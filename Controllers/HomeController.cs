@@ -13,22 +13,12 @@ namespace MovieTheater.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult MovieList()
         {
             return View();
         }
 
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        public IActionResult Signup()
+        public IActionResult Showtime()
         {
             return View();
         }
