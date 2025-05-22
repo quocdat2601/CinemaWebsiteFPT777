@@ -1,0 +1,121 @@
+﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+
+@{
+    ViewData["Title"] = "Create a Movie";
+}
+
+<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
+
+<div class="signup-wrapper">
+    <div class="signup-card">
+        <h2 class="signup-title">Create a Movie</h2>
+        <form asp-controller="Movie" asp-action="Create" method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="MovieNameEnglish" placeholder="Movie Name (EN):" />
+                <span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="MovieNameVn" placeholder="Movie Name (VN):" />
+                <span asp-validation-for="MovieNameVn" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="date" class="form-control" asp-for="FromDate" />
+                <span asp-validation-for="FromDate" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="date" class="form-control" asp-for="ToDate" />
+                <span asp-validation-for="ToDate" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="Actor" placeholder="Actor:" />
+                <span asp-validation-for="Actor" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="MovieProductionCompany" placeholder="Production Company:" />
+                <span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="Director" placeholder="Director:" />
+                <span asp-validation-for="Director" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="number" class="form-control" asp-for="Duration" placeholder="Duration (min):" />
+                <span asp-validation-for="Duration" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="Version" placeholder="Version:" />
+                <span asp-validation-for="Version" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label>Types</label><br />
+                @foreach (var type in Model.AvailableTypes)
+                {
+                    <label>
+                        <input type="checkbox" name="SelectedTypeIds" value="@type.TypeId" />
+                        @type.TypeName
+                    </label><br />
+                }
+            </div>
+            <div class="form-group">
+                <label for="CinemaRoomId">Select Cinema Room:</label>
+                <select asp-for="CinemaRoomId" class="form-control" asp-items="@(new SelectList(Model.AvailableCinemaRooms, "CinemaRoomId", "CinemaRoomName"))">
+                    <option value="">-- Select a Cinema Room --</option>
+                </select>
+                <span asp-validation-for="CinemaRoomId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label>Schedules</label><br />
+                @foreach (var schedule in Model.AvailableSchedules)
+                {
+                    <label>
+                        <input type="checkbox" name="SelectedScheduleIds" value="@schedule.ScheduleId" />
+                        @schedule.ScheduleTime
+                    </label><br />
+                }
+            </div>
+
+            <div class="form-group">
+                <textarea class="form-control" asp-for="Content" placeholder="Movie Description / Content:"></textarea>
+                <span asp-validation-for="Content" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="SmallImage" placeholder="Small Image URL:" />
+                <span asp-validation-for="SmallImage" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" asp-for="LargeImage" placeholder="Large Image URL:" />
+                <span asp-validation-for="LargeImage" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">Create Movie</button>
+        </form>
+    </div>
+</div>
+
+@if (TempData["ToastMessage"] != null)
+{
+    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+        <div class="toast show align-items-center text-bg-success border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    @TempData["ToastMessage"]
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+}

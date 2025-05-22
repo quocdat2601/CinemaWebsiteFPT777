@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
+using MovieTheater.Services;
 
 namespace MovieTheater
 {
@@ -21,6 +22,10 @@ namespace MovieTheater
             });
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+            builder.Services.AddScoped<IMovieService, MovieService>();
+            builder.Services.AddScoped<ICinemaRepository, CinemaRepository>();
+            builder.Services.AddScoped<ICinemaService, CinemaService>();
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
@@ -35,7 +40,7 @@ namespace MovieTheater
             app.UseAuthorization();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=MovieList}/{id?}");
+                pattern: "{controller=Movie}/{action=MovieList}/{id?}");
             app.Run();
         }
     }

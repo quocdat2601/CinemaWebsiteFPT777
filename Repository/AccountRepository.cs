@@ -1,5 +1,5 @@
-﻿using MovieTheater.Models;
-
+﻿using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 namespace MovieTheater.Repository
 {
     public class AccountRepository : IAccountRepository
@@ -39,6 +39,19 @@ namespace MovieTheater.Repository
             _context.Accounts.Add(account);
         }
 
+        public void Delete(string id)
+        {
+            var account = _context.Accounts.FirstOrDefault(m => m.AccountId == id);
+            if (account != null)
+            {
+                _context.Accounts.Remove(account);
+            }
+        }
+        public Account? GetById(string id)
+        {
+            return _context.Accounts.FirstOrDefault(a => a.AccountId == id);
+        }
+
         public Account? GetByUsername(string username)
         {
             return _context.Accounts.FirstOrDefault(a => a.Username == username);
@@ -47,6 +60,30 @@ namespace MovieTheater.Repository
         public void Save()
         {
             _context.SaveChanges();
+        }
+        public void Update(Account account)
+        {
+            var existing = _context.Accounts.FirstOrDefault(a => a.AccountId == account.AccountId);
+            if (existing == null) return; 
+            existing.Address = account.Address;
+            existing.DateOfBirth = account.DateOfBirth;
+            existing.Email = account.Email;
+            existing.FullName = account.FullName;
+            existing.Gender = account.Gender;
+            existing.IdentityCard = account.IdentityCard;
+            existing.Image = account.Image;
+            existing.Password = account.Password;
+            existing.PhoneNumber = account.PhoneNumber;
+            existing.RegisterDate = account.RegisterDate;
+            existing.RoleId = account.RoleId;
+            existing.Status = account.Status;
+            existing.Username = account.Username;
+            _context.SaveChanges();
+        }
+
+        public IEnumerable<Account> GetAll()
+        {
+            return _context.Accounts.ToList();
         }
         public Account? Authenticate(string username, string password)
         {

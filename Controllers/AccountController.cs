@@ -106,7 +106,7 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("Index", "Employee");
             } else
-                return RedirectToAction("MovieList", "Home");
+                return RedirectToAction("MovieList", "Movie");
         }
 
         public IActionResult AccessDenied()

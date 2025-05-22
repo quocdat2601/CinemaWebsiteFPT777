@@ -1,6 +1,7 @@
 ﻿body {
     background-color: #f5f5f5;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-bottom: 50px;
 }
 
 .signup-wrapper {
@@ -51,7 +52,7 @@
 
 .gender-group {
     display: flex;
-    gap: 1.5rem; /* or use margin if you prefer */
+    gap: 1.5rem; 
     align-items: center;
 }
 

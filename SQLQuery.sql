@@ -159,7 +159,8 @@ CREATE TABLE Promotion (
     End_Time DATETIME,
     Image VARCHAR(255),
     Start_Time DATETIME,
-    Title VARCHAR(255)
+    Title VARCHAR(255),
+	Is_Active BIT NOT NULL DEFAULT 1
 );
 
 INSERT INTO Roles (Role_ID, Role_Name) VALUES
@@ -182,8 +183,21 @@ INSERT INTO Show_Dates (Show_Date_ID, Show_Date, Date_Name) VALUES
 (1, '2025-06-01', 'Sunday Premiere'),
 (2, '2025-06-02', 'Monday Matinee');
 
-INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image) VALUES
-('M001', 'Actor A, Actor B', 1, 'A thrilling movie about AI.', 'Director X', 120, '2025-06-01', 'AI Studios', '2025-06-30', '2D', 'AI Awakening', 'Thức Tỉnh AI', 'large_ai.jpg', 'small_ai.jpg');
+
+INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image) 
+VALUES
+('M001', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
+('M002', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('M003', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg'),
+('M004', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
+('M005', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('M006', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg'),
+('M007', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
+('M008', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('M009', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg'),
+('M0010', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
+('M0011', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('M0012', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg');
 
 INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
 ('M001', 1),
@@ -199,27 +213,33 @@ INSERT INTO Movie_Schedule (Movie_ID, Schedule_ID) VALUES
 ('M001', 2);
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
-(1, 'Hành Động'),
-(2, 'Hài Hước'),
-(3, 'Lãng Mạn'),
-(4, 'Tình Cảm'),
-(5, 'Viễn Tưởng'),
-(6, 'Chiến Tranh'),
-(7, 'Kiếm Hiệp'),
-(8, 'Âm Nhạc'),
-(9, 'Kinh Dị'),
-(10, 'Phiêu Lưu'),
-(11, 'Tâm Lý 18+'),
-(12, 'Hoạt Hình');
+(1, 'Action'),
+(2, 'Comedy'),
+(3, 'Romance'),
+(4, 'Drama'),
+(5, 'Sci-Fi'),
+(6, 'War'),
+(7, 'Wuxia'),
+(8, 'Music'),
+(9, 'Horror'),
+(10, 'Adventure'),
+(11, 'Psychology 18+'),
+(12, 'Animation');
 
 INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('M001', 1),
 ('M001', 2);
 
 INSERT INTO Cinema_Room (Cinema_Room_ID, Cinema_Room_Name, Seat_Quantity) VALUES
-(1, 'Main Hall', 100);
+(1, 'Main Hall', 100),
+(2, 'FPT University', 100),
+(3, 'F-Town', 100);
 
 INSERT INTO Seat (Seat_ID, Cinema_Room_ID, Seat_Column, Seat_Row, Seat_Status, Seat_Type) VALUES
 (1, 1, 'A', 1, 0, 1),
 (2, 1, 'A', 2, 0, 1),
 (3, 1, 'B', 1, 1, 2); -- 1 for booked, 2 for VIP
+
+INSERT INTO Promotion (Promotion_ID, Detail, Discount_Level, End_Time, Image, Start_Time, Title, Is_Active) VALUES
+(1, 'Giảm giá năm mới', 20, '2025-12-31 23:59:59', 'newyear.jpg', '2025-12-01 00:00:00', 'Khuyến mãi Năm Mới', 1),
+(2, 'Ưu đãi cuối tuần', 15, '2025-06-30 22:00:00', 'weekend.jpg', '2025-06-01 08:00:00', 'Khuyến mãi Cuối Tuần', 0);
