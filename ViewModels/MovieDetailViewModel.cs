@@ -14,12 +14,17 @@ namespace MovieTheater.ViewModels
         public string? Version { get; set; }
         public string? Content { get; set; }
         public int? CinemaRoomId { get; set; }
+        public IFormFile? LargeImageFile { get; set; } 
+        public IFormFile? SmallImageFile { get; set; } 
+
         public string? LargeImage { get; set; }
         public string? SmallImage { get; set; }
 
         public List<int> SelectedScheduleIds { get; set; } = new();
         public List<int> SelectedShowDateIds { get; set; } = new();
         public List<int> SelectedTypeIds { get; set; } = new();
+
+        public string? CinemaRoomName { get; set; }
 
         public List<Schedule>? AvailableSchedules { get; set; }
         public List<ShowDate>? AvailableShowDates { get; set; }

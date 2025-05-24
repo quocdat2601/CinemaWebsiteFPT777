@@ -28,7 +28,7 @@ namespace MovieTheater.Service
 
         }
 
-        public CinemaRoom? GetById(int id)
+        public CinemaRoom? GetById(int? id)
         {
             return _repository.GetById(id);
 

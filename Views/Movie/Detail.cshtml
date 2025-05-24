@@ -1,0 +1,103 @@
+﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+
+@{
+	ViewData["Title"] = "Movie Detail";
+}
+
+<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
+
+<div class="signup-wrapper">
+
+	<div class="signup-card">
+		<a asp-controller="Movie" asp-action="MovieList" class="btn btn-secondary">
+			&larr; Return
+		</a>
+
+		<h2 class="signup-title">Movie Detail</h2>
+
+		<div class="row">
+			<!-- Left Column: Images -->
+			<div class="col mt-2">
+				<img src="@Url.Content(Model.LargeImage)" alt="@Model.MovieNameEnglish" width="350" height="400">
+			</div>
+
+			<!-- Right Column: Movie Details -->
+			<div class="col-md-6">
+				<div class="form-group mb-3">
+					<div><strong>Movie Name (EN):</strong> @Model.MovieNameEnglish</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Movie Name (VN):</strong> @Model.MovieNameVn</div>
+				</div>
+
+				<div class="row mb-3">
+					<div class="col">
+						<div><strong>From Date:</strong> @Model.FromDate?.ToString()</div>
+
+					</div>
+					<div class="col">
+						<div><strong>To Date:</strong> @Model.ToDate?.ToString()</div>
+
+					</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Actor:</strong> @Model.Actor</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Production Company:</strong> @Model.MovieProductionCompany</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Director:</strong> @Model.Director</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Duration (min):</strong> @Model.Duration</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Version:</strong> @Model.Version</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div>
+						<strong>Types:</strong>
+						@foreach (var type in Model.AvailableTypes)
+						{
+							<span class="badge bg-secondary me-1">@type.TypeName</span>
+						}
+					</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div><strong>Cinema Room:</strong> @Model.CinemaRoomName</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div>
+						<strong>Schedules:</strong>
+						@foreach (var schedule in Model.AvailableSchedules)
+						{
+							<span class="badge bg-info text-dark me-1">@schedule.ScheduleTime</span>
+						}
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<!-- Full-width description row below columns -->
+		<div class="form-group">
+			<label>Description:</label>
+			<div style="white-space: pre-line;">@Model.Content</div>
+		</div>
+
+		<div class="text-center">
+			<button type="button" class="btn btn-primary px-4 py-2 rounded">Book a Ticket</button>
+		</div>
+
+	</div>
+</div>

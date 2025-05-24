@@ -169,9 +169,12 @@ INSERT INTO Roles (Role_ID, Role_Name) VALUES
 (3, 'Member');
 
 INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gender, Identity_Card, Image, Password, Phone_Number, Register_Date, Role_ID, STATUS, USERNAME) VALUES
-('A004', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', 'admin.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
-('A005', '456 Elm St', '1995-06-25', 'employee@gmail.com', 'Employee', 'Male', '987654321', 'bob.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee'),
-('A006', '789 Oak St', '2002-11-10', 'member@gmail.com', 'Member', 'Female', '192837465', 'carol.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member');
+('A001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
+('A002', '456 Elm St', '1995-06-25', 'employee@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee'),
+('A003', '789 Oak St', '2002-11-10', 'member@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member'),
+('A004', '123 Main St', '2000-01-15', 'admin2@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin2'),
+('A005', '456 Elm St', '1995-06-25', 'employee2@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee2'),
+('A006', '789 Oak St', '2002-11-10', 'member2@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member2');
 
 INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('E001', 'A005');
@@ -210,7 +213,23 @@ INSERT INTO Schedule (Schedule_ID, Schedule_Time) VALUES
 
 INSERT INTO Movie_Schedule (Movie_ID, Schedule_ID) VALUES
 ('M001', 1),
-('M001', 2);
+('M001', 2),
+('M002', 1),
+('M003', 2), 
+('M003', 3),
+('M004', 3),
+('M005', 1), 
+('M005', 3),
+('M006', 2),
+('M007', 1), 
+('M007', 2), 
+('M007', 3),
+('M008', 3),
+('M009', 2),
+('M0010', 1), 
+('M0010', 3),
+('M0011', 2),
+('M0012', 1);
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
@@ -228,7 +247,24 @@ INSERT INTO Type (Type_ID, Type_Name) VALUES
 
 INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('M001', 1),
-('M001', 2);
+('M001', 2),
+('M002', 3), 
+('M002', 4),
+('M003', 5),
+('M004', 6), 
+('M004', 7),
+('M005', 8),
+('M006', 9), 
+('M006', 10),
+('M007', 11),
+('M008', 12),
+('M009', 1), 
+('M009', 5),
+('M0010', 2), 
+('M0010', 8),
+('M0011', 3),
+('M0012', 4), 
+('M0012', 7);
 
 INSERT INTO Cinema_Room (Cinema_Room_ID, Cinema_Room_Name, Seat_Quantity) VALUES
 (1, 'Main Hall', 100),

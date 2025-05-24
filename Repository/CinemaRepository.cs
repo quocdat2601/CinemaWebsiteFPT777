@@ -15,7 +15,7 @@ namespace MovieTheater.Repository
             return _context.CinemaRooms.ToList();
         }
 
-        public CinemaRoom? GetById(int id)
+        public CinemaRoom? GetById(int? id)
         {
             return _context.CinemaRooms.FirstOrDefault(a => a.CinemaRoomId == id);
         }

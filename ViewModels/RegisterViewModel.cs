@@ -46,5 +46,7 @@ namespace MovieTheater.ViewModels
         [Phone(ErrorMessage = "Invalid phone number")]
         [StringLength(20, ErrorMessage = "Phone number cannot be longer than 20 characters")]
         public string PhoneNumber { get; set; }
+        public IFormFile? ImageFile { get; set; } // for file upload
+        public string? Image { get; set; } // for saving image path
     }
 }

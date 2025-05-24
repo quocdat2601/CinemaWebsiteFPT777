@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var userRole = Context.Session.GetInt32("Role");
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -40,26 +44,50 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Movie" asp-action="MovieList">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Showtime" asp-action="List">Showtime</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
                         </li>
                     </ul>
 
                     <ul class="navbar-nav">
-                        @if (Context.Session.GetString("UserId") != null)
+                        @if (userRole == 1)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">Admin Dashboard</a>
+                            </li>
+                         
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else if (userRole == 2)
+                        {
+                            
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else if (Context.Session.GetString("UserId") != null) 
                         {
                             <li class="nav-item">
                                 <span class="nav-link">Hello, @Context.Session.GetString("UserName")!</span>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Logout">Logout</a>
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a>
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
                         }
+
                     </ul>
                 </div>
             </div>

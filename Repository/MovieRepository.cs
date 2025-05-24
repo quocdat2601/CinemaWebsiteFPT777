@@ -34,13 +34,20 @@ namespace MovieTheater.Repository
 
         public IEnumerable<Movie> GetAll()
         {
-            return _context.Movies.ToList();
+            return _context.Movies
+                .Include(m => m.Types)
+                .ToList();
         }
        
         public Movie? GetById(string id)
         {
-            return _context.Movies.FirstOrDefault(a => a.MovieId == id);
+            return _context.Movies
+                .Include(m => m.Schedules)
+                .Include(m => m.ShowDates)
+                .Include(m => m.Types)
+                .FirstOrDefault(m => m.MovieId == id);
         }
+
 
         public void Add(Movie movie)
         {

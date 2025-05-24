@@ -1,34 +1,52 @@
 ﻿@model MovieTheater.ViewModels.MovieDetailViewModel
 
 @{
-    ViewData["Title"] = "Create a Movie";
+    ViewData["Title"] = "Edit a Movie";
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
 
 <div class="signup-wrapper">
     <div class="signup-card">
-        <h2 class="signup-title">Create a Movie</h2>
-        <form asp-controller="Movie" asp-action="Create" method="post" enctype="multipart/form-data">
+        <h2 class="signup-title">Edit a Movie</h2>
+        <form asp-controller="Movie" asp-action="Edit" method="Post" enctype="multipart/form-data">
             <div asp-validation-summary="All" class="text-danger"></div>
 
-            <div class="row">
+            <div class="row">   
                 <!-- Left Column: Image Uploads -->
-                <div class="col-md-4">
+                <div class="col">
+
                     <div class="form-group mb-3">
-                        <label>Small Image:</label>
-                        <input type="file" class="form-control" asp-for="SmallImage" />
-                        <span asp-validation-for="SmallImage" class="text-danger"></span>
+                        <label>Small Image:</label><br />
+                        @if (!string.IsNullOrEmpty(Model.SmallImage))
+                        {
+                            <img id="smallImagePreview" src="@Url.Content(Model.SmallImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+                        }
+                        else
+                        {
+                            <img id="smallImagePreview" src="#" alt="No image" width="200" height="250" style="display:none; margin-bottom:10px;" />
+                        }
+                        <input type="file" class="form-control" asp-for="SmallImageFile" onchange="previewImage(this, 'smallImagePreview')" />
+                        <span asp-validation-for="SmallImageFile" class="text-danger"></span>
                     </div>
+
                     <div class="form-group mb-3">
-                        <label>Large Image:</label>
-                        <input type="file" class="form-control" asp-for="LargeImage" />
-                        <span asp-validation-for="LargeImage" class="text-danger"></span>
+                        <label>Large Image:</label><br />
+                        @if (!string.IsNullOrEmpty(Model.LargeImage))
+                        {
+                            <img id="largeImagePreview" src="@Url.Content(Model.LargeImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+                        }
+                        else
+                        {
+                            <img id="largeImagePreview" src="#" alt="No image" width="200" height="250" style="display:none; margin-bottom:10px;" />
+                        }
+                        <input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
+                        <span asp-validation-for="LargeImageFile" class="text-danger"></span>
                     </div>
                 </div>
 
                 <!-- Right Column: Movie Details -->
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <div class="form-group mb-3">
                         <input type="text" class="form-control" asp-for="MovieNameEnglish" placeholder="Movie Name (EN):" />
                         <span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
@@ -81,7 +99,10 @@
                         @foreach (var type in Model.AvailableTypes)
                         {
                             <label class="me-3">
-                                <input type="checkbox" name="SelectedTypeIds" value="@type.TypeId" />
+                                <input type="checkbox"
+                                       name="SelectedTypeIds"
+                                       value="@type.TypeId"
+                                       @(Model.SelectedTypeIds.Contains(type.TypeId) ? "checked" : "") />
                                 @type.TypeName
                             </label>
                         }
@@ -100,7 +121,10 @@
                         @foreach (var schedule in Model.AvailableSchedules)
                         {
                             <label class="me-3">
-                                <input type="checkbox" name="SelectedScheduleIds" value="@schedule.ScheduleId" />
+                                <input type="checkbox"
+                                       name="SelectedScheduleIds"
+                                       value="@schedule.ScheduleId"
+                                       @(Model.SelectedScheduleIds.Contains(schedule.ScheduleId) ? "checked" : "") />
                                 @schedule.ScheduleTime
                             </label>
                         }
@@ -114,10 +138,7 @@
                 <span asp-validation-for="Content" class="text-danger"></span>
             </div>
 
-            <div class="text-center mt-4">
-                <button type="button" class="btn btn-primary px-4 py-2 rounded">Create Movie</button>
-            </div>
-
+            <button type="submit" class="btn btn-primary w-100 mt-3">Edit Movie</button>
         </form>
 
     </div>
@@ -136,3 +157,20 @@
         </div>
     </div>
 }
+
+<script>
+    function previewImage(input, previewId) {
+        var preview = document.getElementById(previewId);
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = "#";
+            preview.style.display = "none";
+        }
+    }
+</script>

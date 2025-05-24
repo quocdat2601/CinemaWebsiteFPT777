@@ -11,8 +11,10 @@ namespace MovieTheater
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
             builder.Services.AddDbContext<MovieTheaterContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>
             {
@@ -20,12 +22,16 @@ namespace MovieTheater
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
+
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IMovieRepository, MovieRepository>();
             builder.Services.AddScoped<IMovieService, MovieService>();
             builder.Services.AddScoped<ICinemaRepository, CinemaRepository>();
             builder.Services.AddScoped<ICinemaService, CinemaService>();
+            builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())

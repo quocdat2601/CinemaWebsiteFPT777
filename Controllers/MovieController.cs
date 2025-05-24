@@ -24,24 +24,43 @@ namespace MovieTheater.Controllers
             var movies = _movieService.GetAll()
                 .Select(m => new MovieViewModel
                 {
+                    MovieId = m.MovieId,
                     MovieNameEnglish = m.MovieNameEnglish,
                     Duration = m.Duration,
                     SmallImage = m.SmallImage,
-                    Types = m.Types.Select(t => new TypeViewModel 
-                    { 
-                        TypeId = t.TypeId,
-                        TypeName = t.TypeName
-                    }).ToList()
+                    Types = m.Types.ToList()
                 });
             
             return View(movies);
         }
 
-        // GET: MovieController/Details/5
-        public ActionResult Details(int id)
+        // GET: MovieController/Detail/5
+        public ActionResult Detail(string id)
         {
-            return View();
+            var movie = _movieService.GetById(id);
+            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId);
+
+            var viewModel = new MovieDetailViewModel
+            {
+                MovieNameEnglish = movie.MovieNameEnglish,
+                MovieNameVn = movie.MovieNameVn,
+                FromDate = movie.FromDate,
+                ToDate = movie.ToDate,
+                Actor = movie.Actor,
+                MovieProductionCompany = movie.MovieProductionCompany,
+                Director = movie.Director,
+                Duration = movie.Duration,
+                Version = movie.Version,
+                Content = movie.Content,
+                LargeImage = movie.LargeImage, 
+                CinemaRoomName = cinemaRoom?.CinemaRoomName, 
+                AvailableTypes = movie.Types.ToList(),
+                AvailableSchedules = movie.Schedules.ToList(),
+            };
+
+            return View(viewModel);
         }
+
 
         // GET: MovieController/Create
         [HttpGet]
@@ -81,12 +100,36 @@ namespace MovieTheater.Controllers
             return RedirectToAction("Index");
         }
 
-
-
-        // GET: MovieController/Edit/5
-        public ActionResult Edit(int id)
+        // GET: Movie/Edit/5
+        public async Task<IActionResult> Edit(string id)
         {
-            return View();
+            var movie = _movieService.GetById(id);
+            if (movie == null)
+                return NotFound();
+
+            var viewModel = new MovieDetailViewModel
+            {
+                MovieNameEnglish = movie.MovieNameEnglish,
+                MovieNameVn = movie.MovieNameVn,
+                FromDate = movie.FromDate,
+                ToDate = movie.ToDate,
+                Actor = movie.Actor,
+                MovieProductionCompany = movie.MovieProductionCompany,
+                Director = movie.Director,
+                Duration = movie.Duration,
+                Version = movie.Version,
+                Content = movie.Content,
+                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
+                SelectedScheduleIds = movie.Schedules.Select(s => s.ScheduleId).ToList(),
+                CinemaRoomId = movie.CinemaRoomId,
+                LargeImage = movie.LargeImage,
+                SmallImage = movie.SmallImage,
+
+                AvailableSchedules = await _movieService.GetSchedulesAsync(),
+                AvailableTypes = await _movieService.GetTypesAsync(),
+                AvailableCinemaRooms = _cinemaService.GetAll().ToList()
+            };
+            return View(viewModel);
         }
 
         // POST: MovieController/Edit/5

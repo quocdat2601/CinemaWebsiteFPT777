@@ -104,7 +104,7 @@ namespace MovieTheater.Controllers
             } else
             if (user.RoleId == 2)
             {
-                return RedirectToAction("Index", "Employee");
+                return RedirectToAction("List", "Employee");
             } else
                 return RedirectToAction("MovieList", "Movie");
         }

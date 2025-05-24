@@ -1,20 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\on_the_job_training\\movietheater\\models\\account.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:models\\account.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\on_the_job_training\\movietheater\\models\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:models\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\on_the_job_training\\movietheater\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -22,7 +9,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 10,
+          "SelectedChildIndex": -1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -59,45 +46,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:132:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Role.cs",
-              "DocumentMoniker": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\Models\\Role.cs",
-              "RelativeDocumentMoniker": "Models\\Role.cs",
-              "ToolTip": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\Models\\Role.cs",
-              "RelativeToolTip": "Models\\Role.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-22T12:15:39.983Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Account.cs",
-              "DocumentMoniker": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\Models\\Account.cs",
-              "RelativeDocumentMoniker": "Models\\Account.cs",
-              "ToolTip": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\Models\\Account.cs",
-              "RelativeToolTip": "Models\\Account.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAAIwB4AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-22T12:15:27.676Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "AccountController.cs",
-              "DocumentMoniker": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\Controllers\\AccountController.cs",
-              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
-              "ToolTip": "D:\\ON_THE_JOB_TRAINING\\MovieTheater\\Controllers\\AccountController.cs",
-              "RelativeToolTip": "Controllers\\AccountController.cs",
-              "ViewState": "AgIAAFgAAAAAAAAAAAAWwGAAAAAxAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-22T12:15:22.571Z",
-              "EditorCaption": ""
             }
           ]
         }
