@@ -94,17 +94,17 @@ namespace MovieTheater.Controllers
 
             HttpContext.Session.SetString("UserId", user.AccountId);
             HttpContext.Session.SetString("UserName", user.Username);
-            HttpContext.Session.SetInt32("Role", user.RoleId);
+            HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
 
             TempData["ToastMessage"] = "Login successful!";
 
             if (user.RoleId == 1)
             {
-                return RedirectToAction("Dashboard", "Admin");
+                return RedirectToAction("MainPage", "Admin");
             } else
             if (user.RoleId == 2)
             {
-                return RedirectToAction("List", "Employee");
+                return RedirectToAction("MainPage", "Employee");
             } else
                 return RedirectToAction("MovieList", "Movie");
         }

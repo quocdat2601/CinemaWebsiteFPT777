@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
+using MovieTheater.Services;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
@@ -9,17 +10,37 @@ namespace MovieTheater.Controllers
     {
         private readonly IEmployeeService _service;
         private readonly ILogger<AccountController> _logger;
+        private readonly IMovieService _movieService;
 
-        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger)
+        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService)
         {
             _service = service;
             _logger = logger;
+            _movieService = movieService;
         }
         // GET: EmployeeController
-        [RoleAuthorize(new[] { 1 })] // Only Admin
-        public ActionResult List()
+        public IActionResult MainPage(string tab = "MovieMg")
         {
+            ViewData["ActiveTab"] = tab;
             return View();
+        } 
+
+        public IActionResult LoadTab(string tab)
+        {
+            switch (tab)
+            {
+                case "MovieMg":
+                    var movies = _movieService.GetAll();
+                    return PartialView("MovieMg", movies);
+                case "ShowroomMg":
+                    return PartialView("ShowroomMg");
+                case "ScheduleMg":
+                    return PartialView("SheduleMg");
+                case "PromotionMg":
+                    return PartialView("PromotionMg");
+                default:
+                    return Content("Tab not found.");
+            }
         }
 
         // GET: EmployeeController/Details/5
@@ -83,17 +104,18 @@ namespace MovieTheater.Controllers
             var employee = _service.GetById(id);
             if (employee == null)
                 return NotFound();
+
             var viewModel = new RegisterViewModel
             {
-                Username = employee.Username,
-                FullName = employee.FullName,
-                DateOfBirth = (DateOnly)employee.DateOfBirth,
-                Gender = employee.Gender,
-                IdentityCard = employee.IdentityCard,
-                Email = employee.Email,
-                Address = employee.Address,
-                PhoneNumber = employee.PhoneNumber,
-                Image = employee.Image
+                Username = employee.Account.Username,
+                FullName = employee.Account.FullName,
+                DateOfBirth = (DateOnly)employee.Account.DateOfBirth,
+                Gender = employee.Account.Gender,
+                IdentityCard = employee.Account.IdentityCard,
+                Email = employee.Account.Email,
+                Address = employee.Account.Address,
+                PhoneNumber = employee.Account.PhoneNumber,
+                Image = employee.Account.Image
             };
 
             return View(viewModel);

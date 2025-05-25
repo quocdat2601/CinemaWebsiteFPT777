@@ -4,12 +4,13 @@ namespace MovieTheater.Repository
 {
     public interface IEmployeeRepository
     {
-        public IEnumerable<Account> GetAll();
-        public Account? GetById(string accountId);
-        public void Add(Account account);
-        public void Update(Account account);
-        public void Delete(string accountId);
+        public IEnumerable<Employee> GetAll();
+        public Employee? GetById(string employeeId);
+        public void Add(Employee employee);
+        public void Update(Employee employee);
+        public void Delete(string employeeId);
         public void Save();
+        public string GenerateEmployeeId();
         public Account? GetByUsername(string username);
 
     }

@@ -15,6 +15,13 @@ CREATE TABLE Roles(
 	Role_Name VARCHAR(255)
 );
 
+CREATE TABLE Rank (
+    Rank_ID INT PRIMARY KEY IDENTITY(1,1),
+    Rank_Name VARCHAR(50) UNIQUE,
+    Discount_Percentage DECIMAL(5,2),
+    Required_Points INT
+);
+
 CREATE TABLE Account (
     Account_ID VARCHAR(10) PRIMARY KEY,
     Address VARCHAR(255),
@@ -30,7 +37,9 @@ CREATE TABLE Account (
     Role_ID INT,
     STATUS INT,
     USERNAME VARCHAR(50),
-    CONSTRAINT FK_Account_Role FOREIGN KEY (Role_ID) REFERENCES Roles(Role_ID)
+    Rank_ID INT, -- Use Rank_ID to match FK constraint
+    CONSTRAINT FK_Account_Role FOREIGN KEY (Role_ID) REFERENCES Roles(Role_ID),
+    CONSTRAINT FK_Account_Rank FOREIGN KEY (Rank_ID) REFERENCES Rank(Rank_ID)
 );
 
 CREATE TABLE Invoice (
@@ -152,21 +161,16 @@ CREATE TABLE Ticket (
     Ticket_Type INT
 );
 
-CREATE TABLE Promotion (
-    Promotion_ID INT PRIMARY KEY,
-    Detail VARCHAR(255),
-    Discount_Level INT,
-    End_Time DATETIME,
-    Image VARCHAR(255),
-    Start_Time DATETIME,
-    Title VARCHAR(255),
-	Is_Active BIT NOT NULL DEFAULT 1
-);
-
 INSERT INTO Roles (Role_ID, Role_Name) VALUES
 (1, 'Admin'),
 (2, 'Employee'),
 (3, 'Member');
+
+INSERT INTO Rank (Rank_Name, Discount_Percentage, Required_Points) VALUES
+('Bronze', 0.00, 0),
+('Gold', 5.00, 30000),
+('Diamond', 10.00, 50000),
+('Elite', 15.00, 80000);
 
 INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gender, Identity_Card, Image, Password, Phone_Number, Register_Date, Role_ID, STATUS, USERNAME) VALUES
 ('A001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
@@ -176,16 +180,17 @@ INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gende
 ('A005', '456 Elm St', '1995-06-25', 'employee2@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee2'),
 ('A006', '789 Oak St', '2002-11-10', 'member2@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member2');
 
+INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
+('M001', 100, 'A003'),  -- Member linked to account A003
+('M002', 1000000, 'A006');  -- Member linked to account A006
+
+
 INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('E001', 'A005');
-
-INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
-('M001', 120, 'A006');
 
 INSERT INTO Show_Dates (Show_Date_ID, Show_Date, Date_Name) VALUES
 (1, '2025-06-01', 'Sunday Premiere'),
 (2, '2025-06-02', 'Monday Matinee');
-
 
 INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image) 
 VALUES
@@ -276,6 +281,43 @@ INSERT INTO Seat (Seat_ID, Cinema_Room_ID, Seat_Column, Seat_Row, Seat_Status, S
 (2, 1, 'A', 2, 0, 1),
 (3, 1, 'B', 1, 1, 2); -- 1 for booked, 2 for VIP
 
-INSERT INTO Promotion (Promotion_ID, Detail, Discount_Level, End_Time, Image, Start_Time, Title, Is_Active) VALUES
-(1, 'Giảm giá năm mới', 20, '2025-12-31 23:59:59', 'newyear.jpg', '2025-12-01 00:00:00', 'Khuyến mãi Năm Mới', 1),
-(2, 'Ưu đãi cuối tuần', 15, '2025-06-30 22:00:00', 'weekend.jpg', '2025-06-01 08:00:00', 'Khuyến mãi Cuối Tuần', 0);
+CREATE TABLE Promotion (
+    Promotion_ID INT PRIMARY KEY,
+    Detail VARCHAR(255),
+    Discount_Level INT,
+    End_Time DATETIME,
+    Image VARCHAR(255),
+    Start_Time DATETIME,
+    Title VARCHAR(255),
+	Is_Active BIT NOT NULL DEFAULT 1
+);
+
+CREATE TABLE ConditionType (
+    ConditionType_ID INT PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE PromotionCondition (
+    Condition_ID INT PRIMARY KEY IDENTITY,
+    Promotion_ID INT FOREIGN KEY REFERENCES Promotion(Promotion_ID),
+    ConditionType_ID INT FOREIGN KEY REFERENCES ConditionType(ConditionType_ID),
+    Target_Entity VARCHAR(50),
+    Target_Field VARCHAR(50),
+    Operator VARCHAR(10),           -- Only used if it's a comparison
+    Target_Value VARCHAR(255)
+);
+
+INSERT INTO ConditionType (ConditionType_ID, Name)
+VALUES 
+(1, 'Comparison'),
+(2, 'Selection');
+
+-- First Time Promo (20% off)
+INSERT INTO Promotion (Promotion_ID, Title, Detail, Discount_Level, Start_Time, End_Time, Image, Is_Active) VALUES
+(1, 'First Time Promo', 'Get 20% off on your first order!', 20, '2025-05-01', '2025-12-31', 'first_time.png', 1),
+(2, 'Group Discount', 'Order with 3 or more people and save 15%!', 15, '2025-05-01', '2025-12-31', 'group_discount.png', 1);
+
+-- First Time Promo condition: User.OrderCount = 0
+INSERT INTO PromotionCondition (Promotion_ID, ConditionType_ID, Target_Entity, Target_Field, Operator, Target_Value) VALUES 
+(1, 1, 'User', 'OrderCount', '=', '0'),
+(2, 1, 'Order', 'Seat_Count', '>=', '3');

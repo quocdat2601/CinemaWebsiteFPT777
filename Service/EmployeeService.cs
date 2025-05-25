@@ -6,59 +6,42 @@ using MovieTheater.ViewModels;
 namespace MovieTheater.Service
 {
     public class EmployeeService : IEmployeeService
-    
     {
         private readonly IEmployeeRepository _repository;
+        private readonly IAccountService _accountService;
 
-        public EmployeeService(IEmployeeRepository repository)
+        public EmployeeService(IEmployeeRepository repository, IAccountService accountService)
         {
             _repository = repository;
+            _accountService = accountService;
         }
 
-        public IEnumerable<Account> GetAll()
+        public IEnumerable<Employee> GetAll()
         {
             return _repository.GetAll();
         }
 
-        public Account? GetById(string id)
+        public Employee? GetById(string id)
         {
             return _repository.GetById(id);
         }
 
         public bool Register(RegisterViewModel model)
         {
-            if (_repository.GetByUsername(model.Username) != null)
-                return false;
-
-            var account = new Account
-            {
-                Username = model.Username,
-                Password = model.Password,
-                FullName = model.FullName,
-                DateOfBirth = model.DateOfBirth,
-                Gender = model.Gender,
-                IdentityCard = model.IdentityCard,
-                Email = model.Email,
-                Address = model.Address,
-                PhoneNumber = model.PhoneNumber,
-                RegisterDate = DateOnly.FromDateTime(DateTime.Now),
-                Status = 1,
-                RoleId = 2
-            };
-
-            _repository.Add(account);
-            _repository.Save();
-            return true;
+            // Set RoleId to 2 for employees
+            model.RoleId = 2;
+            return _accountService.Register(model);
         }
-        public void Update(Account account)
+
+        public void Update(Employee employee)
         {
-            _repository.Update(account);
+            _repository.Update(employee);
             _repository.Save();
         }
 
-        public void Delete(string accountId)
+        public void Delete(string employeeId)
         {
-            _repository.Delete(accountId);
+            _repository.Delete(employeeId);
             _repository.Save();
         }
 

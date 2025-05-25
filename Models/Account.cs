@@ -27,17 +27,21 @@ public partial class Account
 
     public DateOnly? RegisterDate { get; set; }
 
-    public int RoleId { get; set; }
+    public int? RoleId { get; set; }
 
     public int? Status { get; set; }
 
     public string? Username { get; set; }
+
+    public int? RankId { get; set; }
 
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
     public virtual ICollection<Member> Members { get; set; } = new List<Member>();
+
+    public virtual Rank? Rank { get; set; }
 
     public virtual Role? Role { get; set; }
 }

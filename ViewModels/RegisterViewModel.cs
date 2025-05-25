@@ -48,5 +48,7 @@ namespace MovieTheater.ViewModels
         public string PhoneNumber { get; set; }
         public IFormFile? ImageFile { get; set; } // for file upload
         public string? Image { get; set; } // for saving image path
+        public int? RoleId { get; set; }
+
     }
 }

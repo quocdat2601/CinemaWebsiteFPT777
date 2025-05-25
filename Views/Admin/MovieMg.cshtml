@@ -1,0 +1,32 @@
+﻿@model IEnumerable<Movie>
+
+<div class="text-center mb-2">
+    <h2>Movie List</h2>
+</div>
+
+<div class="text-center mb-2">
+    <a asp-controller="Movie" asp-action="Create" class="btn btn-sm btn-primary">Create a Movie</a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th style="width: 150px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var movie in Model)
+        {
+            <tr>
+                <td>@movie.MovieId</td>
+                <td>@movie.MovieNameEnglish</td>
+                <td>
+                    <a href="@Url.Action("Edit", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="@Url.Action("Delete", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

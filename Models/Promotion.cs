@@ -20,4 +20,6 @@ public partial class Promotion
     public string? Title { get; set; }
 
     public bool IsActive { get; set; }
+
+    public virtual ICollection<PromotionCondition> PromotionConditions { get; set; } = new List<PromotionCondition>();
 }

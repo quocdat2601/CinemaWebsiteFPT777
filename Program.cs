@@ -31,6 +31,7 @@ namespace MovieTheater
             builder.Services.AddScoped<ICinemaService, CinemaService>();
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+            builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
@@ -47,6 +48,7 @@ namespace MovieTheater
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Movie}/{action=MovieList}/{id?}");
+
             app.Run();
         }
     }

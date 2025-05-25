@@ -6,10 +6,10 @@ namespace MovieTheater.Service
     public interface IEmployeeService
     {
         public bool Register(RegisterViewModel model);
-        public IEnumerable<Account> GetAll();
-        public Account? GetById(string id);
-        public void Update(Account account);
-        public void Delete(string accountId);
+        public IEnumerable<Employee> GetAll();
+        public Employee? GetById(string id);
+        public void Update(Employee employee);
+        public void Delete(string employeeId);
         public void Save();
 
     }

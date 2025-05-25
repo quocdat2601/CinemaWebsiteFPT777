@@ -12,41 +12,63 @@ namespace MovieTheater.Repository
         {
             _context = context;
         }
+
+        public IEnumerable<Employee> GetAll()
+        {
+            return _context.Employees.Include(m => m.Account).ToList();
+        }
+
+        public Employee? GetById(string employeeId)
+        {
+            return _context.Employees
+                .Include(e => e.Account)
+                .FirstOrDefault(m => m.EmployeeId == employeeId);
+        }
         public Account? GetByUsername(string username)
         {
             return _context.Accounts.FirstOrDefault(a => a.Username == username);
         }
-        public IEnumerable<Account> GetAll()
-        {
-            return _context.Accounts
-                .Where(e => e.RoleId.Equals(2))
-                .ToList();
-        }
 
-        public Account? GetById(string accountId)
+        public string GenerateEmployeeId()
         {
-            return _context.Accounts
-                .FirstOrDefault(e => e.AccountId == accountId && e.RoleId.Equals(2));
-        }
+            var latestEmployee = _context.Employees
+                .OrderByDescending(a => a.EmployeeId)
+                .FirstOrDefault();
 
-        public void Add(Account account)
-        {
-            _context.Accounts.Add(account);
-            _context.SaveChanges();
-        }
-
-        public void Update(Account account)
-        {
-            _context.Accounts.Update(account);
-            _context.SaveChanges();
-        }
-
-        public void Delete(string accountId)
-        {
-            var account = _context.Accounts.Find(accountId);
-            if (account != null)
+            if (latestEmployee == null)
             {
-                _context.Accounts.Remove(account);
+                return "E0001";
+            }
+
+            if (int.TryParse(latestEmployee.EmployeeId.Substring(3), out int number))
+            {
+                return $"E{(number + 1):D4}";
+            }
+
+            return $"E{DateTime.Now:yyyyMMddHHmmss}";
+        }
+
+        public void Add(Employee employee)
+        {
+            if (string.IsNullOrEmpty(employee.EmployeeId))
+            {
+                employee.EmployeeId = GenerateEmployeeId();
+            }
+            _context.Employees.Add(employee);
+        }
+
+        public void Update(Employee employee)
+        {
+            _context.Employees.Update(employee);
+            _context.SaveChanges();
+        }
+
+        public void Delete(string employeeId)
+        {
+            var employee = _context.Employees.Find(employeeId);
+            if (employee != null)
+            {
+                _context.Employees.Remove(employee);
                 _context.SaveChanges();
             }
         }
