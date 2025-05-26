@@ -1,0 +1,16 @@
+# Ignore Visual Studio temporary files
+.vs/
+*.user
+*.suo
+
+# Ignore build outputs
+bin/
+obj/
+
+# Ignore NuGet files
+*.nupkg
+project.lock.json
+project.nuget.cache
+
+# Others
+*.log
