@@ -29,7 +29,7 @@
 				<td>@promotion.Title</td>
 				<td class="text-center">@promotion.StartTime</td>
 				<td class="text-center">@promotion.EndTime</td>
-				<td class="text-center">@promotion.IsActive</td>
+				<td class="text-center">@((promotion.IsActive) ? "Active" : "Deactive")</td>
 
 				<td>
 					<div class="d-flex align-items-center gap-2">

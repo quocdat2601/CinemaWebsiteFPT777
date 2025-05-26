@@ -26,6 +26,11 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        public IActionResult MainPage()
+        {
+            return View();
+        }
+
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
