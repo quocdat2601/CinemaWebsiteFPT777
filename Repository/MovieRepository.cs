@@ -21,15 +21,16 @@ namespace MovieTheater.Repository
 
             if (lastestMovie == null)
             {
-                return "ACC0001";
+                return "MV001";
             }
 
-            if (int.TryParse(lastestMovie.MovieId.Substring(3), out int number))
+            if (int.TryParse(lastestMovie.MovieId.Substring(2, 3), out int number))
             {
-                return $"ACC{(number + 1):D4}";
+                return $"MV{(number + 1):D3}";
             }
 
-            return $"ACC{DateTime.Now:yyyyMMddHHmmss}";
+
+            return $"MV{DateTime.Now:yyyyMMddHHmmss}";
         }
 
         public IEnumerable<Movie> GetAll()
@@ -72,10 +73,24 @@ namespace MovieTheater.Repository
         }
         public void Delete(string id)
         {
-            var movie = _context.Movies.FirstOrDefault(m => m.MovieId == id);
+            var movie = _context.Movies
+                .Include(m => m.Schedules)
+                .Include(m => m.Types)
+                .Include(m => m.ShowDates)
+                .FirstOrDefault(m => m.MovieId == id);
+                
             if (movie != null)
             {
+                // Clear all relationships
+                movie.Schedules?.Clear();
+                movie.Types?.Clear();
+                movie.ShowDates?.Clear();
+                
+                // Remove the movie
                 _context.Movies.Remove(movie);
+                
+                // Save changes immediately
+                _context.SaveChanges();
             }
         }
         public void Save()

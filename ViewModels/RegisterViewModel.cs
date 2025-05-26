@@ -49,6 +49,7 @@ namespace MovieTheater.ViewModels
         public IFormFile? ImageFile { get; set; } // for file upload
         public string? Image { get; set; } // for saving image path
         public int? RoleId { get; set; }
+        public int? Status { get; set; }
 
     }
 }

@@ -8,8 +8,8 @@ namespace MovieTheater.Service
         public bool Register(RegisterViewModel model);
         public IEnumerable<Employee> GetAll();
         public Employee? GetById(string id);
-        public void Update(Employee employee);
-        public void Delete(string employeeId);
+        public bool Update(string id, RegisterViewModel model);
+        public bool Delete(string employeeId);
         public void Save();
 
     }

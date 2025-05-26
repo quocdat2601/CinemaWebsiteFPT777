@@ -59,7 +59,7 @@ namespace MovieTheater.Controllers
 
         // POST: EmployeeController/Create
         [HttpPost]
-        public IActionResult Create(RegisterViewModel model)
+        public async Task<IActionResult> CreateAsync(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -72,6 +72,21 @@ namespace MovieTheater.Controllers
 
             try
             {
+                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.ImageFile.FileName);
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(stream);
+                    }
+                    model.Image = "/image/" + uniqueFileName;
+                }
+               
                 var success = _service.Register(model);
 
                 if (!success)
@@ -80,11 +95,8 @@ namespace MovieTheater.Controllers
                     return View(model);
                 }
 
-                //TempData["SuccessMessage"] = "Sign up successful! Please log in.";
                 TempData["ToastMessage"] = "Employee Created Succesfully!";
-                return RedirectToAction("List","Employee");
-
-                //return RedirectToAction("Login", "Account");
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
 
             }
             catch (Exception ex)
@@ -115,46 +127,121 @@ namespace MovieTheater.Controllers
                 Email = employee.Account.Email,
                 Address = employee.Account.Address,
                 PhoneNumber = employee.Account.PhoneNumber,
-                Image = employee.Account.Image
+                Image = employee.Account.Image,
+                Password = null,
+                ConfirmPassword = null
             };
 
             return View(viewModel);
         }
 
-
         // POST: EmployeeController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<ActionResult> EditAsync(string id, RegisterViewModel model)
         {
+            ModelState.Remove("Password");
+            ModelState.Remove("ConfirmPassword");
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
             try
             {
-                return RedirectToAction(nameof(Index));
+                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.ImageFile.FileName);
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ImageFile.CopyToAsync(stream);
+                    }
+                    model.Image = "/image/" + uniqueFileName;
+                }
+                else
+                {
+                    var existingEmployee = _service.GetById(id);
+                    if (existingEmployee != null)
+                    {
+                        model.Image = existingEmployee.Account.Image;
+                    }
+                }
+
+                var success = _service.Update(id, model);
+
+                if (!success)
+                {
+                    TempData["ErrorMessage"] = "Update failed - Username already exists";
+                    return View(model);
+                }
+
+                TempData["ToastMessage"] = "Employee Updated Successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                TempData["ErrorMessage"] = $"Error during update: {ex.Message}";
+                return View(model);
             }
         }
 
-        // GET: EmployeeController/Delete/5
-        public ActionResult Delete(int id)
+        [HttpGet]
+        public IActionResult Delete(string id)
         {
-            return View();
+            var employee = _service.GetById(id);
+            if (employee == null)
+            {
+                TempData["ToastMessage"] = "Employee not found.";
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+            }
+
+            return View(employee);
         }
 
-        // POST: EmployeeController/Delete/5
+        // POST: Employee/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public IActionResult Delete(string id, IFormCollection collection)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                if (string.IsNullOrEmpty(id))
+                {
+                    TempData["ToastMessage"] = "Invalid employee ID.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                var employee = _service.GetById(id);
+                if (employee == null)
+                {
+                    TempData["ToastMessage"] = "Employee not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                //movie.Schedules?.Clear();
+                //movie.Types?.Clear();
+                //movie.ShowDates?.Clear();
+
+                bool success = _service.Delete(id);
+
+                if (!success)
+                {
+                    TempData["ToastMessage"] = "Failed to delete employee.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                TempData["ToastMessage"] = "Employee deleted successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
             }
         }
     }

@@ -1,10 +1,49 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@model IEnumerable<Promotion>
+
     <div class="text-center">
         <h2>
             Promotion List
         </h2>
     </div>
-}
+
+<div class="text-center mb-2">
+	<a asp-controller="Promotion" asp-action="Create" class="btn btn-sm btn-primary">Create a Promotion</a>
+</div>
+
+<table class="table table-bordered table-striped">
+	<thead class="table-dark">
+		<tr class="text-center">
+			<th>ID</th>
+			<th>Name</th>
+			<th>Start Date</th>
+			<th>End Date</th>
+			<th>Status</th>
+			<th style="width: 150px;">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var promotion in Model)
+		{
+			<tr>
+				<td class="text-center">@promotion.PromotionId</td>
+				<td>@promotion.Title</td>
+				<td class="text-center">@promotion.StartTime</td>
+				<td class="text-center">@promotion.EndTime</td>
+				<td class="text-center">@promotion.IsActive</td>
+
+				<td>
+					<div class="d-flex align-items-center gap-2">
+						<a href="@Url.Action("Edit", "Promotion", new { id = promotion.PromotionId })" class="btn btn-sm btn-primary">Edit</a>
+
+						<form asp-action="Delete" asp-controller="Promotion" method="post" onsubmit="return confirm('Are you sure you want to delete this promotion?');">
+							<input type="hidden" name="id" value="@promotion.PromotionId" />
+							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
+						</form>
+					</div>
+				</td>
+
+			</tr>
+		}
+	</tbody>
+</table>
+

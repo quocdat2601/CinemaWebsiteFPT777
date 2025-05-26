@@ -32,12 +32,12 @@ namespace MovieTheater.Repository
 
             if (latestMember == null)
             {
-                return "MB0001";
+                return "MB001";
             }
 
-            if (int.TryParse(latestMember.MemberId.Substring(3), out int number))
+            if (int.TryParse(latestMember.MemberId.Substring(2, 3), out int number))
             {
-                return $"MB{(number + 1):D4}";
+                return $"MB{(number + 1):D3}";
             }
 
             return $"MB{DateTime.Now:yyyyMMddHHmmss}";

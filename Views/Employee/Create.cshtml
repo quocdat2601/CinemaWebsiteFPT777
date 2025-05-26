@@ -10,6 +10,9 @@
 
 <div class="signup-wrapper">
 	<div class="signup-card">
+		<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="EmployeeMg" class="btn btn-secondary">
+			&larr; Return
+		</a>
 		<h2 class="signup-title">Create Employee</h2>
 		<form asp-controller="Employee" asp-action="Create" method="post" enctype="multipart/form-data">
 			<div asp-validation-summary="All" class="text-danger"></div>
@@ -18,21 +21,19 @@
 			<div class="row">
 				<!-- Left Column: Image Uploads -->
 				<div class="col">
-
 					<div class="form-group mb-3">
-
 						<label>Image:</label><br />
 						@if (!string.IsNullOrEmpty(Model.Image))
 						{
-							<img id="smallImagePreview" src="@Url.Content(Model.Image)" width="150" height="180" style="display:block; margin-bottom:10px" />
+							<img id="smallImagePreview" src="@Url.Content(Model.Image)" alt="Current Image" width="200" height="180" style="display:block; margin-bottom:10px; object-fit: cover;" />
 						}
 						else
 						{
-							<img id="smallImagePreview" src="#" alt="No image" width="150" height="180" style="display:none; margin-bottom:10px;" />
+							<img id="smallImagePreview" src="#" alt="No image" width="200" height="180" style="display:none; margin-bottom:10px;" />
 						}
-						<input type="file" class="form-control" asp-for="ImageFile" onchange="previewImage(this, 'smallImagePreview')" />
+						<input type="file" class="form-control" asp-for="ImageFile" onchange="previewImage(this, 'smallImagePreview')" accept="image/*" />
 						<span asp-validation-for="ImageFile" class="text-danger"></span>
-
+						<input type="hidden" asp-for="Image" />
 					</div>
 				</div>
 
@@ -101,7 +102,7 @@
 			</div>
 
 			<div class="text-center mt-4">
-				<button type="button" class="btn btn-primary px-4 py-2 rounded">Create Employee</button>
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Create Employee</button>
 			</div>
 		</form>
 

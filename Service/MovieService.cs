@@ -2,6 +2,7 @@
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
+using System.IO;
 
 namespace MovieTheater.Services
 {
@@ -54,16 +55,45 @@ namespace MovieTheater.Services
         }
 
 
-        public void UpdateMovie(Movie movie)
+        public bool UpdateMovie(string id, MovieDetailViewModel model)
         {
+            var movie = _movieRepository.GetById(id);
+            if (movie == null) return false;
+
+            movie.MovieNameEnglish = model.MovieNameEnglish;
+            movie.MovieNameVn = model.MovieNameVn;
+            movie.Actor = model.Actor;
+            movie.Director = model.Director;
+            movie.Duration = model.Duration;
+            movie.Version = model.Version;
+            movie.FromDate = model.FromDate;
+            movie.ToDate = model.ToDate;
+            movie.MovieProductionCompany = model.MovieProductionCompany;
+            movie.CinemaRoomId = model.CinemaRoomId;
+            movie.Content = model.Content;
+
+            // Only update images if new ones are provided
+            if (!string.IsNullOrEmpty(model.SmallImage))
+                movie.SmallImage = model.SmallImage;
+
+            if (!string.IsNullOrEmpty(model.LargeImage))
+                movie.LargeImage = model.LargeImage;
+
+            movie.Schedules = _movieRepository.GetSchedulesByIds(model.SelectedScheduleIds);
+            movie.ShowDates = _movieRepository.GetShowDatesByIds(model.SelectedShowDateIds);
+            movie.Types = _movieRepository.GetTypesByIds(model.SelectedTypeIds);
+
             _movieRepository.Update(movie);
             _movieRepository.Save();
+            return true;
         }
 
-        public void DeleteMovie(string id)
+
+        public bool DeleteMovie(string id)
         {
             _movieRepository.Delete(id);
             _movieRepository.Save();
+            return true;
         }
 
         public void Save()

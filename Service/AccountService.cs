@@ -1,6 +1,9 @@
-﻿using MovieTheater.Models;
+﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
+using System.Net;
 
 namespace MovieTheater.Service
 {
@@ -35,7 +38,8 @@ namespace MovieTheater.Service
                 PhoneNumber = model.PhoneNumber,
                 RegisterDate = DateOnly.FromDateTime(DateTime.Now),
                 Status = 1,
-                RoleId = model.RoleId // <- Let the user choose or you assign it
+                RoleId = model.RoleId, // 
+                Image = model.Image
             };
 
             _repository.Add(account);
@@ -62,6 +66,29 @@ namespace MovieTheater.Service
             return true;
         }
 
+        public bool Update(string id, RegisterViewModel model)
+        {
+            var account = _repository.GetById(id);
+            if (account == null) return false;
+            account.Username = model.Username;
+            account.Password = model.Password;
+            account.FullName = model.FullName;
+            account.DateOfBirth = model.DateOfBirth;
+            account.Gender = model.Gender;
+            account.IdentityCard = model.IdentityCard;
+            account.Email = model.Email;
+            account.Address = model.Address;
+            account.PhoneNumber = model.PhoneNumber;
+            account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
+            account.Status = model.Status;
+
+            if (!string.IsNullOrEmpty(model.Image))
+                account.Image = model.Image;
+
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
 
         public bool Authenticate(string username, string password, out Account? account)
         {

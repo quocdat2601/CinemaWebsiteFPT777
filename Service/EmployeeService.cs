@@ -28,21 +28,23 @@ namespace MovieTheater.Service
 
         public bool Register(RegisterViewModel model)
         {
-            // Set RoleId to 2 for employees
             model.RoleId = 2;
             return _accountService.Register(model);
         }
 
-        public void Update(Employee employee)
+        public bool Update(string id, RegisterViewModel model)
         {
-            _repository.Update(employee);
-            _repository.Save();
+            var employee = _repository.GetById(id);
+            if (employee == null) return false;
+            var accountID = employee.AccountId;
+            return _accountService.Update(accountID, model);
         }
 
-        public void Delete(string employeeId)
+        public bool Delete(string employeeId)
         {
             _repository.Delete(employeeId);
             _repository.Save();
+            return true;
         }
 
         public void Save()

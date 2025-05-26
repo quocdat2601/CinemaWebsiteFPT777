@@ -8,6 +8,9 @@
 
 <div class="signup-wrapper">
 	<div class="signup-card">
+		<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="EmployeeMg" class="btn btn-secondary">
+			&larr; Return
+		</a>
 		<h2 class="signup-title">Edit Employee</h2>
 		<form asp-controller="Employee" asp-action="Edit" method="post" enctype="multipart/form-data">
 			<div asp-validation-summary="All" class="text-danger"></div>
@@ -85,26 +88,12 @@
 			</div>
 
 			<div class="text-center mt-4">
-				<button type="button" class="btn btn-primary px-4 py-2 rounded">Edit Employee</button>
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Employee</button>
 			</div>
 		</form>
 
 	</div>
 </div>
-
-@if (TempData["ToastMessage"] != null)
-{
-	<div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-		<div class="toast show align-items-center text-bg-success border-0" role="alert">
-			<div class="d-flex">
-				<div class="toast-body">
-					@TempData["ToastMessage"]
-				</div>
-				<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-			</div>
-		</div>
-	</div>
-}
 
 <script>
 	function previewImage(input, previewId) {

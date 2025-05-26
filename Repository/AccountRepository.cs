@@ -19,15 +19,15 @@ namespace MovieTheater.Repository
 
             if (latestAccount == null)
             {
-                return "ACC0001";
+                return "AC001";
             }
 
-            if (int.TryParse(latestAccount.AccountId.Substring(3), out int number))
+            if (int.TryParse(latestAccount.AccountId.Substring(2, 3), out int number))
             {
-                return $"ACC{(number + 1):D4}";
+                return $"AC{(number + 1):D3}";
             }
 
-            return $"ACC{DateTime.Now:yyyyMMddHHmmss}";
+            return $"AC{DateTime.Now:yyyyMMddHHmmss}";
         }
 
         public void Add(Account account)

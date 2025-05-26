@@ -8,8 +8,8 @@ namespace MovieTheater.Services
         IEnumerable<Movie> GetAll();
         Movie? GetById(string id);
         bool AddMovie(MovieDetailViewModel movie);
-        void UpdateMovie(Movie movie);
-        void DeleteMovie(string id);
+        public bool UpdateMovie(string id, MovieDetailViewModel model);
+        public bool DeleteMovie(string id);
         void Save();
         Task<List<Schedule>> GetSchedulesAsync();
         Task<List<ShowDate>> GetShowDatesAsync();

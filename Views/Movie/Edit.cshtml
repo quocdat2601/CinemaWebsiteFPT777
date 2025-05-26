@@ -1,7 +1,7 @@
 ﻿@model MovieTheater.ViewModels.MovieDetailViewModel
 
 @{
-    ViewData["Title"] = "Edit a Movie";
+    ViewData["Title"] = "Edit Movie";
     var userRole = Context.Session.GetInt32("Role");
 }
 
@@ -22,7 +22,7 @@
             </a>
         }
        
-        <h2 class="signup-title">Edit a Movie</h2>
+        <h2 class="signup-title">Movie Edit</h2>
         <form asp-controller="Movie" asp-action="Edit" method="Post" enctype="multipart/form-data">
             <div asp-validation-summary="All" class="text-danger"></div>
 
@@ -57,6 +57,7 @@
                         <input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
                         <span asp-validation-for="LargeImageFile" class="text-danger"></span>
                     </div>
+
                 </div>
 
                 <!-- Right Column: Movie Details -->
@@ -151,8 +152,9 @@
                 <textarea class="form-control" asp-for="Content" placeholder="Movie Description / Content:"></textarea>
                 <span asp-validation-for="Content" class="text-danger"></span>
             </div>
-
-            <button type="submit" class="btn btn-primary w-100 mt-3">Edit Movie</button>
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Movie</button>
+            </div>
         </form>
 
     </div>

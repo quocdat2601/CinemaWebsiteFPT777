@@ -95,18 +95,29 @@ namespace MovieTheater.Controllers
             HttpContext.Session.SetString("UserId", user.AccountId);
             HttpContext.Session.SetString("UserName", user.Username);
             HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
+            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
 
-            TempData["ToastMessage"] = "Login successful!";
+
+            if (user.Status  == 0)
+            {
+                TempData["ErrorMessage"] = "Account has been locked!";
+                HttpContext.Session.Clear();
+                return View(model);
+            }
 
             if (user.RoleId == 1)
             {
+
                 return RedirectToAction("MainPage", "Admin");
-            } else
-            if (user.RoleId == 2)
+            } 
+            else if (user.RoleId == 2)
             {
                 return RedirectToAction("MainPage", "Employee");
-            } else
+            }
+            else
+            {
                 return RedirectToAction("MovieList", "Movie");
+            }
         }
 
         public IActionResult AccessDenied()

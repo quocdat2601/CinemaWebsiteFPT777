@@ -37,12 +37,12 @@ namespace MovieTheater.Repository
 
             if (latestEmployee == null)
             {
-                return "E0001";
+                return "EM001";
             }
 
-            if (int.TryParse(latestEmployee.EmployeeId.Substring(3), out int number))
+            if (int.TryParse(latestEmployee.EmployeeId.Substring(2,3), out int number))
             {
-                return $"E{(number + 1):D4}";
+                return $"EM{(number + 1):D3}";
             }
 
             return $"E{DateTime.Now:yyyyMMddHHmmss}";

@@ -1,137 +1,171 @@
 ﻿@model MovieTheater.ViewModels.MovieDetailViewModel
 
 @{
-    ViewData["Title"] = "Create a Movie";
-    var userRole = Context.Session.GetInt32("Role");
+	ViewData["Title"] = "Create a Movie";
+	var userRole = Context.Session.GetInt32("Role");
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
 
 <div class="signup-wrapper">
-    <div class="signup-card">
-        @if (userRole == 1)
-        {
-            <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
-                &larr; Return
-            </a>
-        }
-        else
-        {
-            <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
-                &larr; Return
-            </a>
-        }
-        <h2 class="signup-title">Create a Movie</h2>
-        <form asp-controller="Movie" asp-action="Create" method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="All" class="text-danger"></div>
+	<div class="signup-card">
+		@if (userRole == 1)
+		{
+			<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+				&larr; Return
+			</a>
+		}
+		else
+		{
+			<a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+				&larr; Return
+			</a>
+		}
+		<h2 class="signup-title">Create a Movie</h2>
+		<form asp-controller="Movie" asp-action="Create" method="post" enctype="multipart/form-data">
+			<div asp-validation-summary="All" class="text-danger"></div>
 
-            <div class="row">
-                <!-- Left Column: Image Uploads -->
-                <div class="col-md-4">
-                    <div class="form-group mb-3">
-                        <label>Small Image:</label>
-                        <input type="file" class="form-control" asp-for="SmallImage" />
-                        <span asp-validation-for="SmallImage" class="text-danger"></span>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label>Large Image:</label>
-                        <input type="file" class="form-control" asp-for="LargeImage" />
-                        <span asp-validation-for="LargeImage" class="text-danger"></span>
-                    </div>
-                </div>
+			<div class="row">
+				<!-- Left Column: Image Uploads -->
+				<div class="col">
+					<div class="form-group mb-3">
+						<label>Small Image:</label><br />
+						@if (!string.IsNullOrEmpty(Model.SmallImage))
+						{
+							<img id="smallImagePreview" src="@Url.Content(Model.SmallImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						else
+						{
+							<img id="smallImagePreview" src="#" alt="No image" width="200" height="250" style="display:none; margin-bottom:10px;" />
+						}
+						<input type="file" class="form-control" asp-for="SmallImageFile" onchange="previewImage(this, 'smallImagePreview')" />
+						<span asp-validation-for="SmallImageFile" class="text-danger"></span>
+					</div>
 
-                <!-- Right Column: Movie Details -->
-                <div class="col-md-8">
-                    <div class="form-group mb-3">
-                        <input type="text" class="form-control" asp-for="MovieNameEnglish" placeholder="Movie Name (EN):" />
-                        <span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
-                    </div>
+					<div class="form-group mb-3">
+						<label>Large Image:</label><br />
+						@if (!string.IsNullOrEmpty(Model.LargeImage))
+						{
+							<img id="largeImagePreview" src="@Url.Content(Model.LargeImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						else
+						{
+							<img id="largeImagePreview" src="#" alt="No image" width="200" height="250" style="display:none; margin-bottom:10px;" />
+						}
+						<input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
+						<span asp-validation-for="LargeImageFile" class="text-danger"></span>
+					</div>
+				</div>
 
-                    <div class="form-group mb-3">
-                        <input type="text" class="form-control" asp-for="MovieNameVn" placeholder="Movie Name (VN):" />
-                        <span asp-validation-for="MovieNameVn" class="text-danger"></span>
-                    </div>
+				<!-- Right Column: Movie Details -->
+				<div class="col-md-6">
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="MovieNameEnglish" placeholder="Movie Name (EN):" />
+						<span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
+					</div>
 
-                    <div class="row mb-3">
-                        <div class="col">
-                            <input type="date" class="form-control" asp-for="FromDate" />
-                            <span asp-validation-for="FromDate" class="text-danger"></span>
-                        </div>
-                        <div class="col">
-                            <input type="date" class="form-control" asp-for="ToDate" />
-                            <span asp-validation-for="ToDate" class="text-danger"></span>
-                        </div>
-                    </div>
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="MovieNameVn" placeholder="Movie Name (VN):" />
+						<span asp-validation-for="MovieNameVn" class="text-danger"></span>
+					</div>
 
-                    <div class="form-group mb-3">
-                        <input type="text" class="form-control" asp-for="Actor" placeholder="Actor:" />
-                        <span asp-validation-for="Actor" class="text-danger"></span>
-                    </div>
+					<div class="row mb-3">
+						<div class="col">
+							<input type="date" class="form-control" asp-for="FromDate" />
+							<span asp-validation-for="FromDate" class="text-danger"></span>
+						</div>
+						<div class="col">
+							<input type="date" class="form-control" asp-for="ToDate" />
+							<span asp-validation-for="ToDate" class="text-danger"></span>
+						</div>
+					</div>
 
-                    <div class="form-group mb-3">
-                        <input type="text" class="form-control" asp-for="MovieProductionCompany" placeholder="Production Company:" />
-                        <span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
-                    </div>
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="Actor" placeholder="Actor:" />
+						<span asp-validation-for="Actor" class="text-danger"></span>
+					</div>
 
-                    <div class="form-group mb-3">
-                        <input type="text" class="form-control" asp-for="Director" placeholder="Director:" />
-                        <span asp-validation-for="Director" class="text-danger"></span>
-                    </div>
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="MovieProductionCompany" placeholder="Production Company:" />
+						<span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
+					</div>
 
-                    <div class="row mb-3">
-                        <div class="col">
-                            <input type="number" class="form-control" asp-for="Duration" placeholder="Duration (min):" />
-                            <span asp-validation-for="Duration" class="text-danger"></span>
-                        </div>
-                        <div class="col">
-                            <input type="text" class="form-control" asp-for="Version" placeholder="Version:" />
-                            <span asp-validation-for="Version" class="text-danger"></span>
-                        </div>
-                    </div>
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="Director" placeholder="Director:" />
+						<span asp-validation-for="Director" class="text-danger"></span>
+					</div>
 
-                    <div class="form-group mb-3">
-                        <label>Types</label><br />
-                        @foreach (var type in Model.AvailableTypes)
-                        {
-                            <label class="me-3">
-                                <input type="checkbox" name="SelectedTypeIds" value="@type.TypeId" />
-                                @type.TypeName
-                            </label>
-                        }
-                    </div>
+					<div class="row mb-3">
+						<div class="col">
+							<input type="number" class="form-control" asp-for="Duration" placeholder="Duration (min):" />
+							<span asp-validation-for="Duration" class="text-danger"></span>
+						</div>
+						<div class="col">
+							<input type="text" class="form-control" asp-for="Version" placeholder="Version:" />
+							<span asp-validation-for="Version" class="text-danger"></span>
+						</div>
+					</div>
 
-                    <div class="form-group mb-3">
-                        <label for="CinemaRoomId">Cinema Room:</label>
-                        <select asp-for="CinemaRoomId" class="form-control" asp-items="@(new SelectList(Model.AvailableCinemaRooms, "CinemaRoomId", "CinemaRoomName"))">
-                            <option value="">-- Select a Cinema Room --</option>
-                        </select>
-                        <span asp-validation-for="CinemaRoomId" class="text-danger"></span>
-                    </div>
+					<div class="form-group mb-3">
+						<label>Types</label><br />
+						@foreach (var type in Model.AvailableTypes)
+						{
+							<label class="me-3">
+								<input type="checkbox" name="SelectedTypeIds" value="@type.TypeId" />
+								@type.TypeName
+							</label>
+						}
+					</div>
 
-                    <div class="form-group mb-3">
-                        <label>Schedules</label><br />
-                        @foreach (var schedule in Model.AvailableSchedules)
-                        {
-                            <label class="me-3">
-                                <input type="checkbox" name="SelectedScheduleIds" value="@schedule.ScheduleId" />
-                                @schedule.ScheduleTime
-                            </label>
-                        }
-                    </div>
-                </div>
-            </div>
+					<div class="form-group mb-3">
+						<label for="CinemaRoomId">Cinema Room:</label>
+						<select asp-for="CinemaRoomId" class="form-control" asp-items="@(new SelectList(Model.AvailableCinemaRooms, "CinemaRoomId", "CinemaRoomName"))">
+							<option value="">-- Select a Cinema Room --</option>
+						</select>
+						<span asp-validation-for="CinemaRoomId" class="text-danger"></span>
+					</div>
 
-            <!-- Full-width description row below columns -->
-            <div class="form-group mt-3">
-                <textarea class="form-control" asp-for="Content" placeholder="Movie Description / Content:"></textarea>
-                <span asp-validation-for="Content" class="text-danger"></span>
-            </div>
+					<div class="form-group mb-3">
+						<label>Schedules</label><br />
+						@foreach (var schedule in Model.AvailableSchedules)
+						{
+							<label class="me-3">
+								<input type="checkbox" name="SelectedScheduleIds" value="@schedule.ScheduleId" />
+								@schedule.ScheduleTime
+							</label>
+						}
+					</div>
+				</div>
+			</div>
 
-            <div class="text-center mt-4">
-                <button type="button" class="btn btn-primary px-4 py-2 rounded">Create Movie</button>
-            </div>
+			<!-- Full-width description row below columns -->
+			<div class="form-group mt-3">
+				<textarea class="form-control" asp-for="Content" placeholder="Movie Description / Content:"></textarea>
+				<span asp-validation-for="Content" class="text-danger"></span>
+			</div>
 
-        </form>
+			<div class="text-center mt-4">
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Create Movie</button>
+			</div>
 
-    </div>
+		</form>
+
+	</div>
 </div>
+
+<script>
+	function previewImage(input, previewId) {
+		var preview = document.getElementById(previewId);
+		if (input.files && input.files[0]) {
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				preview.src = e.target.result;
+				preview.style.display = "block";
+			}
+			reader.readAsDataURL(input.files[0]);
+		} else {
+			preview.src = "#";
+			preview.style.display = "none";
+		}
+	}
+</script>

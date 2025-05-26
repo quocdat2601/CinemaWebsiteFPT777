@@ -32,6 +32,9 @@ namespace MovieTheater
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+            builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
+            builder.Services.AddScoped<IPromotionService, PromotionService>();
+
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();

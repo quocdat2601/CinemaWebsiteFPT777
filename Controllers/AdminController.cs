@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Service;
 using MovieTheater.Services;
 using MovieTheater.ViewModels;
 
@@ -8,9 +9,13 @@ namespace MovieTheater.Controllers
     public class AdminController : Controller
     {
         private readonly IMovieService _movieService;
-        public AdminController(IMovieService movieService)
+        private readonly IEmployeeService _employeeService;
+        private readonly IPromotionService _promotionService;
+        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService)
         {
             _movieService = movieService;
+            _employeeService = employeeService;
+            _promotionService = promotionService;
         }
 
         // GET: AdminController
@@ -31,7 +36,8 @@ namespace MovieTheater.Controllers
                 case "MemberMg":
                     return PartialView("MemberMg");
                 case "EmployeeMg":
-                    return PartialView("EmployeeMg");
+                    var employees = _employeeService.GetAll();
+                    return PartialView("EmployeeMg", employees);
                 case "MovieMg":
                     var movies = _movieService.GetAll();
                     return PartialView("MovieMg", movies);
@@ -40,7 +46,8 @@ namespace MovieTheater.Controllers
                 case "ScheduleMg":
                     return PartialView("ScheduleMg");
                 case "PromotionMg":
-                    return PartialView("PromotionMg");
+                    var promotions = _promotionService.GetAll();
+                    return PartialView("PromotionMg", promotions);
                 default:
                     return Content("Tab not found.");
             }

@@ -173,43 +173,53 @@ INSERT INTO Rank (Rank_Name, Discount_Percentage, Required_Points) VALUES
 ('Elite', 15.00, 80000);
 
 INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gender, Identity_Card, Image, Password, Phone_Number, Register_Date, Role_ID, STATUS, USERNAME) VALUES
-('A001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
-('A002', '456 Elm St', '1995-06-25', 'employee@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee'),
-('A003', '789 Oak St', '2002-11-10', 'member@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member'),
-('A004', '123 Main St', '2000-01-15', 'admin2@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin2'),
-('A005', '456 Elm St', '1995-06-25', 'employee2@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee2'),
-('A006', '789 Oak St', '2002-11-10', 'member2@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member2');
+('AC001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
+('AC002', '456 Elm St', '1995-06-25', 'employee@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee'),
+('AC003', '789 Oak St', '2002-11-10', 'member@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member'),
+('AC004', '123 Main St', '2000-01-15', 'admin2@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin2'),
+('AC005', '456 Elm St', '1995-06-25', 'employee2@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee2'),
+('AC006', '789 Oak St', '2002-11-10', 'member3@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 0, 'member3');
 
 INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
-('M001', 100, 'A003'),  -- Member linked to account A003
-('M002', 1000000, 'A006');  -- Member linked to account A006
+('MB001', 100, 'AC003'),  -- Member linked to account A003
+('MB002', 1000000,'AC006');  -- Member linked to account A006
 
 
 INSERT INTO Employee (Employee_ID, Account_ID) VALUES
-('E001', 'A005');
+('EM001', 'AC005');
 
 INSERT INTO Show_Dates (Show_Date_ID, Show_Date, Date_Name) VALUES
 (1, '2025-06-01', 'Sunday Premiere'),
 (2, '2025-06-02', 'Monday Matinee');
 
-INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image) 
+INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image)
 VALUES
-('M001', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
-('M002', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('M003', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg'),
-('M004', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
-('M005', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('M006', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg'),
-('M007', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
-('M008', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('M009', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg'),
-('M0010', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tralalero Tralala', 'Tralalero Tralala', '/image/shark.jpg', '/image/shark.jpg'),
-('M0011', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Bombardiro Crocodilo', 'Bombardiro Crocodilo', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('M0012', 'Actor A, Actor B', 1, 'Italian Brainrot', 'Director X', 120, '2025-06-01', 'Xaml Studios', '2025-06-30', '2D', 'Tung Tung Sahur', 'Tung Tung Sahur', '/image/tung.jpg', '/image/tung.jpg');
+('MV001', 'Luca Bianchi, Anna Rossi', 2, 'A reclusive astronomer discovers a hidden constellation that predicts global events, drawing the attention of a secretive organization. As the stars align, she must decide whether to protect her discovery or risk everything for the truth.', 'Giovanni Lupo', 135, '2025-06-05', 'Nebula Films', '2025-07-05', 'IMAX 3D', 'The Stargazer Prophecy', 'Lời Tiên Tri Ngắm Sao', '/image/shark.jpg', '/image/shark.jpg'),
+('MV002', 'Mei Lin, Haruto Tanaka', 3, 'A quirky florist and a grumpy barista in Kyoto are forced to share a café storefront. As their clashing personalities spark chaos, a shared love for old poetry might be the only thing that can bring them together.', 'Akira Sato', 110, '2025-06-10', 'Sakura Pictures', '2025-07-10', '2D', 'Hearts in Kyoto', 'Trái Tim Ở Kyoto', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('MV003', 'Jake Carter, Ella Stone', 4, 'In a neon-lit future where memories are currency, a former racer is pulled into an underworld plot to overwrite identities. Racing against time and corrupted tech, he must confront his forgotten past to survive.', 'Lena Hopkins', 142, '2025-06-12', 'PixelLight Studios', '2025-07-12', '4DX', 'Neon Drift', 'Trôi Trong Ánh Đèn Neon', '/image/tung.jpg', '/image/tung.jpg'),
+('MV004', 'Carlos Mendez, Sofia Rivera', 5, 'A young lawyer returns to her crime-ridden hometown after her brother’s mysterious death. As she uncovers layers of corruption, she must fight both the legal system and her own past to deliver justice.', 'Roberto Diaz', 124, '2025-06-08', 'Solara Pictures', '2025-07-08', '2D', 'Blood and Cement', 'Máu Và Xi Măng', '/image/shark.jpg', '/image/shark.jpg'),
+('MV005', 'Mina Kapoor, Aarav Singh', 1, 'A vibrant tale of love, family, and dance set in the bustling streets of Mumbai. When a young dancer dares to chase her dreams against her conservative familys wishes, rhythm becomes her voice of rebellion.', 'Ravi Desai', 150, '2025-06-15', 'Bollywood Beats', '2025-07-15', '3D', 'Dance of Dreams', 'Vũ Điệu Giấc Mơ', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('MV006', 'Emma Brown, Noah Reed', 2, 'Years after a global collapse, two survivors navigate the ruins of civilization to find a rumored safe haven. Battling both the elements and each other, they learn that survival requires more than just endurance.', 'Jesse Moore', 119, '2025-06-07', 'EchoFilm Studios', '2025-07-07', '2D', 'After the Ashes', 'Sau Tro Tàn', '/image/tung.jpg', '/image/tung.jpg'),
+('MV007', 'Hana Kim, Jihoon Park', 1, 'A cursed prince must gather three ancient relics to break the spell that traps his soul in a stone blade. With a reluctant thief as his guide, their quest takes them across mythical realms in a battle against fate.', 'Soojin Lee', 128, '2025-06-09', 'Dreamwave Korea', '2025-07-09', 'IMAX', 'Sword of the Moon', 'Kiếm Nguyệt', '/image/shark.jpg', '/image/shark.jpg'),
+('MV008', 'Ali Nasser, Leila Haddad', 3, 'Set in the golden age of the Silk Road, a young scribe uncovers a conspiracy threatening the kingdom. With the help of a rebel prince, she races to rewrite history before it’s too late.', 'Samir Al-Hakim', 165, '2025-06-13', 'Desert Star', '2025-07-13', '4DX', 'Kingdom of Sand', 'Vương Quốc Cát', '/image/crocodile.jpg', '/image/crocodile.jpg'),
+('MV009', 'John Smith, Jane Doe', 4, 'A routine software update goes wrong in a remote lab, unleashing an AI entity that turns against its creators. Trapped in the facility, a group of engineers must outwit their own creation to survive.', 'Marcus Black', 117, '2025-06-06', 'Glitch Studios', '2025-07-06', '2D', 'Code Red: Signal Lost', 'Mất Tín Hiệu Đỏ', '/image/tung.jpg', '/image/tung.jpg');
+
 
 INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
-('M001', 1),
-('M001', 2);
+('MV001', 1),
+('MV001', 2),
+('MV002', 1),
+('MV002', 2),
+('MV003', 1),
+('MV003', 2),
+('MV004', 1),
+('MV004', 2),
+('MV005', 1),
+('MV005', 2),
+('MV006', 1),
+('MV006', 2),
+('MV007', 1),
+('MV007', 2);
 
 INSERT INTO Schedule (Schedule_ID, Schedule_Time) VALUES
 (1, '10:00'),
@@ -217,24 +227,20 @@ INSERT INTO Schedule (Schedule_ID, Schedule_Time) VALUES
 (3, '18:00');
 
 INSERT INTO Movie_Schedule (Movie_ID, Schedule_ID) VALUES
-('M001', 1),
-('M001', 2),
-('M002', 1),
-('M003', 2), 
-('M003', 3),
-('M004', 3),
-('M005', 1), 
-('M005', 3),
-('M006', 2),
-('M007', 1), 
-('M007', 2), 
-('M007', 3),
-('M008', 3),
-('M009', 2),
-('M0010', 1), 
-('M0010', 3),
-('M0011', 2),
-('M0012', 1);
+('MV001', 1),
+('MV001', 2),
+('MV002', 1),
+('MV003', 2), 
+('MV003', 3),
+('MV004', 3),
+('MV005', 1), 
+('MV005', 3),
+('MV006', 2),
+('MV007', 1), 
+('MV007', 2), 
+('MV007', 3),
+('MV008', 3),
+('MV009', 2);
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
@@ -251,25 +257,20 @@ INSERT INTO Type (Type_ID, Type_Name) VALUES
 (12, 'Animation');
 
 INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
-('M001', 1),
-('M001', 2),
-('M002', 3), 
-('M002', 4),
-('M003', 5),
-('M004', 6), 
-('M004', 7),
-('M005', 8),
-('M006', 9), 
-('M006', 10),
-('M007', 11),
-('M008', 12),
-('M009', 1), 
-('M009', 5),
-('M0010', 2), 
-('M0010', 8),
-('M0011', 3),
-('M0012', 4), 
-('M0012', 7);
+('MV001', 1),
+('MV001', 2),
+('MV002', 3), 
+('MV002', 4),
+('MV003', 5),
+('MV004', 6), 
+('MV004', 7),
+('MV005', 8),
+('MV006', 9), 
+('MV006', 10),
+('MV007', 11),
+('MV008', 12),
+('MV009', 1), 
+('MV009', 5);
 
 INSERT INTO Cinema_Room (Cinema_Room_ID, Cinema_Room_Name, Seat_Quantity) VALUES
 (1, 'Main Hall', 100),
@@ -285,9 +286,9 @@ CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,
     Detail VARCHAR(255),
     Discount_Level INT,
-    End_Time DATETIME,
+    End_Time DATE,
     Image VARCHAR(255),
-    Start_Time DATETIME,
+    Start_Time DATE,
     Title VARCHAR(255),
 	Is_Active BIT NOT NULL DEFAULT 1
 );
