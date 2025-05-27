@@ -96,7 +96,8 @@ namespace MovieTheater.Controllers
                 }
 
                 // Cập nhật thành công
-                return Json(new { success = true });
+                return Json(new { success = true, reloadTab = "Profile" });
+
             }
             catch (Exception ex)
             {

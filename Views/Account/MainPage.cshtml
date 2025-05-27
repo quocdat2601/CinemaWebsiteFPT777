@@ -78,7 +78,7 @@
                 contentType: false,
                 success: function (result) {
                     if (result.success) {
-                        loadTab('Profile');
+                        loadTab(result.reloadTab);
                     } else {
                         $('#tabContent').html(result);
                     }
