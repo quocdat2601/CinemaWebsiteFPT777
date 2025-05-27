@@ -9,53 +9,61 @@
         <div class="col-2 bg-light border-end vh-100 pt-3">
             <ul class="nav flex-column nav-pills" id="accountTabs">
                 <li class="nav-item">
-                    <a class="nav-link active" data-tab="Profile" href="#">Profile</a>
+                    <a class="nav-link active" href="#" data-tab="Information">Information</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Password" href="#">Change Password</a>
+                    <a class="nav-link" href="#" data-tab="Profile">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Rank" href="#">Rank</a>
+                    <a class="nav-link" href="#" data-tab="Rank">Rank</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Score" href="#">Score</a>
+                    <a class="nav-link" href="#" data-tab="Score">Score</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Voucher" href="#">Voucher</a>
+                    <a class="nav-link" href="#" data-tab="Voucher">Voucher</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="History" href="#">History Booking Ticket</a>
+                    <a class="nav-link" href="#" data-tab="History">History Booking Ticket</a>
                 </li>
             </ul>
         </div>
 
         <!-- Tab Content -->
-        <div class="col-10 p-4" id="tabContent">
-            <h3>Welcome to your profile</h3>
-            <p>This is the default content of the Profile tab.</p>
+        <div class="col-10 p-4">
+            <div id="tabContent">
+                Loading...
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        function loadTab(tab) {
+            // UI Active
+            $('#accountTabs .nav-link').removeClass('active');
+            $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
+
+            // Hiện nội dung tương ứng
+            $('#tabContent').html('<h3>Loading...</h3>');
+
+            $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
+                $('#tabContent').html(data);
+            });
+        }
+
         $(document).ready(function () {
+            // Bắt sự kiện click tab
             $('#accountTabs .nav-link').click(function (e) {
                 e.preventDefault();
-
                 const tab = $(this).data('tab');
-
-                // UI Active
-                $('#accountTabs .nav-link').removeClass('active');
-                $(this).addClass('active');
-
-                // Hiện nội dung tương ứng
-                $('#tabContent').html('<h3>Loading...</h3>');
-
-                $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
-                    $('#tabContent').html(data);
-                });
+                loadTab(tab);
             });
+
+            // Gọi tab mặc định khi vừa vào trang
+            const defaultTab = '@ViewData["ActiveTab"]' || 'Information';
+            loadTab(defaultTab);
         });
     </script>
 }

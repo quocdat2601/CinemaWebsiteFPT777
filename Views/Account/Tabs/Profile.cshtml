@@ -1,2 +1,75 @@
-﻿<h3>Your Profile</h3>
-<p>:3.</p>
+﻿@model MovieTheater.ViewModels.RegisterViewModel
+@* TỐI ƯU = CÁCH TẠO VIEWMODEL CHO PROFILE, THIẾT KẾ LẠI UI, ĐỔ DATA VÀO FIELD *@
+@{
+	ViewData["Title"] = "My Profile";
+}
+
+<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
+
+<div class="signup-wrapper">
+	<div class="signup-card">
+		<h2 class="signup-title">Profile</h2>
+		<form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data">
+			<div asp-validation-summary="All" class="text-danger"></div>
+
+			<div class="row">
+				<!-- Right Column: User Info -->
+				<div class="col">
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="Username" placeholder="Username" />
+						<span asp-validation-for="Username" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="FullName" placeholder="Full Name" />
+						<span asp-validation-for="FullName" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<input type="date" class="form-control" asp-for="DateOfBirth" placeholder="Date of Birth" />
+						<span asp-validation-for="DateOfBirth" class="text-danger"></span>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col">
+							<label class="radio-label">
+								<input type="radio" asp-for="Gender" value="male" /> Male
+							</label>
+						</div>
+
+						<div class="col">
+							<label class="radio-label">
+								<input type="radio" asp-for="Gender" value="female" /> Female
+							</label>
+							<span asp-validation-for="Gender" class="text-danger"></span>
+						</div>
+					</div>
+
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="IdentityCard" placeholder="Identity Card" />
+						<span asp-validation-for="IdentityCard" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<input type="email" class="form-control" asp-for="Email" placeholder="Email" />
+						<span asp-validation-for="Email" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<input type="text" class="form-control" asp-for="Address" placeholder="Address" />
+						<span asp-validation-for="Address" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<input type="tel" class="form-control" asp-for="PhoneNumber" placeholder="Phone Number" />
+						<span asp-validation-for="PhoneNumber" class="text-danger"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="text-center mt-4">
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Employee</button>
+			</div>
+		</form>
+	</div>
+</div>
