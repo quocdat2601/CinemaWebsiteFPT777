@@ -1,4 +1,4 @@
-﻿@model MovieTheater.ViewModels.RegisterViewModel
+﻿@model MovieTheater.ViewModels.ProfileViewModel
 @{
 	ViewData["Title"] = "My Profile";
 }
@@ -63,11 +63,16 @@
 						<input type="tel" class="form-control" asp-for="PhoneNumber" placeholder="Phone Number" />
 						<span asp-validation-for="PhoneNumber" class="text-danger"></span>
 					</div>
+
+					<div class="form-group mb-3">
+						<input type="password" class="form-control" asp-for="Password" placeholder="Password" />
+						<span asp-validation-for="Password" class="text-danger"></span>
+					</div>
 				</div>
 			</div>
 
 			<div class="text-center mt-4">
-				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Employee</button>
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Profile</button>
 			</div>
 		</form>
 	</div>

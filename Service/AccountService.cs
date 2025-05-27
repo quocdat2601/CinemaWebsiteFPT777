@@ -4,6 +4,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Net;
+using System.Security.Claims;
 
 namespace MovieTheater.Service
 {
@@ -12,12 +13,14 @@ namespace MovieTheater.Service
         private readonly IAccountRepository _repository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMemberRepository _memberRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository)
+        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository, IHttpContextAccessor httpContextAccessor)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
             _memberRepository = memberRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public bool Register(RegisterViewModel model)
@@ -96,5 +99,77 @@ namespace MovieTheater.Service
             return account != null;
         }
 
+        public ProfileViewModel GetCurrentUser()
+        {
+            // 1. Lấy userId từ Claims
+            var user = _httpContextAccessor.HttpContext.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            // 2. Query repository
+            var account = _repository.GetById(userId);
+            if (account == null)
+                return null;
+
+            // 3. Map sang ViewModel
+            return new ProfileViewModel
+            {
+                Username = account.Username,
+                FullName = account.FullName,
+                DateOfBirth = (DateOnly)account.DateOfBirth,
+                Gender = account.Gender,
+                IdentityCard = account.IdentityCard,
+                Email = account.Email,
+                Address = account.Address,
+                PhoneNumber = account.PhoneNumber,
+                Password = account.Password
+            };
+        }
+
+        public bool Update1(string id, ProfileViewModel model)
+        {
+            var account = _repository.GetById(id);
+            if (account == null) return false;
+            account.Username = model.Username;
+            account.Password = model.Password;
+            account.FullName = model.FullName;
+            account.DateOfBirth = model.DateOfBirth;
+            account.Gender = model.Gender;
+            account.IdentityCard = model.IdentityCard;
+            account.Email = model.Email;
+            account.Address = model.Address;
+            account.PhoneNumber = model.PhoneNumber;
+            account.Status = model.Status;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        public ProfileViewModel GetDemoUser()
+        {
+            var account = _repository.GetById("AC007");
+            if (account == null)
+                return null;
+
+            // 2) Map sang ProfileViewModel
+            return new ProfileViewModel
+            {
+                Username = account.Username,
+                FullName = account.FullName,
+                DateOfBirth = (DateOnly)account.DateOfBirth,
+                Gender = account.Gender,
+                IdentityCard = account.IdentityCard,
+                Email = account.Email,
+                Address = account.Address,
+                PhoneNumber = account.PhoneNumber,
+                Password = account.Password  // chỉ để demo
+            };
+        }
+
+        public Account? GetById(string id)
+        {
+            return _repository.GetById(id);
+        }
     }
-}
+    }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
@@ -14,7 +13,7 @@ namespace MovieTheater.Controllers
         {
             _service = service;
             _logger = logger;
-        }       
+        }
 
         [HttpGet]
         public IActionResult MainPage(string tab = "Information")
@@ -26,10 +25,16 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult LoadTab(string tab)
         {
+            //var user = _service.GetCurrentUser();
+
+            //TEST HARD-CODE
+            var user = _service.GetDemoUser();
             switch (tab)
             {
                 case "Profile":
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml");
+                    if (user == null)
+                        return NotFound();
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", user);
                 case "Information":
                     return PartialView("~/Views/Account/Tabs/Information.cshtml");
                 case "Rank":
@@ -45,80 +50,61 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // GET: EmployeeController/Edit/5
         //public IActionResult Edit(string id)
         //{
-        //    var account = _service.GetById(id);
-        //    if (account == null)
+        //    var user = _service.GetById(id);
+        //    if (user == null)
         //        return NotFound();
 
-        //    var viewModel = new RegisterViewModel
+        //    var viewModel = new ProfileViewModel
         //    {
-        //        Username = account.Account.Username,
-        //        FullName = account.Account.FullName,
-        //        DateOfBirth = (DateOnly)account.Account.DateOfBirth,
-        //        Gender = account.Account.Gender,
-        //        IdentityCard =  account .Account.IdentityCard,
-        //        Email =     account.Account.Email,
-        //        Address = account.Account.Address,
-        //        PhoneNumber = account.Account.PhoneNumber,
-        //        Image = account.Account.Image,
-        //        Password = null,
-        //        ConfirmPassword = null
+        //        Username = user.Username,
+        //        FullName = user.FullName,
+        //        DateOfBirth = (DateOnly)user.DateOfBirth,
+        //        Gender = user.Gender,
+        //        IdentityCard = user.IdentityCard,
+        //        Email = user.Email,
+        //        Address = user.Address,
+        //        PhoneNumber = user.PhoneNumber,
         //    };
 
         //    return View(viewModel);
         //}
 
-        //// POST: EmployeeController/Edit/5
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<ActionResult> EditAsync(string id, RegisterViewModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return View(model);
-        //    }
-        //    try
-        //    {
-        //        if (model.ImageFile != null && model.ImageFile.Length > 0)
-        //        {
-        //            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-        //            Directory.CreateDirectory(uploadsFolder);
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(ProfileViewModel model)
+        {
+            ModelState.Remove("Password"); // hoặc chỉ khi bạn không yêu cầu nhập lại password
 
-        //            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.ImageFile.FileName);
-        //            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+            if (!ModelState.IsValid)
+            {
+                // Trả lại partial view để client hiển thị trong tab
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+            }
 
-        //            using (var stream = new FileStream(filePath, FileMode.Create))
-        //            {
-        //                await model.ImageFile.CopyToAsync(stream);
-        //            }
-        //            model.Image = "/image/" + uniqueFileName;
-        //        }
-        //        else
-        //        {
-        //            var existingEmployee = _service.GetById(id);
-        //            if (existingEmployee != null)
-        //            {
-        //                model.Image = existingEmployee.Account.Image;
-        //            }
-        //        }
+            try
+            {
+                var demouser = _service.GetById("AC007");
+                var success = _service.Update1(demouser.AccountId, model);
 
-        //        var success = _service.Update(id, model);
+                if (!success)
+                {
+                    //ModelState.AddModelError("", "Update failed - Username already exists");
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                }
 
-        //        if (!success)
-        //        {
-        //            TempData["ErrorMessage"] = "Update failed - Username already exists";
-        //            return View(model);
-        //        }
+                // Cập nhật thành công
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                //ModelState.AddModelError("", $"Error during update: {ex.Message}");
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+            }
+        }
 
-        //        TempData["ToastMessage"] = "Employee Updated Successfully!";
-        //        return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["ErrorMessage"] = $"Error during update: {ex.Message}";
-        //        return View(model);
-        //    }
-        //}
+
     }
 }

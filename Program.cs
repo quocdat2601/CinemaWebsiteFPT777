@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -35,9 +36,22 @@ namespace MovieTheater
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
 
+            builder.Services.AddHttpContextAccessor();
+
+            // CAU HINH AUTHENTICATION COOKIE
+            builder.Services
+                .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login"; // DUONG DAN TRANG LOGIN
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(1);
+                });
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
+
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -46,8 +60,11 @@ namespace MovieTheater
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
             app.UseSession();
+
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(

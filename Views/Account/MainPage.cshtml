@@ -41,29 +41,52 @@
 @section Scripts {
     <script>
         function loadTab(tab) {
-            // UI Active
-            $('#accountTabs .nav-link').removeClass('active');
-            $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
+          $('#accountTabs .nav-link').removeClass('active');
+          $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
+          $('#tabContent').html('<h3>Loading...</h3>');
 
-            // Hiện nội dung tương ứng
-            $('#tabContent').html('<h3>Loading...</h3>');
-
-            $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
-                $('#tabContent').html(data);
-            });
+          // DÙNG Url.Action cho chắc chắn
+          var url = '@Url.Action("LoadTab", "MyAccount")';
+          $.get(url, { tab: tab }, function(data) {
+            $('#tabContent').html(data);
+          });
         }
 
-        $(document).ready(function () {
-            // Bắt sự kiện click tab
-            $('#accountTabs .nav-link').click(function (e) {
-                e.preventDefault();
-                const tab = $(this).data('tab');
-                loadTab(tab);
-            });
+        $(function() {
+          $('#accountTabs .nav-link').click(function(e) {
+            e.preventDefault();
+            loadTab($(this).data('tab'));
+          });
 
-            // Gọi tab mặc định khi vừa vào trang
-            const defaultTab = '@ViewData["ActiveTab"]' || 'Information';
-            loadTab(defaultTab);
+          // khởi động tab mặc định
+          var defaultTab = '@ViewData["ActiveTab"]' || 'Information';
+          loadTab(defaultTab);
+        });
+
+        $(document).on('submit', 'form', function (e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var url = form.attr('action');
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    if (result.success) {
+                        loadTab('Profile');
+                    } else {
+                        $('#tabContent').html(result);
+                    }
+                },
+                error: function () {
+                    alert('Có lỗi xảy ra khi gửi biểu mẫu.');
+                }
+            });
         });
     </script>
 }
