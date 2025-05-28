@@ -80,7 +80,7 @@ namespace MovieTheater.Controllers
 
             if (!ModelState.IsValid)
             {
-                // Trả lại partial view để client hiển thị trong tab
+
                 return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
 
@@ -91,18 +91,19 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
-                    //ModelState.AddModelError("", "Update failed - Username already exists");
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                    string errorMessage = "Update failed";
+                    return Json(new { success = false, error = errorMessage });
                 }
 
                 // Cập nhật thành công
-                return Json(new { success = true, reloadTab = "Profile" });
+                string successMessage = "Profile updated successfully!";
+                return Json(new { success = true, reloadTab = "Profile", toast = successMessage });
 
             }
             catch (Exception ex)
             {
-                //ModelState.AddModelError("", $"Error during update: {ex.Message}");
-                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                ModelState.AddModelError("", $"Error during update: {ex.Message}");
+                return Json(new { success = false, error = ex.Message });
             }
         }
 

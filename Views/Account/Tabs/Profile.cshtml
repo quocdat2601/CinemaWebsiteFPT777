@@ -8,11 +8,11 @@
 <div class="signup-wrapper">
 	<div class="signup-card">
 		<h2 class="signup-title">Profile</h2>
+		@* GỬI FORM ĐẾN MyAccount, ACTION Edit *@
 		<form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data">
-			<div asp-validation-summary="All" class="text-danger"></div>
 
 			<div class="row">
-				<!-- Right Column: User Info -->
+				<!-- User Info -->
 				<div class="col">
 					<div class="form-group mb-3">
 						<input type="text" class="form-control" asp-for="Username" placeholder="Username" />
@@ -39,6 +39,13 @@
 						<div class="col">
 							<label class="radio-label">
 								<input type="radio" asp-for="Gender" value="female" /> Female
+							</label>
+							<span asp-validation-for="Gender" class="text-danger"></span>
+						</div>
+
+						<div class="col">
+							<label class="radio-label">
+								<input type="radio" asp-for="Gender" value="unknown" /> Unknown
 							</label>
 							<span asp-validation-for="Gender" class="text-danger"></span>
 						</div>

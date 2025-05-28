@@ -41,28 +41,26 @@
 @section Scripts {
     <script>
         function loadTab(tab) {
-          $('#accountTabs .nav-link').removeClass('active');
-          $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
-          $('#tabContent').html('<h3>Loading...</h3>');
+            $('#accountTabs .nav-link').removeClass('active');
+            $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
+            $('#tabContent').html('<h3>Loading...</h3>');
 
-          // DÙNG Url.Action cho chắc chắn
-          var url = '@Url.Action("LoadTab", "MyAccount")';
-          $.get(url, { tab: tab }, function(data) {
-            $('#tabContent').html(data);
-          });
+            var url = '@Url.Action("LoadTab", "MyAccount")';
+            $.get(url, { tab: tab }, function (data) {
+                $('#tabContent').html(data);
+            });
         }
 
-        $(function() {
-          $('#accountTabs .nav-link').click(function(e) {
-            e.preventDefault();
-            loadTab($(this).data('tab'));
-          });
+        $(function () {
+            $('#accountTabs .nav-link').click(function (e) {
+                e.preventDefault();
+                loadTab($(this).data('tab'));
+            });
 
-          // khởi động tab mặc định
-          var defaultTab = '@ViewData["ActiveTab"]' || 'Information';
-          loadTab(defaultTab);
+            loadTab('@ViewData["ActiveTab"]' || 'Information');
         });
 
+        // ✅ Submit AJAX Form
         $(document).on('submit', 'form', function (e) {
             e.preventDefault();
 
@@ -79,14 +77,48 @@
                 success: function (result) {
                     if (result.success) {
                         loadTab(result.reloadTab);
+                        if (result.toast) showToast(result.toast);
+                    } else if (result.error) {
+                        showErrorToast(result.error); // ✅ Sửa: nằm trong success
                     } else {
-                        $('#tabContent').html(result);
+                        $('#tabContent').html(result); // Partial chứa lỗi ModelState
                     }
                 },
                 error: function () {
-                    alert('Có lỗi xảy ra khi gửi biểu mẫu.');
+                    $('#tabContent').html('<div class="text-danger">Lỗi không xác định từ server.</div>');
                 }
             });
+
+            // ❌ LOẠI BỎ đoạn này vì nằm ngoài success:
+            // if (!result.success && result.error) { showErrorToast(result.error); }
+
+            // ✅ Ẩn alert truyền thống nếu có (có thể giữ nếu bạn vẫn dùng alert)
+            setTimeout(() => $(".alert").fadeOut("slow"), 3000);
         });
+
+        // Toast hiển thị TempData
+        document.addEventListener("DOMContentLoaded", function () {
+            const toastEl = document.getElementById('toastMessage');
+            if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
+        });
+
+        // ✅ Toast tiện ích
+        function showToast(message) {
+            const toastEl = document.getElementById('toastMessage');
+            toastEl.querySelector('.toast-body').innerText = message;
+            new bootstrap.Toast(toastEl, { delay: 3000 }).show();
+        }
+
+        function showErrorToast(message) {
+            const errorToastEl = document.getElementById('errorToast');
+            errorToastEl.querySelector('.toast-body').innerText = message;
+            new bootstrap.Toast(errorToastEl, { delay: 4000 }).show();
+        }
     </script>
 }
+
+
+

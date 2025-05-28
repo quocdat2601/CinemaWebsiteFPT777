@@ -131,6 +131,7 @@ namespace MovieTheater.Service
         {
             var account = _repository.GetById(id);
             if (account == null) return false;
+
             account.Username = model.Username;
             account.Password = model.Password;
             account.FullName = model.FullName;
