@@ -34,6 +34,10 @@ namespace MovieTheater
             builder.Services.AddScoped<IMemberRepository, MemberRepository>();
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
+            builder.Services.AddScoped<ISeatRepository, SeatRepository>();
+            builder.Services.AddScoped<ISeatService, SeatService>();
+            builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
+            builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
 
 
             builder.Services.AddControllersWithViews();

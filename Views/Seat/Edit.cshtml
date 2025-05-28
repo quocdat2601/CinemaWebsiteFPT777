@@ -1,0 +1,121 @@
+﻿@using MovieTheater.ViewModels
+@model SeatEditViewModel
+<form id="antiForgeryForm">
+	@Html.AntiForgeryToken()
+</form>
+
+<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="ShowroomMg" class="btn btn-secondary ms-3 mt-3">
+	&larr; Return
+</a>
+
+<h3 class="text-center mb-5">@Model.CinemaRoomName</h3>
+
+<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
+
+<div class="screen-label text-center mb-5">
+	Screen
+</div>
+
+@{
+	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
+}
+
+<table class="table table-bordered text-center">
+	<tbody>
+		@for (int row = 1; row <= Model.SeatLength; row++)
+		{
+			<tr>
+				@for (int col = 1; col <= Model.SeatWidth; col++)
+				{
+					var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+					<td style="background-color: @(seat.SeatType?.ColorHex ?? "#ffffff")" data-seat-id="@seat.SeatId">
+						<span class="material-icons" onclick="selectSeat(this)">
+							chair
+						</span>
+					</td>
+				}
+			</tr>
+		}
+	</tbody>
+</table>
+
+
+<div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
+	@foreach (var type in seatTypes)
+	{
+		<div class="seat-type-option p-2 px-3 rounded text-white text-center"
+			 style="background-color: @type.ColorHex; cursor: pointer"
+			 data-color="@type.ColorHex"
+			 data-type="@type.SeatTypeId"
+			 onclick="applySeatType(this)">
+			@type.TypeName
+		</div>
+	}
+</div>
+
+
+<button id="saveChangesBtn" class="btn btn-primary mt-4" onclick="submitUpdatedSeats()" disabled>Save Changes</button>
+
+
+<script>
+	const selectedSeats = new Set();
+
+	function selectSeat(clickedSpan) {
+		const td = clickedSpan.parentElement;
+		const seatId = td.getAttribute('data-seat-id');
+
+		td.classList.toggle('selected-seat-type');
+
+		if (selectedSeats.has(td)) {
+			selectedSeats.delete(td);
+		} else {
+			selectedSeats.add(td);
+		}
+	}
+
+	function applySeatType(clickedTypeDiv) {
+		const color = clickedTypeDiv.getAttribute('data-color');
+		const typeName = clickedTypeDiv.getAttribute('data-type');
+		let hasUpdates = false;
+
+		selectedSeats.forEach(td => {
+			td.style.backgroundColor = color;
+			td.setAttribute('data-selected-type', typeName);
+			td.classList.remove('selected-seat-type');
+					hasUpdates = true;
+		});
+
+		selectedSeats.clear();
+		if (hasUpdates) 
+		{
+		document.getElementById("saveChangesBtn").disabled = false;
+		}
+	}
+
+	// function submitUpdatedSeats() {
+	// 	const updatedSeats = [];
+
+	// 	document.querySelectorAll('td[data-seat-id][data-selected-type]').forEach(td => {
+	// 		updatedSeats.push({
+	// 			SeatId: td.getAttribute('data-seat-id'),
+	// 			SeatTypeId: td.getAttribute('data-selected-type') 
+	// 		});
+	// 	});
+
+	// 	fetch('/Seat/UpdateSeatTypes', {
+	// 		method: 'POST',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+	// 			'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+	// 		},
+	// 		body: JSON.stringify(updatedSeats)
+	// 	})
+	// 	.then(response => {
+	// 		if (response.ok) {
+	// 			window.location.href = '/Admin/MainPage?tab=ShowroomMg';
+	// 		} else {
+	// 			alert("Something went wrong saving the seats.");
+	// 		}
+	// 	});
+
+</script>

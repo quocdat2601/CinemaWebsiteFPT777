@@ -72,7 +72,7 @@ CREATE TABLE Member (
 );
 
 CREATE TABLE Show_Dates (
-    Show_Date_ID INT PRIMARY KEY,
+    Show_Date_ID INT PRIMARY KEY IDENTITY(1,1),
     Show_Date DATE,
     Date_Name VARCHAR(255)
 );
@@ -103,7 +103,7 @@ CREATE TABLE Movie_Date (
 );
 
 CREATE TABLE Schedule (
-    Schedule_ID INT PRIMARY KEY,
+    Schedule_ID INT PRIMARY KEY IDENTITY(1,1),
     Schedule_Time VARCHAR(255)
 );
 
@@ -129,34 +129,64 @@ CREATE TABLE Movie_Type (
 );
 
 CREATE TABLE Cinema_Room (
-    Cinema_Room_ID INT PRIMARY KEY,
+    Cinema_Room_ID INT PRIMARY KEY IDENTITY(1,1),
     Cinema_Room_Name VARCHAR(255),
-    Seat_Quantity INT
+    Seat_Width INT,
+    Seat_Length INT
+);
+
+ALTER TABLE Cinema_Room
+ADD Seat_Quantity AS (Seat_Width * Seat_Length);
+
+CREATE TABLE Seat_Type (
+    Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
+    Type_Name VARCHAR(50),
+	Price_Percent INT NOT NULL DEFAULT 100,
+	ColorHex VARCHAR(7) NOT NULL DEFAULT '#FFFFFF'
+);
+
+CREATE TABLE Seat_Status (
+    Seat_Status_ID INT PRIMARY KEY IDENTITY(1,1),
+    Status_Name VARCHAR(50) -- e.g., 'Available', 'Booked'
 );
 
 CREATE TABLE Seat (
-    Seat_ID INT PRIMARY KEY,
+    Seat_ID INT PRIMARY KEY IDENTITY(1,1),
     Cinema_Room_ID INT,
-    Seat_Column VARCHAR(255),
-    Seat_Row INT,
-    Seat_Status INT,
-    Seat_Type INT,
-    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID)
+    Seat_Column VARCHAR(5), -- e.g., 'A', 'B'
+    Seat_Row INT,           -- e.g., 1, 2, ...
+    Seat_Status_ID INT,
+    Seat_Type_ID INT,
+	SeatName VARCHAR(5),
+    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
+    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID),
+	FOREIGN KEY (Seat_Type_ID) REFERENCES Seat_Type(Seat_Type_ID)
 );
 
+INSERT INTO Cinema_Room (Cinema_Room_Name, Seat_Width, Seat_Length)
+VALUES ('Room 1', 5, 4);
+
+INSERT INTO Seat_Type (Type_Name) VALUES
+('Normal'),
+('VIP'),
+('Couple');
+
+INSERT INTO Seat_Status (Status_Name) VALUES
+('Available'),
+('Booked');
+
 CREATE TABLE Schedule_Seat (
-    Schedule_Seat_ID VARCHAR(10) PRIMARY KEY,
-    Movie_ID VARCHAR(10),
     Schedule_ID INT,
     Seat_ID INT,
-    Seat_Column VARCHAR(255),
-    Seat_Row INT,
-    Seat_Status INT,
-    Seat_Type INT
+    Seat_Status_ID INT,
+    PRIMARY KEY (Schedule_ID, Seat_ID),
+    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
+    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID)
 );
 
 CREATE TABLE Ticket (
-    Ticket_ID INT PRIMARY KEY,
+    Ticket_ID INT PRIMARY KEY IDENTITY(1,1),
     Price NUMERIC(18, 2),
     Ticket_Type INT
 );
@@ -188,9 +218,9 @@ INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
 INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('EM001', 'AC005');
 
-INSERT INTO Show_Dates (Show_Date_ID, Show_Date, Date_Name) VALUES
-(1, '2025-06-01', 'Sunday Premiere'),
-(2, '2025-06-02', 'Monday Matinee');
+INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
+('2025-06-01', 'Sunday Premiere'),
+('2025-06-02', 'Monday Matinee');
 
 INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image)
 VALUES
@@ -221,10 +251,10 @@ INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
 ('MV007', 1),
 ('MV007', 2);
 
-INSERT INTO Schedule (Schedule_ID, Schedule_Time) VALUES
-(1, '10:00'),
-(2, '14:00'),
-(3, '18:00');
+INSERT INTO Schedule (Schedule_Time) VALUES
+('10:00'),
+('14:00'),
+('18:00');
 
 INSERT INTO Movie_Schedule (Movie_ID, Schedule_ID) VALUES
 ('MV001', 1),
@@ -271,16 +301,6 @@ INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('MV008', 12),
 ('MV009', 1), 
 ('MV009', 5);
-
-INSERT INTO Cinema_Room (Cinema_Room_ID, Cinema_Room_Name, Seat_Quantity) VALUES
-(1, 'Main Hall', 100),
-(2, 'FPT University', 100),
-(3, 'F-Town', 100);
-
-INSERT INTO Seat (Seat_ID, Cinema_Room_ID, Seat_Column, Seat_Row, Seat_Status, Seat_Type) VALUES
-(1, 1, 'A', 1, 0, 1),
-(2, 1, 'A', 2, 0, 1),
-(3, 1, 'B', 1, 1, 2); -- 1 for booked, 2 for VIP
 
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,
