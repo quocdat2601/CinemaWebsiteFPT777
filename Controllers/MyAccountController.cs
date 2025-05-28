@@ -7,9 +7,9 @@ namespace MovieTheater.Controllers
     public class MyAccountController : Controller
     {
         private readonly IAccountService _service;
-        private readonly ILogger<AccountController> _logger;
+        private readonly ILogger<MyAccountController> _logger;
 
-        public MyAccountController(IAccountService service, ILogger<AccountController> logger)
+        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger)
         {
             _service = service;
             _logger = logger;
@@ -50,58 +50,41 @@ namespace MovieTheater.Controllers
             }
         }
 
-        // GET: EmployeeController/Edit/5
-        //public IActionResult Edit(string id)
-        //{
-        //    var user = _service.GetById(id);
-        //    if (user == null)
-        //        return NotFound();
-
-        //    var viewModel = new ProfileViewModel
-        //    {
-        //        Username = user.Username,
-        //        FullName = user.FullName,
-        //        DateOfBirth = (DateOnly)user.DateOfBirth,
-        //        Gender = user.Gender,
-        //        IdentityCard = user.IdentityCard,
-        //        Email = user.Email,
-        //        Address = user.Address,
-        //        PhoneNumber = user.PhoneNumber,
-        //    };
-
-        //    return View(viewModel);
-        //}
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProfileViewModel model)
         {
             ModelState.Remove("Password"); // hoặc chỉ khi bạn không yêu cầu nhập lại password
+            var demouser = _service.GetById("AC007");
+            var timestamp = DateTime.UtcNow;
 
             if (!ModelState.IsValid)
             {
-
-                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                _logger.LogWarning("Profile update failed: Invalid model state. Data: {@Model}", model);
+                return Json(new { success = false, error = " Invalid model state" });
             }
 
             try
             {
-                var demouser = _service.GetById("AC007");
                 var success = _service.Update1(demouser.AccountId, model);
 
                 if (!success)
                 {
+                    _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", demouser.AccountId, timestamp);
                     string errorMessage = "Update failed";
                     return Json(new { success = false, error = errorMessage });
                 }
 
                 // Cập nhật thành công
+                _logger.LogInformation("Profile updated successfully. AccountId: {AccountId}, Time: {Time}", demouser.AccountId, timestamp);
                 string successMessage = "Profile updated successfully!";
                 return Json(new { success = true, reloadTab = "Profile", toast = successMessage });
 
             }
             catch (Exception ex)
             {
+                //HARD-CODE DEMO GHI LOG
+                _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", demouser.AccountId, DateTime.UtcNow);
                 ModelState.AddModelError("", $"Error during update: {ex.Message}");
                 return Json(new { success = false, error = ex.Message });
             }
