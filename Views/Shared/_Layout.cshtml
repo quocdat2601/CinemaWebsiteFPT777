@@ -1,5 +1,8 @@
-﻿@{
-    var userRole = Context.Session.GetInt32("Role");
+﻿@using System.Security.Claims
+@{
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+    var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
 <!DOCTYPE html>
@@ -55,16 +58,17 @@
                     </ul>
 
                     <ul class="navbar-nav">
-                        @if (userRole == 1)
+                        @if (userRole == "1")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
                             </li>
+                         
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
-                        else if (userRole == 2)
+                        else if (userRole == "2")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
@@ -73,23 +77,14 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
-                        else if (Context.Session.GetString("UserId") != null)
+                        else if (isAuthenticated)
                         {
                             <li class="nav-item">
-                                <span class="nav-link">Hello, @Context.Session.GetString("UserName")!</span>
+                                <span class="nav-link">Hello, @userName!</span>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
                             </li>
-
-                            @* ✅ Hiển thị Score History nếu là Member *@
-                            @if (userRole == 3)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Account" asp-action="ScoreHistory">Score History</a>
-                                </li>
-                            }
-
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
@@ -100,8 +95,8 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
                         }
-                    </ul>
 
+                    </ul>
                 </div>
             </div>
         </nav>

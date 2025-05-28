@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\OJT\\team03\\MovieTheater.csproj": {}
+    "C:\\Users\\marco\\Desktop\\OJTT\\team03\\MovieTheater.csproj": {}
   },
   "projects": {
-    "C:\\OJT\\team03\\MovieTheater.csproj": {
+    "C:\\Users\\marco\\Desktop\\OJTT\\team03\\MovieTheater.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\OJT\\team03\\MovieTheater.csproj",
+        "projectUniqueName": "C:\\Users\\marco\\Desktop\\OJTT\\team03\\MovieTheater.csproj",
         "projectName": "MovieTheater",
-        "projectPath": "C:\\OJT\\team03\\MovieTheater.csproj",
-        "packagesPath": "C:\\Users\\Dat\\.nuget\\packages\\",
-        "outputPath": "C:\\OJT\\team03\\obj\\",
+        "projectPath": "C:\\Users\\marco\\Desktop\\OJTT\\team03\\MovieTheater.csproj",
+        "packagesPath": "C:\\Users\\marco\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\marco\\Desktop\\OJTT\\team03\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Dat\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\marco\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -22,7 +22,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -46,9 +45,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "Microsoft.AspNetCore.Authentication.Google": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[8.0.5, )"
+              "version": "[8.0.2, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
@@ -102,7 +101,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.401/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

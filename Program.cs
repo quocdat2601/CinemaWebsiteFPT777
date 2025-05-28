@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MovieTheater
 {
@@ -17,12 +18,41 @@ namespace MovieTheater
             builder.Services.AddDbContext<MovieTheaterContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddDistributedMemoryCache();
-            builder.Services.AddSession(options =>
+            // Configure JWT
+            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            builder.Services.AddScoped<IJwtService, JwtService>();
+
+            // Configure JWT Authentication
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+            var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+
+            builder.Services.AddAuthentication(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.Audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["JwtToken"];
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
@@ -37,21 +67,6 @@ namespace MovieTheater
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
 
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-            })
-                .AddCookie()
-            .AddGoogle(options =>
-            {
-                IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-
-                options.ClientId = googleAuthNSection["ClientId"];
-                options.ClientSecret = googleAuthNSection["ClientSecret"];
-                options.CallbackPath = "/signin-google"; // Có thể sửa nếu bạn cần
-            });
-
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
@@ -63,8 +78,8 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseSession();
-            app.UseAuthentication();  // Trước UseAuthorization
+
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(

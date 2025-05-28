@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Security.Claims;
 
 public class RoleAuthorizeAttribute : Attribute, IAuthorizationFilter
 {
@@ -12,11 +13,17 @@ public class RoleAuthorizeAttribute : Attribute, IAuthorizationFilter
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        var role = context.HttpContext.Session.GetInt32("Role");
+        var user = context.HttpContext.User;
 
-        if (role == null || !_allowedRoles.Contains(role.Value))
+        if (!user.Identity.IsAuthenticated)
         {
-            // Redirect to AccessDenied (you can change this)
+            context.Result = new RedirectToActionResult("Login", "Account", null);
+            return;
+        }
+
+        var roleClaimValue = user.FindFirst(ClaimTypes.Role)?.Value;
+        if (roleClaimValue == null || !int.TryParse(roleClaimValue, out int userRole) || !_allowedRoles.Contains(userRole))
+        {
             context.Result = new RedirectToActionResult("AccessDenied", "Account", null);
         }
     }
