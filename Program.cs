@@ -36,6 +36,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IMemberRepository, MemberRepository>();
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
 
             builder.Services.AddAuthentication(options =>
             {
