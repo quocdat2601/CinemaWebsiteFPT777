@@ -7,6 +7,8 @@ namespace MovieTheater.Service
     {
         bool Register(RegisterViewModel model);
         bool Authenticate(string username, string password, out Account? account);
+     
+
         public bool Update(string id, RegisterViewModel model);
     }
 

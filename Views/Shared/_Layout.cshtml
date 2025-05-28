@@ -60,7 +60,6 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
                             </li>
-                         
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
@@ -74,14 +73,23 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
-                        else if (Context.Session.GetString("UserId") != null) 
+                        else if (Context.Session.GetString("UserId") != null)
                         {
                             <li class="nav-item">
                                 <span class="nav-link">Hello, @Context.Session.GetString("UserName")!</span>
                             </li>
-                            <li  class="nav-item">
+                            <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
                             </li>
+
+                            @* ✅ Hiển thị Score History nếu là Member *@
+                            @if (userRole == 3)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Account" asp-action="ScoreHistory">Score History</a>
+                                </li>
+                            }
+
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
@@ -92,8 +100,8 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
                         }
-
                     </ul>
+
                 </div>
             </div>
         </nav>
