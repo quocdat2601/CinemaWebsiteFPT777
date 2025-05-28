@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 
@@ -73,30 +74,20 @@ namespace MovieTheater.Controllers
         }
 
 
-        // POST: SeatController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateSeatTypes([FromBody] List<SeatUpdateViewModel> updatedSeats)
+        public async Task<IActionResult> UpdateSeatTypes([FromBody] List<SeatTypeUpdateModel> updates)
         {
-            if (updatedSeats == null || !updatedSeats.Any())
-                return BadRequest("No seat data submitted");
-
-            foreach (var updated in updatedSeats)
+            foreach (var update in updates)
             {
-                var seat = await _seatService.GetSeatByIdAsync(updated.SeatId);
+                var seat = await _seatService.GetSeatByIdAsync(update.SeatId);
                 if (seat != null)
                 {
-                    var seatType = _seatTypeService.GetById(updated.SeatTypeId);
-                    if (seatType != null)
-                    {
-                        seat.SeatTypeId = seatType.SeatTypeId;
-                        _seatService.UpdateSeatAsync(seat);
-                    }
+                    seat.SeatTypeId = update.NewSeatTypeId; 
                 }
             }
 
-            _seatService.Save();
-
+            _seatService.Save(); 
             return Ok();
         }
 
