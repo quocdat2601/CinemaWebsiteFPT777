@@ -35,6 +35,18 @@
 </head>
 
 <body>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Caught global error:');
+            console.error('Message:', message);
+            console.error('Source:', source);
+            console.error('Line:', lineno);
+            console.error('Column:', colno);
+            console.error('Error object:', error);
+            // Return true to prevent the default browser error handling (optional)
+            // return true;
+        };
+    </script>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">

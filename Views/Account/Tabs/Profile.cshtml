@@ -97,23 +97,22 @@
                             </div>
                         </div>
 
-                        @* Password (bỏ nếu chưa cho đổi) *@
-                        <div class="form-group row mb-3">
-                            <label class="col-sm-3 col-form-label">Password</label>
-                            <div class="col-sm-9">
-                                <input asp-for="Password" type="password" class="form-control" />
-                                <span asp-validation-for="Password" class="text-danger"></span>
-                            </div>
-                        </div>
+					<div class="form-group mb-3">
+						<a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary">Change Password</a>
+					</div>
+				</div>
+			</div>
 
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </form>
-
+			<div class="text-center mt-4">
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Profile</button>
+			</div>			
+		</form>
 	</div>
 </div>
+
+@section Scripts {
+<script>
+// This script block is intentionally left mostly empty as the Change Password logic
+// should reside on the separate Change Password page.
+</script>
+}
