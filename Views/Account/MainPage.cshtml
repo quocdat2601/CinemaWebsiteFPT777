@@ -57,10 +57,19 @@
                 loadTab($(this).data('tab'));
             });
 
-            loadTab('@ViewData["ActiveTab"]' || 'Information');
+            // Ưu tiên đọc từ URL ?tab=..., nếu không có thì dùng ViewData
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab') || '@ViewData["ActiveTab"]' || 'Information';
+            loadTab(activeTab);
+
+            // Hiển thị toast nếu có ?toast=...
+            const toastMessage = urlParams.get('toast');
+            if (toastMessage && typeof showToast === 'function') {
+                showToast(decodeURIComponent(toastMessage));
+            }
         });
 
-        // ✅ Submit AJAX Form
+        // AJAX submit form
         $(document).on('submit', 'form', function (e) {
             e.preventDefault();
 
@@ -79,9 +88,9 @@
                         loadTab(result.reloadTab);
                         if (result.toast) showToast(result.toast);
                     } else if (result.error) {
-                        showErrorToast(result.error); // ✅ Sửa: nằm trong success
+                        showErrorToast(result.error);
                     } else {
-                        $('#tabContent').html(result); // Partial chứa lỗi ModelState
+                        $('#tabContent').html(result); // Hiển thị lại form nếu có lỗi ModelState
                     }
                 },
                 error: function () {
@@ -89,14 +98,11 @@
                 }
             });
 
-            // ❌ LOẠI BỎ đoạn này vì nằm ngoài success:
-            // if (!result.success && result.error) { showErrorToast(result.error); }
-
-            // ✅ Ẩn alert truyền thống nếu có (có thể giữ nếu bạn vẫn dùng alert)
+            // Ẩn alert sau vài giây (nếu có)
             setTimeout(() => $(".alert").fadeOut("slow"), 3000);
         });
 
-        // Toast hiển thị TempData
+        // Hiển thị TempData toast khi DOM sẵn sàng
         document.addEventListener("DOMContentLoaded", function () {
             const toastEl = document.getElementById('toastMessage');
             if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
@@ -105,7 +111,7 @@
             }
         });
 
-        // ✅ Toast tiện ích
+        // Toast tiện ích
         function showToast(message) {
             const toastEl = document.getElementById('toastMessage');
             toastEl.querySelector('.toast-body').innerText = message;
