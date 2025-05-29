@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using Microsoft.Extensions.Logging;
+using MovieTheater.Models;
+using Microsoft.AspNetCore.Authentication.Google;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {

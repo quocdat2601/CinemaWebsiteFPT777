@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -23,14 +25,26 @@ namespace MovieTheater
                 options.Cookie.IsEssential = true;
             });
 
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
+            builder.Services.AddAuthentication(options =>
             {
-                options.LoginPath = "/Account/Login";          
-                options.LogoutPath = "/Account/Logout";        
-                options.AccessDeniedPath = "/Account/AccessDenied";
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(60); 
-            });
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            })
+             .AddCookie(options =>
+             {
+                 options.LoginPath = "/Account/Login";
+                 options.LogoutPath = "/Account/Logout";
+                 options.AccessDeniedPath = "/Account/AccessDenied";
+                 options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+             })
+             .AddGoogle(options =>
+             {
+                 IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+                 options.ClientId = googleAuthNSection["ClientId"];
+                 options.ClientSecret = googleAuthNSection["ClientSecret"];
+                 options.CallbackPath = "/signin-google";
+             });
+
 
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
@@ -48,20 +62,7 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
 
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-            })
-                .AddCookie()
-            .AddGoogle(options =>
-            {
-                IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-
-                options.ClientId = googleAuthNSection["ClientId"];
-                options.ClientSecret = googleAuthNSection["ClientSecret"];
-                options.CallbackPath = "/signin-google"; // Có thể sửa nếu bạn cần
-            });
+           
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
