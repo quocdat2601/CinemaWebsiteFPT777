@@ -48,6 +48,8 @@ namespace MovieTheater.Controllers
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
+                case "TicketSellingMg":
+                    return PartialView("TicketSellingMg");
                 default:
                     return Content("Tab not found.");
             }
