@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize]
     public class MyAccountController : Controller
     {
         private readonly IAccountService _service;

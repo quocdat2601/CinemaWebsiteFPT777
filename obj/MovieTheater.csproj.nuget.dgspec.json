@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Study\\team03\\MovieTheater.csproj": {}
+    "D:\\Study\\OJT\\branch\\team03-dat\\MovieTheater.csproj": {}
   },
   "projects": {
-    "D:\\Study\\team03\\MovieTheater.csproj": {
+    "D:\\Study\\OJT\\branch\\team03-dat\\MovieTheater.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Study\\team03\\MovieTheater.csproj",
+        "projectUniqueName": "D:\\Study\\OJT\\branch\\team03-dat\\MovieTheater.csproj",
         "projectName": "MovieTheater",
-        "projectPath": "D:\\Study\\team03\\MovieTheater.csproj",
+        "projectPath": "D:\\Study\\OJT\\branch\\team03-dat\\MovieTheater.csproj",
         "packagesPath": "C:\\Users\\Quoc Dat\\.nuget\\packages\\",
-        "outputPath": "D:\\Study\\team03\\obj\\",
+        "outputPath": "D:\\Study\\OJT\\branch\\team03-dat\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -50,6 +50,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.2, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[8.0.8, )"

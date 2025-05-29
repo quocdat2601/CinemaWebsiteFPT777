@@ -2,6 +2,7 @@
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -9,11 +10,13 @@ namespace MovieTheater.Controllers
     {
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
+        private readonly IJwtService _jwtService;
 
-        public AccountController(IAccountService service, ILogger<AccountController> logger)
+        public AccountController(IAccountService service, ILogger<AccountController> logger, IJwtService jwtService)
         {
             _service = service;
             _logger = logger;
+            _jwtService = jwtService;
         }
 
         [HttpGet]
@@ -21,6 +24,7 @@ namespace MovieTheater.Controllers
         {
             return View();
         }
+
         public IActionResult Login()
         {
             return View();
@@ -31,12 +35,15 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        [Authorize]
         public IActionResult Logout()
         {
-            HttpContext.Session.Clear();
+            // Remove the JWT token cookie
+            Response.Cookies.Delete("JwtToken");
             return RedirectToAction("Login", "Account");
         }
 
+        [Authorize]
         public IActionResult Profile()
         {
             return View();
@@ -64,12 +71,8 @@ namespace MovieTheater.Controllers
                     return View(model);
                 }
 
-                //TempData["SuccessMessage"] = "Sign up successful! Please log in.";
                 TempData["ToastMessage"] = "Sign up successful! Please log in.";
                 return RedirectToAction("Signup");
-
-                //return RedirectToAction("Login", "Account");
-
             }
             catch (Exception ex)
             {
@@ -97,24 +100,28 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
-            HttpContext.Session.SetString("UserId", user.AccountId);
-            HttpContext.Session.SetString("UserName", user.Username);
-            HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
-            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
-
-
-            if (user.Status  == 0)
+            if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
-                HttpContext.Session.Clear();
                 return View(model);
             }
 
+            // Generate JWT token
+            var token = _jwtService.GenerateToken(user);
+
+            // Store the token in a cookie
+            Response.Cookies.Append("JwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(60)
+            });
+
             if (user.RoleId == 1)
             {
-
                 return RedirectToAction("MainPage", "Admin");
-            } 
+            }
             else if (user.RoleId == 2)
             {
                 return RedirectToAction("MainPage", "Employee");
@@ -129,6 +136,5 @@ namespace MovieTheater.Controllers
         {
             return View();
         }
-
     }
 }
