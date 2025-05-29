@@ -1,0 +1,5 @@
+2025-05-29 19:51:28.671 +07:00 [ERR] Exception during profile update. AccountId: A003, Time: "2025-05-29T12:51:28.6696897Z"
+System.Exception: Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.
+   at MovieTheater.Service.AccountService.UpdateAccount(String id, ProfileViewModel model) in D:\Study\OJT\branch\team03-dat\Service\AccountService.cs:line 141
+   at MovieTheater.Controllers.MyAccountController.Edit(ProfileViewModel model) in D:\Study\OJT\branch\team03-dat\Controllers\MyAccountController.cs:line 74
+2025-05-29 19:51:35.334 +07:00 [INF] Profile updated successfully. AccountId: A003, Time: "2025-05-29T12:51:35.2822635Z"

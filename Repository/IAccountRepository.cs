@@ -12,7 +12,6 @@ namespace MovieTheater.Repository
         public void Delete(string id);
         public void Update(Account account);
         public void Save();
-
-
+        IEnumerable<Account> GetAll();
     }
 }

@@ -28,10 +28,10 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult LoadTab(string tab)
         {
-            //var user = _service.GetCurrentUser();
+            var user = _service.GetCurrentUser();
 
             //TEST HARD-CODE
-            var user = _service.GetDemoUser();
+            //var user = _service.GetDemoUser();
             switch (tab)
             {
                 case "Profile":
@@ -57,8 +57,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProfileViewModel model)
         {
-            ModelState.Remove("Password"); // hoặc chỉ khi bạn không yêu cầu nhập lại password
-            var demouser = _service.GetById("AC007");
+            ModelState.Remove("Password");
+            ModelState.Remove("AccountId");
+            //var demouser = _service.GetById("AC007");
+            var user = _service.GetCurrentUser();
             var timestamp = DateTime.UtcNow;
 
             if (!ModelState.IsValid)
@@ -69,25 +71,24 @@ namespace MovieTheater.Controllers
 
             try
             {
-                var success = _service.Update1(demouser.AccountId, model);
+                var success = _service.UpdateAccount(user.AccountId, model);
 
                 if (!success)
                 {
-                    _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", demouser.AccountId, timestamp);
+                    _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", user.AccountId, timestamp);
                     string errorMessage = "Update failed";
                     return Json(new { success = false, error = errorMessage });
                 }
 
                 // Cập nhật thành công
-                _logger.LogInformation("Profile updated successfully. AccountId: {AccountId}, Time: {Time}", demouser.AccountId, timestamp);
+                _logger.LogInformation("Profile updated successfully. AccountId: {AccountId}, Time: {Time}", user.AccountId, timestamp);
                 string successMessage = "Profile updated successfully!";
                 return Json(new { success = true, reloadTab = "Profile", toast = successMessage });
 
             }
             catch (Exception ex)
             {
-                //HARD-CODE DEMO GHI LOG
-                _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", demouser.AccountId, DateTime.UtcNow);
+                _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", user.AccountId, DateTime.UtcNow);
                 ModelState.AddModelError("", $"Error during update: {ex.Message}");
                 return Json(new { success = false, error = ex.Message });
             }

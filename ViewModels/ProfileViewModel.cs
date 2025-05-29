@@ -3,6 +3,7 @@ namespace MovieTheater.ViewModels
 {
     public class ProfileViewModel
     {
+        public string AccountId { get; set; }
         [Required(ErrorMessage = "Username is required")]
         [StringLength(50, ErrorMessage = "Username cannot be longer than 50 characters")]
         public string Username { get; set; }

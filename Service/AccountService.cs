@@ -1,4 +1,6 @@
-﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -115,6 +117,7 @@ namespace MovieTheater.Service
             // 3. Map sang ViewModel
             return new ProfileViewModel
             {
+                AccountId = account.AccountId,
                 Username = account.Username,
                 FullName = account.FullName,
                 DateOfBirth = (DateOnly)account.DateOfBirth,
@@ -127,13 +130,19 @@ namespace MovieTheater.Service
             };
         }
 
-        public bool Update1(string id, ProfileViewModel model)
+        public bool UpdateAccount(string id, ProfileViewModel model)
         {
             var account = _repository.GetById(id);
             if (account == null) return false;
 
+            var duplicate = _repository.GetAll().Any(a => a.Username == model.Username && a.AccountId != id);
+            if (duplicate)
+            {
+                throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
+            }
+
             account.Username = model.Username;
-            account.Password = model.Password;
+            //account.Password = model.Password;
             account.FullName = model.FullName;
             account.DateOfBirth = model.DateOfBirth;
             account.Gender = model.Gender;
@@ -141,7 +150,7 @@ namespace MovieTheater.Service
             account.Email = model.Email;
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
-            account.Status = model.Status;
+            //account.Status = model.Status;
             _repository.Update(account);
             _repository.Save();
             return true;
