@@ -11,11 +11,14 @@ namespace MovieTheater.Controllers
     {
         private readonly IAccountService _service;
         private readonly ILogger<MyAccountController> _logger;
+        private readonly IJwtService _jwtService;
+        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
 
-        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger)
+        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService)
         {
             _service = service;
             _logger = logger;
+            _jwtService = jwtService;
         }
 
         [HttpGet]
@@ -99,20 +102,19 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult SendOtp()
         {
-            // Get current user's email (replace with actual user retrieval)
             var user = _service.GetCurrentUser();
             if (user == null || string.IsNullOrEmpty(user.Email))
                 return Json(new { success = false, error = "User email not found." });
 
-            // Generate OTP
+            _logger.LogInformation($"[SendOtp] accountId={user.AccountId}");
+
             var otp = new Random().Next(100000, 999999).ToString();
             var expiry = DateTime.UtcNow.AddMinutes(5);
 
-            // Store OTP and expiry in session
-            HttpContext.Session.SetString("PasswordOtp", otp);
-            HttpContext.Session.SetString("PasswordOtpExpiry", expiry.ToString("o"));
+            var otpStored = _service.StoreOtp(user.AccountId, otp, expiry);
+            if (!otpStored)
+                return Json(new { success = false, error = "Failed to store OTP. Please try again later." });
 
-            // Send OTP to user's email via service
             var emailSent = _service.SendOtpEmail(user.Email, otp);
             if (!emailSent)
                 return Json(new { success = false, error = "Failed to send OTP email. Please try again later." });
@@ -123,59 +125,45 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult VerifyOtp([FromBody] VerifyOtpViewModel model)
         {
-            // Trim whitespace from the received OTP from the ViewModel
+            var user = _service.GetCurrentUser();
+            if (user == null)
+                return Json(new { success = false, error = "User not found." });
+
+            _logger.LogInformation($"[VerifyOtp] accountId={user.AccountId}");
+
             var receivedOtp = model?.Otp?.Trim();
+            var otpValid = _service.VerifyOtp(user.AccountId, receivedOtp);
+            if (!otpValid)
+                return Json(new { success = false, error = "Invalid or expired OTP." });
 
-            var storedOtp = HttpContext.Session.GetString("PasswordOtp");
-            var expiryStr = HttpContext.Session.GetString("PasswordOtpExpiry");
-
-            if (string.IsNullOrEmpty(storedOtp) || string.IsNullOrEmpty(expiryStr))
-                return Json(new { success = false, error = "OTP not found. Please request a new one." });
-
-            if (!DateTime.TryParse(expiryStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiry))
-                return Json(new { success = false, error = "OTP expiry error." });
-
-            if (DateTime.UtcNow > expiry)
-                return Json(new { success = false, error = "OTP expired. Please request a new one." });
-
-            if (receivedOtp != storedOtp)
-            {
-                return Json(new { success = false, error = "Incorrect OTP." });
-            }
-
-            // Mark OTP as verified (could set a flag in session)
-            HttpContext.Session.SetString("PasswordOtpVerified", "true");
             return Json(new { success = true });
         }
 
         [HttpPost]
         public IActionResult ChangePassword(string newPassword, string confirmPassword)
         {
-            var otpVerified = HttpContext.Session.GetString("PasswordOtpVerified");
-            if (otpVerified != "true")
-                return Json(new { success = false, error = "OTP not verified." });
-
-            if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
-                return Json(new { success = false, error = "Passwords do not match." });
-
-            // Get current user (replace with actual user retrieval)
+            // Get current user from JWT claims
             var user = _service.GetCurrentUser();
             if (user == null)
                 return Json(new { success = false, error = "User not found." });
 
-            // Update password in DB via service using username
-            var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
+            if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+                return Json(new { success = false, error = "Passwords do not match." });
 
+            // Check if new password is the same as the old password
+            if (user.Password == newPassword)
+                return Json(new { success = false, error = "New password must be different from the old password." });
+
+            // Update password in DB via service
+            var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
             if (!result)
                 return Json(new { success = false, error = "Failed to update password." });
 
-            // Clear OTP session
-            HttpContext.Session.Remove("PasswordOtp");
-            HttpContext.Session.Remove("PasswordOtpExpiry");
-            HttpContext.Session.Remove("PasswordOtpVerified");
+            // Clear OTP from database/cache
+            _service.ClearOtp(user.AccountId);
 
-            // Redirect to MainPage with toast message as query parameter
-            return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile", toast = "Password updated successfully!" });
+            // Always return JSON on success
+            return Json(new { success = true, message = "Password updated successfully!" });
         }
 
         [HttpGet]
@@ -191,8 +179,8 @@ namespace MovieTheater.Controllers
                 Email = user.Email
             };
 
-            // Return full View
-            return View(viewModel);
+            // Return the view from the new location
+            return View("~/Views/Account/Tabs/ChangePassword.cshtml", viewModel);
         }
     }
 }

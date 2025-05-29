@@ -7,6 +7,8 @@ using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Net;
 using System.Security.Claims;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Service
 {
@@ -17,19 +19,23 @@ namespace MovieTheater.Service
         private readonly IMemberRepository _memberRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly EmailService _emailService;
+        private readonly ILogger<AccountService> _logger;
+        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
 
         public AccountService(
             IAccountRepository repository, 
             IEmployeeRepository employeeRepository, 
             IMemberRepository memberRepository, 
             IHttpContextAccessor httpContextAccessor,
-            EmailService emailService)
+            EmailService emailService,
+            ILogger<AccountService> logger)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
             _memberRepository = memberRepository;
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
+            _logger = logger;
         }
 
         public bool Register(RegisterViewModel model)
@@ -219,6 +225,41 @@ namespace MovieTheater.Service
             _repository.Update(account);
             _repository.Save();
             return true;
+        }
+
+        // --- OTP Storage and Verification ---
+        public bool StoreOtp(string accountId, string otp, DateTime expiry)
+        {
+            try
+            {
+                _otpStore[accountId] = (otp, expiry);
+                _logger.LogInformation($"[StoreOtp] accountId={accountId}, otp={otp}, expiry={expiry}");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool VerifyOtp(string accountId, string otp)
+        {
+            if (!_otpStore.TryGetValue(accountId, out var otpData))
+                return false;
+
+            if (DateTime.UtcNow > otpData.Expiry)
+            {
+                _otpStore.Remove(accountId);
+                return false;
+            }
+
+            _logger.LogInformation($"[VerifyOtp] accountId={accountId}, otp={otp}");
+            return otpData.Otp == otp;
+        }
+
+        public void ClearOtp(string accountId)
+        {
+            _otpStore.Remove(accountId);
         }
     }
 }

@@ -14,6 +14,9 @@ namespace MovieTheater.Service
         public Account? GetById(string id);
         bool SendOtpEmail(string toEmail, string otp);
         bool UpdatePasswordByUsername(string username, string newPassword);
+        bool StoreOtp(string accountId, string otp, DateTime expiry);
+        bool VerifyOtp(string accountId, string otp);
+        void ClearOtp(string accountId);
     }
 
 }
