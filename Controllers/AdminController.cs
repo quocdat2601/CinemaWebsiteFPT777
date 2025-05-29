@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
@@ -25,7 +26,7 @@ namespace MovieTheater.Controllers
         }
 
         // GET: AdminController
-        [RoleAuthorize(new[] { 1 })]
+        [Authorize(Roles = "Admin")]
         public IActionResult MainPage(string tab = "Dashboard")
         {
             ViewData["ActiveTab"] = tab;

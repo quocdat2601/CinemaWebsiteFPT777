@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -21,6 +22,15 @@ namespace MovieTheater
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
+            });
+
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.LoginPath = "/Account/Login";          
+                options.LogoutPath = "/Account/Logout";        
+                options.AccessDeniedPath = "/Account/AccessDenied";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(60); 
             });
 
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
@@ -51,8 +61,11 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseSession();
-            app.UseAuthorization();
+
+            app.UseSession();            
+            app.UseAuthentication();      
+            app.UseAuthorization();      
+
 
             app.MapControllerRoute(
                 name: "default",
