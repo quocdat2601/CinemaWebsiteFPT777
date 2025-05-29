@@ -22,13 +22,13 @@
                 if (date.Date == Model.SelectedDate.Date)
                 {
                     <option value="@date.ToString("yyyy-MM-dd")" selected="selected">
-                        @date.ToString("dd") @date.ToString("ddd")
+                        @date.ToString("dd MMM ddd")
                     </option>
                 }
                 else
                 {
                     <option value="@date.ToString("yyyy-MM-dd")">
-                        @date.ToString("dd") @date.ToString("ddd")
+                        @date.ToString("dd MMM ddd")
                     </option>
                 }
             }
