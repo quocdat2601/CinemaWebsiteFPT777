@@ -60,30 +60,34 @@
                     </ul>
 
                     <ul class="navbar-nav">
-                        @if (User.Identity.IsAuthenticated)
+                        @if (userRole == 1)
                         {
-                            if (userRole == "Admin")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
-                                </li>
-                            }
-                            else if (userRole == "Employee")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
-                                </li>
-                            }
-                            else 
-                            {
-                                <li class="nav-item">
-                                    <span class="nav-link">Hello, @User.Identity.Name!</span>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
-                                </li>
-                            }
-                             <li class="nav-item">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
+                            </li>
+                         
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else if (userRole == 2)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else if (Context.Session.GetString("UserId") != null) 
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link">Hello, @Context.Session.GetString("UserName")!</span>
+                            </li>
+                            <li  class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
@@ -93,7 +97,7 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
                         }
-
+                    </ul>
 
                     </ul>
                 </div>

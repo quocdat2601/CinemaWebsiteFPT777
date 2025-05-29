@@ -1,5 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -49,6 +48,20 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
 
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            })
+                .AddCookie()
+            .AddGoogle(options =>
+            {
+                IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+
+                options.ClientId = googleAuthNSection["ClientId"];
+                options.ClientSecret = googleAuthNSection["ClientSecret"];
+                options.CallbackPath = "/signin-google"; // Có thể sửa nếu bạn cần
+            });
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
@@ -61,10 +74,8 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-
-            app.UseSession();            
-            app.UseAuthentication();      
-            app.UseAuthorization();      
+            app.UseSession();
+            app.UseAuthorization();
 
 
             app.MapControllerRoute(
