@@ -44,7 +44,7 @@
             $('#accountTabs .nav-link').removeClass('active');
             $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
             $('#tabContent').html('<h3>Loading...</h3>');
-
+             
             var url = '@Url.Action("LoadTab", "MyAccount")';
             $.get(url, { tab: tab }, function (data) {
                 $('#tabContent').html(data);
@@ -57,66 +57,21 @@
                 loadTab($(this).data('tab'));
             });
 
-            loadTab('@ViewData["ActiveTab"]' || 'Information');
-        });
+            // Read tab from URL and load it
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab'); // Get ONLY the value of the 'tab' parameter
+            loadTab(activeTab || 'Information'); // Use default if tab parameter is not present
 
-        // ✅ Submit AJAX Form
-        $(document).on('submit', 'form', function (e) {
-            e.preventDefault();
-
-            var form = $(this);
-            var url = form.attr('action');
-            var formData = new FormData(this);
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (result) {
-                    if (result.success) {
-                        loadTab(result.reloadTab);
-                        if (result.toast) showToast(result.toast);
-                    } else if (result.error) {
-                        showErrorToast(result.error); // ✅ Sửa: nằm trong success
-                    } else {
-                        $('#tabContent').html(result); // Partial chứa lỗi ModelState
-                    }
-                },
-                error: function () {
-                    $('#tabContent').html('<div class="text-danger">Lỗi không xác định từ server.</div>');
+            // Read toast message from URL and show it
+            const toastMessage = urlParams.get('toast'); // Get ONLY the value of the 'toast' parameter
+            if (toastMessage) {
+                // Decode URI component to handle spaces and special characters
+                // Use the global showToast function from site.js
+                if (typeof showToast === 'function') {
+                     showToast(decodeURIComponent(toastMessage));
                 }
-            });
-
-            // ❌ LOẠI BỎ đoạn này vì nằm ngoài success:
-            // if (!result.success && result.error) { showErrorToast(result.error); }
-
-            // ✅ Ẩn alert truyền thống nếu có (có thể giữ nếu bạn vẫn dùng alert)
-            setTimeout(() => $(".alert").fadeOut("slow"), 3000);
-        });
-
-        // Toast hiển thị TempData
-        document.addEventListener("DOMContentLoaded", function () {
-            const toastEl = document.getElementById('toastMessage');
-            if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
-                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-                toast.show();
             }
         });
-
-        // ✅ Toast tiện ích
-        function showToast(message) {
-            const toastEl = document.getElementById('toastMessage');
-            toastEl.querySelector('.toast-body').innerText = message;
-            new bootstrap.Toast(toastEl, { delay: 3000 }).show();
-        }
-
-        function showErrorToast(message) {
-            const errorToastEl = document.getElementById('errorToast');
-            errorToastEl.querySelector('.toast-body').innerText = message;
-            new bootstrap.Toast(errorToastEl, { delay: 4000 }).show();
-        }
     </script>
 }
 

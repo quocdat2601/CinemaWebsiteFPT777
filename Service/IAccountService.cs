@@ -11,8 +11,9 @@ namespace MovieTheater.Service
         public bool Update(string id, RegisterViewModel model);
         public bool Update1(string id, ProfileViewModel model);
         ProfileViewModel GetCurrentUser();
-        ProfileViewModel GetDemoUser();
         public Account? GetById(string id);
+        bool SendOtpEmail(string toEmail, string otp);
+        bool UpdatePasswordByUsername(string username, string newPassword);
     }
 
 }

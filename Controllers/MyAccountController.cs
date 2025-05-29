@@ -19,16 +19,13 @@ namespace MovieTheater.Controllers
         public IActionResult MainPage(string tab = "Information")
         {
             ViewData["ActiveTab"] = tab;
-            return View();
+            return View("~/Views/Account/MainPage.cshtml");
         }
 
         [HttpGet]
         public IActionResult LoadTab(string tab)
         {
-            //var user = _service.GetCurrentUser();
-
-            //TEST HARD-CODE
-            var user = _service.GetDemoUser();
+            var user = _service.GetCurrentUser();
             switch (tab)
             {
                 case "Profile":
@@ -49,28 +46,6 @@ namespace MovieTheater.Controllers
                     return Content("Tab not found.");
             }
         }
-
-        // GET: EmployeeController/Edit/5
-        //public IActionResult Edit(string id)
-        //{
-        //    var user = _service.GetById(id);
-        //    if (user == null)
-        //        return NotFound();
-
-        //    var viewModel = new ProfileViewModel
-        //    {
-        //        Username = user.Username,
-        //        FullName = user.FullName,
-        //        DateOfBirth = (DateOnly)user.DateOfBirth,
-        //        Gender = user.Gender,
-        //        IdentityCard = user.IdentityCard,
-        //        Email = user.Email,
-        //        Address = user.Address,
-        //        PhoneNumber = user.PhoneNumber,
-        //    };
-
-        //    return View(viewModel);
-        //}
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -107,6 +82,105 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // --- OTP Password Change Endpoints ---
 
+        [HttpPost]
+        public IActionResult SendOtp()
+        {
+            // Get current user's email (replace with actual user retrieval)
+            var user = _service.GetCurrentUser();
+            if (user == null || string.IsNullOrEmpty(user.Email))
+                return Json(new { success = false, error = "User email not found." });
+
+            // Generate OTP
+            var otp = new Random().Next(100000, 999999).ToString();
+            var expiry = DateTime.UtcNow.AddMinutes(5);
+
+            // Store OTP and expiry in session
+            HttpContext.Session.SetString("PasswordOtp", otp);
+            HttpContext.Session.SetString("PasswordOtpExpiry", expiry.ToString("o"));
+
+            // Send OTP to user's email via service
+            var emailSent = _service.SendOtpEmail(user.Email, otp);
+            if (!emailSent)
+                return Json(new { success = false, error = "Failed to send OTP email. Please try again later." });
+
+            return Json(new { success = true, message = "OTP sent to your email." });
+        }
+
+        [HttpPost]
+        public IActionResult VerifyOtp([FromBody] VerifyOtpViewModel model)
+        {
+            // Trim whitespace from the received OTP from the ViewModel
+            var receivedOtp = model?.Otp?.Trim();
+
+            var storedOtp = HttpContext.Session.GetString("PasswordOtp");
+            var expiryStr = HttpContext.Session.GetString("PasswordOtpExpiry");
+
+            if (string.IsNullOrEmpty(storedOtp) || string.IsNullOrEmpty(expiryStr))
+                return Json(new { success = false, error = "OTP not found. Please request a new one." });
+
+            if (!DateTime.TryParse(expiryStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiry))
+                return Json(new { success = false, error = "OTP expiry error." });
+
+            if (DateTime.UtcNow > expiry)
+                return Json(new { success = false, error = "OTP expired. Please request a new one." });
+
+            if (receivedOtp != storedOtp)
+            {
+                return Json(new { success = false, error = "Incorrect OTP." });
+            }
+
+            // Mark OTP as verified (could set a flag in session)
+            HttpContext.Session.SetString("PasswordOtpVerified", "true");
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult ChangePassword(string newPassword, string confirmPassword)
+        {
+            var otpVerified = HttpContext.Session.GetString("PasswordOtpVerified");
+            if (otpVerified != "true")
+                return Json(new { success = false, error = "OTP not verified." });
+
+            if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+                return Json(new { success = false, error = "Passwords do not match." });
+
+            // Get current user (replace with actual user retrieval)
+            var user = _service.GetCurrentUser();
+            if (user == null)
+                return Json(new { success = false, error = "User not found." });
+
+            // Update password in DB via service using username
+            var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
+
+            if (!result)
+                return Json(new { success = false, error = "Failed to update password." });
+
+            // Clear OTP session
+            HttpContext.Session.Remove("PasswordOtp");
+            HttpContext.Session.Remove("PasswordOtpExpiry");
+            HttpContext.Session.Remove("PasswordOtpVerified");
+
+            // Redirect to MainPage with toast message as query parameter
+            return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile", toast = "Password updated successfully!" });
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            var user = _service.GetCurrentUser();
+            if (user == null)
+                return RedirectToAction("Login", "Account");
+
+            var viewModel = new ProfileViewModel
+            {
+                Username = user.Username,
+                Email = user.Email
+            };
+
+            // Return full View
+            return View(viewModel);
+        }
     }
 }

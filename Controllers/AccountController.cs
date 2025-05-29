@@ -2,6 +2,9 @@
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -110,9 +113,34 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
+            // --- Begin Authentication Claims and Sign In ---
+            // Create claims for the user
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.AccountId), // Crucially, add the AccountId here
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.RoleId.ToString()),
+                // Add other claims if needed (e.g., user.Status)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme); // Use your configured authentication scheme
+
+            var authProperties = new AuthenticationProperties
+            {
+                // Set properties like IsPersistent, ExpiresUtc, etc. if needed
+            };
+
+            // Sign in the user
+            HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme, // Use your configured authentication scheme
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+            // --- End Authentication Claims and Sign In ---
+
             if (user.RoleId == 1)
             {
-
                 return RedirectToAction("MainPage", "Admin");
             } 
             else if (user.RoleId == 2)

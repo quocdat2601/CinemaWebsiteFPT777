@@ -14,13 +14,20 @@ namespace MovieTheater.Service
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMemberRepository _memberRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly EmailService _emailService;
 
-        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository, IHttpContextAccessor httpContextAccessor)
+        public AccountService(
+            IAccountRepository repository, 
+            IEmployeeRepository employeeRepository, 
+            IMemberRepository memberRepository, 
+            IHttpContextAccessor httpContextAccessor,
+            EmailService emailService)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
             _memberRepository = memberRepository;
             _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
         }
 
         public bool Register(RegisterViewModel model)
@@ -147,30 +154,62 @@ namespace MovieTheater.Service
             return true;
         }
 
-        public ProfileViewModel GetDemoUser()
-        {
-            var account = _repository.GetById("AC007");
-            if (account == null)
-                return null;
-
-            // 2) Map sang ProfileViewModel
-            return new ProfileViewModel
-            {
-                Username = account.Username,
-                FullName = account.FullName,
-                DateOfBirth = (DateOnly)account.DateOfBirth,
-                Gender = account.Gender,
-                IdentityCard = account.IdentityCard,
-                Email = account.Email,
-                Address = account.Address,
-                PhoneNumber = account.PhoneNumber,
-                Password = account.Password  // chỉ để demo
-            };
-        }
-
         public Account? GetById(string id)
         {
             return _repository.GetById(id);
         }
+
+        // --- OTP Email Sending ---
+        public bool SendOtpEmail(string toEmail, string otp)
+        {
+            try
+            {
+                var subject = "Your Password Change OTP Code";
+                var body = $@"
+                    <html>
+                        <body style='font-family: Arial, sans-serif; padding: 20px;'>
+                            <h2 style='color: #333;'>Password Change Request</h2>
+                            <p>You have requested to change your password. Please use the following OTP code to proceed:</p>
+                            <div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                                <h1 style='color: #007bff; margin: 0; text-align: center;'>{otp}</h1>
+                            </div>
+                            <p>This OTP will expire in 5 minutes.</p>
+                            <p>If you did not request this password change, please ignore this email.</p>
+                            <hr style='margin: 20px 0;'>
+                            <p style='color: #666; font-size: 12px;'>This is an automated message, please do not reply.</p>
+                        </body>
+                    </html>";
+
+                return _emailService.SendEmail(toEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        // --- Password Update ---
+        public bool UpdatePassword(string accountId, string newPassword)
+        {
+            var account = _repository.GetById(accountId);
+            if (account == null) return false;
+            account.Password = newPassword;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        public bool UpdatePasswordByUsername(string username, string newPassword)
+        {
+            var account = _repository.GetByUsername(username);
+            if (account == null)
+            {
+                return false;
+            }
+            account.Password = newPassword;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
     }
-    }
+}
