@@ -19,9 +19,9 @@ namespace MovieTheater.ViewModels
     // Movie and its showtimes for a specific date
     public class MovieShowtimeInfo
     {
-        public int MovieId { get; set; } // Movie ID
+        public string MovieId { get; set; } // Movie ID (string, e.g., 'M001')
         public string MovieName { get; set; } // Movie name
         public string PosterUrl { get; set; } // Poster image URL
-        public List<string> Showtimes { get; set; } // List of showtime strings (e.g., "08:00")
+        public List<string> Showtimes { get; set; } // List of showtime strings (e.g., '08:00')
     }
 } 

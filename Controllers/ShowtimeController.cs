@@ -125,7 +125,7 @@ namespace MovieTheater.Controllers
             // 3. Build the view model
             var movies = moviesForDate.Select(m => new MovieShowtimeInfo
             {
-                MovieId = int.TryParse(m.MovieId, out var id) ? id : 0,
+                MovieId = m.MovieId,
                 MovieName = m.MovieNameVn ?? m.MovieNameEnglish ?? "Unknown",
                 PosterUrl = m.LargeImage ?? m.SmallImage ?? "/images/default-movie.png",
                 Showtimes = m.Schedules.Select(s => s.ScheduleTime).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>()
@@ -145,7 +145,7 @@ namespace MovieTheater.Controllers
 
         // GET: Showtime/SelectSeat
         // Placeholder for seat selection screen (to be implemented)
-        public IActionResult SelectSeat(int movieId, DateTime date, string time)
+        public IActionResult SelectSeat(string movieId, DateTime date, string time)
         {
             // TODO: Implement seat selection logic here
             // For now, just show a placeholder message with the parameters
