@@ -247,6 +247,12 @@ namespace MovieTheater.Controllers
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
+            // ✅ Set đầy đủ Session như đăng nhập thường
+            HttpContext.Session.SetString("UserId", user.AccountId);
+            HttpContext.Session.SetString("UserName", user.Username);
+            HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
+            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
+
             // Redirect by role
             if (user.RoleId == 1)
             {
