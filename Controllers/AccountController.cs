@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.Extensions.Logging;
 using MovieTheater.Models;
+using Microsoft.AspNetCore.Authentication.Google;
+using System.Security.Claims;
+
 namespace MovieTheater.Controllers
 {
     public class AccountController : Controller
@@ -147,11 +150,13 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             HttpContext.Session.Clear();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }
+
 
         public IActionResult Profile()
         {
@@ -199,7 +204,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -213,22 +218,44 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
+            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
+
+
+            if (user.Status  == 0)
+            {
+                TempData["ErrorMessage"] = "Account has been locked!";
+                return View(model);
+            }
+
+            // Build claims only if user is valid and unlocked
+            string roleName = user.RoleId switch
+            {
+                1 => "Admin",
+                2 => "Employee",
+                3 => "Customer",
+                _ => "Guest"
+            };
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, roleName),
+            };                                                                                  
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // ✅ Set đầy đủ Session như đăng nhập thường
             HttpContext.Session.SetString("UserId", user.AccountId);
             HttpContext.Session.SetString("UserName", user.Username);
             HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
             HttpContext.Session.SetInt32("Status", user.Status ?? 0);
 
-
-            if (user.Status == 0)
-            {
-                TempData["ErrorMessage"] = "Account has been locked!";
-                HttpContext.Session.Clear();
-                return View(model);
-            }
-
+            // Redirect by role
             if (user.RoleId == 1)
             {
-
                 return RedirectToAction("MainPage", "Admin");
             }
             else if (user.RoleId == 2)
@@ -239,6 +266,7 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("MovieList", "Movie");
             }
+
         }
 
         public IActionResult AccessDenied()
