@@ -1,15 +1,16 @@
 ﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+@using System.Security.Claims
 
 @{
     ViewData["Title"] = "Edit Movie";
-    var userRole = Context.Session.GetInt32("Role");
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
 
 <div class="signup-wrapper">
     <div class="signup-card">
-        @if (userRole == 1)
+        @if (userRole == "1")
         {
             <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
                 &larr; Return

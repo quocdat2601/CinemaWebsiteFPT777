@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.Services;
+using System.Text;
 
 namespace MovieTheater
 {
@@ -17,18 +20,42 @@ namespace MovieTheater
             builder.Services.AddDbContext<MovieTheaterContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddDistributedMemoryCache();
-            builder.Services.AddSession(options =>
-            {
-                options.IdleTimeout = TimeSpan.FromMinutes(30);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
-            });
+            // Configure JWT
+            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            builder.Services.AddScoped<IJwtService, JwtService>();
+
+            // Configure JWT Authentication
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+            var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
 
             builder.Services.AddAuthentication(options =>
             {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.Audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["JwtToken"];
+                        return Task.CompletedTask;
+                    }
+                };
             })
              .AddCookie(options =>
              {
@@ -36,6 +63,11 @@ namespace MovieTheater
                  options.LogoutPath = "/Account/Logout";
                  options.AccessDeniedPath = "/Account/AccessDenied";
                  options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+                 options.Cookie.Name = "MovieTheater.Auth";
+                 options.Cookie.HttpOnly = true;
+                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                 options.Cookie.SameSite = SameSiteMode.Lax;
+                 options.SlidingExpiration = true;
              })
              .AddGoogle(options =>
              {
@@ -62,8 +94,6 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
 
-           
-
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
             if (!app.Environment.IsDevelopment())
@@ -75,10 +105,25 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseSession();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.Use(async (context, next) =>
+            {
+                await next();
+                if (context.Response.StatusCode == 302) // Redirect
+                {
+                    if (!context.Response.Headers.ContainsKey("Cache-Control"))
+                    {
+                        context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
+                    }
+                    if (!context.Response.Headers.ContainsKey("Pragma"))
+                    {
+                        context.Response.Headers.Add("Pragma", "no-cache");
+                    }
+                }
+            });
 
             app.MapControllerRoute(
                 name: "default",
