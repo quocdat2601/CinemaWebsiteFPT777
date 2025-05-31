@@ -7,9 +7,8 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.Services;
-using System.Text;
 using Serilog;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Text;
 
 namespace MovieTheater
 {
@@ -19,17 +18,18 @@ namespace MovieTheater
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Database
             builder.Services.AddDbContext<MovieTheaterContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Configure JWT
+            // JWT Settings
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
             builder.Services.AddScoped<IJwtService, JwtService>();
 
-            // Configure JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
             var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
 
+            // Authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -59,27 +59,27 @@ namespace MovieTheater
                     }
                 };
             })
-             .AddCookie(options =>
-             {
-                 options.LoginPath = "/Account/Login";
-                 options.LogoutPath = "/Account/Logout";
-                 options.AccessDeniedPath = "/Account/AccessDenied";
-                 options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-                 options.Cookie.Name = "MovieTheater.Auth";
-                 options.Cookie.HttpOnly = true;
-                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                 options.Cookie.SameSite = SameSiteMode.Lax;
-                 options.SlidingExpiration = true;
-             })
-             .AddGoogle(options =>
-             {
-                 IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-                 options.ClientId = googleAuthNSection["ClientId"];
-                 options.ClientSecret = googleAuthNSection["ClientSecret"];
-                 options.CallbackPath = "/signin-google";
-             });
+            .AddCookie(options =>
+            {
+                options.LoginPath = "/Account/Login";
+                options.LogoutPath = "/Account/Logout";
+                options.AccessDeniedPath = "/Account/AccessDenied";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+                options.Cookie.Name = "MovieTheater.Auth";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.SlidingExpiration = true;
+            })
+            .AddGoogle(options =>
+            {
+                IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+                options.ClientId = googleAuthNSection["ClientId"];
+                options.ClientSecret = googleAuthNSection["ClientSecret"];
+                options.CallbackPath = "/signin-google";
+            });
 
-
+            // Services - DI
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -97,6 +97,7 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
             builder.Services.AddScoped<EmailService>();
 
+            // Logging with Serilog
             builder.Host.UseSerilog((context, services, configuration) => configuration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
@@ -106,20 +107,11 @@ namespace MovieTheater
 
             builder.Services.AddHttpContextAccessor();
 
-            // CAU HINH AUTHENTICATION COOKIE
-            builder.Services
-                .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login"; // DUONG DAN TRANG LOGIN
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                    options.ExpireTimeSpan = TimeSpan.FromHours(1);
-                });
-
             builder.Services.AddControllersWithViews();
+
             var app = builder.Build();
 
-
+            // Middleware
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -128,25 +120,21 @@ namespace MovieTheater
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
+            // Prevent caching redirects
             app.Use(async (context, next) =>
             {
                 await next();
-                if (context.Response.StatusCode == 302) // Redirect
+                if (context.Response.StatusCode == 302)
                 {
                     if (!context.Response.Headers.ContainsKey("Cache-Control"))
-                    {
                         context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
-                    }
                     if (!context.Response.Headers.ContainsKey("Pragma"))
-                    {
                         context.Response.Headers.Add("Pragma", "no-cache");
-                    }
                 }
             });
 
