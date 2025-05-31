@@ -1,0 +1,161 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\views\\admin\\mainpage.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:views\\admin\\mainpage.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\controllers\\showtimecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:controllers\\showtimecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\models\\movietheatercontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:models\\movietheatercontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\views\\showtime\\list.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:views\\showtime\\list.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MainPage.cshtml",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Admin\\MainPage.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\MainPage.cshtml",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Admin\\MainPage.cshtml",
+              "RelativeToolTip": "Views\\Admin\\MainPage.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAABkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-30T07:51:00.098Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAAAGEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-30T07:06:43.413Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-05-30T03:06:22.356Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAEQAAAAAAAAAAAAkwFYAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-30T02:58:43.823Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ShowtimeController.cs",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Controllers\\ShowtimeController.cs",
+              "RelativeDocumentMoniker": "Controllers\\ShowtimeController.cs",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Controllers\\ShowtimeController.cs",
+              "RelativeToolTip": "Controllers\\ShowtimeController.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAD4v0EAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-29T12:43:10.358Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Controllers\\AccountController.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAAwAQBAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-29T12:39:25.149Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MovieTheaterContext.cs",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Models\\MovieTheaterContext.cs",
+              "RelativeDocumentMoniker": "Models\\MovieTheaterContext.cs",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Models\\MovieTheaterContext.cs",
+              "RelativeToolTip": "Models\\MovieTheaterContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-29T12:36:35.809Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "List.cshtml",
+              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Showtime\\List.cshtml",
+              "RelativeDocumentMoniker": "Views\\Showtime\\List.cshtml",
+              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Showtime\\List.cshtml",
+              "RelativeToolTip": "Views\\Showtime\\List.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-29T12:36:13.995Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
