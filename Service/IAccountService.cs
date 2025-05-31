@@ -1,4 +1,5 @@
-﻿using MovieTheater.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Service
@@ -8,6 +9,14 @@ namespace MovieTheater.Service
         bool Register(RegisterViewModel model);
         bool Authenticate(string username, string password, out Account? account);
         public bool Update(string id, RegisterViewModel model);
+        public bool UpdateAccount(string id, ProfileViewModel model);
+        ProfileViewModel GetCurrentUser();
+        public Account? GetById(string id);
+        bool SendOtpEmail(string toEmail, string otp);
+        bool UpdatePasswordByUsername(string username, string newPassword);
+        bool StoreOtp(string accountId, string otp, DateTime expiry);
+        bool VerifyOtp(string accountId, string otp);
+        void ClearOtp(string accountId);
     }
 
 }

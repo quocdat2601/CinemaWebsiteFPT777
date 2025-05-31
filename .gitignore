@@ -1,4 +1,4 @@
-# Visual Studio
+﻿# Visual Studio
 .vs/
 *.user
 *.suo
@@ -11,6 +11,7 @@ obj/
 
 # Logs
 *.log
+Logs/          
 
 # Rider IDE files (if you use Rider)
 .idea/

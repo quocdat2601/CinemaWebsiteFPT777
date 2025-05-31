@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
+
 namespace MovieTheater.Repository
 {
     public class AccountRepository : IAccountRepository
