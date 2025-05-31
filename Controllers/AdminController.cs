@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
 using MovieTheater.Services;
 using MovieTheater.ViewModels;
@@ -11,21 +13,25 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly IEmployeeService _employeeService;
         private readonly IPromotionService _promotionService;
-        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService)
+        private readonly ICinemaService _cinemaService;
+        private readonly ISeatTypeService _seatTypeService;
+
+        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
             _promotionService = promotionService;
+            _cinemaService = cinemaService;
+            _seatTypeService = seatTypeService;
         }
 
         // GET: AdminController
-        [RoleAuthorize(new[] { 1 })]
+        [Authorize(Roles = "Admin")]
         public IActionResult MainPage(string tab = "Dashboard")
         {
             ViewData["ActiveTab"] = tab;
             return View();
         }
-
 
         public IActionResult LoadTab(string tab)
         {
@@ -42,12 +48,18 @@ namespace MovieTheater.Controllers
                     var movies = _movieService.GetAll();
                     return PartialView("MovieMg", movies);
                 case "ShowroomMg":
-                    return PartialView("ShowroomMg");
+                    var cinema = _cinemaService.GetAll();
+                    var seatTypes = _seatTypeService.GetAll();
+
+                    ViewBag.SeatTypes = seatTypes;
+                    return PartialView("ShowroomMg", cinema);
                 case "ScheduleMg":
                     return PartialView("ScheduleMg");
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
+                case "TicketSellingMg":
+                    return PartialView("TicketSellingMg");
                 default:
                     return Content("Tab not found.");
             }

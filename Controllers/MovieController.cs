@@ -175,18 +175,15 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
-            // Get the existing movie to preserve images
             var existingMovie = _movieService.GetById(id);
             if (existingMovie != null)
             {
-                // Preserve existing images if no new ones are uploaded
                 if (string.IsNullOrEmpty(model.SmallImage))
                     model.SmallImage = existingMovie.SmallImage;
                 if (string.IsNullOrEmpty(model.LargeImage))
                     model.LargeImage = existingMovie.LargeImage;
             }
 
-            // Handle new SmallImageFile upload
             if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
@@ -202,7 +199,6 @@ namespace MovieTheater.Controllers
                 model.SmallImage = "/image/" + uniqueFileName;
             }
 
-            // Handle new LargeImageFile upload
             if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
@@ -218,7 +214,6 @@ namespace MovieTheater.Controllers
                 model.LargeImage = "/image/" + uniqueFileName2;
             }
 
-            // Perform the update
             bool success = _movieService.UpdateMovie(id, model);
 
             if (!success)
@@ -230,21 +225,7 @@ namespace MovieTheater.Controllers
             TempData["ToastMessage"] = "Movie updated successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
         }
-
-        // GET: Movie/Delete/5
-        [HttpGet]
-        public IActionResult Delete(string id)
-        {
-            var movie = _movieService.GetById(id);
-            if (movie == null)
-            {
-                TempData["ToastMessage"] = "Movie not found.";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-            }
-
-            return View(movie);
-        }
-        
+                
         // POST: Movie/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]

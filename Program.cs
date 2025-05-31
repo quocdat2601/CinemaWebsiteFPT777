@@ -55,6 +55,27 @@ namespace MovieTheater
                 };
             });
 
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            })
+             .AddCookie(options =>
+             {
+                 options.LoginPath = "/Account/Login";
+                 options.LogoutPath = "/Account/Logout";
+                 options.AccessDeniedPath = "/Account/AccessDenied";
+                 options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+             })
+             .AddGoogle(options =>
+             {
+                 IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+                 options.ClientId = googleAuthNSection["ClientId"];
+                 options.ClientSecret = googleAuthNSection["ClientSecret"];
+                 options.CallbackPath = "/signin-google";
+             });
+
+
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -66,6 +87,10 @@ namespace MovieTheater
             builder.Services.AddScoped<IMemberRepository, MemberRepository>();
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
+            builder.Services.AddScoped<ISeatRepository, SeatRepository>();
+            builder.Services.AddScoped<ISeatService, SeatService>();
+            builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
+            builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
@@ -81,6 +106,7 @@ namespace MovieTheater
 
             app.UseAuthentication();
             app.UseAuthorization();
+
 
             app.MapControllerRoute(
                 name: "default",
