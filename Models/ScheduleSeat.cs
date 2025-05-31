@@ -5,19 +5,15 @@ namespace MovieTheater.Models;
 
 public partial class ScheduleSeat
 {
-    public string ScheduleSeatId { get; set; } = null!;
+    public int ScheduleId { get; set; }
 
-    public string? MovieId { get; set; }
+    public int SeatId { get; set; }
 
-    public int? ScheduleId { get; set; }
+    public int? SeatStatusId { get; set; }
 
-    public int? SeatId { get; set; }
+    public virtual Schedule Schedule { get; set; } = null!;
 
-    public string? SeatColumn { get; set; }
+    public virtual Seat Seat { get; set; } = null!;
 
-    public int? SeatRow { get; set; }
-
-    public int? SeatStatus { get; set; }
-
-    public int? SeatType { get; set; }
+    public virtual SeatStatus? SeatStatus { get; set; }
 }
