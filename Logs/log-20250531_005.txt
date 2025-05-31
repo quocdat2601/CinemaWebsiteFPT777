@@ -8,3 +8,11 @@ System.Exception: Tên đăng nhập đã tồn tại. Vui lòng chọn tên kh�
 2025-05-31 21:44:57.175 +07:00 [INF] [VerifyOtp] accountId=A003, otp=870536
 2025-05-31 21:45:07.034 +07:00 [WRN] Unable to configure Browser Link script injection on the response. 
 2025-05-31 21:45:08.595 +07:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-05-31 21:48:41.825 +07:00 [ERR] Exception during profile update. AccountId: A003, Time: "2025-05-31T14:48:41.8232053Z"
+System.Exception: Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.
+   at MovieTheater.Service.AccountService.UpdateAccount(String id, ProfileViewModel model) in D:\Study\OJT\branch\team03-updpro\Service\AccountService.cs:line 154
+   at MovieTheater.Controllers.MyAccountController.Edit(ProfileViewModel model) in D:\Study\OJT\branch\team03-updpro\Controllers\MyAccountController.cs:line 77
+2025-05-31 21:48:43.910 +07:00 [INF] [SendOtp] accountId=A003
+2025-05-31 21:48:43.916 +07:00 [INF] [StoreOtp] accountId=A003, otp=799681, expiry=5/31/2025 2:53:43 PM
+2025-05-31 21:48:48.291 +07:00 [INF] [VerifyOtp] accountId=A003
+2025-05-31 21:48:48.293 +07:00 [INF] [VerifyOtp] accountId=A003, otp=799681
