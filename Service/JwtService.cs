@@ -21,11 +21,19 @@ namespace MovieTheater.Service
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+            string roleName = account.RoleId switch
+            {
+                1 => "Admin",
+                2 => "Employee",
+                3 => "Customer",
+                _ => "Guest"
+            };
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, account.AccountId),
                 new Claim(ClaimTypes.Name, account.Username),
-                new Claim(ClaimTypes.Role, account.RoleId.ToString()),
+                new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", account.Status.ToString())
             };
 

@@ -45,14 +45,14 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
-            var accountId = HttpContext.Session.GetString("UserId");
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var query = _context.Invoice
+            var query = _context.Invoices
                 .Where(i => i.AccountId == accountId &&
                             i.BookingDate >= fromDate &&
                             i.BookingDate <= toDate);
@@ -131,16 +131,9 @@ namespace MovieTheater.Controllers
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
-                HttpContext.Session.Clear();
                 return RedirectToAction("Login");
             }
 
-            HttpContext.Session.SetString("UserId", user.AccountId);
-            HttpContext.Session.SetString("UserName", user.Username);
-            HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
-            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
-
-            // Sign in using cookie
             string roleName = user.RoleId switch
             {
                 1 => "Admin",
@@ -154,13 +147,30 @@ namespace MovieTheater.Controllers
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, roleName),
+                new Claim("Status", user.Status.ToString()),
+                new Claim("Email", user.Email),
+                new Claim("FullName", user.FullName ?? user.Username)
             };
 
             var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
+
+            // Sign in with cookie authentication - match normal login flow
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
+            // Generate JWT token for Google login
+            var token = _jwtService.GenerateToken(user);
 
+            // Store the token in a cookie
+            Response.Cookies.Append("JwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(60)
+            });
+
+            // Direct redirect like normal login
             if (user.RoleId == 1)
             {
                 return RedirectToAction("MainPage", "Admin");
@@ -174,7 +184,6 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("MovieList", "Movie");
             }
         }
-
 
         [HttpGet]
         public IActionResult Signup()
@@ -193,16 +202,24 @@ namespace MovieTheater.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
             return RedirectToAction("Login", "Account");
         }
 
-        [Authorize]
         public IActionResult Profile()
         {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var status = User.FindFirst("Status")?.Value;
+            
             return View();
         }
 
@@ -257,16 +274,12 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
-            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
-
-
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
                 return View(model);
             }
 
-            // Build claims only if user is valid and unlocked
             string roleName = user.RoleId switch
             {
                 1 => "Admin",
@@ -280,13 +293,14 @@ namespace MovieTheater.Controllers
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, roleName),
+                new Claim("Status", user.Status.ToString()),
+                new Claim("Email", user.Email)
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            // Redirect by role
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
 
@@ -311,7 +325,6 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("MovieList", "Movie");
             }
-
         }
 
         public IActionResult AccessDenied()

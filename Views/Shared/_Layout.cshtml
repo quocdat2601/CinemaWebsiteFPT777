@@ -61,7 +61,7 @@
                     </ul>
 
                     <ul class="navbar-nav">
-                        @if (userRole == "1")
+                        @if (userRole == "Admin")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
@@ -71,7 +71,7 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
-                        else if (userRole == "2")
+                        else if (userRole == "Employee")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
