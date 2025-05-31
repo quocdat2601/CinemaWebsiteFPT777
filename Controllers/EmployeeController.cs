@@ -38,6 +38,8 @@ namespace MovieTheater.Controllers
                     return PartialView("SheduleMg");
                 case "PromotionMg":
                     return PartialView("PromotionMg");
+                case "TicketSellingMg":
+                    return PartialView("TicketSellingMg");
                 default:
                     return Content("Tab not found.");
             }

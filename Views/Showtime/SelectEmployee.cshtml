@@ -1,7 +1,7 @@
 @model MovieTheater.ViewModels.ShowtimeSelectionViewModel
 
 <!--
-    MT-20: Select Movie and Showtime View
+    MT-20: Select Movie and Showtime View (Employee Version)
     - Displays a date combobox (dropdown) for valid screening dates (AC-01)
     - Shows movies with posters and showtimes as buttons (AC-02)
     - If no showtimes, shows a 'No showtime' message (AC-04)
@@ -12,14 +12,14 @@
     ViewData["Title"] = "Ticket selling management – Select movie and showtime";
 }
 
-<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="TicketSellingMg" class="btn btn-secondary ms-3 mt-3">
+<a asp-controller="Employee" asp-action="MainPage" asp-route-tab="TicketSellingMg" class="btn btn-secondary ms-3 mt-3">
     &larr; Return
 </a>
 
 <h2 class="text-center mb-4">SHOWTIMES</h2>
 <div class="bg-light p-4 rounded">
     <!-- Date selection as a dropdown combobox (AC-01) -->
-    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center">
+    <form method="get" asp-action="SelectEmployee" asp-controller="Showtime" class="mb-4 text-center">
         <select name="date" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
             @foreach (var date in Model.AvailableDates)
             {
@@ -72,11 +72,4 @@
             </div>
         }
     }
-</div>
-
-<!--
-    - Date combobox triggers form submit on change (AC-01)
-    - Showtimes are links/buttons that redirect to seat selection with movieId, date, and time (AC-03)
-    - If no showtimes, shows a warning message (AC-04)
-    - All data is based on the ViewModel (active schedule, valid showtimes) (AC-05)
---> 
+</div> 
