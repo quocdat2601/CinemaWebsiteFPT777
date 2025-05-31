@@ -1,29 +1,61 @@
 ﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "My Account";
 }
 
-<div class="container mt-5">
-    <h2 class="text-center mb-4">My Account</h2>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Tabs -->
+        <div class="col-2 bg-light border-end vh-100 pt-3">
+            <ul class="nav flex-column nav-pills" id="accountTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-tab="Profile" href="#">Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tab="Password" href="#">Change Password</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tab="Rank" href="#">Rank</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tab="Score" href="#">Score</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tab="Voucher" href="#">Voucher</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-tab="History" href="#">History Booking Ticket</a>
+                </li>
+            </ul>
+        </div>
 
-    <ul class="nav nav-tabs" id="accountTabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" href="@Url.Action("Profile", "Account")">Account Info</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="@Url.Action("ScoreHistory", "Account")">Score History</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="@Url.Action("Booked", "Ticket")">Booked Tickets</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="@Url.Action("Canceled", "Ticket")">Canceled Tickets</a>
-        </li>
-    </ul>
-
-    <div class="tab-content mt-4">
-        <div class="tab-pane fade show active">
-            <p>Welcome to your account dashboard!</p>
-            <p>Use the tabs above to navigate your information.</p>
+        <!-- Tab Content -->
+        <div class="col-10 p-4" id="tabContent">
+            <h3>Welcome to your profile</h3>
+            <p>This is the default content of the Profile tab.</p>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#accountTabs .nav-link').click(function (e) {
+                e.preventDefault();
+
+                const tab = $(this).data('tab');
+
+                // UI Active
+                $('#accountTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                // Hiện nội dung tương ứng
+                $('#tabContent').html('<h3>Loading...</h3>');
+
+                $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
+                    $('#tabContent').html(data);
+                });
+            });
+        });
+    </script>
+}

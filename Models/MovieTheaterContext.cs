@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using MovieTheater.ViewModels;
-using Microsoft.EntityFrameworkCore;
+
 namespace MovieTheater.Models;
 
 public partial class MovieTheaterContext : DbContext
@@ -53,7 +52,7 @@ public partial class MovieTheaterContext : DbContext
     public virtual DbSet<Ticket> Tickets { get; set; }
 
     public virtual DbSet<Type> Types { get; set; }
-    public virtual DbSet<Invoice> Invoice { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>

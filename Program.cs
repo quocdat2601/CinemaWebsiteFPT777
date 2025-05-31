@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MovieTheater
 {
@@ -17,12 +18,41 @@ namespace MovieTheater
             builder.Services.AddDbContext<MovieTheaterContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddDistributedMemoryCache();
-            builder.Services.AddSession(options =>
+            // Configure JWT
+            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            builder.Services.AddScoped<IJwtService, JwtService>();
+
+            // Configure JWT Authentication
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+            var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+
+            builder.Services.AddAuthentication(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.Audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["JwtToken"];
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             builder.Services.AddAuthentication(options =>
@@ -75,6 +105,8 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+
+            app.UseAuthentication();
             app.UseSession();
             app.UseAuthorization();
 

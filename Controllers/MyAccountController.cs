@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize]
     public class MyAccountController : Controller
     {
         [HttpGet]
@@ -17,7 +20,22 @@ namespace MovieTheater.Controllers
             switch (tab)
             {
                 case "Profile":
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml");
+                    var user = HttpContext.User;
+                    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var username = user.Identity?.Name;
+                    var email = user.FindFirst(ClaimTypes.Email)?.Value;
+                    var role = user.FindFirst(ClaimTypes.Role)?.Value;
+
+                    var userInfo = new
+                    {
+                        UserId = userId,
+                        Username = username,
+                        Email = email,
+                        Role = role
+                    };
+
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", userInfo);
+
                 case "Password":
                     return PartialView("~/Views/Account/Tabs/Password.cshtml");
                 case "Rank":

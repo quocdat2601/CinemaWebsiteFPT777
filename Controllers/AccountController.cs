@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
 using MovieTheater.Repository;
 
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
+
 namespace MovieTheater.Controllers
 {
     public class AccountController : Controller
@@ -18,18 +21,19 @@ namespace MovieTheater.Controllers
         private readonly MovieTheaterContext _context;
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
+        private readonly IJwtService _jwtService;
         private readonly IMemberRepository _memberRepository;
 
         public AccountController(
        MovieTheaterContext context,
        IAccountService service,
-       ILogger<AccountController> logger, IAccountRepository accountRepository, IMemberRepository memberRepository)
+       ILogger<AccountController> logger, IAccountRepository accountRepository, IMemberRepository memberRepository, IJwtService jwtService)
         {
-            _context = context;
             _service = service;
             _logger = logger;
             _accountRepository = accountRepository;
             _memberRepository = memberRepository;
+            _jwtService = jwtService;
         }
 
         [HttpGet]
@@ -191,10 +195,12 @@ namespace MovieTheater.Controllers
         {
             HttpContext.Session.Clear();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            // Remove the JWT token cookie
+            Response.Cookies.Delete("JwtToken");
             return RedirectToAction("Login", "Account");
         }
 
-
+        [Authorize]
         public IActionResult Profile()
         {
             return View();
@@ -222,12 +228,8 @@ namespace MovieTheater.Controllers
                     return View(model);
                 }
 
-                //TempData["SuccessMessage"] = "Sign up successful! Please log in.";
                 TempData["ToastMessage"] = "Sign up successful! Please log in.";
                 return RedirectToAction("Signup");
-
-                //return RedirectToAction("Login", "Account");
-
             }
             catch (Exception ex)
             {
@@ -285,6 +287,18 @@ namespace MovieTheater.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             // Redirect by role
+            // Generate JWT token
+            var token = _jwtService.GenerateToken(user);
+
+            // Store the token in a cookie
+            Response.Cookies.Append("JwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(60)
+            });
+
             if (user.RoleId == 1)
             {
                 return RedirectToAction("MainPage", "Admin");
@@ -304,6 +318,5 @@ namespace MovieTheater.Controllers
         {
             return View();
         }
-
     }
 }
