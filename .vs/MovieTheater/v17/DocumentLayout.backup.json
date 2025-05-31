@@ -23,10 +23,6 @@
       "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\views\\showtime\\select.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:views\\showtime\\select.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|d:\\document\\ojt\\feature_ticketmg_movie\u0026showtime_select\\controllers\\showtimecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B56227ED-E453-4225-A033-96ABCA4CFFC5}|MovieTheater.csproj|solutionrelative:controllers\\showtimecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -46,7 +42,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -55,6 +51,10 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Document",
@@ -76,7 +76,7 @@
               "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
               "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Shared\\_Layout.cshtml",
               "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE8AAAAhAAAAAAAAAA==",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAAAGEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-05-30T07:06:43.413Z",
               "EditorCaption": ""
@@ -107,7 +107,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
               "Title": "ShowtimeController.cs",
               "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Controllers\\ShowtimeController.cs",
               "RelativeDocumentMoniker": "Controllers\\ShowtimeController.cs",
@@ -131,7 +131,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 6,
               "Title": "MovieTheaterContext.cs",
               "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Models\\MovieTheaterContext.cs",
               "RelativeDocumentMoniker": "Models\\MovieTheaterContext.cs",
@@ -143,7 +143,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 7,
               "Title": "List.cshtml",
               "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Showtime\\List.cshtml",
               "RelativeDocumentMoniker": "Views\\Showtime\\List.cshtml",
@@ -152,18 +152,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-05-29T12:36:13.995Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Select.cshtml",
-              "DocumentMoniker": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Showtime\\Select.cshtml",
-              "RelativeDocumentMoniker": "Views\\Showtime\\Select.cshtml",
-              "ToolTip": "D:\\Document\\OJT\\feature_ticketmg_movie\u0026showtime_select\\Views\\Showtime\\Select.cshtml",
-              "RelativeToolTip": "Views\\Showtime\\Select.cshtml",
-              "ViewState": "AgIAACoAAAAAAAAAAAAowDoAAABqAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-05-29T12:36:09.614Z"
             }
           ]
         }
