@@ -1,6 +1,7 @@
 ﻿@using System.Security.Claims
 @{
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var fullName = User.FindFirst(ClaimTypes.Name)?.Value;
     var userName = User.FindFirst(ClaimTypes.Name)?.Value;
     var isAuthenticated = User.Identity.IsAuthenticated;
 }
@@ -83,14 +84,14 @@
                         else if (isAuthenticated)
                         {
                             <li class="nav-item">
-                                <span class="nav-link">Hello, @userName!</span>
+                                <span class="nav-link">Hello, @fullName!</span>
                             </li>
                             <li  class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
                             </li>
 
                             @* ✅ Hiển thị Score History nếu là Member *@
-                            @if (userRole == 3)
+                            @if (userRole == "3")
                             {
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Account" asp-action="ScoreHistory">Score History</a>

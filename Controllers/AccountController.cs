@@ -1,28 +1,38 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using MovieTheater.Models;
 using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
+using MovieTheater.Repository;
+
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
     public class AccountController : Controller
     {
+        private readonly IAccountRepository _accountRepository;
         private readonly MovieTheaterContext _context;
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
         private readonly IJwtService _jwtService;
+        private readonly IMemberRepository _memberRepository;
 
-        public AccountController(IAccountService service, ILogger<AccountController> logger, IJwtService jwtService)
+        public AccountController(
+       MovieTheaterContext context,
+       IAccountService service,
+       ILogger<AccountController> logger, IAccountRepository accountRepository, IMemberRepository memberRepository, IJwtService jwtService)
         {
-            _context = context;
             _service = service;
             _logger = logger;
+            _accountRepository = accountRepository;
+            _memberRepository = memberRepository;
             _jwtService = jwtService;
         }
 
@@ -35,14 +45,14 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
-            var accountId = HttpContext.Session.GetString("UserId");
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var query = _context.Invoice
+            var query = _context.Invoices
                 .Where(i => i.AccountId == accountId &&
                             i.BookingDate >= fromDate &&
                             i.BookingDate <= toDate);
@@ -80,7 +90,7 @@ namespace MovieTheater.Controllers
 
         public async Task<IActionResult> ExternalLoginCallback()
         {
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
             if (!result.Succeeded || result.Principal == null)
                 return RedirectToAction("Login");
@@ -89,51 +99,91 @@ namespace MovieTheater.Controllers
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
-            if (email == null)
+            if (string.IsNullOrEmpty(email))
             {
                 TempData["ErrorMessage"] = "Google login failed. Email not provided.";
                 return RedirectToAction("Login");
             }
 
-            // 🔍 Tìm tài khoản theo email
-            var user = _context.Accounts.FirstOrDefault(u => u.Email == email);
+            var user = _accountRepository.GetAccountByEmail(email);
 
-            // ❌ Nếu chưa có tài khoản → tạo mới
             if (user == null)
             {
                 user = new Account
                 {
-                    AccountId = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper(),
                     Email = email,
                     FullName = name ?? "Google User",
                     Username = email,
-                    RoleId = 3, // Mặc định là Member
+                    RoleId = 3,
                     Status = 1,
                     RegisterDate = DateOnly.FromDateTime(DateTime.Now)
                 };
-
-                _context.Accounts.Add(user);
-                _context.SaveChanges();
+                _accountRepository.Add(user);
+                _accountRepository.Save();
+                _memberRepository.Add(new Member
+                {
+                    Score = 0,
+                    AccountId = user.AccountId
+                });
+                _memberRepository.Save();
             }
 
-            // ✅ Set đầy đủ Session như đăng nhập thường
-            HttpContext.Session.SetString("UserId", user.AccountId);
-            HttpContext.Session.SetString("UserName", user.Username);
-            HttpContext.Session.SetInt32("Role", user.RoleId ?? 0);
-            HttpContext.Session.SetInt32("Status", user.Status ?? 0);
-
-            // ✅ Chuyển hướng tùy theo Role
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
-                HttpContext.Session.Clear();
                 return RedirectToAction("Login");
             }
 
-            return RedirectToAction("MainPage", "Account");
+            string roleName = user.RoleId switch
+            {
+                1 => "Admin",
+                2 => "Employee",
+                3 => "Customer",
+                _ => "Guest"
+            };
+
+            var appClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, roleName),
+                new Claim("Status", user.Status.ToString()),
+                new Claim("Email", user.Email),
+                new Claim("FullName", user.FullName ?? user.Username)
+            };
+
+            var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            // Sign in with cookie authentication - match normal login flow
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // Generate JWT token for Google login
+            var token = _jwtService.GenerateToken(user);
+
+            // Store the token in a cookie
+            Response.Cookies.Append("JwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(60)
+            });
+
+            // Direct redirect like normal login
+            if (user.RoleId == 1)
+            {
+                return RedirectToAction("MainPage", "Admin");
+            }
+            else if (user.RoleId == 2)
+            {
+                return RedirectToAction("MainPage", "Employee");
+            }
+            else
+            {
+                return RedirectToAction("MovieList", "Movie");
+            }
         }
-
-
 
         [HttpGet]
         public IActionResult Signup()
@@ -150,17 +200,26 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        [Authorize]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
             return RedirectToAction("Login", "Account");
         }
 
-        [Authorize]
         public IActionResult Profile()
         {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var status = User.FindFirst("Status")?.Value;
+
             return View();
         }
 
@@ -220,6 +279,27 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "Account has been locked!";
                 return View(model);
             }
+
+            string roleName = user.RoleId switch
+            {
+                1 => "Admin",
+                2 => "Employee",
+                3 => "Customer",
+                _ => "Guest"
+            };
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, roleName),
+                new Claim("Status", user.Status.ToString()),
+                new Claim("Email", user.Email)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);

@@ -26,7 +26,7 @@ namespace MovieTheater.Controllers
         }
 
         // GET: AdminController
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "1")]
         public IActionResult MainPage(string tab = "Dashboard")
         {
             ViewData["ActiveTab"] = tab;
