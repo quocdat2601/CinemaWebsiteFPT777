@@ -56,10 +56,6 @@ namespace MovieTheater.Repository
         {
             return _context.Accounts.FirstOrDefault(a => a.Username == username);
         }
-        public Account GetAccountByEmail(string email)
-        {
-            return _context.Accounts.FirstOrDefault(a => a.Email == email);
-        }
 
         public void Save()
         {
@@ -93,6 +89,11 @@ namespace MovieTheater.Repository
         {
             return _context.Accounts
                 .FirstOrDefault(a => a.Username == username && a.Password == password);
+        }
+
+        public Account GetAccountByEmail(string email)
+        {
+            return _context.Accounts.FirstOrDefault(a => a.Email == email);
         }
 
     }

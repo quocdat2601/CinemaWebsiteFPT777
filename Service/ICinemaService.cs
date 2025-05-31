@@ -7,8 +7,8 @@ namespace MovieTheater.Service
         public IEnumerable<CinemaRoom> GetAll();
         public CinemaRoom? GetById(int? id);
         public void Add(CinemaRoom cinemaRoom);
-        public void Update(CinemaRoom cinemaRoom);
-        public void Delete(int id);
-        public void Save();
+        public bool Update(int id, CinemaRoom cinemaRoom);
+        Task<bool> DeleteAsync(int id);
+        Task SaveAsync();
     }
 }

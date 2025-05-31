@@ -1,2 +1,10 @@
-﻿<h3>Your Profile</h3>
-<p>:3.</p>
+﻿@model dynamic
+
+<h4>User Profile</h4>
+
+<ul class="list-group">
+    <li class="list-group-item"><strong>User ID:</strong> @Model.UserId</li>
+    <li class="list-group-item"><strong>Username:</strong> @Model.Username</li>
+    <li class="list-group-item"><strong>Email:</strong> @Model.Email</li>
+    <li class="list-group-item"><strong>Role:</strong> @Model.Role</li>
+</ul>

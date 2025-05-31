@@ -1,0 +1,54 @@
+﻿table.table {
+    border-collapse: separate;
+    border-spacing: 8px;
+    width: auto;
+    margin: 20px auto;
+}
+
+    table.table td {
+        width: 50px;
+        height: 50px;
+        vertical-align: middle;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 6px;
+        border: 2px solid;
+        text-align: center;
+        user-select: none;
+        transition: background-color 0.2s ease;
+    }
+
+        table.table td:hover {
+            background-color: #c3e6cb;
+            border-color: #19692c;
+        }
+
+        table.table td:empty {
+            border: 2px dashed;
+            cursor: default;
+        }
+
+.selected-seat-type {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+}
+
+body {
+    background-color: white;
+}
+
+.seat-map-wrapper {
+    background-color: transparent;
+}
+
+.screen-label {
+    border-top: 3px solid #8B0000;
+    width: 600px;
+    margin: 0 auto 20px auto;
+    font-weight: bold;
+    color: #8B0000;
+    padding-top: 10px;
+    letter-spacing: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}

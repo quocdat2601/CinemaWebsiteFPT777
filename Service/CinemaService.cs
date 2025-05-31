@@ -17,33 +17,39 @@ namespace MovieTheater.Service
             _repository.Add(cinemaRoom);
         }
 
-        public void Delete(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            _repository.Delete(id);
+            await _repository.Delete(id);
+            await _repository.Save();
+            return true;
         }
 
         public IEnumerable<CinemaRoom> GetAll()
         {
             return _repository.GetAll();
-
         }
 
         public CinemaRoom? GetById(int? id)
         {
             return _repository.GetById(id);
-
         }
 
-        public void Save()
+        public async Task SaveAsync()
         {
-            _repository.Save();
-
+            await _repository.Save();
         }
 
-        public void Update(CinemaRoom cinemaRoom)
+        public bool Update(int id, CinemaRoom cinemaRoom)
         {
-            _repository.Update(cinemaRoom);
-
+            try
+            {
+                _repository.Update(cinemaRoom);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

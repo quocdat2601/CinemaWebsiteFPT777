@@ -9,6 +9,10 @@ public partial class CinemaRoom
 
     public string? CinemaRoomName { get; set; }
 
+    public int? SeatWidth { get; set; }
+
+    public int? SeatLength { get; set; }
+
     public int? SeatQuantity { get; set; }
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();

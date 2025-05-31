@@ -8,8 +8,8 @@ namespace MovieTheater.Repository
         public CinemaRoom? GetById(int? id);
         public void Add(CinemaRoom cinemaRoom);
         public void Update(CinemaRoom cinemaRoom);
-        public void Delete(int id);
-        public void Save();
+        Task Delete(int id);
+        Task Save();
 
     }
 }
