@@ -9,11 +9,11 @@ public partial class Invoice
 
     public int? AddScore { get; set; }
 
-    public DateTime? BookingDate { get; set; }
+    public DateOnly? BookingDate { get; set; }
 
     public string? MovieName { get; set; }
 
-    public DateTime? ScheduleShow { get; set; }
+    public DateOnly? ScheduleShow { get; set; }
 
     public string? ScheduleShowTime { get; set; }
 
