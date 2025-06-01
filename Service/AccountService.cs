@@ -174,6 +174,15 @@ namespace MovieTheater.Service
             return _repository.GetById(id);
         }
 
+        public bool VerifyCurrentPassword(string username, string currentPassword)
+        {
+            var account = _repository.GetByUsername(username);
+            if (account == null)
+                return false;
+
+            return account.Password == currentPassword;
+        }
+
         // --- OTP Email Sending ---
         public bool SendOtpEmail(string toEmail, string otp)
         {
@@ -188,7 +197,7 @@ namespace MovieTheater.Service
                             <div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
                                 <h1 style='color: #007bff; margin: 0; text-align: center;'>{otp}</h1>
                             </div>
-                            <p>This OTP will expire in 5 minutes.</p>
+                            <p>This OTP will expire in 10 minutes.</p>
                             <p>If you did not request this password change, please ignore this email.</p>
                             <hr style='margin: 20px 0;'>
                             <p style='color: #666; font-size: 12px;'>This is an automated message, please do not reply.</p>

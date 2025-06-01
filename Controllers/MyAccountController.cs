@@ -109,7 +109,7 @@ namespace MovieTheater.Controllers
             _logger.LogInformation($"[SendOtp] accountId={user.AccountId}");
 
             var otp = new Random().Next(100000, 999999).ToString();
-            var expiry = DateTime.UtcNow.AddMinutes(5);
+            var expiry = DateTime.UtcNow.AddMinutes(10);
 
             var otpStored = _service.StoreOtp(user.AccountId, otp, expiry);
             if (!otpStored)
@@ -140,19 +140,26 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        public IActionResult ChangePassword(string newPassword, string confirmPassword)
+        public IActionResult ChangePassword(string currentPassword, string newPassword, string confirmPassword)
         {
             // Get current user from JWT claims
             var user = _service.GetCurrentUser();
             if (user == null)
                 return Json(new { success = false, error = "User not found." });
 
+            // Verify current password
+            if (string.IsNullOrEmpty(currentPassword))
+                return Json(new { success = false, error = "Current password is required." });
+
+            if (!_service.VerifyCurrentPassword(user.Username, currentPassword))
+                return Json(new { success = false, error = "Current password is incorrect." });
+
             if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
                 return Json(new { success = false, error = "Passwords do not match." });
 
             // Check if new password is the same as the old password
-            if (user.Password == newPassword)
-                return Json(new { success = false, error = "New password must be different from the old password." });
+            if (currentPassword == newPassword)
+                return Json(new { success = false, error = "New password must be different from the current password." });
 
             // Update password in DB via service
             var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
@@ -162,7 +169,6 @@ namespace MovieTheater.Controllers
             // Clear OTP from database/cache
             _service.ClearOtp(user.AccountId);
 
-            // Always return JSON on success
             return Json(new { success = true, message = "Password updated successfully!" });
         }
 

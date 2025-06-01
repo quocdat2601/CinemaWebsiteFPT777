@@ -17,6 +17,7 @@ namespace MovieTheater.Service
         bool StoreOtp(string accountId, string otp, DateTime expiry);
         bool VerifyOtp(string accountId, string otp);
         void ClearOtp(string accountId);
+        bool VerifyCurrentPassword(string username, string currentPassword);
     }
 
 }
