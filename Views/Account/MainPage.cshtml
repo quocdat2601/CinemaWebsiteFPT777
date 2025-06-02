@@ -41,57 +41,45 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Load initial tab content
-            $.get(`/MyAccount/LoadTab?tab=@activeTab`, function (data) {
-                $('#tabContent').html(data);
-            });
+            // Function to load tab content
+            function loadTab(tabName) {
+                // Show loading
+                $('#tabContent').html('<h3>Loading...</h3>');
+                
+                // Update active tab
+                $('#accountTabs .nav-link').removeClass('active');
+                $(`#accountTabs .nav-link[data-tab="${tabName}"]`).addClass('active');
 
+                // Load tab content
+                $.get(`/MyAccount/LoadTab?tab=${tabName}`, function (data) {
+                    $('#tabContent').html(data);
+                }).fail(function() {
+                    $('#tabContent').html('<div class="alert alert-danger">Failed to load tab content. Please try again.</div>');
+                });
+            }
+
+            // Handle tab clicks
             $('#accountTabs .nav-link').click(function (e) {
                 e.preventDefault();
                 loadTab($(this).data('tab'));
             });
 
-            // Ưu tiên đọc từ URL ?tab=..., nếu không có thì dùng ViewData
+            // Load initial tab
             const urlParams = new URLSearchParams(window.location.search);
-            const activeTab = urlParams.get('tab') || '@ViewData["ActiveTab"]' || 'Information';
-            loadTab(activeTab);
+            const initialTab = urlParams.get('tab') || '@activeTab';
+            loadTab(initialTab);
 
-            // Hiển thị toast nếu có ?toast=...
+            // Show toast if present
             const toastMessage = urlParams.get('toast');
             if (toastMessage && typeof showToast === 'function') {
                 showToast(decodeURIComponent(toastMessage));
             }
-        });
 
-                // Show loading and load content
-                $('#tabContent').html('<h3>Loading...</h3>');
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (result) {
-                    if (result.success) {
-                        loadTab(result.reloadTab);
-                        if (result.toast) showToast(result.toast);
-                    } else if (result.error) {
-                        showErrorToast(result.error);
-                    } else {
-                        $('#tabContent').html(result); // Hiển thị lại form nếu có lỗi ModelState
-                    }
-                },
-                error: function () {
-                    $('#tabContent').html('<div class="text-danger">Lỗi không xác định từ server.</div>');
-                }
-            });
-
-            // Ẩn alert sau vài giây (nếu có)
+            // Hide alerts after 3 seconds
             setTimeout(() => $(".alert").fadeOut("slow"), 3000);
         });
 
-        // Hiển thị TempData toast khi DOM sẵn sàng
+        // Show TempData toast when DOM is ready
         document.addEventListener("DOMContentLoaded", function () {
             const toastEl = document.getElementById('toastMessage');
             if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
@@ -99,7 +87,6 @@
                 toast.show();
             }
         });
-   
     </script>
 }
 

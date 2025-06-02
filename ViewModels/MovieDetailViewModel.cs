@@ -6,8 +6,7 @@ namespace MovieTheater.ViewModels
 {
     public class MovieDetailViewModel
     {
-
-        public string MovieId { get; set; }
+        public string? MovieId { get; set; }
 
         [Required(ErrorMessage = "Movie name (English) is required.")]
         public string? MovieNameEnglish { get; set; }

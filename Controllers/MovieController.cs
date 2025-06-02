@@ -87,10 +87,11 @@ namespace MovieTheater.Controllers
                 model.AvailableSchedules = await _movieService.GetSchedulesAsync();
                 model.AvailableShowDates = await _movieService.GetShowDatesAsync();
                 model.AvailableTypes = await _movieService.GetTypesAsync();
-                
+                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
                 return View(model);
             }
 
+            // Handle image uploads
             if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
@@ -120,16 +121,32 @@ namespace MovieTheater.Controllers
                 model.LargeImage = "/image/" + uniqueFileName2;
             }
 
-            bool success = _movieService.AddMovie(model);
-
-            if (!success)
+            try
             {
-                ModelState.AddModelError("", "Failed to create movie.");
+                bool success = _movieService.AddMovie(model);
+
+                if (!success)
+                {
+                    ModelState.AddModelError("", "Failed to create movie.");
+                    model.AvailableSchedules = await _movieService.GetSchedulesAsync();
+                    model.AvailableShowDates = await _movieService.GetShowDatesAsync();
+                    model.AvailableTypes = await _movieService.GetTypesAsync();
+                    model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
+                    return View(model);
+                }
+
+                TempData["ToastMessage"] = "Movie created successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error creating movie: {ex.Message}");
+                model.AvailableSchedules = await _movieService.GetSchedulesAsync();
+                model.AvailableShowDates = await _movieService.GetShowDatesAsync();
+                model.AvailableTypes = await _movieService.GetTypesAsync();
+                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
                 return View(model);
             }
-
-            TempData["ToastMessage"] = "Movie created successfully!";
-            return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
         }
 
         // GET: Movie/Edit/5

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿    using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +26,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult MainPage(string tab = "Information")
+        public IActionResult MainPage(string tab = "Profile")
         {
             ViewData["ActiveTab"] = tab;
             var user = _service.GetCurrentUser();
