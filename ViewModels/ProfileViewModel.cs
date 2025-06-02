@@ -47,5 +47,7 @@ namespace MovieTheater.ViewModels
 
         public int? RoleId { get; set; }
         public int? Status { get; set; }
+
+        public bool IsGoogleAccount { get; set; }
     }
 }
