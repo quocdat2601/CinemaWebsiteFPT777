@@ -1,10 +1,18 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {
     public class PromotionController : Controller
     {
+        private readonly IPromotionService _promotionService;
+
+        public PromotionController(IPromotionService promotionService)
+        {
+            _promotionService = promotionService;
+        }
+
         // GET: PromotionController
         public ActionResult List()
         {
@@ -71,13 +79,19 @@ namespace MovieTheater.Controllers
         public ActionResult Delete(int id, IFormCollection collection)
         {
             try
-            {
-                return RedirectToAction(nameof(Index));
+            {_promotionService.Delete(id);
+                TempData["ToastMessage"] = "Promotion deleted successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
+                /* return RedirectToAction(nameof(Index));*/
             }
             catch
             {
-                return View();
+                TempData["ToastMessage"] = "Failed to delete promotion.";
+                return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
             }
+
+          
+
         }
     }
 }

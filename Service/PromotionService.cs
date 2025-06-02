@@ -35,6 +35,7 @@ namespace MovieTheater.Service
 
         public bool Delete(int id)
         {
+            _promotionRepository.Delete(id);
             return true;
         }
 

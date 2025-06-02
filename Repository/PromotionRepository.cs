@@ -50,6 +50,8 @@ namespace MovieTheater.Repository
 
             if (promotion != null)
             {
+             
+
                 _context.Promotions.Remove(promotion);
                 _context.SaveChanges();
             }
