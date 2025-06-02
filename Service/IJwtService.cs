@@ -1,4 +1,5 @@
 using MovieTheater.Models;
+using System.Security.Claims;
 
 namespace MovieTheater.Service
 {
@@ -6,5 +7,6 @@ namespace MovieTheater.Service
     {
         string GenerateToken(Account account);
         bool ValidateToken(string token);
+        ClaimsPrincipal? GetPrincipalFromToken(string token);
     }
 } 

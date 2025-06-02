@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-
+using MovieTheater.ViewModels;
+using Microsoft.EntityFrameworkCore;
 namespace MovieTheater.Models;
 
 public partial class MovieTheaterContext : DbContext

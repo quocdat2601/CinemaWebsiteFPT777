@@ -61,3 +61,11 @@
     align-items: center;
     gap: 0.3rem;
 }
+
+.text-success-message {
+    color: green;
+}
+
+#otpFeedback.text-success-message {
+    color: green !important;
+}

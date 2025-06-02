@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
+
 namespace MovieTheater.Repository
 {
     public class AccountRepository : IAccountRepository
@@ -93,6 +94,11 @@ namespace MovieTheater.Repository
         {
             return _context.Accounts
                 .FirstOrDefault(a => a.Username == username && a.Password == password);
+        }
+
+        public Account GetAccountByEmail(string email)
+        {
+            return _context.Accounts.FirstOrDefault(a => a.Email == email);
         }
 
     }

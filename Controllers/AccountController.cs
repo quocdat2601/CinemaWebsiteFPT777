@@ -36,51 +36,50 @@ namespace MovieTheater.Controllers
             _jwtService = jwtService;
         }
 
-        //[HttpGet]
-        //public IActionResult ScoreHistory()
-        //{
-        //    return View();
-        //}
+        [HttpGet]
+        public IActionResult ScoreHistory()
+        {
+            return View();
+        }
 
-        //[HttpPost]
-        //public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
-        //{
-        //    var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        [HttpPost]
+        public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
+        {
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        //    if (string.IsNullOrEmpty(accountId))
-        //    {
-        //        return RedirectToAction("Login", "Account");
-        //    }
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
-        //    var query = _context.Invoices
-        //        .Where(i => i.AccountId == accountId &&
-        //                    i.BookingDate >= fromDate &&
-        //                    i.BookingDate <= toDate);
+            var query = _context.Invoices
+                .Where(i => i.AccountId == accountId &&
+                            i.BookingDate >= fromDate &&
+                            i.BookingDate <= toDate);
 
-        //    if (historyType == "add")
-        //    {
-        //        query = query.Where(i => i.AddScore > 0);
-        //    }
-        //    else if (historyType == "use")
-        //    {
-        //        query = query.Where(i => i.UseScore > 0);
-        //    }
+            if (historyType == "add")
+            {
+                query = query.Where(i => i.AddScore > 0);
+            }
+            else if (historyType == "use")
+            {
+                query = query.Where(i => i.UseScore > 0);
+            }
 
-        //    var result = query.Select(i => new ScoreHistoryViewModel
-        //    {
-        //        DateCreated = i.BookingDate ?? DateTime.MinValue,
-        //        MovieName = i.MovieName ?? "N/A",
-        //        Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-        //    }).ToList();
+            var result = query.Select(i => new ScoreHistoryViewModel
+            {
+                DateCreated = i.BookingDate ?? DateTime.MinValue,
+                MovieName = i.MovieName ?? "N/A",
+                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
+            }).ToList();
 
-        //    if (!result.Any())
-        //    {
-        //        ViewBag.Message = "No score history found for the selected period.";
-        //    }
+            if (!result.Any())
+            {
+                ViewBag.Message = "No score history found for the selected period.";
+            }
 
-        //    return View(result);
-        //}
-
+            return View(result);
+        }
         [HttpGet]
         public IActionResult ExternalLogin()
         {
@@ -215,12 +214,15 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-
+            Response.Cookies.Delete("JwtToken");
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             var status = User.FindFirst("Status")?.Value;
-            
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var status = User.FindFirst("Status")?.Value;
+
             return View();
         }
 
