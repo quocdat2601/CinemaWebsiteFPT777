@@ -1,10 +1,55 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
-@{
-    <div class="text-center">
-        <h2>
-            Member List
-        </h2>
-    </div>
+@model IEnumerable<MovieTheater.Models.Member>
+
+<h2 class="text-center">Member Management</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <p>Empty list!</p>
+}
+else
+{
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="table-dark">
+            <tr class="text-center">
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>Identity Card</th>
+                <th>Score</th>
+                <th>Rank</th>
+                @if (User.IsInRole("Admin"))
+                {
+                    <th style="width: 150px;">Actions</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var member in Model)
+            {
+                <tr class="text-center">
+                    <td>@member.Account.Username</td>
+                    <td>@member.Account.FullName</td>
+                    <td>@member.Account.Email</td>
+                    <td>@member.Account.PhoneNumber</td>
+                    <td>@member.Account.IdentityCard</td>
+                    <td>@member.Score</td>
+                    <td>@member.Account.Rank?.RankName</td> @* Assuming Rank model has RankName property and is accessible via Account navigation property. *@
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <td>
+                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                <a href="@Url.Action("Edit", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-primary">Edit</a>
+                                @* Add links to other related actions here as needed, e.g., Ticket Management, Employee Management, etc. *@
+                                <a href="@Url.Action("InitiateTicketSellingForMember", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-success">Sell Ticket</a>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
 }
