@@ -3,7 +3,12 @@
 @{
 	ViewData["Title"] = "Edit Employee";
 }
-
+@if (TempData["ErrorMessage"] != null)
+{
+	<div class="alert alert-danger text-center" role="alert">
+		@TempData["ErrorMessage"]
+	</div>
+}
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
 
 <div class="signup-wrapper">

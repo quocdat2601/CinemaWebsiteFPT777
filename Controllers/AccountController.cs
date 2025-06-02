@@ -37,50 +37,6 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult ScoreHistory()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
-        {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(accountId))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-
-            if (historyType == "add")
-            {
-                query = query.Where(i => i.AddScore > 0);
-            }
-            else if (historyType == "use")
-            {
-                query = query.Where(i => i.UseScore > 0);
-            }
-
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-            }).ToList();
-
-            if (!result.Any())
-            {
-                ViewBag.Message = "No score history found for the selected period.";
-            }
-
-            return View(result);
-        }
-        [HttpGet]
         public IActionResult ExternalLogin()
         {
             var redirectUrl = Url.Action("ExternalLoginCallback", "Account");
@@ -98,6 +54,9 @@ namespace MovieTheater.Controllers
             var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var givenName = claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
+            var surname = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
+            var picture = claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
 
             if (string.IsNullOrEmpty(email))
             {
@@ -112,11 +71,13 @@ namespace MovieTheater.Controllers
                 user = new Account
                 {
                     Email = email,
-                    FullName = name ?? "Google User",
+                    FullName = name ?? $"{givenName} {surname}".Trim() ?? "Google User",
                     Username = email,
                     RoleId = 3,
                     Status = 1,
-                    RegisterDate = DateOnly.FromDateTime(DateTime.Now)
+                    RegisterDate = DateOnly.FromDateTime(DateTime.Now),
+                    Image = picture,
+                    Password = null // Đăng nhập Google thì Password để null
                 };
                 _accountRepository.Add(user);
                 _accountRepository.Save();
@@ -126,6 +87,24 @@ namespace MovieTheater.Controllers
                     AccountId = user.AccountId
                 });
                 _memberRepository.Save();
+            }
+
+            // Sau khi thêm user mới (nếu có)
+            user = _accountRepository.GetAccountByEmail(email); // lấy lại user mới nhất
+
+            // Log các trường thông tin để debug
+            _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
+            // Kiểm tra thiếu thông tin
+            bool missingInfo = 
+                !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
+                string.IsNullOrWhiteSpace(user.Gender) ||
+                string.IsNullOrWhiteSpace(user.IdentityCard) ||
+                string.IsNullOrWhiteSpace(user.Address) ||
+                string.IsNullOrWhiteSpace(user.PhoneNumber);
+
+            if (missingInfo)
+            {
+                TempData["FirstTimeLogin"] = true;
             }
 
             if (user.Status == 0)
@@ -157,6 +136,14 @@ namespace MovieTheater.Controllers
 
             // Sign in with cookie authentication - match normal login flow
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // Check if it's the first time login and redirect to profile update
+            if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
+            {
+                TempData.Remove("FirstTimeLogin");
+                return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
+            }
+
 
             // Generate JWT token for Google login
             var token = _jwtService.GenerateToken(user);
@@ -214,7 +201,7 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-
+            Response.Cookies.Delete("JwtToken");
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -231,6 +218,10 @@ namespace MovieTheater.Controllers
                 var errors = string.Join(", ", ModelState.Values
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
+
+                _logger.LogWarning("Registration failed validation at {Time}. Errors: {Errors}",
+                    DateTime.UtcNow, errors);
+
                 TempData["ErrorMessage"] = $"Validation failed: {errors}";
                 return View(model);
             }
@@ -241,23 +232,34 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
+                    _logger.LogWarning("Registration failed for username: {Username} at {Time}. Reason: Username already exists",
+                        model.Username, DateTime.UtcNow);
+
                     TempData["ErrorMessage"] = "Registration failed - Username already exists";
                     return View(model);
                 }
+
+                _logger.LogInformation("New account registered: {Username} at {Time}",
+                    model.Username, DateTime.UtcNow);
 
                 TempData["ToastMessage"] = "Sign up successful! Please log in.";
                 return RedirectToAction("Signup");
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Exception occurred during registration for {Username} at {Time}",
+                    model.Username, DateTime.UtcNow);
+
                 TempData["ErrorMessage"] = $"Error during registration: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     TempData["ErrorMessage"] += $" Inner error: {ex.InnerException.Message}";
                 }
+
                 return View(model);
             }
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)

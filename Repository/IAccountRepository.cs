@@ -13,7 +13,6 @@ namespace MovieTheater.Repository
         public void Update(Account account);
         public void Save();
         Account GetAccountByEmail(string email);
-
-
+        IEnumerable<Account> GetAll();
     }
 }
