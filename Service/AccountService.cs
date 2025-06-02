@@ -305,7 +305,10 @@ namespace MovieTheater.Service
             _repository.GetByUsername(username);
             return true;
         }
-
+        public Account? GetById(string id)
+        {
+            return _repository.GetById(id);
+        }
     }
 }
 
