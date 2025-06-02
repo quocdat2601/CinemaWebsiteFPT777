@@ -220,9 +220,6 @@ namespace MovieTheater.Controllers
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             var status = User.FindFirst("Status")?.Value;
 
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            var status = User.FindFirst("Status")?.Value;
-
             return View();
         }
 
