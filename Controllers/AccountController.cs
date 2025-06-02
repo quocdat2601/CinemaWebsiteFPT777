@@ -37,50 +37,6 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult ScoreHistory()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
-        {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(accountId))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-
-            if (historyType == "add")
-            {
-                query = query.Where(i => i.AddScore > 0);
-            }
-            else if (historyType == "use")
-            {
-                query = query.Where(i => i.UseScore > 0);
-            }
-
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-            }).ToList();
-
-            if (!result.Any())
-            {
-                ViewBag.Message = "No score history found for the selected period.";
-            }
-
-            return View(result);
-        }
-        [HttpGet]
         public IActionResult ExternalLogin()
         {
             var redirectUrl = Url.Action("ExternalLoginCallback", "Account");
@@ -157,6 +113,13 @@ namespace MovieTheater.Controllers
 
             // Sign in with cookie authentication - match normal login flow
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // Check if it's the first time login and redirect to profile update
+            if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
+            {
+                return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
+            }
+
 
             // Generate JWT token for Google login
             var token = _jwtService.GenerateToken(user);
