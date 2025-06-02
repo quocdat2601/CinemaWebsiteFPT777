@@ -231,6 +231,10 @@ namespace MovieTheater.Controllers
                 var errors = string.Join(", ", ModelState.Values
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
+
+                _logger.LogWarning("Registration failed validation at {Time}. Errors: {Errors}",
+                    DateTime.UtcNow, errors);
+
                 TempData["ErrorMessage"] = $"Validation failed: {errors}";
                 return View(model);
             }
@@ -241,23 +245,34 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
+                    _logger.LogWarning("Registration failed for username: {Username} at {Time}. Reason: Username already exists",
+                        model.Username, DateTime.UtcNow);
+
                     TempData["ErrorMessage"] = "Registration failed - Username already exists";
                     return View(model);
                 }
+
+                _logger.LogInformation("New account registered: {Username} at {Time}",
+                    model.Username, DateTime.UtcNow);
 
                 TempData["ToastMessage"] = "Sign up successful! Please log in.";
                 return RedirectToAction("Signup");
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Exception occurred during registration for {Username} at {Time}",
+                    model.Username, DateTime.UtcNow);
+
                 TempData["ErrorMessage"] = $"Error during registration: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     TempData["ErrorMessage"] += $" Inner error: {ex.InnerException.Message}";
                 }
+
                 return View(model);
             }
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
