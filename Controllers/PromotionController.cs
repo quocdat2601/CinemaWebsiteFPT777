@@ -61,8 +61,13 @@ namespace MovieTheater.Controllers
             {
                 try
                 {
+                    // Get the next available ID
+                    var nextId = _promotionService.GetAll().Any() ? 
+                        _promotionService.GetAll().Max(p => p.PromotionId) + 1 : 1;
+
                     var promotion = new Promotion
                     {
+                        PromotionId = nextId,
                         Title = viewModel.Title,
                         Detail = viewModel.Detail,
                         DiscountLevel = viewModel.DiscountLevel,
