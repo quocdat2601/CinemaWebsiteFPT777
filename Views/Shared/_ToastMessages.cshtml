@@ -31,8 +31,24 @@
         $(document).ready(function() {
             // Auto hide toasts after 3 seconds
             setTimeout(function() {
-                $('.toast').parent().remove();
+                $('.toast').fadeOut(300, function() {
+                    $(this).parent().remove();
+                });
             }, 3000);
+
+            // Clear TempData after showing
+            @if (TempData["ToastMessage"] != null)
+            {
+                <text>
+                TempData["ToastMessage"] = null;
+                </text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                TempData["ErrorMessage"] = null;
+                </text>
+            }
         });
     </script>
-} 
+}

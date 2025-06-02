@@ -183,7 +183,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }
 
@@ -262,20 +262,20 @@ namespace MovieTheater.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Invalid login data.";
-                return View(model);
+                TempData["ErrorMessage"] = "Please fill all required fields!";
+                return RedirectToAction("Login");
             }
 
             if (!_service.Authenticate(model.Username, model.Password, out var user))
             {
-                TempData["ErrorMessage"] = "Invalid username or password.";
-                return View(model);
+                TempData["ErrorMessage"] = "Invalid username or password!";
+                return RedirectToAction("Login");
             }
 
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
-                return View(model);
+                return RedirectToAction("Login");
             }
 
             string roleName = user.RoleId switch

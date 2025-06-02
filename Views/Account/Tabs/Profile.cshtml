@@ -7,13 +7,19 @@
 
 <div class="signup-wrapper">
     <div class="signup-card">
-        <h2 class="signup-title">Profile</h2>
+        <h2 class="signup-title" style="margin-bottom: 1rem;">Profile</h2>
         @* GỬI FORM ĐẾN MyAccount, ACTION Edit *@
         <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data">
             <div class="container">
                 <div class="row">
                     <div class="col-md-10 offset-md-1">
-
+                        @if (Model.IsGoogleAccount)
+                        {
+                            <div class="alert alert-warning mb-3" role="alert">
+                                For Google accounts, please complete the missing information to book a ticket.
+                            </div>
+                        }
+                     
                         @* Full Name *@
                         <div class="form-group row mb-3">
                             <label class="col-sm-3 col-form-label">Full Name</label>
@@ -102,13 +108,17 @@
                         </div> *@
 
                         <div class="d-flex justify-content-center gap-3 mt-3">
-                            <a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary">Change Password</a>
+                            @if (!Model.IsGoogleAccount)
+                            {
+                                <a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary">Change Password</a>
+
+                            }
                             <button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Profile</button>
                         </div>
 
                     </div>
-                </div>
-
+                </div>    
+            </div>
         </form>
     </div>
 </div>

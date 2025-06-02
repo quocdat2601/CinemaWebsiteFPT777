@@ -1,10 +1,14 @@
-﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace MovieTheater.Service
 {
@@ -33,10 +37,14 @@ namespace MovieTheater.Service
             if (_repository.GetByUsername(model.Username) != null)
                 return false;
 
+            var hasher = new PasswordHasher<Account>();
+            var HashedPW = hasher.HashPassword(null, model.Password);
+
+
             var account = new Account
             {
                 Username = model.Username,
-                Password = model.Password,
+                Password = HashedPW,
                 FullName = model.FullName,
                 DateOfBirth = model.DateOfBirth,
                 Gender = model.Gender,
@@ -115,11 +123,26 @@ namespace MovieTheater.Service
 
         public bool Authenticate(string username, string password, out Account? account)
         {
-            account = _repository.Authenticate(username, password);
-            return account != null;
+            account = _repository.Authenticate(username /*, password*/);//account with password hasing
+
+            if (account.Password.Length < 20)
+            {
+                var hashered = new PasswordHasher<Account>();
+                account.Password = hashered.HashPassword(null, account.Password);
+            }
+            var hasher = new PasswordHasher<Account>();
+            var result = hasher.VerifyHashedPassword(null, account.Password, password);
+            if (result == PasswordVerificationResult.Success)
+            {
+                return account != null;
+            }
+            else
+            {
+                return false;
+            }
         }
 
-        public RegisterViewModel GetCurrentUser()
+        public ProfileUpdateViewModel GetCurrentUser()
         {
             var user = _httpContextAccessor.HttpContext?.User;
             if (user == null)
@@ -133,7 +156,9 @@ namespace MovieTheater.Service
             if (account == null)
                 return null;
 
-            return new RegisterViewModel
+            bool isGoogleAccount = account.Password.IsNullOrEmpty();
+
+            return new ProfileUpdateViewModel
             {
                 AccountId = account.AccountId,
                 Username = account.Username ?? string.Empty,
@@ -144,7 +169,8 @@ namespace MovieTheater.Service
                 Email = account.Email ?? string.Empty,
                 Address = account.Address ?? string.Empty,
                 PhoneNumber = account.PhoneNumber ?? string.Empty,
-                Password = account.Password ?? string.Empty
+                Password = account.Password ?? string.Empty,
+                IsGoogleAccount = isGoogleAccount
             };
         }
         public bool VerifyCurrentPassword(string username, string currentPassword)
@@ -153,7 +179,26 @@ namespace MovieTheater.Service
             if (account == null)
                 return false;
 
-            return account.Password == currentPassword;
+            // If the password is not hashed (length < 20), hash it first
+            if (account.Password.Length < 20)
+            {
+                var hasher = new PasswordHasher<Account>();
+                account.Password = hasher.HashPassword(null, account.Password);
+                _repository.Update(account);
+                _repository.Save();
+            }
+
+            try
+            {
+                var hasher = new PasswordHasher<Account>();
+                var result = hasher.VerifyHashedPassword(null, account.Password, currentPassword);
+                return result == PasswordVerificationResult.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error verifying password for user {username}: {ex.Message}");
+                return false;
+            }
         }
 
         // --- OTP Email Sending ---
@@ -177,10 +222,16 @@ namespace MovieTheater.Service
                         </body>
                     </html>";
 
-                return _emailService.SendEmail(toEmail, subject, body);
+                var result = _emailService.SendEmail(toEmail, subject, body);
+                if (!result)
+                {
+                    _logger.LogError($"Failed to send OTP email to {toEmail}");
+                }
+                return result;
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Exception while sending OTP email to {toEmail}: {ex.Message}");
                 return false;
             }
         }
@@ -190,7 +241,10 @@ namespace MovieTheater.Service
         {
             var account = _repository.GetById(accountId);
             if (account == null) return false;
-            account.Password = newPassword;
+
+            var hasher = new PasswordHasher<Account>();
+            account.Password = hasher.HashPassword(null, newPassword);
+            
             _repository.Update(account);
             _repository.Save();
             return true;
@@ -203,7 +257,10 @@ namespace MovieTheater.Service
             {
                 return false;
             }
-            account.Password = newPassword;
+
+            var hasher = new PasswordHasher<Account>();
+            account.Password = hasher.HashPassword(null, newPassword);
+            
             _repository.Update(account);
             _repository.Save();
             return true;

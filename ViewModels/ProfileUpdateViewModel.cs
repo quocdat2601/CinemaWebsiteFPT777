@@ -4,6 +4,8 @@ namespace MovieTheater.ViewModels
 {
     public class ProfileUpdateViewModel
     {
+        public string? Password { get; set; }
+        public string? Username { get; set; }
         public string? AccountId { get; set; }
 
         [Required(ErrorMessage = "Full name is required")]
@@ -37,5 +39,7 @@ namespace MovieTheater.ViewModels
 
         public IFormFile? ImageFile { get; set; } // for file upload
         public string? Image { get; set; } // for saving image path
+        public bool IsGoogleAccount { get; set; }
+
     }
 } 

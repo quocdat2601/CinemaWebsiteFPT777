@@ -8,47 +8,69 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
 <style>
-        /* Google Material Button Styles */
+    /* Google Material Button Styles */
     .gsi-material-button {
-
-      background-color: #fff;
-      border: 1px solid #dadce0;
-      border-radius: 4px;
-          color: #3c4043;
-      cursor: pointer;
-
-      display: flex;
-      align-items: center;
-      font-family: Roboto, sans-serif;
-      font-size: 14px;
-      height: 40px;
-      width: 100%;
-      padding: 0;
-      text-decoration: none;
-      transition: background-color 0.2s;
+        background-color: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        color: #3c4043;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        font-family: Roboto, sans-serif;
+        font-size: 14px;
+        height: 40px;
+        width: 100%;
+        padding: 0;
+        text-decoration: none;
+        transition: background-color 0.2s;
     }
     .gsi-material-button:hover {
-      background-color: #f7f8f8;
+        background-color: #f7f8f8;
     }
     .gsi-material-button-icon {
-      padding: 8px;
+        padding: 8px;
     }
     .gsi-material-button-contents {
-      flex-grow: 1;
-      text-align: center;
-      font-weight: 500;
+        flex-grow: 1;
+        text-align: center;
+        font-weight: 500;
     }
     .gsi-material-button svg {
-      height: 18px;
-      width: 18px;
+        height: 18px;
+        width: 18px;
     }
+
+    /* Toast Message Styles */
+    .toast-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        display: none;
+        animation: slideIn 0.5s ease-out;
+    }
+
+    .toast-success {
+        background-color: #4CAF50;
+    }
+
+    .toast-error {
+        background-color: #f44336;
+    }
+
+  
 </style>
 
 <body>
     <div class="login-wrapper">
         <div class="login-card">
             <h2 class="login-title">Login</h2>
-            <form asp-action="Login" method="post">
+            <form id="loginForm" asp-action="Login" method="post">
                 <div class="form-group">
                     <input type="text" class="form-control" asp-for="Username" placeholder="Username" required />
                 </div>
@@ -76,6 +98,7 @@
             </form>
         </div>
     </div>
+
 </body>
 
 <partial name="_ToastMessages" />

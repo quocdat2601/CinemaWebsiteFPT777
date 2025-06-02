@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -32,7 +34,22 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            return View("~/Views/Account/MainPage.cshtml", user);
+            var model = new ProfileUpdateViewModel
+            {
+                AccountId = user.AccountId,
+                Username = user.Username,
+                FullName = user.FullName,
+                DateOfBirth = user.DateOfBirth,
+                Gender = user.Gender,
+                IdentityCard = user.IdentityCard,
+                Email = user.Email,
+                Address = user.Address,
+                PhoneNumber = user.PhoneNumber,
+                Image = user.Image,
+                IsGoogleAccount = user.IsGoogleAccount
+            };
+
+            return View("~/Views/Account/MainPage.cshtml", model);
         }
 
         [HttpGet]
@@ -57,7 +74,8 @@ namespace MovieTheater.Controllers
                         Email = user.Email,
                         Address = user.Address,
                         PhoneNumber = user.PhoneNumber,
-                        Image = user.Image
+                        Image = user.Image,
+                        IsGoogleAccount = user.IsGoogleAccount
                     };
                     return PartialView("~/Views/Account/Tabs/Profile.cshtml", profileModel);
                 case "Rank":
@@ -169,40 +187,55 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        public IActionResult ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+        public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword)
         {
             // Get current user from JWT claims
             var user = _service.GetCurrentUser();
             if (user == null)
-                return Json(new { success = false, error = "User not found." });
+            {
+                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
+            }
 
             // Verify current password
             if (string.IsNullOrEmpty(currentPassword))
-                return Json(new { success = false, error = "Current password is required." });
+            {
+                TempData["ErrorMessage"] = "Current password cannot be null";
+                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
+            }
 
             if (!_service.VerifyCurrentPassword(user.Username, currentPassword))
-                return Json(new { success = false, error = "Current password is incorrect." });
+            {
+                TempData["ErrorMessage"] = "Invalid current password";
+                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
+            }
 
             if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
-                return Json(new { success = false, error = "Passwords do not match." });
+            {
+                TempData["ErrorMessage"] = "Invalid new password";
+                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
+            }
 
-            // Check if new password is the same as the old password
             if (currentPassword == newPassword)
-                return Json(new { success = false, error = "New password must be different from the current password." });
+            {
+                TempData["ErrorMessage"] = "New password cannot be the same as current password";
+                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
+            }
 
             // Update password in DB via service
             var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
+            _service.ClearOtp(user.AccountId);
+
             if (!result)
             {
-                TempData["ErrorMessage"] = "Password Updated Failed!";
-                return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
-
+                TempData["ErrorMessage"] = "Failed to update password";
+                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
             }
-            // Clear OTP from database/cache
-            //_service.ClearOtp(user.AccountId);
-            TempData["ToastMessage"] = "Password Updated Succesfully!";
 
-            return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            Response.Cookies.Delete("JwtToken");
+            TempData["ToastMessage"] = "Password updated successfully! Please log back in.";
+            return RedirectToAction("Login", "Account");
+
         }
 
         [HttpGet]
