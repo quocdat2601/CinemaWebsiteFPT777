@@ -214,9 +214,12 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-
+            Response.Cookies.Delete("JwtToken");
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var status = User.FindFirst("Status")?.Value;
+
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             var status = User.FindFirst("Status")?.Value;
 
