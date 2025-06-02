@@ -223,10 +223,6 @@ namespace MovieTheater.Controllers
                     return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
                 }
 
-                //movie.Schedules?.Clear();
-                //movie.Types?.Clear();
-                //movie.ShowDates?.Clear();
-
                 bool success = _service.Delete(id);
 
                 if (!success)

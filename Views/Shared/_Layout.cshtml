@@ -1,7 +1,7 @@
 ﻿@using System.Security.Claims
 @{
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-    var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+    var Name = User.FindFirst(ClaimTypes.Name)?.Value;
     var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
@@ -83,10 +83,10 @@
                         else if (isAuthenticated)
                         {
                             <li class="nav-item">
-                                <span class="nav-link">Hello, @userName!</span>
+                                <span class="nav-link">Hello, @Name!</span>
                             </li>
                             <li  class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
+                                <a class="nav-link" asp-controller="MyAccount" asp-action="MainPage">My Account</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>

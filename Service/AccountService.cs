@@ -4,6 +4,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Net;
+using System.Security.Claims;
 
 namespace MovieTheater.Service
 {
@@ -12,12 +13,19 @@ namespace MovieTheater.Service
         private readonly IAccountRepository _repository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMemberRepository _memberRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly EmailService _emailService;
+        private readonly ILogger<AccountService> _logger;
+        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
 
-        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository)
+        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository, IHttpContextAccessor httpContextAccessor, EmailService emailService, ILogger<AccountService> logger)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
             _memberRepository = memberRepository;
+            _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public bool Register(RegisterViewModel model)
@@ -70,8 +78,23 @@ namespace MovieTheater.Service
         {
             var account = _repository.GetById(id);
             if (account == null) return false;
+
+            // Only check for duplicate username if the username is being changed
+            if (model.Username != account.Username)
+            {
+                var duplicate = _repository.GetByUsername(model.Username);
+                if (duplicate != null) 
+                {
+                    throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
+                }
+            }
+
+            // Update fields but preserve password if not provided
             account.Username = model.Username;
-            account.Password = model.Password;
+            if (!string.IsNullOrEmpty(model.Password))
+            {
+                account.Password = model.Password;
+            }
             account.FullName = model.FullName;
             account.DateOfBirth = model.DateOfBirth;
             account.Gender = model.Gender;
@@ -96,5 +119,136 @@ namespace MovieTheater.Service
             return account != null;
         }
 
+        public RegisterViewModel GetCurrentUser()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null)
+                return null;
+
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            var account = _repository.GetById(userId);
+            if (account == null)
+                return null;
+
+            return new RegisterViewModel
+            {
+                AccountId = account.AccountId,
+                Username = account.Username ?? string.Empty,
+                FullName = account.FullName ?? string.Empty,
+                DateOfBirth = account.DateOfBirth ?? DateOnly.FromDateTime(DateTime.Now),
+                Gender = account.Gender ?? "unknown",
+                IdentityCard = account.IdentityCard ?? string.Empty,
+                Email = account.Email ?? string.Empty,
+                Address = account.Address ?? string.Empty,
+                PhoneNumber = account.PhoneNumber ?? string.Empty,
+                Password = account.Password ?? string.Empty
+            };
+        }
+        public bool VerifyCurrentPassword(string username, string currentPassword)
+        {
+            var account = _repository.GetByUsername(username);
+            if (account == null)
+                return false;
+
+            return account.Password == currentPassword;
+        }
+
+        // --- OTP Email Sending ---
+        public bool SendOtpEmail(string toEmail, string otp)
+        {
+            try
+            {
+                var subject = "Your Password Change OTP Code";
+                var body = $@"
+                    <html>
+                        <body style='font-family: Arial, sans-serif; padding: 20px;'>
+                            <h2 style='color: #333;'>Password Change Request</h2>
+                            <p>You have requested to change your password. Please use the following OTP code to proceed:</p>
+                            <div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                                <h1 style='color: #007bff; margin: 0; text-align: center;'>{otp}</h1>
+                            </div>
+                            <p>This OTP will expire in 10 minutes.</p>
+                            <p>If you did not request this password change, please ignore this email.</p>
+                            <hr style='margin: 20px 0;'>
+                            <p style='color: #666; font-size: 12px;'>This is an automated message, please do not reply.</p>
+                        </body>
+                    </html>";
+
+                return _emailService.SendEmail(toEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        // --- Password Update ---
+        public bool UpdatePassword(string accountId, string newPassword)
+        {
+            var account = _repository.GetById(accountId);
+            if (account == null) return false;
+            account.Password = newPassword;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        public bool UpdatePasswordByUsername(string username, string newPassword)
+        {
+            var account = _repository.GetByUsername(username);
+            if (account == null)
+            {
+                return false;
+            }
+            account.Password = newPassword;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        // --- OTP Storage and Verification ---
+        public bool StoreOtp(string accountId, string otp, DateTime expiry)
+        {
+            try
+            {
+                _otpStore[accountId] = (otp, expiry);
+                _logger.LogInformation($"[StoreOtp] accountId={accountId}, otp={otp}, expiry={expiry}");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool VerifyOtp(string accountId, string otp)
+        {
+            if (!_otpStore.TryGetValue(accountId, out var otpData))
+                return false;
+
+            if (DateTime.UtcNow > otpData.Expiry)
+            {
+                _otpStore.Remove(accountId);
+                return false;
+            }
+
+            _logger.LogInformation($"[VerifyOtp] accountId={accountId}, otp={otp}");
+            return otpData.Otp == otp;
+        }
+
+        public void ClearOtp(string accountId)
+        {
+            _otpStore.Remove(accountId);
+        }
+        public bool GetByUsername(string username)
+        {
+            _repository.GetByUsername(username);
+            return true;
+        }
+
     }
 }
+

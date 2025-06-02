@@ -1,17 +1,17 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using MovieTheater.Service;
-using MovieTheater.ViewModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging;
 using MovieTheater.Models;
-using Microsoft.AspNetCore.Authentication.Google;
-using System.Security.Claims;
 using MovieTheater.Repository;
-
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authorization;
+using MovieTheater.Service;
+using MovieTheater.ViewModels;
+using System.Globalization;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -135,22 +135,21 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            string roleName = user.RoleId switch
-            {
-                1 => "Admin",
-                2 => "Employee",
-                3 => "Customer",
-                _ => "Guest"
-            };
+                string roleName = user.RoleId switch
+                {
+                    1 => "Admin",
+                    2 => "Employee",
+                    3 => "Customer",
+                    _ => "Guest"
+                };
 
             var appClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
                 new Claim("Email", user.Email),
-                new Claim("FullName", user.FullName ?? user.Username)
             };
 
             var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -170,6 +169,8 @@ namespace MovieTheater.Controllers
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.Now.AddMinutes(60)
             });
+
+            TempData["ToastMessage"] = "Log in successful!";
 
             // Direct redirect like normal login
             if (user.RoleId == 1)
@@ -196,16 +197,12 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult MainPage()
-        {
-            return View();
-        }
-
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
+            TempData["ToastMessage"] = "Log out successful!";
             return RedirectToAction("Login", "Account");
         }
 
@@ -313,6 +310,8 @@ namespace MovieTheater.Controllers
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.Now.AddMinutes(60)
             });
+
+            TempData["ToastMessage"] = "Log in successful!";
 
             if (user.RoleId == 1)
             {

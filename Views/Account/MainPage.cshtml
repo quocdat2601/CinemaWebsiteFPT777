@@ -1,6 +1,9 @@
-﻿@{
+﻿@model MovieTheater.ViewModels.RegisterViewModel
+
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "My Account";
+    var activeTab = ViewData["ActiveTab"]?.ToString() ?? "Profile";
 }
 
 <div class="container-fluid">
@@ -9,30 +12,26 @@
         <div class="col-2 bg-light border-end vh-100 pt-3">
             <ul class="nav flex-column nav-pills" id="accountTabs">
                 <li class="nav-item">
-                    <a class="nav-link active" data-tab="Profile" href="#">Profile</a>
+                    <a class="nav-link @(activeTab == "Profile" ? "active" : "")" data-tab="Profile" href="#">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Password" href="#">Change Password</a>
+                    <a class="nav-link @(activeTab == "Rank" ? "active" : "")" data-tab="Rank" href="#">Rank</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Rank" href="#">Rank</a>
+                    <a class="nav-link @(activeTab == "Score" ? "active" : "")" data-tab="Score" href="#">Score</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Score" href="#">Score</a>
+                    <a class="nav-link @(activeTab == "Voucher" ? "active" : "")" data-tab="Voucher" href="#">Voucher</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Voucher" href="#">Voucher</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-tab="History" href="#">History Booking Ticket</a>
+                    <a class="nav-link @(activeTab == "History" ? "active" : "")" data-tab="History" href="#">History Booking Ticket</a>
                 </li>
             </ul>
         </div>
 
         <!-- Tab Content -->
         <div class="col-10 p-4" id="tabContent">
-            <h3>Welcome to your profile</h3>
-            <p>This is the default content of the Profile tab.</p>
+            <h3>Loading...</h3>
         </div>
     </div>
 </div>
@@ -40,6 +39,11 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            // Load initial tab content
+            $.get(`/MyAccount/LoadTab?tab=@activeTab`, function (data) {
+                $('#tabContent').html(data);
+            });
+
             $('#accountTabs .nav-link').click(function (e) {
                 e.preventDefault();
 
@@ -49,7 +53,7 @@
                 $('#accountTabs .nav-link').removeClass('active');
                 $(this).addClass('active');
 
-                // Hiện nội dung tương ứng
+                // Show loading and load content
                 $('#tabContent').html('<h3>Loading...</h3>');
 
                 $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {

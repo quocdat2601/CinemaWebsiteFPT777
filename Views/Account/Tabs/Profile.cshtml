@@ -1,10 +1,116 @@
-﻿@model dynamic
+﻿@model MovieTheater.ViewModels.ProfileUpdateViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
 
-<h4>User Profile</h4>
+<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
 
-<ul class="list-group">
-    <li class="list-group-item"><strong>User ID:</strong> @Model.UserId</li>
-    <li class="list-group-item"><strong>Username:</strong> @Model.Username</li>
-    <li class="list-group-item"><strong>Email:</strong> @Model.Email</li>
-    <li class="list-group-item"><strong>Role:</strong> @Model.Role</li>
-</ul>
+<div class="signup-wrapper">
+    <div class="signup-card">
+        <h2 class="signup-title">Profile</h2>
+        @* GỬI FORM ĐẾN MyAccount, ACTION Edit *@
+        <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-10 offset-md-1">
+
+                        @* Full Name *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Full Name</label>
+                            <div class="col-sm-9">
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* Date of Birth *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Date of Birth</label>
+                            <div class="col-sm-9">
+                                <input asp-for="DateOfBirth" type="date" class="form-control" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* Gender *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Gender</label>
+                            <div class="col-sm-9">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" asp-for="Gender" value="male" />
+                                    <label class="form-check-label">Male</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" asp-for="Gender" value="female" />
+                                    <label class="form-check-label">Female</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" asp-for="Gender" value="unknown" />
+                                    <label class="form-check-label">Unknown</label>
+                                </div>
+                                <span asp-validation-for="Gender" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* IdentityCard *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Identity Card</label>
+                            <div class="col-sm-9">
+                                <input asp-for="IdentityCard" class="form-control" />
+                                <span asp-validation-for="IdentityCard" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* Email *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Email</label>
+                            <div class="col-sm-9">
+                                <input asp-for="Email" class="form-control" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* Address *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Address</label>
+                            <div class="col-sm-9">
+                                <input asp-for="Address" class="form-control" />
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* PhoneNumber *@
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Phone Number</label>
+                            <div class="col-sm-9">
+                                <input asp-for="PhoneNumber" class="form-control" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @* Profile Image
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Profile Image</label>
+                            <div class="col-sm-9">
+                                @if (!string.IsNullOrEmpty(Model.Image))
+                                {
+                                    <img src="@Url.Content(Model.Image)" alt="Profile Image" class="img-thumbnail mb-2" style="max-width: 200px;" />
+                                }
+                                <input type="file" class="form-control" asp-for="ImageFile" accept="image/*" />
+                                <span asp-validation-for="ImageFile" class="text-danger"></span>
+                            </div>
+                        </div> *@
+
+                        <div class="d-flex justify-content-center gap-3 mt-3">
+                            <a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary">Change Password</a>
+                            <button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Profile</button>
+                        </div>
+
+                    </div>
+                </div>
+
+        </form>
+    </div>
+</div>
+
+<partial name="_ToastMessages" />

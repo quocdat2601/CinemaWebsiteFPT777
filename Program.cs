@@ -77,7 +77,7 @@ namespace MovieTheater
                  options.CallbackPath = "/signin-google";
              });
 
-
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -93,6 +93,7 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatService, SeatService>();
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
+            builder.Services.AddScoped<EmailService>();
 
             builder.Services.AddControllersWithViews();
             var app = builder.Build();
