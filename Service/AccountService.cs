@@ -89,7 +89,10 @@ namespace MovieTheater.Service
             var account = _repository.GetById(id);
             if (account == null) return false;
             account.Username = model.Username;
-            account.Password = model.Password;
+            if (!string.IsNullOrEmpty(model.Password))
+            {
+                account.Password = model.Password;
+            }
             account.FullName = model.FullName;
             account.DateOfBirth = model.DateOfBirth;
             account.Gender = model.Gender;
@@ -98,7 +101,10 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            account.Status = model.Status;
+            if (model.Status.HasValue)
+            {
+                account.Status = model.Status;
+            }
 
             if (!string.IsNullOrEmpty(model.Image))
                 account.Image = model.Image;
