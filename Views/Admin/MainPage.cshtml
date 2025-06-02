@@ -14,7 +14,6 @@
                 <a class="nav-link" href="#" onclick="loadTab('ShowroomMg')">Showroom Management</a>
                 <a class="nav-link" href="#" onclick="loadTab('ScheduleMg')">Schedule Management</a>
                 <a class="nav-link" href="#" onclick="loadTab('PromotionMg')">Promotion Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('TicketSellingMg')">Ticket Selling Management</a>
             </div>
         </div>
 
@@ -29,12 +28,24 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    function loadTab(tabName) {
-        $('.nav-link').removeClass('active'); 
+    function loadTab(tabName, keyword = '') {
+        $('.nav-link').removeClass('active');
         $(`a.nav-link:contains(${tabName.replace('Mg', ' Management')})`).addClass('active');
-        $('#tabContent').load(`/Admin/LoadTab?tab=${tabName}`);
+
+        const params = new URLSearchParams({ tab: tabName });
+        if (keyword.trim()) {
+            params.append('keyword', keyword);
+        }
+
+        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`);
     }
-        $(document).ready(function () {
+
+    function searchEmployees() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('EmployeeMg', keyword);
+    }
+
+    $(document).ready(function () {
         var tabToLoad = '@ViewData["ActiveTab"]' || 'Dashboard';
         loadTab(tabToLoad);
     });

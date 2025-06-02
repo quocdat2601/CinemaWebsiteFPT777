@@ -9,53 +9,122 @@
         <div class="col-2 bg-light border-end vh-100 pt-3">
             <ul class="nav flex-column nav-pills" id="accountTabs">
                 <li class="nav-item">
-                    <a class="nav-link active" data-tab="Profile" href="#">Profile</a>
+                    <a class="nav-link active" href="#" data-tab="Information">Information</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Password" href="#">Change Password</a>
+                    <a class="nav-link" href="#" data-tab="Profile">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Rank" href="#">Rank</a>
+                    <a class="nav-link" href="#" data-tab="Rank">Rank</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Score" href="#">Score</a>
+                    <a class="nav-link" href="#" data-tab="Score">Score</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="Voucher" href="#">Voucher</a>
+                    <a class="nav-link" href="#" data-tab="Voucher">Voucher</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-tab="History" href="#">History Booking Ticket</a>
+                    <a class="nav-link" href="#" data-tab="History">History Booking Ticket</a>
                 </li>
             </ul>
         </div>
 
         <!-- Tab Content -->
-        <div class="col-10 p-4" id="tabContent">
-            <h3>Welcome to your profile</h3>
-            <p>This is the default content of the Profile tab.</p>
+        <div class="col-10 p-4">
+            <div id="tabContent">
+                Loading...
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
+        function loadTab(tab) {
+            $('#accountTabs .nav-link').removeClass('active');
+            $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
+            $('#tabContent').html('<h3>Loading...</h3>');
+
+            var url = '@Url.Action("LoadTab", "MyAccount")';
+            $.get(url, { tab: tab }, function (data) {
+                $('#tabContent').html(data);
+            });
+        }
+
+        $(function () {
             $('#accountTabs .nav-link').click(function (e) {
                 e.preventDefault();
-
-                const tab = $(this).data('tab');
-
-                // UI Active
-                $('#accountTabs .nav-link').removeClass('active');
-                $(this).addClass('active');
-
-                // Hiện nội dung tương ứng
-                $('#tabContent').html('<h3>Loading...</h3>');
-
-                $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
-                    $('#tabContent').html(data);
-                });
+                loadTab($(this).data('tab'));
             });
+
+            // Ưu tiên đọc từ URL ?tab=..., nếu không có thì dùng ViewData
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab') || '@ViewData["ActiveTab"]' || 'Information';
+            loadTab(activeTab);
+
+            // Hiển thị toast nếu có ?toast=...
+            const toastMessage = urlParams.get('toast');
+            if (toastMessage && typeof showToast === 'function') {
+                showToast(decodeURIComponent(toastMessage));
+            }
         });
+
+        // AJAX submit form
+        $(document).on('submit', 'form', function (e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var url = form.attr('action');
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    if (result.success) {
+                        loadTab(result.reloadTab);
+                        if (result.toast) showToast(result.toast);
+                    } else if (result.error) {
+                        showErrorToast(result.error);
+                    } else {
+                        $('#tabContent').html(result); // Hiển thị lại form nếu có lỗi ModelState
+                    }
+                },
+                error: function () {
+                    $('#tabContent').html('<div class="text-danger">Lỗi không xác định từ server.</div>');
+                }
+            });
+
+            // Ẩn alert sau vài giây (nếu có)
+            setTimeout(() => $(".alert").fadeOut("slow"), 3000);
+        });
+
+        // Hiển thị TempData toast khi DOM sẵn sàng
+        document.addEventListener("DOMContentLoaded", function () {
+            const toastEl = document.getElementById('toastMessage');
+            if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
+        });
+
+        // Toast tiện ích
+        function showToast(message) {
+            const toastEl = document.getElementById('toastMessage');
+            toastEl.querySelector('.toast-body').innerText = message;
+            new bootstrap.Toast(toastEl, { delay: 3000 }).show();
+        }
+
+        function showErrorToast(message) {
+            const errorToastEl = document.getElementById('errorToast');
+            errorToastEl.querySelector('.toast-body').innerText = message;
+            new bootstrap.Toast(errorToastEl, { delay: 4000 }).show();
+        }
     </script>
 }
+
+
+

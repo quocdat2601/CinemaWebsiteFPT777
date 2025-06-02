@@ -126,5 +126,55 @@ namespace MovieTheater.Repository
         {
             return _context.Types.Where(t => ids.Contains(t.TypeId)).ToList();
         }
+
+        public async Task<List<Movie>> GetAllMoviesAsync()
+        {
+            return await _context.Movies
+                .GroupBy(m => m.MovieId)
+                .Select(g => g.First())
+                .ToListAsync();
+        }
+
+        //LẤY SHOWDATE DỰA TRÊN MOVIEID
+        public async Task<List<DateTime>> GetShowDatesAsync(string movieId)
+        {
+            var dates = await _context.Movies
+                .Where(m => m.MovieId == movieId)
+                .SelectMany(m => m.ShowDates)
+                .Where(sd => sd.ShowDate1.HasValue)
+                .Select(sd => sd.ShowDate1.Value.ToDateTime(TimeOnly.MinValue)) // Convert DateOnly → DateTime
+                .Distinct()
+                .ToListAsync();
+
+            return dates;
+        }
+
+
+        //LẤY SHOWTIME DỰA TRÊN MOVIEID
+        public async Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
+        {
+            var movie = await _context.Movies
+                .Include(m => m.Schedules)
+                .Include(m => m.ShowDates)
+                .FirstOrDefaultAsync(m => m.MovieId == movieId);
+
+            if (movie == null)
+                return new List<string>();
+
+            // Kiểm tra xem ngày đó có trong ShowDates không
+            var isValidDate = movie.ShowDates.Any(sd =>
+                sd.ShowDate1.HasValue &&
+                sd.ShowDate1.Value.ToDateTime(TimeOnly.MinValue).Date == date.Date);
+
+            if (!isValidDate)
+                return new List<string>();
+
+            // Trả về danh sách giờ chiếu
+            return movie.Schedules
+                .Select(s => s.ScheduleTime)
+                .Distinct()
+                .ToList();
+        }
+
     }
 }

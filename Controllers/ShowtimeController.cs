@@ -92,7 +92,7 @@ namespace MovieTheater.Controllers
             }
         }
 
-        public IActionResult Select(DateTime? date)
+        public IActionResult Select(DateTime? date, string returnUrl)
         {
             // 1. Get all available screening dates as DateTime
             var availableDates = _context.ShowDates
@@ -126,7 +126,7 @@ namespace MovieTheater.Controllers
             var movies = moviesForDate.Select(m => new MovieShowtimeInfo
             {
                 MovieId = m.MovieId,
-                MovieName = m.MovieNameVn ?? m.MovieNameEnglish ?? "Unknown",
+                MovieName = m.MovieNameEnglish ?? m.MovieNameVn ?? "Unknown",
                 PosterUrl = m.LargeImage ?? m.SmallImage ?? "/images/default-movie.png",
                 Showtimes = m.Schedules.Select(s => s.ScheduleTime).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>()
             })
@@ -137,7 +137,8 @@ namespace MovieTheater.Controllers
             {
                 AvailableDates = availableDates,
                 SelectedDate = selectedDate,
-                Movies = movies
+                Movies = movies,
+                ReturnUrl = returnUrl
             };
 
             return View("~/Views/Showtime/Select.cshtml", model);

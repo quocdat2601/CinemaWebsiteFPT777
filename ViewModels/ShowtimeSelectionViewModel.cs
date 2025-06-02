@@ -14,6 +14,9 @@ namespace MovieTheater.ViewModels
 
         // List of movies with showtimes for the selected date
         public List<MovieShowtimeInfo> Movies { get; set; }
+
+        // URL to return to after completing ticket selling
+        public string? ReturnUrl { get; set; }
     }
 
     // Movie and its showtimes for a specific date

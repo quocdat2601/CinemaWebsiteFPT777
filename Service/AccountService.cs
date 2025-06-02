@@ -1,9 +1,14 @@
-﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Net;
+using System.Security.Claims;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Service
 {
@@ -12,12 +17,25 @@ namespace MovieTheater.Service
         private readonly IAccountRepository _repository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMemberRepository _memberRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly EmailService _emailService;
+        private readonly ILogger<AccountService> _logger;
+        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
 
-        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository)
+        public AccountService(
+            IAccountRepository repository, 
+            IEmployeeRepository employeeRepository, 
+            IMemberRepository memberRepository, 
+            IHttpContextAccessor httpContextAccessor,
+            EmailService emailService,
+            ILogger<AccountService> logger)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
             _memberRepository = memberRepository;
+            _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public bool Register(RegisterViewModel model)
@@ -71,7 +89,10 @@ namespace MovieTheater.Service
             var account = _repository.GetById(id);
             if (account == null) return false;
             account.Username = model.Username;
-            account.Password = model.Password;
+            if (!string.IsNullOrEmpty(model.Password))
+            {
+                account.Password = model.Password;
+            }
             account.FullName = model.FullName;
             account.DateOfBirth = model.DateOfBirth;
             account.Gender = model.Gender;
@@ -80,7 +101,10 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            account.Status = model.Status;
+            if (model.Status.HasValue)
+            {
+                account.Status = model.Status;
+            }
 
             if (!string.IsNullOrEmpty(model.Image))
                 account.Image = model.Image;
@@ -96,5 +120,171 @@ namespace MovieTheater.Service
             return account != null;
         }
 
+        public ProfileViewModel GetCurrentUser()
+        {
+            // 1. Lấy userId từ Claims
+            var user = _httpContextAccessor.HttpContext.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            // 2. Query repository
+            var account = _repository.GetById(userId);
+            if (account == null)
+                return null;
+
+            // 3. Map sang ViewModel
+            bool isGoogleAccount = false;
+            // Giả định: nếu Password null hoặc có độ dài > 30 ký tự (random GUID) thì là Google
+            if (string.IsNullOrEmpty(account.Password) || (account.Password?.Length > 30))
+            {
+                isGoogleAccount = true;
+            }
+            return new ProfileViewModel
+            {
+                AccountId = account.AccountId,
+                Username = account.Username,
+                FullName = account.FullName,
+                DateOfBirth = account.DateOfBirth.HasValue ? account.DateOfBirth.Value : default(DateOnly),
+                Gender = account.Gender,
+                IdentityCard = account.IdentityCard,
+                Email = account.Email,
+                Address = account.Address,
+                PhoneNumber = account.PhoneNumber,
+                Password = account.Password ?? string.Empty,
+                Image = account.Image,
+                RoleId = account.RoleId,
+                Status = account.Status,
+                IsGoogleAccount = isGoogleAccount
+            };
+        }
+
+        public bool UpdateAccount(string id, ProfileViewModel model)
+        {
+            var account = _repository.GetById(id);
+            if (account == null) return false;
+
+            var duplicate = _repository.GetAll().Any(a => a.Username == model.Username && a.AccountId != id);
+            if (duplicate)
+            {
+                throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
+            }
+
+            account.Username = model.Username;
+            //account.Password = model.Password;
+            account.FullName = model.FullName;
+            account.DateOfBirth = model.DateOfBirth;
+            account.Gender = model.Gender;
+            account.IdentityCard = model.IdentityCard;
+            account.Email = model.Email;
+            account.Address = model.Address;
+            account.PhoneNumber = model.PhoneNumber;
+            //account.Status = model.Status;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        public Account? GetById(string id)
+        {
+            return _repository.GetById(id);
+        }
+
+        public bool VerifyCurrentPassword(string username, string currentPassword)
+        {
+            var account = _repository.GetByUsername(username);
+            if (account == null)
+                return false;
+
+            return account.Password == currentPassword;
+        }
+
+        // --- OTP Email Sending ---
+        public bool SendOtpEmail(string toEmail, string otp)
+        {
+            try
+            {
+                var subject = "Your Password Change OTP Code";
+                var body = $@"
+                    <html>
+                        <body style='font-family: Arial, sans-serif; padding: 20px;'>
+                            <h2 style='color: #333;'>Password Change Request</h2>
+                            <p>You have requested to change your password. Please use the following OTP code to proceed:</p>
+                            <div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                                <h1 style='color: #007bff; margin: 0; text-align: center;'>{otp}</h1>
+                            </div>
+                            <p>This OTP will expire in 10 minutes.</p>
+                            <p>If you did not request this password change, please ignore this email.</p>
+                            <hr style='margin: 20px 0;'>
+                            <p style='color: #666; font-size: 12px;'>This is an automated message, please do not reply.</p>
+                        </body>
+                    </html>";
+
+                return _emailService.SendEmail(toEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        // --- Password Update ---
+        public bool UpdatePassword(string accountId, string newPassword)
+        {
+            var account = _repository.GetById(accountId);
+            if (account == null) return false;
+            account.Password = newPassword;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        public bool UpdatePasswordByUsername(string username, string newPassword)
+        {
+            var account = _repository.GetByUsername(username);
+            if (account == null)
+            {
+                return false;
+            }
+            account.Password = newPassword;
+            _repository.Update(account);
+            _repository.Save();
+            return true;
+        }
+
+        // --- OTP Storage and Verification ---
+        public bool StoreOtp(string accountId, string otp, DateTime expiry)
+        {
+            try
+            {
+                _otpStore[accountId] = (otp, expiry);
+                _logger.LogInformation($"[StoreOtp] accountId={accountId}, otp={otp}, expiry={expiry}");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool VerifyOtp(string accountId, string otp)
+        {
+            if (!_otpStore.TryGetValue(accountId, out var otpData))
+                return false;
+
+            if (DateTime.UtcNow > otpData.Expiry)
+            {
+                _otpStore.Remove(accountId);
+                return false;
+            }
+
+            _logger.LogInformation($"[VerifyOtp] accountId={accountId}, otp={otp}");
+            return otpData.Otp == otp;
+        }
+
+        public void ClearOtp(string accountId)
+        {
+            _otpStore.Remove(accountId);
+        }
     }
 }
