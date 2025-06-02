@@ -126,7 +126,7 @@ namespace MovieTheater.Controllers
             var movies = moviesForDate.Select(m => new MovieShowtimeInfo
             {
                 MovieId = m.MovieId,
-                MovieName = m.MovieNameVn ?? m.MovieNameEnglish ?? "Unknown",
+                MovieName = m.MovieNameEnglish ?? m.MovieNameVn ?? "Unknown",
                 PosterUrl = m.LargeImage ?? m.SmallImage ?? "/images/default-movie.png",
                 Showtimes = m.Schedules.Select(s => s.ScheduleTime).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>()
             })
