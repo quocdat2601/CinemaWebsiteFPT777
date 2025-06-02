@@ -58,6 +58,12 @@ namespace MovieTheater
                         return Task.CompletedTask;
                     }
                 };
+            });
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
             })
             .AddCookie(options =>
             {
