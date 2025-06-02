@@ -26,7 +26,7 @@ CREATE TABLE Account (
     Account_ID VARCHAR(10) PRIMARY KEY,
     Address VARCHAR(255),
     Date_Of_Birth DATE,
-    Email VARCHAR(255),
+    Email VARCHAR(255) UNIQUE,
     Full_Name VARCHAR(255),
     Gender VARCHAR(255),
     Identity_Card VARCHAR(255),
@@ -36,7 +36,7 @@ CREATE TABLE Account (
     Register_Date DATE,
     Role_ID INT,
     STATUS INT,
-    USERNAME VARCHAR(50),
+    USERNAME VARCHAR(50) UNIQUE,
     Rank_ID INT, -- Use Rank_ID to match FK constraint
     CONSTRAINT FK_Account_Role FOREIGN KEY (Role_ID) REFERENCES Roles(Role_ID),
     CONSTRAINT FK_Account_Rank FOREIGN KEY (Rank_ID) REFERENCES Rank(Rank_ID)
@@ -72,7 +72,7 @@ CREATE TABLE Member (
 );
 
 CREATE TABLE Show_Dates (
-    Show_Date_ID INT PRIMARY KEY,
+    Show_Date_ID INT PRIMARY KEY IDENTITY(1,1),
     Show_Date DATE,
     Date_Name VARCHAR(255)
 );
@@ -103,7 +103,7 @@ CREATE TABLE Movie_Date (
 );
 
 CREATE TABLE Schedule (
-    Schedule_ID INT PRIMARY KEY,
+    Schedule_ID INT PRIMARY KEY IDENTITY(1,1),
     Schedule_Time VARCHAR(255)
 );
 
@@ -129,34 +129,64 @@ CREATE TABLE Movie_Type (
 );
 
 CREATE TABLE Cinema_Room (
-    Cinema_Room_ID INT PRIMARY KEY,
+    Cinema_Room_ID INT PRIMARY KEY IDENTITY(1,1),
     Cinema_Room_Name VARCHAR(255),
-    Seat_Quantity INT
+    Seat_Width INT,
+    Seat_Length INT
+);
+
+ALTER TABLE Cinema_Room
+ADD Seat_Quantity AS (Seat_Width * Seat_Length);
+
+CREATE TABLE Seat_Type (
+    Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
+    Type_Name VARCHAR(50),
+	Price_Percent INT NOT NULL DEFAULT 100,
+	ColorHex VARCHAR(7) NOT NULL DEFAULT '#FFFFFF'
+);
+
+CREATE TABLE Seat_Status (
+    Seat_Status_ID INT PRIMARY KEY IDENTITY(1,1),
+    Status_Name VARCHAR(50) -- e.g., 'Available', 'Booked'
 );
 
 CREATE TABLE Seat (
-    Seat_ID INT PRIMARY KEY,
+    Seat_ID INT PRIMARY KEY IDENTITY(1,1),
     Cinema_Room_ID INT,
-    Seat_Column VARCHAR(255),
-    Seat_Row INT,
-    Seat_Status INT,
-    Seat_Type INT,
-    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID)
+    Seat_Column VARCHAR(5), -- e.g., 'A', 'B'
+    Seat_Row INT,           -- e.g., 1, 2, ...
+    Seat_Status_ID INT,
+    Seat_Type_ID INT,
+	SeatName VARCHAR(5),
+    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
+    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID),
+	FOREIGN KEY (Seat_Type_ID) REFERENCES Seat_Type(Seat_Type_ID)
 );
 
+INSERT INTO Cinema_Room (Cinema_Room_Name, Seat_Width, Seat_Length)
+VALUES ('Room 1', 5, 4);
+
+INSERT INTO Seat_Type (Type_Name) VALUES
+('Normal'),
+('VIP'),
+('Couple');
+
+INSERT INTO Seat_Status (Status_Name) VALUES
+('Available'),
+('Booked');
+
 CREATE TABLE Schedule_Seat (
-    Schedule_Seat_ID VARCHAR(10) PRIMARY KEY,
-    Movie_ID VARCHAR(10),
     Schedule_ID INT,
     Seat_ID INT,
-    Seat_Column VARCHAR(255),
-    Seat_Row INT,
-    Seat_Status INT,
-    Seat_Type INT
+    Seat_Status_ID INT,
+    PRIMARY KEY (Schedule_ID, Seat_ID),
+    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
+    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID)
 );
 
 CREATE TABLE Ticket (
-    Ticket_ID INT PRIMARY KEY,
+    Ticket_ID INT PRIMARY KEY IDENTITY(1,1),
     Price NUMERIC(18, 2),
     Ticket_Type INT
 );
@@ -173,37 +203,45 @@ INSERT INTO Rank (Rank_Name, Discount_Percentage, Required_Points) VALUES
 ('Elite', 15.00, 80000);
 
 INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gender, Identity_Card, Image, Password, Phone_Number, Register_Date, Role_ID, STATUS, USERNAME) VALUES
-('AC001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
-('AC002', '456 Elm St', '1995-06-25', 'employee@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee'),
-('AC003', '789 Oak St', '2002-11-10', 'member@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member'),
-('AC004', '123 Main St', '2000-01-15', 'admin2@gmail.com', 'Admin', 'Female', '123456789', '/image/shark.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin2'),
-('AC005', '456 Elm St', '1995-06-25', 'employee2@gmail.com', 'Employee', 'Male', '987654321', '/image/crocodile.jpg', '1', '0987654321', '2023-01-05', 2, 1, 'employee2'),
-('AC006', '789 Oak St', '2002-11-10', 'member3@gmail.com', 'Member', 'Female', '192837465', '/image/tung.jpg', '1', '0111222333', '2023-01-10', 3, 0, 'member3');
+('AC001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/profile.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
+('AC002', '789 Oak St', '2002-11-10', 'member@gmail.com', 'Member', 'Female', '192837465', '/image/profile.jpg', '1', '0111222333', '2023-01-10', 3, 1, 'member'),
+('AC003', '789 Oak St', '2002-11-10', 'member2@gmail.com', 'Member', 'Female', '132837465', '/image/profile.jpg', '1', '0111222333', '2023-01-10', 3, 0, 'member2'),
+('AC004', '123 Street', '1999-01-01', 'minh.nguyen@example.com', 'Nguyen Hoang Minh', 'Male', '111111111', '/image/profile.jpg', '1', '0900000001', '2023-01-01', 2, 1, 'minhnguyen'),
+('AC005', '123 Street', '1999-01-01', 'tue.phan@example.com', 'Phan Do Gia Tue', 'Male', '111111112', '/image/profile.jpg', '1', '0900000002', '2023-01-01', 2, 1, 'tuephan'),
+('AC006', '123 Street', '1999-01-01', 'bao.nguyen@example.com', 'Nguyen Gia Bao', 'Male', '111111113', '/image/profile.jpg', '1', '0900000003', '2023-01-01', 2, 1, 'baonguyen'),
+('AC007', '123 Street', '1999-01-01', 'quang.nguyen@example.com', 'Nguyen Quang Duy Quang', 'Male', '111111114', '/image/profile.jpg', '1', '0900000004', '2023-01-01', 2, 1, 'quangnguyen'),
+('AC008', '123 Street', '1999-01-01', 'dat.nguyen@example.com', 'Nguyen Le Quoc Dat', 'Male', '111111115', '/image/profile.jpg', '1', '0900000005', '2023-01-01', 2, 1, 'datnguyen'),
+('AC009', '123 Street', '1999-01-01', 'dat.thai@example.com', 'Thai Cong Dat', 'Male', '111111116', '/image/profile.jpg', '1', '0900000006', '2023-01-01', 2, 1, 'datthai');
+
 
 INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
-('MB001', 100, 'AC003'),  -- Member linked to account A003
-('MB002', 1000000,'AC006');  -- Member linked to account A006
+('MB001', 10000000, 'AC002'),  
+('MB002', 0,'AC003');  
 
-
+-- Insert Employees
 INSERT INTO Employee (Employee_ID, Account_ID) VALUES
-('EM001', 'AC005');
+('EM001', 'AC004'),
+('EM002', 'AC005'),
+('EM003', 'AC006'),
+('EM004', 'AC007'),
+('EM005', 'AC008'),
+('EM006', 'AC009');
 
-INSERT INTO Show_Dates (Show_Date_ID, Show_Date, Date_Name) VALUES
-(1, '2025-06-01', 'Sunday Premiere'),
-(2, '2025-06-02', 'Monday Matinee');
+INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
+('2025-06-01', 'Sunday Premiere'),
+('2025-06-02', 'Monday Matinee');
 
 INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image)
 VALUES
-('MV001', 'Luca Bianchi, Anna Rossi', 2, 'A reclusive astronomer discovers a hidden constellation that predicts global events, drawing the attention of a secretive organization. As the stars align, she must decide whether to protect her discovery or risk everything for the truth.', 'Giovanni Lupo', 135, '2025-06-05', 'Nebula Films', '2025-07-05', 'IMAX 3D', 'The Stargazer Prophecy', 'Lời Tiên Tri Ngắm Sao', '/image/shark.jpg', '/image/shark.jpg'),
-('MV002', 'Mei Lin, Haruto Tanaka', 3, 'A quirky florist and a grumpy barista in Kyoto are forced to share a café storefront. As their clashing personalities spark chaos, a shared love for old poetry might be the only thing that can bring them together.', 'Akira Sato', 110, '2025-06-10', 'Sakura Pictures', '2025-07-10', '2D', 'Hearts in Kyoto', 'Trái Tim Ở Kyoto', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('MV003', 'Jake Carter, Ella Stone', 4, 'In a neon-lit future where memories are currency, a former racer is pulled into an underworld plot to overwrite identities. Racing against time and corrupted tech, he must confront his forgotten past to survive.', 'Lena Hopkins', 142, '2025-06-12', 'PixelLight Studios', '2025-07-12', '4DX', 'Neon Drift', 'Trôi Trong Ánh Đèn Neon', '/image/tung.jpg', '/image/tung.jpg'),
-('MV004', 'Carlos Mendez, Sofia Rivera', 5, 'A young lawyer returns to her crime-ridden hometown after her brother’s mysterious death. As she uncovers layers of corruption, she must fight both the legal system and her own past to deliver justice.', 'Roberto Diaz', 124, '2025-06-08', 'Solara Pictures', '2025-07-08', '2D', 'Blood and Cement', 'Máu Và Xi Măng', '/image/shark.jpg', '/image/shark.jpg'),
-('MV005', 'Mina Kapoor, Aarav Singh', 1, 'A vibrant tale of love, family, and dance set in the bustling streets of Mumbai. When a young dancer dares to chase her dreams against her conservative familys wishes, rhythm becomes her voice of rebellion.', 'Ravi Desai', 150, '2025-06-15', 'Bollywood Beats', '2025-07-15', '3D', 'Dance of Dreams', 'Vũ Điệu Giấc Mơ', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('MV006', 'Emma Brown, Noah Reed', 2, 'Years after a global collapse, two survivors navigate the ruins of civilization to find a rumored safe haven. Battling both the elements and each other, they learn that survival requires more than just endurance.', 'Jesse Moore', 119, '2025-06-07', 'EchoFilm Studios', '2025-07-07', '2D', 'After the Ashes', 'Sau Tro Tàn', '/image/tung.jpg', '/image/tung.jpg'),
-('MV007', 'Hana Kim, Jihoon Park', 1, 'A cursed prince must gather three ancient relics to break the spell that traps his soul in a stone blade. With a reluctant thief as his guide, their quest takes them across mythical realms in a battle against fate.', 'Soojin Lee', 128, '2025-06-09', 'Dreamwave Korea', '2025-07-09', 'IMAX', 'Sword of the Moon', 'Kiếm Nguyệt', '/image/shark.jpg', '/image/shark.jpg'),
-('MV008', 'Ali Nasser, Leila Haddad', 3, 'Set in the golden age of the Silk Road, a young scribe uncovers a conspiracy threatening the kingdom. With the help of a rebel prince, she races to rewrite history before it’s too late.', 'Samir Al-Hakim', 165, '2025-06-13', 'Desert Star', '2025-07-13', '4DX', 'Kingdom of Sand', 'Vương Quốc Cát', '/image/crocodile.jpg', '/image/crocodile.jpg'),
-('MV009', 'John Smith, Jane Doe', 4, 'A routine software update goes wrong in a remote lab, unleashing an AI entity that turns against its creators. Trapped in the facility, a group of engineers must outwit their own creation to survive.', 'Marcus Black', 117, '2025-06-06', 'Glitch Studios', '2025-07-06', '2D', 'Code Red: Signal Lost', 'Mất Tín Hiệu Đỏ', '/image/tung.jpg', '/image/tung.jpg');
-
+('MV001', 'Cillian Murphy, Emily Blunt', 1, 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Christopher Nolan', 180, '2023-07-21', 'Universal Pictures', '2023-09-21', 'IMAX', 'Oppenheimer', 'Oppenheimer', '/image/open.jpg', '/image/open.jpg'),
+('MV002', 'Tom Holland, Zendaya', 2, 'Peter Parker seeks help from Doctor Strange after his identity is revealed, leading to multiverse chaos.', 'Jon Watts', 148, '2021-12-17', 'Marvel Studios', '2022-02-17', '3D', 'Spider-Man: No Way Home', 'Người Nhện: Không Còn Nhà', '/image/spider.jpg', '/image/spider.jpg'),
+('MV003', 'Timothée Chalamet, Zendaya', 3, 'Paul Atreides unites with the Fremen to seek revenge against the conspirators who destroyed his family.', 'Denis Villeneuve', 166, '2024-03-01', 'Legendary Pictures', '2024-05-01', 'IMAX 3D', 'Dune: Part Two', 'Hành Tinh Cát: Phần Hai', '/image/dune.jpg', '/image/dune.jpg'),
+('MV004', 'Margot Robbie, Ryan Gosling', 4, 'Barbie suffers a crisis that leads her to question her world and her existence.', 'Greta Gerwig', 114, '2023-07-21', 'Warner Bros.', '2023-09-21', '2D', 'Barbie', 'Barbie', '/image/barbie.jpg', '/image/barbie.jpg'),
+('MV005', 'Michelle Yeoh, Ke Huy Quan', 5, 'A woman is swept into a multiverse adventure where she must connect with different versions of herself.', 'Daniel Kwan, Daniel Scheinert', 139, '2022-03-11', 'A24', '2022-05-11', '2D', 'Everything Everywhere All at Once', 'Mọi Thứ Mọi Nơi Tất Cả Cùng Lúc', '/image/everything.jpg', '/image/everything.jpg'),
+('MV006', 'Sam Worthington, Zoe Saldana', 1, 'Jake Sully lives with his family on Pandora and must protect them from a new threat.', 'James Cameron', 192, '2022-12-16', '20th Century Studios', '2023-02-16', '3D', 'Avatar: The Way of Water', 'Avatar: Dòng Chảy Của Nước', '/image/avatar.jpg', '/image/avatar.jpg'),
+('MV007', 'Robert Pattinson, Zoë Kravitz', 2, 'Batman uncovers corruption in Gotham while pursuing the Riddler, a sadistic killer.', 'Matt Reeves', 176, '2022-03-04', 'Warner Bros.', '2022-05-04', '2D', 'The Batman', 'Người Dơi', '/image/batman.jpg', '/image/batman.jpg'),
+('MV008', 'Tom Cruise, Miles Teller', 3, 'Pete "Maverick" Mitchell trains Top Gun graduates for a high-stakes mission.', 'Joseph Kosinski', 131, '2022-05-27', 'Paramount Pictures', '2022-07-27', 'IMAX', 'Top Gun: Maverick', 'Phi Công Siêu Đẳng Maverick', '/image/topgun.jpg', '/image/topgun.jpg'),
+('MV009', 'Song Kang-ho, Choi Woo-shik', 4, 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2019-05-30', 'CJ Entertainment', '2019-07-30', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg');
 
 INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
 ('MV001', 1),
@@ -221,25 +259,28 @@ INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
 ('MV007', 1),
 ('MV007', 2);
 
-INSERT INTO Schedule (Schedule_ID, Schedule_Time) VALUES
-(1, '10:00'),
-(2, '14:00'),
-(3, '18:00');
+INSERT INTO Schedule (Schedule_Time) VALUES
+('10:00'),
+('12:00'),
+('14:00'),
+('16:00'),
+('18:00'),
+('20:00');
 
 INSERT INTO Movie_Schedule (Movie_ID, Schedule_ID) VALUES
 ('MV001', 1),
 ('MV001', 2),
-('MV002', 1),
-('MV003', 2), 
-('MV003', 3),
-('MV004', 3),
+('MV002', 3),
+('MV003', 4), 
+('MV003', 5),
+('MV004', 1),
 ('MV005', 1), 
-('MV005', 3),
-('MV006', 2),
-('MV007', 1), 
-('MV007', 2), 
-('MV007', 3),
-('MV008', 3),
+('MV005', 2),
+('MV006', 3),
+('MV007', 3), 
+('MV007', 4), 
+('MV007', 5),
+('MV008', 1),
 ('MV009', 2);
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
@@ -271,16 +312,6 @@ INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('MV008', 12),
 ('MV009', 1), 
 ('MV009', 5);
-
-INSERT INTO Cinema_Room (Cinema_Room_ID, Cinema_Room_Name, Seat_Quantity) VALUES
-(1, 'Main Hall', 100),
-(2, 'FPT University', 100),
-(3, 'F-Town', 100);
-
-INSERT INTO Seat (Seat_ID, Cinema_Room_ID, Seat_Column, Seat_Row, Seat_Status, Seat_Type) VALUES
-(1, 1, 'A', 1, 0, 1),
-(2, 1, 'A', 2, 0, 1),
-(3, 1, 'B', 1, 1, 2); -- 1 for booked, 2 for VIP
 
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,

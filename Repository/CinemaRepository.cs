@@ -1,13 +1,17 @@
 ﻿using MovieTheater.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Repository
 {
     public class CinemaRepository : ICinemaRepository
     {
         private readonly MovieTheaterContext _context;
-        public CinemaRepository(MovieTheaterContext context)
+        private readonly ISeatRepository _seatRepository;
+
+        public CinemaRepository(MovieTheaterContext context, ISeatRepository seatRepository)
         {
             _context = context;
+            _seatRepository = seatRepository;
         }
 
         public IEnumerable<CinemaRoom> GetAll()
@@ -20,32 +24,93 @@ namespace MovieTheater.Repository
             return _context.CinemaRooms.FirstOrDefault(a => a.CinemaRoomId == id);
         }
 
+        private List<Seat> GenerateSeats(CinemaRoom cinemaRoom)
+        {
+            var seats = new List<Seat>();
+            for (int row = 0; row < cinemaRoom.SeatLength; row++)
+            {
+                for (int col = 0; col < cinemaRoom.SeatWidth; col++)
+                {
+                    seats.Add(new Seat
+                    {
+                        CinemaRoomId = cinemaRoom.CinemaRoomId,
+                        SeatRow = row + 1,
+                        SeatColumn = (col + 1).ToString(),
+                        SeatName = $"{(char)('A' + row)}{col + 1}",
+                        SeatTypeId = 1,
+                        SeatStatusId = 1
+                    });
+                }
+            }
+            return seats;
+        }
+
         public void Add(CinemaRoom cinemaRoom)
         {
             _context.CinemaRooms.Add(cinemaRoom);
+            _context.SaveChanges();
+
+            var seats = GenerateSeats(cinemaRoom);
+
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
         }
+
 
         public void Update(CinemaRoom cinemaRoom)
         {
-            var existingCinema = _context.CinemaRooms.FirstOrDefault(m => m.CinemaRoomId == cinemaRoom.CinemaRoomId);
-            if (existingCinema != null)
+            var existingCinema = _context.CinemaRooms
+                .Include(c => c.Seats)
+                .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
+
+            if (existingCinema == null)
+            {
+                throw new KeyNotFoundException($"Cinema room with ID {cinemaRoom.CinemaRoomId} not found.");
+            }
+
+            try
             {
                 existingCinema.CinemaRoomName = cinemaRoom.CinemaRoomName;
-                existingCinema.SeatQuantity = cinemaRoom.SeatQuantity;
+
+                if (existingCinema.SeatLength != cinemaRoom.SeatLength || existingCinema.SeatWidth != cinemaRoom.SeatWidth)
+                {
+                    _context.Seats.RemoveRange(existingCinema.Seats);
+
+                    existingCinema.SeatLength = cinemaRoom.SeatLength;
+                    existingCinema.SeatWidth = cinemaRoom.SeatWidth;
+
+                    var newSeats = GenerateSeats(existingCinema);
+                    _context.Seats.AddRange(newSeats);
+                }
+
                 _context.SaveChanges();
             }
-        }
-        public void Delete(int id)
-        {
-            var cinemaRoom = _context.CinemaRooms.FirstOrDefault(m => m.CinemaRoomId == id);
-            if (cinemaRoom != null)
+            catch (Exception ex)
             {
-                _context.CinemaRooms.Remove(cinemaRoom);
+                throw new Exception($"Error updating cinema room: {ex.Message}", ex);
             }
         }
-        public void Save()
+
+        public async Task Delete(int id)
         {
-            _context.SaveChanges();
+            var cinemaRoom = await _context.CinemaRooms.FirstOrDefaultAsync(m => m.CinemaRoomId == id);
+            if (cinemaRoom != null)
+            {
+                var seats = await _seatRepository.GetByCinemaRoomIdAsync(id);
+                
+                foreach (var seat in seats)
+                {
+                    await _seatRepository.DeleteAsync(seat.SeatId);
+                }
+
+                _context.CinemaRooms.Remove(cinemaRoom);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task Save()
+        {
+            await _context.SaveChangesAsync();
         }
     }
 }
