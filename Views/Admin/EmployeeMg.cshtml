@@ -8,31 +8,57 @@
     <a asp-controller="Employee" asp-action="Create" class="btn btn-sm btn-primary">Create an Employee</a>
 </div>
 
+<form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchEmployees();">
+    <input type="hidden" name="tab" value="EmployeeMg" />
+    <div class="input-group" style="max-width: 600px;">
+        <input type="text" id="searchKeyword" name="keyword" value="@ViewBag.Keyword" maxlength="50" class="form-control" placeholder="🔍 Search by name, email, phone, etc..." />
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+
 <table class="table table-bordered table-striped">
     <thead class="table-dark">
         <tr>
             <th>ID</th>
-            <th>Name</th>
+            <th>FULL NAME</th>
+            <th>IDENTITY CARD</th>
+            <th>EMAIL</th>
+            <th>PHONE</th>
+            <th>ADDRESS</th>
             <th style="width: 150px;">Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var employee in Model)
+        @if (!Model.Any())
         {
             <tr>
-                <td>@employee.EmployeeId</td>
-                <td>@employee.Account?.FullName</td>
-
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                    <a href="@Url.Action("Edit", "Employee", new { id = employee.EmployeeId })" class="btn btn-sm btn-primary">Edit</a>
-                    <form asp-action="Delete" asp-controller="Employee" method="post" onsubmit="return confirm('Are you sure you want to delete this employee?');">
-                        <input type="hidden" name="id" value="@employee.EmployeeId" />
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                    </div>
-                </td>
+                <td colspan="7" class="text-center text-danger">No employees found.</td>
             </tr>
+        }
+        else
+        {
+            @foreach (var employee in Model)
+            {
+                <tr>
+                    <td>@employee.EmployeeId</td>
+                    <td>@employee.Account?.FullName</td>
+                    <td>@employee.Account?.IdentityCard</td>
+                    <td>@employee.Account?.Email</td>
+                    <td>@employee.Account?.PhoneNumber</td>
+                    <td>@employee.Account?.Address</td>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="@Url.Action("Edit", "Employee", new { id = employee.EmployeeId })" class="btn btn-sm btn-primary">Edit</a>
+                            <form asp-action="Delete" asp-controller="Employee" method="post" onsubmit="return confirm('Are you sure you want to delete this employee?');">
+                                <input type="hidden" name="id" value="@employee.EmployeeId" />
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
         }
     </tbody>
 </table>

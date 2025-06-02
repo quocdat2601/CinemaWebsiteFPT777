@@ -14,5 +14,6 @@ namespace MovieTheater.Services
         Task<List<Schedule>> GetSchedulesAsync();
         Task<List<ShowDate>> GetShowDatesAsync();
         Task<List<Models.Type>> GetTypesAsync();
+        IEnumerable<Movie> SearchMovies(string searchTerm);
     }
 }

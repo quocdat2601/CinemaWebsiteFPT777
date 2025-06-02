@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.Services;
 using MovieTheater.ViewModels;
@@ -11,12 +13,14 @@ namespace MovieTheater.Controllers
         private readonly IEmployeeService _service;
         private readonly ILogger<AccountController> _logger;
         private readonly IMovieService _movieService;
+        private readonly IMemberRepository _memberRepository;
 
-        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService)
+        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository)
         {
             _service = service;
             _logger = logger;
             _movieService = movieService;
+            _memberRepository = memberRepository;
         }
         // GET: EmployeeController
         public IActionResult MainPage(string tab = "MovieMg")
@@ -25,6 +29,14 @@ namespace MovieTheater.Controllers
             return View();
         } 
 
+        [Authorize(Roles = "Employee")]
+        public IActionResult MemberList()
+        {
+            var members = _memberRepository.GetAll();
+            return PartialView("MemberMg", members);
+        }
+
+        [Authorize(Roles = "Employee")]
         public IActionResult LoadTab(string tab)
         {
             switch (tab)
@@ -32,12 +44,17 @@ namespace MovieTheater.Controllers
                 case "MovieMg":
                     var movies = _movieService.GetAll();
                     return PartialView("MovieMg", movies);
+                case "MemberMg":
+                    var members = _memberRepository.GetAll();
+                    return PartialView("~/Views/Admin/MemberMg.cshtml", members);
                 case "ShowroomMg":
                     return PartialView("ShowroomMg");
                 case "ScheduleMg":
                     return PartialView("SheduleMg");
                 case "PromotionMg":
                     return PartialView("PromotionMg");
+                case "TicketSellingMg":
+                    return PartialView("TicketSellingMg");
                 default:
                     return Content("Tab not found.");
             }

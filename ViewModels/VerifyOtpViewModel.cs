@@ -4,4 +4,4 @@
     {
         public string Otp { get; set; }
     }
-}
+} 

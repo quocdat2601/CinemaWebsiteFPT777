@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Models;
@@ -9,6 +11,9 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Security.Claims;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Service
 {
@@ -111,7 +116,10 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            account.Status = model.Status;
+            if (model.Status.HasValue)
+            {
+                account.Status = model.Status;
+            }
 
             if (!string.IsNullOrEmpty(model.Image))
                 account.Image = model.Image;

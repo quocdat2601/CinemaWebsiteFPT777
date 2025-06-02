@@ -19,9 +19,9 @@ namespace MovieTheater.Controllers
         }
 
         // GET: MovieController
-        public IActionResult MovieList()
+        public IActionResult MovieList(string searchTerm)
         {
-            var movies = _movieService.GetAll()
+            var movies = _movieService.SearchMovies(searchTerm)
                 .Select(m => new MovieViewModel
                 {
                     MovieId = m.MovieId,
@@ -31,6 +31,7 @@ namespace MovieTheater.Controllers
                     Types = m.Types.ToList()
                 });
             
+            ViewBag.SearchTerm = searchTerm;
             return View(movies);
         }
 
@@ -42,6 +43,7 @@ namespace MovieTheater.Controllers
 
             var viewModel = new MovieDetailViewModel
             {
+                MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 MovieNameVn = movie.MovieNameVn,
                 FromDate = movie.FromDate,
@@ -139,6 +141,7 @@ namespace MovieTheater.Controllers
 
             var viewModel = new MovieDetailViewModel
             {
+                MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 MovieNameVn = movie.MovieNameVn,
                 FromDate = movie.FromDate,

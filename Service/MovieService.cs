@@ -3,6 +3,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.IO;
+using System.Linq;
 
 namespace MovieTheater.Services
 {
@@ -114,5 +115,19 @@ namespace MovieTheater.Services
             return await _movieRepository.GetTypesAsync();
         }
 
+        public IEnumerable<Movie> SearchMovies(string searchTerm)
+        {
+            var movies = _movieRepository.GetAll();
+            
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return movies.OrderBy(m => m.MovieNameEnglish);
+            }
+
+            searchTerm = searchTerm.Trim().ToLower();
+            return movies
+                .Where(m => m.MovieNameEnglish != null && m.MovieNameEnglish.ToLower().Contains(searchTerm))
+                .OrderBy(m => m.MovieNameEnglish);
+        }
     }
 }

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using MovieTheater.Service;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
@@ -24,7 +26,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult MainPage(string tab = "Profile")
+        public IActionResult MainPage(string tab = "Information")
         {
             ViewData["ActiveTab"] = tab;
             var user = _service.GetCurrentUser();

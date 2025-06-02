@@ -48,21 +48,60 @@
 
             $('#accountTabs .nav-link').click(function (e) {
                 e.preventDefault();
+                loadTab($(this).data('tab'));
+            });
 
-                const tab = $(this).data('tab');
+            // Ưu tiên đọc từ URL ?tab=..., nếu không có thì dùng ViewData
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab') || '@ViewData["ActiveTab"]' || 'Information';
+            loadTab(activeTab);
 
-                // UI Active
-                $('#accountTabs .nav-link').removeClass('active');
-                $(this).addClass('active');
+            // Hiển thị toast nếu có ?toast=...
+            const toastMessage = urlParams.get('toast');
+            if (toastMessage && typeof showToast === 'function') {
+                showToast(decodeURIComponent(toastMessage));
+            }
+        });
 
                 // Show loading and load content
                 $('#tabContent').html('<h3>Loading...</h3>');
 
-                $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
-                    $('#tabContent').html(data);
-                });
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    if (result.success) {
+                        loadTab(result.reloadTab);
+                        if (result.toast) showToast(result.toast);
+                    } else if (result.error) {
+                        showErrorToast(result.error);
+                    } else {
+                        $('#tabContent').html(result); // Hiển thị lại form nếu có lỗi ModelState
+                    }
+                },
+                error: function () {
+                    $('#tabContent').html('<div class="text-danger">Lỗi không xác định từ server.</div>');
+                }
             });
+
+            // Ẩn alert sau vài giây (nếu có)
+            setTimeout(() => $(".alert").fadeOut("slow"), 3000);
+        });
+
+        // Hiển thị TempData toast khi DOM sẵn sàng
+        document.addEventListener("DOMContentLoaded", function () {
+            const toastEl = document.getElementById('toastMessage');
+            if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
         });
    
     </script>
 }
+
+
+

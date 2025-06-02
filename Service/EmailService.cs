@@ -50,4 +50,4 @@ namespace MovieTheater.Service
             }
         }
     }
-}
+} 

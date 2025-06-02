@@ -1,0 +1,84 @@
+@model MovieTheater.ViewModels.PromotionViewModel
+
+@{
+    ViewData["Title"] = "Create Promotion";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create New Promotion</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" enctype="multipart/form-data" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Title" class="control-label"></label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Detail" class="control-label"></label>
+                            <textarea asp-for="Detail" class="form-control" rows="4"></textarea>
+                            <span asp-validation-for="Detail" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="DiscountLevel" class="control-label"></label>
+                            <input asp-for="DiscountLevel" class="form-control" type="number" min="1" max="100" />
+                            <span asp-validation-for="DiscountLevel" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="StartTime" class="control-label"></label>
+                                    <input asp-for="StartTime" class="form-control" type="datetime-local" />
+                                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="EndTime" class="control-label"></label>
+                                    <input asp-for="EndTime" class="form-control" type="datetime-local" />
+                                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Image" class="control-label">Promotion Image</label>
+                            <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label"></label>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">Create Promotion</button>
+                            <a asp-action="MainPage" asp-controller="Admin" asp-route-tab="PromotionMg" class="btn btn-secondary">Back to List</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Set min date for EndTime based on StartTime
+        document.getElementById('StartTime').addEventListener('change', function () {
+            document.getElementById('EndTime').min = this.value;
+        });
+    </script>
+} 
