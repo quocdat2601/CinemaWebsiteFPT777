@@ -70,10 +70,13 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
+                        </li>
                     </ul>
 
                     <ul class="navbar-nav">
-                        @if (userRole == "1")
+                        @if (userRole == "Admin")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
@@ -83,7 +86,7 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
-                        else if (userRole == "2")
+                        else if (userRole == "Employee")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
@@ -102,7 +105,7 @@
                             </li>
 
                             @* ✅ Hiển thị Score History nếu là Member *@
-                            @if (userRole == "3")
+                            @if (userRole == "Member")
                             {
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Account" asp-action="ScoreHistory">Score History</a>

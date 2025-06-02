@@ -134,18 +134,28 @@ namespace MovieTheater.Service
                 return null;
 
             // 3. Map sang ViewModel
+            bool isGoogleAccount = false;
+            // Giả định: nếu Password null hoặc có độ dài > 30 ký tự (random GUID) thì là Google
+            if (string.IsNullOrEmpty(account.Password) || (account.Password?.Length > 30))
+            {
+                isGoogleAccount = true;
+            }
             return new ProfileViewModel
             {
                 AccountId = account.AccountId,
                 Username = account.Username,
                 FullName = account.FullName,
-                DateOfBirth = (DateOnly)account.DateOfBirth,
+                DateOfBirth = account.DateOfBirth.HasValue ? account.DateOfBirth.Value : default(DateOnly),
                 Gender = account.Gender,
                 IdentityCard = account.IdentityCard,
                 Email = account.Email,
                 Address = account.Address,
                 PhoneNumber = account.PhoneNumber,
-                Password = account.Password
+                Password = account.Password ?? string.Empty,
+                Image = account.Image,
+                RoleId = account.RoleId,
+                Status = account.Status,
+                IsGoogleAccount = isGoogleAccount
             };
         }
 

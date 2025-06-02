@@ -74,7 +74,7 @@
                         <div class="form-group row mb-3">
                             <label class="col-sm-3 col-form-label">Email</label>
                             <div class="col-sm-9">
-                                <input asp-for="Email" class="form-control" />
+                                <input asp-for="Email" class="form-control" readonly style="background-color: #e9ecef;" />
                                 <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
                         </div>
@@ -98,7 +98,10 @@
                         </div>
 
 					<div class="form-group mb-3">
-						<a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary">Change Password</a>
+						@if (!Model.IsGoogleAccount)
+						{
+							<a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary">Change Password</a>
+						}
 					</div>
 				</div>
 			</div>
@@ -109,10 +112,3 @@
 		</form>
 	</div>
 </div>
-
-@section Scripts {
-<script>
-// This script block is intentionally left mostly empty as the Change Password logic
-// should reside on the separate Change Password page.
-</script>
-}

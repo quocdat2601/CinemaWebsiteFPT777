@@ -1,8 +1,0 @@
-2025-05-29 23:32:47.524 +07:00 [INF] [SendOtp] accountId=0CDD9BD0F9, email=quocdat2601@gmail.com
-2025-05-29 23:32:47.551 +07:00 [INF] [StoreOtp] accountId=0CDD9BD0F9, otp=449391, expiry=5/29/2025 4:37:47 PM
-2025-05-29 23:32:54.983 +07:00 [INF] [VerifyOtp] accountId=0CDD9BD0F9
-2025-05-29 23:32:54.985 +07:00 [INF] [VerifyOtp] accountId=0CDD9BD0F9, otp=449391
-2025-05-29 23:36:02.755 +07:00 [INF] [SendOtp] accountId=0CDD9BD0F9, email=quocdat2601@gmail.com
-2025-05-29 23:36:02.781 +07:00 [INF] [StoreOtp] accountId=0CDD9BD0F9, otp=416204, expiry=5/29/2025 4:41:02 PM
-2025-05-29 23:36:09.548 +07:00 [INF] [VerifyOtp] accountId=0CDD9BD0F9
-2025-05-29 23:36:09.550 +07:00 [INF] [VerifyOtp] accountId=0CDD9BD0F9, otp=416204
