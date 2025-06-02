@@ -11,11 +11,15 @@ namespace MovieTheater.Repository
         public void Delete(string id);
         public void Save();
         string GenerateMovieId();
+        Task<List<Movie>> GetAllMoviesAsync();
         Task<List<Schedule>> GetSchedulesAsync();
         Task<List<ShowDate>> GetShowDatesAsync();
         Task<List<Models.Type>> GetTypesAsync();
         public List<Schedule> GetSchedulesByIds(List<int> ids);
         public List<ShowDate> GetShowDatesByIds(List<int> ids);
         public List<Models.Type> GetTypesByIds(List<int> ids);
+
+        Task<List<DateTime>> GetShowDatesAsync(string movieId);
+        Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);
     }
 }

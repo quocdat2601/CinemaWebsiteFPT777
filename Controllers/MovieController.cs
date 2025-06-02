@@ -43,6 +43,7 @@ namespace MovieTheater.Controllers
 
             var viewModel = new MovieDetailViewModel
             {
+                MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 MovieNameVn = movie.MovieNameVn,
                 FromDate = movie.FromDate,
@@ -140,6 +141,7 @@ namespace MovieTheater.Controllers
 
             var viewModel = new MovieDetailViewModel
             {
+                MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 MovieNameVn = movie.MovieNameVn,
                 FromDate = movie.FromDate,
