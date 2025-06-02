@@ -95,24 +95,9 @@ namespace MovieTheater
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
-            builder.Services.AddScoped<IBookingService, BookingService>();
-
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-            })
-                .AddCookie()
-            .AddGoogle(options =>
-            {
-                IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-
-                options.ClientId = googleAuthNSection["ClientId"];
-                options.ClientSecret = googleAuthNSection["ClientSecret"];
-                options.CallbackPath = "/signin-google"; // Có thể sửa nếu bạn cần
-            });
             builder.Services.AddScoped<ISeatRepository, SeatRepository>();
             builder.Services.AddScoped<ISeatService, SeatService>();
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
