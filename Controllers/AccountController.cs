@@ -102,16 +102,6 @@ namespace MovieTheater.Controllers
                 string.IsNullOrWhiteSpace(user.Address) ||
                 string.IsNullOrWhiteSpace(user.PhoneNumber);
 
-            _logger.LogInformation("[GoogleLoginDebug] missingInfo: {missingInfo}, DateOfBirthNull: {dobNull}, DateOfBirthMin: {dobMin}, GenderEmpty: {genderEmpty}, IdentityCardEmpty: {idEmpty}, AddressEmpty: {addrEmpty}, PhoneEmpty: {phoneEmpty}",
-                missingInfo,
-                !user.DateOfBirth.HasValue,
-                user.DateOfBirth.HasValue && user.DateOfBirth.Value == DateOnly.MinValue,
-                string.IsNullOrWhiteSpace(user.Gender),
-                string.IsNullOrWhiteSpace(user.IdentityCard),
-                string.IsNullOrWhiteSpace(user.Address),
-                string.IsNullOrWhiteSpace(user.PhoneNumber)
-            );
-
             if (missingInfo)
             {
                 TempData["FirstTimeLogin"] = true;
