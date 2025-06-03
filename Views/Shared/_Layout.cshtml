@@ -67,7 +67,7 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Showtime" asp-action="List">Showtime</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Showtime" asp-action="Select">Showtime</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
@@ -135,31 +135,7 @@
         @RenderBody()
     </main>
 
-    <!-- SUCCESS TOAST -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-        <div id="toastMessage" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    @TempData["ToastMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ERROR TOAST -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1081">
-        <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <!-- sẽ được set bằng JavaScript -->
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-
+<partial name="_ToastMessages" />
 
     <footer class="border-top footer text-muted">
         <div class="container text-center">
