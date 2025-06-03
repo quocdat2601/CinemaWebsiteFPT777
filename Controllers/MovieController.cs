@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
 using MovieTheater.Services;
 using MovieTheater.ViewModels;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -16,6 +17,10 @@ namespace MovieTheater.Controllers
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
+        }
+        private string GetUserRole()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
 
         // GET: MovieController
@@ -136,7 +141,13 @@ namespace MovieTheater.Controllers
                 }
 
                 TempData["ToastMessage"] = "Movie created successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                string role = GetUserRole();
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+
             }
             catch (Exception ex)
             {
@@ -243,7 +254,12 @@ namespace MovieTheater.Controllers
             }
 
             TempData["ToastMessage"] = "Movie updated successfully!";
-            return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+            //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+            string role = GetUserRole();
+            if (role == "Admin")
+                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+            else
+                return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
         }
                 
         // POST: Movie/Delete/5
@@ -251,19 +267,28 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {
+            string role = GetUserRole();
             try
             {
                 if (string.IsNullOrEmpty(id))
                 {
                     TempData["ToastMessage"] = "Invalid movie ID.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
                 var movie = _movieService.GetById(id);
                 if (movie == null)
                 {
                     TempData["ToastMessage"] = "Movie not found.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
                 // Force delete by clearing all relationships first
@@ -276,16 +301,28 @@ namespace MovieTheater.Controllers
                 if (!success)
                 {
                     TempData["ToastMessage"] = "Failed to delete movie.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
                 TempData["ToastMessage"] = "Movie deleted successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
             }
             catch (Exception ex)
             {
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
             }
         }
 

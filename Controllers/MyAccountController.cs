@@ -1,10 +1,7 @@
-﻿    using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Service;
-using MovieTheater.ViewModels;
-using System.Security.Claims;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 

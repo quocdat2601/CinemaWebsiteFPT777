@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
-using MovieTheater.Repository;
-using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
 

@@ -1,16 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System.Globalization;
 using System.Security.Claims;
 
 namespace MovieTheater.Controllers
@@ -169,7 +164,8 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
+                return RedirectToAction("MovieList", "Movie");
+                //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }
 
