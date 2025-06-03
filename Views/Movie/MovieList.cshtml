@@ -28,15 +28,14 @@
     <div class="container mt-3">
         <header class="header">
             <h1 class="header-title">Movie List</h1>
-            <div class="search-container text-center my-4">
+            <div class="text-center my-4">
                 <form asp-action="MovieList" method="get" class="d-flex justify-content-center gap-2">
-                    <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" class="form-control w-100" placeholder="Search movies..." />
-                    <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-                                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                    </button>
+                    <div class="input-group" style="max-width: 600px;">
+                        <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" maxlength="50" class="form-control" placeholder="🔍 Search by movies.." />
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+
+                   
                 </form>
             </div>
 

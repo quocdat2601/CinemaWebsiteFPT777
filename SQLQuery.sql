@@ -228,36 +228,104 @@ INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('EM006', 'AC009');
 
 INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
-('2025-06-01', 'Sunday Premiere'),
-('2025-06-02', 'Monday Matinee');
+('2024-03-20', 'Wednesday, March 20'),
+('2024-03-21', 'Thursday, March 21'),
+('2024-03-22', 'Friday, March 22'),
+('2024-03-23', 'Saturday, March 23'),
+('2024-03-24', 'Sunday, March 24'),
+('2024-03-25', 'Monday, March 25'),
+('2024-03-26', 'Tuesday, March 26'),
+('2024-03-27', 'Wednesday, March 27'),
+('2024-03-28', 'Thursday, March 28'),
+('2024-03-29', 'Friday, March 29'),
+('2024-03-30', 'Saturday, March 30'),
+('2024-03-31', 'Sunday, March 31'),
+('2024-04-01', 'Monday, April 1'),
+('2024-04-02', 'Tuesday, April 2');
 
 INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image)
 VALUES
-('MV001', 'Cillian Murphy, Emily Blunt', 1, 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Christopher Nolan', 180, '2023-07-21', 'Universal Pictures', '2023-09-21', 'IMAX', 'Oppenheimer', 'Oppenheimer', '/image/open.jpg', '/image/open.jpg'),
-('MV002', 'Tom Holland, Zendaya', 2, 'Peter Parker seeks help from Doctor Strange after his identity is revealed, leading to multiverse chaos.', 'Jon Watts', 148, '2021-12-17', 'Marvel Studios', '2022-02-17', '3D', 'Spider-Man: No Way Home', 'Người Nhện: Không Còn Nhà', '/image/spider.jpg', '/image/spider.jpg'),
-('MV003', 'Timothée Chalamet, Zendaya', 3, 'Paul Atreides unites with the Fremen to seek revenge against the conspirators who destroyed his family.', 'Denis Villeneuve', 166, '2024-03-01', 'Legendary Pictures', '2024-05-01', 'IMAX 3D', 'Dune: Part Two', 'Hành Tinh Cát: Phần Hai', '/image/dune.jpg', '/image/dune.jpg'),
-('MV004', 'Margot Robbie, Ryan Gosling', 4, 'Barbie suffers a crisis that leads her to question her world and her existence.', 'Greta Gerwig', 114, '2023-07-21', 'Warner Bros.', '2023-09-21', '2D', 'Barbie', 'Barbie', '/image/barbie.jpg', '/image/barbie.jpg'),
-('MV005', 'Michelle Yeoh, Ke Huy Quan', 5, 'A woman is swept into a multiverse adventure where she must connect with different versions of herself.', 'Daniel Kwan, Daniel Scheinert', 139, '2022-03-11', 'A24', '2022-05-11', '2D', 'Everything Everywhere All at Once', 'Mọi Thứ Mọi Nơi Tất Cả Cùng Lúc', '/image/everything.jpg', '/image/everything.jpg'),
-('MV006', 'Sam Worthington, Zoe Saldana', 1, 'Jake Sully lives with his family on Pandora and must protect them from a new threat.', 'James Cameron', 192, '2022-12-16', '20th Century Studios', '2023-02-16', '3D', 'Avatar: The Way of Water', 'Avatar: Dòng Chảy Của Nước', '/image/avatar.jpg', '/image/avatar.jpg'),
-('MV007', 'Robert Pattinson, Zoë Kravitz', 2, 'Batman uncovers corruption in Gotham while pursuing the Riddler, a sadistic killer.', 'Matt Reeves', 176, '2022-03-04', 'Warner Bros.', '2022-05-04', '2D', 'The Batman', 'Người Dơi', '/image/batman.jpg', '/image/batman.jpg'),
-('MV008', 'Tom Cruise, Miles Teller', 3, 'Pete "Maverick" Mitchell trains Top Gun graduates for a high-stakes mission.', 'Joseph Kosinski', 131, '2022-05-27', 'Paramount Pictures', '2022-07-27', 'IMAX', 'Top Gun: Maverick', 'Phi Công Siêu Đẳng Maverick', '/image/topgun.jpg', '/image/topgun.jpg'),
-('MV009', 'Song Kang-ho, Choi Woo-shik', 4, 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2019-05-30', 'CJ Entertainment', '2019-07-30', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg');
+('MV001', 'Cillian Murphy, Emily Blunt', 1, 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Christopher Nolan', 180, '2023-07-21', 'Universal Pictures', '2024-03-25', 'IMAX', 'Oppenheimer', 'Oppenheimer', '/image/open.jpg', '/image/open.jpg'),
+('MV002', 'Tom Holland, Zendaya', 2, 'Peter Parker seeks help from Doctor Strange after his identity is revealed, leading to multiverse chaos.', 'Jon Watts', 148, '2024-03-20', 'Marvel Studios', '2024-04-25', '3D', 'Spider-Man: No Way Home', 'Người Nhện: Không Còn Nhà', '/image/spider.jpg', '/image/spider.jpg'),
+('MV003', 'Timothée Chalamet, Zendaya', 3, 'Paul Atreides unites with the Fremen to seek revenge against the conspirators who destroyed his family.', 'Denis Villeneuve', 166, '2024-03-01', 'Legendary Pictures', '2024-03-21', 'IMAX 3D', 'Dune: Part Two', 'Hành Tinh Cát: Phần Hai', '/image/dune.jpg', '/image/dune.jpg'),
+('MV004', 'Margot Robbie, Ryan Gosling', 4, 'Barbie suffers a crisis that leads her to question her world and her existence.', 'Greta Gerwig', 114, '2023-07-21', 'Warner Bros.', '2024-03-27', '2D', 'Barbie', 'Barbie', '/image/barbie.jpg', '/image/barbie.jpg'),
+('MV005', 'Michelle Yeoh, Ke Huy Quan', 5, 'A woman is swept into a multiverse adventure where she must connect with different versions of herself.', 'Daniel Kwan, Daniel Scheinert', 139, '2024-03-25', 'A24', '2024-04-02', '2D', 'Everything Everywhere All at Once', 'Mọi Thứ Mọi Nơi Tất Cả Cùng Lúc', '/image/everything.jpg', '/image/everything.jpg'),
+('MV006', 'Sam Worthington, Zoe Saldana', 1, 'Jake Sully lives with his family on Pandora and must protect them from a new threat.', 'James Cameron', 192, '2024-03-27', '20th Century Studios', '2024-04-02', '3D', 'Avatar: The Way of Water', 'Avatar: Dòng Chảy Của Nước', '/image/avatar.jpg', '/image/avatar.jpg'),
+('MV007', 'Robert Pattinson, Zoë Kravitz', 2, 'Batman uncovers corruption in Gotham while pursuing the Riddler, a sadistic killer.', 'Matt Reeves', 176, '2024-03-28', 'Warner Bros.', '2024-04-02', '2D', 'The Batman', 'Người Dơi', '/image/batman.jpg', '/image/batman.jpg'),
+('MV008', 'Tom Cruise, Miles Teller', 3, 'Pete "Maverick" Mitchell trains Top Gun graduates for a high-stakes mission.', 'Joseph Kosinski', 131, '2024-03-29', 'Paramount Pictures', '2024-04-02', 'IMAX', 'Top Gun: Maverick', 'Phi Công Siêu Đẳng Maverick', '/image/topgun.jpg', '/image/topgun.jpg'),
+('MV009', 'Song Kang-ho, Choi Woo-shik', 4, 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2024-03-30', 'CJ Entertainment', '2024-04-02', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg');
 
 INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
+-- MV001: From 2023-07-21 to 2024-03-25 (show dates 1 to 6)
 ('MV001', 1),
 ('MV001', 2),
+('MV001', 3),
+('MV001', 4),
+('MV001', 5),
+('MV001', 6),
+-- MV002: From 2024-03-20 to 2024-04-25 (dates 1 to 14)
 ('MV002', 1),
 ('MV002', 2),
+('MV002', 3),
+('MV002', 4),
+('MV002', 5),
+('MV002', 6),
+('MV002', 7),
+('MV002', 8),
+('MV002', 9),
+('MV002', 10),
+('MV002', 11),
+('MV002', 12),
+('MV002', 13),
+('MV002', 14),
+-- MV003: From 2024-03-01 to 2024-03-21 (dates 1 and 2)
 ('MV003', 1),
 ('MV003', 2),
+-- MV004: From 2023-07-21 to 2024-03-27 (dates 1 to 8)
 ('MV004', 1),
 ('MV004', 2),
-('MV005', 1),
-('MV005', 2),
-('MV006', 1),
-('MV006', 2),
-('MV007', 1),
-('MV007', 2);
+('MV004', 3),
+('MV004', 4),
+('MV004', 5),
+('MV004', 6),
+('MV004', 7),
+('MV004', 8),
+-- MV005: From 2024-03-25 to 2024-04-02 (dates 6 to 14)
+('MV005', 6),
+('MV005', 7),
+('MV005', 8),
+('MV005', 9),
+('MV005', 10),
+('MV005', 11),
+('MV005', 12),
+('MV005', 13),
+('MV005', 14),
+-- MV006: From 2024-03-27 to 2024-04-02 (dates 8 to 14)
+('MV006', 8),
+('MV006', 9),
+('MV006', 10),
+('MV006', 11),
+('MV006', 12),
+('MV006', 13),
+('MV006', 14),
+-- MV007: From 2024-03-28 to 2024-04-02 (dates 9 to 14)
+('MV007', 9),
+('MV007', 10),
+('MV007', 11),
+('MV007', 12),
+('MV007', 13),
+('MV007', 14),
+-- MV008: From 2024-03-29 to 2024-04-02 (dates 10 to 14)
+('MV008', 10),
+('MV008', 11),
+('MV008', 12),
+('MV008', 13),
+('MV008', 14),
+-- MV009: From 2024-03-30 to 2024-04-02 (dates 11 to 14)
+('MV009', 11),
+('MV009', 12),
+('MV009', 13),
+('MV009', 14);
 
 INSERT INTO Schedule (Schedule_Time) VALUES
 ('10:00'),

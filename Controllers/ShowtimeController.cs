@@ -144,7 +144,7 @@ namespace MovieTheater.Controllers
             return View("~/Views/Showtime/Select.cshtml", model);
         }
 
-        public IActionResult SelectEmployee(DateTime? date)
+        public IActionResult List(DateTime? date)
         {
             // Reuse the same logic as Select action but return the employee view
             var availableDates = _context.ShowDates
@@ -190,7 +190,7 @@ namespace MovieTheater.Controllers
                 Movies = movies
             };
 
-            return View("~/Views/Showtime/SelectEmployee.cshtml", model);
+            return View("~/Views/Showtime/List.cshtml", model);
         }
 
         // GET: Showtime/SelectSeat
