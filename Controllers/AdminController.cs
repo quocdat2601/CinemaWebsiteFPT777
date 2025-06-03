@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.Services;
 using MovieTheater.ViewModels;
-using System.Collections.Generic;
 
 namespace MovieTheater.Controllers
 {

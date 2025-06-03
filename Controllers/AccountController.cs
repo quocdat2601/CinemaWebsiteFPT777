@@ -1,17 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using MovieTheater.Models;
+using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.Extensions.Logging;
-using MovieTheater.Models;
-using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
-using MovieTheater.Repository;
-
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -113,22 +108,21 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            string roleName = user.RoleId switch
-            {
-                1 => "Admin",
-                2 => "Employee",
-                3 => "Customer",
-                _ => "Guest"
-            };
+                string roleName = user.RoleId switch
+                {
+                    1 => "Admin",
+                    2 => "Employee",
+                    3 => "Customer",
+                    _ => "Guest"
+                };
 
             var appClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
                 new Claim("Email", user.Email),
-                new Claim("FullName", user.FullName ?? user.Username)
             };
 
             var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -157,6 +151,8 @@ namespace MovieTheater.Controllers
                 Expires = DateTime.Now.AddMinutes(60)
             });
 
+            TempData["ToastMessage"] = "Log in successful!";
+
             // Direct redirect like normal login
             if (user.RoleId == 1)
             {
@@ -169,6 +165,7 @@ namespace MovieTheater.Controllers
             else
             {
                 return RedirectToAction("MovieList", "Movie");
+                //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }
 
@@ -182,16 +179,12 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult MainPage()
-        {
-            return View();
-        }
-
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
+            TempData["ToastMessage"] = "Log out successful!";
             return RedirectToAction("Login", "Account");
         }
 
@@ -222,7 +215,7 @@ namespace MovieTheater.Controllers
                 _logger.LogWarning("Registration failed validation at {Time}. Errors: {Errors}",
                     DateTime.UtcNow, errors);
 
-                TempData["ErrorMessage"] = $"Validation failed: {errors}";
+                TempData["ErrorMessage"] = $"{errors}";
                 return View(model);
             }
 
@@ -242,7 +235,7 @@ namespace MovieTheater.Controllers
                 _logger.LogInformation("New account registered: {Username} at {Time}",
                     model.Username, DateTime.UtcNow);
 
-                TempData["ToastMessage"] = "Sign up successful! Please log in.";
+                TempData["ToastMessage"] = "Sign up successful! Redirecting to log in..";
                 return RedirectToAction("Signup");
             }
             catch (Exception ex)
@@ -266,20 +259,20 @@ namespace MovieTheater.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Invalid login data.";
-                return View(model);
+                TempData["ErrorMessage"] = "Please fill all required fields!";
+                return RedirectToAction("Login");
             }
 
             if (!_service.Authenticate(model.Username, model.Password, out var user))
             {
-                TempData["ErrorMessage"] = "Invalid username or password.";
-                return View(model);
+                TempData["ErrorMessage"] = "Invalid username or password!";
+                return RedirectToAction("Login");
             }
 
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
-                return View(model);
+                return RedirectToAction("Login");
             }
 
             string roleName = user.RoleId switch
@@ -293,7 +286,7 @@ namespace MovieTheater.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
                 new Claim("Email", user.Email)
@@ -314,6 +307,8 @@ namespace MovieTheater.Controllers
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.Now.AddMinutes(60)
             });
+
+            TempData["ToastMessage"] = "Log in successful!";
 
             if (user.RoleId == 1)
             {

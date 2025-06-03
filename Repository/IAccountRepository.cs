@@ -6,7 +6,7 @@ namespace MovieTheater.Repository
     {
         string GenerateAccountId();
         public Account? GetById(string id);
-        Account? Authenticate(string username, string password);
+        Account? Authenticate(string username);
         public Account? GetByUsername(string username);
         public void Add(Account account);
         public void Delete(string id);

@@ -30,7 +30,7 @@
 				<!-- Left Column: Image Uploads -->
 				<div class="col">
 					<div class="form-group mb-3">
-						<label>Small Image:</label><br />
+						<strong>Small Image:</strong><br />
 						@if (!string.IsNullOrEmpty(Model.SmallImage))
 						{
 							<img id="smallImagePreview" src="@Url.Content(Model.SmallImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
@@ -44,7 +44,7 @@
 					</div>
 
 					<div class="form-group mb-3">
-						<label>Large Image:</label><br />
+						<strong>Large Image:</strong><br />
 						@if (!string.IsNullOrEmpty(Model.LargeImage))
 						{
 							<img id="largeImagePreview" src="@Url.Content(Model.LargeImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
@@ -61,54 +61,63 @@
 				<!-- Right Column: Movie Details -->
 				<div class="col-md-6">
 					<div class="form-group mb-3">
-						<input type="text" class="form-control" asp-for="MovieNameEnglish" placeholder="Movie Name (EN):" />
+						<strong>Movie Name (EN)</strong>
+						<input type="text" class="form-control" asp-for="MovieNameEnglish"/>
 						<span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
-						<input type="text" class="form-control" asp-for="MovieNameVn" placeholder="Movie Name (VN):" />
+						<strong>Movie Name (VN)</strong>
+						<input type="text" class="form-control" asp-for="MovieNameVn"/>
 						<span asp-validation-for="MovieNameVn" class="text-danger"></span>
 					</div>
 
 					<div class="row mb-3">
 						<div class="col">
-							<input type="date" class="form-control" asp-for="FromDate" />
+							<strong>From Date</strong>
+							<input type="date" class="form-control" asp-for="FromDate"/>
 							<span asp-validation-for="FromDate" class="text-danger"></span>
 						</div>
 						<div class="col">
-							<input type="date" class="form-control" asp-for="ToDate" />
+							<strong>To Date</strong>
+							<input type="date" class="form-control" asp-for="ToDate"/>
 							<span asp-validation-for="ToDate" class="text-danger"></span>
 						</div>
 					</div>
 
 					<div class="form-group mb-3">
-						<input type="text" class="form-control" asp-for="Actor" placeholder="Actor:" />
+						<strong>Actor</strong>
+						<input type="text" class="form-control" asp-for="Actor"/>
 						<span asp-validation-for="Actor" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
-						<input type="text" class="form-control" asp-for="MovieProductionCompany" placeholder="Production Company:" />
+						<strong>Production Company</strong>
+						<input type="text" class="form-control" asp-for="MovieProductionCompany"/>
 						<span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
-						<input type="text" class="form-control" asp-for="Director" placeholder="Director:" />
+						<strong>Director</strong>
+						<input type="text" class="form-control" asp-for="Director"/>
 						<span asp-validation-for="Director" class="text-danger"></span>
 					</div>
 
 					<div class="row mb-3">
 						<div class="col">
-							<input type="number" class="form-control" asp-for="Duration" placeholder="Duration (min):" />
+							<strong>Duration (min)</strong>
+							<input type="number" class="form-control" asp-for="Duration"/>
 							<span asp-validation-for="Duration" class="text-danger"></span>
 						</div>
 						<div class="col">
-							<input type="text" class="form-control" asp-for="Version" placeholder="Version:" />
+							<strong>Version</strong>
+							<input type="text" class="form-control" asp-for="Version"/>
 							<span asp-validation-for="Version" class="text-danger"></span>
 						</div>
 					</div>
 
 					<div class="form-group mb-3">
-						<label>Types</label><br />
+						<strong>Types</strong><br />
 						@foreach (var type in Model.AvailableTypes)
 						{
 							<label class="me-3">
@@ -119,7 +128,7 @@
 					</div>
 
 					<div class="form-group mb-3">
-						<label for="CinemaRoomId">Cinema Room:</label>
+						<strong>Cinema Room</strong>
 						<select asp-for="CinemaRoomId" class="form-control" asp-items="@(new SelectList(Model.AvailableCinemaRooms, "CinemaRoomId", "CinemaRoomName"))">
 							<option value="">-- Select a Cinema Room --</option>
 						</select>
@@ -127,7 +136,7 @@
 					</div>
 
 					<div class="form-group mb-3">
-						<label>Schedules</label><br />
+						<strong>Schedules</strong><br />
 						@foreach (var schedule in Model.AvailableSchedules)
 						{
 							<label class="me-3">
@@ -141,7 +150,8 @@
 
 			<!-- Full-width description row below columns -->
 			<div class="form-group mt-3">
-				<textarea class="form-control" asp-for="Content" placeholder="Movie Description / Content:"></textarea>
+				<strong>Movie Description / Content</strong>
+				<textarea class="form-control" asp-for="Content"></textarea>
 				<span asp-validation-for="Content" class="text-danger"></span>
 			</div>
 

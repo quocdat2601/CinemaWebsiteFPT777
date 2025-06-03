@@ -4,16 +4,19 @@ using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Services
 {
     public class MovieService : IMovieService
     {
         private readonly IMovieRepository _movieRepository;
+        private readonly ILogger<MovieService> _logger;
 
-        public MovieService(IMovieRepository movieRepository)
+        public MovieService(IMovieRepository movieRepository, ILogger<MovieService> logger)
         {
             _movieRepository = movieRepository;
+            _logger = logger;
         }
 
         public IEnumerable<Movie> GetAll()

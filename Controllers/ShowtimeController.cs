@@ -1,11 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
-using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -142,55 +138,6 @@ namespace MovieTheater.Controllers
             };
 
             return View("~/Views/Showtime/Select.cshtml", model);
-        }
-
-        public IActionResult SelectEmployee(DateTime? date)
-        {
-            // Reuse the same logic as Select action but return the employee view
-            var availableDates = _context.ShowDates
-                .OrderBy(d => d.ShowDate1)
-                .Select(d => d.ShowDate1)
-                .ToList()
-                .Where(d => d.HasValue)
-                .Select(d => d.Value.ToDateTime(TimeOnly.MinValue))
-                .ToList();
-            if (!availableDates.Any())
-            {
-                var emptyModel = new ShowtimeSelectionViewModel
-                {
-                    AvailableDates = new List<DateTime>(),
-                    SelectedDate = date ?? DateTime.Today,
-                    Movies = new List<MovieShowtimeInfo>()
-                };
-                return View("~/Views/Showtime/SelectEmployee.cshtml", emptyModel);
-            }
-            var selectedDate = date ?? availableDates.First();
-            var selectedDateOnly = DateOnly.FromDateTime(selectedDate);
-
-            var moviesForDate = _context.Movies
-                .Where(m => m.FromDate <= selectedDateOnly && m.ToDate >= selectedDateOnly)
-                .Where(m => m.ShowDates.Any(sd => sd.ShowDate1 == selectedDateOnly))
-                .Include(m => m.Schedules)
-                .ToList();
-
-            var movies = moviesForDate.Select(m => new MovieShowtimeInfo
-            {
-                MovieId = m.MovieId,
-                MovieName = m.MovieNameVn ?? m.MovieNameEnglish ?? "Unknown",
-                PosterUrl = m.LargeImage ?? m.SmallImage ?? "/images/default-movie.png",
-                Showtimes = m.Schedules.Select(s => s.ScheduleTime).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>()
-            })
-            .Where(m => m.Showtimes.Any())
-            .ToList();
-
-            var model = new ShowtimeSelectionViewModel
-            {
-                AvailableDates = availableDates,
-                SelectedDate = selectedDate,
-                Movies = movies
-            };
-
-            return View("~/Views/Showtime/SelectEmployee.cshtml", model);
         }
 
         // GET: Showtime/SelectSeat

@@ -25,11 +25,9 @@
         text-decoration: none;
         transition: background-color 0.2s;
     }
-
-        .gsi-material-button:hover {
-            background-color: #f7f8f8;
-        }
-
+    .gsi-material-button:hover {
+        background-color: #f7f8f8;
+    }
     .gsi-material-button-icon {
         padding: 8px;
     }
@@ -44,13 +42,37 @@
         height: 18px;
         width: 18px;
     }
+
+    /* Toast Message Styles */
+    .toast-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        display: none;
+        animation: slideIn 0.5s ease-out;
+    }
+
+    .toast-success {
+        background-color: #4CAF50;
+    }
+
+    .toast-error {
+        background-color: #f44336;
+    }
+
+  
 </style>
 
 <body>
     <div class="login-wrapper">
         <div class="login-card">
             <h2 class="login-title">Login</h2>
-            <form asp-action="Login" method="post">
+            <form id="loginForm" asp-action="Login" method="post">
                 <div class="form-group">
                     <input type="text" class="form-control" asp-for="Username" placeholder="Username" required />
                 </div>
@@ -78,32 +100,7 @@
             </form>
         </div>
     </div>
+
 </body>
 
-@if (TempData["ToastMessage"] != null)
-{
-    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-        <div class="toast show align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    @TempData["ToastMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-        <div class="toast show align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    @TempData["ErrorMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-}
+<partial name="_ToastMessages" />

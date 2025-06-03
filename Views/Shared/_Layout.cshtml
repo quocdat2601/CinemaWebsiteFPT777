@@ -1,7 +1,7 @@
 ﻿@using System.Security.Claims
 @{
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-    var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+    var Name = User.FindFirst(ClaimTypes.Name)?.Value;
     var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
@@ -67,7 +67,7 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Showtime" asp-action="List">Showtime</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Showtime" asp-action="Select">Showtime</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
@@ -100,10 +100,10 @@
                         else if (isAuthenticated)
                         {
                             <li class="nav-item">
-                                <span class="nav-link">Hello, @userName!</span>
+                                <span class="nav-link">Hello, @Name!</span>
                             </li>
                             <li  class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
+                                <a class="nav-link" asp-controller="MyAccount" asp-action="MainPage">My Account</a>
                             </li>
 
                             @* ✅ Hiển thị Score History nếu là Member *@
@@ -135,31 +135,7 @@
         @RenderBody()
     </main>
 
-    <!-- SUCCESS TOAST -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-        <div id="toastMessage" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    @TempData["ToastMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ERROR TOAST -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1081">
-        <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <!-- sẽ được set bằng JavaScript -->
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-
+<partial name="_ToastMessages" />
 
     <footer class="border-top footer text-muted">
         <div class="container text-center">
@@ -168,11 +144,40 @@
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-    @* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> *@
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize and show success toast if it exists
+            var toastMessageContainer = document.getElementById('toastMessage');
+            if (toastMessageContainer) {
+                var toastEl = toastMessageContainer.querySelector('.toast');
+                if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay
+                    });
+                    toast.show();
+                }
+            }
+
+            // Initialize and show error toast if it exists
+            var errorToastContainer = document.getElementById('errorToast');
+            if (errorToastContainer) {
+                 var toastEl = errorToastContainer.querySelector('.toast');
+                 if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay (adjust to 4000 if preferred)
+                    });
+                    toast.show();
+                 }
+            }
+        });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

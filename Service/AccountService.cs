@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
@@ -6,6 +8,9 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Net;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Security.Claims;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
@@ -22,13 +27,7 @@ namespace MovieTheater.Service
         private readonly ILogger<AccountService> _logger;
         private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
 
-        public AccountService(
-            IAccountRepository repository, 
-            IEmployeeRepository employeeRepository, 
-            IMemberRepository memberRepository, 
-            IHttpContextAccessor httpContextAccessor,
-            EmailService emailService,
-            ILogger<AccountService> logger)
+        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository, IHttpContextAccessor httpContextAccessor, EmailService emailService, ILogger<AccountService> logger)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
@@ -43,10 +42,14 @@ namespace MovieTheater.Service
             if (_repository.GetByUsername(model.Username) != null)
                 return false;
 
+            var hasher = new PasswordHasher<Account>();
+            var HashedPW = hasher.HashPassword(null, model.Password);
+
+
             var account = new Account
             {
                 Username = model.Username,
-                Password = model.Password,
+                Password = HashedPW,
                 FullName = model.FullName,
                 DateOfBirth = model.DateOfBirth,
                 Gender = model.Gender,
@@ -88,6 +91,18 @@ namespace MovieTheater.Service
         {
             var account = _repository.GetById(id);
             if (account == null) return false;
+
+            // Only check for duplicate username if the username is being changed
+            if (model.Username != account.Username)
+            {
+                var duplicate = _repository.GetByUsername(model.Username);
+                if (duplicate != null) 
+                {
+                    throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
+                }
+            }
+
+            // Update fields but preserve password if not provided
             account.Username = model.Username;
             if (!string.IsNullOrEmpty(model.Password))
             {
@@ -114,89 +129,107 @@ namespace MovieTheater.Service
             return true;
         }
 
+        //public bool Authenticate(string username, string password, out Account? account)
+        //{
+        //    account = _repository.Authenticate(username /*, password*/);//account with password hasing
+
+        //    if (account.Password.Length < 20)
+        //    {
+        //        var hashered = new PasswordHasher<Account>();
+        //        account.Password = hashered.HashPassword(null, account.Password);
+        //    }
+        //    var hasher = new PasswordHasher<Account>();
+        //    var result = hasher.VerifyHashedPassword(null, account.Password, password);
+        //    if (result == PasswordVerificationResult.Success)
+        //    {
+        //        return account != null;
+        //    }
+        //    else
+        //    {
+        //        return false;
+        //    }
+        //}
+        
+        //KIỂM TRA ACCOUNT NULL TRƯỚC KHI DÙNG
         public bool Authenticate(string username, string password, out Account? account)
         {
-            account = _repository.Authenticate(username, password);
-            return account != null;
+            account = _repository.Authenticate(username);
+
+            if (account == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(account.Password) && account.Password.Length < 20)
+            {
+                var hashered = new PasswordHasher<Account>();
+                account.Password = hashered.HashPassword(null, account.Password);
+            }
+
+            var hasher = new PasswordHasher<Account>();
+            var result = hasher.VerifyHashedPassword(null, account.Password, password);
+
+            return result == PasswordVerificationResult.Success;
         }
 
-        public ProfileViewModel GetCurrentUser()
+
+        public ProfileUpdateViewModel GetCurrentUser()
         {
-            // 1. Lấy userId từ Claims
-            var user = _httpContextAccessor.HttpContext.User;
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null)
+                return null;
+
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return null;
 
-            // 2. Query repository
             var account = _repository.GetById(userId);
             if (account == null)
                 return null;
 
-            // 3. Map sang ViewModel
-            bool isGoogleAccount = false;
-            // Giả định: nếu Password null hoặc có độ dài > 30 ký tự (random GUID) thì là Google
-            if (string.IsNullOrEmpty(account.Password) || (account.Password?.Length > 30))
-            {
-                isGoogleAccount = true;
-            }
-            return new ProfileViewModel
+            bool isGoogleAccount = account.Password.IsNullOrEmpty();
+
+            return new ProfileUpdateViewModel
             {
                 AccountId = account.AccountId,
-                Username = account.Username,
-                FullName = account.FullName,
-                DateOfBirth = account.DateOfBirth.HasValue ? account.DateOfBirth.Value : default(DateOnly),
-                Gender = account.Gender,
-                IdentityCard = account.IdentityCard,
-                Email = account.Email,
-                Address = account.Address,
-                PhoneNumber = account.PhoneNumber,
+                Username = account.Username ?? string.Empty,
+                FullName = account.FullName ?? string.Empty,
+                DateOfBirth = account.DateOfBirth ?? DateOnly.FromDateTime(DateTime.Now),
+                Gender = account.Gender ?? "unknown",
+                IdentityCard = account.IdentityCard ?? string.Empty,
+                Email = account.Email ?? string.Empty,
+                Address = account.Address ?? string.Empty,
+                PhoneNumber = account.PhoneNumber ?? string.Empty,
                 Password = account.Password ?? string.Empty,
-                Image = account.Image,
-                RoleId = account.RoleId,
-                Status = account.Status,
                 IsGoogleAccount = isGoogleAccount
             };
         }
-
-        public bool UpdateAccount(string id, ProfileViewModel model)
-        {
-            var account = _repository.GetById(id);
-            if (account == null) return false;
-
-            var duplicate = _repository.GetAll().Any(a => a.Username == model.Username && a.AccountId != id);
-            if (duplicate)
-            {
-                throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
-            }
-
-            account.Username = model.Username;
-            //account.Password = model.Password;
-            account.FullName = model.FullName;
-            account.DateOfBirth = model.DateOfBirth;
-            account.Gender = model.Gender;
-            account.IdentityCard = model.IdentityCard;
-            account.Email = model.Email;
-            account.Address = model.Address;
-            account.PhoneNumber = model.PhoneNumber;
-            //account.Status = model.Status;
-            _repository.Update(account);
-            _repository.Save();
-            return true;
-        }
-
-        public Account? GetById(string id)
-        {
-            return _repository.GetById(id);
-        }
-
         public bool VerifyCurrentPassword(string username, string currentPassword)
         {
             var account = _repository.GetByUsername(username);
             if (account == null)
                 return false;
 
-            return account.Password == currentPassword;
+            // If the password is not hashed (length < 20), hash it first
+            if (account.Password.Length < 20)
+            {
+                var hasher = new PasswordHasher<Account>();
+                account.Password = hasher.HashPassword(null, account.Password);
+                _repository.Update(account);
+                _repository.Save();
+            }
+
+            try
+            {
+                var hasher = new PasswordHasher<Account>();
+                var result = hasher.VerifyHashedPassword(null, account.Password, currentPassword);
+                return result == PasswordVerificationResult.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error verifying password for user {username}: {ex.Message}");
+                return false;
+            }
         }
 
         // --- OTP Email Sending ---
@@ -220,10 +253,16 @@ namespace MovieTheater.Service
                         </body>
                     </html>";
 
-                return _emailService.SendEmail(toEmail, subject, body);
+                var result = _emailService.SendEmail(toEmail, subject, body);
+                if (!result)
+                {
+                    _logger.LogError($"Failed to send OTP email to {toEmail}");
+                }
+                return result;
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Exception while sending OTP email to {toEmail}: {ex.Message}");
                 return false;
             }
         }
@@ -233,7 +272,10 @@ namespace MovieTheater.Service
         {
             var account = _repository.GetById(accountId);
             if (account == null) return false;
-            account.Password = newPassword;
+
+            var hasher = new PasswordHasher<Account>();
+            account.Password = hasher.HashPassword(null, newPassword);
+            
             _repository.Update(account);
             _repository.Save();
             return true;
@@ -246,7 +288,10 @@ namespace MovieTheater.Service
             {
                 return false;
             }
-            account.Password = newPassword;
+
+            var hasher = new PasswordHasher<Account>();
+            account.Password = hasher.HashPassword(null, newPassword);
+            
             _repository.Update(account);
             _repository.Save();
             return true;
@@ -286,5 +331,15 @@ namespace MovieTheater.Service
         {
             _otpStore.Remove(accountId);
         }
+        public bool GetByUsername(string username)
+        {
+            _repository.GetByUsername(username);
+            return true;
+        }
+        public Account? GetById(string id)
+        {
+            return _repository.GetById(id);
+        }
     }
 }
+

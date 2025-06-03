@@ -90,10 +90,10 @@ namespace MovieTheater.Repository
         {
             return _context.Accounts.ToList();
         }
-        public Account? Authenticate(string username, string password)
+        public Account? Authenticate(string username)
         {
             return _context.Accounts
-                .FirstOrDefault(a => a.Username == username && a.Password == password);
+                .FirstOrDefault(a => a.Username == username);
         }
 
     }

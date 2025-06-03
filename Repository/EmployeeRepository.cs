@@ -66,9 +66,11 @@ namespace MovieTheater.Repository
         public void Delete(string employeeId)
         {
             var employee = _context.Employees.Find(employeeId);
+            var account = _context.Accounts.Find(employee.AccountId);
             if (employee != null)
             {
                 _context.Employees.Remove(employee);
+                _context.Accounts.Remove(account);
                 _context.SaveChanges();
             }
         }

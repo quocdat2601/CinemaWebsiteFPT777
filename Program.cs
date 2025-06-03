@@ -85,7 +85,7 @@ namespace MovieTheater
                 options.CallbackPath = "/signin-google";
             });
 
-            // Services - DI
+
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -103,14 +103,6 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
             builder.Services.AddScoped<EmailService>();
-
-            // Logging with Serilog
-            builder.Host.UseSerilog((context, services, configuration) => configuration
-                .ReadFrom.Configuration(context.Configuration)
-                .ReadFrom.Services(services)
-                .WriteTo.Console()
-                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-            );
 
             builder.Services.AddHttpContextAccessor();
 

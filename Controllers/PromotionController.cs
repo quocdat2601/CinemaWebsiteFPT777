@@ -1,11 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Service;
+﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
+using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System;
-using System.IO;
-using System.Linq;
 
 namespace MovieTheater.Controllers
 {

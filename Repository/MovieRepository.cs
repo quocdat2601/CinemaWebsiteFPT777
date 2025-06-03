@@ -2,15 +2,19 @@
 using MovieTheater.Models;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Repository
 {
     public class MovieRepository : IMovieRepository
     {
         private readonly MovieTheaterContext _context;
-        public MovieRepository(MovieTheaterContext context)
+        private readonly ILogger<MovieRepository> _logger;
+
+        public MovieRepository(MovieTheaterContext context, ILogger<MovieRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public string GenerateMovieId()
