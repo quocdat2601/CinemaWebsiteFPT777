@@ -108,6 +108,19 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("MainPage", new { tab = "Profile" });
             }
 
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(", ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                _logger.LogWarning("Update failed validation at {Time}. Errors: {Errors}",
+                    DateTime.UtcNow, errors);
+
+                TempData["ErrorMessage"] = $"{errors}";
+                return RedirectToAction("MainPage", new { tab = "Profile" });
+            }
+
             try
             {
                 var registerModel = new RegisterViewModel

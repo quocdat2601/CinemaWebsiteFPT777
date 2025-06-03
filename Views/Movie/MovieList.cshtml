@@ -28,15 +28,21 @@
     <div class="container mt-3">
         <header class="header">
             <h1 class="header-title">Movie List</h1>
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search movies...">
-                <button class="search-button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </button>
+            <div class="search-container text-center my-4">
+                <form asp-action="MovieList" method="get" class="d-flex justify-content-center gap-2">
+                    <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" class="form-control w-100" placeholder="Search movies..." />
+                    <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </form>
             </div>
+
         </header>
+
+
 
         <section class="filters">
             <h2 class="filter-title">Genres</h2>
@@ -54,33 +60,44 @@
         </section>
 
         <main class="movie-grid">
-            @foreach (var movie in Model)
+            @if (!Model.Any())
             {
-                <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="text-decoration-none text-reset">
-                    <div class="movie-card">
-                        <div class="movie-poster">
-                            <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
-                        </div>
-                        <div class="movie-info">
-                            <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+                <div class="text-center w-100">
+                    <h3>No movies found</h3>
+                </div>
+            }
+            else
+            {
+                @foreach (var movie in Model)
+                {
+                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="text-decoration-none text-reset">
+                        <div class="movie-card">
+                            <div class="movie-poster">
+                                <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
+                            </div>
+                            <div class="movie-info">
+                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
 
-                            <div>
-                                @foreach (var type in movie.Types)
-                                {
-                                    <div class="badge bg-secondary">@type.TypeName</div>
-                                }
-                            </div>
-                            <div class="movie-duration mt-2">
-                                <svg class="duration-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <span>@movie.Duration min</span>
+                                <div>
+                                    @foreach (var type in movie.Types)
+                                    {
+                                        <div class="badge bg-secondary">@type.TypeName</div>
+                                    }
+                                </div>
+                                <div class="movie-duration mt-2">
+                                    <svg class="duration-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <span>@movie.Duration min</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                }
             }
         </main>
+
+
     </div>
 </div>
 

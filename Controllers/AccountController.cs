@@ -219,7 +219,7 @@ namespace MovieTheater.Controllers
                 _logger.LogWarning("Registration failed validation at {Time}. Errors: {Errors}",
                     DateTime.UtcNow, errors);
 
-                TempData["ErrorMessage"] = $"Validation failed: {errors}";
+                TempData["ErrorMessage"] = $"{errors}";
                 return View(model);
             }
 
@@ -239,7 +239,7 @@ namespace MovieTheater.Controllers
                 _logger.LogInformation("New account registered: {Username} at {Time}",
                     model.Username, DateTime.UtcNow);
 
-                TempData["ToastMessage"] = "Sign up successful! Please log in.";
+                TempData["ToastMessage"] = "Sign up successful! Redirecting to log in..";
                 return RedirectToAction("Signup");
             }
             catch (Exception ex)
@@ -290,7 +290,7 @@ namespace MovieTheater.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
                 new Claim("Email", user.Email)
