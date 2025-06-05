@@ -18,7 +18,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult ScoreHistory()
         {
-            return View();
+            return View("~/Views/Account/Tabs/Score.cshtml");
         }
 
         [HttpPost]
@@ -56,8 +56,11 @@ namespace MovieTheater.Controllers
             {
                 ViewBag.Message = "No score history found for the selected period.";
             }
-
-            return View(result);
+            System.Diagnostics.Debug.WriteLine("AccountId: " + accountId);
+            // ... sau khi lấy result
+            System.Diagnostics.Debug.WriteLine("Result count: " + result.Count);
+            return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
+
     }
 }
