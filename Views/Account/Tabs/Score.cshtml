@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <h2 class="text-center mb-4">Score History</h2>
 
-    <form asp-action="ScoreHistory" method="post" class="row g-3 border p-3 shadow-sm rounded bg-light">
+    <form asp-controller="Score" asp-action="ScoreHistory" method="post" class="row g-3 border p-3 shadow-sm rounded bg-light">
         <div class="col-md-4">
             <label class="form-label">From Date</label>
             <input type="date" name="fromDate" class="form-control" required />
