@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers

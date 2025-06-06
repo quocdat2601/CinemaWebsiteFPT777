@@ -13,7 +13,7 @@ public partial class Invoice
 
     public string? MovieName { get; set; }
 
-    public DateTime? ScheduleShow { get; set; }
+    public DateOnly? ScheduleShow { get; set; }
 
     public string? ScheduleShowTime { get; set; }
 

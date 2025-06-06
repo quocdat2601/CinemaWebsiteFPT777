@@ -1,6 +1,6 @@
 ﻿using MovieTheater.Models;
 
-namespace MovieTheater.Services
+namespace MovieTheater.Service
 {
     public interface IBookingService
     {

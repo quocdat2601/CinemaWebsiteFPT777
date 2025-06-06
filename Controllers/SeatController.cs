@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 
@@ -9,12 +11,21 @@ namespace MovieTheater.Controllers
         private readonly ICinemaService _cinemaService;
         private readonly ISeatService _seatService;
         private readonly ISeatTypeService _seatTypeService;
+        private readonly ICoupleSeatService _coupleSeatService;
+        private readonly IMovieService _movieService;
 
-        public SeatController(ICinemaService cinemaService, ISeatService seatService, ISeatTypeService seatTypeService)
+        public SeatController(
+            ICinemaService cinemaService, 
+            ISeatService seatService, 
+            ISeatTypeService seatTypeService,
+            ICoupleSeatService coupleSeatService,
+            IMovieService movieService)
         {
             _cinemaService = cinemaService;
             _seatService = seatService;
             _seatTypeService = seatTypeService;
+            _coupleSeatService = coupleSeatService;
+            _movieService = movieService;
         }
         // GET: SeatController
         public ActionResult Index()
@@ -55,22 +66,116 @@ namespace MovieTheater.Controllers
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
             var cinemaRoom = _cinemaService.GetById(cinemaId);
             ViewBag.SeatTypes = _seatTypeService.GetAll();
+            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
 
             if (cinemaRoom == null)
                 return NotFound();
 
-            var viewModel = new SeatEditViewModel
+            var viewModel = new ShowroomEditViewModel
             {
                 CinemaRoomId = cinemaId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
-                SeatWidth = cinemaRoom.SeatWidth,
-                SeatLength = cinemaRoom.SeatLength,
+                SeatWidth = (int)cinemaRoom.SeatWidth,
+                SeatLength = (int)cinemaRoom.SeatLength,
                 Seats = seats
             };
 
             return View(viewModel);
         }
 
+        [HttpGet("Seat/View/{cinemaId}")]
+        public async Task<IActionResult> View(int cinemaId)
+        {
+            var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
+            var cinemaRoom = _cinemaService.GetById(cinemaId);
+            ViewBag.SeatTypes = _seatTypeService.GetAll();
+            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+
+            if (cinemaRoom == null)
+                return NotFound();
+
+            var viewModel = new ShowroomEditViewModel
+            {
+                CinemaRoomId = cinemaId,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
+                SeatWidth = (int)cinemaRoom.SeatWidth,
+                SeatLength = (int)cinemaRoom.SeatLength,
+                Seats = seats
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet("Seat/ViewByMovie/{movieId}")]
+        public async Task<IActionResult> ViewByMovie(string movieId)
+        {
+            var movie = _movieService.GetById(movieId);
+            if (movie == null || !movie.CinemaRoomId.HasValue)
+            {
+                return NotFound();
+            }
+
+            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
+            if (cinemaRoom == null)
+            {
+                return NotFound();
+            }
+
+            var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
+            ViewBag.SeatTypes = _seatTypeService.GetAll();
+            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            ViewBag.MovieId = movieId;
+
+            var viewModel = new ShowroomEditViewModel
+            {
+                CinemaRoomId = movie.CinemaRoomId.Value,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
+                SeatLength = cinemaRoom.SeatLength ?? 0,
+                SeatWidth = cinemaRoom.SeatWidth ?? 0,
+                Seats = seats,
+                MovieName = movie.MovieNameEnglish
+            };
+
+            return View("View", viewModel);
+        }
+
+        [HttpGet("Seat/Select")]
+        public async Task<IActionResult> Select(string movieId, DateTime date, string time)
+        {
+            var movie = _movieService.GetById(movieId);
+            if (movie == null || !movie.CinemaRoomId.HasValue)
+            {
+                return NotFound();
+            }
+
+            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
+            if (cinemaRoom == null)
+            {
+                return NotFound();
+            }
+
+            var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
+            var bookedSeats = await _seatService.GetBookedSeatsAsync(movieId, date, time);
+
+            ViewBag.SeatTypes = _seatTypeService.GetAll();
+            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            ViewBag.MovieId = movieId;
+            ViewBag.Date = date;
+            ViewBag.Time = time;
+            ViewBag.BookedSeats = bookedSeats;
+
+            var viewModel = new ShowroomEditViewModel
+            {
+                CinemaRoomId = movie.CinemaRoomId.Value,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
+                SeatLength = cinemaRoom.SeatLength ?? 0,
+                SeatWidth = cinemaRoom.SeatWidth ?? 0,
+                Seats = seats,
+                MovieName = movie.MovieNameEnglish
+            };
+
+            return View("View", viewModel);
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -89,6 +194,20 @@ namespace MovieTheater.Controllers
             return Ok();
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCoupleSeat([FromBody] CoupleSeat coupleSeat)
+        {
+            try
+            {
+                await _coupleSeatService.CreateCoupleSeatAsync(coupleSeat.FirstSeatId, coupleSeat.SecondSeatId);
+                return Ok();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         // GET: SeatController/Delete/5
         public ActionResult Delete(int id)

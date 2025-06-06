@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
