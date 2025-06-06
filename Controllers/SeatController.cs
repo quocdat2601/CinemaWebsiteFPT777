@@ -175,7 +175,7 @@ namespace MovieTheater.Controllers
             ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
             viewModel.ReturnUrl = returnUrl;
 
-            return View("~/Views/Showtime/SelectSeat.cshtml", viewModel);
+            return View("~/Views/Seat/View.cshtml", viewModel);
         }
 
         [HttpPost]

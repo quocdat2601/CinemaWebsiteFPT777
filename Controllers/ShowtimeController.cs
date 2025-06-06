@@ -165,14 +165,5 @@ namespace MovieTheater.Controllers
 
             return View("~/Views/Showtime/Select.cshtml", model);
         }
-
-        // GET: Showtime/SelectSeat
-        // Placeholder for seat selection screen (to be implemented)
-        public IActionResult SelectSeat(string movieId, DateTime date, string time)
-        {
-            // TODO: Implement seat selection logic here
-            // For now, just show a placeholder message with the parameters
-            return Content($"Seat selection for MovieId={movieId}, Date={date:yyyy-MM-dd}, Time={time} (to be implemented)");
-        }
     }
 }
