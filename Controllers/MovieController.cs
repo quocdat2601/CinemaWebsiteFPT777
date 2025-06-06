@@ -34,9 +34,17 @@ namespace MovieTheater.Controllers
                     Duration = m.Duration,
                     SmallImage = m.SmallImage,
                     Types = m.Types.ToList()
-                });
-            
+                })
+                .ToList();
+
             ViewBag.SearchTerm = searchTerm;
+
+            // Kiểm tra nếu là Ajax thì chỉ render partial
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_MovieGrid", movies);
+            }
+
             return View(movies);
         }
 
