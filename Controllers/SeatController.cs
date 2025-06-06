@@ -140,7 +140,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet("Seat/Select")]
-        public async Task<IActionResult> Select(string movieId, DateTime date, string time)
+        public async Task<IActionResult> Select(string movieId, DateTime date, string time, string returnUrl)
         {
             var movie = _movieService.GetById(movieId);
             if (movie == null || !movie.CinemaRoomId.HasValue)
@@ -157,24 +157,25 @@ namespace MovieTheater.Controllers
             var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
             var bookedSeats = await _seatService.GetBookedSeatsAsync(movieId, date, time);
 
-            ViewBag.SeatTypes = _seatTypeService.GetAll();
-            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
-            ViewBag.MovieId = movieId;
-            ViewBag.Date = date;
-            ViewBag.Time = time;
-            ViewBag.BookedSeats = bookedSeats;
-
-            var viewModel = new ShowroomEditViewModel
+            var viewModel = new SeatSelectionViewModel
             {
+                MovieId = movieId,
+                MovieName = movie.MovieNameEnglish,
+                ShowDate = date,
+                ShowTime = time,
                 CinemaRoomId = movie.CinemaRoomId.Value,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,
-                MovieName = movie.MovieNameEnglish
+                SeatTypes = _seatTypeService.GetAll().ToList()
             };
 
-            return View("View", viewModel);
+            ViewBag.BookedSeats = bookedSeats;
+            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            viewModel.ReturnUrl = returnUrl;
+
+            return View("~/Views/Showtime/SelectSeat.cshtml", viewModel);
         }
 
         [HttpPost]

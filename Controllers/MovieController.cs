@@ -240,29 +240,16 @@ namespace MovieTheater.Controllers
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
             };
 
-            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, model.SelectedScheduleIds))
+            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, new List<int>() /* TODO: Provide actual scheduleIds */))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-            }
-
-            bool success = _movieService.UpdateMovie(id, model);
-
-            if (!success)
-            {
-                ModelState.AddModelError("", "Failed to update movie.");
-                return View(model);
-            }
-
-            TempData["ToastMessage"] = "Movie updated successfully!";
-            //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
             string role = GetUserRole();
             if (role == "Admin")
                 return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
             else
                 return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
-        }
-                
+            }
+
             TempData["ErrorMessage"] = "Failed to update movie. Some schedules may be unavailable.";
             model.AvailableTypes = _movieService.GetAllTypes();
             model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();

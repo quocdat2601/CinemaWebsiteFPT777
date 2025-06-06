@@ -1,156 +1,178 @@
-﻿//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using MovieTheater.Models;
-//using MovieTheater.ViewModels;
-//using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using MovieTheater.Models;
+using MovieTheater.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
-//namespace MovieTheater.Controllers
-//{
-//    public class ShowtimeController : Controller
-//    {
-//        private readonly MovieTheaterContext _context;
-//        public ShowtimeController(MovieTheaterContext context)
-//        {
-//            _context = context;
-//        }
+namespace MovieTheater.Controllers
+{
+    public class ShowtimeController : Controller
+    {
+        private readonly MovieTheaterContext _context;
+        public ShowtimeController(MovieTheaterContext context)
+        {
+            _context = context;
+        }
 
-//        // GET: ShowtimeController
-//        public IActionResult List()
-//        {
-//            return View();
-//        }
+        // GET: ShowtimeController
+        public IActionResult List()
+        {
+            return View();
+        }
 
-//        // GET: ShowtimeController/Details/5
-//        public ActionResult Details(int id)
-//        {
-//            return View();
-//        }
+        // GET: ShowtimeController/Details/5
+        public ActionResult Details(int id)
+        {
+            return View();
+        }
 
-//        // GET: ShowtimeController/Create
-//        public ActionResult Create()
-//        {
-//            return View();
-//        }
+        // GET: ShowtimeController/Create
+        public ActionResult Create()
+        {
+            return View();
+        }
 
-//        // POST: ShowtimeController/Create
-//        [HttpPost]
-//        [ValidateAntiForgeryToken]
-//        public ActionResult Create(IFormCollection collection)
-//        {
-//            try
-//            {
-//                return RedirectToAction(nameof(Index));
-//            }
-//            catch
-//            {
-//                return View();
-//            }
-//        }
+        // POST: ShowtimeController/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create(IFormCollection collection)
+        {
+            try
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
 
-//        // GET: ShowtimeController/Edit/5
-//        public ActionResult Edit(int id)
-//        {
-//            return View();
-//        }
+        // GET: ShowtimeController/Edit/5
+        public ActionResult Edit(int id)
+        {
+            return View();
+        }
 
-//        // POST: ShowtimeController/Edit/5
-//        [HttpPost]
-//        [ValidateAntiForgeryToken]
-//        public ActionResult Edit(int id, IFormCollection collection)
-//        {
-//            try
-//            {
-//                return RedirectToAction(nameof(Index));
-//            }
-//            catch
-//            {
-//                return View();
-//            }
-//        }
+        // POST: ShowtimeController/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit(int id, IFormCollection collection)
+        {
+            try
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
 
-//        // GET: ShowtimeController/Delete/5
-//        public ActionResult Delete(int id)
-//        {
-//            return View();
-//        }
+        // GET: ShowtimeController/Delete/5
+        public ActionResult Delete(int id)
+        {
+            return View();
+        }
 
-//        // POST: ShowtimeController/Delete/5
-//        [HttpPost]
-//        [ValidateAntiForgeryToken]
-//        public ActionResult Delete(int id, IFormCollection collection)
-//        {
-//            try
-//            {
-//                return RedirectToAction(nameof(Index));
-//            }
-//            catch
-//            {
-//                return View();
-//            }
-//        }
+        // POST: ShowtimeController/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Delete(int id, IFormCollection collection)
+        {
+            try
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
 
-//        public IActionResult Select(DateTime? date, string returnUrl)
-//        {
-//            // 1. Get all available screening dates as DateTime
-//            var availableDates = _context.ShowDates
-//                .OrderBy(d => d.ShowDate1)
-//                .Select(d => d.ShowDate1)
-//                .ToList() // materialize as List<DateOnly?>
-//                .Where(d => d.HasValue)
-//                .Select(d => d.Value.ToDateTime(TimeOnly.MinValue))
-//                .ToList();
-//            if (!availableDates.Any())
-//            {
-//                var emptyModel = new ShowtimeSelectionViewModel
-//                {
-//                    AvailableDates = new List<DateTime>(),
-//                    SelectedDate = date ?? DateTime.Today,
-//                    Movies = new List<MovieShowtimeInfo>()
-//                };
-//                return View("~/Views/Showtime/Select.cshtml", emptyModel);
-//            }
-//            var selectedDate = date ?? availableDates.First();
-//            var selectedDateOnly = DateOnly.FromDateTime(selectedDate);
+        public IActionResult Select(DateTime? date, string returnUrl)
+        {
+            // 1. Get all available screening dates as DateTime
+            var availableDates = _context.ShowDates
+                .OrderBy(d => d.ShowDate1)
+                .Select(d => d.ShowDate1)
+                .ToList() // materialize as List<DateOnly?>
+                .Where(d => d.HasValue)
+                .Select(d => d.Value.ToDateTime(TimeOnly.MinValue))
+                .ToList();
+            if (!availableDates.Any())
+            {
+                var emptyModel = new ShowtimeSelectionViewModel
+                {
+                    AvailableDates = new List<DateTime>(),
+                    SelectedDate = date ?? DateTime.Today,
+                    Movies = new List<MovieShowtimeInfo>()
+                };
+                return View("~/Views/Showtime/Select.cshtml", emptyModel);
+            }
+            var selectedDate = date ?? availableDates.First();
+            var selectedDateOnly = DateOnly.FromDateTime(selectedDate);
 
-//            // 2. Get all movies scheduled for the selected date (active in date range)
-//            var moviesForDate = _context.Movies
-//                .Where(m => m.FromDate <= selectedDateOnly && m.ToDate >= selectedDateOnly)
-//                .Where(m => m.ShowDates.Any(sd => sd.ShowDate1 == selectedDateOnly))
-//                .Include(m => m.Schedules)
-//                .ToList();
+            // Find the ShowDateId for the selected date
+            var selectedShowDate = _context.ShowDates.FirstOrDefault(sd => sd.ShowDate1 == selectedDateOnly);
 
-//            // 3. Build the view model
-//            var movies = moviesForDate.Select(m => new MovieShowtimeInfo
-//            {
-//                MovieId = m.MovieId,
-//                MovieName = m.MovieNameEnglish ?? m.MovieNameVn ?? "Unknown",
-//                PosterUrl = m.LargeImage ?? m.SmallImage ?? "/images/default-movie.png",
-//                Showtimes = m.Schedules.Select(s => s.ScheduleTime).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>()
-//            })
-//            .Where(m => m.Showtimes.Any())
-//            .ToList();
+            if (selectedShowDate == null)
+            {
+                // Handle case where no show date found
+                 var emptyModel = new ShowtimeSelectionViewModel
+                {
+                    AvailableDates = availableDates,
+                    SelectedDate = selectedDate,
+                    Movies = new List<MovieShowtimeInfo>()
+                };
+                return View("~/Views/Showtime/Select.cshtml", emptyModel);
+            }
 
-//            var model = new ShowtimeSelectionViewModel
-//            {
-//                AvailableDates = availableDates,
-//                SelectedDate = selectedDate,
-//                Movies = movies,
-//                ReturnUrl = returnUrl
-//            };
+            // 2. Get all MovieShow entries for the selected date
+            var movieShowsForDate = _context.MovieShows
+                .Where(ms => ms.ShowDateId == selectedShowDate.ShowDateId)
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
+                .ToList();
 
-//            return View("~/Views/Showtime/Select.cshtml", model);
-//        }
+            // 3. Group by movie and build the view model
+            var movies = movieShowsForDate
+                .GroupBy(ms => ms.Movie) // Group by the related Movie entity
+                .Where(g => g.Key != null) // Ensure the Movie is not null after Include
+                .Select(g => new MovieShowtimeInfo
+                {
+                    MovieId = g.Key.MovieId,
+                    MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
+                    PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
+                    Showtimes = g.Where(ms => ms.Schedule != null) // Filter out entries with null Schedule
+                                     .Select(ms => ms.Schedule.ScheduleTime)
+                                     .Where(t => !string.IsNullOrEmpty(t))
+                                     .OrderBy(t => t) // Optional: Order showtimes
+                                     .ToList() ?? new List<string>()
+                })
+                .Where(m => m.Showtimes.Any()) // Only include movies with showtimes
+                .ToList();
 
-//        // GET: Showtime/SelectSeat
-//        // Placeholder for seat selection screen (to be implemented)
-//        public IActionResult SelectSeat(string movieId, DateTime date, string time)
-//        {
-//            // TODO: Implement seat selection logic here
-//            // For now, just show a placeholder message with the parameters
-//            return Content($"Seat selection for MovieId={movieId}, Date={date:yyyy-MM-dd}, Time={time} (to be implemented)");
-//        }
-//    }
-//}
+            var model = new ShowtimeSelectionViewModel
+            {
+                AvailableDates = availableDates,
+                SelectedDate = selectedDate,
+                Movies = movies,
+                ReturnUrl = returnUrl
+            };
+
+            return View("~/Views/Showtime/Select.cshtml", model);
+        }
+
+        // GET: Showtime/SelectSeat
+        // Placeholder for seat selection screen (to be implemented)
+        public IActionResult SelectSeat(string movieId, DateTime date, string time)
+        {
+            // TODO: Implement seat selection logic here
+            // For now, just show a placeholder message with the parameters
+            return Content($"Seat selection for MovieId={movieId}, Date={date:yyyy-MM-dd}, Time={time} (to be implemented)");
+        }
+    }
+}
