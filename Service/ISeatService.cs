@@ -11,6 +11,6 @@ namespace MovieTheater.Service
         public void UpdateSeatAsync(Seat seat);
         public void DeleteSeatAsync(int id);
         public void Save();
-
+        public Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time);
     }
 }

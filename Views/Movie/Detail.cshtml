@@ -2,6 +2,7 @@
 
 @{
 	ViewData["Title"] = "Movie Detail";
+	var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
@@ -78,6 +79,16 @@
 
 				<div class="form-group mb-3">
 					<div>
+						<strong>Show Dates:</strong>
+						@foreach (var showDate in Model.AvailableShowDates)
+						{
+							<span class="badge bg-primary me-1">@(showDate.ShowDate1?.ToString("dd/MM/yyyy") ?? showDate.DateName)</span>
+						}
+					</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<div>
 						<strong>Schedules:</strong>
 						@foreach (var schedule in Model.AvailableSchedules)
 						{
@@ -95,8 +106,23 @@
 			<div style="white-space: pre-line;">@Model.Content</div>
 		</div>
 
+		<h2 class="signup-title">Movie Trailer</h2>
+
+		<div class="video-container mb-4">
+			<iframe src="@Model.TrailerUrl" frameborder="0" allowfullscreen></iframe>
+		</div>
+
+		<div id="errorMessage" class="text-danger mb-3 mx-auto" style="width: 400px">
+			@if (!isAuthenticated)
+			{
+				<div class="alert alert-warning mb-3 text-center" role="alert">
+					Please log in to book your tickets.
+				</div>
+			}
+		</div>
+
 		<div class="text-center">
-			<a asp-controller="Booking"
+			<a asp-controller="Booking" id="bookBtn"
 			   asp-action="TicketBooking"
 			   asp-route-movieId="@Model.MovieId"
 			   class="btn btn-primary px-4 py-2 rounded">
@@ -106,3 +132,13 @@
 
 	</div>
 </div>
+
+<script>
+		document.getElementById('bookBtn').addEventListener('click', function(event) {
+		var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+		if (!isAuthenticated) {
+			event.preventDefault();  
+			window.location.href = '@Url.Action("Login", "Account")';
+		}
+	});
+</script>

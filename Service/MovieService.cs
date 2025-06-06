@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
-namespace MovieTheater.Services
+namespace MovieTheater.Service
 {
     public class MovieService : IMovieService
     {
@@ -29,69 +30,138 @@ namespace MovieTheater.Services
             return _movieRepository.GetById(id);
         }
 
-        public bool AddMovie(MovieDetailViewModel model)
+        public bool AddMovie(Movie movie, List<int> showDateIds, List<int> scheduleIds)
         {
-            var movie = new Movie
+            try
             {
-                MovieNameEnglish = model.MovieNameEnglish,
-                MovieNameVn = model.MovieNameVn,
-                Actor = model.Actor,
-                Director = model.Director,
-                Duration = model.Duration,
-                Version = model.Version,
-                FromDate = model.FromDate,
-                ToDate = model.ToDate,
-                MovieProductionCompany = model.MovieProductionCompany,
-                CinemaRoomId = model.CinemaRoomId,
-                Content = model.Content,
-                LargeImage = model.LargeImage,
-                SmallImage = model.SmallImage,
+                // First add the movie
+                if (!_movieRepository.Add(movie))
+                {
+                    _logger.LogError("Failed to add movie: {MovieId}", movie.MovieId);
+                    return false;
+                }
 
-                Schedules = _movieRepository.GetSchedulesByIds(model.SelectedScheduleIds),
-                ShowDates = _movieRepository.GetShowDatesByIds(model.SelectedShowDateIds),
-                Types = _movieRepository.GetTypesByIds(model.SelectedTypeIds)
-            };
+                // Create MovieShow records for each combination of show date and schedule
+                var movieShows = new List<MovieShow>();
+                foreach (var showDateId in showDateIds)
+                {
+                    foreach (var scheduleId in scheduleIds)
+                    {
+                        // Check if the schedule is available
+                        if (!_movieRepository.IsScheduleAvailable(showDateId, scheduleId, movie.CinemaRoomId))
+                        {
+                            _logger.LogWarning("Schedule conflict detected for MovieId: {MovieId}, ShowDateId: {ShowDateId}, ScheduleId: {ScheduleId}, CinemaRoomId: {CinemaRoomId}",
+                                movie.MovieId, showDateId, scheduleId, movie.CinemaRoomId);
+                            continue;
+                        }
 
-            _movieRepository.Add(movie);
-            _movieRepository.Save();
+                        movieShows.Add(new MovieShow
+                        {
+                            MovieId = movie.MovieId,
+                            ShowDateId = showDateId,
+                            ScheduleId = scheduleId,
+                            CinemaRoomId = movie.CinemaRoomId
+                        });
+                    }
+                }
 
-            return true;
+                // Add all MovieShow records
+                if (movieShows.Any())
+                {
+                    try
+                    {
+                        _movieRepository.AddMovieShows(movieShows);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to add movie shows for movie: {MovieId}", movie.MovieId);
+                        return false;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No valid movie shows could be created for movie: {MovieId}", movie.MovieId);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding movie: {MovieId}", movie.MovieId);
+                return false;
+            }
         }
 
-
-        public bool UpdateMovie(string id, MovieDetailViewModel model)
+        public bool UpdateMovie(Movie movie, List<int> showDateIds, List<int> scheduleIds)
         {
-            var movie = _movieRepository.GetById(id);
-            if (movie == null) return false;
+            try
+            {
+                // First update the movie
+                if (!_movieRepository.Update(movie))
+                {
+                    _logger.LogError("Failed to update movie: {MovieId}", movie.MovieId);
+                    return false;
+                }
 
-            movie.MovieNameEnglish = model.MovieNameEnglish;
-            movie.MovieNameVn = model.MovieNameVn;
-            movie.Actor = model.Actor;
-            movie.Director = model.Director;
-            movie.Duration = model.Duration;
-            movie.Version = model.Version;
-            movie.FromDate = model.FromDate;
-            movie.ToDate = model.ToDate;
-            movie.MovieProductionCompany = model.MovieProductionCompany;
-            movie.CinemaRoomId = model.CinemaRoomId;
-            movie.Content = model.Content;
+                // Remove existing MovieShow records
+                var existingShows = _movieRepository.GetMovieShowsByMovieId(movie.MovieId);
+                foreach (var show in existingShows)
+                {
+                    _movieRepository.DeleteMovieShow(show.MovieShowId);
+                }
 
-            // Only update images if new ones are provided
-            if (!string.IsNullOrEmpty(model.SmallImage))
-                movie.SmallImage = model.SmallImage;
+                // Create new MovieShow records
+                var movieShows = new List<MovieShow>();
+                foreach (var showDateId in showDateIds)
+                {
+                    foreach (var scheduleId in scheduleIds)
+                    {
+                        // Check if the schedule is available
+                        if (!_movieRepository.IsScheduleAvailable(showDateId, scheduleId, movie.CinemaRoomId))
+                        {
+                            _logger.LogWarning("Schedule conflict detected for MovieId: {MovieId}, ShowDateId: {ShowDateId}, ScheduleId: {ScheduleId}, CinemaRoomId: {CinemaRoomId}",
+                                movie.MovieId, showDateId, scheduleId, movie.CinemaRoomId);
+                            continue;
+                        }
 
-            if (!string.IsNullOrEmpty(model.LargeImage))
-                movie.LargeImage = model.LargeImage;
+                        movieShows.Add(new MovieShow
+                        {
+                            MovieId = movie.MovieId,
+                            ShowDateId = showDateId,
+                            ScheduleId = scheduleId,
+                            CinemaRoomId = movie.CinemaRoomId
+                        });
+                    }
+                }
 
-            movie.Schedules = _movieRepository.GetSchedulesByIds(model.SelectedScheduleIds);
-            movie.ShowDates = _movieRepository.GetShowDatesByIds(model.SelectedShowDateIds);
-            movie.Types = _movieRepository.GetTypesByIds(model.SelectedTypeIds);
+                // Add all MovieShow records
+                if (movieShows.Any())
+                {
+                    try
+                    {
+                        _movieRepository.AddMovieShows(movieShows);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to add movie shows for movie: {MovieId}", movie.MovieId);
+                        return false;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No valid movie shows could be created for movie: {MovieId}", movie.MovieId);
+                    return false;
+                }
 
-            _movieRepository.Update(movie);
-            _movieRepository.Save();
-            return true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating movie: {MovieId}", movie.MovieId);
+                return false;
+            }
         }
-
 
         public bool DeleteMovie(string id)
         {
@@ -121,7 +191,7 @@ namespace MovieTheater.Services
         public IEnumerable<Movie> SearchMovies(string searchTerm)
         {
             var movies = _movieRepository.GetAll();
-            
+
             if (string.IsNullOrWhiteSpace(searchTerm))
             {
                 return movies.OrderBy(m => m.MovieNameEnglish);
@@ -131,6 +201,112 @@ namespace MovieTheater.Services
             return movies
                 .Where(m => m.MovieNameEnglish != null && m.MovieNameEnglish.ToLower().Contains(searchTerm))
                 .OrderBy(m => m.MovieNameEnglish);
+        }
+
+        public string ConvertToEmbedUrl(string trailerUrl)
+        {
+            if (string.IsNullOrWhiteSpace(trailerUrl))
+                return trailerUrl;
+
+            string videoId = null;
+
+            var longUrlPattern = @"youtube\.com/watch\?v=([a-zA-Z0-9_-]+)";
+            var longMatch = Regex.Match(trailerUrl, longUrlPattern);
+            if (longMatch.Success)
+            {
+                videoId = longMatch.Groups[1].Value;
+            }
+
+            var shortUrlPattern = @"youtu\.be/([a-zA-Z0-9_-]+)";
+            var shortMatch = Regex.Match(trailerUrl, shortUrlPattern);
+            if (shortMatch.Success)
+            {
+                videoId = shortMatch.Groups[1].Value;
+            }
+
+            return videoId != null ? $"https://www.youtube.com/embed/{videoId}" : trailerUrl;
+        }
+
+        public List<MovieShow> GetMovieShows(string movieId)
+        {
+            return _movieRepository.GetMovieShowsByMovieId(movieId);
+        }
+
+        public bool IsScheduleAvailable(int showDateId, int scheduleId, int cinemaRoomId)
+        {
+            return _movieRepository.IsScheduleAvailable(showDateId, scheduleId, cinemaRoomId);
+        }
+
+        public bool AddMovieShow(MovieShow movieShow)
+        {
+            try
+            {
+                if (!movieShow.ShowDateId.HasValue || !movieShow.ScheduleId.HasValue || !movieShow.CinemaRoomId.HasValue)
+                {
+                    return false;
+                }
+
+                if (!IsScheduleAvailable(movieShow.ShowDateId.Value, movieShow.ScheduleId.Value, movieShow.CinemaRoomId.Value))
+                {
+                    return false;
+                }
+
+                _movieRepository.AddMovieShow(movieShow);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error adding movie show: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool AddMovieShows(List<MovieShow> movieShows)
+        {
+            try
+            {
+                // Check all schedules for availability
+                foreach (var show in movieShows)
+                {
+                    if (!show.ShowDateId.HasValue || !show.ScheduleId.HasValue || !show.CinemaRoomId.HasValue)
+                    {
+                        return false;
+                    }
+
+                    if (!IsScheduleAvailable(show.ShowDateId.Value, show.ScheduleId.Value, show.CinemaRoomId.Value))
+                    {
+                        return false;
+                    }
+                }
+
+                _movieRepository.AddMovieShows(movieShows);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error adding movie shows: {ex.Message}");
+                return false;
+            }
+        }
+
+        public List<Models.Type> GetAllTypes()
+        {
+            return _movieRepository.GetTypesAsync().Result;
+        }
+
+        public List<ShowDate> GetAllShowDates()
+        {
+            return _movieRepository.GetShowDatesAsync().Result;
+        }
+
+        public List<Schedule> GetAllSchedules()
+        {
+            return _movieRepository.GetSchedulesAsync().Result;
+        }
+
+        public List<CinemaRoom> GetAllCinemaRooms()
+        {
+            return _movieRepository.GetAllCinemaRooms();
         }
     }
 }
