@@ -74,5 +74,11 @@ namespace MovieTheater.Repository
 
             return bookedSeats;
         }
+
+        public async Task<List<SeatType>> GetSeatTypesAsync()
+        {
+            return await _context.SeatTypes.ToListAsync();
+        }
+
     }
 }

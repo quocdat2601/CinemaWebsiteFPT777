@@ -13,13 +13,13 @@ public partial class Invoice
 
     public string? MovieName { get; set; }
 
-    public DateOnly? ScheduleShow { get; set; }
+    public DateTime? ScheduleShow { get; set; }
 
     public string? ScheduleShowTime { get; set; }
 
     public int? Status { get; set; }
 
-    public int? TotalMoney { get; set; }
+    public decimal? TotalMoney { get; set; }
 
     public int? UseScore { get; set; }
 

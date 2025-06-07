@@ -1,0 +1,73 @@
+﻿@model MovieTheater.ViewModels.ConfirmBookingViewModel
+
+@{
+    ViewBag.Title = "Confirm Booking";
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Confirm Your Booking</h2>
+
+    <div class="card shadow p-4">
+        <h5 class="mb-3">Movie & Show Info</h5>
+        <p><strong>Movie:</strong> @Model.MovieName</p>
+        <p><strong>Screen:</strong> @Model.CinemaRoomName</p>
+        <p><strong>Date:</strong> @Model.ShowDate.ToString("yyyy-MM-dd")</p>
+        <p><strong>Time:</strong> @Model.ShowTime</p>
+
+        <hr />
+        <h5 class="mb-3">Seat(s)</h5>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Seat</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var seat in Model.SelectedSeats)
+                {
+                    <tr>
+                        <td>@seat.SeatName</td>
+                        <td>@seat.SeatType</td>
+                        <td>@seat.Price.ToString("N0") VND</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="text-end"><strong>Total Price:</strong> @Model.TotalPrice.ToString("N0") VND</p>
+
+        <hr />
+        <h5 class="mb-3">Your Information</h5>
+        <p><strong>Full Name:</strong> @Model.FullName</p>
+        <p><strong>Email:</strong> @Model.Email</p>
+        <p><strong>Identity Card Number:</strong> @Model.IdentityCard</p>
+        <p><strong>Phone Number:</strong> @Model.PhoneNumber</p>
+
+        <hr />
+        <form asp-action="Confirm" method="post">
+            @* Hidden fields to pass data back to controller *@
+            @Html.HiddenFor(m => m.MovieName)
+            @Html.HiddenFor(m => m.CinemaRoomName)
+            @Html.HiddenFor(m => m.ShowDate)
+            @Html.HiddenFor(m => m.ShowTime)
+            @Html.HiddenFor(m => m.TotalPrice)
+            @Html.HiddenFor(m => m.FullName)
+            @Html.HiddenFor(m => m.Email)
+            @Html.HiddenFor(m => m.IdentityCard)
+            @Html.HiddenFor(m => m.PhoneNumber)
+
+            @for (int i = 0; i < Model.SelectedSeats.Count; i++)
+            {
+                <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
+                <input type="hidden" name="SelectedSeats[@i].SeatType" value="@Model.SelectedSeats[i].SeatType" />
+                <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
+            }
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+            </div>
+        </form>
+    </div>
+</div>
