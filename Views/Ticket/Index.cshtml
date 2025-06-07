@@ -1,10 +1,10 @@
-﻿@model List<MovieTheater.Models.Invoice>
+@model List<MovieTheater.Models.Invoice>
 @{
-    ViewData["Title"] = "Booking History";
+    ViewData["Title"] = "My Tickets";
 }
 
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Booking History</h2>
+    <h2 class="text-center mb-4">My Tickets</h2>
 
     @if (TempData["Success"] != null)
     {
@@ -22,26 +22,27 @@
         </div>
     }
 
-    <!-- Filter Form -->
-    <form asp-action="Index" asp-controller="Ticket" method="get">
-        <label>From:</label>
-        <input type="date" name="fromDate" class="form-control" />
+    <!-- AC-03: Navigation Links -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-primary">
+                    <i class="fas fa-user"></i> Account Information
+                </a>
+                <a asp-controller="Ticket" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="fas fa-history"></i> All Tickets
+                </a>
+                <a asp-controller="Ticket" asp-action="Booked" class="btn btn-outline-primary">
+                    <i class="fas fa-ticket-alt"></i> Booked Tickets
+                </a>
+                <a asp-controller="Ticket" asp-action="Canceled" class="btn btn-outline-primary">
+                    <i class="fas fa-ban"></i> Canceled Tickets
+                </a>
+            </div>
+        </div>
+    </div>
 
-        <label>To:</label>
-        <input type="date" name="toDate" class="form-control" />
-
-        <label>Status:</label>
-        <select name="status" class="form-control">
-            <option value="">-- All --</option>
-            <option value="0">Pending</option>
-            <option value="1">Paid</option>
-            <option value="2">Cancelled</option>
-        </select>
-
-        <button type="submit" class="btn btn-primary mt-2">Filter</button>
-    </form>
-
-    <!-- Booking History Table -->
+    <!-- AC-01: Ticket List -->
     @if (Model != null && Model.Any())
     {
         <div class="table-responsive">
@@ -71,11 +72,11 @@
                             <td>
                                 @if (booking.Status == 1)
                                 {
-                                    <span class="badge bg-success">Completed</span>
+                                    <span class="badge bg-success">Booked</span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-danger">Cancelled</span>
+                                    <span class="badge bg-danger">Canceled</span>
                                 }
                             </td>
                             <td>
@@ -105,9 +106,10 @@
     }
     else
     {
+        <!-- AC-02: No tickets message -->
         <div class="alert alert-info text-center">
             <i class="fas fa-info-circle me-2"></i>
-            No booking history found for the selected period.
+            No booked tickets found.
         </div>
     }
 </div>
@@ -125,4 +127,4 @@
             gap: 0.5rem;
         }
     </style>
-}
+} 
