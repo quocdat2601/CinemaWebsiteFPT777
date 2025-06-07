@@ -49,6 +49,11 @@ namespace MovieTheater.Service
         {
             _repository.Save();
         }
+
+        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
+        {
+            return await _repository.GetBookedSeatsAsync(movieId, date, time);
+        }
     }
 
 }

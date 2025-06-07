@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Services;
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {

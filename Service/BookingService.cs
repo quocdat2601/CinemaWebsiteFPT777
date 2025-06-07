@@ -1,7 +1,7 @@
 ﻿using MovieTheater.Models;
 using MovieTheater.Repository;
 
-namespace MovieTheater.Services
+namespace MovieTheater.Service
 {
     public class BookingService : IBookingService
     {

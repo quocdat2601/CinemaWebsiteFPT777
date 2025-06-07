@@ -24,7 +24,8 @@
         }
        
         <h2 class="signup-title">Movie Edit</h2>
-        <form asp-controller="Movie" asp-action="Edit" method="Post" enctype="multipart/form-data">
+        <form asp-controller="Movie" asp-action="Edit" asp-route-id="@Model.MovieId" method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="MovieId" />
             <div asp-validation-summary="All" class="text-danger"></div>
 
             <div class="row">   
@@ -106,19 +107,29 @@
                         <span asp-validation-for="Director" class="text-danger"></span>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col">
+                    <div class="form-group mb-3">
+                     
                             <strong>Duration:</strong>
                             <input type="number" class="form-control" asp-for="Duration" />
                             <span asp-validation-for="Duration" class="text-danger"></span>
-                        </div>
-                        <div class="col">
-                            <strong>Version:</strong>
-                            <input type="text" class="form-control" asp-for="Version" />
-                            <span asp-validation-for="Version" class="text-danger"></span>
-                        </div>
+                     
                     </div>
-
+                    <div class="form-group mb-3">
+                        <strong>Version:</strong><br />
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="Version" value="2D" id="version2D" />
+                            <label class="form-check-label" for="version2D">2D</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="Version" value="3D" id="version3D" />
+                            <label class="form-check-label" for="version3D">3D</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="Version" value="IMAX" id="versionIMAX" />
+                            <label class="form-check-label" for="versionIMAX">IMAX</label>
+                        </div>
+                        <span asp-validation-for="Version" class="text-danger"></span>
+                    </div>
                     <div class="form-group mb-3">
                         <strong>Types</strong><br />
                         @foreach (var type in Model.AvailableTypes)
@@ -142,6 +153,21 @@
                     </div>
 
                     <div class="form-group mb-3">
+                        <strong>Show Dates</strong><br />
+                        @foreach (var showDate in Model.AvailableShowDates)
+                        {
+                            <label class="me-3">
+                                <input type="checkbox"
+                                       name="SelectedShowDateIds"
+                                       value="@showDate.ShowDateId"
+                                       @(Model.SelectedShowDateIds.Contains(showDate.ShowDateId) ? "checked" : "") />
+                                @(showDate.ShowDate1?.ToString("dd/MM/yyyy") ?? showDate.DateName)
+                            </label>
+                        }
+                        <span asp-validation-for="SelectedShowDateIds" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
                         <strong>Schedules</strong><br />
                         @foreach (var schedule in Model.AvailableSchedules)
                         {
@@ -153,7 +179,21 @@
                                 @schedule.ScheduleTime
                             </label>
                         }
+                        <span asp-validation-for="SelectedScheduleIds" class="text-danger"></span>
                     </div>
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger mt-3">
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success mt-3">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -163,6 +203,21 @@
                 <textarea class="form-control" asp-for="Content"></textarea>
                 <span asp-validation-for="Content" class="text-danger"></span>
             </div>
+
+            <h2 class="signup-title">Movie Trailer</h2>
+            <div class="form-group mt-3">
+                <strong>Trailer URL</strong>
+                <input type="url" class="form-control" asp-for="TrailerUrl" />
+                <span asp-validation-for="TrailerUrl" class="text-danger"></span>
+
+                @if (!string.IsNullOrWhiteSpace(Model.TrailerUrl))
+                {
+                    <div class="video-container mb-4">
+                        <iframe src="@Model.TrailerUrl" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                }
+            </div>
+
             <div class="text-center mt-4">
                 <button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Movie</button>
             </div>

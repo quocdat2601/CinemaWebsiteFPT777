@@ -45,7 +45,7 @@ CREATE TABLE Account (
 CREATE TABLE Invoice (
     Invoice_ID VARCHAR(10) PRIMARY KEY,
     Add_Score INT,
-    BookingDate DATE,
+    BookingDate DATETIME,
     MovieName VARCHAR(255),
     Schedule_Show DATE,
     Schedule_Show_Time VARCHAR(255),
@@ -91,28 +91,13 @@ CREATE TABLE Movie (
     Movie_Name_English VARCHAR(255),
     Movie_Name_VN VARCHAR(255),
     Large_Image VARCHAR(255),
-    Small_Image VARCHAR(255)
-);
-
-CREATE TABLE Movie_Date (
-    Movie_ID VARCHAR(10),
-    Show_Date_ID INT,
-    PRIMARY KEY (Movie_ID, Show_Date_ID),
-    FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID),
-    FOREIGN KEY (Show_Date_ID) REFERENCES Show_Dates(Show_Date_ID)
+    Small_Image VARCHAR(255),
+	TrailerUrl VARCHAR(255)
 );
 
 CREATE TABLE Schedule (
     Schedule_ID INT PRIMARY KEY IDENTITY(1,1),
     Schedule_Time VARCHAR(255)
-);
-
-CREATE TABLE Movie_Schedule (
-    Movie_ID VARCHAR(10),
-    Schedule_ID INT,
-    PRIMARY KEY (Movie_ID, Schedule_ID),
-    FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID),
-    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID)
 );
 
 CREATE TABLE Type (
@@ -138,6 +123,18 @@ CREATE TABLE Cinema_Room (
 ALTER TABLE Cinema_Room
 ADD Seat_Quantity AS (Seat_Width * Seat_Length);
 
+CREATE TABLE Movie_Show (
+    Movie_Show_ID INT PRIMARY KEY IDENTITY(1,1),
+    Movie_ID VARCHAR(10),
+    Show_Date_ID INT,
+    Schedule_ID INT,
+    Cinema_Room_ID INT,
+    FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID),
+    FOREIGN KEY (Show_Date_ID) REFERENCES Show_Dates(Show_Date_ID),
+    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID),
+    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
+    UNIQUE (Show_Date_ID, Schedule_ID, Cinema_Room_ID) -- prevent conflict
+);
 CREATE TABLE Seat_Type (
     Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
     Type_Name VARCHAR(50),
@@ -163,13 +160,25 @@ CREATE TABLE Seat (
 	FOREIGN KEY (Seat_Type_ID) REFERENCES Seat_Type(Seat_Type_ID)
 );
 
-INSERT INTO Cinema_Room (Cinema_Room_Name, Seat_Width, Seat_Length)
-VALUES ('Room 1', 5, 4);
+CREATE TABLE CoupleSeat (
+    CoupleSeatId INT IDENTITY(1,1) PRIMARY KEY,
+    FirstSeatId INT NOT NULL,
+    SecondSeatId INT NOT NULL,
+    -- Prevent mirrored duplicates
+    CHECK (FirstSeatId < SecondSeatId),
+    -- Prevent seat reuse
+    CONSTRAINT UQ_CoupleSeat_First UNIQUE (FirstSeatId),
+    CONSTRAINT UQ_CoupleSeat_Second UNIQUE (SecondSeatId),
+    -- Prevent pairing the same seat with itself
+    CHECK (FirstSeatId <> SecondSeatId),
+    FOREIGN KEY (FirstSeatId) REFERENCES Seat(Seat_ID),
+    FOREIGN KEY (SecondSeatId) REFERENCES Seat(Seat_ID)
+);
 
-INSERT INTO Seat_Type (Type_Name) VALUES
-('Normal'),
-('VIP'),
-('Couple');
+INSERT INTO Seat_Type (Type_Name, Price_Percent, ColorHex) VALUES
+('Normal', 40000, '#cccbc8'),
+('VIP', 50000, '#fa7a7a'),
+('Couple', 60000, '#ffa1f1');
 
 INSERT INTO Seat_Status (Status_Name) VALUES
 ('Available'),
@@ -227,6 +236,12 @@ INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('EM005', 'AC008'),
 ('EM006', 'AC009');
 
+INSERT INTO Cinema_Room(Cinema_Room_Name, Seat_Length, Seat_Width) VALUES
+('Screen 1', 10, 8),
+('Screen 2', 10, 8),
+('Screen 3', 10, 8),
+('Screen 4', 10, 8);
+
 INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
 ('2024-03-20', 'Wednesday, March 20'),
 ('2024-03-21', 'Thursday, March 21'),
@@ -243,89 +258,17 @@ INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
 ('2024-04-01', 'Monday, April 1'),
 ('2024-04-02', 'Tuesday, April 2');
 
-INSERT INTO Movie (Movie_ID, Actor, Cinema_Room_ID, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image)
+INSERT INTO Movie (Movie_ID, Actor, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image, TrailerUrl)
 VALUES
-('MV001', 'Cillian Murphy, Emily Blunt', 1, 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Christopher Nolan', 180, '2023-07-21', 'Universal Pictures', '2024-03-25', 'IMAX', 'Oppenheimer', 'Oppenheimer', '/image/open.jpg', '/image/open.jpg'),
-('MV002', 'Tom Holland, Zendaya', 2, 'Peter Parker seeks help from Doctor Strange after his identity is revealed, leading to multiverse chaos.', 'Jon Watts', 148, '2024-03-20', 'Marvel Studios', '2024-04-25', '3D', 'Spider-Man: No Way Home', 'Người Nhện: Không Còn Nhà', '/image/spider.jpg', '/image/spider.jpg'),
-('MV003', 'Timothée Chalamet, Zendaya', 3, 'Paul Atreides unites with the Fremen to seek revenge against the conspirators who destroyed his family.', 'Denis Villeneuve', 166, '2024-03-01', 'Legendary Pictures', '2024-03-21', 'IMAX 3D', 'Dune: Part Two', 'Hành Tinh Cát: Phần Hai', '/image/dune.jpg', '/image/dune.jpg'),
-('MV004', 'Margot Robbie, Ryan Gosling', 4, 'Barbie suffers a crisis that leads her to question her world and her existence.', 'Greta Gerwig', 114, '2023-07-21', 'Warner Bros.', '2024-03-27', '2D', 'Barbie', 'Barbie', '/image/barbie.jpg', '/image/barbie.jpg'),
-('MV005', 'Michelle Yeoh, Ke Huy Quan', 5, 'A woman is swept into a multiverse adventure where she must connect with different versions of herself.', 'Daniel Kwan, Daniel Scheinert', 139, '2024-03-25', 'A24', '2024-04-02', '2D', 'Everything Everywhere All at Once', 'Mọi Thứ Mọi Nơi Tất Cả Cùng Lúc', '/image/everything.jpg', '/image/everything.jpg'),
-('MV006', 'Sam Worthington, Zoe Saldana', 1, 'Jake Sully lives with his family on Pandora and must protect them from a new threat.', 'James Cameron', 192, '2024-03-27', '20th Century Studios', '2024-04-02', '3D', 'Avatar: The Way of Water', 'Avatar: Dòng Chảy Của Nước', '/image/avatar.jpg', '/image/avatar.jpg'),
-('MV007', 'Robert Pattinson, Zoë Kravitz', 2, 'Batman uncovers corruption in Gotham while pursuing the Riddler, a sadistic killer.', 'Matt Reeves', 176, '2024-03-28', 'Warner Bros.', '2024-04-02', '2D', 'The Batman', 'Người Dơi', '/image/batman.jpg', '/image/batman.jpg'),
-('MV008', 'Tom Cruise, Miles Teller', 3, 'Pete "Maverick" Mitchell trains Top Gun graduates for a high-stakes mission.', 'Joseph Kosinski', 131, '2024-03-29', 'Paramount Pictures', '2024-04-02', 'IMAX', 'Top Gun: Maverick', 'Phi Công Siêu Đẳng Maverick', '/image/topgun.jpg', '/image/topgun.jpg'),
-('MV009', 'Song Kang-ho, Choi Woo-shik', 4, 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2024-03-30', 'CJ Entertainment', '2024-04-02', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg');
-
-INSERT INTO Movie_Date (Movie_ID, Show_Date_ID) VALUES
--- MV001: From 2023-07-21 to 2024-03-25 (show dates 1 to 6)
-('MV001', 1),
-('MV001', 2),
-('MV001', 3),
-('MV001', 4),
-('MV001', 5),
-('MV001', 6),
--- MV002: From 2024-03-20 to 2024-04-25 (dates 1 to 14)
-('MV002', 1),
-('MV002', 2),
-('MV002', 3),
-('MV002', 4),
-('MV002', 5),
-('MV002', 6),
-('MV002', 7),
-('MV002', 8),
-('MV002', 9),
-('MV002', 10),
-('MV002', 11),
-('MV002', 12),
-('MV002', 13),
-('MV002', 14),
--- MV003: From 2024-03-01 to 2024-03-21 (dates 1 and 2)
-('MV003', 1),
-('MV003', 2),
--- MV004: From 2023-07-21 to 2024-03-27 (dates 1 to 8)
-('MV004', 1),
-('MV004', 2),
-('MV004', 3),
-('MV004', 4),
-('MV004', 5),
-('MV004', 6),
-('MV004', 7),
-('MV004', 8),
--- MV005: From 2024-03-25 to 2024-04-02 (dates 6 to 14)
-('MV005', 6),
-('MV005', 7),
-('MV005', 8),
-('MV005', 9),
-('MV005', 10),
-('MV005', 11),
-('MV005', 12),
-('MV005', 13),
-('MV005', 14),
--- MV006: From 2024-03-27 to 2024-04-02 (dates 8 to 14)
-('MV006', 8),
-('MV006', 9),
-('MV006', 10),
-('MV006', 11),
-('MV006', 12),
-('MV006', 13),
-('MV006', 14),
--- MV007: From 2024-03-28 to 2024-04-02 (dates 9 to 14)
-('MV007', 9),
-('MV007', 10),
-('MV007', 11),
-('MV007', 12),
-('MV007', 13),
-('MV007', 14),
--- MV008: From 2024-03-29 to 2024-04-02 (dates 10 to 14)
-('MV008', 10),
-('MV008', 11),
-('MV008', 12),
-('MV008', 13),
-('MV008', 14),
--- MV009: From 2024-03-30 to 2024-04-02 (dates 11 to 14)
-('MV009', 11),
-('MV009', 12),
-('MV009', 13),
-('MV009', 14);
+('MV001', 'Cillian Murphy, Emily Blunt', 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Christopher Nolan', 180, '2023-07-21', 'Universal Pictures', '2024-03-25', 'IMAX', 'Oppenheimer', 'Oppenheimer', '/image/open.jpg', '/image/open.jpg', 'https://www.youtube.com/embed/uYPbbksJxIg'),
+('MV002', 'Tom Holland, Zendaya', 'Peter Parker seeks help from Doctor Strange after his identity is revealed, leading to multiverse chaos.', 'Jon Watts', 148, '2024-03-20', 'Marvel Studios', '2024-04-25', '3D', 'Spider-Man: No Way Home', 'Người Nhện: Không Còn Nhà', '/image/spider.jpg', '/image/spider.jpg', 'https://www.youtube.com/embed/rt-2cxAiPJk'),
+('MV003', 'Timothée Chalamet, Zendaya', 'Paul Atreides unites with the Fremen to seek revenge against the conspirators who destroyed his family.', 'Denis Villeneuve', 166, '2024-03-01', 'Legendary Pictures', '2024-03-21', 'IMAX 3D', 'Dune: Part Two', 'Hành Tinh Cát: Phần Hai', '/image/dune.jpg', '/image/dune.jpg', 'https://www.youtube.com/embed/Way9Dexny3w'),
+('MV004', 'Margot Robbie, Ryan Gosling', 'Barbie suffers a crisis that leads her to question her world and her existence.', 'Greta Gerwig', 114, '2023-07-21', 'Warner Bros.', '2024-03-27', '2D', 'Barbie', 'Barbie', '/image/barbie.jpg', '/image/barbie.jpg', 'https://www.youtube.com/embed/pBk4NYhWNMM'),
+('MV005', 'Michelle Yeoh, Ke Huy Quan', 'A woman is swept into a multiverse adventure where she must connect with different versions of herself.', 'Daniel Kwan, Daniel Scheinert', 139, '2024-03-25', 'A24', '2024-04-02', '2D', 'Everything Everywhere All at Once', 'Mọi Thứ Mọi Nơi Tất Cả Cùng Lúc', '/image/everything.jpg', '/image/everything.jpg', 'https://www.youtube.com/embed/wxN1T1uxQ2g'),
+('MV006', 'Sam Worthington, Zoe Saldana', 'Jake Sully lives with his family on Pandora and must protect them from a new threat.', 'James Cameron', 192, '2024-03-27', '20th Century Studios', '2024-04-02', '3D', 'Avatar: The Way of Water', 'Avatar: Dòng Chảy Của Nước', '/image/avatar.jpg', '/image/avatar.jpg', 'https://www.youtube.com/embed/d9MyW72ELq0'),
+('MV007', 'Robert Pattinson, Zoë Kravitz', 'Batman uncovers corruption in Gotham while pursuing the Riddler, a sadistic killer.', 'Matt Reeves', 176, '2024-03-28', 'Warner Bros.', '2024-04-02', '2D', 'The Batman', 'Người Dơi', '/image/batman.jpg', '/image/batman.jpg', 'https://www.youtube.com/embed/mqqft2x_Aa4'),
+('MV008', 'Tom Cruise, Miles Teller', 'Pete "Maverick" Mitchell trains Top Gun graduates for a high-stakes mission.', 'Joseph Kosinski', 131, '2024-03-29', 'Paramount Pictures', '2024-04-02', 'IMAX', 'Top Gun: Maverick', 'Phi Công Siêu Đẳng Maverick', '/image/topgun.jpg', '/image/topgun.jpg', 'https://www.youtube.com/embed/giXco2jaZ_4'),
+('MV009', 'Song Kang-ho, Choi Woo-shik', 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2024-03-30', 'CJ Entertainment', '2024-04-02', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg', 'https://www.youtube.com/embed/5xH0HfJHsaY');
 
 INSERT INTO Schedule (Schedule_Time) VALUES
 ('10:00'),
@@ -335,21 +278,29 @@ INSERT INTO Schedule (Schedule_Time) VALUES
 ('18:00'),
 ('20:00');
 
-INSERT INTO Movie_Schedule (Movie_ID, Schedule_ID) VALUES
-('MV001', 1),
-('MV001', 2),
-('MV002', 3),
-('MV003', 4), 
-('MV003', 5),
-('MV004', 1),
-('MV005', 1), 
-('MV005', 2),
-('MV006', 3),
-('MV007', 3), 
-('MV007', 4), 
-('MV007', 5),
-('MV008', 1),
-('MV009', 2);
+INSERT INTO Movie_Show (Movie_ID, Show_Date_ID, Schedule_ID, Cinema_Room_ID) VALUES
+('MV001', 1, 1, 1),  -- March 20, 10:00
+('MV001', 1, 4, 1),  -- March 20, 16:00
+('MV001', 2, 2, 1),  -- March 21, 12:00
+('MV002', 1, 1, 2),  -- March 20, 10:00 (not conflicting with Screen 1)
+('MV002', 2, 3, 2),  -- March 21, 14:00
+('MV002', 3, 5, 2),  -- March 22, 18:00
+('MV003', 1, 3, 1),  -- March 20, 14:00 (Screen 1 is free then)
+('MV003', 2, 6, 1),  -- March 21, 20:00
+('MV004', 1, 6, 3),  -- March 20, 20:00
+('MV004', 2, 4, 3),  -- March 21, 16:00
+('MV004', 3, 2, 3),  -- March 22, 12:00
+('MV005', 6, 2, 2),  -- March 25, 12:00 (Screen 2 is free at that time)
+('MV005', 6, 6, 3),  -- March 25, 20:00 (Screen 3 free at night)
+('MV006', 2, 1, 4),  -- March 21, 10:00
+('MV006', 2, 5, 4),  -- March 21, 18:00
+('MV006', 3, 6, 4),  -- March 22, 20:00
+('MV007', 9, 2, 4),  -- March 28, 12:00 (Screen 4 is free)
+('MV007', 10, 4, 4), -- March 29, 16:00
+('MV008', 10, 1, 1), -- March 29, 10:00
+('MV008', 11, 5, 1), -- March 30, 18:00
+('MV009', 11, 3, 3), -- March 30, 14:00
+('MV009', 12, 1, 3); -- March 31, 10:00
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
@@ -381,13 +332,28 @@ INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('MV009', 1), 
 ('MV009', 5);
 
+INSERT INTO Invoice (
+    Invoice_ID, Add_Score, BookingDate, MovieName, Schedule_Show,
+    Schedule_Show_Time, Status, Total_Money, Use_Score, Seat, Account_ID
+) VALUES
+('INV001', 10, '2024-03-20', 'Avengers: Endgame', '2024-03-23', '18:00', 1, 150000, 0, 'A1', 'AC001'),
+('INV002', 5, '2024-03-21', 'Kung Fu Panda 4', '2024-03-24', '20:00', 1, 100000, 10, 'B5', 'AC002'),
+('INV003', 7, '2024-03-22', 'Interstellar', '2024-03-25', '19:30', 0, 120000, 5, 'C2', 'AC003'),
+('INV004', 8, '2024-03-22', 'Inception', '2024-03-26', '21:00', 1, 130000, 0, 'D4', 'AC001'),
+('INV005', 0, '2024-03-23', 'The Dark Knight', '2024-03-23', '17:00', 2, 90000, 15, 'E1', 'AC004'),
+('INV2001', 10, '2025-06-01', 'Inside Out 2', '2025-06-01', '18:00', 1, 120000, 0, 'A5', 'AC002'),
+('INV2002', 0, '2025-06-02', 'Kungfu Panda 4', '2025-06-02', '20:30', 1, 100000, 5, 'B2', 'AC002'),
+('INV2003', 15, '2025-06-03', 'Dune: Part Two', '2025-06-03', '14:00', 1, 150000, 0, 'C1', 'AC002'),
+('INV2004', 0, '2025-06-04', 'Godzilla x Kong', '2025-06-04', '16:00', 1, 110000, 8, 'A2', 'AC002'),
+('INV2005', 20, '2025-06-05', 'Fast & Furious 10', '2025-06-05', '19:00', 1, 130000, 0, 'D5', 'AC002');
+
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,
     Detail VARCHAR(255),
     Discount_Level INT,
-    End_Time DATE,
+    End_Time DATETIME,
     Image VARCHAR(255),
-    Start_Time DATE,
+    Start_Time DATETIME,
     Title VARCHAR(255),
 	Is_Active BIT NOT NULL DEFAULT 1
 );

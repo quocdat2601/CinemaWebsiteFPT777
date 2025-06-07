@@ -27,8 +27,14 @@
             border: 2px dashed;
             cursor: default;
         }
-
+/* 
 .selected-seat-type {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+} */
+
+.selected-seat {
     background-color: #c3e6cb !important;
     border-color: #19692c !important;
     box-shadow: 0 0 0 2px white inset;
