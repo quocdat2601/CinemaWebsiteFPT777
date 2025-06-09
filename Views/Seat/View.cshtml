@@ -2,167 +2,187 @@
 @model ShowroomEditViewModel
 
 @{
-    var movieId = ViewBag.MovieId as string;
-    var date = ViewBag.Date as DateTime?;
-    var time = ViewBag.Time as string;
-    var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
-    var returnUrl = movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin";
-    var seatTypes = ViewBag.SeatTypes as List<SeatType>;
+	var movieId = ViewBag.MovieId as string;
+	var date = ViewBag.Date as DateTime?;
+	var time = ViewBag.Time as string;
+	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
+	var returnUrl = movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin";
+	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
 }
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="@returnUrl" class="btn btn-secondary">Return</a>
-    </div>
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<a href="@returnUrl" class="btn btn-secondary">Return</a>
+	</div>
 
-    <div class="screen-label text-center mb-5">
-        @Model.CinemaRoomName
-    </div>
+	<div class="screen-label text-center mb-5">
+		@Model.CinemaRoomName
+	</div>
 
-    <div class="seat-container">
-        <table class="table table-bordered text-center">
-            <tbody>
-                @for (int row = 1; row <= Model.SeatLength; row++)
-                {
-                    <tr>
-                        @for (int col = 1; col <= Model.SeatWidth; col++)
-                        {
-                            var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-                            if (seat != null)
-                            {
-                                var isBooked = bookedSeats.Contains(seat.SeatId);
-                                var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-                                var seatStyle = seatType?.TypeName == "Disabled" ? "border: none;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+	<div class="seat-container">
+		<table class="table table-bordered text-center">
+			<tbody>
+				@for (int row = 1; row <= Model.SeatLength; row++)
+				{
+					<tr>
+						@for (int col = 1; col <= Model.SeatWidth; col++)
+						{
+							var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+							if (seat != null)
+							{
+								var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+								bool isDisabledType = seatType?.TypeName == "Disabled";
+								bool isBooked = seat.SeatStatusId == 2;
 
-                                <td style="@seatStyle" 
-                                    data-seat-id="@seat.SeatId"
-                                    data-seat-name="@seat.SeatName"
-                                    data-seat-type="@seatType?.TypeName"
-                                    data-seat-price="@seatType?.PricePercent"
-                                    @(isBooked ? "disabled" : "")>
-                                    <span class="material-icons" @(isBooked || seatType?.TypeName == "Disabled" ? "" : "onclick=selectSeat(this)")>
-                                        @(seatType?.TypeName == "Disabled" ? "" : "chair")
-                                    </span>
-                                </td>
-                            }
-                        }
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+								var seatStyle = isDisabledType ? "border: none;" : isBooked	? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+								var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-    <div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
-        @foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
-        {
-            <div class="seat-type-option p-2 px-3 rounded text-white text-center"
-                 style="background-color: @type.ColorHex; cursor: pointer; font-weight:bold; font-size:medium"
-                 data-color="@type.ColorHex"
-                 data-type="@type.SeatTypeId"
-                 data-type-name="@type.TypeName"
-                 data-price-percent="@type.PricePercent">
-                @type.TypeName
-            </div>
-        }
-    </div>
+								<td style="@seatStyle"
+									data-seat-id="@seat.SeatId"
+									data-seat-name="@seat.SeatName"
+									data-seat-type="@seatType?.TypeName"
+									data-seat-price="@seatType?.PricePercent"
+									class="@tdClass"
+									@(isDisabledType || isBooked ? "disabled" : "")>
 
-    <div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
-        <div class="p-2 px-3 rounded text-white text-center"
-             style="background-color: #c3e6cb; cursor: pointer; font-weight:bold; font-size:medium">
-             Seat is being booked
-        </div>
-        <div class="p-2 px-3 rounded text-white text-center"
-             style="background-color: #19692c; cursor: pointer; font-weight:bold; font-size:medium">
-            Booked Seat
-        </div>
-    </div>
-    
-    <div id="selectionSummary" class="container mt-4 mb-4 bg-light p-4 rounded shadow" style="display:none; max-width: 700px;">
-        <h5 class="text-center mb-3">Booking Summary</h5>
-        <div class="row">
-            <div class="col-md-6 mb-2">
-                <p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
-                <p><strong>Date:</strong> @date?.ToString("yyyy-MM-dd")</p>
-                <p><strong>@Model.CinemaRoomName</strong></p>
-            </div>
-            <div class="col-md-6 mb-2">
-                <p><strong>Movie:</strong> @Model.MovieName </p>
-                <p><strong>Time:</strong> @time</p>
-                <p><strong>Total Price:</strong> <span id="totalPrice"></span> VND</p>
-            </div>
-        </div>
-    </div>
+									<span class="material-icons"
+										  @(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
+										@(isDisabledType ? "" : "chair")
+									</span>
+								</td>
+							}
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
 
-    @if (date.HasValue && !string.IsNullOrEmpty(time))
-    {
-        <div class="text-center mb-4">
-            <button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Book Selected Seats</button>
-        </div>
-    }
+	<div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
+		@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+		{
+			<div class="seat-type-option p-2 px-3 rounded text-white text-center"
+				 style="background-color: @type.ColorHex; cursor: pointer; font-weight:bold; font-size:medium"
+				 data-color="@type.ColorHex"
+				 data-type="@type.SeatTypeId"
+				 data-type-name="@type.TypeName"
+				 data-price-percent="@type.PricePercent">
+				@type.TypeName
+			</div>
+		}
+	</div>
+
+	<div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
+		<div class="p-2 px-3 rounded text-white text-center"
+			 style="background-color: #c3e6cb; cursor: pointer; font-weight:bold; font-size:medium">
+			Seat is being booked
+		</div>
+		<div class="p-2 px-3 rounded text-white text-center"
+			 style="background-color: #19692c; cursor: pointer; font-weight:bold; font-size:medium">
+			Booked Seat
+		</div>
+	</div>
+
+	<div id="selectionSummary" class="container mt-4 mb-4 bg-light p-4 rounded shadow" style="display:none; max-width: 700px;">
+		<h5 class="text-center mb-3">Booking Summary</h5>
+		<div class="row">
+			<div class="col-md-6 mb-2">
+				<p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
+				<p><strong>Date:</strong> @date?.ToString("yyyy-MM-dd")</p>
+				<p><strong>@Model.CinemaRoomName</strong></p>
+			</div>
+			<div class="col-md-6 mb-2">
+				<p><strong>Movie:</strong> @Model.MovieName </p>
+				<p><strong>Time:</strong> @time</p>
+				<p><strong>Total Price:</strong> <span id="totalPrice"></span> VND</p>
+			</div>
+		</div>
+	</div>
+
+	@if (date.HasValue && !string.IsNullOrEmpty(time))
+	{
+		<div class="text-center mb-4">
+			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Book Selected Seats</button>
+		</div>
+	}
 
 </div>
 
 @section Scripts {
-    <script>
-        let selectedSeats = new Set();
+	<script>
+		let selectedSeats = new Set();
 
-        function selectSeat(clickedSpan) {
-            const td = clickedSpan.parentElement;
-            const seatId = td.getAttribute('data-seat-id');
-            const seatName = td.getAttribute('data-seat-name');
-            const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+		function selectSeat(clickedSpan) {
+			const td = clickedSpan.parentElement;
+			const seatId = td.getAttribute('data-seat-id');
+			const seatName = td.getAttribute('data-seat-name');
+			const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
 
-            td.classList.toggle('selected-seat');
-            if (selectedSeats.has(seatId)) {
-                selectedSeats.delete(seatId);
-            } else {
-                selectedSeats.add(seatId);
-            }
+			td.classList.toggle('selected-seat');
+			if (selectedSeats.has(seatId)) {
+				selectedSeats.delete(seatId);
+			} else {
+				selectedSeats.add(seatId);
+			}
 
-            updateSelectionSummary();
-            const bookButton = document.getElementById('bookButton');
-            bookButton.disabled = selectedSeats.size === 0;
-        }
+			updateSelectionSummary();
+			const bookButton = document.getElementById('bookButton');
+			bookButton.disabled = selectedSeats.size === 0;
+		}
 
-        function updateSelectionSummary() {
-            const summary = document.getElementById('selectionSummary');
-            const selectedSeatNames = document.getElementById('selectedSeatNames');
-            const totalPrice = document.getElementById('totalPrice');
-            
-            if (selectedSeats.size > 0) {
-                let total = 0;
-                let seatNames = [];
+		function updateSelectionSummary() {
+			const summary = document.getElementById('selectionSummary');
+			const selectedSeatNames = document.getElementById('selectedSeatNames');
+			const totalPrice = document.getElementById('totalPrice');
 
-                document.querySelectorAll('.selected-seat').forEach(td => {
-                    const seatName = td.getAttribute('data-seat-name');
-                    const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
-                    seatNames.push(seatName);
-                    total += pricePercent;
-                });
+			if (selectedSeats.size > 0) {
+				let total = 0;
+				let seatNames = [];
 
-                selectedSeatNames.textContent = seatNames.join(', ');
-                totalPrice.textContent = total.toLocaleString("en-US", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-        });
-                        summary.style.display = 'block';
-            } else {
-                summary.style.display = 'none';
-            }
-        }
+				document.querySelectorAll('.selected-seat').forEach(td => {
+					const seatName = td.getAttribute('data-seat-name');
+					const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+					seatNames.push(seatName);
+					total += pricePercent;
+				});
 
-        document.getElementById('bookButton').addEventListener('click', function() {
-            if (selectedSeats.size === 0) return;
+				selectedSeatNames.textContent = seatNames.join(', ');
+				totalPrice.textContent = total.toLocaleString("en-US", {
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 0
+		});
+						summary.style.display = 'block';
+			} else {
+				summary.style.display = 'none';
+			}
+		}
 
-            const movieId = '@movieId';
-            const date = '@date?.ToString("yyyy-MM-dd")';
-            const time = '@time';
-            const seats = Array.from(selectedSeats).join(',');
-        });
+		  document.getElementById('bookButton').addEventListener('click', function() {
+		   if (selectedSeats.size === 0) return;
+			const selectedSeatIds = Array.from(selectedSeats);
+			const data = {
+				movieId: '@movieId',
+				showDate: '@date?.ToString("yyyy-MM-dd")',
+				showTime: '@time',
+				selectedSeatIds: selectedSeatIds
+			};
 
+			// Build query string
+			const params = new URLSearchParams();
+			for (const key in data) {
+				if (Array.isArray(data[key])) {
+					data[key].forEach(item => params.append(key, item));
+				} else {
+					params.append(key, data[key]);
+				}
+			}
 
-    </script>
+			// Navigate to the next page (Ticket Information)
+			 // window.location.href = `/Ticket/Information?${params.toString()}`;
+			 window.location.href = `/Booking/Information?${params.toString()}`;
+
+		});
+	</script>
 }
-

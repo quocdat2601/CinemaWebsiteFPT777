@@ -45,7 +45,7 @@
 					@for (int col = 1; col <= Model.SeatWidth; col++)
 					{
 						var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-						<td style="background-color: @(seat.SeatType?.ColorHex ?? "#ffffff")" 
+						<td style="background-color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
 							data-seat-id="@seat.SeatId"
 							data-seat-row="@row"
 							data-seat-col="@col"
@@ -99,7 +99,7 @@
 				selectedSeats.delete(td);
 			}
 		});
-		
+
 		// Update UI
 		const modeDesc = document.getElementById('modeDescription');
 		modeDesc.textContent = isChecked ? 'All seats selected. Choose a type to apply.' : 'Select seats and choose a type';
@@ -110,7 +110,7 @@
 		const row = checkbox.getAttribute('data-row');
 		const isChecked = checkbox.checked;
 		const seatsInRow = document.querySelectorAll(`td[data-seat-row="${row}"][data-seat-id]`);
-		
+
 		seatsInRow.forEach(td => {
 			if (isChecked) {
 				td.classList.add('selected-seat');
@@ -120,7 +120,7 @@
 				selectedSeats.delete(td);
 			}
 		});
-		
+
 		updateSelectionUI();
 	}
 
@@ -128,7 +128,7 @@
 		const column = checkbox.getAttribute('data-column');
 		const isChecked = checkbox.checked;
 		const seatsInColumn = document.querySelectorAll(`td[data-seat-col="${column}"][data-seat-id]`);
-		
+
 		seatsInColumn.forEach(td => {
 			if (isChecked) {
 				td.classList.add('selected-seat');
@@ -138,7 +138,7 @@
 				selectedSeats.delete(td);
 			}
 		});
-		
+
 		updateSelectionUI();
 	}
 
@@ -162,16 +162,16 @@
 		// If this is a couple seat, we need to select/deselect both seats
 		if (isCoupleSeat) {
 			const allSeats = document.querySelectorAll('td[data-seat-id]');
-			const coupleSeats = Array.from(allSeats).filter(seat => 
-				seat.hasAttribute('data-couple-seat') && 
+			const coupleSeats = Array.from(allSeats).filter(seat =>
+				seat.hasAttribute('data-couple-seat') &&
 				seat.getAttribute('data-seat-id') !== seatId
 			);
-			
+
 			if (coupleSeats.length > 0) {
 				const otherSeat = coupleSeats[0];
 				td.classList.toggle('selected-seat');
 				otherSeat.classList.toggle('selected-seat');
-				
+
 				if (selectedSeats.has(td)) {
 					selectedSeats.delete(td);
 					selectedSeats.delete(otherSeat);
@@ -217,10 +217,6 @@
 		document.getElementById('selectAll').checked = selectedSeats > 0 && selectedSeats === totalSeats;
 	}
 
-		// Enable/disable save button
-		document.getElementById("saveChangesBtn").disabled = !document.querySelector('.selected-seat');
-	}
-
 	function applySeatType(clickedTypeDiv) {
 		const color = clickedTypeDiv.getAttribute('data-color');
 		const typeName = clickedTypeDiv.getAttribute('data-type-name');
@@ -251,7 +247,7 @@
 		document.querySelectorAll('[data-selected-type]').forEach(td => {
 			const typeName = document.querySelector(`[data-type="${td.getAttribute('data-selected-type')}"]`).getAttribute('data-type-name');
 			const seatId = td.getAttribute('data-seat-id');
-			
+
 			// Check if this seat was part of a couple seat
 			if (td.hasAttribute('data-couple-seat')) {
 				wasCoupleSeat = true;
@@ -267,51 +263,6 @@
 				NewSeatTypeId: td.getAttribute('data-selected-type')
 			});
 		});
-
-		// If seats were part of a couple seat but are being changed to a different type
-		if (wasCoupleSeat && !isCoupleSeat) {
-			// First delete the couple seat relationship
-			fetch('/Seat/DeleteCoupleSeat', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-				},
-				body: JSON.stringify({ seatIds: coupleSeatIds })
-			})
-			.then(response => {
-				if (response.ok) {
-					// After couple seat is deleted, update the seat types
-					return fetch('/Seat/UpdateSeatTypes', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-						},
-						body: JSON.stringify(updatedSeats)
-					});
-				} else {
-					throw new Error('Failed to delete couple seat');
-				}
-			})
-			.then(response => {
-				if (response.ok) {
-					alert('Couple seat removed and seats updated successfully.');
-					location.reload();
-				} else {
-					throw new Error('Failed to update seat types');
-				}
-			})
-			.catch(error => {
-				alert('Error: ' + error.message);
-			});
-		}
-		else if (isCoupleSeat && updatedSeats.length === 2) {
-			// First create the couple seat
-			const coupleSeat = {
-				FirstSeatId: parseInt(updatedSeats[0].SeatId),
-				SecondSeatId: parseInt(updatedSeats[1].SeatId)
-			};
 
 		// If seats were part of a couple seat but are being changed to a different type
 		if (wasCoupleSeat && !isCoupleSeat) {

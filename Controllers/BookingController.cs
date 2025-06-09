@@ -77,6 +77,7 @@ namespace MovieTheater.Controllers
 
                 seats.Add(new SeatDetailViewModel
                 {
+                    SeatId = seat.SeatId,
                     SeatName = seat.SeatName,
                     SeatType = seatType?.TypeName ?? "Standard",
                     Price = price
@@ -122,6 +123,12 @@ namespace MovieTheater.Controllers
                 // Tạo danh sách tên ghế
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
                 string seatList = string.Join(",", seatNames);
+
+                foreach (var seat in model.SelectedSeats)
+                {
+                    _seatService.UpdateSeatStatus(seat.SeatId);
+
+                }
 
                 // Tạo đối tượng Invoice
                 var invoice = new Invoice
