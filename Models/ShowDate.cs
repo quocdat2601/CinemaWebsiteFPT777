@@ -11,5 +11,5 @@ public partial class ShowDate
 
     public string? DateName { get; set; }
 
-    public virtual ICollection<Movie> Movies { get; set; } = new List<Movie>();
+    public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 }

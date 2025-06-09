@@ -1,59 +1,54 @@
 ﻿@{
-    ViewData["Title"] = "Movie Ticket Booking";
+    ViewData["Title"] = "Choose Show";
     var movieList = ViewBag.MovieList as List<MovieTheater.Models.Movie>;
     var selectedMovieId = ViewBag.SelectedMovieId as string;
 }
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Step 1: Select Your Show</h4>
-                </div>
-                <div class="card-body">
-                    <form id="bookingForm" novalidate>
-                        <div class="mb-4">
-                            <label for="movieSelect" class="form-label">Movie</label>
-                            <select id="movieSelect" class="form-select">
-                                <option value="">— Select Movie —</option>
-                                @foreach (var m in movieList)
-                                {
-                                    if (m.MovieId == selectedMovieId)
-                                    {
-                                        <option value="@m.MovieId" selected>@m.MovieNameVn</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@m.MovieId">@m.MovieNameVn</option>
-                                    }
-                                }
-                            </select>
-                        </div>
+<div class="container mt-5">
+    <div class="card shadow p-4">
+        <h2 class="text-center mb-4">🎬 Book Your Ticket</h2>
 
-                        <div class="mb-4">
-                            <label for="dateSelect" class="form-label">Date</label>
-                            <select id="dateSelect" class="form-select" disabled>
-                                <option value="">— Select Date —</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="timeSelect" class="form-label">Time</label>
-                            <select id="timeSelect" class="form-select" disabled>
-                                <option value="">— Select Time —</option>
-                            </select>
-                        </div>
-
-                        <div id="errorMessage" class="text-danger mb-3"></div>
-
-                        <button type="button" id="bookBtn" class="btn btn-success w-100">
-                            Continue to Seat Selection
-                        </button>
-                    </form>
-                </div>
+        <form id="bookingForm" novalidate>
+            <div class="mb-4">
+                <label for="movieSelect" class="form-label"><strong>Movie</strong></label>
+                <select id="movieSelect" class="form-select">
+                    <option value="">— Select Movie —</option>
+                    @foreach (var m in movieList)
+                    {
+                        if (m.MovieId == selectedMovieId)
+                        {
+                            <option value="@m.MovieId" selected>@m.MovieNameEnglish</option>
+                        }
+                        else
+                        {
+                            <option value="@m.MovieId">@m.MovieNameEnglish</option>
+                        }
+                    }
+                </select>
             </div>
-        </div>
+
+            <div class="mb-4">
+                <label for="dateSelect" class="form-label"><strong>Date</strong></label>
+                <select id="dateSelect" class="form-select" disabled>
+                    <option value="">— Select Date —</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="timeSelect" class="form-label"><strong>Time</strong></label>
+                <select id="timeSelect" class="form-select" disabled>
+                    <option value="">— Select Time —</option>
+                </select>
+            </div>
+
+            <div class="text-danger mb-3" id="errorMessage"></div>
+
+            <div class="text-center">
+                <button type="button" id="bookBtn" class="btn btn-success btn-lg px-5">
+                    Continue to Seat Selection
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -108,7 +103,6 @@
                 window.location.href = `/Seat/Select?movieId=${movieId}&date=${date}&time=${time}`;
             });
 
-            // Preselect movie if passed from controller
             var preselect = '@selectedMovieId';
             if (preselect) {
                 $movie.val(preselect).trigger('change');

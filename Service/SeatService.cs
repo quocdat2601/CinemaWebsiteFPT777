@@ -1,4 +1,5 @@
-﻿using MovieTheater.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 
 namespace MovieTheater.Service
@@ -49,6 +50,17 @@ namespace MovieTheater.Service
         {
             _repository.Save();
         }
+
+        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
+        {
+            return await _repository.GetBookedSeatsAsync(movieId, date, time);
+        }
+
+        public async Task<List<SeatType>> GetSeatTypesAsync()
+        {
+            return await _repository.GetSeatTypesAsync();
+        }
+
     }
 
 }

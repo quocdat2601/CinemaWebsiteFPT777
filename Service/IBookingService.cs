@@ -1,6 +1,6 @@
 ﻿using MovieTheater.Models;
 
-namespace MovieTheater.Services
+namespace MovieTheater.Service
 {
     public interface IBookingService
     {
@@ -8,5 +8,7 @@ namespace MovieTheater.Services
         Movie GetById(string movieId);
         Task<List<DateTime>> GetShowDatesAsync(string movieId);
         Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);
+        Task SaveInvoiceAsync(Invoice invoice);
+        Task<string> GenerateInvoiceIdAsync();
     }
 }

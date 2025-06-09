@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -67,11 +68,13 @@ namespace MovieTheater.Controllers
                 Duration = movie.Duration,
                 Version = movie.Version,
                 Content = movie.Content,
-                LargeImage = movie.LargeImage, 
-                CinemaRoomName = cinemaRoom?.CinemaRoomName, 
+                TrailerUrl = _movieService.ConvertToEmbedUrl(movie.TrailerUrl),
+                LargeImage = movie.LargeImage,
+                CinemaRoomName = cinemaRoom?.CinemaRoomName,
                 AvailableTypes = movie.Types.ToList(),
-                AvailableSchedules = movie.Schedules.ToList(),
-            };
+                AvailableSchedules = movie.MovieShows.Select(ms => ms.Schedule).Where(s => s != null).ToList(),
+                AvailableShowDates = _movieService.GetMovieShows(id).Select(ms => ms.ShowDate).Where(sd => sd != null).ToList()
+            }; 
 
             return View(viewModel);
         }
@@ -79,75 +82,64 @@ namespace MovieTheater.Controllers
 
         // GET: MovieController/Create
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
-            var vm = new MovieDetailViewModel
+            var model = new MovieDetailViewModel
             {
-                AvailableSchedules = await _movieService.GetSchedulesAsync(),
-                AvailableShowDates = await _movieService.GetShowDatesAsync(),
-                AvailableTypes = await _movieService.GetTypesAsync(),
-                AvailableCinemaRooms = _cinemaService.GetAll().ToList()
+                AvailableTypes = _movieService.GetAllTypes(),
+                AvailableCinemaRooms = _movieService.GetAllCinemaRooms(),
+                AvailableShowDates = _movieService.GetAllShowDates(),
+                AvailableSchedules = _movieService.GetAllSchedules()
             };
-            return View(vm);
+            return View(model);
         }
 
         // POST: MovieController/Create
         [HttpPost]
-        public async Task<IActionResult> Create(MovieDetailViewModel model)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(MovieDetailViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                model.AvailableSchedules = await _movieService.GetSchedulesAsync();
-                model.AvailableShowDates = await _movieService.GetShowDatesAsync();
-                model.AvailableTypes = await _movieService.GetTypesAsync();
-                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
+                model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
+                model.AvailableShowDates = _movieService.GetAllShowDates();
+                model.AvailableSchedules = _movieService.GetAllSchedules();
                 return View(model);
             }
 
-            // Handle image uploads
-            if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
+            if (model.FromDate >= model.ToDate)
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                Directory.CreateDirectory(uploadsFolder); 
-
-                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.SmallImageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.SmallImageFile.CopyToAsync(stream);
-                }
-                model.SmallImage = "/image/" + uniqueFileName;
-            }
-            if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                Directory.CreateDirectory(uploadsFolder);
-
-                var uniqueFileName2 = Guid.NewGuid().ToString() + Path.GetExtension(model.LargeImageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName2);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.LargeImageFile.CopyToAsync(stream);
-                }
-                model.LargeImage = "/image/" + uniqueFileName2;
+                TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
+                model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
+                model.AvailableShowDates = _movieService.GetAllShowDates();
+                model.AvailableSchedules = _movieService.GetAllSchedules();
+                return View(model);
             }
 
-            try
+            var movie = new Movie
             {
-                bool success = _movieService.AddMovie(model);
+                MovieId = model.MovieId,
+                MovieNameEnglish = model.MovieNameEnglish,
+                MovieNameVn = model.MovieNameVn,
+                Actor = model.Actor,
+                Director = model.Director,
+                Duration = model.Duration,
+                Version = model.Version,
+                FromDate = model.FromDate,
+                ToDate = model.ToDate,
+                MovieProductionCompany = model.MovieProductionCompany,
+                CinemaRoomId = model.CinemaRoomId,
+                Content = model.Content,
+                TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
+                LargeImage = model.LargeImage,
+                SmallImage = model.SmallImage,
+                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
+            };
 
-                if (!success)
-                {
-                    ModelState.AddModelError("", "Failed to create movie.");
-                    model.AvailableSchedules = await _movieService.GetSchedulesAsync();
-                    model.AvailableShowDates = await _movieService.GetShowDatesAsync();
-                    model.AvailableTypes = await _movieService.GetTypesAsync();
-                    model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
-                    return View(model);
-                }
-
+            if (_movieService.AddMovie(movie, model.SelectedShowDateIds, model.SelectedScheduleIds))
+            {
                 TempData["ToastMessage"] = "Movie created successfully!";
                 //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 string role = GetUserRole();
@@ -157,117 +149,121 @@ namespace MovieTheater.Controllers
                     return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
 
             }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", $"Error creating movie: {ex.Message}");
-                model.AvailableSchedules = await _movieService.GetSchedulesAsync();
-                model.AvailableShowDates = await _movieService.GetShowDatesAsync();
-                model.AvailableTypes = await _movieService.GetTypesAsync();
-                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
-                return View(model);
-            }
+
+            TempData["ErrorMessage"] = "Failed to create movie. Some schedules may be unavailable.";
+            model.AvailableTypes = _movieService.GetAllTypes();
+            model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
+            model.AvailableShowDates = _movieService.GetAllShowDates();
+            model.AvailableSchedules = _movieService.GetAllSchedules();
+            return View(model);
         }
 
         // GET: Movie/Edit/5
-        public async Task<IActionResult> Edit(string id)
+        [HttpGet]
+        [Route("Movie/Edit/{id}")]
+        public IActionResult Edit(string id)
         {
             var movie = _movieService.GetById(id);
             if (movie == null)
+            {
                 return NotFound();
+            }
 
-            var viewModel = new MovieDetailViewModel
+            var model = new MovieDetailViewModel
             {
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 MovieNameVn = movie.MovieNameVn,
-                FromDate = movie.FromDate,
-                ToDate = movie.ToDate,
                 Actor = movie.Actor,
-                MovieProductionCompany = movie.MovieProductionCompany,
                 Director = movie.Director,
                 Duration = movie.Duration,
                 Version = movie.Version,
-                Content = movie.Content,
-                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
-                SelectedScheduleIds = movie.Schedules.Select(s => s.ScheduleId).ToList(),
+                FromDate = movie.FromDate,
+                ToDate = movie.ToDate,
+                MovieProductionCompany = movie.MovieProductionCompany,
                 CinemaRoomId = movie.CinemaRoomId,
+                Content = movie.Content,
+                TrailerUrl = movie.TrailerUrl,
                 LargeImage = movie.LargeImage,
                 SmallImage = movie.SmallImage,
-
-                AvailableSchedules = await _movieService.GetSchedulesAsync(),
-                AvailableTypes = await _movieService.GetTypesAsync(),
-                AvailableCinemaRooms = _cinemaService.GetAll().ToList()
+                AvailableTypes = _movieService.GetAllTypes(),
+                AvailableCinemaRooms = _movieService.GetAllCinemaRooms(),
+                AvailableShowDates = _movieService.GetAllShowDates(),
+                AvailableSchedules = _movieService.GetAllSchedules(),
+                SelectedShowDateIds = _movieService.GetMovieShows(id).Select(ms => ms.ShowDateId ?? 0).Where(id => id != 0).ToList(),
+                SelectedScheduleIds = _movieService.GetMovieShows(id).Select(ms => ms.ScheduleId ?? 0).Where(id => id != 0).ToList(),
+                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList()
             };
-            return View(viewModel);
+
+            return View(model);
         }
 
         // POST: MovieController/Edit/5
         [HttpPost]
+        [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, MovieDetailViewModel model)
+        public IActionResult Edit(string id, MovieDetailViewModel model)
         {
+            if (id != model.MovieId)
+            {
+                return NotFound();
+            }
+
             if (!ModelState.IsValid)
             {
-                model.AvailableSchedules = await _movieService.GetSchedulesAsync();
-                model.AvailableShowDates = await _movieService.GetShowDatesAsync();
-                model.AvailableTypes = await _movieService.GetTypesAsync();
+                model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
+                model.AvailableShowDates = _movieService.GetAllShowDates();
+                model.AvailableSchedules = _movieService.GetAllSchedules();
                 return View(model);
             }
 
-            var existingMovie = _movieService.GetById(id);
-            if (existingMovie != null)
+            if (model.FromDate >= model.ToDate)
             {
-                if (string.IsNullOrEmpty(model.SmallImage))
-                    model.SmallImage = existingMovie.SmallImage;
-                if (string.IsNullOrEmpty(model.LargeImage))
-                    model.LargeImage = existingMovie.LargeImage;
-            }
-
-            if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                Directory.CreateDirectory(uploadsFolder);
-
-                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.SmallImageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.SmallImageFile.CopyToAsync(stream);
-                }
-                model.SmallImage = "/image/" + uniqueFileName;
-            }
-
-            if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                Directory.CreateDirectory(uploadsFolder);
-
-                var uniqueFileName2 = Guid.NewGuid().ToString() + Path.GetExtension(model.LargeImageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName2);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.LargeImageFile.CopyToAsync(stream);
-                }
-                model.LargeImage = "/image/" + uniqueFileName2;
-            }
-
-            bool success = _movieService.UpdateMovie(id, model);
-
-            if (!success)
-            {
-                ModelState.AddModelError("", "Failed to update movie.");
+                TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
+                model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
+                model.AvailableShowDates = _movieService.GetAllShowDates();
+                model.AvailableSchedules = _movieService.GetAllSchedules();
                 return View(model);
             }
 
-            TempData["ToastMessage"] = "Movie updated successfully!";
-            //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+            var movie = new Movie
+            {
+                MovieId = model.MovieId,
+                MovieNameEnglish = model.MovieNameEnglish,
+                MovieNameVn = model.MovieNameVn,
+                Actor = model.Actor,
+                Director = model.Director,
+                Duration = model.Duration,
+                Version = model.Version,
+                FromDate = model.FromDate,
+                ToDate = model.ToDate,
+                MovieProductionCompany = model.MovieProductionCompany,
+                CinemaRoomId = model.CinemaRoomId,
+                Content = model.Content,
+                TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
+                LargeImage = model.LargeImage,
+                SmallImage = model.SmallImage,
+                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
+            };
+
+            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, new List<int>() /* TODO: Provide actual scheduleIds */))
+            {
+                TempData["ToastMessage"] = "Movie updated successfully!";
             string role = GetUserRole();
             if (role == "Admin")
                 return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
             else
                 return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+            }
+
+            TempData["ErrorMessage"] = "Failed to update movie. Some schedules may be unavailable.";
+            model.AvailableTypes = _movieService.GetAllTypes();
+            model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
+            model.AvailableShowDates = _movieService.GetAllShowDates();
+            model.AvailableSchedules = _movieService.GetAllSchedules();
+            return View(model);
         }
                 
         // POST: Movie/Delete/5
@@ -299,10 +295,7 @@ namespace MovieTheater.Controllers
                         return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
-                // Force delete by clearing all relationships first
-                movie.Schedules?.Clear();
                 movie.Types?.Clear();
-                movie.ShowDates?.Clear();
                 
                 bool success = _movieService.DeleteMovie(id);
 

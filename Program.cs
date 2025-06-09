@@ -6,7 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using Serilog;
 using System.Text;
 
@@ -103,6 +102,8 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
             builder.Services.AddScoped<EmailService>();
+            builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
+            builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
 
             builder.Services.AddHttpContextAccessor();
 

@@ -41,6 +41,7 @@ namespace MovieTheater.ViewModels
         public IFormFile? ImageFile { get; set; } // for file upload
         public string? Image { get; set; } // for saving image path
         public bool IsGoogleAccount { get; set; }
+        public int Score { get; set; }
 
     }
 } 

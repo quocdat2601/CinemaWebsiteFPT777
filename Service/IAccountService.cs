@@ -19,5 +19,7 @@ namespace MovieTheater.Service
         public void ClearOtp(string accountId);
         public bool GetByUsername(string username);
         public Account? GetById(string id);
+        Task DeductScoreAsync(string userId, int points);
+
     }
 }

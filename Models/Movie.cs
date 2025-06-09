@@ -33,9 +33,9 @@ public partial class Movie
 
     public string? SmallImage { get; set; }
 
-    public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
+    public string? TrailerUrl { get; set; }
 
-    public virtual ICollection<ShowDate> ShowDates { get; set; } = new List<ShowDate>();
+    public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
     public virtual ICollection<Type> Types { get; set; } = new List<Type>();
 }
