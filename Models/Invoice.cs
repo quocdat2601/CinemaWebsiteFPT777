@@ -27,5 +27,7 @@ public partial class Invoice
 
     public string? AccountId { get; set; }
 
+    public int? RoleId { get; set; }
+
     public virtual Account? Account { get; set; }
 }

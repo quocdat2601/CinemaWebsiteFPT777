@@ -363,10 +363,12 @@ namespace MovieTheater.Controllers
                     }
                 }
 
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var currentUser = _accountService.GetById(currentUserId);
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
-                    AccountId = member?.Account?.AccountId ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value, // Use member's AccountId for DB FK
+                    AccountId = member?.Account?.AccountId ?? currentUserId, // Use member's AccountId for DB FK
                     AddScore = (int)((model.BookingDetails.TotalPrice - discount) * 0.1m), // Add score based on discounted price
                     BookingDate = DateTime.Now,
                     MovieName = model.BookingDetails.MovieName,
@@ -375,7 +377,8 @@ namespace MovieTheater.Controllers
                     Status = 1,
                     TotalMoney = model.BookingDetails.TotalPrice - discount,
                     UseScore = scoreUsed,
-                    Seat = string.Join(",", model.BookingDetails.SelectedSeats.Select(s => s.SeatName))
+                    Seat = string.Join(",", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
+                    RoleId = currentUser?.RoleId // Set RoleId to the current user's role
                 };
 
                 await _bookingService.SaveInvoiceAsync(invoice);

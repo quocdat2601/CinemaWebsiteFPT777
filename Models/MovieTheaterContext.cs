@@ -215,15 +215,20 @@ public partial class MovieTheaterContext : DbContext
             entity.Property(e => e.MovieName)
                 .HasMaxLength(255)
                 .IsUnicode(false);
-            entity.Property(e => e.ScheduleShow).HasColumnName("Schedule_Show");
+            entity.Property(e => e.RoleId).HasColumnName("Role_ID");
+            entity.Property(e => e.ScheduleShow)
+                .HasColumnType("datetime")
+                .HasColumnName("Schedule_Show");
             entity.Property(e => e.ScheduleShowTime)
                 .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("Schedule_Show_Time");
             entity.Property(e => e.Seat)
-                .HasMaxLength(20)
+                .HasMaxLength(255)
                 .IsUnicode(false);
-            entity.Property(e => e.TotalMoney).HasColumnName("Total_Money");
+            entity.Property(e => e.TotalMoney)
+                .HasColumnType("decimal(18, 0)")
+                .HasColumnName("Total_Money");
             entity.Property(e => e.UseScore).HasColumnName("Use_Score");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Invoices)
@@ -547,7 +552,8 @@ public partial class MovieTheaterContext : DbContext
                 .IsUnicode(false)
                 .HasDefaultValue("#FFFFFF");
             entity.Property(e => e.PricePercent)
-                .HasDefaultValue(100)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(18, 0)")
                 .HasColumnName("Price_Percent");
             entity.Property(e => e.TypeName)
                 .HasMaxLength(50)
