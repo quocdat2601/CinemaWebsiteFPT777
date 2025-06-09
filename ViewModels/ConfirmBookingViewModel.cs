@@ -19,5 +19,8 @@
         public string Email { get; set; }
         public string IdentityCard { get; set; }
         public string PhoneNumber { get; set; }
+        public int CurrentScore { get; set; }
+        public int UseScore { get; set; } // dùng để submit ngược lại nếu cần
+
     }
 }

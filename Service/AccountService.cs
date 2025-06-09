@@ -187,6 +187,13 @@ namespace MovieTheater.Service
             if (account == null)
                 return null;
 
+            //CHECK SCORE USER
+            //var member = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId);
+            //int score = member?.Score ?? 0;
+
+            //_logger.LogInformation("User {UserId} - FullName: {FullName} - Score: {Score}", account.AccountId, account.FullName, score);
+
+
             bool isGoogleAccount = account.Password.IsNullOrEmpty();
 
             return new ProfileUpdateViewModel
@@ -201,7 +208,8 @@ namespace MovieTheater.Service
                 Address = account.Address ?? string.Empty,
                 PhoneNumber = account.PhoneNumber ?? string.Empty,
                 Password = account.Password ?? string.Empty,
-                IsGoogleAccount = isGoogleAccount
+                IsGoogleAccount = isGoogleAccount,
+                Score = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0
             };
         }
         public bool VerifyCurrentPassword(string username, string currentPassword)
@@ -339,6 +347,11 @@ namespace MovieTheater.Service
         public Account? GetById(string id)
         {
             return _repository.GetById(id);
+        }
+
+        public async Task DeductScoreAsync(string userId, int points)
+        {
+            await _repository.DeductScoreAsync(userId, points);
         }
     }
 }
