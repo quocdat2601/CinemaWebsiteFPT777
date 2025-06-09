@@ -1,0 +1,130 @@
+﻿@model MovieTheater.ViewModels.ConfirmBookingViewModel
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Confirm Your Booking</h2>
+
+    <div class="card shadow p-4">
+
+        @* === Thông tin người dùng & phim chia 2 cột === *@
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Movie & Show Info</h5>
+                <p><strong>Movie:</strong> @Model.MovieName</p>
+                <p><strong>Screen:</strong> @Model.CinemaRoomName</p>
+                <p><strong>Date:</strong> @Model.ShowDate.ToString("yyyy-MM-dd")</p>
+                <p><strong>Time:</strong> @Model.ShowTime</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Your Information</h5>
+                <p><strong>Full Name:</strong> @Model.FullName</p>
+                <p><strong>Email:</strong> @Model.Email</p>
+                <p><strong>Identity Card:</strong> @Model.IdentityCard</p>
+                <p><strong>Phone Number:</strong> @Model.PhoneNumber</p>
+                <p><strong>Score:</strong> <span id="currentScore">@Model.CurrentScore</span> pts</p>
+            </div>
+        </div>
+
+        <hr />
+
+        @* === Danh sách ghế === *@
+        <h5 class="mb-3">Seat(s)</h5>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Seat</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var seat in Model.SelectedSeats)
+                {
+                    <tr>
+                        <td>@seat.SeatName</td>
+                        <td>@seat.SeatType</td>
+                        <td>@seat.Price.ToString("N0") VND</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @* === Nhập Use Score & tổng tiền === *@
+        <div class="row mt-4 align-items-center">
+            <div class="col-md-6">
+                <label for="useScore" class="form-label"><strong>Use Score:</strong></label>
+                <input type="number" id="useScore" name="UseScore" class="form-control" min="0" max="@Model.CurrentScore" value="0" />
+                <small id="scoreMessage" class="text-danger fw-bold d-block"></small>
+                <small class="text-muted d-block">Use points to reduce the total price</small>
+
+            </div>
+            <div class="col-md-6 text-end">
+                <p class="mb-1"><strong>Total Price:</strong></p>
+                <h4><span id="displayTotal">@Model.TotalPrice.ToString("N0")</span> VND</h4>
+            </div>
+        </div>
+
+        <hr />
+        <form asp-action="Confirm" method="post">
+            @* Hidden fields *@
+            @Html.HiddenFor(m => m.MovieId)
+            @Html.HiddenFor(m => m.MovieName)
+            @Html.HiddenFor(m => m.CinemaRoomName)
+            @Html.HiddenFor(m => m.ShowDate)
+            @Html.HiddenFor(m => m.ShowTime)
+            @Html.HiddenFor(m => m.TotalPrice)
+            @Html.HiddenFor(m => m.FullName)
+            @Html.HiddenFor(m => m.Email)
+            @Html.HiddenFor(m => m.IdentityCard)
+            @Html.HiddenFor(m => m.PhoneNumber)
+            @Html.HiddenFor(m => m.CurrentScore)
+
+            <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
+
+            @for (int i = 0; i < Model.SelectedSeats.Count; i++)
+            {
+                <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
+                <input type="hidden" name="SelectedSeats[@i].SeatType" value="@Model.SelectedSeats[i].SeatType" />
+                <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
+            }
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const useScoreInput = document.getElementById("useScore");
+        const displayTotal = document.getElementById("displayTotal");
+        const totalPriceOriginal = @Model.TotalPrice;
+        const currentScore = @Model.CurrentScore;
+        const hiddenUseScore = document.getElementById("hiddenUseScore");
+        const scoreMessage = document.getElementById("scoreMessage");
+
+        useScoreInput.addEventListener("input", function () {
+            let used = parseInt(useScoreInput.value) || 0;
+            let valid = true;
+
+            if (used > currentScore) {
+                scoreMessage.textContent = "❌ Member score is not enough.";
+                valid = false;
+            } else {
+                const moneyReduced = used.toLocaleString("en-US");
+                const newTotal = Math.max(0, totalPriceOriginal - used);
+                const newTotalDisplay = newTotal.toLocaleString("en-US");
+
+                scoreMessage.textContent = `✔ Convert ${moneyReduced} score to reduce ${moneyReduced} VND`;
+                displayTotal.textContent = newTotalDisplay;
+                hiddenUseScore.value = used;
+            }
+
+            if (!valid) {
+                displayTotal.textContent = totalPriceOriginal.toLocaleString("en-US");
+                hiddenUseScore.value = 0;
+            }
+        });
+
+    </script>
+}

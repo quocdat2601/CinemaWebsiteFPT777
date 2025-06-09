@@ -1,4 +1,4 @@
-namespace MovieTheater.ViewModels
+﻿namespace MovieTheater.ViewModels
 {
     public class VerifyOtpViewModel
     {

@@ -14,13 +14,12 @@ else
     <table class="table table-bordered table-striped table-hover">
         <thead class="table-dark">
             <tr class="text-center">
-                <th>Username</th>
+                <th>Member ID</th>
                 <th>Full Name</th>
+                <th>Identity card</th>
                 <th>Email</th>
                 <th>Phone Number</th>
-                <th>Identity Card</th>
-                <th>Score</th>
-                <th>Rank</th>
+                <th>Address</th>
                 @if (User.IsInRole("Admin"))
                 {
                     <th style="width: 150px;">Actions</th>
@@ -31,13 +30,12 @@ else
             @foreach (var member in Model)
             {
                 <tr class="text-center">
-                    <td>@member.Account.Username</td>
+                    <td>@member.MemberId</td>
                     <td>@member.Account.FullName</td>
+                    <td>@member.Account.IdentityCard</td>
                     <td>@member.Account.Email</td>
                     <td>@member.Account.PhoneNumber</td>
-                    <td>@member.Account.IdentityCard</td>
-                    <td>@member.Score</td>
-                    <td>@member.Account.Rank?.RankName</td> @* Assuming Rank model has RankName property and is accessible via Account navigation property. *@
+                    <td>@member.Account.Address</td>
                     @if (User.IsInRole("Admin"))
                     {
                         <td>

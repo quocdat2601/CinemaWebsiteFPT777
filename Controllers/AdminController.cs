@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using MovieTheater.ViewModels;
-using System.Collections.Generic;
 
 namespace MovieTheater.Controllers
 {
@@ -39,7 +35,7 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult LoadTab(string tab)
+        public IActionResult LoadTab(string tab,string keyword = null)
         {
             switch (tab)
             {
@@ -50,6 +46,21 @@ namespace MovieTheater.Controllers
                     return PartialView("MemberMg", members);
                 case "EmployeeMg":
                     var employees = _employeeService.GetAll();
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        ViewBag.Keyword = keyword;
+                        keyword = keyword.Trim().ToLower();
+
+                        employees = employees.Where(e =>
+                            (!string.IsNullOrEmpty(e.Account?.FullName) && e.Account.FullName.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(e.Account?.IdentityCard) && e.Account.IdentityCard.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(e.Account?.Email) && e.Account.Email.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(e.Account?.PhoneNumber) && e.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(e.Account?.Address) && e.Account.Address.ToLower().Contains(keyword))
+                        ).ToList();
+                    }
+
                     return PartialView("EmployeeMg", employees);
                 case "MovieMg":
                     var movies = _movieService.GetAll();

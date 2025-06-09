@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
@@ -14,16 +14,19 @@ namespace MovieTheater.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly IMovieService _movieService;
         private readonly IMemberRepository _memberRepository;
+        private readonly IAccountService _accountService;
 
-        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository)
+        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService)
         {
             _service = service;
             _logger = logger;
             _movieService = movieService;
             _memberRepository = memberRepository;
+            _accountService = accountService;
+
         }
         // GET: EmployeeController
-        public IActionResult MainPage(string tab = "MovieMg")
+        public IActionResult MainPage(string tab = "MemberMg")
         {
             ViewData["ActiveTab"] = tab;
             return View();
@@ -53,6 +56,8 @@ namespace MovieTheater.Controllers
                     return PartialView("SheduleMg");
                 case "PromotionMg":
                     return PartialView("PromotionMg");
+                case "TicketSellingMg":
+                    return PartialView("TicketSellingMg");
                 default:
                     return Content("Tab not found.");
             }
@@ -132,7 +137,7 @@ namespace MovieTheater.Controllers
             if (employee == null)
                 return NotFound();
 
-            var viewModel = new RegisterViewModel
+            var viewModel = new EmployeeEditViewModel
             {
                 Username = employee.Account.Username,
                 FullName = employee.Account.FullName,
@@ -143,8 +148,7 @@ namespace MovieTheater.Controllers
                 Address = employee.Account.Address,
                 PhoneNumber = employee.Account.PhoneNumber,
                 Image = employee.Account.Image,
-                Password = null,
-                ConfirmPassword = null
+                AccountId = employee.AccountId
             };
 
             return View(viewModel);
@@ -153,15 +157,39 @@ namespace MovieTheater.Controllers
         // POST: EmployeeController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditAsync(string id, RegisterViewModel model)
+        public async Task<ActionResult> EditAsync(string id, EmployeeEditViewModel model)
         {
-            ModelState.Remove("Password");
-            ModelState.Remove("ConfirmPassword");
-
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
+
+            var employee = _service.GetById(id);
+            if (employee == null)
+            {
+                TempData["ErrorMessage"] = "Employee not found.";
+                return View(model);
+            }
+
+            if (!string.IsNullOrEmpty(model.Password))
+            {
+                if (model.Password != model.ConfirmPassword)
+                {
+                    TempData["ErrorMessage"] = "Password and Confirm Password do not match";
+                    return View(model);
+                }
+
+                if (model.Password != employee.Account.Password)
+                {
+                    var result = _accountService.UpdatePasswordByUsername(model.Username, model.Password);
+                    if (!result)
+                    {
+                        TempData["ErrorMessage"] = "Failed to update password";
+                        return View(model);
+                    }
+                }
+            }
+
             try
             {
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
@@ -187,12 +215,28 @@ namespace MovieTheater.Controllers
                     }
                 }
 
-                var success = _service.Update(id, model);
+                var registerModel = new RegisterViewModel
+                {
+                    AccountId = model.AccountId,
+                    Username = model.Username,
+                    Password = model.Password,
+                    FullName = model.FullName,
+                    DateOfBirth = model.DateOfBirth,
+                    Gender = model.Gender,
+                    IdentityCard = model.IdentityCard,
+                    Email = model.Email,
+                    Address = model.Address,
+                    PhoneNumber = model.PhoneNumber,
+                    Image = model.Image,
+                    ImageFile = model.ImageFile
+                };
+
+                var success = _service.Update(id, registerModel);
 
                 if (!success)
                 {
                     TempData["ErrorMessage"] = "Update failed - Username already exists";
-                    return View(model);
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
                 }
 
                 TempData["ToastMessage"] = "Employee Updated Successfully!";
@@ -237,10 +281,6 @@ namespace MovieTheater.Controllers
                     TempData["ToastMessage"] = "Employee not found.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
                 }
-
-                //movie.Schedules?.Clear();
-                //movie.Types?.Clear();
-                //movie.ShowDates?.Clear();
 
                 bool success = _service.Delete(id);
 

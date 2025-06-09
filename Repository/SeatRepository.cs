@@ -52,6 +52,33 @@ namespace MovieTheater.Repository
         {
             _context.SaveChanges();
         }
-    }
 
+        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
+        {
+            // Get the movie to find its cinema room
+            var movie = await _context.Movies.FirstOrDefaultAsync(m => m.MovieId == movieId);
+            if (movie == null || !movie.CinemaRoomId.HasValue)
+                return new List<int>();
+
+            // Get the schedule ID for the given time
+            var schedule = await _context.Schedules.FirstOrDefaultAsync(s => s.ScheduleTime == time);
+            if (schedule == null)
+                return new List<int>();
+
+            // Get all booked seats for this movie, date, and time
+            var bookedSeats = await _context.ScheduleSeats
+                .Where(ss => ss.ScheduleId == schedule.ScheduleId)
+                .Where(ss => ss.SeatStatusId == 2) // Assuming 2 is the status for booked seats
+                .Select(ss => ss.SeatId)
+                .ToListAsync();
+
+            return bookedSeats;
+        }
+
+        public async Task<List<SeatType>> GetSeatTypesAsync()
+        {
+            return await _context.SeatTypes.ToListAsync();
+        }
+
+    }
 }

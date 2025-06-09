@@ -21,6 +21,10 @@ public partial class Seat
 
     public virtual CinemaRoom? CinemaRoom { get; set; }
 
+    public virtual CoupleSeat? CoupleSeatFirstSeat { get; set; }
+
+    public virtual CoupleSeat? CoupleSeatSecondSeat { get; set; }
+
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
 
     public virtual SeatStatus? SeatStatus { get; set; }

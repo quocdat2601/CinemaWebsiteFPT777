@@ -1,17 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using MovieTheater.Models;
+using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.Extensions.Logging;
-using MovieTheater.Models;
-using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
-using MovieTheater.Repository;
-
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -54,6 +49,9 @@ namespace MovieTheater.Controllers
             var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var givenName = claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
+            var surname = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
+            var picture = claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
 
             if (string.IsNullOrEmpty(email))
             {
@@ -68,11 +66,13 @@ namespace MovieTheater.Controllers
                 user = new Account
                 {
                     Email = email,
-                    FullName = name ?? "Google User",
+                    FullName = name ?? $"{givenName} {surname}".Trim() ?? "Google User",
                     Username = email,
                     RoleId = 3,
                     Status = 1,
-                    RegisterDate = DateOnly.FromDateTime(DateTime.Now)
+                    RegisterDate = DateOnly.FromDateTime(DateTime.Now),
+                    Image = picture,
+                    Password = null // Đăng nhập Google thì Password để null
                 };
                 _accountRepository.Add(user);
                 _accountRepository.Save();
@@ -84,28 +84,45 @@ namespace MovieTheater.Controllers
                 _memberRepository.Save();
             }
 
+            // Sau khi thêm user mới (nếu có)
+            user = _accountRepository.GetAccountByEmail(email); // lấy lại user mới nhất
+
+            // Log các trường thông tin để debug
+            _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
+            // Kiểm tra thiếu thông tin
+            bool missingInfo = 
+                !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
+                string.IsNullOrWhiteSpace(user.Gender) ||
+                string.IsNullOrWhiteSpace(user.IdentityCard) ||
+                string.IsNullOrWhiteSpace(user.Address) ||
+                string.IsNullOrWhiteSpace(user.PhoneNumber);
+
+            if (missingInfo)
+            {
+                TempData["FirstTimeLogin"] = true;
+            }
+
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
                 return RedirectToAction("Login");
             }
 
-            string roleName = user.RoleId switch
-            {
-                1 => "Admin",
-                2 => "Employee",
-                3 => "Customer",
-                _ => "Guest"
-            };
+                string roleName = user.RoleId switch
+                {
+                    1 => "Admin",
+                    2 => "Employee",
+                    3 => "Customer",
+                    _ => "Guest"
+                };
 
             var appClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
                 new Claim("Email", user.Email),
-                new Claim("FullName", user.FullName ?? user.Username)
             };
 
             var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -117,6 +134,7 @@ namespace MovieTheater.Controllers
             // Check if it's the first time login and redirect to profile update
             if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
             {
+                TempData.Remove("FirstTimeLogin");
                 return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
             }
 
@@ -133,6 +151,8 @@ namespace MovieTheater.Controllers
                 Expires = DateTime.Now.AddMinutes(60)
             });
 
+            TempData["ToastMessage"] = "Log in successful!";
+
             // Direct redirect like normal login
             if (user.RoleId == 1)
             {
@@ -145,6 +165,7 @@ namespace MovieTheater.Controllers
             else
             {
                 return RedirectToAction("MovieList", "Movie");
+                //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }
 
@@ -158,16 +179,12 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult MainPage()
-        {
-            return View();
-        }
-
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
+            TempData["ToastMessage"] = "Log out successful!";
             return RedirectToAction("Login", "Account");
         }
 
@@ -198,7 +215,7 @@ namespace MovieTheater.Controllers
                 _logger.LogWarning("Registration failed validation at {Time}. Errors: {Errors}",
                     DateTime.UtcNow, errors);
 
-                TempData["ErrorMessage"] = $"Validation failed: {errors}";
+                TempData["ErrorMessage"] = $"{errors}";
                 return View(model);
             }
 
@@ -218,7 +235,7 @@ namespace MovieTheater.Controllers
                 _logger.LogInformation("New account registered: {Username} at {Time}",
                     model.Username, DateTime.UtcNow);
 
-                TempData["ToastMessage"] = "Sign up successful! Please log in.";
+                TempData["ToastMessage"] = "Sign up successful! Redirecting to log in..";
                 return RedirectToAction("Signup");
             }
             catch (Exception ex)
@@ -242,20 +259,20 @@ namespace MovieTheater.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Invalid login data.";
-                return View(model);
+                TempData["ErrorMessage"] = "Please fill all required fields!";
+                return RedirectToAction("Login");
             }
 
             if (!_service.Authenticate(model.Username, model.Password, out var user))
             {
-                TempData["ErrorMessage"] = "Invalid username or password.";
-                return View(model);
+                TempData["ErrorMessage"] = "Invalid username or password!";
+                return RedirectToAction("Login");
             }
 
             if (user.Status == 0)
             {
                 TempData["ErrorMessage"] = "Account has been locked!";
-                return View(model);
+                return RedirectToAction("Login");
             }
 
             string roleName = user.RoleId switch
@@ -269,7 +286,7 @@ namespace MovieTheater.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
                 new Claim("Email", user.Email)
@@ -291,6 +308,8 @@ namespace MovieTheater.Controllers
                 Expires = DateTime.Now.AddMinutes(60)
             });
 
+            TempData["ToastMessage"] = "Log in successful!";
+
             if (user.RoleId == 1)
             {
                 return RedirectToAction("MainPage", "Admin");
@@ -308,6 +327,49 @@ namespace MovieTheater.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult History()
+        {
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var bookings = _context.Invoices
+                .Where(i => i.AccountId == accountId)
+                .OrderByDescending(i => i.BookingDate)
+                .ToList();
+
+            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+        }
+
+        [HttpPost]
+        public IActionResult History(DateTime fromDate, DateTime toDate, int? status)
+        {
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var query = _context.Invoices
+                .Where(i => i.AccountId == accountId &&
+                            i.BookingDate >= fromDate &&
+                            i.BookingDate <= toDate);
+
+            if (status.HasValue)
+            {
+                query = query.Where(i => i.Status == status);
+            }
+
+            var bookings = query
+                .OrderByDescending(i => i.BookingDate)
+                .ToList();
+
+            return View("~/Views/Account/Tabs/History.cshtml", bookings);
         }
     }
 }

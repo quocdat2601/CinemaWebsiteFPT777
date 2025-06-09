@@ -1,2 +1,150 @@
-﻿<h3>History Booking Ticket</h3>
-<p>No history yet!</p>
+﻿@model List<MovieTheater.Models.Invoice>
+@{
+    ViewData["Title"] = "Booking History";
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Booking History</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filter Form -->
+    <form id="historyFilterForm" class="mb-3">
+        <label>From:</label>
+        <input type="date" id="fromDate" name="fromDate" class="form-control" />
+
+        <label>To:</label>
+        <input type="date" id="toDate" name="toDate" class="form-control" />
+
+        <button type="submit" class="btn btn-primary mt-2">Filter</button>
+    </form>
+
+    <!-- Booking History Table -->
+    <div id="historyResult">
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Booking Date</th>
+                        <th>Movie</th>
+                        <th>Show Date</th>
+                        <th>Show Time</th>
+                        <th>Seats</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var booking in Model)
+                    {
+                        <tr>
+                            <td>@booking.BookingDate?.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@booking.MovieName</td>
+                            <td>@booking.ScheduleShow?.ToString("dd/MM/yyyy")</td>
+                            <td>@booking.ScheduleShowTime</td>
+                            <td>@booking.Seat</td>
+                            <td class="text-end">@booking.TotalMoney?.ToString("N0") VND</td>
+                            <td>
+                                @if (booking.Status == 1)
+                                {
+                                    <span class="badge bg-success">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Cancelled</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-info-circle"></i> Details
+                                    </a>
+                                    @if (booking.Status == 1 && booking.ScheduleShow.HasValue && 
+                                         booking.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
+                                    {
+                                        <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId" 
+                                              method="post" class="d-inline" 
+                                              onsubmit="return confirm('Are you sure you want to cancel this ticket?');">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>
+            No booking history found for the selected period.
+        </div>
+    }
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(function() {
+        // Ép thuộc tính form để ngăn submit về server
+        $('#historyFilterForm').attr('action', 'javascript:void(0)');
+        $('#historyFilterForm').removeAttr('method');
+        $('#historyFilterForm').on('submit', function(e) {
+            e.preventDefault();
+            var fromDate = $('#fromDate').val();
+            var toDate = $('#toDate').val();
+            $.ajax({
+                url: '/Ticket/HistoryPartial',
+                type: 'GET',
+                data: { fromDate: fromDate, toDate: toDate },
+                success: function (result) {
+                    $('#historyResult').html(result);
+                    // Đảm bảo tab History luôn active trên sidebar
+                    $('#accountTabs .nav-link').removeClass('active');
+                    $('#accountTabs .nav-link[data-tab="History"]').addClass('active');
+                },
+                error: function () {
+                    $('#historyResult').html('<div class="alert alert-danger">Error loading data.</div>');
+                }
+            });
+        });
+    });
+</script>
+
+@section Styles {
+    <style>
+        .table th {
+            white-space: nowrap;
+        }
+        .badge {
+            font-size: 0.9em;
+            padding: 0.5em 0.8em;
+        }
+        .btn-group {
+            gap: 0.5rem;
+        }
+    </style>
+}

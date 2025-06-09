@@ -6,7 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using MovieTheater.Services;
 using Serilog;
 using System.Text;
 
@@ -85,7 +84,7 @@ namespace MovieTheater
                 options.CallbackPath = "/signin-google";
             });
 
-            // Services - DI
+
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -95,6 +94,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
             builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IPromotionService, PromotionService>();
             builder.Services.AddScoped<ISeatRepository, SeatRepository>();
@@ -102,14 +102,8 @@ namespace MovieTheater
             builder.Services.AddScoped<ISeatTypeRepository, SeatTypeRepository>();
             builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
             builder.Services.AddScoped<EmailService>();
-
-            // Logging with Serilog
-            builder.Host.UseSerilog((context, services, configuration) => configuration
-                .ReadFrom.Configuration(context.Configuration)
-                .ReadFrom.Services(services)
-                .WriteTo.Console()
-                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-            );
+            builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
+            builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
 
             builder.Services.AddHttpContextAccessor();
 

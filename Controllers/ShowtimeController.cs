@@ -115,23 +115,45 @@ namespace MovieTheater.Controllers
             var selectedDate = date ?? availableDates.First();
             var selectedDateOnly = DateOnly.FromDateTime(selectedDate);
 
-            // 2. Get all movies scheduled for the selected date (active in date range)
-            var moviesForDate = _context.Movies
-                .Where(m => m.FromDate <= selectedDateOnly && m.ToDate >= selectedDateOnly)
-                .Where(m => m.ShowDates.Any(sd => sd.ShowDate1 == selectedDateOnly))
-                .Include(m => m.Schedules)
+            // Find the ShowDateId for the selected date
+            var selectedShowDate = _context.ShowDates.FirstOrDefault(sd => sd.ShowDate1 == selectedDateOnly);
+
+            if (selectedShowDate == null)
+            {
+                // Handle case where no show date found
+                 var emptyModel = new ShowtimeSelectionViewModel
+                {
+                    AvailableDates = availableDates,
+                    SelectedDate = selectedDate,
+                    Movies = new List<MovieShowtimeInfo>()
+                };
+                return View("~/Views/Showtime/Select.cshtml", emptyModel);
+            }
+
+            // 2. Get all MovieShow entries for the selected date
+            var movieShowsForDate = _context.MovieShows
+                .Where(ms => ms.ShowDateId == selectedShowDate.ShowDateId)
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
                 .ToList();
 
-            // 3. Build the view model
-            var movies = moviesForDate.Select(m => new MovieShowtimeInfo
-            {
-                MovieId = m.MovieId,
-                MovieName = m.MovieNameEnglish ?? m.MovieNameVn ?? "Unknown",
-                PosterUrl = m.LargeImage ?? m.SmallImage ?? "/images/default-movie.png",
-                Showtimes = m.Schedules.Select(s => s.ScheduleTime).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>()
-            })
-            .Where(m => m.Showtimes.Any())
-            .ToList();
+            // 3. Group by movie and build the view model
+            var movies = movieShowsForDate
+                .GroupBy(ms => ms.Movie) // Group by the related Movie entity
+                .Where(g => g.Key != null) // Ensure the Movie is not null after Include
+                .Select(g => new MovieShowtimeInfo
+                {
+                    MovieId = g.Key.MovieId,
+                    MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
+                    PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
+                    Showtimes = g.Where(ms => ms.Schedule != null) // Filter out entries with null Schedule
+                                     .Select(ms => ms.Schedule.ScheduleTime)
+                                     .Where(t => !string.IsNullOrEmpty(t))
+                                     .OrderBy(t => t) // Optional: Order showtimes
+                                     .ToList() ?? new List<string>()
+                })
+                .Where(m => m.Showtimes.Any()) // Only include movies with showtimes
+                .ToList();
 
             var model = new ShowtimeSelectionViewModel
             {
@@ -142,15 +164,6 @@ namespace MovieTheater.Controllers
             };
 
             return View("~/Views/Showtime/Select.cshtml", model);
-        }
-
-        // GET: Showtime/SelectSeat
-        // Placeholder for seat selection screen (to be implemented)
-        public IActionResult SelectSeat(string movieId, DateTime date, string time)
-        {
-            // TODO: Implement seat selection logic here
-            // For now, just show a placeholder message with the parameters
-            return Content($"Seat selection for MovieId={movieId}, Date={date:yyyy-MM-dd}, Time={time} (to be implemented)");
         }
     }
 }
