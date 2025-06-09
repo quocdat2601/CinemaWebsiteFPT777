@@ -65,8 +65,10 @@
                                 @foreach (var showtime in movie.Showtimes)
                                 {
                                     <a asp-action="Select" asp-controller="Seat"
-                                       asp-route-movieId="@movie.MovieId" asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")" asp-route-time="@showtime"
-                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("yyyy-MM-dd"), returnUrl = Context.Request.Query["returnUrl"] })"
+                                       asp-route-movieId="@movie.MovieId"
+                                       asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")"
+                                       asp-route-time="@showtime"
+                                       asp-route-returnUrl="@Model.ReturnUrl"
                                        class="btn btn-outline-primary btn-sm m-1">
                                         @showtime
                                     </a>
