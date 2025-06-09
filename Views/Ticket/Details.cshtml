@@ -65,7 +65,7 @@
                 </div>
                 <div class="card-footer">
                     <div class="d-flex justify-content-between">
-                        <a asp-controller="Ticket" asp-action="History" class="btn btn-secondary">
+                        <a href="/MyAccount/MainPage?tab=History" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to History
                         </a>
                         @if (Model.Status == 1 && Model.ScheduleShow.HasValue && 
