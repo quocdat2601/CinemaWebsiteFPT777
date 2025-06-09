@@ -7,10 +7,12 @@ namespace MovieTheater.Service
     public class SeatService : ISeatService
     {
         private readonly ISeatRepository _repository;
+        private readonly MovieTheaterContext _context;
 
-        public SeatService(ISeatRepository repository)
+        public SeatService(ISeatRepository repository, MovieTheaterContext context)
         {
             _repository = repository;
+            _context = context;
         }
 
         public Task<List<Seat>> GetAllSeatsAsync()
@@ -26,6 +28,14 @@ namespace MovieTheater.Service
         public async Task<Seat?> GetSeatByIdAsync(int id)
         {
             return await Task.FromResult(_repository.GetById(id));
+        }
+        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
+        {
+            return await _repository.GetBookedSeatsAsync(movieId, date, time);
+        }
+        public async Task<List<SeatType>> GetSeatTypesAsync()
+        {
+            return await _repository.GetSeatTypesAsync();
         }
 
         public void AddSeatAsync(Seat seat)
@@ -51,14 +61,12 @@ namespace MovieTheater.Service
             _repository.Save();
         }
 
-        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
+        public void UpdateSeatStatus(int? seatId)
         {
-            return await _repository.GetBookedSeatsAsync(movieId, date, time);
-        }
+            if (seatId == null) return;
 
-        public async Task<List<SeatType>> GetSeatTypesAsync()
-        {
-            return await _repository.GetSeatTypesAsync();
+            _repository.UpdateSeatAndScheduleStatus(seatId.Value, 2);
+            _repository.Save();
         }
 
     }

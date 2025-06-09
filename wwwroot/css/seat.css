@@ -27,6 +27,19 @@
             border: 2px dashed;
             cursor: default;
         }
+
+table.table td[data-seat-type="Disabled"] {
+    cursor: default !important;
+    background-color: transparent !important;
+    border: none !important;
+    pointer-events: none;
+}
+
+table.table td[data-seat-type="Disabled"]:hover {
+    background-color: transparent !important;
+    border: none !important;
+}
+
 /* 
 .selected-seat-type {
     background-color: #c3e6cb !important;
@@ -40,6 +53,20 @@
     box-shadow: 0 0 0 2px white inset;
 }
 
+.booked-seat {
+    background-color: #19692c !important;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.disabled-seat {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.booked-seat:hover {
+    background-color: #19692c !important;
+}
 body {
     background-color: white;
 }
@@ -50,7 +77,7 @@ body {
 
 .screen-label {
     border-top: 3px solid #8B0000;
-    width: 600px;
+    width: 700px;
     margin: 0 auto 20px auto;
     font-weight: bold;
     color: #8B0000;

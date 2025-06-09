@@ -13,6 +13,6 @@ namespace MovieTheater.Service
         public void Save();
         public Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time);
         Task<List<SeatType>> GetSeatTypesAsync();
-
+        public void UpdateSeatStatus(int? seatId);
     }
 }
