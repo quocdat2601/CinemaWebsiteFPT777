@@ -129,26 +129,49 @@ namespace MovieTheater.Service
             return true;
         }
 
+        //public bool Authenticate(string username, string password, out Account? account)
+        //{
+        //    account = _repository.Authenticate(username /*, password*/);//account with password hasing
+
+        //    if (account.Password.Length < 20)
+        //    {
+        //        var hashered = new PasswordHasher<Account>();
+        //        account.Password = hashered.HashPassword(null, account.Password);
+        //    }
+        //    var hasher = new PasswordHasher<Account>();
+        //    var result = hasher.VerifyHashedPassword(null, account.Password, password);
+        //    if (result == PasswordVerificationResult.Success)
+        //    {
+        //        return account != null;
+        //    }
+        //    else
+        //    {
+        //        return false;
+        //    }
+        //}
+        
+        //KIỂM TRA ACCOUNT NULL TRƯỚC KHI DÙNG
         public bool Authenticate(string username, string password, out Account? account)
         {
-            account = _repository.Authenticate(username /*, password*/);//account with password hasing
+            account = _repository.Authenticate(username);
 
-            if (account.Password.Length < 20)
+            if (account == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(account.Password) && account.Password.Length < 20)
             {
                 var hashered = new PasswordHasher<Account>();
                 account.Password = hashered.HashPassword(null, account.Password);
             }
+
             var hasher = new PasswordHasher<Account>();
             var result = hasher.VerifyHashedPassword(null, account.Password, password);
-            if (result == PasswordVerificationResult.Success)
-            {
-                return account != null;
-            }
-            else
-            {
-                return false;
-            }
+
+            return result == PasswordVerificationResult.Success;
         }
+
 
         public ProfileUpdateViewModel GetCurrentUser()
         {

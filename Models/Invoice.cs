@@ -19,7 +19,7 @@ public partial class Invoice
 
     public int? Status { get; set; }
 
-    public int? TotalMoney { get; set; }
+    public decimal? TotalMoney { get; set; }
 
     public int? UseScore { get; set; }
 

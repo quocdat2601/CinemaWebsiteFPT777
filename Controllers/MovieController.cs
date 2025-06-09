@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
@@ -17,6 +18,10 @@ namespace MovieTheater.Controllers
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
+        }
+        private string GetUserRole()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
 
         // GET: MovieController
@@ -128,7 +133,13 @@ namespace MovieTheater.Controllers
             if (_movieService.AddMovie(movie, model.SelectedShowDateIds, model.SelectedScheduleIds))
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                string role = GetUserRole();
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+
             }
 
             TempData["ErrorMessage"] = "Failed to create movie. Some schedules may be unavailable.";
@@ -229,10 +240,14 @@ namespace MovieTheater.Controllers
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
             };
 
-            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, model.SelectedScheduleIds))
+            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, new List<int>() /* TODO: Provide actual scheduleIds */))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
+            string role = GetUserRole();
+            if (role == "Admin")
                 return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+            else
+                return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
             }
 
             TempData["ErrorMessage"] = "Failed to update movie. Some schedules may be unavailable.";
@@ -248,19 +263,28 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {
+            string role = GetUserRole();
             try
             {
                 if (string.IsNullOrEmpty(id))
                 {
                     TempData["ToastMessage"] = "Invalid movie ID.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
                 var movie = _movieService.GetById(id);
                 if (movie == null)
                 {
                     TempData["ToastMessage"] = "Movie not found.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
                 movie.Types?.Clear();
@@ -270,16 +294,28 @@ namespace MovieTheater.Controllers
                 if (!success)
                 {
                     TempData["ToastMessage"] = "Failed to delete movie.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
                 }
 
                 TempData["ToastMessage"] = "Movie deleted successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
             }
             catch (Exception ex)
             {
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
             }
         }
 

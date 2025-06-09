@@ -1,7 +1,7 @@
 @if (TempData["ToastMessage"] != null)
 {
-    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-        <div class="toast show align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="toastMessage" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+        <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">
                     @TempData["ToastMessage"]
@@ -14,8 +14,8 @@
 
 @if (TempData["ErrorMessage"] != null)
 {
-    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-        <div class="toast show align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="errorToast" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+        <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">
                     @TempData["ErrorMessage"]
@@ -24,31 +24,4 @@
             </div>
         </div>
     </div>
-}
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Auto hide toasts after 3 seconds
-            setTimeout(function() {
-                $('.toast').fadeOut(300, function() {
-                    $(this).parent().remove();
-                });
-            }, 3000);
-
-            // Clear TempData after showing
-            @if (TempData["ToastMessage"] != null)
-            {
-                <text>
-                TempData["ToastMessage"] = null;
-                </text>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>
-                TempData["ErrorMessage"] = null;
-                </text>
-            }
-        });
-    </script>
 }

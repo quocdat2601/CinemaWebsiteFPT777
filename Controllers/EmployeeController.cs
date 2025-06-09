@@ -26,7 +26,7 @@ namespace MovieTheater.Controllers
 
         }
         // GET: EmployeeController
-        public IActionResult MainPage(string tab = "MovieMg")
+        public IActionResult MainPage(string tab = "MemberMg")
         {
             ViewData["ActiveTab"] = tab;
             return View();

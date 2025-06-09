@@ -1,0 +1,33 @@
+﻿@{
+    ViewBag.Title = "Booking Successful";
+}
+
+<div class="container mt-5">
+    <div class="card shadow p-4">
+        <h2 class="text-center text-success mb-4">🎉 Booking Successful!</h2>
+
+        <p class="text-center">Thank you for booking with us. Below is your booking summary:</p>
+
+        <hr />
+
+        @* Bạn có thể lấy dữ liệu từ TempData nếu cần, hoặc gắn ViewModel sau này *@
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Movie:</strong> @TempData["MovieName"]</p>
+                <p><strong>Date:</strong> @TempData["ShowDate"]</p>
+                <p><strong>Time:</strong> @TempData["ShowTime"]</p>
+                <p><strong>Seat(s):</strong> @TempData["Seats"]</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Total:</strong> @String.Format("{0:N0}", TempData["TotalPrice"]) VND</p>
+                <p><strong>Booking Time:</strong> @TempData["BookingTime"]</p>
+                <p><strong>Invoice ID:</strong> @TempData["InvoiceId"]</p>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/Movie/MovieList" class="btn btn-primary me-2">Back To Movie List</a>
+            <a href="/Booking/TicketBooking" class="btn btn-outline-secondary">Book Another Ticket</a>
+        </div>
+    </div>
+</div>

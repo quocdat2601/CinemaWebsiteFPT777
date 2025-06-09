@@ -149,6 +149,36 @@
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <script>
+        $(document).ready(function() {
+            // Initialize and show success toast if it exists
+            var toastMessageContainer = document.getElementById('toastMessage');
+            if (toastMessageContainer) {
+                var toastEl = toastMessageContainer.querySelector('.toast');
+                if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay
+                    });
+                    toast.show();
+                }
+            }
+
+            // Initialize and show error toast if it exists
+            var errorToastContainer = document.getElementById('errorToast');
+            if (errorToastContainer) {
+                 var toastEl = errorToastContainer.querySelector('.toast');
+                 if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay (adjust to 4000 if preferred)
+                    });
+                    toast.show();
+                 }
+            }
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

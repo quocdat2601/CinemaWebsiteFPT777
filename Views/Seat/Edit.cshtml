@@ -217,6 +217,10 @@
 		document.getElementById('selectAll').checked = selectedSeats > 0 && selectedSeats === totalSeats;
 	}
 
+		// Enable/disable save button
+		document.getElementById("saveChangesBtn").disabled = !document.querySelector('.selected-seat');
+	}
+
 	function applySeatType(clickedTypeDiv) {
 		const color = clickedTypeDiv.getAttribute('data-color');
 		const typeName = clickedTypeDiv.getAttribute('data-type-name');
@@ -263,6 +267,51 @@
 				NewSeatTypeId: td.getAttribute('data-selected-type')
 			});
 		});
+
+		// If seats were part of a couple seat but are being changed to a different type
+		if (wasCoupleSeat && !isCoupleSeat) {
+			// First delete the couple seat relationship
+			fetch('/Seat/DeleteCoupleSeat', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+				},
+				body: JSON.stringify({ seatIds: coupleSeatIds })
+			})
+			.then(response => {
+				if (response.ok) {
+					// After couple seat is deleted, update the seat types
+					return fetch('/Seat/UpdateSeatTypes', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+						},
+						body: JSON.stringify(updatedSeats)
+					});
+				} else {
+					throw new Error('Failed to delete couple seat');
+				}
+			})
+			.then(response => {
+				if (response.ok) {
+					alert('Couple seat removed and seats updated successfully.');
+					location.reload();
+				} else {
+					throw new Error('Failed to update seat types');
+				}
+			})
+			.catch(error => {
+				alert('Error: ' + error.message);
+			});
+		}
+		else if (isCoupleSeat && updatedSeats.length === 2) {
+			// First create the couple seat
+			const coupleSeat = {
+				FirstSeatId: parseInt(updatedSeats[0].SeatId),
+				SecondSeatId: parseInt(updatedSeats[1].SeatId)
+			};
 
 		// If seats were part of a couple seat but are being changed to a different type
 		if (wasCoupleSeat && !isCoupleSeat) {

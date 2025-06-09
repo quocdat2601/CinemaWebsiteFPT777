@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Service;
@@ -106,6 +105,54 @@ namespace MovieTheater.Controllers
 
             return View(viewModel);
         }
+
+        [HttpGet("Seat/ViewByMovie/{movieId}")]
+        public async Task<IActionResult> ViewByMovie(string movieId)
+        {
+            var movie = _movieService.GetById(movieId);
+            if (movie == null || !movie.CinemaRoomId.HasValue)
+            {
+                return NotFound();
+            }
+
+            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
+            if (cinemaRoom == null)
+            {
+                return NotFound();
+            }
+
+            var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
+            ViewBag.SeatTypes = _seatTypeService.GetAll();
+            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            ViewBag.MovieId = movieId;
+
+            var viewModel = new ShowroomEditViewModel
+            {
+                CinemaRoomId = movie.CinemaRoomId.Value,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
+                SeatLength = cinemaRoom.SeatLength ?? 0,
+                SeatWidth = cinemaRoom.SeatWidth ?? 0,
+                Seats = seats,
+                MovieName = movie.MovieNameEnglish
+            };
+
+            return View("View", viewModel);
+        }
+
+        [HttpGet("Seat/Select")]
+        public async Task<IActionResult> Select(string movieId, DateTime date, string time, string returnUrl)
+        {
+            var movie = _movieService.GetById(movieId);
+            if (movie == null || !movie.CinemaRoomId.HasValue)
+            {
+                return NotFound();
+            }
+
+            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
+            if (cinemaRoom == null)
+            {
+                return NotFound();
+            }
 
         [HttpGet("Seat/ViewByMovie/{movieId}")]
         public async Task<IActionResult> ViewByMovie(string movieId)
