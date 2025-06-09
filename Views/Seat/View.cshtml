@@ -1,87 +1,106 @@
 ﻿@using MovieTheater.ViewModels
-@model ShowroomEditViewModel
+@model SeatSelectionViewModel
 
 @{
-	var movieId = ViewBag.MovieId as string;
-	var date = ViewBag.Date as DateTime?;
-	var time = ViewBag.Time as string;
+	var movieId = Model.MovieId;
+	var date = Model.ShowDate;
+	var time = Model.ShowTime;
 	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
-	var returnUrl = movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin";
-	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
+	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
+	var seatTypes = Model.SeatTypes;
 }
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4">
-	<div class="d-flex justify-content-between align-items-center mb-4">
-		<a href="@returnUrl" class="btn btn-secondary">Return</a>
+	@if (!string.IsNullOrEmpty(Model.ReturnUrl))
+	{
+		<div class="text-start p-3">
+			<a href="@Model.ReturnUrl" class="btn btn-secondary">&larr; Return</a>
+		</div>
+	}
+
+	<h2 class="text-center mb-4">SELECT SEATS</h2>
+	<div class="row mb-4 align-items-center">
+		<div class="col-md-4">
+			<div class="form-group row align-items-center">
+				<label for="seatQuantity" class="col-auto col-form-label">Number of Seats:</label>
+				<div class="col-sm-4">
+					<select id="seatQuantity" class="form-select form-select-sm">
+						@for (int i = 0; i <= 8; i++)
+						{
+							<option value="@i">@i</option>
+						}
+					</select>
+				</div>
+			</div>
+			<div style="min-height: 1.5em;">
+				<div id="seatMessage" class="mt-2 text-danger"></div>
+			</div>
+		</div>
+		<div class="col-md-8 text-end">
+		</div>
 	</div>
 
-	<div class="screen-label text-center mb-5">
+	<div class="screen-label text-center mb-4">
 		@Model.CinemaRoomName
 	</div>
 
-	<div class="seat-container">
-		<table class="table table-bordered text-center">
-			<tbody>
-				@for (int row = 1; row <= Model.SeatLength; row++)
-				{
-					<tr>
-						@for (int col = 1; col <= Model.SeatWidth; col++)
-						{
-							var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-							if (seat != null)
+	<div class="seat-layout-bordered-area" style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
+		<div class="seat-container">
+			<table class="table table-bordered text-center">
+				<tbody>
+					@for (int row = 1; row <= Model.SeatLength; row++)
+					{
+						<tr>
+							@for (int col = 1; col <= Model.SeatWidth; col++)
 							{
-								var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-								bool isDisabledType = seatType?.TypeName == "Disabled";
-								bool isBooked = seat.SeatStatusId == 2;
+								var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+								if (seat != null)
+								{
+									var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+									bool isDisabledType = seatType?.TypeName == "Disabled";
+									bool isBooked = seat.SeatStatusId == 2;
 
-								var seatStyle = isDisabledType ? "border: none;" : isBooked	? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
-								var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
+									var seatStyle = isDisabledType ? "border: none;" : isBooked ? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+									var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-								<td style="@seatStyle"
-									data-seat-id="@seat.SeatId"
-									data-seat-name="@seat.SeatName"
-									data-seat-type="@seatType?.TypeName"
-									data-seat-price="@seatType?.PricePercent"
-									class="@tdClass"
-									@(isDisabledType || isBooked ? "disabled" : "")>
-
-									<span class="material-icons"
-										  @(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
-										@(isDisabledType ? "" : "chair")
-									</span>
-								</td>
+									<td style="@seatStyle"
+										data-seat-id="@seat.SeatId"
+										data-seat-name="@seat.SeatName"
+										data-seat-type="@seatType?.TypeName"
+										data-seat-price="@seatType?.PricePercent"
+										class="@tdClass"
+										@(isDisabledType || isBooked ? "disabled" : "")
+										@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
+										<span class="material-icons">
+											@(isDisabledType ? "" : "chair")
+										</span>
+									</td>
+								}
 							}
-						}
-					</tr>
-				}
-			</tbody>
-		</table>
-	</div>
-
-	<div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
-		@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
-		{
-			<div class="seat-type-option p-2 px-3 rounded text-white text-center"
-				 style="background-color: @type.ColorHex; cursor: pointer; font-weight:bold; font-size:medium"
-				 data-color="@type.ColorHex"
-				 data-type="@type.SeatTypeId"
-				 data-type-name="@type.TypeName"
-				 data-price-percent="@type.PricePercent">
-				@type.TypeName
-			</div>
-		}
-	</div>
-
-	<div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
-		<div class="p-2 px-3 rounded text-white text-center"
-			 style="background-color: #c3e6cb; cursor: pointer; font-weight:bold; font-size:medium">
-			Seat is being booked
+						</tr>
+					}
+				</tbody>
+			</table>
 		</div>
-		<div class="p-2 px-3 rounded text-white text-center"
-			 style="background-color: #19692c; cursor: pointer; font-weight:bold; font-size:medium">
-			Booked Seat
+
+		<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
+			@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+			{
+				<div class="d-flex align-items-center me-3">
+					<span style="display: inline-block; width: 20px; height: 20px; background-color: @type.ColorHex; margin-right: 5px; border-radius: 3px;"></span>
+					<span>@type.TypeName</span>
+				</div>
+			}
+			<div class="d-flex align-items-center me-3">
+				<span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
+				<span>Selected</span>
+			</div>
+			<div class="d-flex align-items-center me-3">
+				<span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
+				<span>Booked</span>
+			</div>
 		</div>
 	</div>
 
@@ -90,37 +109,42 @@
 		<div class="row">
 			<div class="col-md-6 mb-2">
 				<p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
-				<p><strong>Date:</strong> @date?.ToString("yyyy-MM-dd")</p>
+				<p><strong>Date:</strong> @date.ToString("yyyy-MM-dd")</p>
 				<p><strong>@Model.CinemaRoomName</strong></p>
 			</div>
 			<div class="col-md-6 mb-2">
-				<p><strong>Movie:</strong> @Model.MovieName </p>
+				<p><strong>Movie:</strong> @Model.MovieName</p>
 				<p><strong>Time:</strong> @time</p>
 				<p><strong>Total Price:</strong> <span id="totalPrice"></span> VND</p>
 			</div>
 		</div>
 	</div>
 
-	@if (date.HasValue && !string.IsNullOrEmpty(time))
+	@if (!string.IsNullOrEmpty(time))
 	{
 		<div class="text-center mb-4">
-			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Book Selected Seats</button>
+			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
 		</div>
 	}
-
 </div>
 
 @section Scripts {
 	<script>
 		let selectedSeats = new Set();
 
-		function selectSeat(clickedSpan) {
-			const td = clickedSpan.parentElement;
-			const seatId = td.getAttribute('data-seat-id');
-			const seatName = td.getAttribute('data-seat-name');
-			const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+		function selectSeat(clickedTd) {
+			const seatId = clickedTd.getAttribute('data-seat-id');
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
 
-			td.classList.toggle('selected-seat');
+			if (quantity === 0) {
+				return;
+			}
+
+			if (clickedTd.hasAttribute('disabled')) {
+				return;
+			}
+
+			clickedTd.classList.toggle('selected-seat');
 			if (selectedSeats.has(seatId)) {
 				selectedSeats.delete(seatId);
 			} else {
@@ -128,8 +152,30 @@
 			}
 
 			updateSelectionSummary();
+			updateSeatMessage();
+			updateBookButtonState();
+		}
+
+		function updateSeatMessage() {
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
+			const selectedCount = selectedSeats.size;
+			const messageElement = document.getElementById('seatMessage');
+
+			if (quantity === 0) {
+				messageElement.textContent = '';
+			} else if (selectedCount < quantity) {
+				messageElement.textContent = `Please select ${quantity - selectedCount} more seat(s)`;
+			} else if (selectedCount > quantity) {
+				messageElement.textContent = `Please select only ${quantity} seat(s)`;
+			} else {
+				messageElement.textContent = '';
+			}
+		}
+
+		function updateBookButtonState() {
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
 			const bookButton = document.getElementById('bookButton');
-			bookButton.disabled = selectedSeats.size === 0;
+			bookButton.disabled = quantity > 0 && selectedSeats.size !== quantity;
 		}
 
 		function updateSelectionSummary() {
@@ -150,26 +196,35 @@
 
 				selectedSeatNames.textContent = seatNames.join(', ');
 				totalPrice.textContent = total.toLocaleString("en-US", {
-				minimumFractionDigits: 0,
-				maximumFractionDigits: 0
-		});
-						summary.style.display = 'block';
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 0
+				});
+				summary.style.display = 'block';
 			} else {
 				summary.style.display = 'none';
 			}
 		}
 
-		  document.getElementById('bookButton').addEventListener('click', function() {
-		   if (selectedSeats.size === 0) return;
+		document.getElementById('seatQuantity').addEventListener('change', function() {
+			selectedSeats.clear();
+			document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+			updateSeatMessage();
+			updateBookButtonState();
+			updateSelectionSummary();
+		});
+
+		document.getElementById('bookButton').addEventListener('click', function() {
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
+			if (this.disabled || (quantity > 0 && selectedSeats.size !== quantity)) return;
+
 			const selectedSeatIds = Array.from(selectedSeats);
 			const data = {
 				movieId: '@movieId',
-				showDate: '@date?.ToString("yyyy-MM-dd")',
+				showDate: '@date.ToString("yyyy-MM-dd")',
 				showTime: '@time',
 				selectedSeatIds: selectedSeatIds
 			};
 
-			// Build query string
 			const params = new URLSearchParams();
 			for (const key in data) {
 				if (Array.isArray(data[key])) {
@@ -179,10 +234,11 @@
 				}
 			}
 
-			// Navigate to the next page (Ticket Information)
-			 // window.location.href = `/Ticket/Information?${params.toString()}`;
-			 window.location.href = `/Booking/Information?${params.toString()}`;
-
+			window.location.href = `/Booking/Information?${params.toString()}`;
 		});
+
+		updateSeatMessage();
+		updateBookButtonState();
+		updateSelectionSummary();
 	</script>
 }

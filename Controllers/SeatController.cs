@@ -89,19 +89,19 @@ namespace MovieTheater.Controllers
         {
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
             var cinemaRoom = _cinemaService.GetById(cinemaId);
-            ViewBag.SeatTypes = _seatTypeService.GetAll();
-            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            var seatTypes = _seatTypeService.GetAll().ToList();
 
             if (cinemaRoom == null)
                 return NotFound();
 
-            var viewModel = new ShowroomEditViewModel
+            var viewModel = new SeatSelectionViewModel
             {
                 CinemaRoomId = cinemaId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
                 SeatWidth = (int)cinemaRoom.SeatWidth,
                 SeatLength = (int)cinemaRoom.SeatLength,
-                Seats = seats
+                Seats = seats,
+                SeatTypes = seatTypes
             };
 
             return View(viewModel);
@@ -123,18 +123,19 @@ namespace MovieTheater.Controllers
             }
 
             var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
-            ViewBag.SeatTypes = _seatTypeService.GetAll();
-            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            var seatTypes = _seatTypeService.GetAll().ToList();
             ViewBag.MovieId = movieId;
 
-            var viewModel = new ShowroomEditViewModel
+            var viewModel = new SeatSelectionViewModel
             {
+                MovieId = movieId,
+                MovieName = movie.MovieNameEnglish,
                 CinemaRoomId = movie.CinemaRoomId.Value,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,
-                MovieName = movie.MovieNameEnglish
+                SeatTypes = seatTypes
             };
 
             return View("View", viewModel);
@@ -157,22 +158,22 @@ namespace MovieTheater.Controllers
 
             var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
             var bookedSeats = await _seatService.GetBookedSeatsAsync(movieId, date, time);
+            var seatTypes = _seatTypeService.GetAll().ToList();
 
-            ViewBag.SeatTypes = _seatTypeService.GetAll();
-            ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
-            ViewBag.MovieId = movieId;
-            ViewBag.Date = date;
-            ViewBag.Time = time;
             ViewBag.BookedSeats = bookedSeats;
 
-            var viewModel = new ShowroomEditViewModel
+            var viewModel = new SeatSelectionViewModel
             {
+                MovieId = movieId,
+                MovieName = movie.MovieNameEnglish,
+                ShowDate = date,
+                ShowTime = time,
                 CinemaRoomId = movie.CinemaRoomId.Value,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,
-                MovieName = movie.MovieNameEnglish
+                SeatTypes = seatTypes
             };
 
             return View("View", viewModel);
