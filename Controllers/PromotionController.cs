@@ -22,8 +22,9 @@ namespace MovieTheater.Controllers
             var promotions = _promotionService.GetAll()
                 .Where(p => p.IsActive && p.EndTime >= DateTime.Now)
                 .OrderByDescending(p => p.StartTime)
+                .Select(p => new { p.PromotionId, p.Title, p.Image, p.Detail, p.DiscountLevel, p.StartTime, p.EndTime, p.IsActive })
                 .ToList();
-            return View(promotions);
+            return Json(promotions);
         }
 
         // GET: PromotionController/Details/5
@@ -35,6 +36,12 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
             return View(promotion);
+        }
+
+        // GET: PromotionController/Index
+        public ActionResult Index()
+        {
+            return View();
         }
 
         // GET: PromotionController/Create
