@@ -1,6 +1,8 @@
 ﻿@model List<MovieTheater.ViewModels.ScoreHistoryViewModel>
 @{
     ViewData["Title"] = "Score History";
+    var defaultToDate = DateTime.Now.ToString("yyyy-MM-dd");
+    var defaultFromDate = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd");
 }
 
 <div class="container mt-4">
@@ -54,7 +56,16 @@
                         <tr>
                             <td>@item.DateCreated.ToString("dd/MM/yyyy")</td>
                             <td>@item.MovieName</td>
-                            <td class="text-end">@item.Score</td>
+                            <td class="text-end">
+                                @if (ViewBag.HistoryType == "add")
+                                {
+                                    <span class="text-success">+@item.Score</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">-@item.Score</span>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -62,7 +73,7 @@
         }
         else
         {
-            <p class="text-muted">No data loaded yet. Please filter and click "View Score".</p>
+            <p class="text-muted">No data found for the selected period.</p>
         }
     </div>
 
@@ -94,6 +105,21 @@
                     $('#scoreResult').html('<div class="alert alert-danger">Error loading data.</div>');
                 }
             });
+        });
+
+        // Tự động load dữ liệu mặc định khi vào tab Score (không truyền historyType)
+        $.ajax({
+            url: '/Score/ScoreHistoryPartial',
+            type: 'GET',
+            data: { fromDate: '', toDate: '' }, // KHÔNG truyền historyType
+            success: function (result) {
+                $('#scoreResult').html(result);
+                $('#accountTabs .nav-link').removeClass('active');
+                $('#accountTabs .nav-link[data-tab="Score"]').addClass('active');
+            },
+            error: function () {
+                $('#scoreResult').html('<div class="alert alert-danger">Error loading data.</div>');
+            }
         });
     });
 </script>
