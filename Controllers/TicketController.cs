@@ -127,6 +127,22 @@ namespace MovieTheater.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate)
+        {
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+                return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
+
+            var query = _context.Invoices.Where(i => i.AccountId == accountId);
+            if (fromDate.HasValue)
+                query = query.Where(i => i.BookingDate >= fromDate.Value);
+            if (toDate.HasValue)
+                query = query.Where(i => i.BookingDate <= toDate.Value);
+            var result = query.ToList();
+            return PartialView("~/Views/Account/Tabs/_HistoryPartial.cshtml", result);
+        }
+
         public IActionResult Test()
         {
             return Content("Test OK");

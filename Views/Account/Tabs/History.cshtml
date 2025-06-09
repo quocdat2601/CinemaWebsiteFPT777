@@ -23,17 +23,18 @@
     }
 
     <!-- Filter Form -->
-    <form asp-action="Index" asp-controller="Ticket" method="get">
+    <form id="historyFilterForm" class="mb-3">
         <label>From:</label>
-        <input type="date" name="fromDate" class="form-control" />
+        <input type="date" id="fromDate" name="fromDate" class="form-control" />
 
         <label>To:</label>
-        <input type="date" name="toDate" class="form-control" />
+        <input type="date" id="toDate" name="toDate" class="form-control" />
 
         <button type="submit" class="btn btn-primary mt-2">Filter</button>
     </form>
 
     <!-- Booking History Table -->
+    <div id="historyResult">
     @if (Model != null && Model.Any())
     {
         <div class="table-responsive">
@@ -102,7 +103,36 @@
             No booking history found for the selected period.
         </div>
     }
+    </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(function() {
+        // Ép thuộc tính form để ngăn submit về server
+        $('#historyFilterForm').attr('action', 'javascript:void(0)');
+        $('#historyFilterForm').removeAttr('method');
+        $('#historyFilterForm').on('submit', function(e) {
+            e.preventDefault();
+            var fromDate = $('#fromDate').val();
+            var toDate = $('#toDate').val();
+            $.ajax({
+                url: '/Ticket/HistoryPartial',
+                type: 'GET',
+                data: { fromDate: fromDate, toDate: toDate },
+                success: function (result) {
+                    $('#historyResult').html(result);
+                    // Đảm bảo tab History luôn active trên sidebar
+                    $('#accountTabs .nav-link').removeClass('active');
+                    $('#accountTabs .nav-link[data-tab="History"]').addClass('active');
+                },
+                error: function () {
+                    $('#historyResult').html('<div class="alert alert-danger">Error loading data.</div>');
+                }
+            });
+        });
+    });
+</script>
 
 @section Styles {
     <style>
