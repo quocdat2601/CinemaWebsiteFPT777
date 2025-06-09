@@ -328,5 +328,48 @@ namespace MovieTheater.Controllers
         {
             return View();
         }
+
+        [HttpGet]
+        public IActionResult History()
+        {
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var bookings = _context.Invoices
+                .Where(i => i.AccountId == accountId)
+                .OrderByDescending(i => i.BookingDate)
+                .ToList();
+
+            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+        }
+
+        [HttpPost]
+        public IActionResult History(DateTime fromDate, DateTime toDate, int? status)
+        {
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var query = _context.Invoices
+                .Where(i => i.AccountId == accountId &&
+                            i.BookingDate >= fromDate &&
+                            i.BookingDate <= toDate);
+
+            if (status.HasValue)
+            {
+                query = query.Where(i => i.Status == status);
+            }
+
+            var bookings = query
+                .OrderByDescending(i => i.BookingDate)
+                .ToList();
+
+            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+        }
     }
 }

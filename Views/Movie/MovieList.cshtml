@@ -32,16 +32,14 @@
                 <form asp-action="MovieList" method="get" class="d-flex justify-content-center gap-2">
                     <div class="input-group" style="max-width: 600px;">
                         <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" maxlength="50" class="form-control" placeholder="🔍 Search by movies.." />
-                        <button type="submit" class="btn btn-primary">Search</button>
+                        @* <button type="submit" class="btn btn-primary">Search</button> *@
                     </div>
 
-                   
+
                 </form>
             </div>
 
         </header>
-
-
 
         <section class="filters">
             <h2 class="filter-title">Genres</h2>
@@ -57,44 +55,11 @@
                 <button class="filter-tag" data-type="Animation">Animation</button>
             </div>
         </section>
-
-        <main class="movie-grid">
-            @if (!Model.Any())
-            {
-                <div class="text-center w-100">
-                    <h3>No movies found</h3>
-                </div>
-            }
-            else
-            {
-                @foreach (var movie in Model)
-                {
-                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="text-decoration-none text-reset">
-                        <div class="movie-card">
-                            <div class="movie-poster">
-                                <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
-                            </div>
-                            <div class="movie-info">
-                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
-
-                                <div>
-                                    @foreach (var type in movie.Types)
-                                    {
-                                        <div class="badge bg-secondary">@type.TypeName</div>
-                                    }
-                                </div>
-                                <div class="movie-duration mt-2">
-                                    <svg class="duration-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <span>@movie.Duration min</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                }
-            }
+        @* CHUYỂN SANG TRANG PARTIAL VIEW *@
+        <main class="movie-grid" id="movieGrid">
+            @await Html.PartialAsync("_MovieGrid", Model)
         </main>
+
     </div>
 </div>
 
@@ -102,12 +67,32 @@
 
 @section Scripts {
     <script>
+        // Ẩn loading và hiển thị nội dung sau khi trang đã render xong
         window.addEventListener("load", function () {
-            // Simulate fetching delay
-            setTimeout(function () {
-                document.getElementById('loading-overlay').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-            }, 500); // Simulate 1.5 seconds fetch
+            document.getElementById("loading-overlay").style.display = "none";
+            document.getElementById("content").style.display = "block";
+        });
+
+        const searchInput = document.querySelector("input[name='searchTerm']");
+        let timeoutId;
+
+        searchInput.addEventListener("input", function () {
+            clearTimeout(timeoutId);
+
+            timeoutId = setTimeout(() => {
+                const searchTerm = searchInput.value;
+
+                fetch(`/Movie/MovieList?searchTerm=${encodeURIComponent(searchTerm)}`, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById("movieGrid").innerHTML = html;
+                    });
+            }, 300);
         });
     </script>
 }
+
