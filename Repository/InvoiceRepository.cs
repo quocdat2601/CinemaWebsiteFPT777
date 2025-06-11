@@ -17,5 +17,12 @@ namespace MovieTheater.Repository
             return _context.Invoices.Include(i => i.Account).ToList();
         }
 
+        public Invoice? GetById(string invoiceId)
+        {
+            return _context.Invoices
+                .Include(i => i.Account)
+                .ThenInclude(a => a.Members)
+                .FirstOrDefault(i => i.InvoiceId == invoiceId);
+        }
     }
 }

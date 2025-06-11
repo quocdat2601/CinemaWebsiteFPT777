@@ -393,9 +393,21 @@ namespace MovieTheater.Controllers
                     Status = 1,
                     TotalMoney = model.BookingDetails.TotalPrice - discount,
                     UseScore = scoreUsed,
-                    Seat = string.Join(",", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
+                    Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
                     RoleId = currentUser?.RoleId // Set RoleId to the current user's role
                 };
+
+                // Fix roomName logic
+                string roomName = "N/A";
+                if (!string.IsNullOrEmpty(model.BookingDetails.MovieId))
+                {
+                    var movie = _movieService.GetById(model.BookingDetails.MovieId);
+                    if (movie != null && movie.CinemaRoomId.HasValue)
+                    {
+                        var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
+                        roomName = room?.CinemaRoomName ?? "N/A";
+                    }
+                }
 
                 await _bookingService.SaveInvoiceAsync(invoice);
 
@@ -410,19 +422,18 @@ namespace MovieTheater.Controllers
                 TempData["InvoiceId"] = invoice.InvoiceId;
                 TempData["ScoreUsed"] = scoreUsed;
                 TempData["ConvertedTicketIndexes"] = string.Join(",", convertedTicketIndexes);
-                
+                TempData["Screen"] = roomName;
+                TempData["TicketsConverted"] = convertedTicketIndexes?.Count > 0 ? convertedTicketIndexes.Count.ToString() : null;
                 // Always pass member information
                 TempData["MemberId"] = member?.MemberId;
                 TempData["MemberName"] = member?.Account?.FullName;
                 TempData["MemberIdentityCard"] = member?.Account?.IdentityCard;
                 TempData["MemberPhone"] = member?.Account?.PhoneNumber;
-                TempData["Screen"] = model.BookingDetails.CinemaRoomName;
                 TempData["MemberEmail"] = member?.Account?.Email;
 
                 // Prepare seat table rows for ticket info page
                 string seatTableRows = string.Join("", model.BookingDetails.SelectedSeats.Select(s => $"<tr><td>{s.SeatName}</td><td>{s.SeatType}</td><td>{s.Price:N0} VND</td></tr>"));
                 TempData["SeatTableRows"] = seatTableRows;
-                TempData["TicketsConverted"] = convertedTicketIndexes?.Count > 0 ? convertedTicketIndexes.Count.ToString() : null;
 
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Admin") });
             }
@@ -435,9 +446,9 @@ namespace MovieTheater.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet]
-        public IActionResult TicketBookingConfirmed()
+        public IActionResult TicketBookingConfirmed(string invoiceId)
         {
-            return View();
+            return View("TicketBookingConfirmed");
         }
 
         [Authorize(Roles = "Admin")]
@@ -459,6 +470,107 @@ namespace MovieTheater.Controllers
             {
                 return Json(new { success = false, message = "Member score is not enough to convert into ticket", scoreNeeded = totalNeeded });
             }
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult TicketInfo(string invoiceId)
+        {
+            var invoice = _invoiceService.GetById(invoiceId);
+            if (invoice == null)
+                return NotFound();
+
+            var member = _memberRepository.GetByAccountId(invoice.AccountId);
+
+            // Fix roomName logic
+            string roomName = "N/A";
+            var allMovies = _movieService.GetAll();
+            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
+            if (movie != null && movie.CinemaRoomId.HasValue)
+            {
+                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
+                roomName = room?.CinemaRoomName ?? "N/A";
+            }
+
+            // Prepare seat details
+            var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seats = new List<SeatDetailViewModel>();
+            foreach (var seatName in seatNames)
+            {
+                // Fetch seat details using new method
+                var seat = _seatService.GetSeatByName(seatName);
+                SeatType seatType = null;
+                if (seat != null && seat.SeatTypeId.HasValue)
+                {
+                    seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
+                }
+                seats.Add(new SeatDetailViewModel
+                {
+                    SeatName = seatName,
+                    SeatType = seatType?.TypeName ?? "N/A",
+                    Price = seatType?.PricePercent ?? 0
+                });
+            }
+
+            // Calculate tickets converted by score
+            int ticketsConverted = 0;
+            if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0 && seats.Count > 0)
+            {
+                // Sort seats by price descending and count how many could be converted by the used score
+                var sortedSeats = seats.OrderByDescending(s => s.Price).ToList();
+                decimal runningScore = invoice.UseScore.Value;
+                foreach (var seat in sortedSeats)
+                {
+                    if (runningScore >= seat.Price)
+                    {
+                        ticketsConverted++;
+                        runningScore -= seat.Price;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            var bookingDetails = new ConfirmBookingViewModel
+            {
+                MovieId = movie?.MovieId,
+                MovieName = invoice.MovieName,
+                CinemaRoomName = roomName,
+                ShowDate = invoice.ScheduleShow ?? DateTime.Now,
+                ShowTime = invoice.ScheduleShowTime,
+                SelectedSeats = seats,
+                TotalPrice = invoice.TotalMoney ?? 0,
+                PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
+                InvoiceId = invoice.InvoiceId,
+                ScoreUsed = invoice.UseScore ?? 0,
+                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null
+            };
+
+            // Determine return URL based on user role
+            string returnUrl;
+            if (User.IsInRole("Admin"))
+            {
+                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            else
+            {
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
+            }
+
+            var viewModel = new ConfirmTicketAdminViewModel
+            {
+                BookingDetails = bookingDetails,
+                MemberCheckMessage = "",
+                ReturnUrl = returnUrl,
+                MemberId = member?.MemberId,
+                MemberEmail = member?.Account?.Email,
+                MemberIdentityCard = member?.Account?.IdentityCard,
+                MemberPhone = member?.Account?.PhoneNumber
+            };
+
+            return View("TicketBookingConfirmed", viewModel);
         }
 
         public class MemberCheckRequest

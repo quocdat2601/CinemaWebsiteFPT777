@@ -1,6 +1,21 @@
+@model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
 @{
     ViewBag.Title = "Ticket Information (Admin)";
     Layout = "_Layout";
+    var booking = Model?.BookingDetails;
+    string movieName = booking?.MovieName ?? TempData["MovieName"] as string;
+    string screen = booking?.CinemaRoomName ?? TempData["Screen"] as string;
+    string showDate = booking != null ? booking.ShowDate.ToString("yyyy-MM-dd") : TempData["ShowDate"] as string;
+    string showTime = booking?.ShowTime ?? TempData["ShowTime"] as string;
+    string ticketId = booking?.InvoiceId ?? TempData["InvoiceId"] as string;
+    string totalPrice = booking != null ? booking.TotalPrice.ToString("N0") : TempData["TotalPrice"] as string;
+    string ticketsConverted = booking?.TicketsConverted ?? TempData["TicketsConverted"] as string;  
+    string scoreUsed = booking?.ScoreUsed.ToString() ?? TempData["ScoreUsed"] as string;
+    string memberId = Model?.MemberId ?? TempData["MemberId"] as string;
+    string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
+    string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
+    string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
+    string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 }
 <style>
     .ticket-success-header {
@@ -113,19 +128,19 @@
             <div class="ticket-section-title">Movie & Show Info</div>
             <div class="ticket-row">
                 <label for="movieName" class="ticket-info-label">Movie Name</label>
-                <input type="text" id="movieName" class="ticket-info-value" value="@TempData["MovieName"]" readonly />
+                <input type="text" id="movieName" class="ticket-info-value" value="@movieName" readonly />
                 <label for="screen" class="ticket-info-label">Screen</label>
-                <input type="text" id="screen" class="ticket-info-value" value="@TempData["Screen"]" readonly />
+                <input type="text" id="screen" class="ticket-info-value" value="@screen" readonly />
             </div>
             <div class="ticket-row">
                 <label for="showDate" class="ticket-info-label">Date</label>
-                <input type="text" id="showDate" class="ticket-info-value" value="@TempData["ShowDate"]" readonly />
+                <input type="text" id="showDate" class="ticket-info-value" value="@showDate" readonly />
                 <label for="showTime" class="ticket-info-label">Time</label>
-                <input type="text" id="showTime" class="ticket-info-value" value="@TempData["ShowTime"]" readonly />
+                <input type="text" id="showTime" class="ticket-info-value" value="@showTime" readonly />
             </div>
             <div class="ticket-row">
                 <label for="ticketId" class="ticket-info-label">Ticket ID</label>
-                <input type="text" id="ticketId" class="ticket-info-value" value="@TempData["InvoiceId"]" readonly />
+                <input type="text" id="ticketId" class="ticket-info-value" value="@ticketId" readonly />
             </div>
             <div class="ticket-section-title">Seat(s)</div>
             <table class="table table-bordered mb-2">
@@ -137,40 +152,51 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (TempData["SeatTableRows"] != null)
+                    @if (booking != null && booking.SelectedSeats != null && booking.SelectedSeats.Any())
+                    {
+                        foreach (var seat in booking.SelectedSeats)
+                        {
+                            <tr>
+                                <td>@seat.SeatName</td>
+                                <td>@seat.SeatType</td>
+                                <td>@seat.Price.ToString("N0") VND</td>
+                            </tr>
+                        }
+                    }
+                    else if (TempData["SeatTableRows"] != null)
                     {
                         @Html.Raw(TempData["SeatTableRows"])
                     }
                 </tbody>
             </table>
-            @if (TempData["ScoreUsed"] != null && TempData["ScoreUsed"].ToString() != "0") {
+            @if ((!string.IsNullOrEmpty(scoreUsed) && scoreUsed != "0") || (booking != null && booking.ScoreUsed > 0)) {
                 <div class="ticket-row">
                     <label for="ticketsConverted" class="ticket-info-label">Tickets by Score</label>
-                    <input type="text" id="ticketsConverted" class="ticket-info-value" value="@TempData["TicketsConverted"]" readonly />
+                    <input type="text" id="ticketsConverted" class="ticket-info-value" value="@ticketsConverted" readonly />
                     <label for="scoreUsed" class="ticket-info-label">Score Used</label>
-                    <input type="text" id="scoreUsed" class="ticket-info-value" value="@TempData["ScoreUsed"]" readonly />
+                    <input type="text" id="scoreUsed" class="ticket-info-value" value="@scoreUsed" readonly />
                 </div>
             }
             <div class="ticket-total-row">
                 <span class="ticket-total-label">Total Price</span>
-                <span class="ticket-total-value">@TempData["TotalPrice"] VND</span>
+                <span class="ticket-total-value">@totalPrice VND</span>
             </div>
             <hr />
             <div class="ticket-section-title">Member Information</div>
             <div class="ticket-row">
                 <label for="memberId" class="ticket-info-label">Member ID</label>
-                <input type="text" id="memberId" class="ticket-info-value" value="@TempData["MemberId"]" readonly />
+                <input type="text" id="memberId" class="ticket-info-value" value="@memberId" readonly />
                 <label for="memberEmail" class="ticket-info-label">Email</label>
-                <input type="text" id="memberEmail" class="ticket-info-value" value="@TempData["MemberEmail"]" readonly />
+                <input type="text" id="memberEmail" class="ticket-info-value" value="@memberEmail" readonly />
             </div>
             <div class="ticket-row">
                 <label for="memberIdentityCard" class="ticket-info-label">Identity Card</label>
-                <input type="text" id="memberIdentityCard" class="ticket-info-value" value="@TempData["MemberIdentityCard"]" readonly />
+                <input type="text" id="memberIdentityCard" class="ticket-info-value" value="@memberIdentityCard" readonly />
                 <label for="memberPhone" class="ticket-info-label">Phone</label>
-                <input type="text" id="memberPhone" class="ticket-info-value" value="@TempData["MemberPhone"]" readonly />
+                <input type="text" id="memberPhone" class="ticket-info-value" value="@memberPhone" readonly />
             </div>
             <div class="text-center">
-                <a href="@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })" class="btn btn-ticket-back">Back to Booking Management</a>
+                <a href="@returnUrl" class="btn btn-ticket-back">Back to Booking Management</a>
             </div>
         </div>
     </div>

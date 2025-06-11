@@ -25,8 +25,7 @@
             <th>Identity Card</th>
             <th>Phone Number</th>
             <th>Schedule Time</th>
-          
-          
+            <th>Action</th>
         </tr>
     </thead>
 
@@ -49,8 +48,9 @@
                     <td>@(account?.IdentityCard ?? "N/A")</td>
                     <td>@(account?.PhoneNumber ?? "N/A")</td>
                     <td>@(Invoice.ScheduleShowTime ?? "N/A")</td>
-                
-
+                    <td>
+                        <a href="@Url.Action("TicketInfo", "Admin", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">View Details</a>
+                    </td>
                 </tr>
             }
         }

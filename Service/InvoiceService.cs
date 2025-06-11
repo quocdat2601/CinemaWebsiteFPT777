@@ -18,5 +18,10 @@ namespace MovieTheater.Service
         {
             return _invoiceRepository.GetAll();
         }
+
+        public Invoice? GetById(string invoiceId)
+        {
+            return _invoiceRepository.GetById(invoiceId);
+        }
     }
 }
