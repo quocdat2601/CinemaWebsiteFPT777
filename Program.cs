@@ -143,7 +143,7 @@ namespace MovieTheater
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Movie}/{action=MovieList}/{id?}");
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
             app.Run();
         }
