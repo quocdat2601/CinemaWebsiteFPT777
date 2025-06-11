@@ -15,9 +15,9 @@ namespace MovieTheater.Service
             _context = context;
         }
 
-        public Task<List<Movie>> GetAvailableMoviesAsync()
+        public IEnumerable<Movie> GetAvailableMovies()
         {
-            return _repo.GetAllMoviesAsync();
+            return _repo.GetAll();
         }
 
         public Movie GetById(string movieId)
@@ -35,14 +35,14 @@ namespace MovieTheater.Service
             return _repo.GetShowDatesByIds(ids);
         }
 
-        public Task<List<DateTime>> GetShowDatesAsync(string movieId)
+        public async Task<List<DateTime>> GetShowDates(string movieId)
         {
-            return _repo.GetShowDatesAsync(movieId);
+            return await _repo.GetShowDatesAsync(movieId);
         }
 
-        public Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
+        public async Task<List<string>> GetShowTimes(string movieId, DateTime date)
         {
-            return _repo.GetShowTimesAsync(movieId, date);
+            return await _repo.GetShowTimesAsync(movieId, date);
         }
 
         public async Task SaveInvoiceAsync(Invoice invoice)
@@ -60,22 +60,15 @@ namespace MovieTheater.Service
                 .ToListAsync();
 
             int maxNumber = 0;
-
             foreach (var id in allIds)
             {
-                var numberPart = id.Substring(3); // Bỏ "INV"
-                if (int.TryParse(numberPart, out int num))
+                if (int.TryParse(id.Substring(3), out int number))
                 {
-                    if (num > maxNumber)
-                        maxNumber = num;
+                    maxNumber = Math.Max(maxNumber, number);
                 }
             }
 
-            int nextNumber = maxNumber + 1;
-
-            // Trả về "INV" + số với padding 3 chữ số
-            return "INV" + nextNumber.ToString("D3");
+            return $"INV{(maxNumber + 1):D3}";
         }
-
     }
 }

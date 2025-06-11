@@ -1,33 +1,36 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-	<div class="text-center">
-		<h2>
-			Schedule List
-		</h2>
-		<!-- Button to open the modal -->
-		<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal">
-			Open Modal
-		</button>
+﻿@model IEnumerable<Movie>
 
-		<!-- Modal structure -->
-		<div class="modal fade" id="myModal" tabindex="-1">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">My Pop-Up</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-					</div>
-					<div class="modal-body">
-						This is a modal pop-up!
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					</div>
-				</div>
-			</div>
-		</div>
+<div class="text-center mb-2">
+	<h2>Schedule Management</h2>
+</div>
+@* 
+<div class="text-center mb-2">
+	<a asp-controller="Movie" asp-action="Create" class="btn btn-sm btn-primary">Create a Movie</a>
+</div> *@
 
-	</div>
-}
+<table class="table table-bordered table-striped">
+	<thead class="table-dark">
+		<tr class="text-center">
+			<th>ID</th>
+			<th>Name</th>
+			<th style="width: 150px;">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var movie in Model)
+		{
+			<tr>
+				<td class="text-center">@movie.MovieId</td>
+				<td class="text-center">@movie.MovieNameEnglish</td>
+				<td>
+					<div class="d-flex align-items-center gap-2">
+						<a href="@Url.Action("MovieShow", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-primary">Edit Movie Show</a>
+					</div>
+				</td>
+
+			</tr>
+		}
+	</tbody>
+</table>
+
+<partial name="_ToastMessages" />

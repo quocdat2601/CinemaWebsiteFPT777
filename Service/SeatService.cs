@@ -69,6 +69,9 @@ namespace MovieTheater.Service
             _repository.Save();
         }
 
+        public async Task ResetSeatsAfterShowAsync(string movieId, DateTime showDate, string showTime)
+        {
+            await _repository.ResetSeatsAfterShowAsync(movieId, showDate, showTime);
+        }
     }
-
 }

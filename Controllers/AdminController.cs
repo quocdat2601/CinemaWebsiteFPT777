@@ -72,7 +72,8 @@ namespace MovieTheater.Controllers
                     ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
                 case "ScheduleMg":
-                    return PartialView("ScheduleMg");
+                    var scheduleMovies = _movieService.GetAll();
+                    return PartialView("ScheduleMg", scheduleMovies);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);

@@ -4,9 +4,9 @@
     var selectedMovieId = ViewBag.SelectedMovieId as string;
 }
 
-<div class="container mt-5">
-    <div class="card shadow p-4">
-        <h2 class="text-center mb-4">🎬 Book Your Ticket</h2>
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="card shadow p-4 w-50 w-md-50">
+        <h2 class="text-center mb-4" style="font-size: x-large">🎬 Book Your Ticket</h2>
 
         <form id="bookingForm" novalidate>
             <div class="mb-4">
@@ -82,8 +82,9 @@
 
                 if (!date) return;
                 $.getJSON(`/Booking/GetTimes?movieId=${movieId}&date=${date}`, times => {
-                    if (times.length) {
-                        times.forEach(t => $time.append(`<option>${t}</option>`));
+                    if (times && times.length) {
+                        $time.empty().append('<option value="">— Select Time —</option>');
+                        times.forEach(t => $time.append(`<option value="${t}">${t}</option>`));
                         $time.prop('disabled', false);
                     }
                 });

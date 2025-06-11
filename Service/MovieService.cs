@@ -6,6 +6,7 @@ using MovieTheater.ViewModels;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace MovieTheater.Service
 {
@@ -30,60 +31,15 @@ namespace MovieTheater.Service
             return _movieRepository.GetById(id);
         }
 
-        public bool AddMovie(Movie movie, List<int> showDateIds, List<int> scheduleIds)
+        public bool AddMovie(Movie movie)
         {
             try
             {
-                // First add the movie
                 if (!_movieRepository.Add(movie))
                 {
                     _logger.LogError("Failed to add movie: {MovieId}", movie.MovieId);
                     return false;
                 }
-
-                // Create MovieShow records for each combination of show date and schedule
-                var movieShows = new List<MovieShow>();
-                foreach (var showDateId in showDateIds)
-                {
-                    foreach (var scheduleId in scheduleIds)
-                    {
-                        // Check if the schedule is available
-                        if (!_movieRepository.IsScheduleAvailable(showDateId, scheduleId, movie.CinemaRoomId))
-                        {
-                            _logger.LogWarning("Schedule conflict detected for MovieId: {MovieId}, ShowDateId: {ShowDateId}, ScheduleId: {ScheduleId}, CinemaRoomId: {CinemaRoomId}",
-                                movie.MovieId, showDateId, scheduleId, movie.CinemaRoomId);
-                            continue;
-                        }
-
-                        movieShows.Add(new MovieShow
-                        {
-                            MovieId = movie.MovieId,
-                            ShowDateId = showDateId,
-                            ScheduleId = scheduleId,
-                            CinemaRoomId = movie.CinemaRoomId
-                        });
-                    }
-                }
-
-                // Add all MovieShow records
-                if (movieShows.Any())
-                {
-                    try
-                    {
-                        _movieRepository.AddMovieShows(movieShows);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError("Failed to add movie shows for movie: {MovieId}", movie.MovieId);
-                        return false;
-                    }
-                }
-                else
-                {
-                    _logger.LogWarning("No valid movie shows could be created for movie: {MovieId}", movie.MovieId);
-                    return false;
-                }
-
                 return true;
             }
             catch (Exception ex)
@@ -93,67 +49,15 @@ namespace MovieTheater.Service
             }
         }
 
-        public bool UpdateMovie(Movie movie, List<int> showDateIds, List<int> scheduleIds)
+        public bool UpdateMovie(Movie movie)
         {
             try
             {
-                // First update the movie
                 if (!_movieRepository.Update(movie))
                 {
                     _logger.LogError("Failed to update movie: {MovieId}", movie.MovieId);
                     return false;
                 }
-
-                // Remove existing MovieShow records
-                var existingShows = _movieRepository.GetMovieShowsByMovieId(movie.MovieId);
-                foreach (var show in existingShows)
-                {
-                    _movieRepository.DeleteMovieShow(show.MovieShowId);
-                }
-
-                // Create new MovieShow records
-                var movieShows = new List<MovieShow>();
-                foreach (var showDateId in showDateIds)
-                {
-                    foreach (var scheduleId in scheduleIds)
-                    {
-                        // Check if the schedule is available
-                        if (!_movieRepository.IsScheduleAvailable(showDateId, scheduleId, movie.CinemaRoomId))
-                        {
-                            _logger.LogWarning("Schedule conflict detected for MovieId: {MovieId}, ShowDateId: {ShowDateId}, ScheduleId: {ScheduleId}, CinemaRoomId: {CinemaRoomId}",
-                                movie.MovieId, showDateId, scheduleId, movie.CinemaRoomId);
-                            continue;
-                        }
-
-                        movieShows.Add(new MovieShow
-                        {
-                            MovieId = movie.MovieId,
-                            ShowDateId = showDateId,
-                            ScheduleId = scheduleId,
-                            CinemaRoomId = movie.CinemaRoomId
-                        });
-                    }
-                }
-
-                // Add all MovieShow records
-                if (movieShows.Any())
-                {
-                    try
-                    {
-                        _movieRepository.AddMovieShows(movieShows);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError("Failed to add movie shows for movie: {MovieId}", movie.MovieId);
-                        return false;
-                    }
-                }
-                else
-                {
-                    _logger.LogWarning("No valid movie shows could be created for movie: {MovieId}", movie.MovieId);
-                    return false;
-                }
-
                 return true;
             }
             catch (Exception ex)
@@ -307,6 +211,39 @@ namespace MovieTheater.Service
         public List<CinemaRoom> GetAllCinemaRooms()
         {
             return _movieRepository.GetAllCinemaRooms();
+        }
+
+        public List<Schedule> GetSchedules()
+        {
+            return _movieRepository.GetSchedules();
+        }
+
+        public List<ShowDate> GetShowDates()
+        {
+            return _movieRepository.GetShowDates();
+        }
+
+        public List<Models.Type> GetTypes()
+        {
+            return _movieRepository.GetTypes();
+        }
+
+        public bool DeleteAllMovieShows(string movieId)
+        {
+            try
+            {
+                var existingShows = _movieRepository.GetMovieShowsByMovieId(movieId);
+                foreach (var show in existingShows)
+                {
+                    _movieRepository.DeleteMovieShow(show.MovieShowId);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting movie shows for movie: {MovieId}", movieId);
+                return false;
+            }
         }
     }
 }

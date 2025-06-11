@@ -132,8 +132,7 @@ CREATE TABLE Movie_Show (
     FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID),
     FOREIGN KEY (Show_Date_ID) REFERENCES Show_Dates(Show_Date_ID),
     FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID),
-    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
-    UNIQUE (Show_Date_ID, Schedule_ID, Cinema_Room_ID) -- prevent conflict
+    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID)
 );
 CREATE TABLE Seat_Type (
     Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
