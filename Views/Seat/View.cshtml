@@ -7,17 +7,26 @@
 	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
 	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
 	var seatTypes = Model.SeatTypes;
+
+	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
+	string returnLink;
+	if (isAdminSell)
+	{
+		// Admin flow: return to select showtime page
+		returnLink = Url.Action("Select", "Showtime", new { area = "Admin" });
+	}
+	else
+	{
+		returnLink = Url.Action("TicketBooking", "Booking");
+	}
 }
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4">
-	@if (!string.IsNullOrEmpty(Model.ReturnUrl))
-	{
-		<div class="text-start p-3">
-			<a href="@Model.ReturnUrl" class="btn btn-secondary">&larr; Return</a>
-		</div>
-	}
+	<div class="text-start p-3">
+		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+	</div>
 
 	<h2 class="text-center mb-4">SELECT SEATS</h2>
 	<div class="row mb-4 align-items-center">

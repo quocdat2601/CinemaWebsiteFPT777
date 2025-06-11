@@ -264,6 +264,7 @@ namespace MovieTheater.Controllers
 
                 seats.Add(new SeatDetailViewModel
                 {
+                    SeatId = seat.SeatId,
                     SeatName = seat.SeatName,
                     SeatType = seatType?.TypeName ?? "Standard",
                     Price = price
@@ -411,7 +412,12 @@ namespace MovieTheater.Controllers
 
                 await _bookingService.SaveInvoiceAsync(invoice);
 
-                // Remove TempData usage for confirmation page
+                // Mark all selected seats as booked
+                foreach (var seat in model.BookingDetails.SelectedSeats)
+                {
+                    _seatService.UpdateSeatStatus(seat.SeatId);
+                }
+
                 // Redirect to confirmation page with invoiceId
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Admin", new { invoiceId = invoice.InvoiceId }) });
             }
@@ -463,6 +469,7 @@ namespace MovieTheater.Controllers
                 }
                 seats.Add(new SeatDetailViewModel
                 {
+                    SeatId = seat.SeatId,
                     SeatName = trimmedSeatName,
                     SeatType = seatType?.TypeName ?? "N/A",
                     Price = seatType?.PricePercent ?? 0
@@ -577,6 +584,7 @@ namespace MovieTheater.Controllers
                 }
                 seats.Add(new SeatDetailViewModel
                 {
+                    SeatId = seat.SeatId,
                     SeatName = seatName,
                     SeatType = seatType?.TypeName ?? "N/A",
                     Price = seatType?.PricePercent ?? 0

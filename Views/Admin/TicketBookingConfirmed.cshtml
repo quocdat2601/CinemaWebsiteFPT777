@@ -3,18 +3,18 @@
     ViewBag.Title = "Ticket Information (Admin)";
     Layout = "_Layout";
     var booking = Model?.BookingDetails;
-    string movieName = booking?.MovieName;
-    string screen = booking?.CinemaRoomName;
-    string showDate = booking?.ShowDate.ToString("yyyy-MM-dd");
-    string showTime = booking?.ShowTime;
-    string ticketId = booking?.InvoiceId;
-    string totalPrice = booking?.TotalPrice.ToString("N0");
-    string ticketsConverted = booking?.TicketsConverted;
-    string scoreUsed = booking?.ScoreUsed.ToString();
-    string memberId = Model?.MemberId;
-    string memberEmail = Model?.MemberEmail;
-    string memberIdentityCard = Model?.MemberIdentityCard;
-    string memberPhone = Model?.MemberPhone;
+    string movieName = booking?.MovieName ?? TempData["MovieName"] as string;
+    string screen = booking?.CinemaRoomName ?? TempData["Screen"] as string;
+    string showDate = booking != null ? booking.ShowDate.ToString("yyyy-MM-dd") : TempData["ShowDate"] as string;
+    string showTime = booking?.ShowTime ?? TempData["ShowTime"] as string;
+    string ticketId = booking?.InvoiceId ?? TempData["InvoiceId"] as string;
+    string totalPrice = booking != null ? booking.TotalPrice.ToString("N0") : TempData["TotalPrice"] as string;
+    string ticketsConverted = booking?.TicketsConverted ?? TempData["TicketsConverted"] as string;  
+    string scoreUsed = booking?.ScoreUsed.ToString() ?? TempData["ScoreUsed"] as string;
+    string memberId = Model?.MemberId ?? TempData["MemberId"] as string;
+    string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
+    string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
+    string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
     string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 }
 <style>
