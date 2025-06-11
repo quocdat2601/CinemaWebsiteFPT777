@@ -1,33 +1,40 @@
 ﻿@{
     ViewBag.Title = "Booking Successful";
+    var originalPrice = TempData["OriginalPrice"] != null ? Convert.ToDecimal(TempData["OriginalPrice"]) : 0;
+    var usedScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : 0;
+    var finalPrice = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : 0;
 }
 
+
 <div class="container mt-5">
-    <div class="card shadow p-4">
+    <div class="card shadow-lg p-4 rounded-4">
         <h2 class="text-center text-success mb-4">🎉 Booking Successful!</h2>
 
-        <p class="text-center">Thank you for booking with us. Below is your booking summary:</p>
+        <p class="text-center">Thank you for booking with us. Here is your booking summary:</p>
 
-        <hr />
+        <hr class="mb-4" />
 
-        @* Bạn có thể lấy dữ liệu từ TempData nếu cần, hoặc gắn ViewModel sau này *@
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-md-6">
-                <p><strong>Movie:</strong> @TempData["MovieName"]</p>
-                <p><strong>Date:</strong> @TempData["ShowDate"]</p>
-                <p><strong>Time:</strong> @TempData["ShowTime"]</p>
-                <p><strong>Seat(s):</strong> @TempData["Seats"]</p>
+                <p><strong>🎬 Movie:</strong> @TempData["MovieName"]</p>
+                <p><strong>📅 Date:</strong> @TempData["ShowDate"]</p>
+                <p><strong>⏰ Time:</strong> @TempData["ShowTime"]</p>
+                <p><strong>💺 Seats:</strong> @TempData["Seats"]</p>
             </div>
             <div class="col-md-6">
-                <p><strong>Total:</strong> @String.Format("{0:N0}", TempData["TotalPrice"]) VND</p>
-                <p><strong>Booking Time:</strong> @TempData["BookingTime"]</p>
-                <p><strong>Invoice ID:</strong> @TempData["InvoiceId"]</p>
+                <p><strong>🧾 Invoice ID:</strong> @TempData["InvoiceId"]</p>
+                <p><strong>🕓 Booking Time:</strong> @TempData["BookingTime"]</p>
+
+                <hr />
+                <p><strong>💰 Original Price:</strong> @String.Format("{0:N0}", originalPrice) VND</p>
+                <p><strong>🏷️ Used Score:</strong> @String.Format("{0:N0}", usedScore) points</p>
+                <p><strong>✅ Final Price:</strong> <span class="text-danger fw-bold">@String.Format("{0:N0}", finalPrice) VND</span></p>
             </div>
         </div>
 
         <div class="text-center mt-4">
-            <a href="/MyAccount/Profile" class="btn btn-primary me-2">My Account</a>
-            <a href="/Booking/TicketBooking" class="btn btn-outline-secondary">Book Another Ticket</a>
+            <a href="/Movie/MovieList" class="btn btn-primary me-2">🎞️ Back To Movie List</a>
+            <a href="/Booking/TicketBooking" class="btn btn-outline-secondary">🎟️ Book Another Ticket</a>
         </div>
     </div>
 </div>

@@ -1,10 +1,10 @@
-﻿@model List<MovieTheater.Models.Invoice>
+@model List<MovieTheater.Models.Invoice>
 @{
-    ViewData["Title"] = "Booking History";
+    ViewData["Title"] = "My Tickets";
 }
 
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Booking History</h2>
+    <h2 class="text-center mb-4">My Tickets</h2>
 
     @if (TempData["Success"] != null)
     {
@@ -22,23 +22,24 @@
         </div>
     }
 
-    <!-- Filter Form -->
-    <form id="historyFilterForm" class="row g-3 border p-3 shadow-sm rounded bg-light align-items-end mb-4">
-        <div class="col-md-4">
-            <label class="form-label">From Date</label>
-            <input type="date" id="fromDate" name="fromDate" class="form-control" />
+    <!-- AC-03: Navigation Links -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <a asp-controller="Ticket" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="fas fa-history"></i> All Tickets
+                </a>
+                <a asp-controller="Ticket" asp-action="Booked" class="btn btn-outline-primary">
+                    <i class="fas fa-ticket-alt"></i> Booked Tickets
+                </a>
+                <a asp-controller="Ticket" asp-action="Canceled" class="btn btn-outline-primary">
+                    <i class="fas fa-ban"></i> Canceled Tickets
+                </a>
+            </div>
         </div>
-        <div class="col-md-4">
-            <label class="form-label">To Date</label>
-            <input type="date" id="toDate" name="toDate" class="form-control" />
-        </div>
-        <div class="col-md-4 d-flex align-items-end justify-content-end">
-            <button type="submit" class="btn btn-primary btn-lg w-50">Filter</button>
-        </div>
-    </form>
+    </div>
 
-    <!-- Booking History Table -->
-    <div id="historyResult">
+    <!-- AC-01: Ticket List -->
     @if (Model != null && Model.Any())
     {
         <div class="table-responsive">
@@ -68,11 +69,11 @@
                             <td>
                                 @if (booking.Status == 1)
                                 {
-                                    <span class="badge bg-success">Completed</span>
+                                    <span class="badge bg-success">Booked</span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-danger">Cancelled</span>
+                                    <span class="badge bg-danger">Canceled</span>
                                 }
                             </td>
                             <td>
@@ -102,56 +103,13 @@
     }
     else
     {
+        <!-- AC-02: No tickets message -->
         <div class="alert alert-info text-center">
             <i class="fas fa-info-circle me-2"></i>
-            No booking history found for the selected period.
+            No booked tickets found.
         </div>
     }
-    </div>
 </div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(function() {
-        // Ép thuộc tính form để ngăn submit về server
-        $('#historyFilterForm').attr('action', 'javascript:void(0)');
-        $('#historyFilterForm').removeAttr('method');
-        $('#historyFilterForm').on('submit', function(e) {
-            e.preventDefault();
-            var fromDate = $('#fromDate').val();
-            var toDate = $('#toDate').val();
-            $.ajax({
-                url: '/Ticket/HistoryPartial',
-                type: 'GET',
-                data: { fromDate: fromDate, toDate: toDate },
-                success: function (result) {
-                    $('#historyResult').html(result);
-                    // Đảm bảo tab History luôn active trên sidebar
-                    $('#accountTabs .nav-link').removeClass('active');
-                    $('#accountTabs .nav-link[data-tab="History"]').addClass('active');
-                },
-                error: function () {
-                    $('#historyResult').html('<div class="alert alert-danger">Error loading data.</div>');
-                }
-            });
-        });
-
-        // Tự động load dữ liệu mặc định khi vào tab History (không truyền ngày)
-        $.ajax({
-            url: '/Ticket/HistoryPartial',
-            type: 'GET',
-            data: { fromDate: '', toDate: '' },
-            success: function (result) {
-                $('#historyResult').html(result);
-                $('#accountTabs .nav-link').removeClass('active');
-                $('#accountTabs .nav-link[data-tab="History"]').addClass('active');
-            },
-            error: function () {
-                $('#historyResult').html('<div class="alert alert-danger">Error loading data.</div>');
-            }
-        });
-    });
-</script>
 
 @section Styles {
     <style>
@@ -166,4 +124,4 @@
             gap: 0.5rem;
         }
     </style>
-}
+} 

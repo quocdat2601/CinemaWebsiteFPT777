@@ -98,7 +98,8 @@ namespace MovieTheater.Controllers
                 FullName = currentUser.FullName,
                 Email = currentUser.Email,
                 IdentityCard = currentUser.IdentityCard,
-                PhoneNumber = currentUser.PhoneNumber
+                PhoneNumber = currentUser.PhoneNumber,
+                CurrentScore = currentUser.Score
             };
 
             return View("ConfirmBooking", viewModel);
@@ -134,21 +135,30 @@ namespace MovieTheater.Controllers
                     ScheduleShow = model.ShowDate,
                     ScheduleShowTime = model.ShowTime,
                     Status = 1,
-                    TotalMoney = model.TotalPrice,
-                    UseScore = 0,
+                    TotalMoney = model.TotalPrice - model.UseScore,
+                    UseScore = model.UseScore,
                     Seat = seatList
                 };
 
                 // Lưu vào DB
                 await _service.SaveInvoiceAsync(invoice);
+
+                // GIẢM ĐIỂM NẾU USESCORE > 0
+                if (model.UseScore > 0)
+                {
+                    await _accountService.DeductScoreAsync(userId, model.UseScore);
+                }
                 TempData["MovieName"] = model.MovieName;
                 TempData["ShowDate"] = model.ShowDate.ToString("yyyy-MM-dd");
                 TempData["ShowTime"] = model.ShowTime;
                 TempData["Seats"] = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName));
-                //TempData["TotalPrice"] = model.TotalPrice;
-                TempData["TotalPrice"] = model.TotalPrice.ToString();
                 TempData["BookingTime"] = DateTime.Now.ToString("g");
                 TempData["InvoiceId"] = invoice.InvoiceId;
+
+                TempData["OriginalPrice"] = model.TotalPrice.ToString();
+                TempData["UsedScore"] = model.UseScore.ToString();
+                TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
+
                 return RedirectToAction("Success");
             }
             catch (Exception ex)

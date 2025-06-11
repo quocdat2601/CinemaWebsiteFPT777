@@ -21,6 +21,7 @@ namespace MovieTheater.Controllers
         private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
         private readonly ILogger<AdminController> _logger;
+        private readonly IInvoiceService _invoiceService;
 
         public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService, IBookingService bookingService, ISeatService seatService, ILogger<AdminController> logger)
         {
@@ -34,6 +35,7 @@ namespace MovieTheater.Controllers
             _bookingService = bookingService;
             _seatService = seatService;
             _logger = logger;
+            _invoiceService = invoiceService;
         }
 
         // GET: AdminController
@@ -44,7 +46,7 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult LoadTab(string tab,string keyword = null)
+        public IActionResult LoadTab(string tab, string keyword = null)
         {
             switch (tab)
             {
@@ -87,6 +89,25 @@ namespace MovieTheater.Controllers
                     return PartialView("PromotionMg", promotions);
                 case "TicketSellingMg":
                     return PartialView("TicketSellingMg");
+                case "BookingMg":
+                    var invoices = _invoiceService.GetAll();
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        ViewBag.Keyword = keyword;
+                        keyword = keyword.Trim().ToLower();
+
+                        invoices = invoices.Where(i =>
+                            (!string.IsNullOrEmpty(i.InvoiceId) && i.InvoiceId.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(i.AccountId) && i.AccountId.ToLower().Contains(keyword)) ||
+                            (i.Account != null && (
+                                (!string.IsNullOrEmpty(i.Account.PhoneNumber) && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                                (!string.IsNullOrEmpty(i.Account.IdentityCard) && i.Account.IdentityCard.ToLower().Contains(keyword))
+                            ))
+                        ).ToList();
+                    }
+
+                    return PartialView("BookingMg", invoices);
                 default:
                     return Content("Tab not found.");
             }
