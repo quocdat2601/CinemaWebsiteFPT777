@@ -56,8 +56,6 @@ namespace MovieTheater.Controllers
                     return PartialView("SheduleMg");
                 case "PromotionMg":
                     return PartialView("PromotionMg");
-                case "TicketSellingMg":
-                    return PartialView("TicketSellingMg");
                 case "BookingMg":
                     var invoices = _invoiceService.GetAll();
 

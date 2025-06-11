@@ -77,7 +77,7 @@
 
 <div class="container mt-4">
     <div class="text-start p-3">
-        <a href="@Model.ReturnUrl" class="btn btn-secondary">&larr; Return</a>
+        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
     <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
     <div class="card shadow p-4">

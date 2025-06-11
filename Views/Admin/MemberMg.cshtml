@@ -41,8 +41,6 @@ else
                         <td>
                             <div class="d-flex align-items-center justify-content-center gap-2">
                                 <a href="@Url.Action("Edit", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-primary">Edit</a>
-                                @* Add links to other related actions here as needed, e.g., Ticket Management, Employee Management, etc. *@
-                                <a href="@Url.Action("InitiateTicketSellingForMember", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-success">Sell Ticket</a>
                             </div>
                         </td>
                     }

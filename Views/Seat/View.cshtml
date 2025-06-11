@@ -261,7 +261,8 @@
 
             let redirectUrl;
 
-            if (returnUrl && returnUrl.toLowerCase().includes("admin/confirmticketforadmin")) {
+            const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+            if (isAdminSell) {
                 redirectUrl = `/Admin/ConfirmTicketForAdmin?movieId=${movieId}&showDate=${showDate}&showTime=${showTime}&${selectedSeatIdsQuery}`;
             } else {
                 redirectUrl = `/Booking/Information?movieId=${movieId}&showDate=${showDate}&showTime=${showTime}&${selectedSeatIdsQuery}`;

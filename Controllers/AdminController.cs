@@ -20,10 +20,9 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _accountService;
         private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
-        private readonly ILogger<AdminController> _logger;
         private readonly IInvoiceService _invoiceService;
 
-        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService, IBookingService bookingService, ISeatService seatService, ILogger<AdminController> logger)
+        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService, IBookingService bookingService, ISeatService seatService, IInvoiceService invoiceService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -34,7 +33,6 @@ namespace MovieTheater.Controllers
             _accountService = accountService;
             _bookingService = bookingService;
             _seatService = seatService;
-            _logger = logger;
             _invoiceService = invoiceService;
         }
 
@@ -87,8 +85,6 @@ namespace MovieTheater.Controllers
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
-                case "TicketSellingMg":
-                    return PartialView("TicketSellingMg");
                 case "BookingMg":
                     var invoices = _invoiceService.GetAll();
 
@@ -161,8 +157,7 @@ namespace MovieTheater.Controllers
             // Store the member's AccountId in TempData to use in the ticket selling process
             TempData["InitiateTicketSellingForMemberId"] = id;
 
-            // Redirect to the start of the ticket selling process (ShowtimeController's Select action)
-            var returnUrl = Url.Action("ConfirmTicketForAdmin", "Admin");
+            var returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
             return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
         }
 
