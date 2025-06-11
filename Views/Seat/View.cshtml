@@ -195,8 +195,8 @@
         function updateBookButtonState() {
             const quantity = parseInt(document.getElementById('seatQuantity').value);
             const bookButton = document.getElementById('bookButton');
-            // Enable button only if quantity > 0 and selected count matches quantity
-            bookButton.disabled = quantity > 0 && selectedSeats.size !== quantity;
+            // Disable button if quantity is 0, or if selected count doesn't match quantity
+            bookButton.disabled = (quantity === 0) || (selectedSeats.size !== quantity);
         }
 
         // Update selection summary (kept from previous View.cshtml)
@@ -270,10 +270,10 @@
             window.location.href = redirectUrl;
         });
 
-        // Initial calls to set the correct state on page load
-        updateSeatMessage();
-        updateBookButtonState();
-        updateSelectionSummary(); // Hide summary initially
+        // On page load, ensure button is disabled if seatQuantity is 0
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBookButtonState();
+        });
 
     </script>
 }

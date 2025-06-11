@@ -411,31 +411,9 @@ namespace MovieTheater.Controllers
 
                 await _bookingService.SaveInvoiceAsync(invoice);
 
-                // Prepare data for confirmation view
-                TempData["BookingConfirmedMessage"] = "Ticket booking successful!";
-                TempData["MovieName"] = model.BookingDetails.MovieName;
-                TempData["ShowDate"] = model.BookingDetails.ShowDate.ToString("yyyy-MM-dd");
-                TempData["ShowTime"] = model.BookingDetails.ShowTime;
-                TempData["Seats"] = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName));
-                TempData["TotalPrice"] = (model.BookingDetails.TotalPrice - discount).ToString();
-                TempData["BookingTime"] = DateTime.Now.ToString("g");
-                TempData["InvoiceId"] = invoice.InvoiceId;
-                TempData["ScoreUsed"] = scoreUsed;
-                TempData["ConvertedTicketIndexes"] = string.Join(",", convertedTicketIndexes);
-                TempData["Screen"] = roomName;
-                TempData["TicketsConverted"] = convertedTicketIndexes?.Count > 0 ? convertedTicketIndexes.Count.ToString() : null;
-                // Always pass member information
-                TempData["MemberId"] = member?.MemberId;
-                TempData["MemberName"] = member?.Account?.FullName;
-                TempData["MemberIdentityCard"] = member?.Account?.IdentityCard;
-                TempData["MemberPhone"] = member?.Account?.PhoneNumber;
-                TempData["MemberEmail"] = member?.Account?.Email;
-
-                // Prepare seat table rows for ticket info page
-                string seatTableRows = string.Join("", model.BookingDetails.SelectedSeats.Select(s => $"<tr><td>{s.SeatName}</td><td>{s.SeatType}</td><td>{s.Price:N0} VND</td></tr>"));
-                TempData["SeatTableRows"] = seatTableRows;
-
-                return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Admin") });
+                // Remove TempData usage for confirmation page
+                // Redirect to confirmation page with invoiceId
+                return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Admin", new { invoiceId = invoice.InvoiceId }) });
             }
             catch (Exception ex)
             {
@@ -448,7 +426,100 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult TicketBookingConfirmed(string invoiceId)
         {
-            return View("TicketBookingConfirmed");
+            if (string.IsNullOrEmpty(invoiceId))
+                return View("TicketBookingConfirmed"); // fallback, but not recommended
+
+            var invoice = _invoiceService.GetById(invoiceId);
+            if (invoice == null)
+                return NotFound();
+
+            var member = _memberRepository.GetByAccountId(invoice.AccountId);
+
+            // Fix roomName logic
+            string roomName = "N/A";
+            var allMovies = _movieService.GetAll();
+            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
+            if (movie != null && movie.CinemaRoomId.HasValue)
+            {
+                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
+                roomName = room?.CinemaRoomName ?? "N/A";
+            }
+
+            // Prepare seat details
+            var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seats = new List<SeatDetailViewModel>();
+            foreach (var seatName in seatNames)
+            {
+                var trimmedSeatName = seatName.Trim();
+                var seat = _seatService.GetSeatByName(trimmedSeatName);
+                if (seat == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TicketBookingConfirmed] Seat not found: '{trimmedSeatName}'");
+                }
+                SeatType seatType = null;
+                if (seat != null && seat.SeatTypeId.HasValue)
+                {
+                    seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
+                }
+                seats.Add(new SeatDetailViewModel
+                {
+                    SeatName = trimmedSeatName,
+                    SeatType = seatType?.TypeName ?? "N/A",
+                    Price = seatType?.PricePercent ?? 0
+                });
+            }
+
+            // Calculate tickets converted by score
+            int ticketsConverted = 0;
+            if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0 && seats.Count > 0)
+            {
+                // Sort seats by price descending and count how many could be converted by the used score
+                var sortedSeats = seats.OrderByDescending(s => s.Price).ToList();
+                decimal runningScore = invoice.UseScore.Value;
+                foreach (var seat in sortedSeats)
+                {
+                    if (runningScore >= seat.Price)
+                    {
+                        ticketsConverted++;
+                        runningScore -= seat.Price;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            var bookingDetails = new ConfirmBookingViewModel
+            {
+                MovieId = movie?.MovieId,
+                MovieName = invoice.MovieName,
+                CinemaRoomName = roomName,
+                ShowDate = invoice.ScheduleShow ?? DateTime.Now,
+                ShowTime = invoice.ScheduleShowTime,
+                SelectedSeats = seats,
+                TotalPrice = invoice.TotalMoney ?? 0,
+                PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
+                InvoiceId = invoice.InvoiceId,
+                ScoreUsed = invoice.UseScore ?? 0,
+                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null
+            };
+
+            // Determine return URL based on user role
+            string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+
+            var viewModel = new ConfirmTicketAdminViewModel
+            {
+                BookingDetails = bookingDetails,
+                MemberCheckMessage = "",
+                ReturnUrl = returnUrl,
+                MemberId = member?.MemberId,
+                MemberEmail = member?.Account?.Email,
+                MemberIdentityCard = member?.Account?.IdentityCard,
+                MemberPhone = member?.Account?.PhoneNumber
+            };
+
+            return View("TicketBookingConfirmed", viewModel);
         }
 
         [Authorize(Roles = "Admin")]
