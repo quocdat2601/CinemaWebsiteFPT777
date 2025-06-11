@@ -19,7 +19,16 @@ else
             <tr>
                 <td>@item.DateCreated.ToString("dd/MM/yyyy")</td>
                 <td>@item.MovieName</td>
-                <td class="text-end">@item.Score</td>
+                <td class="text-end">
+                    @if (item.Type == "add")
+                    {
+                        <span class="text-success">+@item.Score</span>
+                    }
+                    else if (item.Type == "use")
+                    {
+                        <span class="text-danger">-@item.Score</span>
+                    }
+                </td>
             </tr>
         }
         </tbody>

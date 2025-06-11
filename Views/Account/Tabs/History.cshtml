@@ -23,14 +23,18 @@
     }
 
     <!-- Filter Form -->
-    <form id="historyFilterForm" class="mb-3">
-        <label>From:</label>
-        <input type="date" id="fromDate" name="fromDate" class="form-control" />
-
-        <label>To:</label>
-        <input type="date" id="toDate" name="toDate" class="form-control" />
-
-        <button type="submit" class="btn btn-primary mt-2">Filter</button>
+    <form id="historyFilterForm" class="row g-3 border p-3 shadow-sm rounded bg-light align-items-end mb-4">
+        <div class="col-md-4">
+            <label class="form-label">From Date</label>
+            <input type="date" id="fromDate" name="fromDate" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">To Date</label>
+            <input type="date" id="toDate" name="toDate" class="form-control" />
+        </div>
+        <div class="col-md-4 d-flex align-items-end justify-content-end">
+            <button type="submit" class="btn btn-primary btn-lg w-50">Filter</button>
+        </div>
     </form>
 
     <!-- Booking History Table -->
@@ -130,6 +134,21 @@
                     $('#historyResult').html('<div class="alert alert-danger">Error loading data.</div>');
                 }
             });
+        });
+
+        // Tự động load dữ liệu mặc định khi vào tab History (không truyền ngày)
+        $.ajax({
+            url: '/Ticket/HistoryPartial',
+            type: 'GET',
+            data: { fromDate: '', toDate: '' },
+            success: function (result) {
+                $('#historyResult').html(result);
+                $('#accountTabs .nav-link').removeClass('active');
+                $('#accountTabs .nav-link[data-tab="History"]').addClass('active');
+            },
+            error: function () {
+                $('#historyResult').html('<div class="alert alert-danger">Error loading data.</div>');
+            }
         });
     });
 </script>
