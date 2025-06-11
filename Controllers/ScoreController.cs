@@ -18,22 +18,23 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult ScoreHistory()
         {
-            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            // Lấy toàn bộ Invoice của Account_ID, mặc định là Score Adding
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.AddScore > 0);
+            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
+            ViewBag.CurrentScore = member?.Score ?? 0;
 
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = i.AddScore ?? 0
-            }).ToList();
+            var result = _context.Invoices
+                .Where(i => i.AccountId == accountId && i.AddScore > 0)
+                .Select(i => new ScoreHistoryViewModel
+                {
+                    DateCreated = i.BookingDate ?? DateTime.MinValue,
+                    MovieName = i.MovieName ?? "N/A",
+                    Score = i.AddScore ?? 0
+                }).ToList();
 
             ViewBag.HistoryType = "add";
             return View("~/Views/Account/Tabs/Score.cshtml", result);
@@ -43,11 +44,13 @@ namespace MovieTheater.Controllers
         public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
             }
+
+            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
+            ViewBag.CurrentScore = member?.Score ?? 0;
 
             var query = _context.Invoices
                 .Where(i => i.AccountId == accountId &&
@@ -74,9 +77,7 @@ namespace MovieTheater.Controllers
             {
                 ViewBag.Message = "No score history found for the selected period.";
             }
-            System.Diagnostics.Debug.WriteLine("AccountId: " + accountId);
-            // ... sau khi lấy result
-            System.Diagnostics.Debug.WriteLine("Result count: " + result.Count);
+
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
@@ -88,9 +89,14 @@ namespace MovieTheater.Controllers
             {
                 return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
             }
+
+            // Get current score
+            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
+            ViewBag.CurrentScore = member?.Score ?? 0;
+
             var query = _context.Invoices.Where(i => i.AccountId == accountId);
 
-            // Parse ngày nếu có
+            // Parse dates if provided
             DateTime fromDateValue, toDateValue;
             bool hasFrom = DateTime.TryParse(fromDate, out fromDateValue);
             bool hasTo = DateTime.TryParse(toDate, out toDateValue);
@@ -103,7 +109,7 @@ namespace MovieTheater.Controllers
             var result = new List<ScoreHistoryViewModel>();
             foreach (var i in query)
             {
-                if (i.AddScore.HasValue && i.AddScore.Value > 0)
+                if (historyType != "use" && i.AddScore.HasValue && i.AddScore.Value > 0)
                 {
                     result.Add(new ScoreHistoryViewModel
                     {
@@ -113,7 +119,7 @@ namespace MovieTheater.Controllers
                         Type = "add"
                     });
                 }
-                if (i.UseScore.HasValue && i.UseScore.Value > 0)
+                if (historyType != "add" && i.UseScore.HasValue && i.UseScore.Value > 0)
                 {
                     result.Add(new ScoreHistoryViewModel
                     {
@@ -124,16 +130,10 @@ namespace MovieTheater.Controllers
                     });
                 }
             }
-            // Sắp xếp theo ngày giảm dần
+
             result = result.OrderByDescending(x => x.DateCreated).ToList();
 
-            // Nếu filter theo historyType thì chỉ trả về đúng loại
-            if (!string.IsNullOrEmpty(historyType) && (historyType == "add" || historyType == "use"))
-            {
-                result = result.Where(x => x.Type == historyType).ToList();
-            }
-
-            return PartialView("~/Views/Account/_ScoreHistoryPartial.cshtml", result);
+            return PartialView("~/Views/Account/Tabs/_ScoreHistoryPartial.cshtml", result);
         }
 
     }
