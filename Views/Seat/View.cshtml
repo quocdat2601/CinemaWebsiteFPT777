@@ -1,5 +1,4 @@
-﻿@using MovieTheater.ViewModels
-@model SeatSelectionViewModel
+﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
 @{
     var movieId = Model.MovieId;
@@ -250,28 +249,25 @@
              // Prevent navigation if button is disabled or quantity doesn't match selected count
              if (this.disabled || (quantity > 0 && selectedSeats.size !== quantity)) return;
 
-            const selectedSeatIds = Array.from(selectedSeats);
-            const data = {
-                movieId: '@movieId',
-                showDate: '@date.ToString("yyyy-MM-dd")',
-                showTime: '@time',
-                selectedSeatIds: selectedSeatIds
-            };
+            const movieId = "@movieId";
+            const showDate = "@date.ToString("yyyy-MM-dd")";
+            const showTime = "@time";
 
-            // Build query string
-            const params = new URLSearchParams();
-            for (const key in data) {
-                if (Array.isArray(data[key])) {
-                    data[key].forEach(item => params.append(key, item));
-                } else {
-                    params.append(key, data[key]);
-                }
+            // Correctly format selectedSeatIds for URL query string
+            const selectedSeatIdsArray = Array.from(selectedSeats);
+            const selectedSeatIdsQuery = selectedSeatIdsArray.map(id => `selectedSeatIds=${id}`).join('&');
+
+            const returnUrl = "@Model.ReturnUrl";
+
+            let redirectUrl;
+
+            const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+            if (isAdminSell) {
+                redirectUrl = `/Admin/ConfirmTicketForAdmin?movieId=${movieId}&showDate=${showDate}&showTime=${showTime}&${selectedSeatIdsQuery}`;
+            } else {
+                redirectUrl = `/Booking/Information?movieId=${movieId}&showDate=${showDate}&showTime=${showTime}&${selectedSeatIdsQuery}`;
             }
-
-            // Navigate to the next page (Ticket Information)
-             // window.location.href = `/Ticket/Information?${params.toString()}`;
-             window.location.href = `/Booking/Information?${params.toString()}`;
-
+            window.location.href = redirectUrl;
         });
 
         // Initial calls to set the correct state on page load

@@ -22,5 +22,8 @@
         public int CurrentScore { get; set; }
         public int UseScore { get; set; } // dùng để submit ngược lại nếu cần
 
+        public string InvoiceId { get; set; }
+        public int ScoreUsed { get; set; }
+        public string TicketsConverted { get; set; }
     }
 }

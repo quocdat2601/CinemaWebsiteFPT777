@@ -72,5 +72,26 @@ namespace MovieTheater.Repository
         {
             _context.SaveChanges();
         }
+
+        public Member GetByIdentityCard(string identityCard)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .FirstOrDefault(m => m.Account.IdentityCard == identityCard);
+        }
+
+        public Member GetByAccountId(string accountId)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .FirstOrDefault(m => m.AccountId == accountId);
+        }
+
+        public Member GetByMemberId(string memberId)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .FirstOrDefault(m => m.MemberId == memberId);
+        }
     }
 }

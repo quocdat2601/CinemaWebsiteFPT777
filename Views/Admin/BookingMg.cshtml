@@ -3,6 +3,10 @@
 
 <h2 class="text-center">Booking Management</h2>
 
+<div class="text-center mb-2">
+    <a href="@Url.Action("InitiateTicketSellingForMember", "Admin", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-sm btn-primary">Sell Ticket</a>
+</div>
+
 <form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchBooking();">
     <input type="hidden" name="tab" value="EmployeeMg" />
     <div class="input-group" style="max-width: 600px;">
@@ -21,8 +25,7 @@
             <th>Identity Card</th>
             <th>Phone Number</th>
             <th>Schedule Time</th>
-          
-          
+            <th>Action</th>
         </tr>
     </thead>
 
@@ -45,8 +48,11 @@
                     <td>@(account?.IdentityCard ?? "N/A")</td>
                     <td>@(account?.PhoneNumber ?? "N/A")</td>
                     <td>@(Invoice.ScheduleShowTime ?? "N/A")</td>
-                
-
+                    <td>
+                        <a href="@Url.Action("TicketInfo", "Admin", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                            <i class="fas fa-info-circle"></i> Details
+                        </a>
+                    </td>
                 </tr>
             }
         }

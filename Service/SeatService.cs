@@ -61,6 +61,11 @@ namespace MovieTheater.Service
             return await _repository.GetSeatTypesAsync();
         }
 
+        public Seat GetSeatByName(string seatName)
+        {
+            return _repository.GetSeatByName(seatName);
+        }
+
     }
 
 }
