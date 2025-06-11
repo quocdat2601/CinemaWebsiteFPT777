@@ -1,280 +1,266 @@
 ﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
 @{
-    var movieId = Model.MovieId;
-    var date = Model.ShowDate;
-    var time = Model.ShowTime;
-    var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
-    var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
-    var seatTypes = Model.SeatTypes;
+	var movieId = Model.MovieId;
+	var date = Model.ShowDate;
+	var time = Model.ShowTime;
+	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
+	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
+	var seatTypes = Model.SeatTypes;
+
+	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
+	string returnLink;
+	if (isAdminSell)
+	{
+		// Admin flow: return to select showtime page
+		returnLink = Url.Action("Select", "Showtime", new { area = "Admin" });
+	}
+	else
+	{
+		returnLink = Url.Action("TicketBooking", "Booking");
+	}
 }
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4">
-    @* Add Return Button at the top *@
-    @if (!string.IsNullOrEmpty(Model.ReturnUrl))
-    {
-        <div class="text-start p-3">
-            <a href="@Model.ReturnUrl" class="btn btn-secondary">&larr; Return</a>
-        </div>
-    }
+	<div class="text-start p-3">
+		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+	</div>
 
-    <h2 class="text-center mb-4">SELECT SEATS</h2>
-    @* Add seat quantity selection combobox and message container - Copied and adapted from original SelectSeat *@
-     <div class="row mb-4 align-items-center">
-         <div class="col-md-4">
-              <div class="form-group row align-items-center">
-                 <label for="seatQuantity" class="col-auto col-form-label">Number of Seats:</label>
-                 <div class="col-sm-4">
-                     <select id="seatQuantity" class="form-select form-select-sm">
-                         @for (int i = 0; i <= 8; i++)
-                         {
-                             <option value="@i">@i</option>
-                         }
-                     </select>
-                 </div>
-             </div>
-              @* Container for message to prevent layout shift *@
-              <div style="min-height: 1.5em;"> @* Adjust min-height as needed based on message size *@
-                  <div id="seatMessage" class="mt-2 text-danger"></div>
-              </div>
-         </div>
-          <div class="col-md-8 text-end">
-          </div>
-     </div>
+	<h2 class="text-center mb-4">SELECT SEATS</h2>
+	<div class="row mb-4 align-items-center">
+		<div class="col-md-4">
+			<div class="form-group row align-items-center">
+				<label for="seatQuantity" class="col-auto col-form-label">Number of Seats:</label>
+				<div class="col-sm-4">
+					<select id="seatQuantity" class="form-select form-select-sm">
+						@for (int i = 0; i <= 8; i++)
+						{
+							<option value="@i">@i</option>
+						}
+					</select>
+				</div>
+			</div>
+			<div style="min-height: 1.5em;">
+				<div id="seatMessage" class="mt-2 text-danger"></div>
+			</div>
+		</div>
+		<div class="col-md-8 text-end">
+		</div>
+	</div>
 
-    @* Movie and Showtime Information - Removed as requested *@
+	<div class="screen-label text-center mb-4">
+		@Model.CinemaRoomName
+	</div>
 
-    <div class="screen-label text-center mb-4">
-        Screen
-    </div>
+	<div class="seat-layout-bordered-area" style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
+		<div class="seat-container">
+			<table class="table table-bordered text-center">
+				<tbody>
+					@for (int row = 1; row <= Model.SeatLength; row++)
+					{
+						<tr>
+							@for (int col = 1; col <= Model.SeatWidth; col++)
+							{
+								var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+								if (seat != null)
+								{
+									var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+									bool isDisabledType = seatType?.TypeName == "Disabled";
+									bool isBooked = seat.SeatStatusId == 2;
 
-    @* Add border around seat container and legends *@@* Start of bordered section *@
-    <div class="seat-layout-bordered-area" style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
+									var seatStyle = isDisabledType ? "border: none;" : isBooked ? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+									var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-        <div class="seat-container">
-            <table class="table table-bordered text-center">
-                <tbody>
-                    @for (int row = 1; row <= Model.SeatLength; row++)
-                    {
-                        <tr>
-                            @for (int col = 1; col <= Model.SeatWidth; col++)
-                            {
-                                var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-                                if (seat != null)
-                                {
-                                    var isBooked = bookedSeats.Contains(seat.SeatId);
-                                    var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-                                    var seatStyle = $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+									<td style="@seatStyle"
+										data-seat-id="@seat.SeatId"
+										data-seat-name="@seat.SeatName"
+										data-seat-type="@seatType?.TypeName"
+										data-seat-price="@seatType?.PricePercent"
+										class="@tdClass"
+										@(isDisabledType || isBooked ? "disabled" : "")
+										@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
+										<span class="material-icons">
+											@(isDisabledType ? "" : "chair")
+										</span>
+									</td>
+								}
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
 
-                                    <td style="@seatStyle" 
-                                        data-seat-id="@seat.SeatId"
-                                        data-seat-name="@seat.SeatName"
-                                        data-seat-type="@seatType?.TypeName"
-                                        data-seat-price="@seatType?.PricePercent"
-                                        @(isBooked ? "disabled" : "")
-                                         onclick="@(isBooked ? "" : "selectSeat(this)")">
-                                        <span class="material-icons">
-                                            chair
-                                        </span>
-                                    </td>
-                                }
-                            }
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+		<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
+			@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+			{
+				<div class="d-flex align-items-center me-3">
+					<span style="display: inline-block; width: 20px; height: 20px; background-color: @type.ColorHex; margin-right: 5px; border-radius: 3px;"></span>
+					<span>@type.TypeName</span>
+				</div>
+			}
+			<div class="d-flex align-items-center me-3">
+				<span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
+				<span>Selected</span>
+			</div>
+			<div class="d-flex align-items-center me-3">
+				<span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
+				<span>Booked</span>
+			</div>
+		</div>
+	</div>
 
-        @* Seat Legend - Updated to colored squares and text *@
-        <div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
-            @foreach (var type in seatTypes)
-            {
-                <div class="d-flex align-items-center me-3">
-                    <span style="display: inline-block; width: 20px; height: 20px; background-color: @type.ColorHex; margin-right: 5px; border-radius: 3px;"></span>
-                    <span>@type.TypeName</span>
-                </div>
-            }
-            <div class="d-flex align-items-center me-3">
-                <span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
-                <span>Selected</span>
-            </div>
-            <div class="d-flex align-items-center me-3">
-                <span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
-                <span>Booked</span>
-            </div>
-        </div>
-    </div>
+	<div id="selectionSummary" class="container mt-4 mb-4 bg-light p-4 rounded shadow" style="display:none; max-width: 700px;">
+		<h5 class="text-center mb-3">Booking Summary</h5>
+		<div class="row">
+			<div class="col-md-6 mb-2">
+				<p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
+				<p><strong>Date:</strong> @date.ToString("yyyy-MM-dd")</p>
+				<p><strong>@Model.CinemaRoomName</strong></p>
+			</div>
+			<div class="col-md-6 mb-2">
+				<p><strong>Movie:</strong> @Model.MovieName</p>
+				<p><strong>Time:</strong> @time</p>
+				<p><strong>Total Price:</strong> <span id="totalPrice"></span> VND</p>
+			</div>
+		</div>
+	</div>
 
-    @* Booking Summary - Keep this section *@
-    <div id="selectionSummary" class="container mt-4 mb-4 bg-light p-4 rounded shadow" style="display:none; max-width: 700px;">
-        <h5 class="text-center mb-3">Booking Summary</h5>
-        <div class="row">
-            <div class="col-md-6 mb-2">
-                <p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
-                <p><strong>Date:</strong> @date.ToString("yyyy-MM-dd")</p>
-                <p><strong>@Model.CinemaRoomName</strong></p>
-            </div>
-            <div class="col-md-6 mb-2">
-                <p><strong>Movie:</strong> @Model.MovieName</p>
-                <p><strong>Time:</strong> @time</p>
-                <p><strong>Total Price:</strong> <span id="totalPrice"></span> VND</p>
-            </div>
-        </div>
-    </div>
-
-    @if (!string.IsNullOrEmpty(time))
-    {
-        <div class="text-center mb-4">
-            <button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
-        </div>
-    }
+	@if (!string.IsNullOrEmpty(time))
+	{
+		<div class="text-center mb-4">
+			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+		</div>
+	}
 </div>
 
 @section Scripts {
-    <script>
-        let selectedSeats = new Set();
-        // maxSeats variable is not strictly needed, quantity is read directly from the dropdown
+	<script>
+		let selectedSeats = new Set();
 
-        function selectSeat(clickedTd) {
-            const seatId = clickedTd.getAttribute('data-seat-id');
+		function selectSeat(clickedTd) {
+			const seatId = clickedTd.getAttribute('data-seat-id');
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
 
-            const quantity = parseInt(document.getElementById('seatQuantity').value);
-            // Add check to prevent selection if quantity is 0
-            if (quantity === 0) {
-                return;
-            }
+			if (quantity === 0) {
+				return;
+			}
 
-            // Prevent selecting occupied seats (handled by disabled attribute and onclick condition)
-            if (clickedTd.hasAttribute('disabled')) {
-                return;
-            }
+			if (clickedTd.hasAttribute('disabled')) {
+				return;
+			}
 
-            if (clickedTd.classList.contains('selected-seat')) {
-                // Deselect the seat
-                clickedTd.classList.remove('selected-seat');
-                selectedSeats.delete(seatId);
+			clickedTd.classList.toggle('selected-seat');
+			if (selectedSeats.has(seatId)) {
+				selectedSeats.delete(seatId);
+			} else {
+				selectedSeats.add(seatId);
+			}
 
-                // Update state after deselection
-                updateSelectionSummary();
-                updateSeatMessage();
-                updateBookButtonState();
+			updateSelectionSummary();
+			updateSeatMessage();
+			updateBookButtonState();
+		}
 
-            } else {
-                // Select the seat
-                // Allow selection, update state
-                clickedTd.classList.add('selected-seat');
-                selectedSeats.add(seatId);
+		function updateSeatMessage() {
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
+			const selectedCount = selectedSeats.size;
+			const messageElement = document.getElementById('seatMessage');
 
-                // Update state after successful selection
-                updateSelectionSummary();
-                updateSeatMessage();
-                updateBookButtonState();
-            }
-        }
-
-        function updateSeatMessage() {
-            const quantity = parseInt(document.getElementById('seatQuantity').value);
-            const selectedCount = selectedSeats.size;
-
-            const messageElement = document.getElementById('seatMessage');
-
-            if (quantity === 0) {
-                 messageElement.textContent = '';
-            } else if (selectedCount < quantity) {
-                messageElement.textContent = `Please select ${quantity - selectedCount} more seat(s)`;
-            } else if (selectedCount > quantity) {
-                messageElement.textContent = `Please select only ${quantity} seat(s)`;
-            } else {
-                messageElement.textContent = '';
-            }
-        }
+			if (quantity === 0) {
+				messageElement.textContent = '';
+			} else if (selectedCount < quantity) {
+				messageElement.textContent = `Please select ${quantity - selectedCount} more seat(s)`;
+			} else if (selectedCount > quantity) {
+				messageElement.textContent = `Please select only ${quantity} seat(s)`;
+			} else {
+				messageElement.textContent = '';
+			}
+		}
 
         // Renamed from updateContinueButton and updateBookButton to clarify purpose
         function updateBookButtonState() {
             const quantity = parseInt(document.getElementById('seatQuantity').value);
             const bookButton = document.getElementById('bookButton');
-            // Enable button only if quantity > 0 and selected count matches quantity
-            bookButton.disabled = quantity > 0 && selectedSeats.size !== quantity;
+            // Disable button if quantity is 0, or if selected count doesn't match quantity
+            bookButton.disabled = (quantity === 0) || (selectedSeats.size !== quantity);
         }
 
-        // Update selection summary (kept from previous View.cshtml)
-        function updateSelectionSummary() {
-            const summary = document.getElementById('selectionSummary');
-            const selectedSeatNames = document.getElementById('selectedSeatNames');
-            const totalPrice = document.getElementById('totalPrice');
-            
-            if (selectedSeats.size > 0) {
-                let total = 0;
-                let seatNames = [];
+		function updateSelectionSummary() {
+			const summary = document.getElementById('selectionSummary');
+			const selectedSeatNames = document.getElementById('selectedSeatNames');
+			const totalPrice = document.getElementById('totalPrice');
 
-                 selectedSeats.forEach(seatId => {
-                     const td = document.querySelector(`td[data-seat-id="${seatId}"]`);
-                     if (td) {
-                         const seatName = td.getAttribute('data-seat-name');
-                         const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
-                         seatNames.push(seatName);
-                         // Assuming base price is 100 for calculation example, adjust as needed
-                         total += 100 * (pricePercent / 100);
-                     }
-                 });
+			if (selectedSeats.size > 0) {
+				let total = 0;
+				let seatNames = [];
 
-                selectedSeatNames.textContent = seatNames.join(', ');
-                totalPrice.textContent = total.toLocaleString("en-US", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                });
-                summary.style.display = 'block';
-            } else {
-                summary.style.display = 'none';
-            }
-        }
+				document.querySelectorAll('.selected-seat').forEach(td => {
+					const seatName = td.getAttribute('data-seat-name');
+					const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+					seatNames.push(seatName);
+					total += pricePercent;
+				});
 
-        // Handle change in the number of seats dropdown
-        document.getElementById('seatQuantity').addEventListener('change', function() {
-            // Clear selected seats and their visual indication
-            selectedSeats.clear();
-            document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+				selectedSeatNames.textContent = seatNames.join(', ');
+				totalPrice.textContent = total.toLocaleString("en-US", {
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 0
+				});
+				summary.style.display = 'block';
+			} else {
+				summary.style.display = 'none';
+			}
+		}
 
-            // Update messages and button state
-            updateSeatMessage();
-            updateBookButtonState();
-            updateSelectionSummary(); // Hide the summary section if no seats are selected
-        });
+		document.getElementById('seatQuantity').addEventListener('change', function() {
+			selectedSeats.clear();
+			document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+			updateSeatMessage();
+			updateBookButtonState();
+			updateSelectionSummary();
+		});
 
-        // Handle click on Book button (kept from previous View.cshtml)
-        document.getElementById('bookButton').addEventListener('click', function() {
-             const quantity = parseInt(document.getElementById('seatQuantity').value);
-             // Prevent navigation if button is disabled or quantity doesn't match selected count
-             if (this.disabled || (quantity > 0 && selectedSeats.size !== quantity)) return;
+		document.getElementById('bookButton').addEventListener('click', function() {
+			const quantity = parseInt(document.getElementById('seatQuantity').value);
+			if (this.disabled || (quantity > 0 && selectedSeats.size !== quantity)) return;
 
-            const movieId = "@movieId";
-            const showDate = "@date.ToString("yyyy-MM-dd")";
-            const showTime = "@time";
+			const selectedSeatIds = Array.from(selectedSeats);
+			const data = {
+				movieId: '@movieId',
+				showDate: '@date.ToString("yyyy-MM-dd")',
+				showTime: '@time',
+				selectedSeatIds: selectedSeatIds
+			};
 
-            // Correctly format selectedSeatIds for URL query string
-            const selectedSeatIdsArray = Array.from(selectedSeats);
-            const selectedSeatIdsQuery = selectedSeatIdsArray.map(id => `selectedSeatIds=${id}`).join('&');
-
-            const returnUrl = "@Model.ReturnUrl";
-
-            let redirectUrl;
+			const params = new URLSearchParams();
+			for (const key in data) {
+				if (Array.isArray(data[key])) {
+					data[key].forEach(item => params.append(key, item));
+				} else {
+					params.append(key, data[key]);
+				}
+			}
 
             const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
             if (isAdminSell) {
-                redirectUrl = `/Admin/ConfirmTicketForAdmin?movieId=${movieId}&showDate=${showDate}&showTime=${showTime}&${selectedSeatIdsQuery}`;
+				window.location.href = `/Admin/ConfirmTicketForAdmin?${params.toString()}`;
             } else {
-                redirectUrl = `/Booking/Information?movieId=${movieId}&showDate=${showDate}&showTime=${showTime}&${selectedSeatIdsQuery}`;
+				window.location.href = `/Booking/Information?${params.toString()}`;
             }
             window.location.href = redirectUrl;
         });
 
-        // Initial calls to set the correct state on page load
-        updateSeatMessage();
-        updateBookButtonState();
-        updateSelectionSummary(); // Hide summary initially
+		
+        // On page load, ensure button is disabled if seatQuantity is 0
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBookButtonState();
+        });
 
+		updateSeatMessage();
+		updateBookButtonState();
+		updateSelectionSummary();
     </script>
 }
-

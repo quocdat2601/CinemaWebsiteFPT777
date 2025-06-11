@@ -95,7 +95,7 @@ namespace MovieTheater.Controllers
         public IActionResult Select(DateTime? date, string returnUrl)
         {
             // 1. Get all available screening dates as DateTime
-            var availableDates = _context.ShowDates
+            var availableDates = _context.ShowDates 
                 .OrderBy(d => d.ShowDate1)
                 .Select(d => d.ShowDate1)
                 .ToList() // materialize as List<DateOnly?>
@@ -121,7 +121,7 @@ namespace MovieTheater.Controllers
             if (selectedShowDate == null)
             {
                 // Handle case where no show date found
-                 var emptyModel = new ShowtimeSelectionViewModel
+                var emptyModel = new ShowtimeSelectionViewModel
                 {
                     AvailableDates = availableDates,
                     SelectedDate = selectedDate,

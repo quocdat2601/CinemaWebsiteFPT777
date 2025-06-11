@@ -12,12 +12,17 @@
     ViewData["Title"] = "Ticket selling management – Select movie and showtime";
 }
 
-@if (!string.IsNullOrEmpty(Model.ReturnUrl))
-{
-    <div class="text-start p-3">
-        <a href="@Model.ReturnUrl" class="btn btn-secondary">&larr; Return</a>
-    </div>
+@{
+    var returnUrl = Context.Request.Query["ReturnUrl"].ToString();
+    if (string.IsNullOrEmpty(returnUrl))
+    {
+        // Default to Booking Management if no ReturnUrl is provided
+        returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+    }
 }
+<div class="text-start p-3">
+    <a href="@returnUrl" class="btn btn-secondary">&larr; Return</a>
+</div>
 
 <h2 class="text-center mb-4">SHOWTIMES</h2>
 

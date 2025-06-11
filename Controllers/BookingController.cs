@@ -77,6 +77,7 @@ namespace MovieTheater.Controllers
 
                 seats.Add(new SeatDetailViewModel
                 {
+                    SeatId = seat.SeatId,
                     SeatName = seat.SeatName,
                     SeatType = seatType?.TypeName ?? "Standard",
                     Price = price
@@ -124,12 +125,18 @@ namespace MovieTheater.Controllers
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
                 string seatList = string.Join(",", seatNames);
 
+                foreach (var seat in model.SelectedSeats)
+                {
+                    _seatService.UpdateSeatStatus(seat.SeatId);
+
+                }
+                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice); //GIỚI HẠN USE SCORE = TOTAL PRICE
                 // Tạo đối tượng Invoice
                 var invoice = new Invoice
                 {
                     InvoiceId = await _service.GenerateInvoiceIdAsync(),
                     AccountId = userId,
-                    AddScore = (int)(model.TotalPrice * 0.1m),
+                    AddScore = (int)(model.TotalPrice * 0.01m),
                     BookingDate = DateTime.Now,
                     MovieName = model.MovieName,
                     ScheduleShow = model.ShowDate,
