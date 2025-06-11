@@ -45,7 +45,9 @@
                     <td>@(account?.PhoneNumber ?? "N/A")</td>
                     <td>@(Invoice.ScheduleShowTime ?? "N/A")</td>
                     <td>
-                        <a href="@Url.Action("TicketInfo", "Admin", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">View Details</a>
+                        <a href="@Url.Action("TicketInfo", "Admin", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                            <i class="fas fa-info-circle"></i> Details
+                        </a>
                     </td>
                 </tr>
             }
