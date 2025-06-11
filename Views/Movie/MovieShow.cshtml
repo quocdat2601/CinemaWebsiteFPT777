@@ -57,7 +57,7 @@
                 @foreach (var showDate in Model.AvailableShowDates)
                 {
                     <div class="form-check me-3">
-                        <input class="form-check-input show-date-checkbox" type="radio" name="SelectedShowDateIds" value="@showDate.ShowDateId" id="showDate_@showDate.ShowDateId" />
+                        <input class="form-check-input show-date-checkbox" type="checkbox" name="SelectedShowDateIds" value="@showDate.ShowDateId" id="showDate_@showDate.ShowDateId" />
                         <label class="form-check-label" for="showDate_@showDate.ShowDateId">
                             @(showDate.ShowDate1?.ToString("dd/MM/yyyy") ?? showDate.DateName)
                         </label>
@@ -124,12 +124,74 @@
 
         let movieShows = [];
 
+        async function updateAvailableSchedules() {
+            const selectedRoom = cinemaRoomSelect.value;
+            const selectedDate = Array.from(showDateCheckboxes)
+                .find(cb => cb.checked)?.value;
+
+            if (!selectedRoom || !selectedDate) {
+                // If no room or date selected, hide all schedules
+                scheduleCheckboxes.forEach(cb => {
+                    cb.parentElement.style.display = 'none';
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Movie/GetAvailableSchedules?showDateId=${selectedDate}&cinemaRoomId=${selectedRoom}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch available schedules');
+                }
+                const availableSchedules = await response.json();
+                
+                // Hide all schedules first
+                scheduleCheckboxes.forEach(cb => {
+                    cb.parentElement.style.display = 'none';
+                });
+
+                // Show only available schedules
+                availableSchedules.forEach(schedule => {
+                    const checkbox = document.querySelector(`#schedule_${schedule.scheduleId}`);
+                    if (checkbox) {
+                        checkbox.parentElement.style.display = 'block';
+                    }
+                });
+            } catch (error) {
+                console.error('Error updating available schedules:', error);
+            }
+        }
+
         function updateAddButtonState() {
             const hasRoom = cinemaRoomSelect.value !== '';
             const hasDate = Array.from(showDateCheckboxes).some(cb => cb.checked);
             const hasSchedule = Array.from(scheduleCheckboxes).some(cb => cb.checked);
             addMovieShowBtn.disabled = !(hasRoom && hasDate && hasSchedule);
         }
+
+        // Add event listeners for room and date changes
+        cinemaRoomSelect.addEventListener('change', async function() {
+            await updateAvailableSchedules();
+            updateAddButtonState();
+        });
+
+        showDateCheckboxes.forEach(cb => {
+            cb.addEventListener('change', async function() {
+                // Uncheck other dates
+                showDateCheckboxes.forEach(otherCb => {
+                    if (otherCb !== cb) {
+                        otherCb.checked = false;
+                    }
+                });
+                await updateAvailableSchedules();
+                updateAddButtonState();
+            });
+        });
+
+        scheduleCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateAddButtonState);
+        });
+
+        addMovieShowBtn.addEventListener('click', addMovieShow);
 
         async function loadExistingMovieShows() {
             try {
@@ -483,22 +545,13 @@
                     }
                 }
 
-                // If all successful, redirect to the appropriate page
-                const userRole = '@userRole';
-                if (userRole === 'Admin') {
-                    window.location.href = '/Admin/MainPage?tab=ScheduleMg';
-                } else {
-                    window.location.href = '/Employee/MainPage?tab=ScheduleMg';
-                }
+                // Show success message and reload the page to refresh the data
+                alert('Movie shows saved successfully!');
+                window.location.reload();
             } catch (error) {
                 console.error('Error saving movie shows:', error);
                 alert('An error occurred while saving the movie shows. Please try again.');
             }
         });
-
-        cinemaRoomSelect.addEventListener('change', updateAddButtonState);
-        showDateCheckboxes.forEach(cb => cb.addEventListener('change', updateAddButtonState));
-        scheduleCheckboxes.forEach(cb => cb.addEventListener('change', updateAddButtonState));
-        addMovieShowBtn.addEventListener('click', addMovieShow);
     });
 </script>

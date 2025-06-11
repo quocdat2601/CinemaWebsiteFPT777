@@ -31,5 +31,6 @@ namespace MovieTheater.Repository
         public Task<List<Movie>> GetAllMoviesAsync();
         public Task<List<DateTime>> GetShowDatesAsync(string movieId);
         public Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);
+        public Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId);
     }
 }

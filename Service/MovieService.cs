@@ -245,5 +245,10 @@ namespace MovieTheater.Service
                 return false;
             }
         }
+
+        public async Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId)
+        {
+            return await _movieRepository.GetAvailableSchedulesAsync(showDateId, cinemaRoomId);
+        }
     }
 }

@@ -369,5 +369,23 @@ namespace MovieTheater.Repository
                 .OrderBy(t => t)
                 .ToList();
         }
+
+        public async Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId)
+        {
+            // Get all schedules
+            var allSchedules = await _context.Schedules.ToListAsync();
+
+            // Get booked schedules for this room and date
+            var bookedScheduleIds = await _context.MovieShows
+                .Where(ms => ms.ShowDateId == showDateId && ms.CinemaRoomId == cinemaRoomId)
+                .Select(ms => ms.ScheduleId)
+                .ToListAsync();
+
+            // Return schedules that are not booked
+            return allSchedules
+                .Where(s => !bookedScheduleIds.Contains(s.ScheduleId))
+                .OrderBy(s => s.ScheduleTime)
+                .ToList();
+        }
     }
 }

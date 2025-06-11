@@ -351,11 +351,12 @@ namespace MovieTheater.Controllers
             {
                 // The actual movie show creation is handled by the JavaScript AJAX calls
                 TempData["SuccessMessage"] = "Movie shows updated successfully!";
-                string role = GetUserRole();
-                if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "ScheduleMg" });
-                else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "ScheduleMg" });
+                return View(model);
+                //string role = GetUserRole();
+                //if (role == "Admin")
+                //    return RedirectToAction("MainPage", "Admin", new { tab = "ScheduleMg" });
+                //else
+                //    return RedirectToAction("MainPage", "Employee", new { tab = "ScheduleMg" });
             }
             catch (Exception ex)
             {
@@ -421,6 +422,21 @@ namespace MovieTheater.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting movie shows for movie {MovieId}", movieId);
+                return BadRequest();
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableSchedules(int showDateId, int cinemaRoomId)
+        {
+            try
+            {
+                var availableSchedules = await _movieService.GetAvailableSchedulesAsync(showDateId, cinemaRoomId);
+                return Json(availableSchedules);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available schedules");
                 return BadRequest();
             }
         }

@@ -25,5 +25,6 @@ namespace MovieTheater.Service
         public List<ShowDate> GetAllShowDates();
         public List<Schedule> GetAllSchedules();
         public bool DeleteAllMovieShows(string movieId);
+        public Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId);
     }
 }
