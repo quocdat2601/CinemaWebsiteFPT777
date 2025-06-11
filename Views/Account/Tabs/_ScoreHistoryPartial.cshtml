@@ -1,4 +1,13 @@
-@model IEnumerable<MovieTheater.ViewModels.ScoreHistoryViewModel>
+﻿@model IEnumerable<MovieTheater.ViewModels.ScoreHistoryViewModel>
+@if (ViewBag.CurrentScore != null)
+{
+    <div class="text-center mb-3">
+        <div class="alert alert-info d-inline-block">
+            <strong>🎯 Current Score:</strong> @ViewBag.CurrentScore pts
+        </div>
+    </div>
+}
+
 @if (Model == null || !Model.Any())
 {
     <div class="alert alert-info">No data found.</div>
@@ -22,11 +31,11 @@ else
                 <td class="text-end">
                     @if (item.Type == "add")
                     {
-                        <span class="text-success">+@item.Score</span>
+                        <span class="badge bg-success">+@item.Score</span>
                     }
                     else if (item.Type == "use")
                     {
-                        <span class="text-danger">-@item.Score</span>
+                        <span class="badge bg-danger">-@item.Score</span>
                     }
                 </td>
             </tr>

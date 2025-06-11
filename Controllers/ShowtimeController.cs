@@ -121,7 +121,7 @@ namespace MovieTheater.Controllers
             if (selectedShowDate == null)
             {
                 // Handle case where no show date found
-                 var emptyModel = new ShowtimeSelectionViewModel
+                var emptyModel = new ShowtimeSelectionViewModel
                 {
                     AvailableDates = availableDates,
                     SelectedDate = selectedDate,

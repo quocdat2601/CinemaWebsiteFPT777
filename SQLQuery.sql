@@ -47,10 +47,10 @@ CREATE TABLE Invoice (
     Add_Score INT,
     BookingDate DATETIME,
     MovieName VARCHAR(255),
-    Schedule_Show DATE,
+    Schedule_Show DATETIME,
     Schedule_Show_Time VARCHAR(255),
     Status INT,
-    Total_Money INT,
+    Total_Money DECIMAL,
     Use_Score INT,
     Seat VARCHAR(20),
     Account_ID VARCHAR(10),
@@ -178,7 +178,8 @@ CREATE TABLE CoupleSeat (
 INSERT INTO Seat_Type (Type_Name, Price_Percent, ColorHex) VALUES
 ('Normal', 40000, '#cccbc8'),
 ('VIP', 50000, '#fa7a7a'),
-('Couple', 60000, '#ffa1f1');
+('Couple', 60000, '#ffa1f1'),
+('Disabled', 0, '#2F2F2F');
 
 INSERT INTO Seat_Status (Status_Name) VALUES
 ('Available'),
