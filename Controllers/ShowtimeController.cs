@@ -95,7 +95,7 @@ namespace MovieTheater.Controllers
         public IActionResult Select(DateTime? date, string returnUrl)
         {
             // 1. Get all available screening dates as DateTime
-            var availableDates = _context.ShowDates
+            var availableDates = _context.ShowDates 
                 .OrderBy(d => d.ShowDate1)
                 .Select(d => d.ShowDate1)
                 .ToList() // materialize as List<DateOnly?>

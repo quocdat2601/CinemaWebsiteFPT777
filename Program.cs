@@ -105,6 +105,9 @@ namespace MovieTheater
             builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
             builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
             builder.Services.AddHostedService<SeatResetService>();
+            builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
 
             builder.Services.AddHttpContextAccessor();
 

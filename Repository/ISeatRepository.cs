@@ -15,5 +15,6 @@ namespace MovieTheater.Repository
         Task<List<SeatType>> GetSeatTypesAsync();
         public void UpdateSeatAndScheduleStatus(int seatId, int statusId);
         Task ResetSeatsAfterShowAsync(string movieId, DateTime showDate, string showTime);
+        Seat GetSeatByName(string seatName);
     }
 }

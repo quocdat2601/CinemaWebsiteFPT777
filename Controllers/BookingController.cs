@@ -130,13 +130,13 @@ namespace MovieTheater.Controllers
                     _seatService.UpdateSeatStatus(seat.SeatId);
 
                 }
-
+                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice); //GIỚI HẠN USE SCORE = TOTAL PRICE
                 // Tạo đối tượng Invoice
                 var invoice = new Invoice
                 {
                     InvoiceId = await _service.GenerateInvoiceIdAsync(),
                     AccountId = userId,
-                    AddScore = (int)(model.TotalPrice * 0.1m),
+                    AddScore = (int)(model.TotalPrice * 0.01m),
                     BookingDate = DateTime.Now,
                     MovieName = model.MovieName,
                     ScheduleShow = model.ShowDate,

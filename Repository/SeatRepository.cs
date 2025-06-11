@@ -141,5 +141,11 @@ namespace MovieTheater.Repository
 
             await _context.SaveChangesAsync();
         }
+
+        public Seat GetSeatByName(string seatName)
+        {
+            return _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
+        }
+
     }
 }

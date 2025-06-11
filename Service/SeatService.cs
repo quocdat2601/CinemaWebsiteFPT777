@@ -73,5 +73,10 @@ namespace MovieTheater.Service
         {
             await _repository.ResetSeatsAfterShowAsync(movieId, showDate, showTime);
         }
+        public Seat GetSeatByName(string seatName)
+        {
+            return _repository.GetSeatByName(seatName);
+        }
+
     }
 }
