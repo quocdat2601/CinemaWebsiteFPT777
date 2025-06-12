@@ -276,6 +276,8 @@ namespace MovieTheater.Repository
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.CinemaRoom)
                 .Where(ms => ms.MovieId == movieId)
+                .OrderBy(ms => ms.ShowDate.ShowDate1)
+                .ThenBy(ms => ms.Schedule.ScheduleTime)
                 .ToList();
         }
 

@@ -19,6 +19,8 @@ public partial class Invoice
 
     public int? Status { get; set; }
 
+    public int? RoleId { get; set; }
+
     public decimal? TotalMoney { get; set; }
 
     public int? UseScore { get; set; }
@@ -27,7 +29,7 @@ public partial class Invoice
 
     public string? AccountId { get; set; }
 
-    public int RoleId { get; set; }
-
     public virtual Account? Account { get; set; }
+
+    public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
 }

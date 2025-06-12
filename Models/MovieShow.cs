@@ -21,5 +21,7 @@ public partial class MovieShow
 
     public virtual Schedule? Schedule { get; set; }
 
+    public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
+
     public virtual ShowDate? ShowDate { get; set; }
 }

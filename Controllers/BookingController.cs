@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
+using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
@@ -11,22 +12,53 @@ namespace MovieTheater.Controllers
         private readonly IBookingService _service;
         private readonly ISeatService _seatService;
         private readonly IAccountService _accountService;
+        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly ILogger<BookingController> _logger;
+        private readonly IMovieService _movieService;
 
-        public BookingController(IBookingService service, ISeatService seatService, IAccountService accountService, ILogger<BookingController> logger)
+        public BookingController(
+            IBookingService service, 
+            ISeatService seatService, 
+            IAccountService accountService, 
+            IScheduleSeatRepository scheduleSeatRepository,
+            ILogger<BookingController> logger, 
+            IMovieService movieService)
         {
             _service = service;
             _seatService = seatService;
             _accountService = accountService;
+            _scheduleSeatRepository = scheduleSeatRepository;
             _logger = logger;
+            _movieService = movieService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> TicketBooking(string movieId = null)
+        public IActionResult TicketBooking(string movieId = null)
         {
             var movies = _service.GetAvailableMovies();
             ViewBag.MovieList = movies;
             ViewBag.SelectedMovieId = movieId;
+
+            if (!string.IsNullOrEmpty(movieId))
+            {
+                // Get movie shows for the selected movie
+                var movieShows = _movieService.GetMovieShows(movieId);
+                
+                // Group by date and time
+                var showsByDate = movieShows
+                    .Where(ms => ms.ShowDate?.ShowDate1 != null && ms.Schedule?.ScheduleTime != null)
+                    .GroupBy(ms => ms.ShowDate.ShowDate1.Value.ToString("dd/MM/yyyy"))
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(ms => ms.Schedule.ScheduleTime)
+                              .Distinct()
+                              .OrderBy(t => t)
+                              .ToList()
+                    );
+
+                ViewBag.ShowsByDate = showsByDate;
+            }
+
             return View();
         }
 
@@ -57,6 +89,17 @@ namespace MovieTheater.Controllers
             if (movie == null)
             {
                 return NotFound("Movie not found.");
+            }
+
+            // Get the movie show ID based on the selected date and time
+            var movieShows = _movieService.GetMovieShows(movieId);
+            var selectedMovieShow = movieShows.FirstOrDefault(ms => 
+                ms.ShowDate?.ShowDate1?.ToString("yyyy-MM-dd") == showDate.ToString("yyyy-MM-dd") &&
+                ms.Schedule?.ScheduleTime == showTime);
+
+            if (selectedMovieShow == null)
+            {
+                return NotFound("Movie show not found for the selected date and time.");
             }
 
             var seatTypes = await _seatService.GetSeatTypesAsync();
@@ -95,6 +138,7 @@ namespace MovieTheater.Controllers
                 ShowTime = showTime,
                 SelectedSeats = seats,
                 TotalPrice = totalPrice,
+                MovieShowId = selectedMovieShow.MovieShowId,
 
                 FullName = currentUser.FullName,
                 Email = currentUser.Email,
@@ -125,13 +169,9 @@ namespace MovieTheater.Controllers
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
                 string seatList = string.Join(",", seatNames);
 
-                foreach (var seat in model.SelectedSeats)
-                {
-                    _seatService.UpdateSeatStatus(seat.SeatId);
-
-                }
-                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice); //GIỚI HẠN USE SCORE = TOTAL PRICE
-                // Tạo đối tượng Invoice
+                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice);
+                
+                // 1. First create and save the Invoice
                 var invoice = new Invoice
                 {
                     InvoiceId = await _service.GenerateInvoiceIdAsync(),
@@ -147,8 +187,19 @@ namespace MovieTheater.Controllers
                     Seat = seatList
                 };
 
-                // Lưu vào DB
+                // Save Invoice to DB
                 await _service.SaveInvoiceAsync(invoice);
+
+                // 2. Then create ScheduleSeat records with the InvoiceId
+                var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
+                {
+                    MovieShowId = model.MovieShowId,
+                    InvoiceId = invoice.InvoiceId,
+                    SeatId = (int)seat.SeatId,
+                    SeatStatusId = 2
+                });
+
+                await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
 
                 // GIẢM ĐIỂM NẾU USESCORE > 0
                 if (model.UseScore > 0)
@@ -177,7 +228,7 @@ namespace MovieTheater.Controllers
                     movieId = model.MovieId,
                     showDate = model.ShowDate.ToString("yyyy-MM-dd"),
                     showTime = model.ShowTime,
-                    selectedSeatIds = model.SelectedSeats.Select(s => s.SeatName) // Hoặc giữ lại Id nếu cần
+                    selectedSeatIds = model.SelectedSeats.Select(s => s.SeatName)
                 });
             }
         }

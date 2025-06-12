@@ -29,10 +29,7 @@ namespace MovieTheater.Service
         {
             return await Task.FromResult(_repository.GetById(id));
         }
-        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
-        {
-            return await _repository.GetBookedSeatsAsync(movieId, date, time);
-        }
+
         public async Task<List<SeatType>> GetSeatTypesAsync()
         {
             return await _repository.GetSeatTypesAsync();
@@ -61,18 +58,6 @@ namespace MovieTheater.Service
             _repository.Save();
         }
 
-        public void UpdateSeatStatus(int? seatId)
-        {
-            if (seatId == null) return;
-
-            _repository.UpdateSeatAndScheduleStatus(seatId.Value, 2);
-            _repository.Save();
-        }
-
-        public async Task ResetSeatsAfterShowAsync(string movieId, DateTime showDate, string showTime)
-        {
-            await _repository.ResetSeatsAfterShowAsync(movieId, showDate, showTime);
-        }
         public Seat GetSeatByName(string seatName)
         {
             return _repository.GetSeatByName(seatName);

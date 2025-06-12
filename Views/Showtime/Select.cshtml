@@ -10,6 +10,7 @@
 
 @{
     ViewData["Title"] = "Ticket selling management – Select movie and showtime";
+    var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
 @{
@@ -35,13 +36,13 @@
             {
                 if (date.Date == Model.SelectedDate.Date)
                 {
-                    <option value="@date.ToString("yyyy-MM-dd")" selected="selected">
+                    <option value="@date.ToString("dd/MM/yyyy")" selected="selected">
                         @date.ToString("dd MMM ddd")
                     </option>
                 }
                 else
                 {
-                    <option value="@date.ToString("yyyy-MM-dd")">
+                    <option value="@date.ToString("dd/MM/yyyy")">
                         @date.ToString("dd MMM ddd")
                     </option>
                 }
@@ -71,11 +72,11 @@
                                 {
                                     <a asp-action="Select" asp-controller="Seat"
                                        asp-route-movieId="@movie.MovieId"
-                                       asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")"
+                                       asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
                                        asp-route-time="@showtime"
-                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("yyyy-MM-dd"), returnUrl = Model.ReturnUrl })"
+                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
                                        asp-route-isAdminSell="true"
-                                       class="btn btn-outline-primary btn-sm m-1">
+                                       class="btn btn-outline-primary btn-sm m-1 bookBtn">
                                         @showtime
                                     </a>
                                 }
@@ -94,3 +95,15 @@
     - If no showtimes, shows a warning message (AC-04)
     - All data is based on the ViewModel (active schedule, valid showtimes) (AC-05)
 --> 
+
+<script>
+    document.querySelectorAll('.bookBtn').forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+            if (!isAuthenticated) {
+                event.preventDefault();  
+                window.location.href = '@Url.Action("Login", "Account")';
+            }
+        });
+    });
+</script>

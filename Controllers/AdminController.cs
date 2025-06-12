@@ -416,7 +416,7 @@ namespace MovieTheater.Controllers
                 // Mark all selected seats as booked
                 foreach (var seat in model.BookingDetails.SelectedSeats)
                 {
-                    _seatService.UpdateSeatStatus(seat.SeatId);
+
                 }
 
                 // Redirect to confirmation page with invoiceId

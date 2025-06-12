@@ -104,10 +104,9 @@ namespace MovieTheater
             builder.Services.AddScoped<EmailService>();
             builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
             builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
-            builder.Services.AddHostedService<SeatResetService>();
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-
+            builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
 
             builder.Services.AddHttpContextAccessor();
 
@@ -145,6 +144,11 @@ namespace MovieTheater
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Movie}/{action=MovieList}/{id?}");
+
+            app.MapControllerRoute(
+                name: "seat",
+                pattern: "Seat/{action}/{id?}",
+                defaults: new { controller = "Seat", action = "Select" });
 
             app.Run();
         }

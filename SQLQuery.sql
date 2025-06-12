@@ -50,11 +50,24 @@ CREATE TABLE Invoice (
     Schedule_Show DATETIME,
     Schedule_Show_Time VARCHAR(255),
     Status INT,
+	RoleId INT,
     Total_Money DECIMAL,
     Use_Score INT,
     Seat VARCHAR(20),
     Account_ID VARCHAR(10),
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
+);
+
+CREATE TABLE Schedule_Seat (
+    Movie_Show_ID INT,
+	Invoice_ID VARCHAR(10),
+    Seat_ID INT,
+    Seat_Status_ID INT,
+    PRIMARY KEY (Movie_Show_ID, Seat_ID),
+    FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
+	FOREIGN KEY (Invoice_ID) REFERENCES Invoice(Invoice_ID),
+    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID)
 );
 
 CREATE TABLE Employee (
@@ -184,22 +197,6 @@ INSERT INTO Seat_Status (Status_Name) VALUES
 ('Available'),
 ('Booked');
 
-CREATE TABLE Schedule_Seat (
-    Schedule_ID INT,
-    Seat_ID INT,
-    Seat_Status_ID INT,
-    PRIMARY KEY (Schedule_ID, Seat_ID),
-    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID) ON DELETE CASCADE,
-    FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
-    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID)
-);
-
-CREATE TABLE Ticket (
-    Ticket_ID INT PRIMARY KEY IDENTITY(1,1),
-    Price NUMERIC(18, 2),
-    Ticket_Type INT
-);
-
 INSERT INTO Roles (Role_ID, Role_Name) VALUES
 (1, 'Admin'),
 (2, 'Employee'),
@@ -236,12 +233,6 @@ INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('EM005', 'AC008'),
 ('EM006', 'AC009');
 
-INSERT INTO Cinema_Room(Cinema_Room_Name, Seat_Length, Seat_Width) VALUES
-('Screen 1', 10, 8),
-('Screen 2', 10, 8),
-('Screen 3', 10, 8),
-('Screen 4', 10, 8);
-
 INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
 ('2024-03-20', 'Wednesday, March 20'),
 ('2024-03-21', 'Thursday, March 21'),
@@ -277,30 +268,6 @@ INSERT INTO Schedule (Schedule_Time) VALUES
 ('16:00'),
 ('18:00'),
 ('20:00');
-
-INSERT INTO Movie_Show (Movie_ID, Show_Date_ID, Schedule_ID, Cinema_Room_ID) VALUES
-('MV001', 1, 1, 1),  -- March 20, 10:00
-('MV001', 1, 4, 1),  -- March 20, 16:00
-('MV001', 2, 2, 1),  -- March 21, 12:00
-('MV002', 1, 1, 2),  -- March 20, 10:00 (not conflicting with Screen 1)
-('MV002', 2, 3, 2),  -- March 21, 14:00
-('MV002', 3, 5, 2),  -- March 22, 18:00
-('MV003', 1, 3, 1),  -- March 20, 14:00 (Screen 1 is free then)
-('MV003', 2, 6, 1),  -- March 21, 20:00
-('MV004', 1, 6, 3),  -- March 20, 20:00
-('MV004', 2, 4, 3),  -- March 21, 16:00
-('MV004', 3, 2, 3),  -- March 22, 12:00
-('MV005', 6, 2, 2),  -- March 25, 12:00 (Screen 2 is free at that time)
-('MV005', 6, 6, 3),  -- March 25, 20:00 (Screen 3 free at night)
-('MV006', 2, 1, 4),  -- March 21, 10:00
-('MV006', 2, 5, 4),  -- March 21, 18:00
-('MV006', 3, 6, 4),  -- March 22, 20:00
-('MV007', 9, 2, 4),  -- March 28, 12:00 (Screen 4 is free)
-('MV007', 10, 4, 4), -- March 29, 16:00
-('MV008', 10, 1, 1), -- March 29, 10:00
-('MV008', 11, 5, 1), -- March 30, 18:00
-('MV009', 11, 3, 3), -- March 30, 14:00
-('MV009', 12, 1, 3); -- March 31, 10:00
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
