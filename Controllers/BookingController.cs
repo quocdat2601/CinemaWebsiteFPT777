@@ -3,6 +3,7 @@ using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
@@ -12,13 +13,20 @@ namespace MovieTheater.Controllers
         private readonly ISeatService _seatService;
         private readonly IAccountService _accountService;
         private readonly ILogger<BookingController> _logger;
+        private readonly VNPayService _vnPayService;
 
-        public BookingController(IBookingService service, ISeatService seatService, IAccountService accountService, ILogger<BookingController> logger)
+        public BookingController(
+            IBookingService service, 
+            ISeatService seatService, 
+            IAccountService accountService, 
+            ILogger<BookingController> logger,
+            VNPayService vnPayService)
         {
             _service = service;
             _seatService = seatService;
             _accountService = accountService;
             _logger = logger;
+            _vnPayService = vnPayService;
         }
 
         [HttpGet]
@@ -128,7 +136,6 @@ namespace MovieTheater.Controllers
                 foreach (var seat in model.SelectedSeats)
                 {
                     _seatService.UpdateSeatStatus(seat.SeatId);
-
                 }
                 model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice); //GIỚI HẠN USE SCORE = TOTAL PRICE
                 // Tạo đối tượng Invoice
@@ -155,18 +162,9 @@ namespace MovieTheater.Controllers
                 {
                     await _accountService.DeductScoreAsync(userId, model.UseScore);
                 }
-                TempData["MovieName"] = model.MovieName;
-                TempData["ShowDate"] = model.ShowDate.ToString("yyyy-MM-dd");
-                TempData["ShowTime"] = model.ShowTime;
-                TempData["Seats"] = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName));
-                TempData["BookingTime"] = DateTime.Now.ToString("g");
-                TempData["InvoiceId"] = invoice.InvoiceId;
 
-                TempData["OriginalPrice"] = model.TotalPrice.ToString();
-                TempData["UsedScore"] = model.UseScore.ToString();
-                TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
-
-                return RedirectToAction("Success");
+                // Chuyển hướng đến trang thanh toán
+                return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
             catch (Exception ex)
             {
@@ -177,7 +175,7 @@ namespace MovieTheater.Controllers
                     movieId = model.MovieId,
                     showDate = model.ShowDate.ToString("yyyy-MM-dd"),
                     showTime = model.ShowTime,
-                    selectedSeatIds = model.SelectedSeats.Select(s => s.SeatName) // Hoặc giữ lại Id nếu cần
+                    selectedSeatIds = model.SelectedSeats.Select(s => s.SeatName)
                 });
             }
         }
@@ -190,6 +188,48 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        [HttpGet]
+        public IActionResult Payment(string invoiceId)
+        {
+            var invoice = _service.GetInvoiceById(invoiceId);
+            if (invoice == null)
+            {
+                return NotFound();
+            }
 
+            var viewModel = new PaymentViewModel
+            {
+                InvoiceId = invoice.InvoiceId,
+                MovieName = invoice.MovieName,
+                ShowDate = invoice.ScheduleShow ?? DateTime.MinValue,
+                ShowTime = invoice.ScheduleShowTime,
+                Seats = invoice.Seat,
+                TotalAmount = invoice.TotalMoney ?? 0,
+                OrderInfo = $"Thanh toan ve xem phim {invoice.MovieName} - {invoice.Seat}"
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        public IActionResult ProcessPayment(PaymentViewModel model)
+        {
+            try
+            {
+                var paymentUrl = _vnPayService.CreatePaymentUrl(
+                    model.TotalAmount,
+                    model.OrderInfo,
+                    model.InvoiceId
+                );
+
+                return Redirect(paymentUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating payment URL");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tạo URL thanh toán. Vui lòng thử lại sau.";
+                return RedirectToAction("Payment", new { invoiceId = model.InvoiceId });
+            }
+        }
     }
 }

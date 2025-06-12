@@ -77,5 +77,10 @@ namespace MovieTheater.Service
             return "INV" + nextNumber.ToString("D3");
         }
 
+        public Invoice? GetInvoiceById(string invoiceId)
+        {
+            return _context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
+        }
+
     }
 }
