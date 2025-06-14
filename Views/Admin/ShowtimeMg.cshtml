@@ -1,0 +1,131 @@
+﻿@model MovieTheater.ViewModels.ShowtimeManagementViewModel
+
+<h2 class="text-center">Showtime List</h2>
+
+<div class="p-2 rounded">
+    <div class="d-flex justify-content-center gap-3 mb-2">
+        <select id="dateFilter" class="form-select w-auto">
+            <option value="">All dates</option>
+            @foreach (var date in Model.AvailableDates)
+            {
+                if (date.Date == Model.SelectedDate.Date)
+                {
+                    <option value="@date.ToString("dd/MM/yyyy")" selected="selected">
+                        @date.ToString("dd MMM ddd")
+                    </option>
+                }
+                else
+                {
+                    <option value="@date.ToString("dd/MM/yyyy")">
+                        @date.ToString("dd MMM ddd")
+                    </option>
+                }
+            }
+        </select>
+
+        <select id="scheduleFilter" class="form-select w-auto">
+            @if (Model.AvailableSchedules == null || !Model.AvailableSchedules.Any())
+            {
+                <option value="">No schedules available</option>
+            }
+            else
+            {
+                <option value="">All times</option>
+                @foreach (var schedule in Model.AvailableSchedules)
+                {
+                    <option value="@schedule.ScheduleId">@schedule.ScheduleTime</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+<div class="bg-light p-4 rounded">
+    @if (Model.MovieShows == null || !Model.MovieShows.Any())
+    {
+        <div class="alert alert-warning text-center">No showtime</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Movie Name</th>
+                        <th>Date</th>
+                        <th>
+                            Time
+                            <button class="btn btn-sm btn-link p-0 ms-1" onclick="sortTime('asc')">
+                                <i class="bi bi-arrow-up"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link p-0" onclick="sortTime('desc')">
+                                <i class="bi bi-arrow-down"></i>
+                            </button>
+                        </th>
+                        <th>Screen</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="showtimeTableBody">
+                    @foreach (var show in Model.MovieShows)
+                    {
+                        <tr class="showtime-row" 
+                            data-date="@show.ShowDate?.ShowDate1?.ToString("dd/MM/yyyy")"
+                            data-schedule="@show.ScheduleId"
+                            data-time="@show.Schedule?.ScheduleTime">
+                            <td>@show.Movie?.MovieNameEnglish</td>
+                            <td>@show.ShowDate?.ShowDate1?.ToString("dd MMM yyyy")</td>
+                            <td>@show.Schedule?.ScheduleTime</td>
+                            <td>@show.CinemaRoom?.CinemaRoomName</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary">View Showroom</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<script>
+    document.getElementById('dateFilter').addEventListener('change', filterShows);
+    document.getElementById('scheduleFilter').addEventListener('change', filterShows);
+
+    function filterShows() {
+        const selectedDate = document.getElementById('dateFilter').value;
+        const selectedSchedule = document.getElementById('scheduleFilter').value;
+        const rows = document.querySelectorAll('.showtime-row');
+
+        rows.forEach(row => {
+            const rowDate = row.dataset.date;
+            const rowSchedule = row.dataset.schedule;
+            
+            const dateMatch = !selectedDate || rowDate === selectedDate;
+            const scheduleMatch = !selectedSchedule || rowSchedule === selectedSchedule;
+            
+            row.style.display = dateMatch && scheduleMatch ? '' : 'none';
+        });
+    }
+
+    function sortTime(direction) {
+        const tbody = document.getElementById('showtimeTableBody');
+        const rows = Array.from(tbody.getElementsByClassName('showtime-row'));
+
+        rows.sort((a, b) => {
+            const timeA = a.dataset.time || '';
+            const timeB = b.dataset.time || '';
+            
+            if (direction === 'asc') {
+                return timeA.localeCompare(timeB);
+            } else {
+                return timeB.localeCompare(timeA);
+            }
+        });
+
+        // Reorder the rows in the table
+        rows.forEach(row => tbody.appendChild(row));
+    }
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">

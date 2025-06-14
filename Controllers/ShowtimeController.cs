@@ -92,7 +92,7 @@ namespace MovieTheater.Controllers
             }
         }
 
-        public IActionResult Select(DateTime? date, string returnUrl)
+        public IActionResult Select(string date, string returnUrl)
         {
             // 1. Get all available screening dates as DateTime
             var availableDates = _context.ShowDates 
@@ -102,17 +102,40 @@ namespace MovieTheater.Controllers
                 .Where(d => d.HasValue)
                 .Select(d => d.Value.ToDateTime(TimeOnly.MinValue))
                 .ToList();
+
             if (!availableDates.Any())
             {
                 var emptyModel = new ShowtimeSelectionViewModel
                 {
                     AvailableDates = new List<DateTime>(),
-                    SelectedDate = date ?? DateTime.Today,
+                    SelectedDate = DateTime.Today,
                     Movies = new List<MovieShowtimeInfo>()
                 };
                 return View("~/Views/Showtime/Select.cshtml", emptyModel);
             }
-            var selectedDate = date ?? availableDates.First();
+
+            // Parse the date from dd/MM/yyyy format
+            DateTime selectedDate;
+            if (!string.IsNullOrEmpty(date))
+            {
+                if (!DateTime.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out selectedDate))
+                {
+                    // If parsing fails, use the first available date
+                    selectedDate = availableDates.First();
+                }
+            }
+            else
+            {
+                // If no date provided, use the first available date
+                selectedDate = availableDates.First();
+            }
+
+            // Ensure the selected date is one of the available dates
+            if (!availableDates.Any(d => d.Date == selectedDate.Date))
+            {
+                selectedDate = availableDates.First();
+            }
+
             var selectedDateOnly = DateOnly.FromDateTime(selectedDate);
 
             // Find the ShowDateId for the selected date

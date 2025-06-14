@@ -107,6 +107,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
+            builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
             builder.Services.AddHttpContextAccessor();
 

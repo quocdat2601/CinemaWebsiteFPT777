@@ -92,6 +92,11 @@ namespace MovieTheater.Service
             return await _movieRepository.GetTypesAsync();
         }
 
+        public List<MovieShow> GetMovieShow()
+        {
+            return _movieRepository.GetMovieShow();
+        }
+
         public IEnumerable<Movie> SearchMovies(string searchTerm)
         {
             var movies = _movieRepository.GetAll();

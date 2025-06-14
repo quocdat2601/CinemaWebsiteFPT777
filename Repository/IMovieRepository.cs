@@ -28,6 +28,7 @@ namespace MovieTheater.Repository
         public Task<List<Schedule>> GetSchedulesAsync();
         public Task<List<ShowDate>> GetShowDatesAsync();
         public Task<List<Models.Type>> GetTypesAsync();
+        public List<MovieShow> GetMovieShow();
         public Task<List<Movie>> GetAllMoviesAsync();
         public Task<List<DateTime>> GetShowDatesAsync(string movieId);
         public Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);

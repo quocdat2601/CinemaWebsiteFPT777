@@ -15,6 +15,7 @@ namespace MovieTheater.Service
         public List<ShowDate> GetShowDates();
         public List<Models.Type> GetTypes();
         public List<CinemaRoom> GetAllCinemaRooms();
+        public List<MovieShow> GetMovieShow();
         public IEnumerable<Movie> SearchMovies(string searchTerm);
         public string ConvertToEmbedUrl(string trailerUrl);
         public List<MovieShow> GetMovieShows(string movieId);

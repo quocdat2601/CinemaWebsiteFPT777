@@ -345,6 +345,14 @@ namespace MovieTheater.Repository
         {
             return _context.Types.ToList();
         }
+        public List<MovieShow> GetMovieShow()
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.ShowDate)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom).ToList();
+        }
 
         public List<DateTime> GetShowDates(string movieId)
         {

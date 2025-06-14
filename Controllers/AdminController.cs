@@ -6,6 +6,7 @@ using MovieTheater.ViewModels;
 using MovieTheater.Models;
 using System.Security.Claims;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -21,8 +22,20 @@ namespace MovieTheater.Controllers
         private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
         private readonly IInvoiceService _invoiceService;
+        private readonly IScheduleRepository _scheduleRepository;
 
-        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService, IBookingService bookingService, ISeatService seatService, IInvoiceService invoiceService)
+        public AdminController(
+            IMovieService movieService, 
+            IEmployeeService employeeService, 
+            IPromotionService promotionService, 
+            ICinemaService cinemaService, 
+            ISeatTypeService seatTypeService, 
+            IMemberRepository memberRepository, 
+            IAccountService accountService, 
+            IBookingService bookingService, 
+            ISeatService seatService, 
+            IInvoiceService invoiceService,
+            IScheduleRepository scheduleRepository)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -34,6 +47,7 @@ namespace MovieTheater.Controllers
             _bookingService = bookingService;
             _seatService = seatService;
             _invoiceService = invoiceService;
+            _scheduleRepository = scheduleRepository;
         }
 
         // GET: AdminController
@@ -105,6 +119,15 @@ namespace MovieTheater.Controllers
                     }
 
                     return PartialView("BookingMg", invoices);
+                case "ShowtimeMg":
+                    var showtimeModel = new ShowtimeManagementViewModel
+                    {
+                        AvailableDates = _scheduleRepository.GetAllShowDates(),
+                        SelectedDate = DateTime.Today,
+                        AvailableSchedules = _movieService.GetAllSchedules(),
+                        MovieShows = _movieService.GetMovieShow()
+                    };
+                    return PartialView("ShowtimeMg", showtimeModel);
                 default:
                     return Content("Tab not found.");
             }

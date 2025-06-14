@@ -34,18 +34,11 @@
         <select name="date" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
             @foreach (var date in Model.AvailableDates)
             {
-                if (date.Date == Model.SelectedDate.Date)
-                {
-                    <option value="@date.ToString("dd/MM/yyyy")" selected="selected">
-                        @date.ToString("dd MMM ddd")
-                    </option>
-                }
-                else
-                {
-                    <option value="@date.ToString("dd/MM/yyyy")">
-                        @date.ToString("dd MMM ddd")
-                    </option>
-                }
+                var dateStr = date.ToString("dd/MM/yyyy");
+                var isSelected = date.Date == Model.SelectedDate.Date;
+                <option value="@dateStr" selected="@isSelected">
+                    @date.ToString("dd MMM ddd")
+                </option>
             }
         </select>
     </form>
@@ -75,7 +68,6 @@
                                        asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
                                        asp-route-time="@showtime"
                                        asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
-                                       asp-route-isAdminSell="true"
                                        class="btn btn-outline-primary btn-sm m-1 bookBtn">
                                         @showtime
                                     </a>

@@ -9,17 +9,8 @@
 	var seatTypes = Model.SeatTypes;
 	var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
 
-	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
-	string returnLink;
-	if (isAdminSell)
-	{
-		// Admin flow: return to select showtime page
-		returnLink = Url.Action("Select", "Showtime", new { area = "Admin" });
-	}
-	else
-	{
-		returnLink = Url.Action("TicketBooking", "Booking");
-	}
+	// Simplified return link logic
+	string returnLink = Url.Action("TicketBooking", "Booking");
 }
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />

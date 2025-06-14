@@ -262,12 +262,13 @@ VALUES
 ('MV009', 'Song Kang-ho, Choi Woo-shik', 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2024-03-30', 'CJ Entertainment', '2024-04-02', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg', 'https://www.youtube.com/embed/5xH0HfJHsaY');
 
 INSERT INTO Schedule (Schedule_Time) VALUES
-('10:00'),
-('12:00'),
-('14:00'),
-('16:00'),
-('18:00'),
-('20:00');
+('09:00'), ('09:30'), ('10:00'), ('10:30'), ('11:00'),
+('11:30'), ('12:00'), ('12:30'), ('13:00'), ('13:30'),
+('14:00'), ('14:30'), ('15:00'), ('15:30'), ('16:00'),
+('16:30'), ('17:00'), ('17:30'), ('18:00'), ('18:30'),
+('19:00'), ('19:30'), ('20:00'), ('20:30'), ('21:00'),
+('21:30'), ('22:00'), ('22:30');
+
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
