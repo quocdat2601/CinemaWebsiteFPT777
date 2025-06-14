@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pag
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-
+using System.Linq;
 namespace MovieTheater.Controllers
 {
     public class EmployeeController : Controller
@@ -15,15 +15,15 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
-
-        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService)
+        private readonly IInvoiceService _invoiceService;
+        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService)
         {
             _service = service;
             _logger = logger;
             _movieService = movieService;
             _memberRepository = memberRepository;
             _accountService = accountService;
-
+            _invoiceService = invoiceService;
         }
         // GET: EmployeeController
         public IActionResult MainPage(string tab = "MemberMg")
@@ -40,7 +40,7 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Employee")]
-        public IActionResult LoadTab(string tab)
+        public IActionResult LoadTab(string tab, string keyword = null)
         {
             switch (tab)
             {
@@ -56,8 +56,23 @@ namespace MovieTheater.Controllers
                     return PartialView("SheduleMg");
                 case "PromotionMg":
                     return PartialView("PromotionMg");
-                case "TicketSellingMg":
-                    return PartialView("TicketSellingMg");
+                case "BookingMg":
+                    var invoices = _invoiceService.GetAll();
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        keyword = keyword.Trim().ToLower();
+                        invoices = invoices.Where(i =>
+                            (i.InvoiceId != null && i.InvoiceId.ToLower().Contains(keyword)) ||
+                            (i.AccountId != null && i.AccountId.ToLower().Contains(keyword)) ||
+                            (i.Account != null && (
+                                (i.Account.PhoneNumber != null && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                                (i.Account.IdentityCard != null && i.Account.IdentityCard.ToLower().Contains(keyword))
+                            ))
+                        ).ToList();
+                    }
+
+                    return PartialView("BookingMg", invoices);
                 default:
                     return Content("Tab not found.");
             }

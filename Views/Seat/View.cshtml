@@ -1,5 +1,4 @@
-﻿@using MovieTheater.ViewModels
-@model SeatSelectionViewModel
+﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
 @{
 	var movieId = Model.MovieId;
@@ -8,17 +7,26 @@
 	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
 	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
 	var seatTypes = Model.SeatTypes;
+
+	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
+	string returnLink;
+	if (isAdminSell)
+	{
+		// Admin flow: return to select showtime page
+		returnLink = Url.Action("Select", "Showtime", new { area = "Admin" });
+	}
+	else
+	{
+		returnLink = Url.Action("TicketBooking", "Booking");
+	}
 }
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4">
-	@if (!string.IsNullOrEmpty(Model.ReturnUrl))
-	{
-		<div class="text-start p-3">
-			<a href="@Model.ReturnUrl" class="btn btn-secondary">&larr; Return</a>
-		</div>
-	}
+	<div class="text-start p-3">
+		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+	</div>
 
 	<h2 class="text-center mb-4">SELECT SEATS</h2>
 	<div class="row mb-4 align-items-center">
@@ -172,11 +180,13 @@
 			}
 		}
 
-		function updateBookButtonState() {
-			const quantity = parseInt(document.getElementById('seatQuantity').value);
-			const bookButton = document.getElementById('bookButton');
-			bookButton.disabled = quantity > 0 && selectedSeats.size !== quantity;
-		}
+        // Renamed from updateContinueButton and updateBookButton to clarify purpose
+        function updateBookButtonState() {
+            const quantity = parseInt(document.getElementById('seatQuantity').value);
+            const bookButton = document.getElementById('bookButton');
+            // Disable button if quantity is 0, or if selected count doesn't match quantity
+            bookButton.disabled = (quantity === 0) || (selectedSeats.size !== quantity);
+        }
 
 		function updateSelectionSummary() {
 			const summary = document.getElementById('selectionSummary');
@@ -234,11 +244,23 @@
 				}
 			}
 
-			window.location.href = `/Booking/Information?${params.toString()}`;
-		});
+            const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+            if (isAdminSell) {
+				window.location.href = `/Admin/ConfirmTicketForAdmin?${params.toString()}`;
+            } else {
+				window.location.href = `/Booking/Information?${params.toString()}`;
+            }
+            window.location.href = redirectUrl;
+        });
+
+		
+        // On page load, ensure button is disabled if seatQuantity is 0
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBookButtonState();
+        });
 
 		updateSeatMessage();
 		updateBookButtonState();
 		updateSelectionSummary();
-	</script>
+    </script>
 }

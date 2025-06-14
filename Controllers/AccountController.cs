@@ -164,7 +164,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("Index", "Home");
                 //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }
@@ -320,7 +320,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("Index", "Home");
             }
         }
 

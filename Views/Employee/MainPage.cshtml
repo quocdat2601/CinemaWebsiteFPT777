@@ -11,7 +11,7 @@
                 <a class="nav-link" href="#" onclick="loadTab('MovieMg')">Movie Management</a>
                 <a class="nav-link" href="#" onclick="loadTab('ShowroomMg')">Showroom Management</a>
                 <a class="nav-link" href="#" onclick="loadTab('ScheduleMg')">Schedule Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('TicketSellingMg')">Ticket Selling Management</a>
+                <a class="nav-link" href="#" onclick="loadTab('BookingMg')">Booking Management</a>
             </div>
         </div>
 
@@ -26,15 +26,28 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    function loadTab(tabName) {
+    function loadTab(tabName, keyword = '') {
         $('.nav-link').removeClass('active');
         $(`a.nav-link:contains(${tabName.replace('Mg', ' Management')})`).addClass('active');
-        $('#tabContent').load(`/Employee/LoadTab?tab=${tabName}`);
+        
+        let url = `/Employee/LoadTab?tab=${tabName}`;
+        if (keyword) {
+            url += `&keyword=${encodeURIComponent(keyword)}`;
+        }
+        $('#tabContent').load(url);
     }
-        $(document).ready(function () {
+
+    $(document).ready(function () {
         var tabToLoad = '@ViewData["ActiveTab"]' || 'MovieMg';
         loadTab(tabToLoad);
     });
+
+
+    function searchBooking() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('BookingMg', keyword);
+    }
+
 </script>
 
 
