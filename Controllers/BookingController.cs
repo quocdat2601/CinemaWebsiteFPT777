@@ -131,7 +131,7 @@ namespace MovieTheater.Controllers
 
                 // Tạo danh sách tên ghế
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
-                string seatList = string.Join(",", seatNames);
+                string seatList = string.Join(" ", seatNames);
 
                 foreach (var seat in model.SelectedSeats)
                 {
