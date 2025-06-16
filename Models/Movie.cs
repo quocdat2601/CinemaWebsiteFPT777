@@ -37,5 +37,7 @@ public partial class Movie
 
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
+    public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
+
     public virtual ICollection<Type> Types { get; set; } = new List<Type>();
 }

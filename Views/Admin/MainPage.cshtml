@@ -39,7 +39,12 @@
             params.append('keyword', keyword);
         }
 
-        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`);
+        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function() {
+            // Trigger event when ShowtimeMg tab is loaded
+            if (tabName === 'ShowtimeMg') {
+                $(document).trigger('showtimeTabLoaded');
+            }
+        });
     }
 
     function searchEmployees() {
@@ -51,9 +56,6 @@
         const keyword = document.getElementById('searchKeyword')?.value ?? '';
         loadTab('BookingMg', keyword);
     }
-
-
-
 
     $(document).ready(function () {
         var tabToLoad = '@ViewData["ActiveTab"]' || 'Dashboard';

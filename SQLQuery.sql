@@ -58,18 +58,6 @@ CREATE TABLE Invoice (
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
 );
 
-CREATE TABLE Schedule_Seat (
-    Movie_Show_ID INT,
-	Invoice_ID VARCHAR(10),
-    Seat_ID INT,
-    Seat_Status_ID INT,
-    PRIMARY KEY (Movie_Show_ID, Seat_ID),
-    FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID) ON DELETE CASCADE,
-    FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
-	FOREIGN KEY (Invoice_ID) REFERENCES Invoice(Invoice_ID),
-    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID)
-);
-
 CREATE TABLE Employee (
     Employee_ID VARCHAR(10) PRIMARY KEY,
     Account_ID VARCHAR(10),
@@ -136,6 +124,9 @@ CREATE TABLE Cinema_Room (
 ALTER TABLE Cinema_Room
 ADD Seat_Quantity AS (Seat_Width * Seat_Length);
 
+INSERT INTO Cinema_Room(Cinema_Room_Name) VALUES
+('Screen 1'), ('Screen 2'), ('Screen 3'), ('Screen 4'), ('Screen 5'), ('Screen 6');
+
 CREATE TABLE Movie_Show (
     Movie_Show_ID INT PRIMARY KEY IDENTITY(1,1),
     Movie_ID VARCHAR(10),
@@ -147,6 +138,7 @@ CREATE TABLE Movie_Show (
     FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID),
     FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID)
 );
+
 CREATE TABLE Seat_Type (
     Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
     Type_Name VARCHAR(50),
@@ -170,6 +162,18 @@ CREATE TABLE Seat (
     FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
     FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID),
 	FOREIGN KEY (Seat_Type_ID) REFERENCES Seat_Type(Seat_Type_ID)
+);
+
+CREATE TABLE Schedule_Seat (
+    Movie_Show_ID INT,
+	Invoice_ID VARCHAR(10),
+    Seat_ID INT,
+    Seat_Status_ID INT,
+    PRIMARY KEY (Movie_Show_ID, Seat_ID),
+    FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
+	FOREIGN KEY (Invoice_ID) REFERENCES Invoice(Invoice_ID),
+    FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID)
 );
 
 CREATE TABLE CoupleSeat (
@@ -218,7 +222,6 @@ INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gende
 ('AC007', '123 Street', '1999-01-01', 'quang.nguyen@example.com', 'Nguyen Quang Duy Quang', 'Male', '111111114', '/image/profile.jpg', '1', '0900000004', '2023-01-01', 2, 1, 'quangnguyen'),
 ('AC008', '123 Street', '1999-01-01', 'dat.nguyen@example.com', 'Nguyen Le Quoc Dat', 'Male', '111111115', '/image/profile.jpg', '1', '0900000005', '2023-01-01', 2, 1, 'datnguyen'),
 ('AC009', '123 Street', '1999-01-01', 'dat.thai@example.com', 'Thai Cong Dat', 'Male', '111111116', '/image/profile.jpg', '1', '0900000006', '2023-01-01', 2, 1, 'datthai');
-
 
 INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
 ('MB001', 10000000, 'AC002'),  
@@ -269,7 +272,6 @@ INSERT INTO Schedule (Schedule_Time) VALUES
 ('19:00'), ('19:30'), ('20:00'), ('20:30'), ('21:00'),
 ('21:30'), ('22:00'), ('22:30');
 
-
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
 (2, 'Comedy'),
@@ -299,6 +301,61 @@ INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('MV008', 12),
 ('MV009', 1), 
 ('MV009', 5);
+
+INSERT INTO Movie_Show (Show_Date_ID, Schedule_ID, Movie_ID, Cinema_Room_ID) VALUES
+(1, 1, 'MV001', 1), (1, 2, 'MV001', 3), (1, 3, 'MV001', 5), (1, 4, 'MV001', 1),
+(1, 5, 'MV001', 3), (1, 6, 'MV001', 5), (1, 7, 'MV001', 1), (1, 8, 'MV001', 3),
+
+(1, 1, 'MV002', 2), (1, 2, 'MV002', 4), (1, 3, 'MV002', 6), (1, 4, 'MV002', 2),
+(1, 5, 'MV002', 4), (1, 6, 'MV002', 6), (1, 7, 'MV002', 2), (1, 8, 'MV002', 4),
+
+(1, 9,  'MV003', 1), (1, 10, 'MV003', 3), (1, 11, 'MV003', 5), (1, 12, 'MV003', 1),
+(1, 13, 'MV003', 3), (1, 14, 'MV003', 5), (1, 15, 'MV003', 1), (1, 16, 'MV003', 3),
+
+(1, 17, 'MV004', 2), (1, 18, 'MV004', 4), (1, 19, 'MV004', 6), (1, 20, 'MV004', 2),
+(1, 21, 'MV004', 4), (1, 22, 'MV004', 6), (1, 23, 'MV004', 2), (1, 24, 'MV004', 4),
+
+(2, 1, 'MV001', 1), (2, 2, 'MV001', 3), (2, 3, 'MV001', 5), (2, 4, 'MV001', 1),
+(2, 5, 'MV001', 3), (2, 6, 'MV001', 5), (2, 7, 'MV001', 1), (2, 8, 'MV001', 3),
+
+(2, 1, 'MV002', 2), (2, 2, 'MV002', 4), (2, 3, 'MV002', 6), (2, 4, 'MV002', 2),
+(2, 5, 'MV002', 4), (2, 6, 'MV002', 6), (2, 7, 'MV002', 2), (2, 8, 'MV002', 4),
+
+(2, 9,  'MV003', 1), (2, 10, 'MV003', 3), (2, 11, 'MV003', 5), (2, 12, 'MV003', 1),
+(2, 13, 'MV003', 3), (2, 14, 'MV003', 5), (2, 15, 'MV003', 1), (2, 16, 'MV003', 3),
+
+(2, 17, 'MV004', 2), (2, 18, 'MV004', 4), (2, 19, 'MV004', 6), (2, 20, 'MV004', 2),
+(2, 21, 'MV004', 4), (2, 22, 'MV004', 6), (2, 23, 'MV004', 2), (2, 24, 'MV004', 4),
+
+(3, 1, 'MV005', 1), (3, 2, 'MV005', 3), (3, 3, 'MV005', 5), (3, 4, 'MV005', 1),
+(3, 5, 'MV005', 3), (3, 6, 'MV005', 5), (3, 7, 'MV005', 1), (3, 8, 'MV005', 3),
+
+(3, 1, 'MV006', 2), (3, 2, 'MV006', 4), (3, 3, 'MV006', 6), (3, 4, 'MV006', 2),
+(3, 5, 'MV006', 4), (3, 6, 'MV006', 6), (3, 7, 'MV006', 2), (3, 8, 'MV006', 4),
+
+(3, 9,  'MV007', 1), (3, 10, 'MV007', 3), (3, 11, 'MV007', 5), (3, 12, 'MV007', 1),
+(3, 13, 'MV007', 3), (3, 14, 'MV007', 5), (3, 15, 'MV007', 1), (3, 16, 'MV007', 3),
+
+(3, 17, 'MV008', 2), (3, 18, 'MV008', 4), (3, 19, 'MV008', 6), (3, 20, 'MV008', 2),
+(3, 21, 'MV008', 4), (3, 22, 'MV008', 6), (3, 23, 'MV008', 2), (3, 24, 'MV008', 4),
+
+(4, 1, 'MV005', 1), (4, 2, 'MV005', 3), (4, 3, 'MV005', 5), (4, 4, 'MV005', 1),
+(4, 5, 'MV005', 3), (4, 6, 'MV005', 5), (4, 7, 'MV005', 1), (4, 8, 'MV005', 3),
+
+(4, 1, 'MV006', 2), (4, 2, 'MV006', 4), (4, 3, 'MV006', 6), (4, 4, 'MV006', 2),
+(4, 5, 'MV006', 4), (4, 6, 'MV006', 6), (4, 7, 'MV006', 2), (4, 8, 'MV006', 4),
+
+(4, 9,  'MV007', 1), (4, 10, 'MV007', 3), (4, 11, 'MV007', 5), (4, 12, 'MV007', 1),
+(4, 13, 'MV007', 3), (4, 14, 'MV007', 5), (4, 15, 'MV007', 1), (4, 16, 'MV007', 3),
+
+(4, 17, 'MV008', 2), (4, 18, 'MV008', 4), (4, 19, 'MV008', 6), (4, 20, 'MV008', 2),
+(4, 21, 'MV008', 4), (4, 22, 'MV008', 6), (4, 23, 'MV008', 2), (4, 24, 'MV008', 4),
+
+(5, 1, 'MV009', 1), (5, 2, 'MV009', 2), (5, 3, 'MV009', 3), (5, 4, 'MV009', 4),
+(5, 5, 'MV009', 5), (5, 6, 'MV009', 6), (5, 7, 'MV009', 1), (5, 8, 'MV009', 2),
+
+(6, 9,  'MV009', 3), (6, 10, 'MV009', 4), (6, 11, 'MV009', 5), (6, 12, 'MV009', 6),
+(6, 13, 'MV009', 1), (6, 14, 'MV009', 2), (6, 15, 'MV009', 3), (6, 16, 'MV009', 4);
 
 INSERT INTO Invoice (
     Invoice_ID, Add_Score, BookingDate, MovieName, Schedule_Show,
@@ -355,3 +412,11 @@ INSERT INTO Promotion (Promotion_ID, Title, Detail, Discount_Level, Start_Time, 
 INSERT INTO PromotionCondition (Promotion_ID, ConditionType_ID, Target_Entity, Target_Field, Operator, Target_Value) VALUES 
 (1, 1, 'User', 'OrderCount', '=', '0'),
 (2, 1, 'Order', 'Seat_Count', '>=', '3');
+
+CREATE TABLE Wishlist (
+    Account_ID VARCHAR(10),
+    Movie_ID VARCHAR(10),
+    PRIMARY KEY (Account_ID, Movie_ID),
+    FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
+    FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID)
+);
