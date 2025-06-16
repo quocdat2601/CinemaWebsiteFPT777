@@ -1,10 +1,10 @@
 ﻿@{
     ViewData["Title"] = "Admin Main Page";
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 bg-light min-vh-100 border-end">
             <div class="nav flex-column nav-pills">
                 <a class="nav-link active" href="#" onclick="loadTab('Dashboard')">Dashboard</a>
@@ -17,47 +17,69 @@
                 <a class="nav-link" href="#" onclick="loadTab('BookingMg')">Booking Management</a>
             </div>
         </div>
-
-        <!-- Tab Content -->
         <div class="col-md-9 col-lg-10 p-4">
-            <div id="tabContent">
-                Loading...
-            </div>
+            <div id="tabContent"></div>
         </div>
     </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function loadTab(tabName, keyword = '') {
-        $('.nav-link').removeClass('active');
-        $(`a.nav-link:contains(${tabName.replace('Mg', ' Management')})`).addClass('active');
+    window.initDashboardCharts = function(model) {
+      const revCtx = document.getElementById('revenueChart')?.getContext('2d');
+      if (revCtx && model.revenueDates) {
+        new Chart(revCtx, {
+          type: 'line',
+          data: {
+            labels: model.revenueDates,
+            datasets: [{
+              label: 'Revenue',
+              data: model.revenueValues,
+              fill: true,
+              tension: 0.4
+            }]
+          }
+        });
+      }
+      const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
+      if (bookCtx && model.bookingDates) {
+        new Chart(bookCtx, {
+          type: 'line',
+          data: {
+            labels: model.bookingDates,
+            datasets: [{
+              label: 'Bookings',
+              data: model.bookingValues,
+              fill: true,
+              tension: 0.4
+            }]
+          }
+        });
+      }
+    };
 
-        const params = new URLSearchParams({ tab: tabName });
-        if (keyword.trim()) {
-            params.append('keyword', keyword);
+    function loadTab(tabName, keyword='') {
+      $('.nav-link').removeClass('active');
+      $(`a.nav-link:contains(${tabName.replace('Mg',' Management')})`).addClass('active');
+      const params = new URLSearchParams({ tab: tabName });
+      if (keyword) params.append('keyword', keyword);
+      $('#tabContent').load(`/Admin/LoadTab?${params}`, function(res, status) {
+        if (status === 'error') $('#tabContent').html('<div class="alert alert-danger">Failed loading</div>');
+        else if (tabName === 'Dashboard') {
+          const el = document.getElementById('dashboard-data');
+          if (el) {
+            const model = JSON.parse(el.textContent);
+            window.initDashboardCharts(model);
+          }
         }
-
-        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`);
+      });
     }
 
-    function searchEmployees() {
-        const keyword = document.getElementById('searchKeyword')?.value ?? '';
-        loadTab('EmployeeMg', keyword);
-    }
+    function searchEmployees() { loadTab('EmployeeMg', document.getElementById('searchKeyword')?.value ?? ''); }
+    function searchBooking() { loadTab('BookingMg', document.getElementById('searchKeyword')?.value ?? ''); }
 
-    function searchBooking() {
-        const keyword = document.getElementById('searchKeyword')?.value ?? '';
-        loadTab('BookingMg', keyword);
-    }
-
-
-
-
-    $(document).ready(function () {
-        var tabToLoad = '@ViewData["ActiveTab"]' || 'Dashboard';
-        loadTab(tabToLoad);
-    });
+    $(document).ready(function() { loadTab('@ViewData["ActiveTab"]' || 'Dashboard'); });
 </script>
 
 <partial name="_ToastMessages" />

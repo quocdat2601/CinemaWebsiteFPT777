@@ -9,7 +9,6 @@ namespace MovieTheater.ViewModels
         public decimal RevenueToday { get; set; }
         public int BookingsToday { get; set; }
         public int TicketsSoldToday { get; set; }
-        public int CancellationsToday { get; set; }
 
         // Trends over the last 7 days
         public List<DateTime> RevenueTrendDates { get; set; }
@@ -22,21 +21,13 @@ namespace MovieTheater.ViewModels
         // Top 5 members by booking count
         public List<(string MemberName, int Bookings)> TopMembers { get; set; }
 
-        // Recent bookings & cancellations
+        // Recent bookings 
         public List<RecentBookingInfo> RecentBookings { get; set; }
-        public List<RecentBookingInfo> RecentCancellations { get; set; }
 
         // Newest 5 members
         public List<RecentMemberInfo> RecentMembers { get; set; }
 
-        // Useful URLs
-        public string SellTicketUrl { get; set; }
-        public string AddMovieUrl { get; set; }
-        public string BookingManagementUrl { get; set; }
-        public string MemberManagementUrl { get; set; }
-
         public decimal OccupancyRateToday { get; set; }    // from 0 to 100
-        public decimal AverageTicketPrice { get; set; }    // revenue ÷ tickets sold
 
     }
 
