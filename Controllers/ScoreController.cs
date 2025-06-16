@@ -18,18 +18,39 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult ScoreHistory()
         {
-            return View("~/Views/Account/Tabs/Score.cshtml");
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
+            ViewBag.CurrentScore = member?.Score ?? 0;
+
+            var result = _context.Invoices
+                .Where(i => i.AccountId == accountId && i.AddScore > 0)
+                .Select(i => new ScoreHistoryViewModel
+                {
+                    DateCreated = i.BookingDate ?? DateTime.MinValue,
+                    MovieName = i.MovieName ?? "N/A",
+                    Score = i.AddScore ?? 0
+                }).ToList();
+
+            ViewBag.HistoryType = "add";
+            return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
         [HttpPost]
         public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
             }
+
+            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
+            ViewBag.CurrentScore = member?.Score ?? 0;
 
             var query = _context.Invoices
                 .Where(i => i.AccountId == accountId &&
@@ -56,39 +77,63 @@ namespace MovieTheater.Controllers
             {
                 ViewBag.Message = "No score history found for the selected period.";
             }
-            System.Diagnostics.Debug.WriteLine("AccountId: " + accountId);
-            // ... sau khi lấy result
-            System.Diagnostics.Debug.WriteLine("Result count: " + result.Count);
+
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
         [HttpGet]
-        public IActionResult ScoreHistoryPartial(DateTime fromDate, DateTime toDate, string historyType)
+        public IActionResult ScoreHistoryPartial(string fromDate, string toDate, string historyType)
         {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {
                 return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
             }
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-            if (historyType == "add")
+
+            // Get current score
+            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
+            ViewBag.CurrentScore = member?.Score ?? 0;
+
+            var query = _context.Invoices.Where(i => i.AccountId == accountId);
+
+            // Parse dates if provided
+            DateTime fromDateValue, toDateValue;
+            bool hasFrom = DateTime.TryParse(fromDate, out fromDateValue);
+            bool hasTo = DateTime.TryParse(toDate, out toDateValue);
+
+            if (hasFrom && hasTo)
             {
-                query = query.Where(i => i.AddScore > 0);
+                query = query.Where(i => i.BookingDate >= fromDateValue && i.BookingDate <= toDateValue);
             }
-            else if (historyType == "use")
+
+            var result = new List<ScoreHistoryViewModel>();
+            foreach (var i in query)
             {
-                query = query.Where(i => i.UseScore > 0);
+                if (historyType != "use" && i.AddScore.HasValue && i.AddScore.Value > 0)
+                {
+                    result.Add(new ScoreHistoryViewModel
+                    {
+                        DateCreated = i.BookingDate ?? DateTime.MinValue,
+                        MovieName = i.MovieName ?? "N/A",
+                        Score = i.AddScore.Value,
+                        Type = "add"
+                    });
+                }
+                if (historyType != "add" && i.UseScore.HasValue && i.UseScore.Value > 0)
+                {
+                    result.Add(new ScoreHistoryViewModel
+                    {
+                        DateCreated = i.BookingDate ?? DateTime.MinValue,
+                        MovieName = i.MovieName ?? "N/A",
+                        Score = i.UseScore.Value,
+                        Type = "use"
+                    });
+                }
             }
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-            }).ToList();
-            return PartialView("~/Views/Account/_ScoreHistoryPartial.cshtml", result);
+
+            result = result.OrderByDescending(x => x.DateCreated).ToList();
+
+            return PartialView("~/Views/Account/Tabs/_ScoreHistoryPartial.cshtml", result);
         }
 
     }

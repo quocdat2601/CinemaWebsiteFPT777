@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 
 namespace MovieTheater.ViewModels
 {

@@ -6,7 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using Serilog;
 using System.Text;
 
 namespace MovieTheater
@@ -104,6 +103,9 @@ namespace MovieTheater
             builder.Services.AddScoped<EmailService>();
             builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
             builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
+            builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
 
             builder.Services.AddHttpContextAccessor();
 
@@ -140,7 +142,7 @@ namespace MovieTheater
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Movie}/{action=MovieList}/{id?}");
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
             app.Run();
         }

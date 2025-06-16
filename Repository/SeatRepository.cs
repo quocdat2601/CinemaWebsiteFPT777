@@ -39,6 +39,23 @@ namespace MovieTheater.Repository
             _context.Seats.Update(seat);
         }
 
+        public void UpdateSeatAndScheduleStatus(int seatId, int statusId)
+        {
+            var seat = _context.Seats.FirstOrDefault(s => s.SeatId == seatId);
+            if (seat != null)
+            {
+                seat.SeatStatusId = statusId;
+                _context.Seats.Update(seat);
+            }
+
+            var scheduleSeat = _context.ScheduleSeats.FirstOrDefault(ss => ss.SeatId == seatId);
+            if (scheduleSeat != null)
+            {
+                scheduleSeat.SeatStatusId = statusId;
+                _context.ScheduleSeats.Update(scheduleSeat);
+            }
+        }
+
         public async Task DeleteAsync(int id)
         {
             var seat = await _context.Seats.FindAsync(id);
@@ -74,10 +91,14 @@ namespace MovieTheater.Repository
 
             return bookedSeats;
         }
-
         public async Task<List<SeatType>> GetSeatTypesAsync()
         {
             return await _context.SeatTypes.ToListAsync();
+        }
+
+        public Seat GetSeatByName(string seatName)
+        {
+            return _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
         }
 
     }

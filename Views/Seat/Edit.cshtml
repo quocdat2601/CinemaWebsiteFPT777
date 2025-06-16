@@ -20,28 +20,46 @@
 	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
 }
 
-<table class="table table-bordered text-center">
-	<tbody>
-		@for (int row = 1; row <= Model.SeatLength; row++)
-		{
+<div class="table-responsive">
+	<table class="table table-bordered text-center">
+		<thead>
 			<tr>
+				<th>
+					<input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+				</th>
 				@for (int col = 1; col <= Model.SeatWidth; col++)
 				{
-					var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-					<td style="background-color: @(seat.SeatType?.ColorHex ?? "#ffffff")" 
-						data-seat-id="@seat.SeatId"
-						data-seat-row="@row"
-						data-seat-col="@col"
-						@(seat.SeatType.Equals("Couple") ? "data-couple-seat=true" : "")>
-						<span class="material-icons" onclick="selectSeat(this)">
-							chair
-						</span>
-					</td>
+					<th>
+						<input type="checkbox" class="column-checkbox" data-column="@col" onclick="toggleColumn(this)">
+					</th>
 				}
 			</tr>
-		}
-	</tbody>
-</table>
+		</thead>
+		<tbody>
+			@for (int row = 1; row <= Model.SeatLength; row++)
+			{
+				<tr>
+					<th>
+						<input type="checkbox" class="row-checkbox" data-row="@row" onclick="toggleRow(this)">
+					</th>
+					@for (int col = 1; col <= Model.SeatWidth; col++)
+					{
+						var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+						<td style="background-color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
+							data-seat-id="@seat.SeatId"
+							data-seat-row="@row"
+							data-seat-col="@col"
+							@(seat.SeatType.Equals("Couple") ? "data-couple-seat=true" : "")>
+							<span class="material-icons" onclick="selectSeat(this)">
+								chair
+							</span>
+						</td>
+					}
+				</tr>
+			}
+		</tbody>
+	</table>
+</div>
 
 <div class="d-flex flex-wrap gap-4 mb-4" style="justify-content:center">
 	@foreach (var type in seatTypes)
@@ -70,27 +88,133 @@
 <script>
 	const selectedSeats = new Set();
 
-	function selectSeat(clickedSpan) {
-		const td = clickedSpan.parentElement;
-		const seatId = td.getAttribute('data-seat-id');
+	function toggleSelectAll(checkbox) {
+		const isChecked = checkbox.checked;
+		document.querySelectorAll('td[data-seat-id]').forEach(td => {
+			if (isChecked) {
+				td.classList.add('selected-seat');
+				selectedSeats.add(td);
+			} else {
+				td.classList.remove('selected-seat');
+				selectedSeats.delete(td);
+			}
+		});
 
-		td.classList.toggle('selected-seat');
-		if (selectedSeats.has(td)) {
-			selectedSeats.delete(td);
-		} else {
-			selectedSeats.add(td);
-		}
-
-		// Update UI based on selection count
+		// Update UI
 		const modeDesc = document.getElementById('modeDescription');
-		if (selectedSeats.size === 2) {
-			modeDesc.textContent = 'Two seats selected. Choose a type to apply.';
+		modeDesc.textContent = isChecked ? 'All seats selected. Choose a type to apply.' : 'Select seats and choose a type';
+		document.getElementById("saveChangesBtn").disabled = !isChecked;
+	}
+
+	function toggleRow(checkbox) {
+		const row = checkbox.getAttribute('data-row');
+		const isChecked = checkbox.checked;
+		const seatsInRow = document.querySelectorAll(`td[data-seat-row="${row}"][data-seat-id]`);
+
+		seatsInRow.forEach(td => {
+			if (isChecked) {
+				td.classList.add('selected-seat');
+				selectedSeats.add(td);
+			} else {
+				td.classList.remove('selected-seat');
+				selectedSeats.delete(td);
+			}
+		});
+
+		updateSelectionUI();
+	}
+
+	function toggleColumn(checkbox) {
+		const column = checkbox.getAttribute('data-column');
+		const isChecked = checkbox.checked;
+		const seatsInColumn = document.querySelectorAll(`td[data-seat-col="${column}"][data-seat-id]`);
+
+		seatsInColumn.forEach(td => {
+			if (isChecked) {
+				td.classList.add('selected-seat');
+				selectedSeats.add(td);
+			} else {
+				td.classList.remove('selected-seat');
+				selectedSeats.delete(td);
+			}
+		});
+
+		updateSelectionUI();
+	}
+
+	function updateSelectionUI() {
+		const modeDesc = document.getElementById('modeDescription');
+		if (selectedSeats.size > 0) {
+			modeDesc.textContent = `${selectedSeats.size} seats selected. Choose a type to apply.`;
 		} else {
 			modeDesc.textContent = 'Select seats and choose a type';
 		}
+		document.getElementById("saveChangesBtn").disabled = selectedSeats.size === 0;
+	}
 
-		// Enable/disable save button
-		document.getElementById("saveChangesBtn").disabled = !document.querySelector('.selected-seat');
+	function selectSeat(clickedSpan) {
+		const td = clickedSpan.parentElement;
+		const seatId = td.getAttribute('data-seat-id');
+		const isCoupleSeat = td.hasAttribute('data-couple-seat');
+		const row = td.getAttribute('data-seat-row');
+		const col = td.getAttribute('data-seat-col');
+
+		// If this is a couple seat, we need to select/deselect both seats
+		if (isCoupleSeat) {
+			const allSeats = document.querySelectorAll('td[data-seat-id]');
+			const coupleSeats = Array.from(allSeats).filter(seat =>
+				seat.hasAttribute('data-couple-seat') &&
+				seat.getAttribute('data-seat-id') !== seatId
+			);
+
+			if (coupleSeats.length > 0) {
+				const otherSeat = coupleSeats[0];
+				td.classList.toggle('selected-seat');
+				otherSeat.classList.toggle('selected-seat');
+
+				if (selectedSeats.has(td)) {
+					selectedSeats.delete(td);
+					selectedSeats.delete(otherSeat);
+				} else {
+					selectedSeats.add(td);
+					selectedSeats.add(otherSeat);
+				}
+			}
+		} else {
+			td.classList.toggle('selected-seat');
+			if (selectedSeats.has(td)) {
+				selectedSeats.delete(td);
+			} else {
+				selectedSeats.add(td);
+			}
+		}
+
+		// Update checkboxes
+		updateCheckboxStates();
+		updateSelectionUI();
+	}
+
+	function updateCheckboxStates() {
+		// Update row checkboxes
+		document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+			const row = checkbox.getAttribute('data-row');
+			const seatsInRow = document.querySelectorAll(`td[data-seat-row="${row}"][data-seat-id]`);
+			const selectedInRow = document.querySelectorAll(`td[data-seat-row="${row}"][data-seat-id].selected-seat`);
+			checkbox.checked = selectedInRow.length > 0 && selectedInRow.length === seatsInRow.length;
+		});
+
+		// Update column checkboxes
+		document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+			const col = checkbox.getAttribute('data-column');
+			const seatsInColumn = document.querySelectorAll(`td[data-seat-col="${col}"][data-seat-id]`);
+			const selectedInColumn = document.querySelectorAll(`td[data-seat-col="${col}"][data-seat-id].selected-seat`);
+			checkbox.checked = selectedInColumn.length > 0 && selectedInColumn.length === seatsInColumn.length;
+		});
+
+		// Update select all checkbox
+		const totalSeats = document.querySelectorAll('td[data-seat-id]').length;
+		const selectedSeats = document.querySelectorAll('td[data-seat-id].selected-seat').length;
+		document.getElementById('selectAll').checked = selectedSeats > 0 && selectedSeats === totalSeats;
 	}
 
 	function applySeatType(clickedTypeDiv) {
@@ -123,7 +247,7 @@
 		document.querySelectorAll('[data-selected-type]').forEach(td => {
 			const typeName = document.querySelector(`[data-type="${td.getAttribute('data-selected-type')}"]`).getAttribute('data-type-name');
 			const seatId = td.getAttribute('data-seat-id');
-			
+
 			// Check if this seat was part of a couple seat
 			if (td.hasAttribute('data-couple-seat')) {
 				wasCoupleSeat = true;

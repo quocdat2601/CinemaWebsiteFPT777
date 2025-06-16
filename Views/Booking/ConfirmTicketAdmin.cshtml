@@ -1,0 +1,301 @@
+@using Newtonsoft.Json
+@model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
+@{
+    ViewBag.Title = "Confirm Ticket Information (Admin)";
+    Layout = "_Layout";
+}
+
+<style>
+    .member-input-group .form-control {
+        max-width: 220px;
+        padding: 0.3rem 0.5rem;
+        font-size: 1rem;
+        display: inline-block;
+    }
+    .member-input-group .btn {
+        padding: 0.3rem 0.8rem;
+        font-size: 1rem;
+        margin-left: 4px;
+    }
+    #ticketsToConvert {
+        max-width: 120px;
+        padding: 0.3rem 0.5rem;
+        font-size: 1rem;
+        display: inline-block;
+    }
+    .soft-label {
+        font-weight: 500;
+        color: #444;
+        margin-bottom: 0.1rem;
+        display: block;
+        font-size: 1rem;
+        margin-right: 0.5rem;
+    }
+    .soft-readonly {
+        background: #f8f9fa;
+        border: none;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 0;
+        padding: 0.2rem 0.5rem;
+        margin-bottom: 0.2rem;
+        width: 100%;
+        font-size: 1rem;
+        color: #222;
+        opacity: 1;
+        cursor: not-allowed;
+        box-shadow: none;
+        min-width: 80px;
+        margin-right: 1.5rem;
+    }
+    .ticket-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 0.3rem;
+    }
+    .ticket-row .soft-label {
+        min-width: 110px;
+    }
+    .ticket-row .soft-readonly {
+        flex: 1 1 180px;
+        min-width: 120px;
+        margin-right: 2rem;
+    }
+    .member-info-section {
+        background: #f6f8fa;
+        border-radius: 8px;
+        padding: 1rem 1rem 0.5rem 1rem;
+        margin-bottom: 1rem;
+    }
+    .section-title {
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="text-start p-3">
+        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
+    </div>
+    <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
+    <div class="card shadow p-4">
+        <div class="section-title">Movie & Show Info</div>
+        <div class="ticket-row">
+            <label for="movieName" class="soft-label">Movie Name</label>
+            <input type="text" id="movieName" class="soft-readonly" value="@Model.BookingDetails.MovieName" readonly />
+            <label for="screen" class="soft-label">Screen</label>
+            <input type="text" id="screen" class="soft-readonly" value="@Model.BookingDetails.CinemaRoomName" readonly />
+        </div>
+        <div class="ticket-row">
+            <label for="showDate" class="soft-label">Date</label>
+            <input type="text" id="showDate" class="soft-readonly" value="@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")" readonly />
+            <label for="showTime" class="soft-label">Time</label>
+            <input type="text" id="showTime" class="soft-readonly" value="@Model.BookingDetails.ShowTime" readonly />
+        </div>
+        <hr />
+        <div class="section-title">Seat(s)</div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Seat</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var seat in Model.BookingDetails.SelectedSeats)
+                {
+                    <tr>
+                        <td>@seat.SeatName</td>
+                        <td>@seat.SeatType</td>
+                        <td>@seat.Price.ToString("N0") VND</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="text-end"><strong>Total Price:</strong> @Model.BookingDetails.TotalPrice.ToString("N0") VND</p>
+        <hr />
+        <!-- AC-02: Member lookup textbox -->
+        <div class="mb-3">
+            <label for="memberInput" class="soft-label"><strong>Member ID / Identity Card: *</strong></label>
+            <div class="input-group member-input-group">
+                <input type="text" id="memberInput" name="MemberIdInput" class="form-control" value="@Model.MemberIdInput" required />
+                <button type="button" id="checkMemberBtn" class="btn btn-primary">Check</button>
+            </div>
+            <div class="alert alert-info mt-2" id="memberMessage" style="display:none;"></div>
+        </div>
+        <!-- AC-03: Member info if found -->
+        <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
+            <hr />
+            <div class="section-title">Member Information</div>
+            <div class="member-info-section">
+                <div class="ticket-row">
+                    <label for="memberId" class="soft-label">Member ID</label>
+                    <input type="text" id="memberId" class="soft-readonly" value="@Model.MemberId" readonly />
+                    <label for="memberFullName" class="soft-label">Full Name</label>
+                    <input type="text" id="memberFullName" class="soft-readonly" value="@Model.MemberFullName" readonly />
+                </div>
+                <div class="ticket-row">
+                    <label for="memberIdentityCard" class="soft-label">Identity Card</label>
+                    <input type="text" id="memberIdentityCard" class="soft-readonly" value="@Model.MemberIdentityCard" readonly />
+                    <label for="memberPhoneNumber" class="soft-label">Phone Number</label>
+                    <input type="text" id="memberPhoneNumber" class="soft-readonly" value="@Model.MemberPhoneNumber" readonly />
+                </div>
+                <div class="ticket-row">
+                    <label for="memberScore" class="soft-label">Member Score</label>
+                    <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
+                </div>
+            </div>
+            <div class="mb-3 mt-3">
+                <label for="ticketsToConvert" class="soft-label"><strong>Number of tickets to convert using score:</strong></label>
+                <input type="number" id="ticketsToConvert" class="form-control" min="0" max="@Model.BookingDetails.SelectedSeats.Count" value="0" />
+                <div id="scoreStatus" class="mt-2"></div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg" disabled>Confirm Ticket Booking</button>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // AC-02: Member Check Button Click
+            $('#checkMemberBtn').click(function () {
+                var memberInput = $('#memberInput').val();
+                if (memberInput) {
+                    $.ajax({
+                        url: '@Url.Action("CheckMemberDetails", "Booking")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ MemberInput: memberInput }),
+                        success: function (response) {
+                            if (response.success) {
+                                $('#memberId').val(response.memberId);
+                                $('#memberFullName').val(response.fullName);
+                                $('#memberIdentityCard').val(response.identityCard);
+                                $('#memberPhoneNumber').val(response.phoneNumber);
+                                $('#memberScore').val(response.memberScore);
+                                $('#memberDetails').show();
+                                $('#memberMessage').hide();
+                                $('#confirmTicketAdminBtn').prop('disabled', false);
+                                $('#ticketsToConvert').val(0);
+                                $('#scoreStatus').html('');
+                            } else {
+                                $('#memberDetails').hide();
+                                $('#memberMessage').text(response.message).show();
+                                $('#confirmTicketAdminBtn').prop('disabled', true);
+                                $('#ticketsToConvert').val(0);
+                                $('#scoreStatus').html('');
+                                // Clear member info fields
+                                $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("AJAX Error:", error);
+                            $('#memberDetails').hide();
+                            $('#memberMessage').text("An error occurred while checking member details.").show();
+                            $('#confirmTicketAdminBtn').prop('disabled', true);
+                            $('#ticketsToConvert').val(0);
+                            $('#scoreStatus').html('');
+                            // Clear member info fields
+                            $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
+                        }
+                    });
+                } else {
+                    $('#memberDetails').hide();
+                    $('#memberMessage').text("Please enter a Member ID or Identity Card.").show();
+                    $('#confirmTicketAdminBtn').prop('disabled', true);
+                    $('#ticketsToConvert').val(0);
+                    $('#scoreStatus').html('');
+                    // Clear member info fields
+                    $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
+                }
+            });
+
+            // Confirm Ticket Admin Button Click
+            $('#confirmTicketAdminBtn').click(function () {
+                // Ensure SelectedSeats uses PascalCase property names to match backend model
+                var model = {
+                    BookingDetails: {
+                        MovieId: '@Model.BookingDetails.MovieId',
+                        MovieName: '@Model.BookingDetails.MovieName',
+                        CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
+                        ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
+                        ShowTime: '@Model.BookingDetails.ShowTime',
+                        // This will output PascalCase property names as required by backend
+                        SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
+                        TotalPrice: @Model.BookingDetails.TotalPrice,
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket
+                    },
+                    MemberIdInput: $('#memberInput').val(),
+                    MemberId: $('#memberId').val(),
+                    MemberFullName: $('#memberFullName').val(),
+                    MemberIdentityCard: $('#memberIdentityCard').val(),
+                    MemberPhoneNumber: $('#memberPhoneNumber').val(),
+                    MemberScore: parseInt($('#memberScore').val()) || 0,
+                    TicketsToConvert: parseInt($('#ticketsToConvert').val()) || 0
+                };
+
+                $.ajax({
+                    url: '@Url.Action("ConfirmTicketForAdmin", "Booking")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (response) {
+                        if (response.success) {
+                            window.location.href = response.redirectUrl; // Redirect to success page
+                        } else {
+                            $('#memberMessage').text(response.message).show();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", error);
+                        $('#memberMessage').text("An error occurred during booking confirmation.").show();
+                    }
+                });
+            });
+
+            // Real-time score check when number of tickets to convert changes
+            $('#ticketsToConvert').on('input', function () {
+                var ticketsToConvert = parseInt($(this).val()) || 0;
+                var ticketPrices = [];
+                @foreach (var seat in Model.BookingDetails.SelectedSeats)
+                {
+                    @:ticketPrices.push(@seat.Price);
+                }
+                var memberScore = parseInt($('#memberScore').val()) || 0;
+                if (ticketsToConvert > 0) {
+                    $.ajax({
+                        url: '/Booking/CheckScoreForConversion',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            TicketPrices: ticketPrices,
+                            TicketsToConvert: ticketsToConvert,
+                            MemberScore: memberScore
+                        }),
+                        success: function (response) {
+                            if (response.success) {
+                                $('#scoreStatus').html('<span class="text-success">Score needed: ' + response.scoreNeeded + '. Tickets will be converted.</span>');
+                                $('#confirmTicketAdminBtn').prop('disabled', false);
+                            } else {
+                                $('#scoreStatus').html('<span class="text-danger">' + response.message + ' (Score needed: ' + response.scoreNeeded + ')</span>');
+                                $('#confirmTicketAdminBtn').prop('disabled', true);
+                            }
+                        },
+                        error: function () {
+                            $('#scoreStatus').html('<span class="text-danger">Error checking score.</span>');
+                            $('#confirmTicketAdminBtn').prop('disabled', true);
+                        }
+                    });
+                } else {
+                    $('#scoreStatus').html('');
+                    $('#confirmTicketAdminBtn').prop('disabled', false);
+                }
+            });
+        });
+    </script>
+} 

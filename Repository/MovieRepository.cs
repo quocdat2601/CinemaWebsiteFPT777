@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Repository
 {
@@ -43,7 +40,7 @@ namespace MovieTheater.Repository
                 .OrderBy(comparer => comparer.MovieId)
                 .ToList();
         }
-       
+
         public Movie? GetById(string id)
         {
             return _context.Movies
@@ -114,13 +111,13 @@ namespace MovieTheater.Repository
                 .Include(m => m.Types)
                 .Include(m => m.MovieShows)
                 .FirstOrDefault(m => m.MovieId == id);
-                
+
             if (movie != null)
             {
                 movie.Types?.Clear();
                 movie.MovieShows?.Clear();
                 _context.Movies.Remove(movie);
-                
+
                 try
                 {
                     _context.SaveChanges();
@@ -203,7 +200,7 @@ namespace MovieTheater.Repository
             var movieShows = await _context.MovieShows
                 .Include(ms => ms.ShowDate)
                 .Include(ms => ms.Schedule)
-                .Where(ms => ms.MovieId == movieId && 
+                .Where(ms => ms.MovieId == movieId &&
                        ms.ShowDate.ShowDate1 == dateOnly)
                 .ToListAsync();
 
@@ -257,8 +254,8 @@ namespace MovieTheater.Repository
         public bool IsScheduleAvailable(int showDateId, int scheduleId, int? cinemaRoomId)
         {
             return !_context.MovieShows
-                .Any(ms => ms.ShowDateId == showDateId 
-                    && ms.ScheduleId == scheduleId 
+                .Any(ms => ms.ShowDateId == showDateId
+                    && ms.ScheduleId == scheduleId
                     && ms.CinemaRoomId == cinemaRoomId);
         }
 

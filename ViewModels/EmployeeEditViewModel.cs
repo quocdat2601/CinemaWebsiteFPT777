@@ -51,4 +51,4 @@ namespace MovieTheater.ViewModels
         public IFormFile? ImageFile { get; set; }
         public string? Image { get; set; }
     }
-} 
+}

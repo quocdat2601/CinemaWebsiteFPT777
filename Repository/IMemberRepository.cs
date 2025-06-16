@@ -11,6 +11,8 @@ namespace MovieTheater.Repository
         public void Update(Member member);
         public void Delete(string memberId);
         public void Save();
-
+        public Member? GetByIdentityCard(string identityCard);
+        public Member? GetByAccountId(string accountId);
+        public Member GetByMemberId(string memberId);
     }
 }

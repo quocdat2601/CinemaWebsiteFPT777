@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -15,8 +17,16 @@ namespace MovieTheater.Controllers
         private readonly ISeatTypeService _seatTypeService;
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
+        private readonly IInvoiceService _invoiceService;
 
-        public AdminController(IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService)
+        public AdminController(IMovieService movieService, 
+                               IEmployeeService employeeService, 
+                               IPromotionService promotionService, 
+                               ICinemaService cinemaService, 
+                               ISeatTypeService seatTypeService, 
+                               IMemberRepository memberRepository, 
+                               IAccountService accountService,  
+                               IInvoiceService invoiceService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -25,6 +35,7 @@ namespace MovieTheater.Controllers
             _seatTypeService = seatTypeService;
             _memberRepository = memberRepository;
             _accountService = accountService;
+            _invoiceService = invoiceService;
         }
 
         // GET: AdminController
@@ -35,7 +46,7 @@ namespace MovieTheater.Controllers
             return View();
         }
 
-        public IActionResult LoadTab(string tab,string keyword = null)
+        public IActionResult LoadTab(string tab, string keyword = null)
         {
             switch (tab)
             {
@@ -76,8 +87,25 @@ namespace MovieTheater.Controllers
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
-                case "TicketSellingMg":
-                    return PartialView("TicketSellingMg");
+                case "BookingMg":
+                    var invoices = _invoiceService.GetAll();
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        ViewBag.Keyword = keyword;
+                        keyword = keyword.Trim().ToLower();
+
+                        invoices = invoices.Where(i =>
+                            (!string.IsNullOrEmpty(i.InvoiceId) && i.InvoiceId.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(i.AccountId) && i.AccountId.ToLower().Contains(keyword)) ||
+                            (i.Account != null && (
+                                (!string.IsNullOrEmpty(i.Account.PhoneNumber) && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                                (!string.IsNullOrEmpty(i.Account.IdentityCard) && i.Account.IdentityCard.ToLower().Contains(keyword))
+                            ))
+                        ).ToList();
+                    }
+
+                    return PartialView("BookingMg", invoices);
                 default:
                     return Content("Tab not found.");
             }
@@ -131,8 +159,7 @@ namespace MovieTheater.Controllers
             // Store the member's AccountId in TempData to use in the ticket selling process
             TempData["InitiateTicketSellingForMemberId"] = id;
 
-            // Redirect to the start of the ticket selling process (ShowtimeController's Select action)
-            var returnUrl = Url.Action("MainPage", "Admin", new { tab = "MemberMg" });
+            var returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
             return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
         }
 

@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-
 namespace MovieTheater.Controllers
 {
     public class EmployeeController : Controller
@@ -15,22 +12,22 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
-
-        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService)
+        private readonly IInvoiceService _invoiceService;
+        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService)
         {
             _service = service;
             _logger = logger;
             _movieService = movieService;
             _memberRepository = memberRepository;
             _accountService = accountService;
-
+            _invoiceService = invoiceService;
         }
         // GET: EmployeeController
         public IActionResult MainPage(string tab = "MemberMg")
         {
             ViewData["ActiveTab"] = tab;
             return View();
-        } 
+        }
 
         [Authorize(Roles = "Employee")]
         public IActionResult MemberList()
@@ -40,7 +37,7 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Employee")]
-        public IActionResult LoadTab(string tab)
+        public IActionResult LoadTab(string tab, string keyword = null)
         {
             switch (tab)
             {
@@ -56,8 +53,23 @@ namespace MovieTheater.Controllers
                     return PartialView("SheduleMg");
                 case "PromotionMg":
                     return PartialView("PromotionMg");
-                case "TicketSellingMg":
-                    return PartialView("TicketSellingMg");
+                case "BookingMg":
+                    var invoices = _invoiceService.GetAll();
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        keyword = keyword.Trim().ToLower();
+                        invoices = invoices.Where(i =>
+                            (i.InvoiceId != null && i.InvoiceId.ToLower().Contains(keyword)) ||
+                            (i.AccountId != null && i.AccountId.ToLower().Contains(keyword)) ||
+                            (i.Account != null && (
+                                (i.Account.PhoneNumber != null && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                                (i.Account.IdentityCard != null && i.Account.IdentityCard.ToLower().Contains(keyword))
+                            ))
+                        ).ToList();
+                    }
+
+                    return PartialView("BookingMg", invoices);
                 default:
                     return Content("Tab not found.");
             }
@@ -73,7 +85,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            var model = new RegisterViewModel(); 
+            var model = new RegisterViewModel();
             return View(model);
         }
 
@@ -106,7 +118,7 @@ namespace MovieTheater.Controllers
                     }
                     model.Image = "/image/" + uniqueFileName;
                 }
-               
+
                 var success = _service.Register(model);
 
                 if (!success)

@@ -123,8 +123,8 @@ namespace MovieTheater.Controllers
                 var registerModel = new RegisterViewModel
                 {
                     AccountId = model.AccountId,
-                    Username = user.Username, 
-                    Password = user.Password, 
+                    Username = user.Username,
+                    Password = user.Password,
                     FullName = model.FullName,
                     DateOfBirth = model.DateOfBirth,
                     Gender = model.Gender,

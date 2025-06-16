@@ -85,46 +85,61 @@
                 <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
                 <input type="hidden" name="SelectedSeats[@i].SeatType" value="@Model.SelectedSeats[i].SeatType" />
                 <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
+                <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
 
             <div class="text-center mt-4">
-                <button type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+                <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
             </div>
         </form>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        const useScoreInput = document.getElementById("useScore");
-        const displayTotal = document.getElementById("displayTotal");
-        const totalPriceOriginal = @Model.TotalPrice;
-        const currentScore = @Model.CurrentScore;
-        const hiddenUseScore = document.getElementById("hiddenUseScore");
-        const scoreMessage = document.getElementById("scoreMessage");
+<style>
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
 
-        useScoreInput.addEventListener("input", function () {
-            let used = parseInt(useScoreInput.value) || 0;
-            let valid = true;
+<script>
+    const useScoreInput = document.getElementById("useScore");
+    const displayTotal = document.getElementById("displayTotal");
+    const totalPriceOriginal = @Model.TotalPrice;
+    const currentScore = @Model.CurrentScore;
+    const hiddenUseScore = document.getElementById("hiddenUseScore");
+    const scoreMessage = document.getElementById("scoreMessage");
+    const confirmBtn = document.getElementById("confirmBtn");
 
-            if (used > currentScore) {
-                scoreMessage.textContent = "❌ Member score is not enough.";
-                valid = false;
-            } else {
-                const moneyReduced = used.toLocaleString("en-US");
-                const newTotal = Math.max(0, totalPriceOriginal - used);
-                const newTotalDisplay = newTotal.toLocaleString("en-US");
+    useScoreInput.addEventListener("input", function () {
+        let used = parseInt(useScoreInput.value) || 0;
+        let valid = true;
 
-                scoreMessage.textContent = `✔ Convert ${moneyReduced} score to reduce ${moneyReduced} VND`;
-                displayTotal.textContent = newTotalDisplay;
-                hiddenUseScore.value = used;
-            }
+        scoreMessage.textContent = "";
 
-            if (!valid) {
-                displayTotal.textContent = totalPriceOriginal.toLocaleString("en-US");
-                hiddenUseScore.value = 0;
-            }
-        });
+        if (used > currentScore) {
+            scoreMessage.textContent = "❌ You do not have enough points.";
+            valid = false;
+        } else if (used > totalPriceOriginal) {
+            scoreMessage.textContent = "❌ You cannot use more points than the total price.";
+            valid = false;
+        } else {
+            const moneyReduced = used.toLocaleString("en-US");
+            const newTotal = Math.max(0, totalPriceOriginal - used);
+            displayTotal.textContent = newTotal.toLocaleString("en-US");
+            scoreMessage.textContent = `✔ ${moneyReduced} points will reduce ${moneyReduced} VND.`;
+            hiddenUseScore.value = used;
+        }
 
-    </script>
-}
+        if (!valid) {
+            displayTotal.textContent = totalPriceOriginal.toLocaleString("en-US");
+            hiddenUseScore.value = 0;
+            confirmBtn.disabled = true; // ❌ Không cho submit
+        } else {
+            confirmBtn.disabled = false; // ✅ Cho phép submit
+        }
+    });
+
+    // Đảm bảo trạng thái nút ban đầu là enable
+    confirmBtn.disabled = false;
+</script>
