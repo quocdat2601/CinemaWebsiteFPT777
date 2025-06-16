@@ -1,11 +1,52 @@
-@{
+﻿@{
     ViewData["Title"] = "Home";
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
 }
 <link rel="stylesheet" href="~/css/home-page.css" asp-append-version="true" />
 
-<!-- Hero Section OUTSIDE container -->
+
+<div class="container-xl py-4">
+    <!-- Slideshow banner -->
+    <div class="slideshow-container">
+        <ul id="home_big_banner" class="slideshow"
+            data-cycle-fx="fade"
+            data-cycle-timeout="5000"
+            data-cycle-slides="> li"
+            data-cycle-pager=".home_big_banner_pager"
+            data-cycle-pager-template="<span class='pager-bullet'></span>"
+            data-cycle-prev=".home_big_banner_prev"
+            data-cycle-next=".home_big_banner_next"
+            data-cycle-swipe="true"
+            data-cycle-swipe-fx="fade">
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h_1_-min_6.jpg" alt="Banner 1" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h-duoidayho.jpg" alt="Banner 2" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://i.ytimg.com/vi/8Yj61CP1Sic/maxresdefault.jpg" alt="Banner 3" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://www.bhdstar.vn/wp-content/uploads/2024/08/referenceSchemeHeadOfficeallowPlaceHoldertrueheight360ldapp.png" alt="Banner 4" />
+                </a>
+            </li>
+        </ul>
+        <button type="button" class="slideshow-prev home_big_banner_prev" aria-label="Previous slide">&#10094;</button>
+        <button type="button" class="slideshow-next home_big_banner_next" aria-label="Next slide">&#10095;</button>
+        <div class="home_big_banner_pager pager-container"></div>
+    </div>
+
+    <div class="mb-5"></div>
+    <!-- Hero Section OUTSIDE container -->
 <div class="hero-section">
     <div class="hero-bg" id="hero-bg" style="background-image: url('@Url.Content(movies.FirstOrDefault()?.LargeImage)');"></div>
     <div class="hero-content row no-gutters">
@@ -71,6 +112,36 @@
 
 @section Scripts {
     <script>
+        $(document).ready(function() {
+            // Initialize cycle2 slideshow with explicit options
+            $('#home_big_banner').cycle({
+                fx: 'fade',
+                timeout: 5000,
+                slides: '> li',
+                pager: '.home_big_banner_pager',
+                pagerTemplate: '<span class="pager-bullet"></span>',
+                prev: '.home_big_banner_prev',
+                next: '.home_big_banner_next',
+                swipe: true,
+                swipeFx: 'fade',
+                log: false,
+                speed: 1000,
+                pauseOnHover: true,
+                allowWrap: true,
+                manualSpeed: 1000,
+                manualTrump: true
+            });
+
+            // Add click event handlers as backup
+            $('.home_big_banner_prev').on('click', function() {
+                $('#home_big_banner').cycle('prev');
+            });
+            
+            $('.home_big_banner_next').on('click', function() {
+                $('#home_big_banner').cycle('next');
+            });
+        });
+
         var movieSwiper = new Swiper('.movie-swiper', {
             effect: 'coverflow',
             grabCursor: true,
@@ -177,4 +248,6 @@
             }
         });
     </script>
+          
+
 }

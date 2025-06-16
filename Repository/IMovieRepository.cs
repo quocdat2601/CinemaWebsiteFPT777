@@ -17,7 +17,7 @@ namespace MovieTheater.Repository
         public List<Models.Type> GetTypesByIds(List<int> ids);
         Task<List<DateTime>> GetShowDatesAsync(string movieId);
         Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);
-        
+
         // New methods for MovieShow
         public void AddMovieShow(MovieShow movieShow);
         public void AddMovieShows(List<MovieShow> movieShows);

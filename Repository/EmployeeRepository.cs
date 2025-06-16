@@ -4,7 +4,7 @@ using MovieTheater.Models;
 namespace MovieTheater.Repository
 {
     public class EmployeeRepository : IEmployeeRepository
-    
+
     {
         private readonly MovieTheaterContext _context;
 
@@ -40,7 +40,7 @@ namespace MovieTheater.Repository
                 return "EM001";
             }
 
-            if (int.TryParse(latestEmployee.EmployeeId.Substring(2,3), out int number))
+            if (int.TryParse(latestEmployee.EmployeeId.Substring(2, 3), out int number))
             {
                 return $"EM{(number + 1):D3}";
             }
@@ -74,7 +74,7 @@ namespace MovieTheater.Repository
                 _context.SaveChanges();
             }
         }
-        
+
         public void Save()
         {
             _context.SaveChanges();

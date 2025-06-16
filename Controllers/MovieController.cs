@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -53,7 +50,16 @@ namespace MovieTheater.Controllers
         public ActionResult Detail(string id)
         {
             var movie = _movieService.GetById(id);
-            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId);
+            if (movie == null)
+            {
+                return NotFound(); // hoặc redirect về trang lỗi
+            }
+
+            CinemaRoom cinemaRoom = null;
+            if (movie.CinemaRoomId != null)
+            {
+                cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId);
+            }
 
             var viewModel = new MovieDetailViewModel
             {
@@ -74,7 +80,7 @@ namespace MovieTheater.Controllers
                 AvailableTypes = movie.Types.ToList(),
                 AvailableSchedules = movie.MovieShows.Select(ms => ms.Schedule).Where(s => s != null).ToList(),
                 AvailableShowDates = _movieService.GetMovieShows(id).Select(ms => ms.ShowDate).Where(sd => sd != null).ToList()
-            }; 
+            };
 
             return View(viewModel);
         }
@@ -251,11 +257,11 @@ namespace MovieTheater.Controllers
             if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, new List<int>() /* TODO: Provide actual scheduleIds */))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
-            string role = GetUserRole();
-            if (role == "Admin")
-                return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-            else
-                return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                string role = GetUserRole();
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
             }
 
             TempData["ErrorMessage"] = "Failed to update movie. Some schedules may be unavailable.";
@@ -265,7 +271,7 @@ namespace MovieTheater.Controllers
             model.AvailableSchedules = _movieService.GetAllSchedules();
             return View(model);
         }
-                
+
         // POST: Movie/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -296,7 +302,7 @@ namespace MovieTheater.Controllers
                 }
 
                 movie.Types?.Clear();
-                
+
                 bool success = _movieService.DeleteMovie(id);
 
                 if (!success)

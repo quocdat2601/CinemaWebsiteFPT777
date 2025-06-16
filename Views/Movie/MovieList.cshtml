@@ -3,9 +3,12 @@
     ViewData["Title"] = "Movie List";
 }
 
-<link rel="stylesheet" href="~/css/movie-grid.css">
-<link rel="stylesheet" href="~/css/header-filters.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/movie-grid.css" />
+<link rel="stylesheet" href="~/css/header-filters.css" />
+<link rel="stylesheet" href="~/css/promotion.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+
+
 
 <!-- Loading Overlay -->
 <div id="loading-overlay" style="
@@ -24,48 +27,35 @@
 </div>
 
 <div id="content" style="display: none;">
-
     <div class="container mt-3">
-        <header class="header">
+        <header class="header d-flex justify-content-between align-items-center">
             <h1 class="header-title">Movie List</h1>
-            <div class="text-center my-4">
-                <form asp-action="MovieList" method="get" class="d-flex justify-content-center gap-2">
-                    <div class="input-group" style="max-width: 600px;">
-                        <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" maxlength="50" class="form-control" placeholder="🔍 Search by movies.." />
-                        @* <button type="submit" class="btn btn-primary">Search</button> *@
-                    </div>
+            
+        </header>
 
-
-                </form>
-            </div>
+        <div class="text-center my-4">
+            <form asp-action="MovieList" method="get" class="d-flex justify-content-center gap-2">
+                <div class="input-group" style="max-width: 600px;">
+                    <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" maxlength="50" class="form-control" placeholder="🔍 Search by movies.." />
+                </div>
+            </form>
+        </div>
 
         </header>
 
-        <section class="filters">
-            <h2 class="filter-title">Genres</h2>
-            <div class="filter-tags">
-                <button class="filter-tag" data-type="Action">Action</button>
-                <button class="filter-tag" data-type="Comedy">Comedy</button>
-                <button class="filter-tag" data-type="Drama">Drama</button>
-                <button class="filter-tag" data-type="Horror">Horror</button>
-                <button class="filter-tag" data-type="Sci-Fi">Sci-Fi</button>
-                <button class="filter-tag" data-type="Romance">Romance</button>
-                <button class="filter-tag" data-type="Thriller">Thriller</button>
-                <button class="filter-tag" data-type="Documentary">Documentary</button>
-                <button class="filter-tag" data-type="Animation">Animation</button>
-            </div>
-        </section>
         @* CHUYỂN SANG TRANG PARTIAL VIEW *@
         <main class="movie-grid" id="movieGrid">
             @await Html.PartialAsync("_MovieGrid", Model)
         </main>
 
-    </div>
-</div>
+      
 
 <partial name="_ToastMessages" />
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.js"></script>
+
     <script>
         // Ẩn loading và hiển thị nội dung sau khi trang đã render xong
         window.addEventListener("load", function () {
@@ -93,6 +83,7 @@
                     });
             }, 300);
         });
+
+      
     </script>
 }
-

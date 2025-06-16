@@ -1,5 +1,5 @@
-﻿using MovieTheater.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 
 namespace MovieTheater.Repository
 {
@@ -97,7 +97,7 @@ namespace MovieTheater.Repository
             if (cinemaRoom != null)
             {
                 var seats = await _seatRepository.GetByCinemaRoomIdAsync(id);
-                
+
                 foreach (var seat in seats)
                 {
                     await _seatRepository.DeleteAsync(seat.SeatId);

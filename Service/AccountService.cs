@@ -1,19 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
-using System.Net;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Security.Claims;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Service
 {
@@ -96,7 +86,7 @@ namespace MovieTheater.Service
             if (model.Username != account.Username)
             {
                 var duplicate = _repository.GetByUsername(model.Username);
-                if (duplicate != null) 
+                if (duplicate != null)
                 {
                     throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
                 }
@@ -149,7 +139,7 @@ namespace MovieTheater.Service
         //        return false;
         //    }
         //}
-        
+
         //KIỂM TRA ACCOUNT NULL TRƯỚC KHI DÙNG
         public bool Authenticate(string username, string password, out Account? account)
         {
@@ -283,7 +273,7 @@ namespace MovieTheater.Service
 
             var hasher = new PasswordHasher<Account>();
             account.Password = hasher.HashPassword(null, newPassword);
-            
+
             _repository.Update(account);
             _repository.Save();
             return true;
@@ -299,7 +289,7 @@ namespace MovieTheater.Service
 
             var hasher = new PasswordHasher<Account>();
             account.Password = hasher.HashPassword(null, newPassword);
-            
+
             _repository.Update(account);
             _repository.Save();
             return true;

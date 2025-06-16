@@ -36,6 +36,6 @@ namespace MovieTheater.Controllers
         {
             return View();
         }
-        
+
     }
 }

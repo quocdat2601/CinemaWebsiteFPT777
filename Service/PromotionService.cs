@@ -26,7 +26,7 @@ namespace MovieTheater.Service
         {
             if (promotion == null)
                 return false;
-                
+
             _promotionRepository.Add(promotion);
             return true;
         }
