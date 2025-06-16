@@ -108,6 +108,9 @@ namespace MovieTheater
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
+            builder.Services.Configure<VNPayConfig>(
+             builder.Configuration.GetSection("VNPay")
+                );
 
             builder.Services.AddHttpContextAccessor();
 

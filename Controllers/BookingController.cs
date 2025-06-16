@@ -210,7 +210,11 @@ namespace MovieTheater.Controllers
 
             return View(viewModel);
         }
-
+        [HttpGet]
+        public IActionResult Failed()
+        {
+         return View();
+        }
         [HttpPost]
         public IActionResult ProcessPayment(PaymentViewModel model)
         {
