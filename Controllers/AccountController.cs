@@ -90,7 +90,7 @@ namespace MovieTheater.Controllers
             // Log các trường thông tin để debug
             _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
             // Kiểm tra thiếu thông tin
-            bool missingInfo = 
+            bool missingInfo =
                 !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
                 string.IsNullOrWhiteSpace(user.Gender) ||
                 string.IsNullOrWhiteSpace(user.IdentityCard) ||
@@ -108,13 +108,13 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-                string roleName = user.RoleId switch
-                {
-                    1 => "Admin",
-                    2 => "Employee",
-                    3 => "Customer",
-                    _ => "Guest"
-                };
+            string roleName = user.RoleId switch
+            {
+                1 => "Admin",
+                2 => "Employee",
+                3 => "Customer",
+                _ => "Guest"
+            };
 
             var appClaims = new List<Claim>
             {
@@ -164,7 +164,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("Index", "Home");
                 //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }

@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Repository
 {
@@ -43,7 +40,7 @@ namespace MovieTheater.Repository
                 .OrderBy(comparer => comparer.MovieId)
                 .ToList();
         }
-       
+
         public Movie? GetById(string id)
         {
             return _context.Movies
@@ -129,7 +126,7 @@ namespace MovieTheater.Repository
                 .Include(m => m.Types)
                 .Include(m => m.MovieShows)
                 .FirstOrDefault(m => m.MovieId == id);
-                
+
             if (movie != null)
             {
                 // Remove all related movie shows
@@ -145,7 +142,7 @@ namespace MovieTheater.Repository
                 }
                 
                 _context.Movies.Remove(movie);
-                
+
                 try
                 {
                     _context.SaveChanges();

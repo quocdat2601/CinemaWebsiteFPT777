@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
@@ -56,6 +54,16 @@ namespace MovieTheater.Controllers
         public ActionResult Detail(string id)
         {
             var movie = _movieService.GetById(id);
+            if (movie == null)
+            {
+                return NotFound(); // hoặc redirect về trang lỗi
+            }
+
+            CinemaRoom cinemaRoom = null;
+            if (movie.CinemaRoomId != null)
+            {
+                cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId);
+            }
 
             var viewModel = new MovieDetailViewModel
             {

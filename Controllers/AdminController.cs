@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using MovieTheater.Models;
 using System.Security.Claims;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +19,6 @@ namespace MovieTheater.Controllers
         private readonly ISeatTypeService _seatTypeService;
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
-        private readonly IBookingService _bookingService;
-        private readonly ISeatService _seatService;
         private readonly IInvoiceService _invoiceService;
         private readonly IScheduleRepository _scheduleRepository;
 
@@ -44,8 +42,6 @@ namespace MovieTheater.Controllers
             _seatTypeService = seatTypeService;
             _memberRepository = memberRepository;
             _accountService = accountService;
-            _bookingService = bookingService;
-            _seatService = seatService;
             _invoiceService = invoiceService;
             _scheduleRepository = scheduleRepository;
         }

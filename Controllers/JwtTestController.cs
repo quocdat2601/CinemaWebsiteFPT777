@@ -60,4 +60,4 @@ namespace MovieTheater.Controllers
             });
         }
     }
-} 
+}

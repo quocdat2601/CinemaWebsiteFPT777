@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System.Linq;
 namespace MovieTheater.Controllers
 {
     public class EmployeeController : Controller
@@ -30,7 +27,7 @@ namespace MovieTheater.Controllers
         {
             ViewData["ActiveTab"] = tab;
             return View();
-        } 
+        }
 
         [Authorize(Roles = "Employee")]
         public IActionResult MemberList()
@@ -88,7 +85,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            var model = new RegisterViewModel(); 
+            var model = new RegisterViewModel();
             return View(model);
         }
 
@@ -121,7 +118,7 @@ namespace MovieTheater.Controllers
                     }
                     model.Image = "/image/" + uniqueFileName;
                 }
-               
+
                 var success = _service.Register(model);
 
                 if (!success)

@@ -1,11 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
-using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -95,7 +91,7 @@ namespace MovieTheater.Controllers
         public IActionResult Select(string date, string returnUrl)
         {
             // 1. Get all available screening dates as DateTime
-            var availableDates = _context.ShowDates 
+            var availableDates = _context.ShowDates
                 .OrderBy(d => d.ShowDate1)
                 .Select(d => d.ShowDate1)
                 .ToList() // materialize as List<DateOnly?>

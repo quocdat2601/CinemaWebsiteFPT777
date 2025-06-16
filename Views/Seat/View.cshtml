@@ -237,11 +237,10 @@
 
             const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
             if (isAdminSell) {
-				window.location.href = `/Admin/ConfirmTicketForAdmin?${params.toString()}`;
+				window.location.href = `/Booking/ConfirmTicketForAdmin?${params.toString()}`;
             } else {
 				window.location.href = `/Booking/Information?${params.toString()}`;
             }
-            window.location.href = redirectUrl;
         });
 
 		

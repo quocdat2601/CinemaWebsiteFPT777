@@ -1,10 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 using MovieTheater.Repository;
-using MovieTheater.ViewModels;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 

@@ -1,6 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace MovieTheater.ViewModels
 {

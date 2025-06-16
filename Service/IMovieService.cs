@@ -1,5 +1,4 @@
 ﻿using MovieTheater.Models;
-using MovieTheater.ViewModels;
 
 namespace MovieTheater.Service
 {
