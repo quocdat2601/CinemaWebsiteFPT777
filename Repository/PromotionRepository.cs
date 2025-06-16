@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Repository
 {
@@ -37,7 +35,7 @@ namespace MovieTheater.Repository
             var existingMovie = _context.Promotions.FirstOrDefault(m => m.PromotionId == promotion.PromotionId);
             if (existingMovie != null)
             {
-                
+
             }
         }
 
@@ -50,7 +48,7 @@ namespace MovieTheater.Repository
 
             if (promotion != null)
             {
-             
+
 
                 _context.Promotions.Remove(promotion);
                 _context.SaveChanges();

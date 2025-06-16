@@ -41,20 +41,6 @@
 
         </header>
 
-        <section class="filters">
-            <h2 class="filter-title">Genres</h2>
-            <div class="filter-tags">
-                <button class="filter-tag" data-type="Action">Action</button>
-                <button class="filter-tag" data-type="Comedy">Comedy</button>
-                <button class="filter-tag" data-type="Drama">Drama</button>
-                <button class="filter-tag" data-type="Horror">Horror</button>
-                <button class="filter-tag" data-type="Sci-Fi">Sci-Fi</button>
-                <button class="filter-tag" data-type="Romance">Romance</button>
-                <button class="filter-tag" data-type="Thriller">Thriller</button>
-                <button class="filter-tag" data-type="Documentary">Documentary</button>
-                <button class="filter-tag" data-type="Animation">Animation</button>
-            </div>
-        </section>
         @* CHUYỂN SANG TRANG PARTIAL VIEW *@
         <main class="movie-grid" id="movieGrid">
             @await Html.PartialAsync("_MovieGrid", Model)
