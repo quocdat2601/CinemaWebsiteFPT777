@@ -60,4 +60,4 @@ public class CoupleSeatRepository : ICoupleSeatRepository
         return await _context.CoupleSeats
             .AnyAsync(cs => cs.FirstSeatId == seatId || cs.SecondSeatId == seatId);
     }
-} 
+}

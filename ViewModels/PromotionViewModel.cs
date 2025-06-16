@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace MovieTheater.ViewModels
@@ -32,4 +31,4 @@ namespace MovieTheater.ViewModels
         [Display(Name = "Active Status")]
         public bool IsActive { get; set; }
     }
-} 
+}

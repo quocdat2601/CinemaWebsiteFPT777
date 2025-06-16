@@ -1,5 +1,4 @@
 ﻿using MovieTheater.Models;
-using System.Collections.Generic;
 
 namespace MovieTheater.Repository
 {

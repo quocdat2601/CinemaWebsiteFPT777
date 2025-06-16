@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 
@@ -36,7 +35,7 @@ namespace MovieTheater.Service
             return result;
         }
 
-        
+
         public bool Update(string id, RegisterViewModel model)
         {
             var employee = _repository.GetById(id);

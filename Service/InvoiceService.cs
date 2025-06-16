@@ -1,6 +1,5 @@
 ﻿using MovieTheater.Models;
 using MovieTheater.Repository;
-using NuGet.Protocol.Core.Types;
 
 namespace MovieTheater.Service
 {

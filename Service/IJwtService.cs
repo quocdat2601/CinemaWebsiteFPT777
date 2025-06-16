@@ -9,4 +9,4 @@ namespace MovieTheater.Service
         bool ValidateToken(string token);
         ClaimsPrincipal? GetPrincipalFromToken(string token);
     }
-} 
+}

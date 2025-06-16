@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using MovieTheater.Models;
 using System.Security.Claims;
-using System.Linq;
 
 namespace MovieTheater.Controllers
 {
@@ -290,7 +289,8 @@ namespace MovieTheater.Controllers
             {
                 BookingDetails = bookingDetails,
                 MemberCheckMessage = "",
-                ReturnUrl = Url.Action("Select", "Seat", new {
+                ReturnUrl = Url.Action("Select", "Seat", new
+                {
                     movieId = movieId,
                     date = showDate.ToString("yyyy-MM-dd"),
                     time = showTime,

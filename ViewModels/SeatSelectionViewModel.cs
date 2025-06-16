@@ -16,4 +16,4 @@ namespace MovieTheater.ViewModels
         public List<SeatType> SeatTypes { get; set; }
         public string ReturnUrl { get; set; }
     }
-} 
+}
