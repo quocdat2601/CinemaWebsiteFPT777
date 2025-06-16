@@ -3,33 +3,50 @@
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
 }
+<link rel="stylesheet" href="~/css/home-page.css" asp-append-version="true" />
+
+<!-- Hero Section OUTSIDE container -->
+<div class="hero-section">
+    <div class="hero-bg" id="hero-bg" style="background-image: url('@Url.Content(movies.FirstOrDefault()?.LargeImage)');"></div>
+    <div class="hero-content row no-gutters">
+        <div class="col-md-7 hero-info" id="hero-info">
+
+            <h1 class="movie-title">@movies.FirstOrDefault()?.MovieNameEnglish</h1>
+            <div class="movie-meta">
+                <span class="movie-duration">@movies.FirstOrDefault()?.Duration</span>
+                <span class="movie-director">@movies.FirstOrDefault()?.Director</span>
+                <span class="movie-version">@movies.FirstOrDefault()?.Version</span>
+            </div>
+            <p class="movie-desc">@movies.FirstOrDefault()?.Content</p>
+            <div class="movie-actions">
+                <a href="#" class="btn btn-danger">WATCH</a>
+            </div>
+        </div>
+        <div class="col-md-5 d-flex align-items-center justify-content-end">
+            <div class="movie-slider-glass">
+                <div class="swiper movie-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach (var movie in movies)
+                        {
+                            <div class="swiper-slide" 
+                                 data-large="@movie.LargeImage"
+                                 data-title="@movie.MovieNameEnglish"
+                                 data-duration="@movie.Duration"
+                                 data-director="@movie.Director"
+                                 data-version="@movie.Version"
+                                 data-desc="@movie.Content">
+                                <img src="@movie.SmallImage" class="slider-img" alt="@movie.MovieNameEnglish">
+                            </div>
+                        }
+                    </div>
+                    <div class="swiper-pagination movie-pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="container-xl py-4">
-    <!-- Hero Banner (để trống) -->
-    <div class="mb-5"></div>
-
-    <!-- Movie Slider -->
-    <h2 class="section-title">MOVIE</h2>
-    <div class="swiper movie-swiper mb-5">
-        <div class="swiper-wrapper">
-            @foreach (var movie in movies)
-            {
-                <div class="swiper-slide">
-                    <div class="card movie-card h-100 shadow-sm">
-                        <img src="@movie.SmallImage" class="card-img-top" alt="@movie.MovieNameEnglish">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">@movie.MovieNameEnglish</h5>
-                            <a href="@Url.Action("MovieList", "Movie")" class="btn btn-danger mt-2 px-4">Đặt vé</a>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-        <div class="swiper-pagination movie-pagination"></div>
-        <div class="swiper-button-next movie-next"></div>
-        <div class="swiper-button-prev movie-prev"></div>
-    </div>
-
     <!-- Promotion Slider -->
     <h2 class="section-title">PROMOTION</h2>
     <div class="swiper promo-swiper mb-5">
@@ -58,18 +75,18 @@
             effect: 'coverflow',
             grabCursor: true,
             centeredSlides: true,
-            slidesPerView: 4,
+            slidesPerView: 3,
             spaceBetween: 30,
+            loop: true,
+            loopAdditionalSlides: 2,
+            watchSlidesProgress: true,
+            speed: 800,
             coverflowEffect: {
-                rotate: 30,
+                rotate: 0,
                 stretch: 0,
-                depth: 200,
+                depth: 0,
                 modifier: 1,
-                slideShadows: true,
-            },
-            navigation: {
-                nextEl: '.movie-next',
-                prevEl: '.movie-prev',
+                slideShadows: false,
             },
             pagination: {
                 el: '.movie-pagination',
@@ -78,9 +95,69 @@
             breakpoints: {
                 0: { slidesPerView: 1 },
                 576: { slidesPerView: 2 },
-                992: { slidesPerView: 4 }
+                992: { slidesPerView: 3 }
             }
         });
+
+        // Cập nhật hero-info và background khi slide thay đổi
+        function updateHeroContentByIndex(index) {
+            const slide = document.querySelector(`.movie-swiper .swiper-slide[data-swiper-slide-index="${index}"]`);
+            const heroInfo = document.getElementById('hero-info');
+            const heroBg = document.getElementById('hero-bg');
+
+            if (slide) {
+                heroBg.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                heroBg.style.backgroundImage = `url('${slide.dataset.large}')`;
+
+                heroInfo.style.opacity = 0;
+                setTimeout(() => {
+                    document.querySelector('.movie-title').textContent = slide.dataset.title;
+                    document.querySelector('.movie-duration').textContent = slide.dataset.duration;
+                    document.querySelector('.movie-director').textContent = slide.dataset.director;
+                    document.querySelector('.movie-version').textContent = slide.dataset.version;
+                    document.querySelector('.movie-desc').textContent = slide.dataset.desc;
+                    heroInfo.style.opacity = 1;
+                }, 300);
+            }
+
+            heroBg.style.filter = 'brightness(0.7) blur(0.5px)';
+        }
+
+
+        // Khi Swiper bắt đầu chuyển slide
+        movieSwiper.on('slideChangeTransitionStart', function () {
+            var heroInfo = document.getElementById('hero-info');
+            var heroBg = document.getElementById('hero-bg');
+            heroInfo.style.opacity = 0;
+            heroBg.style.filter = 'brightness(0.5) blur(1px)';
+        });
+
+        // Khi Swiper chuyển slide xong
+        movieSwiper.on('slideChangeTransitionEnd', function () {
+            updateHeroContentByIndex(movieSwiper.realIndex);
+        });
+
+        // Khi click vào slide, chuyển đến slide đó
+                document.querySelectorAll('.movie-swiper .swiper-slide').forEach((slide) => {
+            slide.addEventListener('click', function () {
+                const realIndex = parseInt(this.dataset.swiperSlideIndex);
+                console.log('Clicked slide realIndex:', realIndex);
+                movieSwiper.slideToLoop(realIndex);
+            });
+        });
+
+        //DEBUG INDEX
+        //         movieSwiper.on('slideChangeTransitionStart', function () {
+        //     console.log('Before Slide Change – Active realIndex:', movieSwiper.realIndex);
+        // });
+
+        // movieSwiper.on('slideChangeTransitionEnd', function () {
+        //     console.log('After Slide Change – New realIndex:', movieSwiper.realIndex);
+        //     updateHeroContentByIndex(movieSwiper.realIndex);
+        // });
+
+        // Lần đầu load cũng cập nhật đúng info
+        updateHeroContentByIndex(movieSwiper.realIndex);
 
         var promoSwiper = new Swiper('.promo-swiper', {
             slidesPerView: 4,
@@ -101,97 +178,3 @@
         });
     </script>
 }
-<style>
-body {
-    background: #f8f9fa;
-}
-.section-title {
-    font-family: 'Montserrat', monospace;
-    font-size: 2.2rem;
-    letter-spacing: 2px;
-    font-weight: bold;
-    color: #e50914;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 32px;
-}
-.section-title:before, .section-title:after {
-    content: '';
-    flex: 1;
-    border-bottom: 2px solid #e50914;
-    margin: 0 16px;
-    opacity: 0.2;
-}
-.swiper {
-    padding-bottom: 40px;
-}
-.movie-card, .promo-card {
-    border-radius: 18px;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    background: #fff;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    border: none;
-}
-.movie-card:hover, .promo-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 8px 32px rgba(229,9,20,0.18);
-}
-.card-img-top {
-    height: 340px;
-    object-fit: cover;
-    border-bottom: 1px solid #eee;
-    background: #f2f2f2;
-}
-.promo-card .card-img-top {
-    height: 180px;
-}
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #222;
-    margin-bottom: 0.5rem;
-}
-.card-text {
-    font-size: 1rem;
-    color: #444;
-}
-.btn-danger {
-    background: #e50914;
-    border: none;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: background 0.2s;
-}
-.btn-danger:hover {
-    background: #b0060f;
-}
-.swiper-button-next, .swiper-button-prev {
-    color: #fff;
-    background: #e50914;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    width: 48px;
-    height: 48px;
-    top: 45%;
-    opacity: 0.95;
-    transition: background 0.2s;
-}
-.swiper-button-next:hover, .swiper-button-prev:hover {
-    background: #b0060f;
-}
-.swiper-button-next:after, .swiper-button-prev:after {
-    font-size: 1.7rem;
-    font-weight: bold;
-}
-.swiper-pagination-bullet {
-    background: #e50914;
-    opacity: 0.4;
-}
-.swiper-pagination-bullet-active {
-    background: #e50914;
-    opacity: 1;
-}
-</style>
