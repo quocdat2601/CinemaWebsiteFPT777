@@ -13,5 +13,6 @@ namespace MovieTheater.Service
         public void Save();
         public Task<List<SeatType>> GetSeatTypesAsync();
         Seat GetSeatByName(string seatName);
+        Seat GetSeatById(int id);
     }
 }

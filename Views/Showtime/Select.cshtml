@@ -67,6 +67,7 @@
                                        asp-route-movieId="@movie.MovieId"
                                        asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
                                        asp-route-time="@showtime"
+                                       asp-route-isAdminSell="true"
                                        asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
                                        class="btn btn-outline-primary btn-sm m-1 bookBtn">
                                         @showtime

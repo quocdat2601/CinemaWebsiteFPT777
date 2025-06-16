@@ -15,9 +15,9 @@ namespace MovieTheater.Service
             _context = context;
         }
 
-        public IEnumerable<Movie> GetAvailableMovies()
+        public Task<List<Movie>> GetAvailableMoviesAsync()
         {
-            return _repo.GetAll();
+            return _repo.GetAllMoviesAsync();
         }
 
         public Movie GetById(string movieId)
@@ -35,14 +35,14 @@ namespace MovieTheater.Service
             return _repo.GetShowDatesByIds(ids);
         }
 
-        public async Task<List<DateTime>> GetShowDates(string movieId)
+        public Task<List<DateTime>> GetShowDatesAsync(string movieId)
         {
-            return await _repo.GetShowDatesAsync(movieId);
+            return _repo.GetShowDatesAsync(movieId);
         }
 
-        public async Task<List<string>> GetShowTimes(string movieId, DateTime date)
+        public Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
         {
-            return await _repo.GetShowTimesAsync(movieId, date);
+            return _repo.GetShowTimesAsync(movieId, date);
         }
 
         public async Task SaveInvoiceAsync(Invoice invoice)
@@ -60,20 +60,21 @@ namespace MovieTheater.Service
                 .ToListAsync();
 
             int maxNumber = 0;
+
             foreach (var id in allIds)
             {
-                if (int.TryParse(id.Substring(3), out int number))
+                var numberPart = id.Substring(3); // Bỏ "INV"
+                if (int.TryParse(numberPart, out int num))
                 {
-                    maxNumber = Math.Max(maxNumber, number);
+                    if (num > maxNumber)
+                        maxNumber = num;
                 }
             }
 
-            return $"INV{(maxNumber + 1):D3}";
-        }
+            int nextNumber = maxNumber + 1;
 
-        public Invoice? GetInvoiceById(string invoiceId)
-        {
-            return _context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
+            // Trả về "INV" + số với padding 3 chữ số
+            return "INV" + nextNumber.ToString("D3");
         }
 
     }

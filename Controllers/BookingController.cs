@@ -5,7 +5,6 @@ using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
@@ -15,11 +14,12 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly ISeatService _seatService;
         private readonly IAccountService _accountService;
-        private readonly IScheduleSeatRepository _scheduleSeatRepository;
+        private readonly ISeatTypeService _seatTypeService;
+        private readonly IMemberRepository _memberRepository;
+        private readonly IInvoiceService _invoiceService;
+        private readonly ICinemaService _cinemaService;
         private readonly ILogger<BookingController> _logger;
-        private readonly IMovieService _movieService;
-        private readonly VNPayService _vnPayService;
-
+        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         public BookingController(IBookingService bookingService,
                          IMovieService movieService,
                          ISeatService seatService,
@@ -28,25 +28,24 @@ namespace MovieTheater.Controllers
                          IMemberRepository memberRepository,
                          ILogger<BookingController> logger,
                          IInvoiceService invoiceService,
-                         ICinemaService cinemaService)
+                         ICinemaService cinemaService,
+                         IScheduleSeatRepository scheduleSeatRepository)
         {
             _bookingService = bookingService;
             _movieService = movieService;
             _seatService = seatService;
             _accountService = accountService;
-            _scheduleSeatRepository = scheduleSeatRepository;
             _seatTypeService = seatTypeService;
             _memberRepository = memberRepository;
             _logger = logger;
             _invoiceService = invoiceService;
             _cinemaService = cinemaService;
-            _movieService = movieService;
-            _vnPayService = vnPayService;
+            _scheduleSeatRepository = scheduleSeatRepository;
         }
 
 
-        [HttpGet]
-        public IActionResult TicketBooking(string movieId = null)
+         [HttpGet]
+        public async Task<IActionResult> TicketBooking(string movieId = null)
         {
             var movies = await _bookingService.GetAvailableMoviesAsync();
             ViewBag.MovieList = movies;
@@ -104,15 +103,21 @@ namespace MovieTheater.Controllers
                 return NotFound("Movie not found.");
             }
 
-            // Get the movie show ID based on the selected date and time
+            // Get the specific movie show for this date and time
             var movieShows = _movieService.GetMovieShows(movieId);
-            var selectedMovieShow = movieShows.FirstOrDefault(ms => 
-                ms.ShowDate?.ShowDate1?.ToString("yyyy-MM-dd") == showDate.ToString("yyyy-MM-dd") &&
+            var movieShow = movieShows.FirstOrDefault(ms => 
+                ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(showDate) && 
                 ms.Schedule?.ScheduleTime == showTime);
 
-            if (selectedMovieShow == null)
+            if (movieShow == null)
             {
-                return NotFound("Movie show not found for the selected date and time.");
+                return NotFound("Movie show not found for the specified date and time.");
+            }
+
+            var cinemaRoom = movieShow.CinemaRoom;
+            if (cinemaRoom == null)
+            {
+                return NotFound("Cinema room not found for this movie show.");
             }
 
             var seatTypes = await _seatService.GetSeatTypesAsync();
@@ -146,12 +151,11 @@ namespace MovieTheater.Controllers
             {
                 MovieId = movieId,
                 MovieName = movie.MovieNameEnglish,
-                CinemaRoomName = "Room " + movie.CinemaRoomId,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
                 ShowDate = showDate,
                 ShowTime = showTime,
                 SelectedSeats = seats,
                 TotalPrice = totalPrice,
-                MovieShowId = selectedMovieShow.MovieShowId,
 
                 FullName = currentUser.FullName,
                 Email = currentUser.Email,
@@ -180,11 +184,10 @@ namespace MovieTheater.Controllers
 
                 // Tạo danh sách tên ghế
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
-                string seatList = string.Join(" ", seatNames);
+                string seatList = string.Join(",", seatNames);
 
-                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice);
-                
-                // 1. First create and save the Invoice
+                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice); //GIỚI HẠN USE SCORE = TOTAL PRICE
+                // Tạo đối tượng Invoice
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
@@ -200,13 +203,24 @@ namespace MovieTheater.Controllers
                     Seat = seatList
                 };
 
-                // Save Invoice to DB
-                await _service.SaveInvoiceAsync(invoice);
+                // Lưu vào DB
+                await _bookingService.SaveInvoiceAsync(invoice);
 
-                // 2. Then create ScheduleSeat records with the InvoiceId
+                // Get the MovieShowId for this movie, date and time
+                var movieShow = _movieService.GetMovieShows(model.MovieId)
+                    .FirstOrDefault(ms => 
+                        ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.ShowDate) && 
+                        ms.Schedule?.ScheduleTime == model.ShowTime);
+
+                if (movieShow == null)
+                {
+                    return Json(new { success = false, message = "Movie show not found for the specified date and time." });
+                }
+
+                // Mark all selected seats as booked
                 var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
                 {
-                    MovieShowId = model.MovieShowId,
+                    MovieShowId = movieShow.MovieShowId,
                     InvoiceId = invoice.InvoiceId,
                     SeatId = (int)seat.SeatId,
                     SeatStatusId = 2
@@ -219,9 +233,18 @@ namespace MovieTheater.Controllers
                 {
                     await _accountService.DeductScoreAsync(userId, model.UseScore);
                 }
+                TempData["MovieName"] = model.MovieName;
+                TempData["ShowDate"] = model.ShowDate.ToString("yyyy-MM-dd");
+                TempData["ShowTime"] = model.ShowTime;
+                TempData["Seats"] = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName));
+                TempData["BookingTime"] = DateTime.Now.ToString("g");
+                TempData["InvoiceId"] = invoice.InvoiceId;
+                TempData["CinemaRoomName"] = model.CinemaRoomName;
+                TempData["OriginalPrice"] = model.TotalPrice.ToString();
+                TempData["UsedScore"] = model.UseScore.ToString();
+                TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
 
-                // Chuyển hướng đến trang thanh toán
-                return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
+                return RedirectToAction("Success");
             }
             catch (Exception ex)
             {
@@ -232,7 +255,7 @@ namespace MovieTheater.Controllers
                     movieId = model.MovieId,
                     showDate = model.ShowDate.ToString("yyyy-MM-dd"),
                     showTime = model.ShowTime,
-                    selectedSeatIds = model.SelectedSeats.Select(s => s.SeatName)
+                    selectedSeatIds = model.SelectedSeats.Select(s => s.SeatName) // Hoặc giữ lại Id nếu cần
                 });
             }
         }
@@ -280,14 +303,28 @@ namespace MovieTheater.Controllers
                     Price = price
                 });
             }
+            var movieShows = _movieService.GetMovieShows(movieId);
+            var movieShow = movieShows.FirstOrDefault(ms =>
+                ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(showDate) &&
+                ms.Schedule?.ScheduleTime == showTime);
 
+            if (movieShow == null)
+            {
+                return NotFound("Movie show not found for the specified date and time.");
+            }
+
+            var cinemaRoom = movieShow.CinemaRoom;
+            if (cinemaRoom == null)
+            {
+                return NotFound("Cinema room not found for this movie show.");
+            }
             var totalPrice = seats.Sum(s => s.Price);
 
             var bookingDetails = new ConfirmBookingViewModel
             {
                 MovieId = movieId,
                 MovieName = movie.MovieNameEnglish,
-                CinemaRoomName = "Room " + movie.CinemaRoomId,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
                 ShowDate = showDate,
                 ShowTime = showTime,
                 SelectedSeats = seats,
@@ -423,11 +460,28 @@ namespace MovieTheater.Controllers
 
                 await _bookingService.SaveInvoiceAsync(invoice);
 
-                // Mark all selected seats as booked
-                foreach (var seat in model.BookingDetails.SelectedSeats)
+                // Get the MovieShowId for this movie, date and time
+                var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
+                    .FirstOrDefault(ms => 
+                        ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.BookingDetails.ShowDate) && 
+                        ms.Schedule?.ScheduleTime == model.BookingDetails.ShowTime);
+
+                if (movieShow == null)
                 {
-                    _seatService.UpdateSeatStatus(seat.SeatId);
+                    return Json(new { success = false, message = "Movie show not found for the specified date and time." });
                 }
+
+                // Mark all selected seats as booked
+                var scheduleSeats = model.BookingDetails.SelectedSeats.Select(seat => new ScheduleSeat
+                {
+                    MovieShowId = movieShow.MovieShowId,
+                    InvoiceId = invoice.InvoiceId,
+                    SeatId = (int)seat.SeatId,
+                    SeatStatusId = 2
+                });
+
+                await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
+
 
                 // Redirect to confirmation page with invoiceId
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
@@ -452,16 +506,24 @@ namespace MovieTheater.Controllers
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
 
-            // Fix roomName logic
-            string roomName = "N/A";
             var allMovies = _movieService.GetAll();
             var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
-            if (movie != null && movie.CinemaRoomId.HasValue)
+
+            var movieShows = _movieService.GetMovieShows(movie.MovieId);
+            var movieShow = movieShows.FirstOrDefault(ms =>
+                ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(invoice.ScheduleShow ?? DateTime.Now) &&
+                ms.Schedule?.ScheduleTime == invoice.ScheduleShowTime);
+
+            if (movieShow == null)
             {
-                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
-                roomName = room?.CinemaRoomName ?? "N/A";
+                return NotFound("Movie show not found for the specified date and time.");
             }
 
+            var cinemaRoom = movieShow.CinemaRoom;
+            if (cinemaRoom == null)
+            {
+                return NotFound("Cinema room not found for this movie show.");
+            }
             // Prepare seat details
             var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
             var seats = new List<SeatDetailViewModel>();
@@ -512,7 +574,7 @@ namespace MovieTheater.Controllers
             {
                 MovieId = movie?.MovieId,
                 MovieName = invoice.MovieName,
-                CinemaRoomName = roomName,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
                 ShowDate = invoice.ScheduleShow ?? DateTime.Now,
                 ShowTime = invoice.ScheduleShowTime,
                 SelectedSeats = seats,
@@ -565,38 +627,113 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult TicketInfo(string invoiceId)
         {
-            var invoice = _invoiceService.GetById(invoiceId);
-            if (invoice == null)
+            if (string.IsNullOrEmpty(invoiceId))
                 return NotFound();
 
-            var member = _memberRepository.GetByAccountId(invoice.AccountId);
-
-            // Fix roomName logic
-            string roomName = "N/A";
-            var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
-            if (movie != null && movie.CinemaRoomId.HasValue)
+            var invoice = _invoiceService.GetById(invoiceId);
+            if (invoice == null)
             {
-                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
-                roomName = room?.CinemaRoomName ?? "N/A";
+                _logger.LogError($"Invoice not found: {invoiceId}");
+                return NotFound();
             }
 
-            // Prepare seat details
-            var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
-            var seats = new List<SeatDetailViewModel>();
-            foreach (var seatName in seatNames)
+            _logger.LogInformation($"Found invoice: {invoiceId}, Movie: {invoice.MovieName}, Seats: {invoice.Seat}");
+
+            // Get the first schedule seat to access movie show and cinema room info
+            var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId).ToList();
+            _logger.LogInformation($"Found {scheduleSeats.Count} schedule seats for invoice {invoiceId}");
+
+            // Find the movie first
+            var allMovies = _movieService.GetAll();
+            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
+            if (movie == null)
             {
-                // Fetch seat details using new method
-                var seat = _seatService.GetSeatByName(seatName);
+                _logger.LogError($"Movie not found: {invoice.MovieName}");
+                return NotFound("Movie not found for this invoice.");
+            }
+
+            // Then find the movie show
+            var movieShow = _movieService.GetMovieShows(movie.MovieId)
+                .FirstOrDefault(ms => 
+                    ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(invoice.ScheduleShow ?? DateTime.Now) && 
+                    ms.Schedule?.ScheduleTime == invoice.ScheduleShowTime);
+
+            if (movieShow == null)
+            {
+                _logger.LogError($"Movie show not found for invoice {invoiceId}. Movie: {movie.MovieId}, Date: {invoice.ScheduleShow}, Time: {invoice.ScheduleShowTime}");
+                return NotFound("Movie show not found for this invoice.");
+            }
+
+            var firstScheduleSeat = scheduleSeats.FirstOrDefault();
+            if (firstScheduleSeat == null)
+            {
+                _logger.LogError($"No schedule seats found for invoice {invoiceId}. Creating schedule seats from invoice data.");
+                
+                // Create schedule seats from the seat names in the invoice
+                var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var newScheduleSeats = new List<ScheduleSeat>();
+                
+                foreach (var seatName in seatNames)
+                {
+                    var trimmedSeatName = seatName.Trim();
+                    var seat = _seatService.GetSeatByName(trimmedSeatName);
+                    if (seat == null)
+                    {
+                        _logger.LogError($"Seat not found: {trimmedSeatName}");
+                        continue;
+                    }
+
+                    newScheduleSeats.Add(new ScheduleSeat
+                    {
+                        MovieShowId = movieShow.MovieShowId,
+                        InvoiceId = invoice.InvoiceId,
+                        SeatId = seat.SeatId,
+                        SeatStatusId = 2
+                    });
+                }
+
+                if (newScheduleSeats.Any())
+                {
+                    _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(newScheduleSeats).Wait();
+                    _logger.LogInformation($"Created {newScheduleSeats.Count} new schedule seats for invoice {invoiceId}");
+                    scheduleSeats = newScheduleSeats;
+                }
+                else
+                {
+                    _logger.LogError($"No valid seats found to create schedule seats for invoice {invoiceId}");
+                    return NotFound("No valid seats found for this invoice.");
+                }
+            }
+
+            var cinemaRoom = movieShow.CinemaRoom;
+            if (cinemaRoom == null)
+            {
+                _logger.LogError($"Cinema room not found for movie show in invoice {invoiceId}");
+                return NotFound("Cinema room not found.");
+            }
+
+            var member = _memberRepository.GetByAccountId(invoice.AccountId);
+            var seats = new List<SeatDetailViewModel>();
+            
+            foreach (var scheduleSeat in scheduleSeats)
+            {
+                var seat = _seatService.GetSeatById(scheduleSeat.SeatId);
+                if (seat == null)
+                {
+                    _logger.LogError($"Seat not found for ID {scheduleSeat.SeatId} in invoice {invoiceId}");
+                    continue;
+                }
+
                 SeatType seatType = null;
-                if (seat != null && seat.SeatTypeId.HasValue)
+                if (seat.SeatTypeId.HasValue)
                 {
                     seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                 }
+
                 seats.Add(new SeatDetailViewModel
                 {
                     SeatId = seat.SeatId,
-                    SeatName = seatName,
+                    SeatName = seat.SeatName,
                     SeatType = seatType?.TypeName ?? "N/A",
                     Price = seatType?.PricePercent ?? 0
                 });
@@ -606,7 +743,6 @@ namespace MovieTheater.Controllers
             int ticketsConverted = 0;
             if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0 && seats.Count > 0)
             {
-                // Sort seats by price descending and count how many could be converted by the used score
                 var sortedSeats = seats.OrderByDescending(s => s.Price).ToList();
                 decimal runningScore = invoice.UseScore.Value;
                 foreach (var seat in sortedSeats)
@@ -625,9 +761,9 @@ namespace MovieTheater.Controllers
 
             var bookingDetails = new ConfirmBookingViewModel
             {
-                MovieId = movie?.MovieId,
+                MovieId = movieShow.MovieId,
                 MovieName = invoice.MovieName,
-                CinemaRoomName = roomName,
+                CinemaRoomName = cinemaRoom.CinemaRoomName,
                 ShowDate = invoice.ScheduleShow ?? DateTime.Now,
                 ShowTime = invoice.ScheduleShowTime,
                 SelectedSeats = seats,
@@ -635,19 +771,15 @@ namespace MovieTheater.Controllers
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
-                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null
+                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null,
+                FullName = member?.Account?.FullName,
+                Email = member?.Account?.Email,
+                IdentityCard = member?.Account?.IdentityCard,
+                PhoneNumber = member?.Account?.PhoneNumber,
+                CurrentScore = member?.Score ?? 0
             };
 
-            // Determine return URL based on user role
-            string returnUrl;
-            if (User.IsInRole("Admin"))
-            {
-                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
-            }
-            else
-            {
-                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
-            }
+            string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 
             var viewModel = new ConfirmTicketAdminViewModel
             {

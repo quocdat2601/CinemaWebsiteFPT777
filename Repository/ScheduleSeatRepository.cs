@@ -69,5 +69,15 @@ namespace MovieTheater.Repository
                 return false;
             }
         }
+
+        public IEnumerable<ScheduleSeat> GetByInvoiceId(string invoiceId)
+        {
+            return _context.ScheduleSeats
+                .Include(s => s.MovieShow)
+                    .ThenInclude(ms => ms.CinemaRoom)
+                .Include(s => s.Seat)
+                .Where(s => s.InvoiceId == invoiceId)
+                .ToList();
+        }
     }
 }

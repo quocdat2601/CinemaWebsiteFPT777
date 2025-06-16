@@ -7,15 +7,15 @@
         <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 bg-light min-vh-100 border-end">
             <div class="nav flex-column nav-pills">
-                <a class="nav-link active" href="#" onclick="loadTab('Dashboard')">Dashboard</a>
-                <a class="nav-link" href="#" onclick="loadTab('MemberMg')">Member Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('EmployeeMg')">Employee Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('MovieMg')">Movie Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ScheduleMg')">Schedule Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ShowroomMg')">Showroom Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ShowtimeMg')">Show Time Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('PromotionMg')">Promotion Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('BookingMg')">Booking Management</a>
+                <a class="nav-link admin-tab active" data-tab="Dashboard" href="javascript:void(0)">Dashboard</a>
+                <a class="nav-link admin-tab" data-tab="MemberMg" href="javascript:void(0)">Member Management</a>
+                <a class="nav-link admin-tab" data-tab="EmployeeMg" href="javascript:void(0)">Employee Management</a>
+                <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
+                <a class="nav-link admin-tab" data-tab="ScheduleMg" href="javascript:void(0)">Schedule Management</a>
+                <a class="nav-link admin-tab" data-tab="ShowroomMg" href="javascript:void(0)">Showroom Management</a>
+                <a class="nav-link admin-tab" data-tab="ShowtimeMg" href="javascript:void(0)">Show Time Management</a>
+                <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
+                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
             </div>
         </div>
 
@@ -31,8 +31,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     function loadTab(tabName, keyword = '') {
-        $('.nav-link').removeClass('active');
-        $(`a.nav-link:contains(${tabName.replace('Mg', ' Management')})`).addClass('active');
+        $('.admin-tab').removeClass('active');
+        $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
         const params = new URLSearchParams({ tab: tabName });
         if (keyword.trim()) {
@@ -40,9 +40,14 @@
         }
 
         $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function() {
-            // Trigger event when ShowtimeMg tab is loaded
-            if (tabName === 'ShowtimeMg') {
-                $(document).trigger('showtimeTabLoaded');
+            // Trigger appropriate event based on the loaded tab
+            switch(tabName) {
+                case 'ShowtimeMg':
+                    $(document).trigger('showtimeTabLoaded');
+                    break;
+                case 'BookingMg':
+                    $(document).trigger('bookingTabLoaded');
+                    break;
             }
         });
     }
@@ -57,9 +62,17 @@
         loadTab('BookingMg', keyword);
     }
 
+    // Initialize the page
     $(document).ready(function () {
         var tabToLoad = '@ViewData["ActiveTab"]' || 'Dashboard';
         loadTab(tabToLoad);
+
+        // Add click handlers for admin tabs
+        $('.admin-tab').on('click', function(e) {
+            e.preventDefault();
+            const tabName = $(this).data('tab');
+            loadTab(tabName);
+        });
     });
 </script>
 

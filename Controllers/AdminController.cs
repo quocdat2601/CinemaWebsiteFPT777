@@ -21,6 +21,9 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
         private readonly IScheduleRepository _scheduleRepository;
+        private readonly IBookingService _bookingService;
+        private readonly ISeatService _seatService;
+        private readonly IScheduleSeatRepository _scheduleSeatRepository;
 
         public AdminController(
             IMovieService movieService, 
@@ -33,7 +36,8 @@ namespace MovieTheater.Controllers
             IBookingService bookingService, 
             ISeatService seatService, 
             IInvoiceService invoiceService,
-            IScheduleRepository scheduleRepository)
+            IScheduleRepository scheduleRepository,
+            IScheduleSeatRepository scheduleSeatRepository)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -44,6 +48,9 @@ namespace MovieTheater.Controllers
             _accountService = accountService;
             _invoiceService = invoiceService;
             _scheduleRepository = scheduleRepository;
+            _bookingService = bookingService;
+            _seatService = seatService;
+            _scheduleSeatRepository = scheduleSeatRepository;
         }
 
         // GET: AdminController
@@ -255,71 +262,6 @@ namespace MovieTheater.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> ConfirmTicketForAdmin(string movieId, DateTime showDate, string showTime, List<int>? selectedSeatIds)
-        {
-            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
-            {
-                TempData["ErrorMessage"] = "No seats were selected.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
-            }
-
-            var movie = _bookingService.GetById(movieId);
-            if (movie == null)
-            {
-                return NotFound("Movie not found.");
-            }
-
-            var seatTypes = await _seatService.GetSeatTypesAsync();
-            var seats = new List<SeatDetailViewModel>();
-
-            foreach (var id in selectedSeatIds)
-            {
-                var seat = await _seatService.GetSeatByIdAsync(id);
-                if (seat == null) continue;
-
-                var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
-                var price = seatType?.PricePercent ?? 0;
-
-                seats.Add(new SeatDetailViewModel
-                {
-                    SeatId = seat.SeatId,
-                    SeatName = seat.SeatName,
-                    SeatType = seatType?.TypeName ?? "Standard",
-                    Price = price
-                });
-            }
-
-            var totalPrice = seats.Sum(s => s.Price);
-
-            var bookingDetails = new ConfirmBookingViewModel
-            {
-                MovieId = movieId,
-                MovieName = movie.MovieNameEnglish,
-                CinemaRoomName = "Room " + movie.CinemaRoomId,
-                ShowDate = showDate,
-                ShowTime = showTime,
-                SelectedSeats = seats,
-                TotalPrice = totalPrice,
-                PricePerTicket = seats.Any() ? totalPrice / seats.Count : 0
-            };
-
-            var adminConfirmUrl = Url.Action("ConfirmTicketForAdmin", "Admin");
-            var viewModel = new ConfirmTicketAdminViewModel
-            {
-                BookingDetails = bookingDetails,
-                MemberCheckMessage = "",
-                ReturnUrl = Url.Action("Select", "Seat", new {
-                    movieId = movieId,
-                    date = showDate.ToString("yyyy-MM-dd"),
-                    time = showTime,
-                    returnUrl = adminConfirmUrl
-                })
-            };
-
-            return View("ConfirmTicketAdmin", viewModel);
-        }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
@@ -432,11 +374,27 @@ namespace MovieTheater.Controllers
 
                 await _bookingService.SaveInvoiceAsync(invoice);
 
-                // Mark all selected seats as booked
-                foreach (var seat in model.BookingDetails.SelectedSeats)
-                {
+                // Get the MovieShowId for this movie, date and time
+                var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
+                    .FirstOrDefault(ms => 
+                        ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.BookingDetails.ShowDate) && 
+                        ms.Schedule?.ScheduleTime == model.BookingDetails.ShowTime);
 
+                if (movieShow == null)
+                {
+                    return Json(new { success = false, message = "Movie show not found for the specified date and time." });
                 }
+
+                // Mark all selected seats as booked
+                var scheduleSeats = model.BookingDetails.SelectedSeats.Select(seat => new ScheduleSeat
+                {
+                    MovieShowId = movieShow.MovieShowId,
+                    InvoiceId = invoice.InvoiceId,
+                    SeatId = (int)seat.SeatId,
+                    SeatStatusId = 2
+                });
+
+                await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
 
                 // Redirect to confirmation page with invoiceId
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Admin", new { invoiceId = invoice.InvoiceId }) });

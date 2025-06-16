@@ -62,5 +62,9 @@ namespace MovieTheater.Service
             return _repository.GetSeatByName(seatName);
         }
 
+        public Seat GetSeatById(int id)
+        {
+            return _repository.GetById(id);
+        }
     }
 }

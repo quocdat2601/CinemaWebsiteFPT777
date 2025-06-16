@@ -97,26 +97,23 @@
 </div>
 
 <script>
-    const ITEMS_PER_PAGE = 7;
-    let currentPage = 1;
-    let filteredRows = [];
+    const SHOWTIME_ITEMS_PER_PAGE = 7;
+    let showtimeCurrentPage = 1;
+    let showtimeFilteredRows = [];
 
     function initializeShowtimePagination() {
         const rows = document.querySelectorAll('.showtime-row');
-        filteredRows = Array.from(rows);
-        displayPage(currentPage);
-        updatePagination();
+        showtimeFilteredRows = Array.from(rows);
+        displayShowtimePage(showtimeCurrentPage);
+        updateShowtimePagination();
     }
 
-    document.getElementById('dateFilter').addEventListener('change', filterShows);
-    document.getElementById('scheduleFilter').addEventListener('change', filterShows);
-
-    function filterShows() {
+    function filterShowtimes() {
         const selectedDate = document.getElementById('dateFilter').value;
         const selectedSchedule = document.getElementById('scheduleFilter').value;
         const rows = document.querySelectorAll('.showtime-row');
         
-        filteredRows = Array.from(rows).filter(row => {
+        showtimeFilteredRows = Array.from(rows).filter(row => {
             const rowDate = row.dataset.date;
             const rowSchedule = row.dataset.schedule;
             
@@ -126,54 +123,54 @@
             return dateMatch && scheduleMatch;
         });
 
-        currentPage = 1;
-        displayPage(currentPage);
-        updatePagination();
+        showtimeCurrentPage = 1;
+        displayShowtimePage(showtimeCurrentPage);
+        updateShowtimePagination();
     }
 
-    function displayPage(page) {
-        const startIndex = (page - 1) * ITEMS_PER_PAGE;
-        const endIndex = startIndex + ITEMS_PER_PAGE;
+    function displayShowtimePage(page) {
+        const startIndex = (page - 1) * SHOWTIME_ITEMS_PER_PAGE;
+        const endIndex = startIndex + SHOWTIME_ITEMS_PER_PAGE;
         const rows = document.querySelectorAll('.showtime-row');
         
         // Hide all rows first
         rows.forEach(row => row.style.display = 'none');
         
         // Show only the rows for the current page
-        filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+        showtimeFilteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
     }
 
-    function updatePagination() {
-        const totalPages = Math.ceil(filteredRows.length / ITEMS_PER_PAGE);
+    function updateShowtimePagination() {
+        const totalPages = Math.ceil(showtimeFilteredRows.length / SHOWTIME_ITEMS_PER_PAGE);
         const pagination = document.getElementById('pagination');
         pagination.innerHTML = '';
 
         // Previous button
         const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
+        prevLi.className = `page-item ${showtimeCurrentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeShowtimePage(${showtimeCurrentPage - 1})">Previous</a>`;
         pagination.appendChild(prevLi);
 
         // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             const li = document.createElement('li');
-            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            li.className = `page-item ${showtimeCurrentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changeShowtimePage(${i})">${i}</a>`;
             pagination.appendChild(li);
         }
 
         // Next button
         const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
+        nextLi.className = `page-item ${showtimeCurrentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeShowtimePage(${showtimeCurrentPage + 1})">Next</a>`;
         pagination.appendChild(nextLi);
     }
 
-    function changePage(page) {
-        if (page < 1 || page > Math.ceil(filteredRows.length / ITEMS_PER_PAGE)) return;
-        currentPage = page;
-        displayPage(currentPage);
-        updatePagination();
+    function changeShowtimePage(page) {
+        if (page < 1 || page > Math.ceil(showtimeFilteredRows.length / SHOWTIME_ITEMS_PER_PAGE)) return;
+        showtimeCurrentPage = page;
+        displayShowtimePage(showtimeCurrentPage);
+        updateShowtimePagination();
     }
 
     function sortTime(direction) {
@@ -195,20 +192,33 @@
         rows.forEach(row => tbody.appendChild(row));
         
         // Update filtered rows and pagination
-        filteredRows = rows;
-        currentPage = 1;
-        displayPage(currentPage);
-        updatePagination();
+        showtimeFilteredRows = rows;
+        showtimeCurrentPage = 1;
+        displayShowtimePage(showtimeCurrentPage);
+        updateShowtimePagination();
     }
 
     // Initialize pagination when the content is loaded
     $(document).ready(function() {
         initializeShowtimePagination();
+        
+        // Add event listeners for filters
+        $('#dateFilter, #scheduleFilter').on('change', function() {
+            filterShowtimes();
+        });
     });
 
     // Re-initialize pagination when the tab content is loaded
     $(document).on('showtimeTabLoaded', function() {
-        initializeShowtimePagination();
+        // Small delay to ensure DOM is ready
+        setTimeout(function() {
+            initializeShowtimePagination();
+            
+            // Re-attach event listeners for filters
+            $('#dateFilter, #scheduleFilter').off('change').on('change', function() {
+                filterShowtimes();
+            });
+        }, 100);
     });
 </script>
 
