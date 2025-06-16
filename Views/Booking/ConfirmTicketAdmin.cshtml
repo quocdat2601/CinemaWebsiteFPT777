@@ -167,7 +167,7 @@
                 var memberInput = $('#memberInput').val();
                 if (memberInput) {
                     $.ajax({
-                        url: '@Url.Action("CheckMemberDetails", "Admin")',
+                        url: '@Url.Action("CheckMemberDetails", "Booking")',
                         type: 'POST',
                         contentType: 'application/json',
                         data: JSON.stringify({ MemberInput: memberInput }),
@@ -240,7 +240,7 @@
                 };
 
                 $.ajax({
-                    url: '@Url.Action("ConfirmTicketForAdmin", "Admin")',
+                    url: '@Url.Action("ConfirmTicketForAdmin", "Booking")',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(model),
@@ -269,7 +269,7 @@
                 var memberScore = parseInt($('#memberScore').val()) || 0;
                 if (ticketsToConvert > 0) {
                     $.ajax({
-                        url: '/Admin/CheckScoreForConversion',
+                        url: '/Booking/CheckScoreForConversion',
                         type: 'POST',
                         contentType: 'application/json',
                         data: JSON.stringify({
