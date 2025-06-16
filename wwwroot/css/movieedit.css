@@ -21,6 +21,10 @@
     max-width: 900px;
 }
 
+.signup-card {
+    color: var(--card-color);
+}
+
 .signup-title {
     margin-bottom: 2rem;
     text-align: center;
