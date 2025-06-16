@@ -87,6 +87,13 @@
             }
         });
 
+        // 👇 Thêm đoạn này để click vào ảnh => chuyển slide
+        document.querySelectorAll('.movie-swiper .swiper-slide').forEach((slide, index) => {
+            slide.addEventListener('click', () => {
+                movieSwiper.slideTo(index);
+            });
+        });
+
         var promoSwiper = new Swiper('.promo-swiper', {
             slidesPerView: 4,
             spaceBetween: 30,
@@ -106,6 +113,7 @@
         });
     </script>
 }
+
 <style>
 body {
     background: #f8f9fa;
