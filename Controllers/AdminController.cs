@@ -58,7 +58,8 @@ namespace MovieTheater.Controllers
         public IActionResult MainPage(string tab = "Dashboard")
         {
             ViewData["ActiveTab"] = tab;
-            return View();
+            var model = GetDashboardViewModel();
+            return View(model);
         }
 
         public IActionResult LoadTab(string tab, string keyword = null)
@@ -66,7 +67,8 @@ namespace MovieTheater.Controllers
             switch (tab)
             {
                 case "Dashboard":
-                    return PartialView("Dashboard");
+                    var dashModel = GetDashboardViewModel();
+                    return PartialView("Dashboard", dashModel);
                 case "MemberMg":
                     var members = _memberRepository.GetAll();
                     return PartialView("MemberMg", members);
@@ -640,6 +642,106 @@ namespace MovieTheater.Controllers
             public List<decimal> TicketPrices { get; set; }
             public int TicketsToConvert { get; set; }
             public int MemberScore { get; set; }
+        }
+        private AdminDashboardViewModel GetDashboardViewModel()
+        {
+            var today = DateTime.Today;
+            var allInvoices = _invoiceService.GetAll().ToList();
+
+            // Only “completed” and “cancelled”
+            var completed = allInvoices.Where(i => i.Status == 1).ToList();
+            var cancelled = allInvoices.Where(i => i.Status == 0).ToList();
+
+            var todayInv = completed.Where(i => i.BookingDate?.Date == today).ToList();
+            var todayCancelled = cancelled.Where(i => i.BookingDate?.Date == today).ToList();
+
+            // 1) Today’s summary
+            var revenueToday = todayInv.Sum(i => i.TotalMoney ?? 0m);
+            var bookingsToday = todayInv.Count;
+            var ticketsSoldToday = todayInv.Sum(i => i.Seat?.Split(',').Length ?? 0);
+
+            // 2) Occupancy 
+            var allSeats = _seatService.GetAllSeatsAsync().Result;
+            var totalSeats = allSeats.Count;
+            var occupancyRate = totalSeats > 0
+                ? Math.Round((decimal)ticketsSoldToday / totalSeats * 100, 1)
+                : 0m;
+
+            // 3) 7‑day trends
+            var last7 = Enumerable.Range(0, 7)
+                           .Select(i => today.AddDays(-i))
+                           .Reverse()
+                           .ToList();
+            var revTrend = last7
+                .Select(d => allInvoices
+                    .Where(inv => inv.BookingDate?.Date == d && inv.Status == 1)
+                    .Sum(inv => inv.TotalMoney ?? 0m))
+                .ToList();
+            var bookTrend = last7
+                .Select(d => allInvoices
+                    .Count(inv => inv.BookingDate?.Date == d && inv.Status == 1))
+                .ToList();
+
+            // 4) Top 5 movies & members
+            var topMovies = completed
+                .GroupBy(i => i.MovieName)
+                .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
+                .Take(5)
+                .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
+                .ToList();
+
+            var topMembers = completed
+                .Where(i => i.Account != null && i.Account.RoleId == 3)
+                .GroupBy(i => i.Account.FullName)
+                .OrderByDescending(g => g.Count())
+                .Take(5)
+                .Select(g => (MemberName: g.Key, Bookings: g.Count()))
+                .ToList();
+
+            // 5) Recent bookings 
+            var recentBookings = completed
+                .OrderByDescending(i => i.BookingDate)
+                .Take(10)
+                .Select(i => new RecentBookingInfo
+                {
+                    InvoiceId = i.InvoiceId,
+                    MemberName = i.Account?.FullName ?? "N/A",
+                    MovieName = i.MovieName,
+                    BookingDate = i.BookingDate ?? DateTime.MinValue,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // 6) Recent members
+            var recentMembers = _memberRepository.GetAll()
+                .Where(m => m.Account?.RegisterDate != null)
+                .OrderByDescending(m => m.Account!.RegisterDate)
+                .Take(5)
+                .Select(m => new RecentMemberInfo
+                {
+                    MemberId = m.MemberId,
+                    FullName = m.Account!.FullName ?? "N/A",
+                    Email = m.Account.Email ?? "N/A",
+                    PhoneNumber = m.Account.PhoneNumber ?? "N/A",
+                    JoinDate = m.Account.RegisterDate
+                })
+                .ToList();
+
+            return new AdminDashboardViewModel
+            {
+                RevenueToday = revenueToday,
+                BookingsToday = bookingsToday,
+                TicketsSoldToday = ticketsSoldToday,
+                OccupancyRateToday = occupancyRate,
+                RevenueTrendDates = last7,
+                RevenueTrendValues = revTrend,
+                BookingTrendDates = last7,
+                BookingTrendValues = bookTrend,
+                TopMovies = topMovies,
+                TopMembers = topMembers,
+                RecentBookings = recentBookings,
+                RecentMembers = recentMembers,
+            };
         }
     }
 }
