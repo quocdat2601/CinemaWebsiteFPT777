@@ -243,6 +243,7 @@ namespace MovieTheater.Controllers
                 TempData["OriginalPrice"] = model.TotalPrice.ToString();
                 TempData["UsedScore"] = model.UseScore.ToString();
                 TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
+                TempData["ToastMessage"] = "Movie booked successfully!";
 
                 return RedirectToAction("Success");
             }
@@ -345,7 +346,6 @@ namespace MovieTheater.Controllers
                     returnUrl = adminConfirmUrl
                 })
             };
-
             return View("ConfirmTicketAdmin", viewModel);
         }
 
@@ -482,6 +482,7 @@ namespace MovieTheater.Controllers
 
                 await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
 
+                TempData["ToastMessage"] = "Movie booked successfully!";
 
                 // Redirect to confirmation page with invoiceId
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
@@ -637,18 +638,14 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
-            _logger.LogInformation($"Found invoice: {invoiceId}, Movie: {invoice.MovieName}, Seats: {invoice.Seat}");
-
             // Get the first schedule seat to access movie show and cinema room info
             var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId).ToList();
-            _logger.LogInformation($"Found {scheduleSeats.Count} schedule seats for invoice {invoiceId}");
 
             // Find the movie first
             var allMovies = _movieService.GetAll();
             var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
             if (movie == null)
             {
-                _logger.LogError($"Movie not found: {invoice.MovieName}");
                 return NotFound("Movie not found for this invoice.");
             }
 
@@ -660,14 +657,12 @@ namespace MovieTheater.Controllers
 
             if (movieShow == null)
             {
-                _logger.LogError($"Movie show not found for invoice {invoiceId}. Movie: {movie.MovieId}, Date: {invoice.ScheduleShow}, Time: {invoice.ScheduleShowTime}");
                 return NotFound("Movie show not found for this invoice.");
             }
 
             var firstScheduleSeat = scheduleSeats.FirstOrDefault();
             if (firstScheduleSeat == null)
             {
-                _logger.LogError($"No schedule seats found for invoice {invoiceId}. Creating schedule seats from invoice data.");
                 
                 // Create schedule seats from the seat names in the invoice
                 var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
@@ -679,7 +674,6 @@ namespace MovieTheater.Controllers
                     var seat = _seatService.GetSeatByName(trimmedSeatName);
                     if (seat == null)
                     {
-                        _logger.LogError($"Seat not found: {trimmedSeatName}");
                         continue;
                     }
 
@@ -695,12 +689,10 @@ namespace MovieTheater.Controllers
                 if (newScheduleSeats.Any())
                 {
                     _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(newScheduleSeats).Wait();
-                    _logger.LogInformation($"Created {newScheduleSeats.Count} new schedule seats for invoice {invoiceId}");
                     scheduleSeats = newScheduleSeats;
                 }
                 else
                 {
-                    _logger.LogError($"No valid seats found to create schedule seats for invoice {invoiceId}");
                     return NotFound("No valid seats found for this invoice.");
                 }
             }
@@ -708,7 +700,6 @@ namespace MovieTheater.Controllers
             var cinemaRoom = movieShow.CinemaRoom;
             if (cinemaRoom == null)
             {
-                _logger.LogError($"Cinema room not found for movie show in invoice {invoiceId}");
                 return NotFound("Cinema room not found.");
             }
 
@@ -720,7 +711,6 @@ namespace MovieTheater.Controllers
                 var seat = _seatService.GetSeatById(scheduleSeat.SeatId);
                 if (seat == null)
                 {
-                    _logger.LogError($"Seat not found for ID {scheduleSeat.SeatId} in invoice {invoiceId}");
                     continue;
                 }
 

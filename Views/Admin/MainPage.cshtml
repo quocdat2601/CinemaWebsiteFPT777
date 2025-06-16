@@ -36,18 +36,62 @@
             params.append('keyword', keyword);
         }
 
-        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function() {
-            // Trigger appropriate event based on the loaded tab
-            switch(tabName) {
-                case 'ShowtimeMg':
-                    $(document).trigger('showtimeTabLoaded');
-                    break;
-                case 'BookingMg':
-                    $(document).trigger('bookingTabLoaded');
-                    break;
+        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function(response, status) {
+            if (status === 'error') {
+                $('#tabContent').html('<div class="alert alert-danger">Failed to load content</div>');
+            } else {
+                // Trigger appropriate event based on the loaded tab
+                switch(tabName) {
+                    case 'ShowtimeMg':
+                        $(document).trigger('showtimeTabLoaded');
+                        break;
+                    case 'BookingMg':
+                        $(document).trigger('bookingTabLoaded');
+                        break;
+                    case 'Dashboard':
+                        const el = document.getElementById('dashboard-data');
+                        if (el) {
+                            const model = JSON.parse(el.textContent);
+                            window.initDashboardCharts(model);
+                        }
+                        break;
+                }
             }
         });
     }
+
+    window.initDashboardCharts = function(model) {
+        const revCtx = document.getElementById('revenueChart')?.getContext('2d');
+        if (revCtx && model.revenueDates) {
+            new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: model.revenueDates,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: model.revenueValues,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+        const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
+        if (bookCtx && model.bookingDates) {
+            new Chart(bookCtx, {
+                type: 'line',
+                data: {
+                    labels: model.bookingDates,
+                    datasets: [{
+                        label: 'Bookings',
+                        data: model.bookingValues,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+    };
 
     function searchEmployees() {
         const keyword = document.getElementById('searchKeyword')?.value ?? '';
@@ -57,54 +101,6 @@
     function searchBooking() {
         const keyword = document.getElementById('searchKeyword')?.value ?? '';
         loadTab('BookingMg', keyword);
-    window.initDashboardCharts = function(model) {
-      const revCtx = document.getElementById('revenueChart')?.getContext('2d');
-      if (revCtx && model.revenueDates) {
-        new Chart(revCtx, {
-          type: 'line',
-          data: {
-            labels: model.revenueDates,
-            datasets: [{
-              label: 'Revenue',
-              data: model.revenueValues,
-              fill: true,
-              tension: 0.4
-            }]
-          }
-        });
-      }
-      const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
-      if (bookCtx && model.bookingDates) {
-        new Chart(bookCtx, {
-          type: 'line',
-          data: {
-            labels: model.bookingDates,
-            datasets: [{
-              label: 'Bookings',
-              data: model.bookingValues,
-              fill: true,
-              tension: 0.4
-            }]
-          }
-        });
-      }
-    };
-
-    function loadTab(tabName, keyword='') {
-      $('.nav-link').removeClass('active');
-      $(`a.nav-link:contains(${tabName.replace('Mg',' Management')})`).addClass('active');
-      const params = new URLSearchParams({ tab: tabName });
-      if (keyword) params.append('keyword', keyword);
-      $('#tabContent').load(`/Admin/LoadTab?${params}`, function(res, status) {
-        if (status === 'error') $('#tabContent').html('<div class="alert alert-danger">Failed loading</div>');
-        else if (tabName === 'Dashboard') {
-          const el = document.getElementById('dashboard-data');
-          if (el) {
-            const model = JSON.parse(el.textContent);
-            window.initDashboardCharts(model);
-          }
-        }
-      });
     }
 
     // Initialize the page
@@ -122,3 +118,4 @@
 </script>
 
 <partial name="_ToastMessages" />
+

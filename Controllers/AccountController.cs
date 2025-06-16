@@ -112,7 +112,7 @@ namespace MovieTheater.Controllers
             {
                 1 => "Admin",
                 2 => "Employee",
-                3 => "Customer",
+                3 => "Member",
                 _ => "Guest"
             };
 
@@ -279,7 +279,7 @@ namespace MovieTheater.Controllers
             {
                 1 => "Admin",
                 2 => "Employee",
-                3 => "Customer",
+                3 => "Member",
                 _ => "Guest"
             };
 

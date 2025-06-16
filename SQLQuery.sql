@@ -357,21 +357,6 @@ INSERT INTO Movie_Show (Show_Date_ID, Schedule_ID, Movie_ID, Cinema_Room_ID) VAL
 (6, 9,  'MV009', 3), (6, 10, 'MV009', 4), (6, 11, 'MV009', 5), (6, 12, 'MV009', 6),
 (6, 13, 'MV009', 1), (6, 14, 'MV009', 2), (6, 15, 'MV009', 3), (6, 16, 'MV009', 4);
 
-INSERT INTO Invoice (
-    Invoice_ID, Add_Score, BookingDate, MovieName, Schedule_Show,
-    Schedule_Show_Time, Status, Total_Money, Use_Score, Seat, Account_ID
-) VALUES
-('INV001', 10, '2024-03-20', 'Avengers: Endgame', '2024-03-23', '18:00', 1, 150000, 0, 'A1', 'AC001'),
-('INV002', 5, '2024-03-21', 'Kung Fu Panda 4', '2024-03-24', '20:00', 1, 100000, 10, 'B5', 'AC002'),
-('INV003', 7, '2024-03-22', 'Interstellar', '2024-03-25', '19:30', 0, 120000, 5, 'C2', 'AC003'),
-('INV004', 8, '2024-03-22', 'Inception', '2024-03-26', '21:00', 1, 130000, 0, 'D4', 'AC001'),
-('INV005', 0, '2024-03-23', 'The Dark Knight', '2024-03-23', '17:00', 2, 90000, 15, 'E1', 'AC004'),
-('INV2001', 10, '2025-06-01', 'Inside Out 2', '2025-06-01', '18:00', 1, 120000, 0, 'A5', 'AC002'),
-('INV2002', 0, '2025-06-02', 'Kungfu Panda 4', '2025-06-02', '20:30', 1, 100000, 5, 'B2', 'AC002'),
-('INV2003', 15, '2025-06-03', 'Dune: Part Two', '2025-06-03', '14:00', 1, 150000, 0, 'C1', 'AC002'),
-('INV2004', 0, '2025-06-04', 'Godzilla x Kong', '2025-06-04', '16:00', 1, 110000, 8, 'A2', 'AC002'),
-('INV2005', 20, '2025-06-05', 'Fast & Furious 10', '2025-06-05', '19:00', 1, 130000, 0, 'D5', 'AC002');
-
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,
     Detail VARCHAR(255),
