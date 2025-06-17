@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
-using MovieTheater.ViewModels;
 using System.Security.Claims;
 
 namespace MovieTheater.Controllers
@@ -148,4 +147,4 @@ namespace MovieTheater.Controllers
             return Content("Test OK");
         }
     }
-} 
+}

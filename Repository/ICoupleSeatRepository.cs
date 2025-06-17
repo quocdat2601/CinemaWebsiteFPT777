@@ -10,4 +10,4 @@ public interface ICoupleSeatRepository
     Task<CoupleSeat> CreateAsync(CoupleSeat coupleSeat);
     Task<bool> DeleteAsync(int id);
     Task<bool> IsSeatInCoupleAsync(int seatId);
-} 
+}

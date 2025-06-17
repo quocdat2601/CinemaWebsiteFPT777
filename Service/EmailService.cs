@@ -1,6 +1,4 @@
 ﻿using System.Net.Mail;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Service
 {
@@ -50,4 +48,4 @@ namespace MovieTheater.Service
             }
         }
     }
-} 
+}

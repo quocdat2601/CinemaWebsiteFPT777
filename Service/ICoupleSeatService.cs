@@ -11,4 +11,4 @@ public interface ICoupleSeatService
     Task<bool> DeleteCoupleSeatAsync(int id);
     Task<bool> IsSeatInCoupleAsync(int seatId);
     Task<bool> ValidateCoupleSeatPairAsync(int firstSeatId, int secondSeatId);
-} 
+}

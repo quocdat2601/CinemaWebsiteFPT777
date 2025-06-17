@@ -71,7 +71,7 @@ namespace MovieTheater.Repository
         public void Update(Account account)
         {
             var existing = _context.Accounts.FirstOrDefault(a => a.AccountId == account.AccountId);
-            if (existing == null) return; 
+            if (existing == null) return;
             existing.Address = account.Address;
             existing.DateOfBirth = account.DateOfBirth;
             existing.Email = account.Email;

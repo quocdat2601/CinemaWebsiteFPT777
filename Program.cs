@@ -6,7 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using Serilog;
 using System.Text;
 
 namespace MovieTheater

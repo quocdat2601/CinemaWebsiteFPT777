@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Service

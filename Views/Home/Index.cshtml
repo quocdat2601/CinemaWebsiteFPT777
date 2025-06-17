@@ -19,7 +19,12 @@
                         <img src="@movie.SmallImage" class="card-img-top" alt="@movie.MovieNameEnglish">
                         <div class="card-body text-center">
                             <h5 class="card-title">@movie.MovieNameEnglish</h5>
-                            <a href="@Url.Action("MovieList", "Movie")" class="btn btn-danger mt-2 px-4">Đặt vé</a>
+                            <a asp-controller="Movie"
+                               asp-action="Detail"
+                               asp-route-id="@movie.MovieId"
+                               class="btn btn-danger mt-2 px-4">
+                                Book
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -82,6 +87,13 @@
             }
         });
 
+        // 👇 Thêm đoạn này để click vào ảnh => chuyển slide
+        document.querySelectorAll('.movie-swiper .swiper-slide').forEach((slide, index) => {
+            slide.addEventListener('click', () => {
+                movieSwiper.slideTo(index);
+            });
+        });
+
         var promoSwiper = new Swiper('.promo-swiper', {
             slidesPerView: 4,
             spaceBetween: 30,
@@ -101,6 +113,7 @@
         });
     </script>
 }
+
 <style>
 body {
     background: #f8f9fa;

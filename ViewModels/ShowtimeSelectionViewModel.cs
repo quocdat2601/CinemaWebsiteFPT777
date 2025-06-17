@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace MovieTheater.ViewModels
 {
     // ViewModel for MT-20: Select movie and showtime
@@ -27,4 +24,4 @@ namespace MovieTheater.ViewModels
         public string PosterUrl { get; set; } // Poster image URL
         public List<string> Showtimes { get; set; } // List of showtime strings (e.g., '08:00')
     }
-} 
+}

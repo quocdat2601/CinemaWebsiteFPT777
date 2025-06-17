@@ -21,4 +21,4 @@ namespace MovieTheater.ViewModels
         public string MemberCheckMessage { get; set; } // For displaying messages like "No member has found!" or "Member score is not enough!"
         public string ReturnUrl { get; set; } // For return button to seat selection
     }
-} 
+}
