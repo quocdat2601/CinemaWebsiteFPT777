@@ -861,13 +861,17 @@ body {
     margin-bottom: 32px;
 }
 
-.section-title:before, .section-title:after {
-    content: '';
-    flex: 1;
-    border-bottom: 2px solid #e50914;
-    margin: 0 16px;
-    opacity: 0.2;
-}
+    .section-title .dark-mode{
+        color: #ffffff;
+    }
+
+    .section-title:before, .section-title:after {
+        content: '';
+        flex: 1;
+        border-bottom: 2px solid #e50914;
+        margin: 0 16px;
+        opacity: 0.2;
+    }
 
 .swiper {
     padding-bottom: 40px;
