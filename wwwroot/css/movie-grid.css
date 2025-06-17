@@ -14,16 +14,15 @@
     border-radius: var(--border-radius);
     overflow: hidden;
     box-shadow: var(--shadow);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    animation: fadeIn 0.5s ease-out;
-    animation-delay: calc(var(--animation-order, 0) * 0.05s);
-    opacity: 0;
-    animation-fill-mode: forwards;
+    transition: all var(--transition-speed) ease;
+    border: 1px solid transparent;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
-.movie-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-lg);
+body.dark-mode .movie-card {
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    background: var(--card-bg);
 }
 
 .movie-poster {
@@ -36,11 +35,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
-}
-
-.movie-card:hover .movie-poster img {
-    transform: scale(1.05);
+    transition: all var(--transition-speed) ease;
 }
 
 .movie-overlay {

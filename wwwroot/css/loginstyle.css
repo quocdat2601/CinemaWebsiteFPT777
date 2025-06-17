@@ -20,9 +20,12 @@
 }
 
 body.dark-mode .login-card {
-    background-color: var(--card-bg) !important;
+    background: rgba(22, 33, 62, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     color: var(--card-color) !important;
-    border: 1px solid var(--input-border) !important; /* Ensure border is dark mode compatible */
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25) !important;
 }
 
 .login-title {
@@ -33,6 +36,7 @@ body.dark-mode .login-card {
 
 body.dark-mode .login-title {
     color: var(--header-title-color) !important;
+    text-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
 }
 
 .form-group {
@@ -49,51 +53,65 @@ body.dark-mode .login-title {
 /* Ensure input fields are readable in dark mode */
 body.dark-mode .login-card input[type="text"],
 body.dark-mode .login-card input[type="password"] {
-    background-color: var(--body-color) !important; /* Made input background much lighter */
-    color: #212529 !important; /* Set input text color to a dark color */
-    border-color: var(--input-border) !important;
+    background: rgba(22, 33, 62, 0.9) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .login-card input[type="text"]:focus,
+body.dark-mode .login-card input[type="password"]:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+    transform: translateY(-1px);
 }
 
 body.dark-mode .login-card input[type="text"]::placeholder,
 body.dark-mode .login-card input[type="password"]::placeholder {
-    color: #212529 !important; /* Set placeholder text color to a darker black for better contrast */
+    color: #94a3b8 !important;
 }
 
 body.dark-mode .login-card input[type="text"]::-webkit-input-placeholder,
 body.dark-mode .login-card input[type="password"]::-webkit-input-placeholder {
-    color: #212529 !important;
+    color: #94a3b8 !important;
 }
 
 body.dark-mode .login-card input[type="text"]:-ms-input-placeholder,
 body.dark-mode .login-card input[type="password"]:-ms-input-placeholder {
-    color: #212529 !important;
+    color: #94a3b8 !important;
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     border: none;
     padding: 0.6rem;
     font-size: 1rem;
     border-radius: 6px;
+    transition: all 0.3s ease;
 }
 
-    .btn-primary:hover {
-        background-color: #0056b3;
-    }
+.btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
 
 /* Google Material Button Styles for Dark Mode */
 body.dark-mode .gsi-material-button {
-    background-color: var(--card-bg) !important;
-    border: 1px solid var(--input-border) !important;
+    background: rgba(22, 33, 62, 0.8) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
     color: var(--input-color) !important;
+    transition: all 0.3s ease;
 }
 
 body.dark-mode .gsi-material-button:hover {
-    background-color: var(--input-bg) !important;
-}
-
-body.dark-mode .gsi-material-button-icon {
-    /* Ensure the icon's background is still visible if it's a separate element */
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-color: #6366f1 !important;
+    transform: translateY(-1px);
 }
 
 body.dark-mode .gsi-material-button-contents {
