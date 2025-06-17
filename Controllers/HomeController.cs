@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
@@ -16,6 +16,10 @@ namespace MovieTheater.Controllers
             _movieService = movieService;
         }
 
+        /// <summary>
+        /// [GET] /Home/Index
+        /// Trang chủ hiển thị danh sách phim và khuyến mãi hiện có.
+        /// </summary>
         public IActionResult Index()
         {
             var movies = _movieService.GetAll();
@@ -27,11 +31,19 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        /// <summary>
+        /// [GET] /Home/MovieList
+        /// Trang hiển thị danh sách các bộ phim.
+        /// </summary>
         public IActionResult MovieList()
         {
             return View();
         }
 
+        /// <summary>
+        /// [GET] /Home/Showtime
+        /// Trang hiển thị lịch chiếu phim.
+        /// </summary>
         public IActionResult Showtime()
         {
             return View();
