@@ -1,40 +1,97 @@
-@{
+﻿@{
     ViewData["Title"] = "Home";
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
 }
+<link rel="stylesheet" href="~/css/home-page.css" asp-append-version="true" />
+
 
 <div class="container-xl py-4">
-    <!-- Hero Banner (để trống) -->
-    <div class="mb-5"></div>
-
-    <!-- Movie Slider -->
-    <h2 class="section-title">MOVIE</h2>
-    <div class="swiper movie-swiper mb-5">
-        <div class="swiper-wrapper">
-            @foreach (var movie in movies)
-            {
-                <div class="swiper-slide">
-                    <div class="card movie-card h-100 shadow-sm">
-                        <img src="@movie.SmallImage" class="card-img-top" alt="@movie.MovieNameEnglish">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">@movie.MovieNameEnglish</h5>
-                            <a asp-controller="Movie"
-                               asp-action="Detail"
-                               asp-route-id="@movie.MovieId"
-                               class="btn btn-danger mt-2 px-4">
-                                Book
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-        <div class="swiper-pagination movie-pagination"></div>
-        <div class="swiper-button-next movie-next"></div>
-        <div class="swiper-button-prev movie-prev"></div>
+    <!-- Slideshow banner -->
+    <div class="slideshow-container">
+        <ul id="home_big_banner" class="slideshow"
+            data-cycle-fx="fade"
+            data-cycle-timeout="5000"
+            data-cycle-slides="> li"
+            data-cycle-pager=".home_big_banner_pager"
+            data-cycle-pager-template="<span class='pager-bullet'></span>"
+            data-cycle-prev=".home_big_banner_prev"
+            data-cycle-next=".home_big_banner_next"
+            data-cycle-swipe="true"
+            data-cycle-swipe-fx="fade">
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h_1_-min_6.jpg" alt="Banner 1" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h-duoidayho.jpg" alt="Banner 2" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://i.ytimg.com/vi/8Yj61CP1Sic/maxresdefault.jpg" alt="Banner 3" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://www.bhdstar.vn/wp-content/uploads/2024/08/referenceSchemeHeadOfficeallowPlaceHoldertrueheight360ldapp.png" alt="Banner 4" />
+                </a>
+            </li>
+        </ul>
+        <button type="button" class="slideshow-prev home_big_banner_prev" aria-label="Previous slide">&#10094;</button>
+        <button type="button" class="slideshow-next home_big_banner_next" aria-label="Next slide">&#10095;</button>
+        <div class="home_big_banner_pager pager-container"></div>
     </div>
 
+    <div class="mb-5"></div>
+
+    <h2 class="section-title">MOVIE</h2>
+    <!-- Hero Section OUTSIDE container -->
+<div class="hero-section">
+    <div class="hero-bg" id="hero-bg" style="background-image: url('@Url.Content(movies.FirstOrDefault()?.LargeImage)');"></div>
+    <div class="hero-content row no-gutters">
+        <div class="col-md-7 hero-info" id="hero-info">
+
+            <h1 class="movie-title">@movies.FirstOrDefault()?.MovieNameEnglish</h1>
+            <div class="movie-meta">
+                <span class="movie-duration">@movies.FirstOrDefault()?.Duration</span>
+                <span class="movie-director">@movies.FirstOrDefault()?.Director</span>
+                <span class="movie-actor">@movies.FirstOrDefault()?.Actor</span>
+                <span class="movie-version">@movies.FirstOrDefault()?.Version</span>
+            </div>
+            <p class="movie-desc">@movies.FirstOrDefault()?.Content</p>
+            <div class="movie-actions">
+                <a href="Movie/Detail/@movies.FirstOrDefault()?.MovieId" class="btn btn-danger">Book</a>
+            </div>
+        </div>
+        <div class="col-md-5 d-flex align-items-center justify-content-end">
+            <div class="movie-slider-glass">
+                <div class="swiper movie-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach (var movie in movies)
+                        {
+                            <div class="swiper-slide" 
+                                 data-large="@movie.LargeImage"
+                                 data-title="@movie.MovieNameEnglish"
+                                 data-duration="@movie.Duration"
+                                 data-director="@movie.Director"
+                                 data-actor="@movie.Actor"
+                                 data-version="@movie.Version"
+                                 data-desc="@movie.Content">
+                                <img src="@movie.SmallImage" class="slider-img" alt="@movie.MovieNameEnglish">
+                            </div>
+                        }
+                    </div>
+                    <div class="swiper-pagination movie-pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-xl py-4">
     <!-- Promotion Slider -->
     <h2 class="section-title">PROMOTION</h2>
     <div class="swiper promo-swiper mb-5">
@@ -57,154 +114,4 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        var movieSwiper = new Swiper('.movie-swiper', {
-            effect: 'coverflow',
-            grabCursor: true,
-            centeredSlides: true,
-            slidesPerView: 4,
-            spaceBetween: 30,
-            coverflowEffect: {
-                rotate: 30,
-                stretch: 0,
-                depth: 200,
-                modifier: 1,
-                slideShadows: true,
-            },
-            navigation: {
-                nextEl: '.movie-next',
-                prevEl: '.movie-prev',
-            },
-            pagination: {
-                el: '.movie-pagination',
-                clickable: true,
-            },
-            breakpoints: {
-                0: { slidesPerView: 1 },
-                576: { slidesPerView: 2 },
-                992: { slidesPerView: 4 }
-            }
-        });
-
-        // 👇 Thêm đoạn này để click vào ảnh => chuyển slide
-        document.querySelectorAll('.movie-swiper .swiper-slide').forEach((slide, index) => {
-            slide.addEventListener('click', () => {
-                movieSwiper.slideTo(index);
-            });
-        });
-
-        var promoSwiper = new Swiper('.promo-swiper', {
-            slidesPerView: 4,
-            spaceBetween: 30,
-            navigation: {
-                nextEl: '.promo-next',
-                prevEl: '.promo-prev',
-            },
-            pagination: {
-                el: '.promo-pagination',
-                clickable: true,
-            },
-            breakpoints: {
-                0: { slidesPerView: 1 },
-                576: { slidesPerView: 2 },
-                992: { slidesPerView: 4 }
-            }
-        });
-    </script>
-}
-
-<style>
-body {
-    background: #f8f9fa;
-}
-.section-title {
-    font-family: 'Montserrat', monospace;
-    font-size: 2.2rem;
-    letter-spacing: 2px;
-    font-weight: bold;
-    color: #e50914;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 32px;
-}
-.section-title:before, .section-title:after {
-    content: '';
-    flex: 1;
-    border-bottom: 2px solid #e50914;
-    margin: 0 16px;
-    opacity: 0.2;
-}
-.swiper {
-    padding-bottom: 40px;
-}
-.movie-card, .promo-card {
-    border-radius: 18px;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    background: #fff;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    border: none;
-}
-.movie-card:hover, .promo-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 8px 32px rgba(229,9,20,0.18);
-}
-.card-img-top {
-    height: 340px;
-    object-fit: cover;
-    border-bottom: 1px solid #eee;
-    background: #f2f2f2;
-}
-.promo-card .card-img-top {
-    height: 180px;
-}
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #222;
-    margin-bottom: 0.5rem;
-}
-.card-text {
-    font-size: 1rem;
-    color: #444;
-}
-.btn-danger {
-    background: #e50914;
-    border: none;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: background 0.2s;
-}
-.btn-danger:hover {
-    background: #b0060f;
-}
-.swiper-button-next, .swiper-button-prev {
-    color: #fff;
-    background: #e50914;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    width: 48px;
-    height: 48px;
-    top: 45%;
-    opacity: 0.95;
-    transition: background 0.2s;
-}
-.swiper-button-next:hover, .swiper-button-prev:hover {
-    background: #b0060f;
-}
-.swiper-button-next:after, .swiper-button-prev:after {
-    font-size: 1.7rem;
-    font-weight: bold;
-}
-.swiper-pagination-bullet {
-    background: #e50914;
-    opacity: 0.4;
-}
-.swiper-pagination-bullet-active {
-    background: #e50914;
-    opacity: 1;
-}
-</style>
+<script src="~/js/home-page.js"></script>

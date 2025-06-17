@@ -110,7 +110,7 @@ namespace MovieTheater.Controllers
             if (user == null)
             {
                 TempData["ErrorMessage"] = "User not found";
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
 
             if (!ModelState.IsValid)
@@ -118,7 +118,7 @@ namespace MovieTheater.Controllers
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 _logger.LogWarning("Update failed validation at {Time}. Errors: {Errors}", DateTime.UtcNow, errors);
                 TempData["ErrorMessage"] = $"{errors}";
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
 
             try
@@ -145,7 +145,7 @@ namespace MovieTheater.Controllers
                 {
                     _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", user.AccountId, timestamp);
                     TempData["ErrorMessage"] = "Update failed";
-                    return RedirectToAction("MainPage", new { tab = "Profile" });
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
                 }
 
                 TempData["ToastMessage"] = "Profile updated successfully!";
@@ -155,7 +155,7 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", user.AccountId, DateTime.UtcNow);
                 TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
         }
 
