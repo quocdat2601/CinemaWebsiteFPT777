@@ -153,6 +153,9 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // [HttpGet]
+        // /// Admin: Initiate ticket selling for a member
+        // /// url: /Admin/InitiateTicketSellingForMember
         [Authorize(Roles = "Admin")]
         public IActionResult InitiateTicketSellingForMember(string id)
         {

@@ -41,7 +41,12 @@ namespace MovieTheater.Controllers
             _cinemaService = cinemaService;
         }
 
-
+        //GET: /api/booking/ticketbooking
+        /// <summary>
+        /// Hiển thị giao diện đặt vé.
+        /// </summary>
+        /// <param name="movieId">Id của phim nếu đã chọn trước.</param>
+        /// <returns>View với danh sách phim có thể đặt vé.</returns>
         [HttpGet]
         public async Task<IActionResult> TicketBooking(string movieId = null)
         {
@@ -51,6 +56,12 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        //GET: /api/booking/getdates
+        /// <summary>
+        /// Trả về danh sách các ngày có suất chiếu cho phim.
+        /// </summary>
+        /// <param name="movieId">Id của phim.</param>
+        /// <returns>Json danh sách ngày (yyyy-MM-dd).</returns>
         [HttpGet]
         public async Task<IActionResult> GetDates(string movieId)
         {
@@ -58,13 +69,28 @@ namespace MovieTheater.Controllers
             return Json(dates.Select(d => d.ToString("yyyy-MM-dd")));
         }
 
+        //GET: /api/booking/gettimes
+        /// <summary>
+        /// Trả về các khung giờ chiếu của phim trong một ngày.
+        /// </summary>
+        /// <param name="movieId">Id của phim.</param>
+        /// <param name="date">Ngày chiếu.</param>
+        /// <returns>Json danh sách giờ chiếu.</returns>
         [HttpGet]
         public async Task<IActionResult> GetTimes(string movieId, DateTime date)
         {
             var times = await _bookingService.GetShowTimesAsync(movieId, date);
             return Json(times);
         }
-
+        //GET: /api/booking/information
+        /// <summary>
+        /// Hiển thị thông tin xác nhận đặt vé.
+        /// </summary>
+        /// <param name="movieId">Id phim được chọn.</param>
+        /// <param name="showDate">Ngày chiếu.</param>
+        /// <param name="showTime">Giờ chiếu.</param>
+        /// <param name="selectedSeatIds">Danh sách ghế đã chọn.</param>
+        /// <returns>View xác nhận đặt vé.</returns>
         [HttpGet]
         public async Task<IActionResult> Information(string movieId, DateTime showDate, string showTime, List<int>? selectedSeatIds)
         {
@@ -127,8 +153,12 @@ namespace MovieTheater.Controllers
             return View("ConfirmBooking", viewModel);
         }
 
-
-        //CONFIRM BOOK TICKET -> SAVE INVOICE TO DB
+        //POST: /api/booking/confirm
+        /// <summary>
+        /// Xác nhận đặt vé, lưu hoá đơn vào database.
+        /// </summary>
+        /// <param name="model">Thông tin xác nhận đặt vé từ client.</param>
+        /// <returns>Chuyển hướng tới trang thành công nếu đặt vé thành công.</returns>
         [HttpPost]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model)
         {
@@ -203,14 +233,19 @@ namespace MovieTheater.Controllers
             }
         }
 
-
-        // GET: Trang sau khi đặt vé thành công
+        //GET: /api/booking/success
+        /// <summary>
+        /// Trang hiển thị khi đặt vé thành công.
+        /// </summary>
+        /// <returns>View chúc mừng đặt vé thành công.</returns>
         [HttpGet]
         public IActionResult Success()
         {
             return View();
         }
 
+        // /// Admin: Select seat for ticket selling
+        // /// url: /Booking/ConfirmTicketForAdmin
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> ConfirmTicketForAdmin(string movieId, DateTime showDate, string showTime, List<int>? selectedSeatIds)
@@ -278,6 +313,8 @@ namespace MovieTheater.Controllers
             return View("ConfirmTicketAdmin", viewModel);
         }
 
+        // /// Admin: Check member details for ticket selling
+        // /// url: /Booking/CheckMemberDetails
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CheckMemberDetails([FromBody] MemberCheckRequest request)
@@ -302,6 +339,8 @@ namespace MovieTheater.Controllers
             });
         }
 
+        // /// Admin: Confirm ticket booking and convert score
+        // /// url: /Booking/ConfirmTicketForAdmin
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> ConfirmTicketForAdmin([FromBody] ConfirmTicketAdminViewModel model)
@@ -405,6 +444,8 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // /// Admin: Show confirmation after ticket booking
+        // /// url: /Booking/TicketBookingConfirmed
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult TicketBookingConfirmed(string invoiceId)
@@ -506,6 +547,8 @@ namespace MovieTheater.Controllers
             return View("TicketBookingConfirmed", viewModel);
         }
 
+        // /// Admin: Check score for ticket conversion
+        // /// url: /Booking/CheckScoreForConversion
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult CheckScoreForConversion([FromBody] ScoreConversionRequest request)
@@ -527,6 +570,8 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // /// Admin/Employee: Show detailed ticket information
+        // /// url: /Booking/TicketInfo
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
         public IActionResult TicketInfo(string invoiceId)
