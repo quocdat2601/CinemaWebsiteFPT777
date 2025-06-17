@@ -211,6 +211,8 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        // /// Admin: Select seat for ticket selling
+        // /// url: /Booking/ConfirmTicketForAdmin
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> ConfirmTicketForAdmin(string movieId, DateTime showDate, string showTime, List<int>? selectedSeatIds)
@@ -278,6 +280,8 @@ namespace MovieTheater.Controllers
             return View("ConfirmTicketAdmin", viewModel);
         }
 
+        // /// Admin: Check member details for ticket selling
+        // /// url: /Booking/CheckMemberDetails
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CheckMemberDetails([FromBody] MemberCheckRequest request)
@@ -302,6 +306,8 @@ namespace MovieTheater.Controllers
             });
         }
 
+        // /// Admin: Confirm ticket booking and convert score
+        // /// url: /Booking/ConfirmTicketForAdmin
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> ConfirmTicketForAdmin([FromBody] ConfirmTicketAdminViewModel model)
@@ -405,6 +411,8 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // /// Admin: Show confirmation after ticket booking
+        // /// url: /Booking/TicketBookingConfirmed
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult TicketBookingConfirmed(string invoiceId)
@@ -506,6 +514,8 @@ namespace MovieTheater.Controllers
             return View("TicketBookingConfirmed", viewModel);
         }
 
+        // /// Admin: Check score for ticket conversion
+        // /// url: /Booking/CheckScoreForConversion
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult CheckScoreForConversion([FromBody] ScoreConversionRequest request)
@@ -527,6 +537,8 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // /// Admin/Employee: Show detailed ticket information
+        // /// url: /Booking/TicketInfo
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
         public IActionResult TicketInfo(string invoiceId)
