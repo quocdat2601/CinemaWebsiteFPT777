@@ -16,12 +16,19 @@ namespace MovieTheater.Controllers
             _movieService = movieService;
             _cinemaService = cinemaService;
         }
+
+        /// <summary>
+        /// Lấy role người dùng hiện tại từ JWT Claims.
+        /// </summary>
         private string GetUserRole()
         {
             return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
 
-        // GET: MovieController
+        /// <summary>
+        /// [GET] api/movie/movielist
+        /// Tìm kiếm và hiển thị danh sách phim. Nếu là Ajax request thì trả về partial view.
+        /// </summary>
         public IActionResult MovieList(string searchTerm)
         {
             var movies = _movieService.SearchMovies(searchTerm)
@@ -37,7 +44,6 @@ namespace MovieTheater.Controllers
 
             ViewBag.SearchTerm = searchTerm;
 
-            // Kiểm tra nếu là Ajax thì chỉ render partial
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return PartialView("_MovieGrid", movies);
@@ -46,13 +52,16 @@ namespace MovieTheater.Controllers
             return View(movies);
         }
 
-        // GET: MovieController/Detail/5
+        /// <summary>
+        /// [GET] api/movie/detail/{id}
+        /// Hiển thị thông tin chi tiết của một bộ phim.
+        /// </summary>
         public ActionResult Detail(string id)
         {
             var movie = _movieService.GetById(id);
             if (movie == null)
             {
-                return NotFound(); // hoặc redirect về trang lỗi
+                return NotFound();
             }
 
             CinemaRoom cinemaRoom = null;
@@ -85,8 +94,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-
-        // GET: MovieController/Create
+        /// <summary>
+        /// [GET] api/movie/create
+        /// Trả về form tạo mới phim.
+        /// </summary>
         [HttpGet]
         public IActionResult Create()
         {
@@ -100,23 +111,20 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // POST: MovieController/Create
+        /// <summary>
+        /// [POST] api/movie/create
+        /// Tạo mới một bộ phim kèm theo các lịch chiếu và ngày chiếu.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(MovieDetailViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || model.FromDate >= model.ToDate)
             {
-                model.AvailableTypes = _movieService.GetAllTypes();
-                model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
-                model.AvailableShowDates = _movieService.GetAllShowDates();
-                model.AvailableSchedules = _movieService.GetAllSchedules();
-                return View(model);
-            }
+                TempData["ErrorMessage"] = model.FromDate >= model.ToDate
+                    ? "Invalid date range. From date must be before To date."
+                    : "Invalid form data.";
 
-            if (model.FromDate >= model.ToDate)
-            {
-                TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
                 model.AvailableTypes = _movieService.GetAllTypes();
                 model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
                 model.AvailableShowDates = _movieService.GetAllShowDates();
@@ -147,13 +155,8 @@ namespace MovieTheater.Controllers
             if (_movieService.AddMovie(movie, model.SelectedShowDateIds, model.SelectedScheduleIds))
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
-                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 string role = GetUserRole();
-                if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
-
+                return RedirectToAction("MainPage", role == "Admin" ? "Admin" : "Employee", new { tab = "MovieMg" });
             }
 
             TempData["ErrorMessage"] = "Failed to create movie. Some schedules may be unavailable.";
@@ -164,7 +167,10 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // GET: Movie/Edit/5
+        /// <summary>
+        /// [GET] api/movie/edit/{id}
+        /// Trả về form cập nhật phim.
+        /// </summary>
         [HttpGet]
         [Route("Movie/Edit/{id}")]
         public IActionResult Edit(string id)
@@ -196,37 +202,26 @@ namespace MovieTheater.Controllers
                 AvailableCinemaRooms = _movieService.GetAllCinemaRooms(),
                 AvailableShowDates = _movieService.GetAllShowDates(),
                 AvailableSchedules = _movieService.GetAllSchedules(),
-                SelectedShowDateIds = _movieService.GetMovieShows(id).Select(ms => ms.ShowDateId ?? 0).Where(id => id != 0).ToList(),
-                SelectedScheduleIds = _movieService.GetMovieShows(id).Select(ms => ms.ScheduleId ?? 0).Where(id => id != 0).ToList(),
+                SelectedShowDateIds = _movieService.GetMovieShows(id).Select(ms => ms.ShowDateId ?? 0).Where(i => i != 0).ToList(),
+                SelectedScheduleIds = _movieService.GetMovieShows(id).Select(ms => ms.ScheduleId ?? 0).Where(i => i != 0).ToList(),
                 SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList()
             };
 
             return View(model);
         }
 
-        // POST: MovieController/Edit/5
+        /// <summary>
+        /// [POST] api/movie/edit/{id}
+        /// Cập nhật thông tin phim dựa trên ID. Kiểm tra validation và cập nhật dữ liệu.
+        /// </summary>
         [HttpPost]
         [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(string id, MovieDetailViewModel model)
         {
-            if (id != model.MovieId)
+            if (id != model.MovieId || !ModelState.IsValid || model.FromDate >= model.ToDate)
             {
-                return NotFound();
-            }
-
-            if (!ModelState.IsValid)
-            {
-                model.AvailableTypes = _movieService.GetAllTypes();
-                model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
-                model.AvailableShowDates = _movieService.GetAllShowDates();
-                model.AvailableSchedules = _movieService.GetAllSchedules();
-                return View(model);
-            }
-
-            if (model.FromDate >= model.ToDate)
-            {
-                TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
+                TempData["ErrorMessage"] = model.FromDate >= model.ToDate ? "Invalid date range." : "Invalid data.";
                 model.AvailableTypes = _movieService.GetAllTypes();
                 model.AvailableCinemaRooms = _movieService.GetAllCinemaRooms();
                 model.AvailableShowDates = _movieService.GetAllShowDates();
@@ -254,14 +249,11 @@ namespace MovieTheater.Controllers
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
             };
 
-            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, new List<int>() /* TODO: Provide actual scheduleIds */))
+            if (_movieService.UpdateMovie(movie, model.SelectedShowDateIds, model.SelectedScheduleIds))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
                 string role = GetUserRole();
-                if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                return RedirectToAction("MainPage", role == "Admin" ? "Admin" : "Employee", new { tab = "MovieMg" });
             }
 
             TempData["ErrorMessage"] = "Failed to update movie. Some schedules may be unavailable.";
@@ -272,7 +264,10 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // POST: Movie/Delete/5
+        /// <summary>
+        /// [POST] api/movie/delete/{id}
+        /// Xóa phim khỏi hệ thống dựa trên ID. Role xác định route sau khi xóa.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
@@ -283,55 +278,27 @@ namespace MovieTheater.Controllers
                 if (string.IsNullOrEmpty(id))
                 {
                     TempData["ToastMessage"] = "Invalid movie ID.";
-                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                    if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                    else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                    return RedirectToAction("MainPage", role == "Admin" ? "Admin" : "Employee", new { tab = "MovieMg" });
                 }
 
                 var movie = _movieService.GetById(id);
                 if (movie == null)
                 {
                     TempData["ToastMessage"] = "Movie not found.";
-                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                    if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                    else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                    return RedirectToAction("MainPage", role == "Admin" ? "Admin" : "Employee", new { tab = "MovieMg" });
                 }
 
                 movie.Types?.Clear();
-
                 bool success = _movieService.DeleteMovie(id);
 
-                if (!success)
-                {
-                    TempData["ToastMessage"] = "Failed to delete movie.";
-                    //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                    if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                    else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
-                }
-
-                TempData["ToastMessage"] = "Movie deleted successfully!";
-                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                TempData["ToastMessage"] = success ? "Movie deleted successfully!" : "Failed to delete movie.";
+                return RedirectToAction("MainPage", role == "Admin" ? "Admin" : "Employee", new { tab = "MovieMg" });
             }
             catch (Exception ex)
             {
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
-                //return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
-                else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                return RedirectToAction("MainPage", role == "Admin" ? "Admin" : "Employee", new { tab = "MovieMg" });
             }
         }
-
     }
 }
