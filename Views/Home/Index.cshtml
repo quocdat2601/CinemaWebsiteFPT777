@@ -38,8 +38,12 @@
                 </a>
             </li>
         </ul>
-        <button type="button" class="slideshow-prev home_big_banner_prev" aria-label="Previous slide">&#10094;</button>
-        <button type="button" class="slideshow-next home_big_banner_next" aria-label="Next slide">&#10095;</button>
+        
+        <!-- Navigation Buttons -->
+        <button type="button" class="slideshow-prev home_big_banner_prev" aria-label="Previous slide" style="z-index: 1000; position: absolute; top: 50%; left: 20px; transform: translateY(-50%);">&#10094;</button>
+        <button type="button" class="slideshow-next home_big_banner_next" aria-label="Next slide" style="z-index: 1000; position: absolute; top: 50%; right: 20px; transform: translateY(-50%);">&#10095;</button>
+        
+        <!-- Pagination -->
         <div class="home_big_banner_pager pager-container"></div>
     </div>
 
@@ -97,318 +101,229 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            console.log('Document ready');
+            
+            // Check if Cycle2 is loaded
+            if (typeof $.fn.cycle === 'undefined') {
+                console.error('Cycle2 plugin not loaded');
+                // Fallback: manual slideshow
+                initManualSlideshow();
+                return;
+            }
+
+            console.log('Cycle2 plugin found');
+
             // Initialize cycle2 slideshow with explicit options
-            $('#home_big_banner').cycle({
-                fx: 'fade',
-                timeout: 5000,
-                slides: '> li',
-                pager: '.home_big_banner_pager',
-                pagerTemplate: '<span class="pager-bullet"></span>',
-                prev: '.home_big_banner_prev',
-                next: '.home_big_banner_next',
-                swipe: true,
-                swipeFx: 'fade',
-                log: false,
-                speed: 1000,
-                pauseOnHover: true,
-                allowWrap: true,
-                manualSpeed: 1000,
-                manualTrump: true
-            });
+            try {
+                var $slideshow = $('#home_big_banner');
+                $slideshow.cycle({
+                    fx: 'fade',
+                    timeout: 5000,
+                    slides: '> li',
+                    pager: '.home_big_banner_pager',
+                    pagerTemplate: '<span class="pager-bullet"></span>',
+                    prev: '.home_big_banner_prev',
+                    next: '.home_big_banner_next',
+                    swipe: true,
+                    swipeFx: 'fade',
+                    log: true, // Enable logging for debugging
+                    speed: 1000,
+                    pauseOnHover: true,
+                    allowWrap: true,
+                    manualSpeed: 1000,
+                    manualTrump: true
+                });
+                console.log('Cycle2 initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Cycle2:', error);
+                // Fallback: manual slideshow
+                initManualSlideshow();
+            }
 
             // Add click event handlers as backup
-            $('.home_big_banner_prev').on('click', function() {
-                $('#home_big_banner').cycle('prev');
+            $('.home_big_banner_prev').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Prev button clicked');
+                try {
+                    var $slideshow = $('#home_big_banner');
+                    if ($slideshow.data('cycle.opts')) {
+                        $slideshow.cycle('prev');
+                        console.log('Cycle2 prev called');
+                    } else {
+                        manualPrev();
+                    }
+                } catch (error) {
+                    console.error('Error navigating to previous slide:', error);
+                    manualPrev();
+                }
             });
             
-            $('.home_big_banner_next').on('click', function() {
-                $('#home_big_banner').cycle('next');
+            $('.home_big_banner_next').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Next button clicked');
+                try {
+                    var $slideshow = $('#home_big_banner');
+                    if ($slideshow.data('cycle.opts')) {
+                        $slideshow.cycle('next');
+                        console.log('Cycle2 next called');
+                    } else {
+                        manualNext();
+                    }
+                } catch (error) {
+                    console.error('Error navigating to next slide:', error);
+                    manualNext();
+                }
+            });
+
+            // Test if buttons are clickable
+            $('.slideshow-prev, .slideshow-next').on('click', function(e) {
+                console.log('Generic slideshow button clicked:', this.className);
             });
         });
 
-        var movieSwiper = new Swiper('.movie-swiper', {
-            effect: 'coverflow',
-            grabCursor: true,
-            centeredSlides: true,
-            slidesPerView: 4,
-            spaceBetween: 30,
-            coverflowEffect: {
-                rotate: 30,
-                stretch: 0,
-                depth: 200,
-                modifier: 1,
-                slideShadows: true,
-            },
-            navigation: {
-                nextEl: '.movie-next',
-                prevEl: '.movie-prev',
-            },
-            pagination: {
-                el: '.movie-pagination',
-                clickable: true,
-            },
-            breakpoints: {
-                0: { slidesPerView: 1 },
-                576: { slidesPerView: 2 },
-                992: { slidesPerView: 4 }
-            }
-        });
+        // Manual slideshow fallback
+        var currentSlide = 0;
+        var totalSlides = 0;
+        var slideInterval;
 
-        var promoSwiper = new Swiper('.promo-swiper', {
-            slidesPerView: 4,
-            spaceBetween: 30,
-            navigation: {
-                nextEl: '.promo-next',
-                prevEl: '.promo-prev',
-            },
-            pagination: {
-                el: '.promo-pagination',
-                clickable: true,
-            },
-            breakpoints: {
-                0: { slidesPerView: 1 },
-                576: { slidesPerView: 2 },
-                992: { slidesPerView: 4 }
+        function initManualSlideshow() {
+            console.log('Initializing manual slideshow');
+            var $slides = $('#home_big_banner li');
+            totalSlides = $slides.length;
+            
+            if (totalSlides === 0) {
+                console.error('No slides found');
+                return;
             }
-        });
+
+            // Hide all slides except first
+            $slides.hide();
+            $slides.first().show();
+            currentSlide = 0;
+
+            // Create pagination
+            createManualPagination();
+
+            // Start auto-slide
+            startAutoSlide();
+        }
+
+        function manualNext() {
+            console.log('Manual next');
+            var $slides = $('#home_big_banner li');
+            $slides.eq(currentSlide).fadeOut(500);
+            currentSlide = (currentSlide + 1) % totalSlides;
+            $slides.eq(currentSlide).fadeIn(500);
+            updatePagination();
+        }
+
+        function manualPrev() {
+            console.log('Manual prev');
+            var $slides = $('#home_big_banner li');
+            $slides.eq(currentSlide).fadeOut(500);
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            $slides.eq(currentSlide).fadeIn(500);
+            updatePagination();
+        }
+
+        function createManualPagination() {
+            var $pager = $('.home_big_banner_pager');
+            $pager.empty();
+            
+            for (var i = 0; i < totalSlides; i++) {
+                var $bullet = $('<span class="pager-bullet" data-slide="' + i + '"></span>');
+                $bullet.on('click', function() {
+                    var slideIndex = parseInt($(this).data('slide'));
+                    goToSlide(slideIndex);
+                });
+                $pager.append($bullet);
+            }
+            updatePagination();
+        }
+
+        function goToSlide(index) {
+            var $slides = $('#home_big_banner li');
+            $slides.eq(currentSlide).fadeOut(500);
+            currentSlide = index;
+            $slides.eq(currentSlide).fadeIn(500);
+            updatePagination();
+        }
+
+        function updatePagination() {
+            $('.pager-bullet').removeClass('cycle-pager-active');
+            $('.pager-bullet').eq(currentSlide).addClass('cycle-pager-active');
+        }
+
+        function startAutoSlide() {
+            slideInterval = setInterval(function() {
+                manualNext();
+            }, 5000);
+        }
+
+        // Check if Swiper is loaded
+        if (typeof Swiper === 'undefined') {
+            console.error('Swiper library not loaded');
+        } else {
+            console.log('Swiper library found');
+            // Initialize Swiper for movies
+            try {
+                var movieSwiper = new Swiper('.movie-swiper', {
+                    effect: 'coverflow',
+                    grabCursor: true,
+                    centeredSlides: true,
+                    slidesPerView: 4,
+                    spaceBetween: 30,
+                    coverflowEffect: {
+                        rotate: 30,
+                        stretch: 0,
+                        depth: 200,
+                        modifier: 1,
+                        slideShadows: true,
+                    },
+                    navigation: {
+                        nextEl: '.movie-next',
+                        prevEl: '.movie-prev',
+                    },
+                    pagination: {
+                        el: '.movie-pagination',
+                        clickable: true,
+                    },
+                    breakpoints: {
+                        0: { slidesPerView: 1 },
+                        576: { slidesPerView: 2 },
+                        992: { slidesPerView: 4 }
+                    }
+                });
+                console.log('Movie Swiper initialized');
+            } catch (error) {
+                console.error('Error initializing movie Swiper:', error);
+            }
+
+            // Initialize Swiper for promotions
+            try {
+                var promoSwiper = new Swiper('.promo-swiper', {
+                    slidesPerView: 4,
+                    spaceBetween: 30,
+                    navigation: {
+                        nextEl: '.promo-next',
+                        prevEl: '.promo-prev',
+                    },
+                    pagination: {
+                        el: '.promo-pagination',
+                        clickable: true,
+                    },
+                    breakpoints: {
+                        0: { slidesPerView: 1 },
+                        576: { slidesPerView: 2 },
+                        992: { slidesPerView: 4 }
+                    }
+                });
+                console.log('Promotion Swiper initialized');
+            } catch (error) {
+                console.error('Error initializing promotion Swiper:', error);
+            }
+        }
     </script>
-          
-
 }
-<style>
-body {
-    background: #f8f9fa;
-}
-.section-title {
-    font-family: 'Montserrat', monospace;
-    font-size: 2.2rem;
-    letter-spacing: 2px;
-    font-weight: bold;
-    color: #e50914;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 32px;
-}
-.section-title:before, .section-title:after {
-    content: '';
-    flex: 1;
-    border-bottom: 2px solid #e50914;
-    margin: 0 16px;
-    opacity: 0.2;
-}
-.swiper {
-    padding-bottom: 40px;
-}
-.movie-card, .promo-card {
-    border-radius: 18px;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    background: #fff;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    border: none;
-}
-.movie-card:hover, .promo-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 8px 32px rgba(229,9,20,0.18);
-}
-.card-img-top {
-    height: 340px;
-    object-fit: cover;
-    border-bottom: 1px solid #eee;
-    background: #f2f2f2;
-}
-.promo-card .card-img-top {
-    height: 180px;
-}
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #222;
-    margin-bottom: 0.5rem;
-}
-.card-text {
-    font-size: 1rem;
-    color: #444;
-}
-.btn-danger {
-    background: #e50914;
-    border: none;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: background 0.2s;
-}
-.btn-danger:hover {
-    background: #b0060f;
-}
-.swiper-button-next, .swiper-button-prev {
-    color: #fff;
-    background: #e50914;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    width: 48px;
-    height: 48px;
-    top: 45%;
-    opacity: 0.95;
-    transition: background 0.2s;
-}
-.swiper-button-next:hover, .swiper-button-prev:hover {
-    background: #b0060f;
-}
-.swiper-button-next:after, .swiper-button-prev:after {
-    font-size: 1.7rem;
-    font-weight: bold;
-}
-.swiper-pagination-bullet {
-    background: #e50914;
-    opacity: 0.4;
-}
-.swiper-pagination-bullet-active {
-    background: #e50914;
-    opacity: 1;
-}
-
-/* Slideshow Styles */
-.slideshow-container {
-    position: relative;
-    width: 100%;
-    margin: 0 auto;
-    overflow: hidden;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-    background: #000;
-}
-
-.slideshow {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    width: 100%;
-    height: 0;
-    padding-bottom: 45%; /* 16:9 aspect ratio */
-    position: relative;
-}
-
-.slide-item {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-}
-
-.slide-item.cycle-slide-active {
-    opacity: 1;
-}
-
-.slide-item a {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-.slide-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.slideshow-controls {
-    position: absolute;
-    top: 50%;
-    width: 100%;
-    transform: translateY(-50%);
-    z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 20px;
-}
-
-.slideshow-prev,
-.slideshow-next {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 48px;
-    height: 48px;
-    background: rgba(229, 9, 20, 0.85);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 30;
-}
-
-.slideshow-prev {
-    left: 20px;
-}
-
-.slideshow-next {
-    right: 20px;
-}
-
-.slideshow-prev:hover,
-.slideshow-next:hover {
-    background: #e50914;
-    transform: translateY(-50%) scale(1.1);
-}
-
-.slideshow-prev i,
-.slideshow-next i {
-    font-size: 1.2rem;
-    pointer-events: none;
-}
-
-.pager-container {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    z-index: 10;
-}
-
-.pager-bullet {
-    width: 10px;
-    height: 10px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.pager-bullet.cycle-pager-active {
-    background: #e50914;
-    transform: scale(1.2);
-}
-
-@@media (max-width: 768px) {
-    .slideshow {
-        padding-bottom: 56.25%; /* 16:9 aspect ratio for mobile */
-    }
-    
-    .slideshow-prev,
-    .slideshow-next {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .pager-container {
-        bottom: 12px;
-    }
-    
-    .pager-bullet {
-        width: 8px;
-        height: 8px;
-    }
-}
-</style>
