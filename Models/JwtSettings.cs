@@ -7,4 +7,4 @@ namespace MovieTheater.Models
         public string Audience { get; set; }
         public int ExpirationInMinutes { get; set; }
     }
-}
+} 

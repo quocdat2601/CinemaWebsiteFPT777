@@ -4,28 +4,27 @@ namespace MovieTheater.Service
 {
     public interface IMovieService
     {
-        IEnumerable<Movie> GetAll();
-        Movie? GetById(string id);
-        bool AddMovie(Movie movie, List<int> showDateIds, List<int> scheduleIds);
-        bool UpdateMovie(Movie movie, List<int> showDateIds, List<int> scheduleIds);
-        bool DeleteMovie(string id);
-        void Save();
-        Task<List<Schedule>> GetSchedulesAsync();
-        Task<List<ShowDate>> GetShowDatesAsync();
-        Task<List<Models.Type>> GetTypesAsync();
-        IEnumerable<Movie> SearchMovies(string searchTerm);
-        string ConvertToEmbedUrl(string trailerUrl);
-
-        // New methods for MovieShow
-        List<MovieShow> GetMovieShows(string movieId);
-        bool IsScheduleAvailable(int showDateId, int scheduleId, int cinemaRoomId);
-        bool AddMovieShow(MovieShow movieShow);
-        bool AddMovieShows(List<MovieShow> movieShows);
-
-        // Additional methods for getting available options
-        List<Models.Type> GetAllTypes();
-        List<ShowDate> GetAllShowDates();
-        List<Schedule> GetAllSchedules();
-        List<CinemaRoom> GetAllCinemaRooms();
+        public IEnumerable<Movie> GetAll();
+        public Movie? GetById(string id);
+        public bool AddMovie(Movie movie);
+        public bool UpdateMovie(Movie movie);
+        public bool DeleteMovie(string id);
+        public void Save();
+        public List<Schedule> GetSchedules();
+        public List<ShowDate> GetShowDates();
+        public List<Models.Type> GetTypes();
+        public List<CinemaRoom> GetAllCinemaRooms();
+        public List<MovieShow> GetMovieShow();
+        public IEnumerable<Movie> SearchMovies(string searchTerm);
+        public string ConvertToEmbedUrl(string trailerUrl);
+        public List<MovieShow> GetMovieShows(string movieId);
+        public bool IsScheduleAvailable(int showDateId, int scheduleId, int cinemaRoomId);
+        public bool AddMovieShow(MovieShow movieShow);
+        public bool AddMovieShows(List<MovieShow> movieShows);
+        public List<Models.Type> GetAllTypes();
+        public List<ShowDate> GetAllShowDates();
+        public List<Schedule> GetAllSchedules();
+        public bool DeleteAllMovieShows(string movieId);
+        public Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId);
     }
 }

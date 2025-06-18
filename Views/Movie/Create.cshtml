@@ -104,26 +104,28 @@
 					</div>
 
 					<div class="form-group mb-3">
-							<strong>Duration (min)</strong>
-							<input type="number" class="form-control" asp-for="Duration"/>
-							<span asp-validation-for="Duration" class="text-danger"></span>
+						<strong>Duration (min)</strong>
+						<input type="number" class="form-control" asp-for="Duration"/>
+						<span asp-validation-for="Duration" class="text-danger"></span>
 					</div>
- 					<div class="form-group mb-3">
-                        <strong>Version:</strong><br />
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" asp-for="Version" value="2D" id="version2D" />
-                            <label class="form-check-label" for="version2D">2D</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" asp-for="Version" value="3D" id="version3D" />
-                            <label class="form-check-label" for="version3D">3D</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" asp-for="Version" value="IMAX" id="versionIMAX" />
-                            <label class="form-check-label" for="versionIMAX">IMAX</label>
-                        </div>
-                        <span asp-validation-for="Version" class="text-danger"></span>
-                    </div>
+
+					<div class="form-group mb-3">
+						<strong>Version:</strong><br />
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" asp-for="Version" value="2D" id="version2D" />
+							<label class="form-check-label" for="version2D">2D</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" asp-for="Version" value="3D" id="version3D" />
+							<label class="form-check-label" for="version3D">3D</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" asp-for="Version" value="IMAX" id="versionIMAX" />
+							<label class="form-check-label" for="versionIMAX">IMAX</label>
+						</div>
+						<span asp-validation-for="Version" class="text-danger"></span>
+					</div>
+
 					<div class="form-group mb-3">
 						<strong>Types</strong><br />
 						@foreach (var type in Model.AvailableTypes)
@@ -134,51 +136,6 @@
 							</label>
 						}
 					</div>
-
-					<div class="form-group mb-3">
-						<strong>Cinema Room</strong>
-						<select asp-for="CinemaRoomId" class="form-control" asp-items="@(new SelectList(Model.AvailableCinemaRooms, "CinemaRoomId", "CinemaRoomName"))">
-							<option value="">-- Select a Cinema Room --</option>
-						</select>
-						<span asp-validation-for="CinemaRoomId" class="text-danger"></span>
-					</div>
-
-					<div class="form-group mb-3">
-						<strong>Show Dates</strong><br />
-						@foreach (var showDate in Model.AvailableShowDates)
-						{
-							<label class="me-3">
-								<input type="checkbox" name="SelectedShowDateIds" value="@showDate.ShowDateId" />
-								@(showDate.ShowDate1?.ToString("dd/MM/yyyy") ?? showDate.DateName)
-							</label>
-						}
-						<span asp-validation-for="SelectedShowDateIds" class="text-danger"></span>
-					</div>
-
-					<div class="form-group mb-3">
-						<strong>Schedules</strong><br />
-						@foreach (var schedule in Model.AvailableSchedules)
-						{
-							<label class="me-3">
-								<input type="checkbox" name="SelectedScheduleIds" value="@schedule.ScheduleId" />
-								@schedule.ScheduleTime
-							</label>
-						}
-						<span asp-validation-for="SelectedScheduleIds" class="text-danger"></span>
-					</div>
-
-					@if (TempData["ErrorMessage"] != null)
-					{
-						<div class="alert alert-danger mt-3">
-							@TempData["ErrorMessage"]
-						</div>
-					}
-					@if (TempData["SuccessMessage"] != null)
-					{
-						<div class="alert alert-success mt-3">
-							@TempData["SuccessMessage"]
-						</div>
-					}
 				</div>
 			</div>
 
@@ -206,9 +163,7 @@
 			<div class="text-center mt-4">
 				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Create Movie</button>
 			</div>
-
 		</form>
-
 	</div>
 </div>
 

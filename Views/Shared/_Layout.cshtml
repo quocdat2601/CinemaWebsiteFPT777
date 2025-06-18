@@ -53,15 +53,15 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
                         </li>
-                        @* <li class="nav-item"> *@
-                        @*     <a class="nav-link" asp-area="" asp-controller="Showtime" asp-action="Select">Showtime</a> *@
-                        @* </li> *@
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
-                        </li>
+                        @if (userRole == "Member")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
+                            </li>
+                        }
                     </ul>
 
                     <ul class="navbar-nav">
@@ -95,14 +95,6 @@
                             <li  class="nav-item">
                                 <a class="nav-link" asp-controller="MyAccount" asp-action="MainPage">My Account</a>
                             </li>
-
-                            @* ✅ Hiển thị Score History nếu là Member *@
-                            @if (userRole == "Member")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Account" asp-action="ScoreHistory">Score History</a>
-                                </li>
-                            }
 
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>

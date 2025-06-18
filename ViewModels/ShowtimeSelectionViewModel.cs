@@ -5,6 +5,7 @@ namespace MovieTheater.ViewModels
     {
         // List of available screening dates
         public List<DateTime> AvailableDates { get; set; }
+        public List<String> AvailableSchedules { get; set; }
 
         // Currently selected date
         public DateTime SelectedDate { get; set; }

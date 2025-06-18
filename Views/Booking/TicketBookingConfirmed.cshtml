@@ -1,4 +1,6 @@
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
+@using System.Security.Claims
+
 @{
     ViewBag.Title = "Ticket Information (Admin)";
     Layout = "_Layout";
@@ -16,6 +18,8 @@
     string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
     string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
     string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
 }
 <style>
     .ticket-success-header {
@@ -120,17 +124,25 @@
 <div class="container mt-4">
     <div class="ticket-card card shadow p-0">
         <div class="ticket-success-header">
-            <div class="icon">&#x1F389;</div>
-            <h2>Booked Successfully!</h2>
-            <div class="sub">This is your ticket. Please show this at the theater entrance.</div>
+            @if (userRole == "Admin")
+            {
+                <h2>Ticket Information</h2>
+            }
+            else
+            {
+                <div class="icon" role="img" aria-label="Celebration">&#x1F389;</div>
+                <h2>Booked Successfully!</h2>
+                <p class="sub">This is your ticket. Please show this at the theater entrance.</p>
+            }
         </div>
+        
         <div class="p-4">
             <div class="ticket-section-title">Movie & Show Info</div>
             <div class="ticket-row">
                 <label for="movieName" class="ticket-info-label">Movie Name</label>
                 <input type="text" id="movieName" class="ticket-info-value" value="@movieName" readonly />
                 <label for="screen" class="ticket-info-label">Screen</label>
-                <input type="text" id="screen" class="ticket-info-value" value="@screen" readonly />
+                <input type="text" id="screen" class="ticket-info-value" value="@Model.BookingDetails.CinemaRoomName" readonly />
             </div>
             <div class="ticket-row">
                 <label for="showDate" class="ticket-info-label">Date</label>
@@ -201,3 +213,5 @@
         </div>
     </div>
 </div> 
+
+<partial name="_ToastMessages" />

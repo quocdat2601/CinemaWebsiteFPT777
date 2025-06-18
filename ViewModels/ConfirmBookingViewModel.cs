@@ -25,5 +25,7 @@
         public string InvoiceId { get; set; }
         public int ScoreUsed { get; set; }
         public string TicketsConverted { get; set; }
+
+        public int MovieShowId { get; set; }
     }
 }

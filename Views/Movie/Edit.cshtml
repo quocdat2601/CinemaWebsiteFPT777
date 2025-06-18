@@ -31,7 +31,6 @@
             <div class="row">   
                 <!-- Left Column: Image Uploads -->
                 <div class="col">
-
                     <div class="form-group mb-3">
                         <strong>Small Image:</strong><br />
                         @if (!string.IsNullOrEmpty(Model.SmallImage))
@@ -59,7 +58,6 @@
                         <input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
                         <span asp-validation-for="LargeImageFile" class="text-danger"></span>
                     </div>
-
                 </div>
 
                 <!-- Right Column: Movie Details -->
@@ -108,12 +106,11 @@
                     </div>
 
                     <div class="form-group mb-3">
-                     
-                            <strong>Duration:</strong>
-                            <input type="number" class="form-control" asp-for="Duration" />
-                            <span asp-validation-for="Duration" class="text-danger"></span>
-                     
+                        <strong>Duration:</strong>
+                        <input type="number" class="form-control" asp-for="Duration" />
+                        <span asp-validation-for="Duration" class="text-danger"></span>
                     </div>
+
                     <div class="form-group mb-3">
                         <strong>Version:</strong><br />
                         <div class="form-check form-check-inline">
@@ -130,6 +127,7 @@
                         </div>
                         <span asp-validation-for="Version" class="text-danger"></span>
                     </div>
+
                     <div class="form-group mb-3">
                         <strong>Types</strong><br />
                         @foreach (var type in Model.AvailableTypes)
@@ -143,57 +141,6 @@
                             </label>
                         }
                     </div>
-
-                    <div class="form-group mb-3">
-                        <strong>Cinema Room:</strong>
-                        <select asp-for="CinemaRoomId" class="form-control" asp-items="@(new SelectList(Model.AvailableCinemaRooms, "CinemaRoomId", "CinemaRoomName"))">
-                            <option value="">-- Select a Cinema Room --</option>
-                        </select>
-                        <span asp-validation-for="CinemaRoomId" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group mb-3">
-                        <strong>Show Dates</strong><br />
-                        @foreach (var showDate in Model.AvailableShowDates)
-                        {
-                            <label class="me-3">
-                                <input type="checkbox"
-                                       name="SelectedShowDateIds"
-                                       value="@showDate.ShowDateId"
-                                       @(Model.SelectedShowDateIds.Contains(showDate.ShowDateId) ? "checked" : "") />
-                                @(showDate.ShowDate1?.ToString("dd/MM/yyyy") ?? showDate.DateName)
-                            </label>
-                        }
-                        <span asp-validation-for="SelectedShowDateIds" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group mb-3">
-                        <strong>Schedules</strong><br />
-                        @foreach (var schedule in Model.AvailableSchedules)
-                        {
-                            <label class="me-3">
-                                <input type="checkbox"
-                                       name="SelectedScheduleIds"
-                                       value="@schedule.ScheduleId"
-                                       @(Model.SelectedScheduleIds.Contains(schedule.ScheduleId) ? "checked" : "") />
-                                @schedule.ScheduleTime
-                            </label>
-                        }
-                        <span asp-validation-for="SelectedScheduleIds" class="text-danger"></span>
-                    </div>
-
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger mt-3">
-                            @TempData["ErrorMessage"]
-                        </div>
-                    }
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success mt-3">
-                            @TempData["SuccessMessage"]
-                        </div>
-                    }
                 </div>
             </div>
 
@@ -222,10 +169,8 @@
                 <button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Movie</button>
             </div>
         </form>
-
     </div>
 </div>
-
 
 <script>
     function previewImage(input, previewId) {

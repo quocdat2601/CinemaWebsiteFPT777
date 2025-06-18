@@ -1,4 +1,7 @@
-﻿namespace MovieTheater.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace MovieTheater.Models;
 
 public partial class SeatStatus
 {

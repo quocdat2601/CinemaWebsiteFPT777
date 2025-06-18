@@ -24,6 +24,10 @@
                         <div class="col-md-8">@Model.ScheduleShowTime</div>
                     </div>
                     <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Screen:</div>
+                        <div class="col-md-8">@Model.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName</div>
+                    </div>
+                    <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Seats:</div>
                         <div class="col-md-8">@Model.Seat</div>
                     </div>

@@ -2,6 +2,8 @@
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.Extensions.Logging;
+using MovieTheater.Repository;
 
 namespace MovieTheater.Controllers
 {
@@ -12,19 +14,25 @@ namespace MovieTheater.Controllers
         private readonly ISeatTypeService _seatTypeService;
         private readonly ICoupleSeatService _coupleSeatService;
         private readonly IMovieService _movieService;
+        private readonly ILogger<SeatController> _logger;
+        private readonly IScheduleSeatRepository _scheduleSeatRepository;
 
         public SeatController(
             ICinemaService cinemaService,
             ISeatService seatService,
             ISeatTypeService seatTypeService,
             ICoupleSeatService coupleSeatService,
-            IMovieService movieService)
+            IMovieService movieService,
+            ILogger<SeatController> logger,
+            IScheduleSeatRepository scheduleSeatRepository)
         {
             _cinemaService = cinemaService;
             _seatService = seatService;
             _seatTypeService = seatTypeService;
             _coupleSeatService = coupleSeatService;
             _movieService = movieService;
+            _logger = logger;
+            _scheduleSeatRepository = scheduleSeatRepository;
         }
         // GET: SeatController
         public ActionResult Index()
@@ -139,34 +147,59 @@ namespace MovieTheater.Controllers
             return View("View", viewModel);
         }
 
-        [HttpGet("Seat/Select")]
-        public async Task<IActionResult> Select(string movieId, DateTime date, string time)
-        {
+        [HttpGet]
+        [Route("Seat/Select")]
+        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time)
+        {            
             var movie = _movieService.GetById(movieId);
-            if (movie == null || !movie.CinemaRoomId.HasValue)
+            if (movie == null)
             {
                 return NotFound();
             }
 
-            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
+            // Parse the date from dd/MM/yyyy format
+            if (!DateTime.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
+            {
+                return BadRequest("Invalid date format. Please use dd/MM/yyyy format.");
+            }
+
+            // Get all movie shows for this movie
+            var movieShows = _movieService.GetMovieShows(movieId);
+
+            // Get the specific movie show for this date and time
+            var movieShow = movieShows.FirstOrDefault(ms => 
+                ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(parsedDate) && 
+                ms.Schedule?.ScheduleTime == time);
+
+            if (movieShow == null)
+            {
+                _logger.LogWarning($"No movie show found for movie {movieId} with date {date} and time {time}");
+                return NotFound("Movie show not found for the specified date and time.");
+            }
+
+
+            var cinemaRoom = movieShow.CinemaRoom;
             if (cinemaRoom == null)
             {
-                return NotFound();
+                _logger.LogWarning($"No cinema room found for movie show {movieShow.MovieShowId}");
+                return NotFound("Cinema room not found for this movie show.");
             }
 
-            var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
-            var bookedSeats = await _seatService.GetBookedSeatsAsync(movieId, date, time);
+            var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaRoom.CinemaRoomId);
             var seatTypes = _seatTypeService.GetAll().ToList();
 
-            ViewBag.BookedSeats = bookedSeats;
+            // Get booked seats for this movie show
+            var bookedSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(movieShow.MovieShowId);
+            ViewBag.BookedSeats = bookedSeats.Select(s => s.SeatId).ToList();
+            ViewBag.MovieShow = movieShow;
 
             var viewModel = new SeatSelectionViewModel
             {
                 MovieId = movieId,
                 MovieName = movie.MovieNameEnglish,
-                ShowDate = date,
+                ShowDate = parsedDate,
                 ShowTime = time,
-                CinemaRoomId = movie.CinemaRoomId.Value,
+                CinemaRoomId = cinemaRoom.CinemaRoomId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
