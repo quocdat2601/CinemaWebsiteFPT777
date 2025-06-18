@@ -62,29 +62,51 @@ public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
     if (model.vnp_ResponseCode == "00")
     {
         // Thanh toán thành công
+        // Lấy lại hóa đơn từ DB
+        var context = new MovieTheater.Models.MovieTheaterContext();
+        var invoice = context.Invoices.FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
+        if (invoice != null && invoice.AddScore == 0)
+        {
+            // Tính điểm thưởng dựa trên TotalMoney
+            int addScore = (int)((invoice.TotalMoney ?? 0) * 0.01m);
+            invoice.AddScore = addScore;
+            // Cộng điểm cho user
+            var member = context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
+            if (member != null)
+            {
+                member.Score += addScore;
+                // Trừ điểm nếu UseScore > 0
+                if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                {
+                    member.Score -= invoice.UseScore.Value;
+                }
+            }
+            context.Invoices.Update(invoice);
+            context.SaveChanges();
+        }
         // Lưu thông tin cần thiết vào TempData để hiển thị ở trang Success
         TempData["InvoiceId"] = model.vnp_TxnRef;
-        TempData["MovieName"] = model.vnp_OrderInfo;
+        TempData["MovieName"] = model.vnp_MovieName;
         TempData["ShowDate"] = DateTime.Now.ToString("dd/MM/yyyy");
         TempData["ShowTime"] = DateTime.Now.ToString("HH:mm");
-        TempData["Seats"] = "Ghế đã chọn"; // Thay bằng thông tin thực tế
+        TempData["Seats"] = "Selected seats"; // Thay bằng thông tin thực tế
         TempData["BookingTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         TempData["OriginalPrice"] = int.Parse(model.vnp_Amount) / 100; // Chuyển đổi từ số tiền VNPay (x100)
         TempData["UsedScore"] = 0; // Thay bằng số điểm đã dùng nếu có
         TempData["FinalPrice"] = int.Parse(model.vnp_Amount) / 100; // Thay bằng số tiền cuối cùng
 
-                // Redirect về trang Success
-                return RedirectToAction("Success", "Booking");
+        // Redirect về trang Success
+        return RedirectToAction("Success", "Booking");
     }
     else
     {
         // Thanh toán thất bại
         // Lưu thông tin cần thiết vào TempData để hiển thị ở trang Failed
         TempData["InvoiceId"] = model.vnp_TxnRef;
-        TempData["MovieName"] = model.vnp_OrderInfo;
+        TempData["MovieName"] = model.vnp_MovieName;
         TempData["ShowDate"] = DateTime.Now.ToString("dd/MM/yyyy");
         TempData["ShowTime"] = DateTime.Now.ToString("HH:mm");
-        TempData["Seats"] = "Ghế đã chọn"; // Thay bằng thông tin thực tế
+        TempData["Seats"] = "Selected seats"; // Thay bằng thông tin thực tế
         TempData["BookingTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
 
         // Redirect về trang Failed
