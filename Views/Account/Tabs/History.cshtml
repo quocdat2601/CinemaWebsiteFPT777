@@ -28,20 +28,20 @@
                     }
 
                     <!-- Filter Form -->
-                    <form id="historyFilterForm" class="row g-3 p-4 bg-light rounded-3 shadow-sm mb-4">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">From Date</label>
-                            <input type="date" id="fromDate" name="fromDate" class="form-control" />
+                    <form id="historyFilterForm" class="row g-3 filter-form mb-4">
+                        <div class="filter-col">
+                            <label class="filter-label">From Date</label>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control filter-input" />
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">To Date</label>
-                            <input type="date" id="toDate" name="toDate" class="form-control" />
+                        <div class="filter-col">
+                            <label class="filter-label">To Date</label>
+                            <input type="date" id="toDate" name="toDate" class="form-control filter-input" />
                         </div>
-                        <div class="col-md-4 d-flex align-items-end justify-content-end gap-2">
-                            <button type="button" id="viewAllBtn" class="btn btn-success">
+                        <div class="filter-col d-flex align-items-end justify-content-end gap-2">
+                            <button type="button" id="viewAllBtn" class="btn filter-btn filter-btn-success">
                                 <i class="fas fa-list"></i> View All
                             </button>
-                            <button type="submit" id="filterBtn" class="btn btn-primary">
+                            <button type="submit" id="filterBtn" class="btn filter-btn filter-btn-primary">
                                 <i class="fas fa-search"></i> Filter
                             </button>
                         </div>
@@ -194,6 +194,73 @@
         .btn-sm {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
+        }
+        .filter-form {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .filter-col {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+            padding: 0 1rem;
+        }
+
+        .filter-col:first-child {
+            padding-left: 0;
+        }
+
+        .filter-col:last-child {
+            padding-right: 0;
+        }
+
+        .filter-label {
+            color: rgb(65, 123, 199);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-input {
+            border: 1px solid rgb(65, 123, 199);
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            border-color: rgb(28, 109, 216);
+            box-shadow: 0 0 0 3px rgba(65, 123, 199, 0.15);
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn-primary {
+            background: rgb(65, 123, 199);
+            border-color: rgb(65, 123, 199);
+        }
+
+        .filter-btn-primary:hover {
+            background: rgb(28, 109, 216);
+            border-color: rgb(28, 109, 216);
+            transform: translateY(-2px);
+        }
+
+        .filter-btn-success {
+            background: rgb(56, 168, 134);
+            border-color: rgb(56, 168, 134);
+        }
+
+        .filter-btn-success:hover {
+            background: rgb(45, 147, 118);
+            border-color: rgb(45, 147, 118);
+            transform: translateY(-2px);
         }
     </style>
 }

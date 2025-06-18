@@ -20,12 +20,19 @@ namespace MovieTheater.Controllers
             _cinemaService = cinemaService;
             _logger = logger;
         }
+
+        /// <summary>
+        /// Lấy role người dùng hiện tại từ JWT Claims.
+        /// </summary>
         private string GetUserRole()
         {
             return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
 
-        // GET: MovieController
+        /// <summary>
+        /// [GET] api/movie/movielist
+        /// Tìm kiếm và hiển thị danh sách phim. Nếu là Ajax request thì trả về partial view.
+        /// </summary>
         public IActionResult MovieList(string searchTerm)
         {
             var movies = _movieService.SearchMovies(searchTerm)
@@ -41,7 +48,6 @@ namespace MovieTheater.Controllers
 
             ViewBag.SearchTerm = searchTerm;
 
-            // Kiểm tra nếu là Ajax thì chỉ render partial
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return PartialView("_MovieGrid", movies);
@@ -50,13 +56,16 @@ namespace MovieTheater.Controllers
             return View(movies);
         }
 
-        // GET: MovieController/Detail/5
+        /// <summary>
+        /// [GET] api/movie/detail/{id}
+        /// Hiển thị thông tin chi tiết của một bộ phim.
+        /// </summary>
         public ActionResult Detail(string id)
         {
             var movie = _movieService.GetById(id);
             if (movie == null)
             {
-                return NotFound(); // hoặc redirect về trang lỗi
+                return NotFound();
             }
 
             CinemaRoom cinemaRoom = null;
@@ -86,7 +95,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // GET: MovieController/Create
+        /// <summary>
+        /// [GET] api/movie/create
+        /// Trả về form tạo mới phim.
+        /// </summary>
         [HttpGet]
         public IActionResult Create()
         {
@@ -97,7 +109,10 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // POST: MovieController/Create
+        /// <summary>
+        /// [POST] api/movie/create
+        /// Tạo mới một bộ phim kèm theo các lịch chiếu và ngày chiếu.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(MovieDetailViewModel model)
@@ -149,7 +164,10 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // GET: Movie/Edit/5
+        /// <summary>
+        /// [GET] api/movie/edit/{id}
+        /// Trả về form cập nhật phim.
+        /// </summary>
         [HttpGet]
         [Route("Movie/Edit/{id}")]
         public IActionResult Edit(string id)
@@ -183,13 +201,16 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // POST: MovieController/Edit/5
+        /// <summary>
+        /// [POST] api/movie/edit/{id}
+        /// Cập nhật thông tin phim dựa trên ID. Kiểm tra validation và cập nhật dữ liệu.
+        /// </summary>
         [HttpPost]
         [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(string id, MovieDetailViewModel model)
         {
-            if (id != model.MovieId)
+            if (id != model.MovieId || !ModelState.IsValid || model.FromDate >= model.ToDate)
             {
                 return NotFound();
             }
@@ -241,7 +262,10 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        // POST: Movie/Delete/5
+        /// <summary>
+        /// [POST] api/movie/delete/{id}
+        /// Xóa phim khỏi hệ thống dựa trên ID. Role xác định route sau khi xóa.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
@@ -269,7 +293,6 @@ namespace MovieTheater.Controllers
                 }
 
                 movie.Types?.Clear();
-
                 bool success = _movieService.DeleteMovie(id);
 
                 if (!success)

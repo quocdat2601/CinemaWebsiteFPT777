@@ -22,6 +22,10 @@ namespace MovieTheater.Controllers
             _jwtService = jwtService;
         }
 
+        /// <summary>
+        /// [GET] api/MyAccount/MainPage
+        /// Trang chính tài khoản người dùng, hiển thị tab mặc định là 'Profile'.
+        /// </summary>
         [HttpGet]
         public IActionResult MainPage(string tab = "Profile")
         {
@@ -51,13 +55,15 @@ namespace MovieTheater.Controllers
             return View("~/Views/Account/MainPage.cshtml", model);
         }
 
+        /// <summary>
+        /// [GET] api/MyAccount/LoadTab
+        /// Load nội dung tab tương ứng trong tài khoản (Profile, Rank, Score, Voucher, History).
+        /// </summary>
         [HttpGet]
         public IActionResult LoadTab(string tab)
         {
             var user = _service.GetCurrentUser();
 
-            //TEST HARD-CODE
-            //var user = _service.GetDemoUser();
             switch (tab)
             {
                 case "Profile":
@@ -85,13 +91,15 @@ namespace MovieTheater.Controllers
                     return PartialView("~/Views/Account/Tabs/Voucher.cshtml");
                 case "History":
                     return PartialView("~/Views/Account/Tabs/History.cshtml");
-                //case "Password":
-                //    return PartialView("~/Views/Account/Tabs/ChangePassword.cshtml");
                 default:
                     return Content("Tab not found.");
             }
         }
 
+        /// <summary>
+        /// [POST] api/MyAccount/Edit
+        /// Cập nhật thông tin hồ sơ người dùng.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProfileUpdateViewModel model)
@@ -102,20 +110,15 @@ namespace MovieTheater.Controllers
             if (user == null)
             {
                 TempData["ErrorMessage"] = "User not found";
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
 
             if (!ModelState.IsValid)
             {
-                var errors = string.Join(", ", ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage));
-
-                _logger.LogWarning("Update failed validation at {Time}. Errors: {Errors}",
-                    DateTime.UtcNow, errors);
-
+                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                _logger.LogWarning("Update failed validation at {Time}. Errors: {Errors}", DateTime.UtcNow, errors);
                 TempData["ErrorMessage"] = $"{errors}";
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
 
             try
@@ -142,7 +145,7 @@ namespace MovieTheater.Controllers
                 {
                     _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", user.AccountId, timestamp);
                     TempData["ErrorMessage"] = "Update failed";
-                    return RedirectToAction("MainPage", new { tab = "Profile" });
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
                 }
 
                 TempData["ToastMessage"] = "Profile updated successfully!";
@@ -152,12 +155,14 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", user.AccountId, DateTime.UtcNow);
                 TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
             }
         }
 
-        // --- OTP Password Change Endpoints ---
-
+        /// <summary>
+        /// [POST] api/MyAccount/SendOtp
+        /// Gửi mã OTP đến email người dùng để xác thực thay đổi mật khẩu.
+        /// </summary>
         [HttpPost]
         public IActionResult SendOtp()
         {
@@ -181,6 +186,10 @@ namespace MovieTheater.Controllers
             return Json(new { success = true, message = "OTP sent to your email." });
         }
 
+        /// <summary>
+        /// [POST] api/MyAccount/VerifyOtp
+        /// Kiểm tra mã OTP do người dùng nhập.
+        /// </summary>
         [HttpPost]
         public IActionResult VerifyOtp([FromBody] VerifyOtpViewModel model)
         {
@@ -198,17 +207,19 @@ namespace MovieTheater.Controllers
             return Json(new { success = true });
         }
 
+        /// <summary>
+        /// [POST] api/MyAccount/ChangePasswordAsync
+        /// Đổi mật khẩu người dùng sau khi xác thực OTP.
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword)
         {
-            // Get current user from JWT claims
             var user = _service.GetCurrentUser();
             if (user == null)
             {
                 return View("~/Views/Account/Tabs/ChangePassword.cshtml");
             }
 
-            // Verify current password
             if (string.IsNullOrEmpty(currentPassword))
             {
                 TempData["ErrorMessage"] = "Current password cannot be null";
@@ -233,7 +244,6 @@ namespace MovieTheater.Controllers
                 return View("~/Views/Account/Tabs/ChangePassword.cshtml");
             }
 
-            // Update password in DB via service
             var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
             _service.ClearOtp(user.AccountId);
 
@@ -247,9 +257,12 @@ namespace MovieTheater.Controllers
             Response.Cookies.Delete("JwtToken");
             TempData["ToastMessage"] = "Password updated successfully! Please log back in.";
             return RedirectToAction("Login", "Account");
-
         }
 
+        /// <summary>
+        /// [GET] api/MyAccount/ChangePassword
+        /// Trả về view đổi mật khẩu người dùng.
+        /// </summary>
         [HttpGet]
         public IActionResult ChangePassword()
         {
@@ -263,7 +276,6 @@ namespace MovieTheater.Controllers
                 Email = user.Email
             };
 
-            // Return the view from the new location
             return View("~/Views/Account/Tabs/ChangePassword.cshtml", viewModel);
         }
     }
