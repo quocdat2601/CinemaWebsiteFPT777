@@ -53,7 +53,7 @@ namespace MovieTheater.Service
 
         public async Task<string> GenerateInvoiceIdAsync()
         {
-            // Lấy tất cả InvoiceId từ DB bắt đầu bằng "INV"
+            // Get all InvoiceIds from DB starting with "INV"
             var allIds = await _context.Invoices
                 .Where(i => i.InvoiceId.StartsWith("INV"))
                 .Select(i => i.InvoiceId)
@@ -63,7 +63,7 @@ namespace MovieTheater.Service
 
             foreach (var id in allIds)
             {
-                var numberPart = id.Substring(3); // Bỏ "INV"
+                var numberPart = id.Substring(3); // Remove "INV"
                 if (int.TryParse(numberPart, out int num))
                 {
                     if (num > maxNumber)
@@ -73,7 +73,7 @@ namespace MovieTheater.Service
 
             int nextNumber = maxNumber + 1;
 
-            // Trả về "INV" + số với padding 3 chữ số
+            // Return "INV" + number with 3-digit padding
             return "INV" + nextNumber.ToString("D3");
         }
 

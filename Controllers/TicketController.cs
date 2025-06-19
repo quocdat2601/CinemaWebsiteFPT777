@@ -49,7 +49,7 @@ namespace MovieTheater.Controllers
             }
 
             var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.Status == 1)
+                .Where(i => i.AccountId == accountId && i.Status == MovieTheater.Models.InvoiceStatus.Completed)
                 .OrderByDescending(i => i.BookingDate)
                 .ToList();
 
@@ -67,7 +67,7 @@ namespace MovieTheater.Controllers
             }
 
             var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.Status == 0)
+                .Where(i => i.AccountId == accountId && i.Status == MovieTheater.Models.InvoiceStatus.Incomplete)
                 .OrderByDescending(i => i.BookingDate)
                 .ToList();
 
@@ -123,7 +123,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            booking.Status = 0; // 0 = Canceled
+            booking.Status = MovieTheater.Models.InvoiceStatus.Incomplete; // 0 = Canceled
             _context.SaveChanges();
 
             TempData["Success"] = "Ticket canceled successfully.";

@@ -16,7 +16,8 @@ namespace MovieTheater.Service
 
         public VNPayService(IConfiguration configuration)
         {
-            _config = configuration.GetSection("VNPay").Get<VNPayConfig>();
+            _config = configuration.GetSection("VNPay").Get<VNPayConfig>()
+                      ?? throw new InvalidOperationException("VNPay configuration is missing or invalid.");
         }
 
         public string CreatePaymentUrl(decimal amount, string orderInfo, string orderId)
@@ -106,13 +107,19 @@ namespace MovieTheater.Service
 
     public class VNPayCompare : IComparer<string>
     {
-        public int Compare(string x, string y)
+        private readonly CompareInfo _compareInfo;
+
+        public VNPayCompare()
+        {
+            _compareInfo = CompareInfo.GetCompareInfo("en-US");
+        }
+
+        public int Compare(string? x, string? y)
         {
             if (x == y) return 0;
             if (x == null) return -1;
             if (y == null) return 1;
-            var vnpCompare = CompareInfo.GetCompareInfo("en-US");
-            return vnpCompare.Compare(x, y, CompareOptions.Ordinal);
+            return _compareInfo.Compare(x, y, CompareOptions.Ordinal);
         }
     }
 } 

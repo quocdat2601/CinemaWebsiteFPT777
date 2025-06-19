@@ -532,14 +532,14 @@ namespace MovieTheater.Controllers
             var today = DateTime.Today;
             var allInvoices = _invoiceService.GetAll().ToList();
 
-            // Only “completed” and “cancelled”
-            var completed = allInvoices.Where(i => i.Status == 1).ToList();
-            var cancelled = allInvoices.Where(i => i.Status == 0).ToList();
+            // Only "completed" and "cancelled"
+            var completed = allInvoices.Where(i => i.Status == InvoiceStatus.Completed).ToList();
+            var cancelled = allInvoices.Where(i => i.Status == InvoiceStatus.Incomplete).ToList();
 
             var todayInv = completed.Where(i => i.BookingDate?.Date == today).ToList();
             var todayCancelled = cancelled.Where(i => i.BookingDate?.Date == today).ToList();
 
-            // 1) Today’s summary
+            // 1) Today's summary
             var revenueToday = todayInv.Sum(i => i.TotalMoney ?? 0m);
             var bookingsToday = todayInv.Count;
             var ticketsSoldToday = todayInv.Sum(i => i.Seat?.Split(',').Length ?? 0);
@@ -558,12 +558,12 @@ namespace MovieTheater.Controllers
                            .ToList();
             var revTrend = last7
                 .Select(d => allInvoices
-                    .Where(inv => inv.BookingDate?.Date == d && inv.Status == 1)
+                    .Where(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed)
                     .Sum(inv => inv.TotalMoney ?? 0m))
                 .ToList();
             var bookTrend = last7
                 .Select(d => allInvoices
-                    .Count(inv => inv.BookingDate?.Date == d && inv.Status == 1))
+                    .Count(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed))
                 .ToList();
 
             // 4) Top 5 movies & members

@@ -88,7 +88,7 @@ namespace MovieTheater.Service
                 var duplicate = _repository.GetByUsername(model.Username);
                 if (duplicate != null)
                 {
-                    throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
+                    throw new Exception("Username already exists. Please choose a different one.");
                 }
             }
 
@@ -140,7 +140,7 @@ namespace MovieTheater.Service
         //    }
         //}
 
-        //KIỂM TRA ACCOUNT NULL TRƯỚC KHI DÙNG
+        //CHECK ACCOUNT NULL BEFORE USING
         public bool Authenticate(string username, string password, out Account? account)
         {
             account = _repository.Authenticate(username);

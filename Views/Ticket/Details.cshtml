@@ -42,7 +42,7 @@
                     <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Status:</div>
                         <div class="col-md-8">
-                            @if (Model.Status == 1)
+                            @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed)
                             {
                                 <span class="badge bg-success">Completed</span>
                             }
@@ -72,7 +72,7 @@
                         <a href="/MyAccount/MainPage?tab=History" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to History
                         </a>
-                        @if (Model.Status == 1 && Model.ScheduleShow.HasValue && 
+                        @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed && Model.ScheduleShow.HasValue && 
                              Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
                         {
                             <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId" 

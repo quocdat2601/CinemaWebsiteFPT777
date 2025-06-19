@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using System.Linq;
 using System.Collections.Generic;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PaymentController : ControllerBase
+    public class PaymentController : Controller
     {
         private readonly VNPayService _vnPayService;
 
@@ -55,10 +56,50 @@ namespace MovieTheater.Controllers
         [HttpGet("vnpay-return")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
-        public IActionResult VNPayReturn()
+        public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
         {
-            // Trả về HTML đơn giản cho VNPAY
-            return Content("<h1>Thanh toán thành công!</h1>", "text/html");
+            var context = new MovieTheater.Models.MovieTheaterContext();
+            var invoice = context.Invoices.FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
+            if (model.vnp_ResponseCode == "00")
+            {
+                // Thanh toán thành công
+                if (invoice != null && invoice.AddScore == 0)
+                {
+                    int addScore = (int)((invoice.TotalMoney ?? 0) * 0.01m);
+                    invoice.AddScore = addScore;
+                    var member = context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                    if (member != null)
+                    {
+                        member.Score += addScore;
+                        if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                        {
+                            member.Score -= invoice.UseScore.Value;
+                        }
+                    }
+                    context.Invoices.Update(invoice);
+                    context.SaveChanges();
+                }
+                TempData["InvoiceId"] = model.vnp_TxnRef;
+                TempData["MovieName"] = invoice?.MovieName ?? "";
+                TempData["ShowDate"] = DateTime.Now.ToString("dd/MM/yyyy");
+                TempData["ShowTime"] = DateTime.Now.ToString("HH:mm");
+                TempData["Seats"] = "Selected seats"; // Thay bằng thông tin thực tế
+                TempData["BookingTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                TempData["OriginalPrice"] = int.Parse(model.vnp_Amount) / 100;
+                TempData["UsedScore"] = 0;
+                TempData["FinalPrice"] = int.Parse(model.vnp_Amount) / 100;
+                return RedirectToAction("Success", "Booking");
+            }
+            else
+            {
+                TempData["InvoiceId"] = model.vnp_TxnRef;
+                TempData["MovieName"] = invoice?.MovieName ?? "";
+                TempData["ShowDate"] = DateTime.Now.ToString("dd/MM/yyyy");
+                TempData["ShowTime"] = DateTime.Now.ToString("HH:mm");
+                TempData["Seats"] = "Selected seats"; // Thay bằng thông tin thực tế
+                TempData["BookingTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                return RedirectToAction("Failed", "Booking");
+            }
         }
 
         /// <summary>

@@ -72,7 +72,7 @@ namespace MovieTheater.Controllers
                     Status = 1,
                     RegisterDate = DateOnly.FromDateTime(DateTime.Now),
                     Image = picture,
-                    Password = null // Đăng nhập Google thì Password để null
+                    Password = null // Set Password to null for Google login
                 };
                 _accountRepository.Add(user);
                 _accountRepository.Save();
@@ -84,12 +84,12 @@ namespace MovieTheater.Controllers
                 _memberRepository.Save();
             }
 
-            // Sau khi thêm user mới (nếu có)
-            user = _accountRepository.GetAccountByEmail(email); // lấy lại user mới nhất
+            // After adding new user (if any)
+            user = _accountRepository.GetAccountByEmail(email); // get the latest user
 
-            // Log các trường thông tin để debug
+            // Log fields for debugging
             _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
-            // Kiểm tra thiếu thông tin
+            // Check for missing information
             bool missingInfo =
                 !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
                 string.IsNullOrWhiteSpace(user.Gender) ||
@@ -362,7 +362,8 @@ namespace MovieTheater.Controllers
 
             if (status.HasValue)
             {
-                query = query.Where(i => i.Status == status);
+                var statusEnum = (MovieTheater.Models.InvoiceStatus?)status;
+                query = query.Where(i => i.Status == statusEnum);
             }
 
             var bookings = query

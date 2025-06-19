@@ -109,6 +109,10 @@ namespace MovieTheater
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
+            builder.Services.Configure<VNPayConfig>(
+             builder.Configuration.GetSection("VNPay")
+                );
+
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddControllersWithViews();
