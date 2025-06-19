@@ -547,7 +547,15 @@ namespace MovieTheater.Controllers
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
 
             var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
+            var movie = allMovies.FirstOrDefault(m =>
+                string.Equals(m.MovieNameEnglish?.Trim(), invoice.MovieName?.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(m.MovieNameVn?.Trim(), invoice.MovieName?.Trim(), StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (movie == null)
+            {
+                return NotFound("Movie not found for this invoice.");
+            }
 
             var movieShows = _movieService.GetMovieShows(movie.MovieId);
             var movieShow = movieShows.FirstOrDefault(ms =>
@@ -672,7 +680,10 @@ namespace MovieTheater.Controllers
             var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId).ToList();
 
             var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
+            var movie = allMovies.FirstOrDefault(m =>
+                string.Equals(m.MovieNameEnglish?.Trim(), invoice.MovieName?.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(m.MovieNameVn?.Trim(), invoice.MovieName?.Trim(), StringComparison.OrdinalIgnoreCase)
+            );
             if (movie == null)
             {
                 return NotFound("Movie not found for this invoice.");
@@ -804,6 +815,24 @@ namespace MovieTheater.Controllers
             };
 
             return View("TicketBookingConfirmed", viewModel);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public IActionResult GetAllMembers()
+        {
+            var members = _memberRepository.GetAll()
+                .Select(m => new {
+                    memberId = m.MemberId,
+                    score = m.Score,
+                    account = new {
+                        fullName = m.Account?.FullName,
+                        identityCard = m.Account?.IdentityCard,
+                        email = m.Account?.Email,
+                        phoneNumber = m.Account?.PhoneNumber
+                    }
+                }).ToList();
+            return Json(members);
         }
     }
 }

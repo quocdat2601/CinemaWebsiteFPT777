@@ -77,7 +77,7 @@
 
 <div class="container mt-4">
     <div class="text-start p-3">
-        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
+        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
     <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
     <div class="card shadow p-4">
@@ -117,15 +117,13 @@
         </table>
         <p class="text-end"><strong>Total Price:</strong> @Model.BookingDetails.TotalPrice.ToString("N0") VND</p>
         <hr />
-        <!-- AC-02: Member lookup textbox -->
+        <!-- Member selection UI -->
         <div class="mb-3">
-            <label for="memberInput" class="soft-label"><strong>Member ID / Identity Card: *</strong></label>
-            <div class="input-group member-input-group">
-                <input type="text" id="memberInput" name="MemberIdInput" class="form-control" value="@Model.MemberIdInput" required />
-                <button type="button" id="checkMemberBtn" class="btn btn-primary">Check</button>
-            </div>
+            <label class="soft-label"><strong>Select Member: *</strong></label>
+            <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
             <div class="alert alert-info mt-2" id="memberMessage" style="display:none;"></div>
         </div>
+
         <!-- AC-03: Member info if found -->
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
@@ -159,61 +157,109 @@
         </div>
     </div>
 </div>
+
+<!-- Move the modal HTML to the end of the file, outside the main content -->
+
+<!-- Member Picker Modal -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="memberModalLabel">Select a Member</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="memberSearch" class="form-control mb-3" placeholder="Search by name, phone, or email..." />
+        <div style="max-height: 350px; overflow-y: auto;">
+          <table class="table table-bordered table-hover" id="memberTable">
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Full Name</th>
+                <th>Identity Card</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Members will be loaded here by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // AC-02: Member Check Button Click
-            $('#checkMemberBtn').click(function () {
-                var memberInput = $('#memberInput').val();
-                if (memberInput) {
-                    $.ajax({
-                        url: '@Url.Action("CheckMemberDetails", "Booking")',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ MemberInput: memberInput }),
-                        success: function (response) {
-                            if (response.success) {
-                                $('#memberId').val(response.memberId);
-                                $('#memberFullName').val(response.fullName);
-                                $('#memberIdentityCard').val(response.identityCard);
-                                $('#memberPhoneNumber').val(response.phoneNumber);
-                                $('#memberScore').val(response.memberScore);
-                                $('#memberDetails').show();
-                                $('#memberMessage').hide();
-                                $('#confirmTicketAdminBtn').prop('disabled', false);
-                                $('#ticketsToConvert').val(0);
-                                $('#scoreStatus').html('');
-                            } else {
-                                $('#memberDetails').hide();
-                                $('#memberMessage').text(response.message).show();
-                                $('#confirmTicketAdminBtn').prop('disabled', true);
-                                $('#ticketsToConvert').val(0);
-                                $('#scoreStatus').html('');
-                                // Clear member info fields
-                                $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error("AJAX Error:", error);
-                            $('#memberDetails').hide();
-                            $('#memberMessage').text("An error occurred while checking member details.").show();
-                            $('#confirmTicketAdminBtn').prop('disabled', true);
-                            $('#ticketsToConvert').val(0);
-                            $('#scoreStatus').html('');
-                            // Clear member info fields
-                            $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
-                        }
-                    });
-                } else {
-                    $('#memberDetails').hide();
-                    $('#memberMessage').text("Please enter a Member ID or Identity Card.").show();
-                    $('#confirmTicketAdminBtn').prop('disabled', true);
-                    $('#ticketsToConvert').val(0);
-                    $('#scoreStatus').html('');
-                    // Clear member info fields
-                    $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
+            // Open modal using Bootstrap 5 API
+            let memberModalInstance = null;
+            $('#openMemberModalBtn').click(function () {
+                if (!memberModalInstance) {
+                    memberModalInstance = new bootstrap.Modal(document.getElementById('memberModal'));
                 }
+                memberModalInstance.show();
+                loadMembers();
             });
+
+            // Load all members into the modal table
+            function loadMembers() {
+                $.getJSON('/Booking/GetAllMembers', function (members) {
+                    renderMemberTable(members);
+                    $('#memberSearch').off('input').on('input', function () {
+                        const keyword = $(this).val().toLowerCase().trim();
+                        const filtered = members.filter(m =>
+                            (m.account.fullName && m.account.fullName.toLowerCase().includes(keyword)) ||
+                            (m.account.email && m.account.email.toLowerCase().includes(keyword)) ||
+                            (m.account.phoneNumber && m.account.phoneNumber.toLowerCase().includes(keyword)) ||
+                            (m.account.identityCard && m.account.identityCard.toLowerCase().includes(keyword))
+                        );
+                        renderMemberTable(filtered);
+                    });
+                });
+            }
+
+            function renderMemberTable(members) {
+                const tbody = $('#memberTable tbody');
+                tbody.empty();
+                if (members.length === 0) {
+                    tbody.append('<tr><td colspan="6" class="text-center">No members found.</td></tr>');
+                    return;
+                }
+                members.forEach(m => {
+                    const row = `<tr>
+                        <td>${m.memberId}</td>
+                        <td>${m.account.fullName || ''}</td>
+                        <td>${m.account.identityCard || ''}</td>
+                        <td>${m.account.email || ''}</td>
+                        <td>${m.account.phoneNumber || ''}</td>
+                        <td><button type="button" class="btn btn-sm btn-success select-member-btn" data-member='${JSON.stringify(m)}'>Select</button></td>
+                    </tr>`;
+                    tbody.append(row);
+                });
+                // Attach select event
+                $('.select-member-btn').off('click').on('click', function () {
+                    const member = JSON.parse($(this).attr('data-member'));
+                    fillMemberInfo(member);
+                    if (memberModalInstance) memberModalInstance.hide();
+                });
+            }
+
+            function fillMemberInfo(member) {
+                $('#memberId').val(member.memberId);
+                $('#memberFullName').val(member.account.fullName);
+                $('#memberIdentityCard').val(member.account.identityCard);
+                $('#memberPhoneNumber').val(member.account.phoneNumber);
+                $('#memberScore').val(member.score);
+                $('#memberDetails').show();
+                $('#memberMessage').hide();
+                $('#confirmTicketAdminBtn').prop('disabled', false);
+                $('#ticketsToConvert').val(0);
+                $('#scoreStatus').html('');
+            }
 
             // Confirm Ticket Admin Button Click
             $('#confirmTicketAdminBtn').click(function () {

@@ -142,7 +142,7 @@ CREATE TABLE Movie_Show (
 CREATE TABLE Seat_Type (
     Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
     Type_Name VARCHAR(50),
-	Price_Percent INT NOT NULL DEFAULT 100,
+	Price_Percent decimal(18,2) NOT NULL,
 	ColorHex VARCHAR(7) NOT NULL DEFAULT '#FFFFFF'
 );
 

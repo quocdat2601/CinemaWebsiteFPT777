@@ -30,25 +30,6 @@
 	</div>
 
 	<h2 class="text-center mb-4">SELECT SEATS</h2>
-	<div class="row mb-4 align-items-center">
-		<div class="col-md-4">
-			<div class="form-group row align-items-center">
-				<label for="seatQuantity" class="col-auto col-form-label">Number of Seats:</label>
-				<div class="col-sm-4">
-					<select id="seatQuantity" class="form-select form-select-sm">
-						@for (int i = 0; i <= 8; i++)
-						{
-							<option value="@i">@i</option>
-						}
-					</select>
-				</div>
-			</div>
-			<div style="min-height: 1.5em;">
-				<div id="seatMessage" class="mt-2 text-danger"></div>
-			</div>
-		</div>
-		
-	</div>
 
 	<div class="screen-label text-center mb-4">
 		Screen
@@ -142,68 +123,38 @@
 
 		function selectSeat(clickedTd) {
 			const seatId = clickedTd.getAttribute('data-seat-id');
-			const quantity = parseInt(document.getElementById('seatQuantity').value);
-
-			if (quantity === 0) {
-				return;
-			}
-
 			if (clickedTd.hasAttribute('disabled')) {
 				return;
 			}
-
 			clickedTd.classList.toggle('selected-seat');
 			if (selectedSeats.has(seatId)) {
 				selectedSeats.delete(seatId);
 			} else {
 				selectedSeats.add(seatId);
 			}
-
 			updateSelectionSummary();
-			updateSeatMessage();
 			updateBookButtonState();
 		}
 
-		function updateSeatMessage() {
-			const quantity = parseInt(document.getElementById('seatQuantity').value);
-			const selectedCount = selectedSeats.size;
-			const messageElement = document.getElementById('seatMessage');
-
-			if (quantity === 0) {
-				messageElement.textContent = '';
-			} else if (selectedCount < quantity) {
-				messageElement.textContent = `Please select ${quantity - selectedCount} more seat(s)`;
-			} else if (selectedCount > quantity) {
-				messageElement.textContent = `Please select only ${quantity} seat(s)`;
-			} else {
-				messageElement.textContent = '';
-			}
+		function updateBookButtonState() {
+			const bookButton = document.getElementById('bookButton');
+			// Only disable if no seat is selected
+			bookButton.disabled = (selectedSeats.size === 0);
 		}
-
-        // Renamed from updateContinueButton and updateBookButton to clarify purpose
-        function updateBookButtonState() {
-            const quantity = parseInt(document.getElementById('seatQuantity').value);
-            const bookButton = document.getElementById('bookButton');
-            // Disable button if quantity is 0, or if selected count doesn't match quantity
-            bookButton.disabled = (quantity === 0) || (selectedSeats.size !== quantity);
-        }
 
 		function updateSelectionSummary() {
 			const summary = document.getElementById('selectionSummary');
 			const selectedSeatNames = document.getElementById('selectedSeatNames');
 			const totalPrice = document.getElementById('totalPrice');
-
 			if (selectedSeats.size > 0) {
 				let total = 0;
 				let seatNames = [];
-
 				document.querySelectorAll('.selected-seat').forEach(td => {
 					const seatName = td.getAttribute('data-seat-name');
 					const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
 					seatNames.push(seatName);
 					total += pricePercent;
 				});
-
 				selectedSeatNames.textContent = seatNames.join(', ');
 				totalPrice.textContent = total.toLocaleString("en-US", {
 					minimumFractionDigits: 0,
@@ -215,18 +166,8 @@
 			}
 		}
 
-		document.getElementById('seatQuantity').addEventListener('change', function() {
-			selectedSeats.clear();
-			document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
-			updateSeatMessage();
-			updateBookButtonState();
-			updateSelectionSummary();
-		});
-
 		document.getElementById('bookButton').addEventListener('click', function() {
-			const quantity = parseInt(document.getElementById('seatQuantity').value);
-			if (this.disabled || (quantity > 0 && selectedSeats.size !== quantity)) return;
-
+			if (this.disabled || selectedSeats.size === 0) return;
 			const selectedSeatIds = Array.from(selectedSeats);
 			const data = {
 				movieId: '@movieId',
@@ -234,7 +175,6 @@
 				showTime: '@time',
 				selectedSeatIds: selectedSeatIds
 			};
-
 			const params = new URLSearchParams();
 			for (const key in data) {
 				if (Array.isArray(data[key])) {
@@ -243,23 +183,19 @@
 					params.append(key, data[key]);
 				}
 			}
-
-            const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
-            if (isAdminSell) {
+			const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+			if (isAdminSell) {
 				window.location.href = `/Booking/ConfirmTicketForAdmin?${params.toString()}`;
-            } else {
+			} else {
 				window.location.href = `/Booking/Information?${params.toString()}`;
-            }
-        });
+			}
+		});
 
-		
-        // On page load, ensure button is disabled if seatQuantity is 0
-        document.addEventListener('DOMContentLoaded', function() {
-            updateBookButtonState();
-        });
+		document.addEventListener('DOMContentLoaded', function() {
+			updateBookButtonState();
+		});
 
-		updateSeatMessage();
 		updateBookButtonState();
 		updateSelectionSummary();
-    </script>
+	</script>
 }
