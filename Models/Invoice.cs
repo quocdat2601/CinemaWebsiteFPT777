@@ -25,7 +25,8 @@ public partial class Invoice
 
     public InvoiceStatus? Status { get; set; }
 
-    public int? RoleId { get; set; }
+    // Remove or comment out this property if not needed
+    // public int? RoleId { get; set; }
 
     public decimal? TotalMoney { get; set; }
 

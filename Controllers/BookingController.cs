@@ -487,7 +487,7 @@ namespace MovieTheater.Controllers
                     TotalMoney = model.BookingDetails.TotalPrice - discount,
                     UseScore = scoreUsed,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
-                    RoleId = currentUser?.RoleId
+                    //RoleId = currentUser?.RoleId
                 };
 
                 string roomName = "N/A";
