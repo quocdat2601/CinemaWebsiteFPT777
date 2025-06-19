@@ -1,4 +1,7 @@
-﻿namespace MovieTheater.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace MovieTheater.Models;
 
 public partial class MovieShow
 {
@@ -17,6 +20,8 @@ public partial class MovieShow
     public virtual Movie? Movie { get; set; }
 
     public virtual Schedule? Schedule { get; set; }
+
+    public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
 
     public virtual ShowDate? ShowDate { get; set; }
 }

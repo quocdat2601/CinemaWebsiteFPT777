@@ -20,7 +20,9 @@
                 <p><strong>📅 Date:</strong> @TempData["ShowDate"]</p>
                 <p><strong>⏰ Time:</strong> @TempData["ShowTime"]</p>
                 <p><strong>💺 Seats:</strong> @TempData["Seats"]</p>
+                <p><strong>📽 Screen: </strong> @TempData["CinemaRoomName"]</p>
             </div>
+
             <div class="col-md-6">
                 <p><strong>🧾 Invoice ID:</strong> @TempData["InvoiceId"]</p>
                 <p><strong>🕓 Booking Time:</strong> @TempData["BookingTime"]</p>
@@ -38,3 +40,5 @@
         </div>
     </div>
 </div>
+
+<partial name="_ToastMessages" />

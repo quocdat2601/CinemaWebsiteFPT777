@@ -52,13 +52,15 @@ namespace MovieTheater.ViewModels
         [Required(ErrorMessage = "At least one type must be selected.")]
         public List<int> SelectedTypeIds { get; set; } = new();
 
+        public List<int> SelectedCinemaRoomIds { get; set; } = new();
+
         public List<int> SelectedShowDateIds { get; set; } = new();
 
         public string? CinemaRoomName { get; set; }
 
         public List<Schedule>? AvailableSchedules { get; set; }
         public List<ShowDate>? AvailableShowDates { get; set; }
-        public List<Models.Type>? AvailableTypes { get; set; }
+        public List<Models.Type> AvailableTypes { get; set; } = new();
         public List<CinemaRoom> AvailableCinemaRooms { get; set; } = new();
     }
 }

@@ -106,6 +106,8 @@ namespace MovieTheater
             builder.Services.AddScoped<VNPayService>();
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+            builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
+            builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
@@ -147,6 +149,11 @@ namespace MovieTheater
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.MapControllerRoute(
+                name: "seat",
+                pattern: "Seat/{action}/{id?}",
+                defaults: new { controller = "Seat", action = "Select" });
 
             app.Run();
         }

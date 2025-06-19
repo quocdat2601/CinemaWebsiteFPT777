@@ -1,4 +1,7 @@
-﻿namespace MovieTheater.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace MovieTheater.Models;
 
 public partial class Account
 {
@@ -41,4 +44,6 @@ public partial class Account
     public virtual Rank? Rank { get; set; }
 
     public virtual Role? Role { get; set; }
+
+    public virtual ICollection<Movie> Movies { get; set; } = new List<Movie>();
 }

@@ -10,6 +10,5 @@ namespace MovieTheater.Service
         Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);
         Task SaveInvoiceAsync(Invoice invoice);
         Task<string> GenerateInvoiceIdAsync();
-        Invoice? GetInvoiceById(string invoiceId);
     }
 }

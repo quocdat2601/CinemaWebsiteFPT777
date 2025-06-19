@@ -7,6 +7,7 @@
 	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
 	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
 	var seatTypes = Model.SeatTypes;
+	var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
 
 	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
 	string returnLink;
@@ -46,12 +47,11 @@
 				<div id="seatMessage" class="mt-2 text-danger"></div>
 			</div>
 		</div>
-		<div class="col-md-8 text-end">
-		</div>
+		
 	</div>
 
 	<div class="screen-label text-center mb-4">
-		@Model.CinemaRoomName
+		Screen
 	</div>
 
 	<div class="seat-layout-bordered-area" style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
@@ -68,7 +68,7 @@
 								{
 									var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
 									bool isDisabledType = seatType?.TypeName == "Disabled";
-									bool isBooked = seat.SeatStatusId == 2;
+									bool isBooked = bookedSeats.Contains(seat.SeatId);
 
 									var seatStyle = isDisabledType ? "border: none;" : isBooked ? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
 									var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
@@ -118,7 +118,7 @@
 			<div class="col-md-6 mb-2">
 				<p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
 				<p><strong>Date:</strong> @date.ToString("yyyy-MM-dd")</p>
-				<p><strong>@Model.CinemaRoomName</strong></p>
+				<p><strong>Screen:</strong> @Model.CinemaRoomName</p>
 			</div>
 			<div class="col-md-6 mb-2">
 				<p><strong>Movie:</strong> @Model.MovieName</p>

@@ -75,7 +75,10 @@ namespace MovieTheater.Repository
         {
             try
             {
-                var existingMovie = _context.Movies.FirstOrDefault(m => m.MovieId == movie.MovieId);
+                var existingMovie = _context.Movies
+                    .Include(m => m.Types)
+                    .FirstOrDefault(m => m.MovieId == movie.MovieId);
+                    
                 if (existingMovie != null)
                 {
                     existingMovie.MovieNameEnglish = movie.MovieNameEnglish;
@@ -87,12 +90,24 @@ namespace MovieTheater.Repository
                     existingMovie.FromDate = movie.FromDate;
                     existingMovie.ToDate = movie.ToDate;
                     existingMovie.MovieProductionCompany = movie.MovieProductionCompany;
-                    existingMovie.CinemaRoomId = movie.CinemaRoomId;
                     existingMovie.Content = movie.Content;
                     existingMovie.TrailerUrl = movie.TrailerUrl;
                     existingMovie.LargeImage = movie.LargeImage;
                     existingMovie.SmallImage = movie.SmallImage;
-                    existingMovie.Types = movie.Types;
+                    
+                    // Clear existing types
+                    existingMovie.Types.Clear();
+                    
+                    // Add new types
+                    foreach (var type in movie.Types)
+                    {
+                        var existingType = _context.Types.Find(type.TypeId);
+                        if (existingType != null)
+                        {
+                            existingMovie.Types.Add(existingType);
+                        }
+                    }
+                    
                     _context.SaveChanges();
                     return true;
                 }
@@ -114,8 +129,18 @@ namespace MovieTheater.Repository
 
             if (movie != null)
             {
-                movie.Types?.Clear();
-                movie.MovieShows?.Clear();
+                // Remove all related movie shows
+                if (movie.MovieShows != null)
+                {
+                    _context.MovieShows.RemoveRange(movie.MovieShows);
+                }
+
+                // Remove all related types
+                if (movie.Types != null)
+                {
+                    _context.Types.RemoveRange(movie.Types);
+                }
+                
                 _context.Movies.Remove(movie);
 
                 try
@@ -197,20 +222,20 @@ namespace MovieTheater.Repository
         public async Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
+            
             var movieShows = await _context.MovieShows
                 .Include(ms => ms.ShowDate)
                 .Include(ms => ms.Schedule)
-                .Where(ms => ms.MovieId == movieId &&
-                       ms.ShowDate.ShowDate1 == dateOnly)
+                .Where(ms => ms.MovieId == movieId && 
+                       ms.ShowDate.ShowDate1 == dateOnly &&
+                       ms.Schedule != null)
+                .Select(ms => ms.Schedule.ScheduleTime)
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Distinct()
+                .OrderBy(t => t)
                 .ToListAsync();
 
-            if (!movieShows.Any())
-                return new List<string>();
-
-            return movieShows
-                .Select(ms => ms.Schedule.ScheduleTime)
-                .Distinct()
-                .ToList();
+            return movieShows;
         }
 
         public void AddMovieShow(MovieShow movieShow)
@@ -248,20 +273,126 @@ namespace MovieTheater.Repository
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.CinemaRoom)
                 .Where(ms => ms.MovieId == movieId)
+                .OrderBy(ms => ms.ShowDate.ShowDate1)
+                .ThenBy(ms => ms.Schedule.ScheduleTime)
                 .ToList();
         }
 
         public bool IsScheduleAvailable(int showDateId, int scheduleId, int? cinemaRoomId)
         {
-            return !_context.MovieShows
-                .Any(ms => ms.ShowDateId == showDateId
-                    && ms.ScheduleId == scheduleId
-                    && ms.CinemaRoomId == cinemaRoomId);
+            try
+            {
+                // Get the show date and schedule
+                var showDate = _context.ShowDates.Find(showDateId);
+                var schedule = _context.Schedules.Find(scheduleId);
+
+                if (showDate == null || schedule == null || !cinemaRoomId.HasValue)
+                {
+                    return false;
+                }
+
+                // Parse the schedule time
+                if (!TimeSpan.TryParse(schedule.ScheduleTime, out TimeSpan showTime))
+                {
+                    return false;
+                }
+
+                // Check for any existing shows in the same room at the same time
+                var existingShows = _context.MovieShows
+                    .Include(ms => ms.Movie)
+                    .Include(ms => ms.Schedule)
+                    .Where(ms => ms.ShowDateId == showDateId 
+                        && ms.CinemaRoomId == cinemaRoomId
+                        && ms.ScheduleId == scheduleId)
+                    .ToList();
+
+                // If there are any existing shows at this exact time slot, it's not available
+                if (existingShows.Any())
+                {
+                    _logger.LogWarning("Schedule conflict found: ShowDateId={ShowDateId}, ScheduleId={ScheduleId}, CinemaRoomId={CinemaRoomId}",
+                        showDateId, scheduleId, cinemaRoomId);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking schedule availability");
+                return false;
+            }
         }
 
         public List<CinemaRoom> GetAllCinemaRooms()
         {
             return _context.CinemaRooms.ToList();
+        }
+
+        public List<Schedule> GetSchedules()
+        {
+            return _context.Schedules.ToList();
+        }
+
+        public List<ShowDate> GetShowDates()
+        {
+            return _context.ShowDates.ToList();
+        }
+
+        public List<Models.Type> GetTypes()
+        {
+            return _context.Types.ToList();
+        }
+        public List<MovieShow> GetMovieShow()
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.ShowDate)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom).ToList();
+        }
+
+        public List<DateTime> GetShowDates(string movieId)
+        {
+            return _context.MovieShows
+                .Where(ms => ms.MovieId == movieId)
+                .Select(ms => ms.ShowDate.ShowDate1.Value.ToDateTime(TimeOnly.MinValue))
+                .Distinct()
+                .ToList();
+        }
+
+        public List<string> GetShowTimes(string movieId, DateTime date)
+        {
+            var dateOnly = DateOnly.FromDateTime(date);
+            
+            return _context.MovieShows
+                .Include(ms => ms.ShowDate)
+                .Include(ms => ms.Schedule)
+                .Where(ms => ms.MovieId == movieId && 
+                       ms.ShowDate.ShowDate1 == dateOnly &&
+                       ms.Schedule != null)
+                .Select(ms => ms.Schedule.ScheduleTime)
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Distinct()
+                .OrderBy(t => t)
+                .ToList();
+        }
+
+        public async Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId)
+        {
+            // Get all schedules
+            var allSchedules = await _context.Schedules.ToListAsync();
+
+            // Get booked schedules for this room and date
+            var bookedScheduleIds = await _context.MovieShows
+                .Where(ms => ms.ShowDateId == showDateId && ms.CinemaRoomId == cinemaRoomId)
+                .Select(ms => ms.ScheduleId)
+                .ToListAsync();
+
+            // Return schedules that are not booked
+            return allSchedules
+                .Where(s => !bookedScheduleIds.Contains(s.ScheduleId))
+                .OrderBy(s => s.ScheduleTime)
+                .ToList();
         }
     }
 }

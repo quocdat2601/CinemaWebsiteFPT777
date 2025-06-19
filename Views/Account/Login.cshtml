@@ -10,10 +10,9 @@
 <style>
     /* Google Material Button Styles */
     .gsi-material-button {
-        background-color: #fff;
-        border: 1px solid #dadce0;
-        border-radius: 4px;
-        color: #3c4043;
+        background-color: transparent;
+        border: 1px solid var(--input-border);
+        color: var(--input-color);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -26,7 +25,7 @@
         transition: background-color 0.2s;
     }
     .gsi-material-button:hover {
-        background-color: #f7f8f8;
+        background-color: var(--input-bg);
     }
     .gsi-material-button-icon {
         padding: 8px;
@@ -58,11 +57,11 @@
     }
 
     .toast-success {
-        background-color: #4CAF50;
+        background-color: var(--badge-primary-bg);
     }
 
     .toast-error {
-        background-color: #f44336;
+        background-color: var(--badge-danger-bg);
     }
 
   

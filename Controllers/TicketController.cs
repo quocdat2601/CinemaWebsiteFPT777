@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -84,6 +85,9 @@ namespace MovieTheater.Controllers
             }
 
             var booking = _context.Invoices
+                .Include(i => i.ScheduleSeats)
+                    .ThenInclude(ss => ss.MovieShow)
+                        .ThenInclude(ms => ms.CinemaRoom)
                 .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
 
             if (booking == null)

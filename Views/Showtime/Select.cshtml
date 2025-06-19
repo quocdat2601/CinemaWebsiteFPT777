@@ -10,6 +10,7 @@
 
 @{
     ViewData["Title"] = "Ticket selling management – Select movie and showtime";
+    var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
 @{
@@ -26,25 +27,18 @@
 
 <h2 class="text-center mb-4">SHOWTIMES</h2>
 
-<div class="bg-light p-4 rounded">
+<div class="showtime-container p-4 rounded">
     <!-- Date selection as a dropdown combobox (AC-01) -->
     <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center">
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
         <select name="date" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
             @foreach (var date in Model.AvailableDates)
             {
-                if (date.Date == Model.SelectedDate.Date)
-                {
-                    <option value="@date.ToString("yyyy-MM-dd")" selected="selected">
-                        @date.ToString("dd MMM ddd")
-                    </option>
-                }
-                else
-                {
-                    <option value="@date.ToString("yyyy-MM-dd")">
-                        @date.ToString("dd MMM ddd")
-                    </option>
-                }
+                var dateStr = date.ToString("dd/MM/yyyy");
+                var isSelected = date.Date == Model.SelectedDate.Date;
+                <option value="@dateStr" selected="@isSelected">
+                    @date.ToString("dd MMM ddd")
+                </option>
             }
         </select>
     </form>
@@ -71,11 +65,11 @@
                                 {
                                     <a asp-action="Select" asp-controller="Seat"
                                        asp-route-movieId="@movie.MovieId"
-                                       asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")"
+                                       asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
                                        asp-route-time="@showtime"
-                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("yyyy-MM-dd"), returnUrl = Model.ReturnUrl })"
                                        asp-route-isAdminSell="true"
-                                       class="btn btn-outline-primary btn-sm m-1">
+                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
+                                       class="btn btn-outline-primary btn-sm m-1 bookBtn">
                                         @showtime
                                     </a>
                                 }
@@ -94,3 +88,15 @@
     - If no showtimes, shows a warning message (AC-04)
     - All data is based on the ViewModel (active schedule, valid showtimes) (AC-05)
 --> 
+
+<script>
+    document.querySelectorAll('.bookBtn').forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+            if (!isAuthenticated) {
+                event.preventDefault();  
+                window.location.href = '@Url.Action("Login", "Account")';
+            }
+        });
+    });
+</script>

@@ -23,7 +23,7 @@ namespace MovieTheater.Controllers
                 .Where(p => p.IsActive && p.EndTime >= DateTime.Now)
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
-            return View(promotions);
+            return View("Index", promotions);
         }
 
         // GET: PromotionController/Details/5
@@ -35,6 +35,12 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
             return View(promotion);
+        }
+
+        // GET: PromotionController/Index
+        public ActionResult Index()
+        {
+            return View();
         }
 
         // GET: PromotionController/Create
