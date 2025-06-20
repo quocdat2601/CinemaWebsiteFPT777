@@ -24,6 +24,8 @@
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
+@await Html.PartialAsync("~/Views/Shared/_ToastMessages.cshtml")
+
 <div class="container mt-4">
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
@@ -121,13 +123,39 @@
 	<script>
 		let selectedSeats = new Set();
 
+		function showToast(message) {
+			let toastId = 'seatLimitToast';
+			let existing = document.getElementById(toastId);
+			if (existing) existing.remove();
+			const toastHtml = `<div id="${toastId}" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+				<div class="toast align-items-center text-bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+					<div class="d-flex">
+						<div class="toast-body">${message}</div>
+						<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+					</div>
+				</div>
+			</div>`;
+			document.body.insertAdjacentHTML('beforeend', toastHtml);
+			const toastElem = document.getElementById(toastId).querySelector('.toast');
+			const toast = new bootstrap.Toast(toastElem, { delay: 2500 });
+			toast.show();
+			toastElem.addEventListener('hidden.bs.toast', function() {
+				document.getElementById(toastId)?.remove();
+			});
+		}
+
 		function selectSeat(clickedTd) {
 			const seatId = clickedTd.getAttribute('data-seat-id');
 			if (clickedTd.hasAttribute('disabled')) {
 				return;
 			}
+			const isSelected = selectedSeats.has(seatId);
+			if (!isSelected && selectedSeats.size >= 8) {
+				showToast('You can only select 8 seats for this order');
+				return;
+			}
 			clickedTd.classList.toggle('selected-seat');
-			if (selectedSeats.has(seatId)) {
+			if (isSelected) {
 				selectedSeats.delete(seatId);
 			} else {
 				selectedSeats.add(seatId);
