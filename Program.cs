@@ -108,12 +108,29 @@ namespace MovieTheater
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            builder.Services.AddScoped<IRankRepository, RankRepository>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
                 );
 
             builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<IMovieService, MovieService>();
+            builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+            builder.Services.AddScoped<ICinemaService, CinemaService>();
+            builder.Services.AddScoped<IPromotionService, PromotionService>();
+            builder.Services.AddScoped<ISeatService, SeatService>();
+            builder.Services.AddScoped<ISeatTypeService, SeatTypeService>();
+            builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
+            builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+            builder.Services.AddScoped<IRankRepository, RankRepository>();
+            builder.Services.AddScoped<IRankService, RankService>();
+
+            builder.Services.AddTransient<IJwtService, JwtService>();
+            builder.Services.AddTransient<EmailService>();
 
             builder.Services.AddControllersWithViews();
 
