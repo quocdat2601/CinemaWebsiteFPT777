@@ -158,6 +158,7 @@ namespace MovieTheater
                 defaults: new { controller = "Seat", action = "Select" });
 
             app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
+            app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
 
             app.Run();
         }
