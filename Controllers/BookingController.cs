@@ -6,6 +6,7 @@ using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace MovieTheater.Controllers
 {
@@ -216,18 +217,15 @@ namespace MovieTheater.Controllers
                     return Json(new { success = false, message = "Movie show not found for the specified date and time." });
                 }
 
-                if (invoice.Status != InvoiceStatus.Incomplete)
+                var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
                 {
-                    var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
-                    {
-                        MovieShowId = movieShow.MovieShowId,
-                        InvoiceId = invoice.InvoiceId,
-                        SeatId = (int)seat.SeatId,
-                        SeatStatusId = 2
-                    });
+                    MovieShowId = movieShow.MovieShowId,
+                    InvoiceId = invoice.InvoiceId,
+                    SeatId = (int)seat.SeatId,
+                    SeatStatusId = 2
+                });
 
-                    await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
-                }
+                await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
 
                 if (model.UseScore > 0)
                 {
@@ -265,6 +263,7 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
+            var sanitizedMovieName = Regex.Replace(invoice.MovieName, @"[^a-zA-Z0-9\s]", "");
             var viewModel = new PaymentViewModel
             {
                 InvoiceId = invoice.InvoiceId,
@@ -273,7 +272,7 @@ namespace MovieTheater.Controllers
                 ShowTime = invoice.ScheduleShowTime,
                 Seats = invoice.Seat,
                 TotalAmount = invoice.TotalMoney ?? 0,
-                OrderInfo = $"Payment for movie ticket {invoice.MovieName} - {invoice.Seat.Replace(",", " ")}"
+                OrderInfo = $"Payment for movie ticket {sanitizedMovieName} - {invoice.Seat.Replace(",", " ")}"
             };
 
             return View("Payment", viewModel);
@@ -528,7 +527,6 @@ namespace MovieTheater.Controllers
 
                     await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
                 }
-
 
                 TempData["ToastMessage"] = "Movie booked successfully!";
 

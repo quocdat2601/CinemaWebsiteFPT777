@@ -5,6 +5,7 @@ using MovieTheater.Service;
 using System.Linq;
 using System.Collections.Generic;
 using MovieTheater.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -59,7 +60,11 @@ namespace MovieTheater.Controllers
         public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
         {
             var context = new MovieTheater.Models.MovieTheaterContext();
-            var invoice = context.Invoices.FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
+            var invoice = context.Invoices
+                .Include(i => i.ScheduleSeats)
+                .ThenInclude(ss => ss.MovieShow)
+                .ThenInclude(ms => ms.CinemaRoom)
+                .FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
             if (model.vnp_ResponseCode == "00")
             {
                 // Thanh toán thành công
@@ -81,23 +86,24 @@ namespace MovieTheater.Controllers
                 }
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieName ?? "";
-                TempData["ShowDate"] = DateTime.Now.ToString("dd/MM/yyyy");
-                TempData["ShowTime"] = DateTime.Now.ToString("HH:mm");
-                TempData["Seats"] = "Selected seats"; // Thay bằng thông tin thực tế
-                TempData["BookingTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
-                TempData["OriginalPrice"] = int.Parse(model.vnp_Amount) / 100;
-                TempData["UsedScore"] = 0;
-                TempData["FinalPrice"] = int.Parse(model.vnp_Amount) / 100;
+                TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
+                TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
+                TempData["Seats"] = invoice?.Seat ?? "N/A";
+                TempData["CinemaRoomName"] = invoice?.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName ?? "N/A";
+                TempData["BookingTime"] = invoice?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
+                TempData["OriginalPrice"] = (int.Parse(model.vnp_Amount) / 100).ToString();
+                TempData["UsedScore"] = invoice?.UseScore ?? 0;
+                TempData["FinalPrice"] = (invoice?.TotalMoney ?? 0).ToString();
                 return RedirectToAction("Success", "Booking");
             }
             else
             {
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieName ?? "";
-                TempData["ShowDate"] = DateTime.Now.ToString("dd/MM/yyyy");
-                TempData["ShowTime"] = DateTime.Now.ToString("HH:mm");
-                TempData["Seats"] = "Selected seats"; // Thay bằng thông tin thực tế
-                TempData["BookingTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
+                TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
+                TempData["Seats"] = invoice?.Seat ?? "N/A";
+                TempData["BookingTime"] = invoice?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
                 return RedirectToAction("Failed", "Booking");
             }
         }
