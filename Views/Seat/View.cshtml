@@ -8,6 +8,7 @@
 	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
 	var seatTypes = Model.SeatTypes;
 	var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
+	var movieShowId = Model.MovieShowId.ToString();
 
 	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
 	string returnLink = isAdminSell
@@ -145,21 +146,6 @@
 			}, 1000);
 		}
 
-		function selectSeat(clickedTd) {
-			const seatId = clickedTd.getAttribute('data-seat-id');
-			if (clickedTd.hasAttribute('disabled')) return;
-
-			clickedTd.classList.toggle('selected-seat');
-			if (selectedSeats.has(seatId)) {
-				selectedSeats.delete(seatId);
-			} else {
-				selectedSeats.add(seatId);
-				if (selectedSeats.size === 1) startCountdown();
-			}
-			updateSelectionSummary();
-			updateBookButtonState();
-		}
-
 		function updateBookButtonState() {
 			document.getElementById('bookButton').disabled = (selectedSeats.size === 0);
 		}
@@ -227,7 +213,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 	<script>
 		const connection = new signalR.HubConnectionBuilder()
-			.withUrl("/seathub") // đường dẫn hub bạn đã đăng ký
+			.withUrl("/seathub")
 			.build();
 
 		connection.on("SeatSelected", (seatId) => {
@@ -253,10 +239,9 @@
 		});
 
 		connection.start().then(() => {
-			connection.invoke("JoinShowtime", "@Model.MovieId");
+			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
 		});
 
-		// Cập nhật thêm logic gọi SignalR khi chọn hoặc bỏ chọn ghế
 		function selectSeat(clickedTd) {
 			const seatId = clickedTd.getAttribute('data-seat-id');
 			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
@@ -264,16 +249,17 @@
 			clickedTd.classList.toggle('selected-seat');
 			if (selectedSeats.has(seatId)) {
 				selectedSeats.delete(seatId);
-				connection.invoke("DeselectSeat", "@Model.MovieId", parseInt(seatId));
+				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
 			} else {
 				selectedSeats.add(seatId);
-				connection.invoke("SelectSeat", "@Model.MovieId", parseInt(seatId));
+				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
 				if (selectedSeats.size === 1) startCountdown();
 			}
 			updateSelectionSummary();
 			updateBookButtonState();
 		}
-				connection.on("HeldSeats", (seatIds) => {
+
+		connection.on("HeldSeats", (seatIds) => {
 			seatIds.forEach(seatId => {
 				const td = document.querySelector(`[data-seat-id='${seatId}']`);
 				if (td && !td.classList.contains("selected-seat")) {
