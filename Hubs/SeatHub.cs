@@ -10,6 +10,17 @@ namespace MovieTheater.Hubs
         public async Task JoinShowtime(string movieId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, movieId);
+
+            // Lấy danh sách seatId đang bị hold cho movieId này
+            if (_heldSeats.TryGetValue(movieId, out var seatsForMovie))
+            {
+                var heldSeatIds = seatsForMovie.Keys.ToList();
+                await Clients.Caller.SendAsync("HeldSeats", heldSeatIds);
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("HeldSeats", new List<int>());
+            }
         }
 
         public async Task SelectSeat(string movieId, int seatId)
