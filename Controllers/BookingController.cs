@@ -235,6 +235,9 @@ namespace MovieTheater.Controllers
                     await _accountService.DeductScoreAsync(userId, model.UseScore);
                 }
 
+                // Lưu MovieShowId vào TempData để PaymentController sử dụng
+                TempData["MovieShowId"] = movieShow.MovieShowId;
+
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
             catch (Exception ex)
