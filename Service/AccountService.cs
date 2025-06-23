@@ -50,7 +50,6 @@ namespace MovieTheater.Service
                 RegisterDate = DateOnly.FromDateTime(DateTime.Now),
                 Status = 1,
                 RoleId = model.RoleId, // 
-                RankId = (model.RoleId == 3) ? 1 : null, // Set default rank for members
                 Image = model.Image
             };
 

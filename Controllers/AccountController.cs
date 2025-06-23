@@ -69,7 +69,6 @@ namespace MovieTheater.Controllers
                     FullName = name ?? $"{givenName} {surname}".Trim() ?? "Google User",
                     Username = email,
                     RoleId = 3,
-                    RankId = 1,
                     Status = 1,
                     RegisterDate = DateOnly.FromDateTime(DateTime.Now),
                     Image = picture,

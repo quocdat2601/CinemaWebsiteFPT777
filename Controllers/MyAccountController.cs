@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using MovieTheater.Repository;
 
 namespace MovieTheater.Controllers
 {
@@ -14,15 +13,13 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _service;
         private readonly ILogger<MyAccountController> _logger;
         private readonly IJwtService _jwtService;
-        private readonly IRankService _rankService;
         private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
 
-        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService, IRankService rankService)
+        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService)
         {
             _service = service;
             _logger = logger;
             _jwtService = jwtService;
-            _rankService = rankService;
         }
 
         /// <summary>
@@ -65,20 +62,29 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult LoadTab(string tab)
         {
-            var currentViewModel = _service.GetCurrentUser();
-            if (currentViewModel == null) return NotFound();
+            var user = _service.GetCurrentUser();
 
             switch (tab)
             {
                 case "Profile":
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", currentViewModel);
-                case "Rank":
-                    var rankModel = _rankService.GetRankInfoForUser(currentViewModel.AccountId);
-                    if (rankModel == null)
+                    if (user == null)
+                        return NotFound();
+                    var profileModel = new ProfileUpdateViewModel
                     {
-                        return Content("Rank information not available.");
-                    }
-                    return PartialView("~/Views/Account/Tabs/Rank.cshtml", rankModel);
+                        AccountId = user.AccountId,
+                        FullName = user.FullName,
+                        DateOfBirth = user.DateOfBirth,
+                        Gender = user.Gender,
+                        IdentityCard = user.IdentityCard,
+                        Email = user.Email,
+                        Address = user.Address,
+                        PhoneNumber = user.PhoneNumber,
+                        Image = user.Image,
+                        IsGoogleAccount = user.IsGoogleAccount
+                    };
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", profileModel);
+                case "Rank":
+                    return PartialView("~/Views/Account/Tabs/Rank.cshtml");
                 case "Score":
                     return PartialView("~/Views/Account/Tabs/Score.cshtml");
                 case "Voucher":

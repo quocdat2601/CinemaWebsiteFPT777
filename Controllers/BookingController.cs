@@ -205,7 +205,7 @@ namespace MovieTheater.Controllers
                 };
 
                 await _bookingService.SaveInvoiceAsync(invoice);
-                    
+
                 var movieShow = _movieService.GetMovieShows(model.MovieId)
                     .FirstOrDefault(ms =>
                         ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.ShowDate) &&
@@ -478,7 +478,7 @@ namespace MovieTheater.Controllers
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = member?.Account?.AccountId ?? currentUserId,
-                    AddScore = (int)((model.BookingDetails.TotalPrice - discount) * 0.01m),
+                    AddScore = (int)((model.BookingDetails.TotalPrice - discount) * 0.1m),
                     BookingDate = DateTime.Now,
                     MovieName = model.BookingDetails.MovieName,
                     ScheduleShow = model.BookingDetails.ShowDate,
