@@ -28,19 +28,18 @@
 <h2 class="text-center mb-4">SHOWTIMES</h2>
 
 <div class="showtime-container p-4 rounded">
-    <!-- Date selection as a dropdown combobox (AC-01) -->
-    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center">
+    <!-- Date navigation UI -->
+    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center" id="dateNavForm">
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-        <select name="date" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-            @foreach (var date in Model.AvailableDates)
-            {
-                var dateStr = date.ToString("dd/MM/yyyy");
-                var isSelected = date.Date == Model.SelectedDate.Date;
-                <option value="@dateStr" selected="@isSelected">
-                    @date.ToString("dd MMM ddd")
-                </option>
-            }
-        </select>
+        <input type="hidden" name="date" id="dateInput" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" />
+        <div class="d-inline-flex align-items-center gap-2">
+            <button type="button" id="prevDayBtn" class="btn btn-outline-secondary btn-sm" title="Previous day">&lt;</button>
+            <span id="selectedDate" class="fw-bold" style="cursor:pointer;">
+                @Model.SelectedDate.ToString("dd/MM/yyyy")
+            </span>
+            <button type="button" id="nextDayBtn" class="btn btn-outline-secondary btn-sm" title="Next day">&gt;</button>
+            <input type="date" id="calendarInput" style="display:none;" />
+        </div>
     </form>
 
     @if (Model.Movies == null || !Model.Movies.Any())
@@ -90,13 +89,60 @@
 --> 
 
 <script>
-    document.querySelectorAll('.bookBtn').forEach(function(button) {
-        button.addEventListener('click', function(event) {
-            var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
-            if (!isAuthenticated) {
-                event.preventDefault();  
-                window.location.href = '@Url.Action("Login", "Account")';
-            }
-        });
+    // Helper to format Date object as dd/MM/yyyy
+    function formatDate(date) {
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}/${m}/${y}`;
+    }
+
+    // Parse dd/MM/yyyy to Date object
+    function parseDate(str) {
+        const [d, m, y] = str.split('/');
+        return new Date(`${y}-${m}-${d}`);
+    }
+
+    // Get/set selected date
+    function getSelectedDate() {
+        return parseDate(document.getElementById('selectedDate').innerText.trim());
+    }
+    function setSelectedDate(date) {
+        const formatted = formatDate(date);
+        document.getElementById('selectedDate').innerText = formatted;
+        document.getElementById('dateInput').value = formatted;
+        document.getElementById('dateNavForm').submit();
+    }
+
+    document.getElementById('prevDayBtn').addEventListener('click', function() {
+        const date = getSelectedDate();
+        date.setDate(date.getDate() - 1);
+        setSelectedDate(date);
+    });
+
+    document.getElementById('nextDayBtn').addEventListener('click', function() {
+        const date = getSelectedDate();
+        date.setDate(date.getDate() + 1);
+        setSelectedDate(date);
+    });
+
+    document.getElementById('selectedDate').addEventListener('click', function() {
+        const calendar = document.getElementById('calendarInput');
+        // Set calendar value to current date in yyyy-MM-dd
+        const date = getSelectedDate();
+        calendar.value = date.toISOString().slice(0, 10);
+        calendar.style.display = 'inline-block';
+        calendar.focus();
+    });
+
+    document.getElementById('calendarInput').addEventListener('change', function() {
+        const date = new Date(this.value);
+        setSelectedDate(date);
+        this.style.display = 'none';
+    });
+
+    // Hide calendar if it loses focus
+    document.getElementById('calendarInput').addEventListener('blur', function() {
+        setTimeout(() => { this.style.display = 'none'; }, 200);
     });
 </script>

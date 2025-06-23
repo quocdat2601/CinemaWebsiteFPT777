@@ -168,8 +168,8 @@ namespace MovieTheater.Controllers
 
             // Get the specific movie show for this date and time
             var movieShow = movieShows.FirstOrDefault(ms => 
-                ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(parsedDate) && 
-                ms.Schedule?.ScheduleTime == time);
+                ms.ShowDate == DateOnly.FromDateTime(parsedDate) && 
+                ms.Schedule?.ScheduleTime.HasValue == true && ms.Schedule.ScheduleTime.Value.ToString("HH:mm") == time);
 
             if (movieShow == null)
             {

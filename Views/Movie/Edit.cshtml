@@ -22,8 +22,8 @@
                 &larr; Return
             </a>
         }
-       
-        <h2 class="signup-title">Movie Edit</h2>
+
+		<h2 class="signup-title">Movie Edit</h2>
         <form asp-controller="Movie" asp-action="Edit" asp-route-id="@Model.MovieId" method="post" enctype="multipart/form-data">
             <input type="hidden" asp-for="MovieId" />
             <div asp-validation-summary="All" class="text-danger"></div>
@@ -109,6 +109,12 @@
                         <strong>Duration:</strong>
                         <input type="number" class="form-control" asp-for="Duration" />
                         <span asp-validation-for="Duration" class="text-danger"></span>
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger mt-2 mb-0 p-2 text-center">
+                                @TempData["ErrorMessage"]
+                            </div>
+                        }
                     </div>
 
                     <div class="form-group mb-3">

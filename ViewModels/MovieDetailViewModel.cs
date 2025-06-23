@@ -59,8 +59,9 @@ namespace MovieTheater.ViewModels
         public string? CinemaRoomName { get; set; }
 
         public List<Schedule>? AvailableSchedules { get; set; }
-        public List<ShowDate>? AvailableShowDates { get; set; }
+        public List<DateOnly>? AvailableShowDates { get; set; }
         public List<Models.Type> AvailableTypes { get; set; } = new();
         public List<CinemaRoom> AvailableCinemaRooms { get; set; } = new();
+        public List<MovieShow> CurrentMovieShows { get; set; } = new();
     }
 }

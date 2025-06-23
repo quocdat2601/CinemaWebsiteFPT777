@@ -70,12 +70,28 @@
                     @foreach (var show in Model.MovieShows)
                     {
                         <tr class="showtime-row" 
-                            data-date="@show.ShowDate?.ShowDate1?.ToString("dd/MM/yyyy")"
+                            data-date="@show.ShowDate.ToString("dd/MM/yyyy")"
                             data-schedule="@show.ScheduleId"
                             data-time="@show.Schedule?.ScheduleTime">
                             <td>@show.Movie?.MovieNameEnglish</td>
-                            <td class="text-center">@show.ShowDate?.ShowDate1?.ToString("dd MMM yyyy")</td>
-                            <td class="text-center">@show.Schedule?.ScheduleTime</td>
+                            <td class="text-center">@show.ShowDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-center">
+                                @{
+                                    var start = show.Schedule?.ScheduleTime;
+                                    var duration = show.Movie?.Duration ?? 0;
+                                    string timeDisplay = "";
+                                    if (start != null && duration > 0)
+                                    {
+                                        var end = start.Value.AddMinutes(duration);
+                                        timeDisplay = $"[{start:HH\\:mm} ~ {end:HH\\:mm}]";
+                                    }
+                                    else if (start != null)
+                                    {
+                                        timeDisplay = $"[{start:HH\\:mm}]";
+                                    }
+                                    @timeDisplay
+                                }
+                            </td>
                             <td class="text-center">@show.CinemaRoom?.CinemaRoomName</td>
                             <td class="text-center">
                                 <button class="btn btn-sm btn-primary">View Showroom</button>

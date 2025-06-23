@@ -53,7 +53,7 @@ CREATE TABLE Invoice (
 	RoleId INT,
     Total_Money DECIMAL,
     Use_Score INT,
-    Seat VARCHAR(20),
+    Seat VARCHAR(30),
     Account_ID VARCHAR(10),
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
 );
@@ -70,12 +70,6 @@ CREATE TABLE Member (
     Score INT,
     Account_ID VARCHAR(10),
     CONSTRAINT FK_Member_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
-);
-
-CREATE TABLE Show_Dates (
-    Show_Date_ID INT PRIMARY KEY IDENTITY(1,1),
-    Show_Date DATE,
-    Date_Name VARCHAR(255)
 );
 
 CREATE TABLE Movie (
@@ -98,7 +92,7 @@ CREATE TABLE Movie (
 
 CREATE TABLE Schedule (
     Schedule_ID INT PRIMARY KEY IDENTITY(1,1),
-    Schedule_Time VARCHAR(255)
+    Schedule_Time TIME
 );
 
 CREATE TABLE Type (
@@ -129,14 +123,14 @@ INSERT INTO Cinema_Room(Cinema_Room_Name) VALUES
 
 CREATE TABLE Movie_Show (
     Movie_Show_ID INT PRIMARY KEY IDENTITY(1,1),
-    Movie_ID VARCHAR(10),
-    Show_Date_ID INT,
-    Schedule_ID INT,
-    Cinema_Room_ID INT,
+    Movie_ID VARCHAR(10) NOT NULL,
+    Cinema_Room_ID INT NOT NULL,
+    Show_Date DATE NOT NULL,
+    Schedule_ID INT NOT NULL,
+    
     FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID),
-    FOREIGN KEY (Show_Date_ID) REFERENCES Show_Dates(Show_Date_ID),
-    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID),
-    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID)
+    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
+    FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID)
 );
 
 CREATE TABLE Seat_Type (
@@ -236,22 +230,6 @@ INSERT INTO Employee (Employee_ID, Account_ID) VALUES
 ('EM005', 'AC008'),
 ('EM006', 'AC009');
 
-INSERT INTO Show_Dates (Show_Date, Date_Name) VALUES
-('2024-03-20', 'Wednesday, March 20'),
-('2024-03-21', 'Thursday, March 21'),
-('2024-03-22', 'Friday, March 22'),
-('2024-03-23', 'Saturday, March 23'),
-('2024-03-24', 'Sunday, March 24'),
-('2024-03-25', 'Monday, March 25'),
-('2024-03-26', 'Tuesday, March 26'),
-('2024-03-27', 'Wednesday, March 27'),
-('2024-03-28', 'Thursday, March 28'),
-('2024-03-29', 'Friday, March 29'),
-('2024-03-30', 'Saturday, March 30'),
-('2024-03-31', 'Sunday, March 31'),
-('2024-04-01', 'Monday, April 1'),
-('2024-04-02', 'Tuesday, April 2');
-
 INSERT INTO Movie (Movie_ID, Actor, Content, Director, Duration, From_Date, Movie_Production_Company, To_Date, Version, Movie_Name_English, Movie_Name_VN, Large_Image, Small_Image, TrailerUrl)
 VALUES
 ('MV001', 'Cillian Murphy, Emily Blunt', 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.', 'Christopher Nolan', 180, '2023-07-21', 'Universal Pictures', '2024-03-25', 'IMAX', 'Oppenheimer', 'Oppenheimer', '/image/open.jpg', '/image/open.jpg', 'https://www.youtube.com/embed/uYPbbksJxIg'),
@@ -265,16 +243,16 @@ VALUES
 ('MV009', 'Song Kang-ho, Choi Woo-shik', 'A poor family schemes to become employed by a wealthy family and infiltrate their household.', 'Bong Joon-ho', 132, '2024-03-30', 'CJ Entertainment', '2024-04-02', '2D', 'Parasite', 'Ký Sinh Trùng', '/image/parasite.jpg', '/image/parasite.jpg', 'https://www.youtube.com/embed/5xH0HfJHsaY');
 
 INSERT INTO Schedule (Schedule_Time) VALUES
-('09:00'), ('09:30'), ('10:00'), ('10:30'), ('11:00'),
-('11:30'), ('12:00'), ('12:30'), ('13:00'), ('13:30'),
-('14:00'), ('14:30'), ('15:00'), ('15:30'), ('16:00'),
-('16:30'), ('17:00'), ('17:30'), ('18:00'), ('18:30'),
-('19:00'), ('19:30'), ('20:00'), ('20:30'), ('21:00'),
-('21:30'), ('22:00'), ('22:30');
+('09:00:00'), ('09:30:00'), ('10:00:00'), ('10:30:00'), ('11:00:00'),
+('11:30:00'), ('12:00:00'), ('12:30:00'), ('13:00:00'), ('13:30:00'),
+('14:00:00'), ('14:30:00'), ('15:00:00'), ('15:30:00'), ('16:00:00'),
+('16:30:00'), ('17:00:00'), ('17:30:00'), ('18:00:00'), ('18:30:00'),
+('19:00:00'), ('19:30:00'), ('20:00:00'), ('20:30:00'), ('21:00:00'),
+('21:30:00'), ('22:00:00'), ('22:30:00');
 
 INSERT INTO Type (Type_ID, Type_Name) VALUES
 (1, 'Action'),
-(2, 'Comedy'),
+(2, 'Comedy'),	
 (3, 'Romance'),
 (4, 'Drama'),
 (5, 'Sci-Fi'),
@@ -301,61 +279,6 @@ INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('MV008', 12),
 ('MV009', 1), 
 ('MV009', 5);
-
-INSERT INTO Movie_Show (Show_Date_ID, Schedule_ID, Movie_ID, Cinema_Room_ID) VALUES
-(1, 1, 'MV001', 1), (1, 2, 'MV001', 3), (1, 3, 'MV001', 5), (1, 4, 'MV001', 1),
-(1, 5, 'MV001', 3), (1, 6, 'MV001', 5), (1, 7, 'MV001', 1), (1, 8, 'MV001', 3),
-
-(1, 1, 'MV002', 2), (1, 2, 'MV002', 4), (1, 3, 'MV002', 6), (1, 4, 'MV002', 2),
-(1, 5, 'MV002', 4), (1, 6, 'MV002', 6), (1, 7, 'MV002', 2), (1, 8, 'MV002', 4),
-
-(1, 9,  'MV003', 1), (1, 10, 'MV003', 3), (1, 11, 'MV003', 5), (1, 12, 'MV003', 1),
-(1, 13, 'MV003', 3), (1, 14, 'MV003', 5), (1, 15, 'MV003', 1), (1, 16, 'MV003', 3),
-
-(1, 17, 'MV004', 2), (1, 18, 'MV004', 4), (1, 19, 'MV004', 6), (1, 20, 'MV004', 2),
-(1, 21, 'MV004', 4), (1, 22, 'MV004', 6), (1, 23, 'MV004', 2), (1, 24, 'MV004', 4),
-
-(2, 1, 'MV001', 1), (2, 2, 'MV001', 3), (2, 3, 'MV001', 5), (2, 4, 'MV001', 1),
-(2, 5, 'MV001', 3), (2, 6, 'MV001', 5), (2, 7, 'MV001', 1), (2, 8, 'MV001', 3),
-
-(2, 1, 'MV002', 2), (2, 2, 'MV002', 4), (2, 3, 'MV002', 6), (2, 4, 'MV002', 2),
-(2, 5, 'MV002', 4), (2, 6, 'MV002', 6), (2, 7, 'MV002', 2), (2, 8, 'MV002', 4),
-
-(2, 9,  'MV003', 1), (2, 10, 'MV003', 3), (2, 11, 'MV003', 5), (2, 12, 'MV003', 1),
-(2, 13, 'MV003', 3), (2, 14, 'MV003', 5), (2, 15, 'MV003', 1), (2, 16, 'MV003', 3),
-
-(2, 17, 'MV004', 2), (2, 18, 'MV004', 4), (2, 19, 'MV004', 6), (2, 20, 'MV004', 2),
-(2, 21, 'MV004', 4), (2, 22, 'MV004', 6), (2, 23, 'MV004', 2), (2, 24, 'MV004', 4),
-
-(3, 1, 'MV005', 1), (3, 2, 'MV005', 3), (3, 3, 'MV005', 5), (3, 4, 'MV005', 1),
-(3, 5, 'MV005', 3), (3, 6, 'MV005', 5), (3, 7, 'MV005', 1), (3, 8, 'MV005', 3),
-
-(3, 1, 'MV006', 2), (3, 2, 'MV006', 4), (3, 3, 'MV006', 6), (3, 4, 'MV006', 2),
-(3, 5, 'MV006', 4), (3, 6, 'MV006', 6), (3, 7, 'MV006', 2), (3, 8, 'MV006', 4),
-
-(3, 9,  'MV007', 1), (3, 10, 'MV007', 3), (3, 11, 'MV007', 5), (3, 12, 'MV007', 1),
-(3, 13, 'MV007', 3), (3, 14, 'MV007', 5), (3, 15, 'MV007', 1), (3, 16, 'MV007', 3),
-
-(3, 17, 'MV008', 2), (3, 18, 'MV008', 4), (3, 19, 'MV008', 6), (3, 20, 'MV008', 2),
-(3, 21, 'MV008', 4), (3, 22, 'MV008', 6), (3, 23, 'MV008', 2), (3, 24, 'MV008', 4),
-
-(4, 1, 'MV005', 1), (4, 2, 'MV005', 3), (4, 3, 'MV005', 5), (4, 4, 'MV005', 1),
-(4, 5, 'MV005', 3), (4, 6, 'MV005', 5), (4, 7, 'MV005', 1), (4, 8, 'MV005', 3),
-
-(4, 1, 'MV006', 2), (4, 2, 'MV006', 4), (4, 3, 'MV006', 6), (4, 4, 'MV006', 2),
-(4, 5, 'MV006', 4), (4, 6, 'MV006', 6), (4, 7, 'MV006', 2), (4, 8, 'MV006', 4),
-
-(4, 9,  'MV007', 1), (4, 10, 'MV007', 3), (4, 11, 'MV007', 5), (4, 12, 'MV007', 1),
-(4, 13, 'MV007', 3), (4, 14, 'MV007', 5), (4, 15, 'MV007', 1), (4, 16, 'MV007', 3),
-
-(4, 17, 'MV008', 2), (4, 18, 'MV008', 4), (4, 19, 'MV008', 6), (4, 20, 'MV008', 2),
-(4, 21, 'MV008', 4), (4, 22, 'MV008', 6), (4, 23, 'MV008', 2), (4, 24, 'MV008', 4),
-
-(5, 1, 'MV009', 1), (5, 2, 'MV009', 2), (5, 3, 'MV009', 3), (5, 4, 'MV009', 4),
-(5, 5, 'MV009', 5), (5, 6, 'MV009', 6), (5, 7, 'MV009', 1), (5, 8, 'MV009', 2),
-
-(6, 9,  'MV009', 3), (6, 10, 'MV009', 4), (6, 11, 'MV009', 5), (6, 12, 'MV009', 6),
-(6, 13, 'MV009', 1), (6, 14, 'MV009', 2), (6, 15, 'MV009', 3), (6, 16, 'MV009', 4);
 
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,
