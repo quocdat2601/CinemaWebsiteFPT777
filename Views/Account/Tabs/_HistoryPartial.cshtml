@@ -18,7 +18,7 @@
             <tbody>
                 @foreach (var booking in Model)
                 {
-                    <tr>
+                    <tr class="history-row">
                         <td>@booking.BookingDate?.ToString("dd/MM/yyyy HH:mm")</td>
                         <td>@booking.MovieName</td>
                         <td>@booking.ScheduleShow?.ToString("dd/MM/yyyy")</td>
@@ -66,4 +66,71 @@ else
         <i class="fas fa-info-circle me-2"></i>
         No booking history found for the selected period.
     </div>
-} 
+}
+
+<!-- Pagination for history -->
+@if (Model != null && Model.Any())
+{
+    <div class="d-flex justify-content-center mt-3">
+        <nav aria-label="Page navigation">
+            <ul class="pagination" id="historyPagination">
+                <!-- Pagination will be dynamically generated here -->
+            </ul>
+        </nav>
+    </div>
+}
+
+<script>
+    const HISTORY_ITEMS_PER_PAGE = 7;
+    let historyCurrentPage = 1;
+    let historyFilteredRows = [];
+
+    function initializeHistoryPagination() {
+        historyFilteredRows = Array.from(document.querySelectorAll('.history-row'));
+        displayHistoryPage(historyCurrentPage);
+        updateHistoryPagination();
+    }
+
+    function displayHistoryPage(page) {
+        const startIndex = (page - 1) * HISTORY_ITEMS_PER_PAGE;
+        const endIndex = startIndex + HISTORY_ITEMS_PER_PAGE;
+        historyFilteredRows.forEach(row => row.style.display = 'none');
+        historyFilteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+    }
+
+    function updateHistoryPagination() {
+        const totalPages = Math.ceil(historyFilteredRows.length / HISTORY_ITEMS_PER_PAGE);
+        const pagination = document.getElementById('historyPagination');
+        if (!pagination) return;
+        pagination.innerHTML = '';
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${historyCurrentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class='page-link' href='#' onclick='changeHistoryPage(${historyCurrentPage - 1})'>Previous</a>`;
+        pagination.appendChild(prevLi);
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${historyCurrentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class='page-link' href='#' onclick='changeHistoryPage(${i})'>${i}</a>`;
+            pagination.appendChild(li);
+        }
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${historyCurrentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class='page-link' href='#' onclick='changeHistoryPage(${historyCurrentPage + 1})'>Next</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function changeHistoryPage(page) {
+        if (page < 1 || page > Math.ceil(historyFilteredRows.length / HISTORY_ITEMS_PER_PAGE)) return;
+        historyCurrentPage = page;
+        displayHistoryPage(historyCurrentPage);
+        updateHistoryPagination();
+    }
+
+    // Khởi tạo lại phân trang mỗi khi partial được load lại
+    $(function() {
+        initializeHistoryPagination();
+    });
+</script> 

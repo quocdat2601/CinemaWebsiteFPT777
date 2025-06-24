@@ -629,7 +629,7 @@ namespace MovieTheater.Controllers
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
                 TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null,
-                Status = (InvoiceStatus)invoice.Status
+                Status = InvoiceStatus.Completed
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
@@ -804,7 +804,8 @@ namespace MovieTheater.Controllers
                 Email = member?.Account?.Email,
                 IdentityCard = member?.Account?.IdentityCard,
                 PhoneNumber = member?.Account?.PhoneNumber,
-                CurrentScore = member?.Score ?? 0
+                CurrentScore = member?.Score ?? 0,
+                Status = (InvoiceStatus)invoice.Status
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });

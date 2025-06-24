@@ -25,7 +25,7 @@ else
         <tbody>
         @foreach (var item in Model)
         {
-            <tr>
+            <tr class="score-row">
                 <td>@item.DateCreated.ToString("dd/MM/yyyy")</td>
                 <td>@item.MovieName</td>
                 <td class="text-end">
@@ -42,4 +42,70 @@ else
         }
         </tbody>
     </table>
-} 
+}
+
+@if (Model != null && Model.Any())
+{
+    <div class="d-flex justify-content-center mt-3">
+        <nav aria-label="Page navigation">
+            <ul class="pagination" id="scorePagination">
+                <!-- Pagination will be dynamically generated here -->
+            </ul>
+        </nav>
+    </div>
+}
+
+<script>
+    const SCORE_ITEMS_PER_PAGE = 7;
+    let scoreCurrentPage = 1;
+    let scoreFilteredRows = [];
+
+    function initializeScorePagination() {
+        scoreFilteredRows = Array.from(document.querySelectorAll('.score-row'));
+        displayScorePage(scoreCurrentPage);
+        updateScorePagination();
+    }
+
+    function displayScorePage(page) {
+        const startIndex = (page - 1) * SCORE_ITEMS_PER_PAGE;
+        const endIndex = startIndex + SCORE_ITEMS_PER_PAGE;
+        scoreFilteredRows.forEach(row => row.style.display = 'none');
+        scoreFilteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+    }
+
+    function updateScorePagination() {
+        const totalPages = Math.ceil(scoreFilteredRows.length / SCORE_ITEMS_PER_PAGE);
+        const pagination = document.getElementById('scorePagination');
+        if (!pagination) return;
+        pagination.innerHTML = '';
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${scoreCurrentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class='page-link' href='#' onclick='changeScorePage(${scoreCurrentPage - 1})'>Previous</a>`;
+        pagination.appendChild(prevLi);
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${scoreCurrentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class='page-link' href='#' onclick='changeScorePage(${i})'>${i}</a>`;
+            pagination.appendChild(li);
+        }
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${scoreCurrentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class='page-link' href='#' onclick='changeScorePage(${scoreCurrentPage + 1})'>Next</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function changeScorePage(page) {
+        if (page < 1 || page > Math.ceil(scoreFilteredRows.length / SCORE_ITEMS_PER_PAGE)) return;
+        scoreCurrentPage = page;
+        displayScorePage(scoreCurrentPage);
+        updateScorePagination();
+    }
+
+    // Khởi tạo lại phân trang mỗi khi partial được load lại
+    $(function() {
+        initializeScorePagination();
+    });
+</script> 

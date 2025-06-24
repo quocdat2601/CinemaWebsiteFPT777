@@ -49,74 +49,7 @@
 
                     <!-- Booking History Table -->
                     <div id="historyResult">
-                        @if (Model != null && Model.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover table-striped">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>Booking Date</th>
-                                            <th>Movie</th>
-                                            <th>Show Date</th>
-                                            <th>Show Time</th>
-                                            <th>Seats</th>
-                                            <th class="text-end">Total Amount</th>
-                                            <th>Status</th>
-                                            <th class="text-center">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var booking in Model)
-                                        {
-                                            <tr>
-                                                <td>@booking.BookingDate?.ToString("dd/MM/yyyy HH:mm")</td>
-                                                <td>@booking.MovieName</td>
-                                                <td>@booking.ScheduleShow?.ToString("dd/MM/yyyy")</td>
-                                                <td>@booking.ScheduleShowTime</td>
-                                                <td>@booking.Seat</td>
-                                                <td class="text-end">@booking.TotalMoney?.ToString("N0") VND</td>
-                                                <td>
-                                                    @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed)
-                                                    {
-                                                        <span class="badge bg-success">Completed</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-danger">Cancelled</span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex justify-content-center gap-2">
-                                                        <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId" 
-                                                           class="btn btn-sm btn-info">
-                                                            <i class="fas fa-info-circle"></i> Details
-                                                        </a>
-                                                        @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed && booking.ScheduleShow.HasValue && 
-                                                             booking.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
-                                                        {
-                                                            <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId" 
-                                                                  method="post" class="d-inline" 
-                                                                  onsubmit="return confirm('Are you sure you want to cancel this ticket?');">
-                                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                                    <i class="fas fa-times"></i> Cancel
-                                                                </button>
-                                                            </form>
-                                                        }
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center text-muted py-5">
-                                <i class="fas fa-info-circle fa-3x mb-3"></i>
-                                <p class="lead">No booking history found for the selected period.</p>
-                            </div>
-                        }
+                        <!-- Nội dung danh sách booking và phân trang sẽ được load động từ _HistoryPartial.cshtml -->
                     </div>
                 </div>
             </div>
@@ -146,6 +79,11 @@
                     $('#historyResult').html(result);
                     $('#accountTabs .nav-link').removeClass('active');
                     $('#accountTabs .nav-link[data-tab="History"]').addClass('active');
+                    
+                    // Initialize pagination after loading new data
+                    setTimeout(function() {
+                        initializeHistoryPagination();
+                    }, 100);
                 },
                 error: function () {
                     $('#historyResult').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error loading data.</div>');
@@ -173,6 +111,73 @@
 
         // Load initial data (all records)
         loadHistory('', '');
+    });
+    
+    // Pagination functionality for History
+    const HISTORY_ITEMS_PER_PAGE = 7;
+    let historyCurrentPage = 1;
+    let historyFilteredRows = [];
+
+    function initializeHistoryPagination() {
+        historyFilteredRows = Array.from(document.querySelectorAll('.history-row'));
+        displayHistoryPage(historyCurrentPage);
+        updateHistoryPagination();
+    }
+
+    function displayHistoryPage(page) {
+        const startIndex = (page - 1) * HISTORY_ITEMS_PER_PAGE;
+        const endIndex = startIndex + HISTORY_ITEMS_PER_PAGE;
+        
+        // Hide all rows first
+        historyFilteredRows.forEach(row => row.style.display = 'none');
+        
+        // Show only the rows for the current page
+        historyFilteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+    }
+
+    function updateHistoryPagination() {
+        const totalPages = Math.ceil(historyFilteredRows.length / HISTORY_ITEMS_PER_PAGE);
+        const pagination = document.getElementById('historyPagination');
+        if (!pagination) return;
+        
+        pagination.innerHTML = '';
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${historyCurrentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeHistoryPage(${historyCurrentPage - 1})">Previous</a>`;
+        pagination.appendChild(prevLi);
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${historyCurrentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changeHistoryPage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${historyCurrentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeHistoryPage(${historyCurrentPage + 1})">Next</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function changeHistoryPage(page) {
+        if (page < 1 || page > Math.ceil(historyFilteredRows.length / HISTORY_ITEMS_PER_PAGE)) return;
+        historyCurrentPage = page;
+        displayHistoryPage(historyCurrentPage);
+        updateHistoryPagination();
+    }
+
+    // Initialize pagination when the content is loaded
+    $(document).ready(function() {
+        initializeHistoryPagination();
+    });
+
+    // Re-initialize pagination when the history content is loaded
+    $(document).on('historyTabLoaded', function() {
+        initializeHistoryPagination();
     });
 </script>
 
