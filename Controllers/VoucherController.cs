@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using System;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -67,6 +68,60 @@ namespace MovieTheater.Controllers
         {
             _voucherService.Delete(id);
             return RedirectToAction("Index");
+        }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminDelete(string id, string returnUrl)
+        {
+            var voucher = _voucherService.GetById(id);
+            if (voucher == null)
+            {
+                TempData["ToastMessage"] = "Voucher not found.";
+                return Redirect("/Admin/MainPage?tab=VoucherMg");
+            }
+            _voucherService.Delete(id);
+            TempData["ToastMessage"] = "Voucher deleted successfully.";
+            return Redirect("/Admin/MainPage?tab=VoucherMg");
+        }
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminEdit(string id)
+        {
+            var voucher = _voucherService.GetById(id);
+            if (voucher == null)
+            {
+                TempData["ToastMessage"] = "Voucher not found.";
+                return RedirectToAction("VoucherMg");
+            }
+            return View(voucher);
+        }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminEdit(Voucher model, string returnUrl)
+        {
+            if (!ModelState.IsValid) return View(model);
+            _voucherService.Update(model);
+            TempData["ToastMessage"] = "Voucher updated successfully.";
+            return Redirect("/Admin/MainPage?tab=VoucherMg");
+        }
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminCreate()
+        {
+            return View();
+        }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminCreate(Voucher model, string returnUrl)
+        {
+            if (!ModelState.IsValid) return View(model);
+            model.VoucherId = _voucherService.GenerateVoucherId();
+            model.CreatedDate = DateTime.Now;
+            model.RemainingValue = model.Value;
+            model.IsUsed = false;
+            _voucherService.Add(model);
+            TempData["ToastMessage"] = "Voucher created successfully.";
+            return Redirect("/Admin/MainPage?tab=VoucherMg");
         }
     }
 } 

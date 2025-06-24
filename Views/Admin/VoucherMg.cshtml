@@ -15,6 +15,7 @@
             <th>Remaining</th>
             <th>Expiry</th>
             <th>Status</th>
+            <th style="width: 120px;">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -50,6 +51,12 @@
                     {
                         <span class="badge bg-success">Active</span>
                     }
+                </td>
+                <td>
+                    <form asp-action="AdminDelete" asp-controller="Voucher" method="post" onsubmit="return confirm('Are you sure you want to delete this voucher?');">
+                        <input type="hidden" name="id" value="@voucher.VoucherId" />
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
                 </td>
             </tr>
         }
