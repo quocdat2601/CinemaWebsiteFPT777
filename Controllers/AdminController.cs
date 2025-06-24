@@ -24,6 +24,7 @@ namespace MovieTheater.Controllers
         private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
+        private readonly IVoucherService _voucherService;
 
         public AdminController(
             IMovieService movieService, 
@@ -37,7 +38,8 @@ namespace MovieTheater.Controllers
             ISeatService seatService, 
             IInvoiceService invoiceService,
             IScheduleRepository scheduleRepository,
-            IScheduleSeatRepository scheduleSeatRepository)
+            IScheduleSeatRepository scheduleSeatRepository,
+            IVoucherService voucherService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -51,6 +53,7 @@ namespace MovieTheater.Controllers
             _bookingService = bookingService;
             _seatService = seatService;
             _scheduleSeatRepository = scheduleSeatRepository;
+            _voucherService = voucherService;
         }
 
         // GET: AdminController
@@ -133,6 +136,9 @@ namespace MovieTheater.Controllers
                         MovieShows = _movieService.GetMovieShow()
                     };
                     return PartialView("ShowtimeMg", showtimeModel);
+                case "VoucherMg":
+                    var vouchers = _voucherService.GetAll();
+                    return PartialView("VoucherMg", vouchers);
                 default:
                     return Content("Tab not found.");
             }
