@@ -115,9 +115,9 @@ namespace MovieTheater.Controllers
 
         // AC-04: Cancel ticket
         [HttpPost]
-        public IActionResult Cancel(string id)
+        public IActionResult Cancel(string id, string returnUrl, [FromServices] MovieTheater.Service.IVoucherService voucherService)
         {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
@@ -131,17 +131,45 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
-            // Check if ticket can be canceled (24 hours before showtime)
-            if (booking.ScheduleShow.HasValue && booking.ScheduleShow.Value.AddHours(-24) <= DateTime.Now)
+            // Only allow cancel if paid, not already cancelled
+            if (booking.Status != MovieTheater.Models.InvoiceStatus.Completed)
             {
-                TempData["Error"] = "Cannot cancel ticket within 24 hours of showtime.";
+                TempData["ErrorMessage"] = "Only paid bookings can be cancelled.";
+                if (!string.IsNullOrEmpty(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction(nameof(Index));
+            }
+            // (Showtime check is commented out as per your logic)
+            if (booking.Status == MovieTheater.Models.InvoiceStatus.Incomplete)
+            {
+                TempData["ErrorMessage"] = "This ticket has already been cancelled.";
+                if (!string.IsNullOrEmpty(returnUrl))
+                    return Redirect(returnUrl);
                 return RedirectToAction(nameof(Index));
             }
 
-            booking.Status = MovieTheater.Models.InvoiceStatus.Incomplete; // 0 = Canceled
+            // Mark as cancelled
+            booking.Status = MovieTheater.Models.InvoiceStatus.Incomplete;
             _context.SaveChanges();
 
-            TempData["Success"] = "Ticket canceled successfully.";
+            // Create voucher with code 'REFUND'
+            var voucher = new MovieTheater.Models.Voucher
+            {
+                VoucherId = voucherService.GenerateVoucherId(),
+                AccountId = accountId,
+                Code = "REFUND",
+                Value = booking.TotalMoney ?? 0,
+                RemainingValue = booking.TotalMoney ?? 0,
+                CreatedDate = DateTime.Now,
+                ExpiryDate = DateTime.Now.AddDays(30),
+                IsUsed = false,
+                Image = "/voucher-img/refund-voucher.jpg"
+            };
+            voucherService.Add(voucher);
+
+            TempData["ToastMessage"] = $"Ticket cancelled successfully. Voucher value: {voucher.Value:N0} VND (valid for 30 days).";
+            if (!string.IsNullOrEmpty(returnUrl))
+                return Redirect(returnUrl);
             return RedirectToAction(nameof(Index));
         }
 
@@ -164,6 +192,48 @@ namespace MovieTheater.Controllers
         public IActionResult Test()
         {
             return Content("Test OK");
+        }
+
+        [HttpPost]
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+        public IActionResult CancelByAdmin(string id, string returnUrl, [FromServices] MovieTheater.Service.IVoucherService voucherService)
+        {
+            var booking = _context.Invoices.FirstOrDefault(i => i.InvoiceId == id);
+            if (booking == null)
+            {
+                TempData["ErrorMessage"] = "Booking not found.";
+                if (!string.IsNullOrEmpty(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction("Index");
+            }
+            if (booking.Status == MovieTheater.Models.InvoiceStatus.Incomplete)
+            {
+                TempData["ErrorMessage"] = "This ticket has already been cancelled.";
+                if (!string.IsNullOrEmpty(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction("Index");
+            }
+            booking.Status = MovieTheater.Models.InvoiceStatus.Incomplete;
+            _context.SaveChanges();
+
+            var voucher = new MovieTheater.Models.Voucher
+            {
+                VoucherId = voucherService.GenerateVoucherId(),
+                AccountId = booking.AccountId,
+                Code = "REFUND",
+                Value = booking.TotalMoney ?? 0,
+                RemainingValue = booking.TotalMoney ?? 0,
+                CreatedDate = DateTime.Now,
+                ExpiryDate = DateTime.Now.AddDays(30),
+                IsUsed = false,
+                Image = "/voucher-img/refund-voucher.jpg"
+            };
+            voucherService.Add(voucher);
+
+            TempData["ToastMessage"] = $"Ticket cancelled successfully. Voucher value: {voucher.Value:N0} VND (valid for 30 days).";
+            if (!string.IsNullOrEmpty(returnUrl))
+                return Redirect(returnUrl);
+            return RedirectToAction("Index");
         }
     }
 }

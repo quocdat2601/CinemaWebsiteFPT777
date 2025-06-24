@@ -203,18 +203,20 @@
                 <span class="ticket-total-label">Total Price</span>
                 <span class="ticket-total-value">@totalPrice VND</span>
             </div>
-            <div class="text-center">
-                <a href="/MyAccount/MainPage?tab=History" class="btn btn-ticket-back">
+            <div class="text-center mt-4">
+                <a href="/MyAccount/MainPage?tab=History" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
                     <i class="fas fa-arrow-left me-1"></i> Back to History
                 </a>
                 @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed
                     && Model.ScheduleShow.HasValue
-                    && Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
+                    /* && Model.ScheduleShow.Value > DateTime.Now
+                    && Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now */)
                 {
                     <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId"
                           method="post" class="d-inline"
-                          onsubmit="return confirm('Are you sure you want to cancel this ticket?');">
-                        <button type="submit" class="btn btn-danger ms-2">
+                          onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="btn btn-outline-danger fw-bold px-4" style="min-width: 180px;">
                             <i class="fas fa-times me-1"></i> Cancel Ticket
                         </button>
                     </form>
