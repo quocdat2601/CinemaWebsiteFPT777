@@ -1,4 +1,6 @@
-﻿namespace MovieTheater.ViewModels
+﻿using MovieTheater.Models;
+
+namespace MovieTheater.ViewModels
 {
     public class ConfirmBookingViewModel
     {
@@ -8,6 +10,7 @@
         public string CinemaRoomName { get; set; }
         public DateTime ShowDate { get; set; }
         public string ShowTime { get; set; }
+        public InvoiceStatus Status { get; set; }
 
         // Ghế đã chọn
         public List<SeatDetailViewModel> SelectedSeats { get; set; }

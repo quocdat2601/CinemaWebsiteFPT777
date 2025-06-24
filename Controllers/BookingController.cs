@@ -628,7 +628,8 @@ namespace MovieTheater.Controllers
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
-                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null
+                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null,
+                Status = (InvoiceStatus)invoice.Status
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });

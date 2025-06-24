@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 
 namespace MovieTheater.Models;
-
 public enum InvoiceStatus
 {
     Incomplete = 0,
     Completed = 1
 }
-
 public partial class Invoice
 {
     public string InvoiceId { get; set; } = null!;
@@ -25,8 +23,7 @@ public partial class Invoice
 
     public InvoiceStatus? Status { get; set; }
 
-    // Remove or comment out this property if not needed
-    // public int? RoleId { get; set; }
+    public int? RoleId { get; set; }
 
     public decimal? TotalMoney { get; set; }
 

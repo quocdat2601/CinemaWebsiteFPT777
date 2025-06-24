@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
@@ -86,6 +87,9 @@ namespace MovieTheater.Controllers
 
             var booking = _context.Invoices
                 .Include(i => i.ScheduleSeats)
+                    .ThenInclude(ss => ss.Seat)
+                        .ThenInclude(s => s.SeatType)
+                .Include(i => i.ScheduleSeats)
                     .ThenInclude(ss => ss.MovieShow)
                         .ThenInclude(ms => ms.CinemaRoom)
                 .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
@@ -94,6 +98,17 @@ namespace MovieTheater.Controllers
             {
                 return NotFound();
             }
+
+            // Tạo danh sách ghế chi tiết
+            var seatDetails = booking.ScheduleSeats.Select(ss => new SeatDetailViewModel
+            {
+                SeatId = ss.Seat.SeatId,
+                SeatName = ss.Seat.SeatName,
+                SeatType = ss.Seat.SeatType?.TypeName,
+                Price = (decimal)(ss.Seat.SeatType?.PricePercent)
+            }).ToList();
+
+            ViewBag.SeatDetails = seatDetails;
 
             return View(booking);
         }

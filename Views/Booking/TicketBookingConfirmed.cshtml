@@ -19,29 +19,40 @@
     string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
     string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
+    var status = booking?.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled";
 }
 <style>
     .ticket-success-header {
         background: #e3fcec;
         border-radius: 12px 12px 0 0;
         padding: 32px 0 16px 0;
-        text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .ticket-success-header .icon {
-        font-size: 3rem;
-        color: #2ecc40;
-        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
     .ticket-success-header h2 {
         font-weight: bold;
-        margin-bottom: 0.5rem;
-    }
-    .ticket-success-header .sub {
-        color: #555;
-        font-size: 1.1rem;
         margin-bottom: 0;
+        text-align: left;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.35em 1.2em;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 1.2em;
+        color: #fff;
+        margin-left: 1rem;
+    }
+    .status-completed {
+        background-color: #28a745;
+    }
+    .status-cancelled {
+        background-color: #dc3545;
     }
     .ticket-info-label {
         font-weight: 500;
@@ -124,18 +135,11 @@
 <div class="container mt-4">
     <div class="ticket-card card shadow p-0">
         <div class="ticket-success-header">
-            @if (userRole == "Admin")
-            {
-                <h2>Ticket Information</h2>
-            }
-            else
-            {
-                <div class="icon" role="img" aria-label="Celebration">&#x1F389;</div>
-                <h2>Booked Successfully!</h2>
-                <p class="sub">This is your ticket. Please show this at the theater entrance.</p>
-            }
+            <h2 class="mb-0">Ticket Information</h2>
+            <span class="status-badge @(status == "Completed" ? "status-completed" : "status-cancelled")">
+                @status
+            </span>
         </div>
-        
         <div class="p-4">
             <div class="ticket-section-title">Movie & Show Info</div>
             <div class="ticket-row">
