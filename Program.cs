@@ -108,6 +108,8 @@ namespace MovieTheater
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            builder.Services.AddScoped<MovieTheater.Repository.IRankRepository, MovieTheater.Repository.RankRepository>();
+            builder.Services.AddScoped<MovieTheater.Service.IRankService, MovieTheater.Service.RankService>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")

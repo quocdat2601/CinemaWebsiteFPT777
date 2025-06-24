@@ -464,6 +464,14 @@ public partial class MovieTheaterContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("Rank_Name");
             entity.Property(e => e.RequiredPoints).HasColumnName("Required_Points");
+            entity.Property(e => e.ColorGradient)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasDefaultValue("linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)");
+            entity.Property(e => e.IconClass)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasDefaultValue("fa-crown");
         });
 
         modelBuilder.Entity<Role>(entity =>

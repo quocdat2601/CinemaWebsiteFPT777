@@ -4,6 +4,9 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using System.Linq;
 
 namespace MovieTheater.Service
 {
@@ -111,8 +114,21 @@ namespace MovieTheater.Service
                 account.Status = model.Status;
             }
 
-            if (!string.IsNullOrEmpty(model.Image))
+            if (model.ImageFile != null && model.ImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    model.ImageFile.CopyTo(stream);
+                }
+                account.Image = $"/images/avatars/{uniqueFileName}";
+            }
+            else if (!string.IsNullOrEmpty(model.Image) && model.ImageFile == null)
+            {
                 account.Image = model.Image;
+            }
 
             _repository.Update(account);
             _repository.Save();
@@ -177,12 +193,23 @@ namespace MovieTheater.Service
             if (account == null)
                 return null;
 
-            //CHECK SCORE USER
-            //var member = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId);
-            //int score = member?.Score ?? 0;
-
-            //_logger.LogInformation("User {UserId} - FullName: {FullName} - Score: {Score}", account.AccountId, account.FullName, score);
-
+            // --- AUTO-UPGRADE RANK LOGIC ---
+            // Get the user's current score
+            var userScore = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0;
+            // Get all ranks ordered by required points
+            using (var context = new MovieTheaterContext())
+            {
+                var allRanks = context.Ranks.OrderBy(r => r.RequiredPoints).ToList();
+                // Find the highest rank the user qualifies for
+                var newRank = allRanks.LastOrDefault(r => r.RequiredPoints <= userScore);
+                if (newRank != null && account.RankId != newRank.RankId)
+                {
+                    account.RankId = newRank.RankId;
+                    _repository.Update(account);
+                    _repository.Save();
+                }
+            }
+            // --- END AUTO-UPGRADE RANK LOGIC ---
 
             bool isGoogleAccount = account.Password.IsNullOrEmpty();
 
@@ -199,7 +226,8 @@ namespace MovieTheater.Service
                 PhoneNumber = account.PhoneNumber ?? string.Empty,
                 Password = account.Password ?? string.Empty,
                 IsGoogleAccount = isGoogleAccount,
-                Score = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0
+                Score = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0,
+                Image = account.Image
             };
         }
         public bool VerifyCurrentPassword(string username, string currentPassword)

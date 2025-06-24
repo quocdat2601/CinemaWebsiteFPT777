@@ -12,14 +12,16 @@ namespace MovieTheater.Controllers
     {
         private readonly IAccountService _service;
         private readonly ILogger<MyAccountController> _logger;
-        private readonly IJwtService _jwtService;
-        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
+        private readonly IRankService _rankService;
 
-        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService)
+        public MyAccountController(
+            IAccountService service,
+            ILogger<MyAccountController> logger,
+            IRankService rankService)
         {
             _service = service;
             _logger = logger;
-            _jwtService = jwtService;
+            _rankService = rankService;
         }
 
         /// <summary>
@@ -63,26 +65,20 @@ namespace MovieTheater.Controllers
         public IActionResult LoadTab(string tab)
         {
             var user = _service.GetCurrentUser();
+            if (user == null) return NotFound();
 
             switch (tab)
             {
                 case "Profile":
-                    if (user == null)
-                        return NotFound();
-                    var profileModel = new ProfileUpdateViewModel
+                    var rankInfo = _rankService.GetRankInfoForUser(user.AccountId);
+                    var allRanks = _rankService.GetAllRanks();
+                    var viewModel = new ProfilePageViewModel
                     {
-                        AccountId = user.AccountId,
-                        FullName = user.FullName,
-                        DateOfBirth = user.DateOfBirth,
-                        Gender = user.Gender,
-                        IdentityCard = user.IdentityCard,
-                        Email = user.Email,
-                        Address = user.Address,
-                        PhoneNumber = user.PhoneNumber,
-                        Image = user.Image,
-                        IsGoogleAccount = user.IsGoogleAccount
+                        Profile = user,
+                        RankInfo = rankInfo,
+                        AllRanks = allRanks
                     };
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", profileModel);
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
                 case "Rank":
                     return PartialView("~/Views/Account/Tabs/Rank.cshtml");
                 case "Score":
@@ -102,61 +98,103 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(ProfileUpdateViewModel model)
+        public async Task<IActionResult> Edit(ProfilePageViewModel model, string action)
         {
             var user = _service.GetCurrentUser();
-            var timestamp = DateTime.UtcNow;
-
             if (user == null)
             {
-                TempData["ErrorMessage"] = "User not found";
-                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                TempData["ErrorMessage"] = "User session expired. Please log in again.";
+                return RedirectToAction("Login", "Account");
             }
 
-            if (!ModelState.IsValid)
+            if (action == "updateImage")
             {
-                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                _logger.LogWarning("Update failed validation at {Time}. Errors: {Errors}", DateTime.UtcNow, errors);
-                TempData["ErrorMessage"] = $"{errors}";
-                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
-            }
+                // Minimal validation for image upload
+                ModelState.Remove("Profile.FullName");
+                ModelState.Remove("Profile.DateOfBirth");
+                ModelState.Remove("Profile.Gender");
+                ModelState.Remove("Profile.IdentityCard");
+                ModelState.Remove("Profile.Email");
+                ModelState.Remove("Profile.Address");
+                ModelState.Remove("Profile.PhoneNumber");
 
-            try
-            {
+                if (!ModelState.IsValid)
+                {
+                    // If validation fails, reload the tab with the errors
+                    TempData["ErrorMessage"] = "An error occurred during image upload.";
+                    return RedirectToAction("MainPage", new { tab = "Profile" });
+                }
+
                 var registerModel = new RegisterViewModel
                 {
-                    AccountId = model.AccountId,
+                    AccountId = user.AccountId,
                     Username = user.Username,
+                    // Pass the uploaded file to the service. The service now handles saving.
+                    ImageFile = model.Profile.ImageFile,
+                    // Pass the rest of the user's data to prevent it from being wiped out
+                    FullName = user.FullName,
+                    DateOfBirth = user.DateOfBirth,
+                    Gender = user.Gender,
+                    IdentityCard = user.IdentityCard,
+                    Email = user.Email,
+                    Address = user.Address,
+                    PhoneNumber = user.PhoneNumber,
                     Password = user.Password,
-                    FullName = model.FullName,
-                    DateOfBirth = model.DateOfBirth,
-                    Gender = model.Gender,
-                    IdentityCard = model.IdentityCard,
-                    Email = model.Email,
-                    Address = model.Address,
-                    PhoneNumber = model.PhoneNumber,
-                    Image = model.Image,
-                    ImageFile = model.ImageFile
+                    Image = user.Image // Pass the current image name for deletion purposes
                 };
 
                 var success = _service.Update(user.AccountId, registerModel);
-
-                if (!success)
+                if (success)
                 {
-                    _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", user.AccountId, timestamp);
-                    TempData["ErrorMessage"] = "Update failed";
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                    TempData["ToastMessage"] = "Profile image updated successfully!";
                 }
-
-                TempData["ToastMessage"] = "Profile updated successfully!";
+                else
+                {
+                    TempData["ErrorMessage"] = "Image update failed.";
+                }
                 return RedirectToAction("MainPage", new { tab = "Profile" });
             }
-            catch (Exception ex)
+            else if (action == "editProfile")
             {
-                _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", user.AccountId, DateTime.UtcNow);
-                TempData["ErrorMessage"] = ex.Message;
-                return PartialView("~/Views/Account/Tabs/Profile.cshtml", model);
+                // Standard validation for profile fields
+                if (!ModelState.IsValid)
+                {
+                    var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                    TempData["ErrorMessage"] = $"Update failed: {errors}";
+                    // It's better to redirect here as returning the partial view can cause issues with page state
+                    return RedirectToAction("MainPage", new { tab = "Profile" });
+                }
+
+                var registerModel = new RegisterViewModel
+                {
+                    AccountId = model.Profile.AccountId,
+                    Username = user.Username, // Username is not editable here
+                    Password = user.Password, // Password is not changed here
+                    FullName = model.Profile.FullName,
+                    DateOfBirth = model.Profile.DateOfBirth,
+                    Gender = model.Profile.Gender,
+                    IdentityCard = model.Profile.IdentityCard,
+                    Email = model.Profile.Email, // Email is not editable here
+                    Address = model.Profile.Address,
+                    PhoneNumber = model.Profile.PhoneNumber,
+                    Image = user.Image, // Preserve the existing image
+                    ImageFile = null    // Ensure we do not process a file
+                };
+
+                var success = _service.Update(user.AccountId, registerModel);
+                if (success)
+                {
+                    TempData["ToastMessage"] = "Profile updated successfully!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Update failed.";
+                }
+                return RedirectToAction("MainPage", new { tab = "Profile" });
             }
+
+            // Fallback for any other action
+            return RedirectToAction("MainPage", new { tab = "Profile" });
         }
 
         /// <summary>
@@ -280,3 +318,4 @@ namespace MovieTheater.Controllers
         }
     }
 }
+
