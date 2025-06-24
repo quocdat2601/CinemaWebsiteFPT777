@@ -19,6 +19,6 @@ namespace MovieTheater.Service
         public bool GetByUsername(string username);
         public Account? GetById(string id);
         Task DeductScoreAsync(string userId, int points);
-
+        Task AddScoreAsync(string userId, int points);
     }
 }

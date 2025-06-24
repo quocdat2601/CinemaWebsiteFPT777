@@ -249,8 +249,17 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Success()
+        public async Task<IActionResult> Success()
         {
+            var invoiceId = TempData["InvoiceId"] as string;
+            if (!string.IsNullOrEmpty(invoiceId))
+            {
+                var invoice = _invoiceService.GetById(invoiceId);
+                if (invoice != null && invoice.Status == InvoiceStatus.Completed && invoice.AddScore.HasValue && invoice.AddScore.Value > 0)
+                {
+                    await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
+                }
+            }
             return View();
         }
 
