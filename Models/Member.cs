@@ -11,5 +11,7 @@ public partial class Member
 
     public string? AccountId { get; set; }
 
+    public int TotalPoints { get; set; }
+
     public virtual Account? Account { get; set; }
 }

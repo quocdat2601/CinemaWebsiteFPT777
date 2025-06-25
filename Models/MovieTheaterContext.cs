@@ -262,8 +262,6 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Member>(entity =>
         {
-            entity.HasKey(e => e.MemberId).HasName("PK__Member__42A68F27522D5FB1");
-
             entity.ToTable("Member");
 
             entity.Property(e => e.MemberId)
@@ -274,6 +272,7 @@ public partial class MovieTheaterContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Account_ID");
+            entity.Property(e => e.TotalPoints).HasColumnName("Total_Points");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Members)
                 .HasForeignKey(d => d.AccountId)
@@ -450,16 +449,21 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Rank>(entity =>
         {
-            entity.HasKey(e => e.RankId).HasName("PK__Rank__25BE3A65719EA5DD");
-
             entity.ToTable("Rank");
 
-            entity.HasIndex(e => e.RankName, "UQ__Rank__5CE0876A856127AE").IsUnique();
+            entity.HasIndex(e => e.RankName, "UQ_Rank_RankName").IsUnique();
 
             entity.Property(e => e.RankId).HasColumnName("Rank_ID");
+            entity.Property(e => e.ColorGradient)
+                .HasMaxLength(200)
+                .HasDefaultValue("linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)");
             entity.Property(e => e.DiscountPercentage)
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("Discount_Percentage");
+            entity.Property(e => e.IconClass)
+                .HasMaxLength(50)
+                .HasDefaultValue("fa-crown");
+            entity.Property(e => e.PointEarningPercentage).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.RankName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
