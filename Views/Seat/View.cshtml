@@ -8,107 +8,14 @@
 	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
 	var seatTypes = Model.SeatTypes;
 	var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
+	var movieShowId = Model.MovieShowId.ToString();
 
 	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
 	string returnLink = isAdminSell
 		? Url.Action("Select", "Showtime", new { area = "Admin" })
 		: Url.Action("TicketBooking", "Booking");
 }
-
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
-<style>
-	.seat-section {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-	.screen-label {
-		font-weight: bold;
-		font-size: 1.2rem;
-	}
-	.seat-layout-bordered-area {
-		flex-grow: 1;
-		min-width: 0;
-		max-width: none;
-		width: auto;
-		margin-right: 32px;
-		background: #fff;
-		padding: 32px 0 32px 0;
-		box-sizing: border-box;
-	}
-	.seat-container table {
-		margin: 0 auto;
-	}
-	.seat-container td {
-		padding: 10px 12px !important;
-	}
-	.material-icons {
-		font-size: 2.1rem !important;
-	}
-	#selectionSummary {
-		width: 320px;
-		min-width: 220px;
-		max-width: 350px;
-		padding: 0;
-		margin-left: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		box-sizing: border-box;
-		box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-		border-radius: 18px;
-		background: #fff;
-		align-self: center;
-	}
-	.summary-block {
-		width: 100%;
-		padding: 18px 24px 12px 24px;
-		border-bottom: 1px solid #e6e6e6;
-		border-radius: 18px 18px 0 0;
-		background: #f6fcfa;
-	}
-	.summary-info {
-		width: 100%;
-		padding: 12px 24px 8px 24px;
-		border-bottom: 1px solid #e6e6e6;
-		background: #fff;
-	}
-	.summary-movie {
-		font-weight: bold;
-		font-size: 1.15rem;
-		color: #1a3e72;
-		margin-bottom: 8px;
-	}
-	.summary-seat {
-		width: 100%;
-		padding: 12px 24px 18px 24px;
-		background: #fff;
-		border-radius: 0 0 18px 18px;
-		text-align: left;
-	}
-	.summary-label {
-		font-weight: 500;
-		color: #555;
-	}
-	.summary-value {
-		font-weight: 600;
-		color: #1a3e72;
-	}
-	.summary-alert {
-		color: #d32f2f;
-		background: #fff0f0;
-		border: 1px solid #f5c2c7;
-		padding: 8px 12px;
-		border-radius: 6px;
-		margin: 10px 0 0 0;
-		font-size: 1rem;
-		text-align: center;
-	}
-	.selected-seat {
-		outline: 3px solid #ffc107 !important;
-		border-radius: 5px;
-	}
-</style>
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
@@ -221,7 +128,7 @@
 	<script>
 		let selectedSeats = new Set();
 		let countdownTimer = null;
-		let secondsLeft = 10; // 10 seconds for testing
+		let secondsLeft = 100; // 10 seconds for testing
 
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
@@ -241,48 +148,6 @@
 					secondsLeft--;
 				}
 			}, 1000);
-		}
-
-		function showToast(message) {
-			let toastId = 'seatLimitToast';
-			let existing = document.getElementById(toastId);
-			if (existing) existing.remove();
-			const toastHtml = `<div id="${toastId}" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-				<div class="toast align-items-center text-bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-					<div class="d-flex">
-						<div class="toast-body">${message}</div>
-						<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-					</div>
-				</div>
-			</div>`;
-			document.body.insertAdjacentHTML('beforeend', toastHtml);
-			const toastElem = document.getElementById(toastId).querySelector('.toast');
-			const toast = new bootstrap.Toast(toastElem, { delay: 2500 });
-			toast.show();
-			toastElem.addEventListener('hidden.bs.toast', function() {
-				document.getElementById(toastId)?.remove();
-			});
-		}
-
-		function selectSeat(clickedTd) {
-			const seatId = clickedTd.getAttribute('data-seat-id');
-			if (clickedTd.hasAttribute('disabled')) {
-				return;
-			}
-			const isSelected = selectedSeats.has(seatId);
-			if (!isSelected && selectedSeats.size >= 8) {
-				showToast('You can only select 8 seats for this order');
-				return;
-			}
-			clickedTd.classList.toggle('selected-seat');
-			if (isSelected) {
-				selectedSeats.delete(seatId);
-			} else {
-				selectedSeats.add(seatId);
-				if (selectedSeats.size === 1) startCountdown();
-			}
-			updateSelectionSummary();
-			updateBookButtonState();
 		}
 
 		function updateBookButtonState() {
@@ -347,6 +212,65 @@
 		document.addEventListener('DOMContentLoaded', function () {
 			updateBookButtonState();
 			updateSelectionSummary();
+		});
+	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+	<script>
+		const connection = new signalR.HubConnectionBuilder()
+			.withUrl("/seathub")
+			.build();
+
+		connection.on("SeatSelected", (seatId) => {
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			if (td && !td.classList.contains("selected-seat")) {
+				td.classList.add("being-held");
+				td.setAttribute("title", "Ghế đang được người khác giữ");
+			}
+		});
+
+		connection.on("SeatDeselected", (seatId) => {
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			td?.classList.remove("being-held");
+			td?.removeAttribute("title");
+		});
+
+		connection.on("SeatsReleased", (seatIds) => {
+			seatIds.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				td?.classList.remove("being-held");
+				td?.removeAttribute("title");
+			});
+		});
+
+		connection.start().then(() => {
+			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
+		});
+
+		function selectSeat(clickedTd) {
+			const seatId = clickedTd.getAttribute('data-seat-id');
+			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+
+			clickedTd.classList.toggle('selected-seat');
+			if (selectedSeats.has(seatId)) {
+				selectedSeats.delete(seatId);
+				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+			} else {
+				selectedSeats.add(seatId);
+				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+				if (selectedSeats.size === 1) startCountdown();
+			}
+			updateSelectionSummary();
+			updateBookButtonState();
+		}
+
+		connection.on("HeldSeats", (seatIds) => {
+			seatIds.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				if (td && !td.classList.contains("selected-seat")) {
+					td.classList.add("being-held");
+					td.setAttribute("title", "Ghế đang được người khác giữ");
+				}
+			});
 		});
 	</script>
 }

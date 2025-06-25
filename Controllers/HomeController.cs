@@ -30,6 +30,14 @@ namespace MovieTheater.Controllers
 
             return View();
         }
+        /// <summary>
+        /// [GET] /Home/Chat
+        /// Trang test chat realtime.
+        /// </summary>
+        public IActionResult Chat()
+        {
+            return View();
+        }
 
         /// <summary>
         /// [GET] /Home/MovieList

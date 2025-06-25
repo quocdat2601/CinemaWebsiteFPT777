@@ -197,6 +197,7 @@ namespace MovieTheater.Controllers
             {
                 MovieId = movieId,
                 MovieName = movie.MovieNameEnglish,
+                MovieShowId = movieShow.MovieShowId,
                 ShowDate = parsedDate,
                 ShowTime = time,
                 CinemaRoomId = cinemaRoom.CinemaRoomId,
