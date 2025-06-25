@@ -683,6 +683,32 @@ public partial class MovieTheaterContext : DbContext
                 .HasConstraintName("FK_Voucher_Account");
         });
 
+        modelBuilder.Entity<Food>(entity =>
+        {
+            entity.HasKey(e => e.FoodId).HasName("PK__Food__856DB2EB7C8486AE");
+
+            entity.ToTable("Food");
+
+            entity.Property(e => e.FoodId).HasColumnName("FoodId");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.Image)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Status);
+            entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
+            entity.Property(e => e.UpdatedDate).HasColumnName("UpdatedDate");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

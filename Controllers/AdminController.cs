@@ -24,21 +24,23 @@ namespace MovieTheater.Controllers
         private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
+        private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
 
         public AdminController(
-            IMovieService movieService, 
-            IEmployeeService employeeService, 
-            IPromotionService promotionService, 
-            ICinemaService cinemaService, 
-            ISeatTypeService seatTypeService, 
-            IMemberRepository memberRepository, 
-            IAccountService accountService, 
-            IBookingService bookingService, 
-            ISeatService seatService, 
+            IMovieService movieService,
+            IEmployeeService employeeService,
+            IPromotionService promotionService,
+            ICinemaService cinemaService,
+            ISeatTypeService seatTypeService,
+            IMemberRepository memberRepository,
+            IAccountService accountService,
+            IBookingService bookingService,
+            ISeatService seatService,
             IInvoiceService invoiceService,
             IScheduleRepository scheduleRepository,
             IScheduleSeatRepository scheduleSeatRepository,
+            IFoodService foodService,
             IVoucherService voucherService)
         {
             _movieService = movieService;
@@ -54,6 +56,7 @@ namespace MovieTheater.Controllers
             _seatService = seatService;
             _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
+            _foodService = foodService;
         }
 
         // GET: AdminController
@@ -65,7 +68,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        public IActionResult LoadTab(string tab, string keyword = null)
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null)
         {
             switch (tab)
             {
@@ -136,6 +139,22 @@ namespace MovieTheater.Controllers
                         MovieShows = _movieService.GetMovieShow()
                     };
                     return PartialView("ShowtimeMg", showtimeModel);
+                case "FoodMg":
+                    // Sử dụng parameter keyword thay vì Request.Query["keyword"]
+                    var searchKeyword = keyword ?? string.Empty;
+                    var categoryFilter = Request.Query["categoryFilter"].ToString();
+                    var statusFilterStr = Request.Query["statusFilter"].ToString();
+                    bool? statusFilter = null;
+                    if (!string.IsNullOrEmpty(statusFilterStr))
+                        statusFilter = bool.Parse(statusFilterStr);
+
+                    var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, statusFilter);
+
+                    ViewBag.Keyword = searchKeyword;
+                    ViewBag.CategoryFilter = categoryFilter;
+                    ViewBag.StatusFilter = statusFilter;
+
+                    return PartialView("FoodMg", foods);
                 case "VoucherMg":
                     var vouchers = _voucherService.GetAll();
                     return PartialView("VoucherMg", vouchers);

@@ -1,0 +1,92 @@
+@model MovieTheater.ViewModels.FoodViewModel
+@{
+    ViewData["Title"] = "Edit Food";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Edit Food</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        <input type="hidden" asp-for="FoodId" />
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Category" class="form-label">Category *</label>
+                                    <select asp-for="Category" class="form-select" required>
+                                        <option value="">Select Category</option>
+                                        <option value="food">Food</option>
+                                        <option value="drink">Drink</option>
+                                        <option value="combo">Combo</option>
+                                    </select>
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label">Name *</label>
+                                    <input asp-for="Name" class="form-control" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Price" class="form-label">Price (VND) *</label>
+                                    <input asp-for="Price" class="form-control" type="number" min="0" step="1000" required />
+                                    <span asp-validation-for="Price" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Description</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="ImageFile" class="form-label">Image</label>
+                                    <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
+                                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+                                    
+                                    @if (!string.IsNullOrEmpty(Model.Image))
+                                    {
+                                        <div class="mt-2">
+                                            <label class="form-label">Current Image:</label>
+                                            <img src="@Model.Image" alt="Current Image" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;" />
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="Status" class="form-check-input" type="checkbox" />
+                                        <label asp-for="Status" class="form-check-label">
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("MainPage", "Admin", new { tab = "FoodMg" })" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Food Management
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Update Food
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 
