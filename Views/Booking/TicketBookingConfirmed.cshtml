@@ -221,7 +221,6 @@
                     <form asp-controller="Ticket" asp-action="CancelByAdmin" asp-route-id="@Model.BookingDetails.InvoiceId"
                           method="post" class="d-inline"
                           onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
-                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
                         <button type="submit" class="btn btn-outline-danger fw-bold px-4" style="min-width: 220px;">
                             <i class="fas fa-times me-1"></i> Cancel Ticket
                         </button>

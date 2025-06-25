@@ -212,13 +212,13 @@ namespace MovieTheater.Controllers
             if (booking == null)
             {
                 TempData["ErrorMessage"] = "Booking not found.";
-                return !string.IsNullOrEmpty(returnUrl) ? Redirect(returnUrl) : RedirectToAction("Index");
+                return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
             }
 
             if (booking.Status == InvoiceStatus.Incomplete)
             {
                 TempData["ErrorMessage"] = "This ticket has already been cancelled.";
-                return !string.IsNullOrEmpty(returnUrl) ? Redirect(returnUrl) : RedirectToAction("Index");
+                return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
             }
 
             // ✅ Cập nhật trạng thái
@@ -253,7 +253,9 @@ namespace MovieTheater.Controllers
             voucherService.Add(voucher);
 
             TempData["ToastMessage"] = $"Ticket cancelled successfully. Voucher value: {voucher.Value:N0} VND (valid for 30 days).";
-            return !string.IsNullOrEmpty(returnUrl) ? Redirect(returnUrl) : RedirectToAction("Index");
+            
+            // Redirect về TicketInfo thay vì returnUrl
+            return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
         }
     }
 }
