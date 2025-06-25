@@ -11,11 +11,20 @@ function showToast(message) {
         new bootstrap.Toast(toastEl, { delay: 3000 }).show();
     }
 }
-
 function showErrorToast(message) {
     const errorToastEl = document.getElementById('errorToast');
      if (errorToastEl) {
         errorToastEl.querySelector('.toast-body').innerText = message;
         new bootstrap.Toast(errorToastEl, { delay: 4000 }).show();
-     }
+    }
+}
+
+// Call this after AJAX tab loads
+function initMyAccountTabScripts() {
+    const rankModalEl = document.getElementById('rankDetailsModal');
+    if (rankModalEl) {
+        rankModalEl.addEventListener('show.bs.modal', () => {
+            bootstrap.Carousel.getOrCreateInstance('#rankCarousel');
+        });
+    }
 }
