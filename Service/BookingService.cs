@@ -51,6 +51,12 @@ namespace MovieTheater.Service
             await _context.SaveChangesAsync();
         }
 
+        public async Task UpdateInvoiceAsync(Invoice invoice)
+        {
+            _context.Invoices.Update(invoice);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<string> GenerateInvoiceIdAsync()
         {
             // Get all InvoiceIds from DB starting with "INV"

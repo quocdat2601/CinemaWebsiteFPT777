@@ -241,6 +241,10 @@ namespace MovieTheater.Controllers
                 // Nếu là test success thì bỏ qua thanh toán, chuyển thẳng sang trang Success
                 if (!string.IsNullOrEmpty(IsTestSuccess) && IsTestSuccess == "true")
                 {
+                    // Cập nhật status thành Completed cho test success
+                    invoice.Status = InvoiceStatus.Completed;
+                    await _bookingService.UpdateInvoiceAsync(invoice);
+                    
                     TempData["MovieName"] = model.MovieName;
                     TempData["ShowDate"] = model.ShowDate.ToString();
                     TempData["ShowTime"] = model.ShowTime;
