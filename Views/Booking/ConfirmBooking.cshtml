@@ -65,7 +65,6 @@
 
         <hr />
         <form asp-action="Confirm" method="post">
-            @* Hidden fields *@
             @Html.HiddenFor(m => m.MovieId)
             @Html.HiddenFor(m => m.MovieName)
             @Html.HiddenFor(m => m.CinemaRoomName)
@@ -78,9 +77,8 @@
             @Html.HiddenFor(m => m.PhoneNumber)
             @Html.HiddenFor(m => m.CurrentScore)
             @Html.HiddenFor(m => m.MovieShowId)
-
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
-
+            <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
             @for (int i = 0; i < Model.SelectedSeats.Count; i++)
             {
                 <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
@@ -88,9 +86,9 @@
                 <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
-
             <div class="text-center mt-4">
                 <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Test Success</button>
             </div>
         </form>
     </div>
@@ -143,4 +141,17 @@
 
     // Đảm bảo trạng thái nút ban đầu là enable
     confirmBtn.disabled = false;
+
+    function testSuccess() {
+        var useScoreInput = document.getElementById('useScore');
+        var hiddenUseScore = document.getElementById('hiddenUseScore');
+        var isTestSuccess = document.getElementById('isTestSuccess');
+        if (useScoreInput && hiddenUseScore) {
+            hiddenUseScore.value = useScoreInput.value || 0;
+        }
+        if (isTestSuccess) {
+            isTestSuccess.value = "true";
+        }
+        document.querySelector('form[method="post"]').submit();
+    }
 </script>

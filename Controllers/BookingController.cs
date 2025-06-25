@@ -178,7 +178,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model)
+        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
             try
             {
@@ -238,6 +238,22 @@ namespace MovieTheater.Controllers
                 // Lưu MovieShowId vào TempData để PaymentController sử dụng
                 TempData["MovieShowId"] = movieShow.MovieShowId;
 
+                // Nếu là test success thì bỏ qua thanh toán, chuyển thẳng sang trang Success
+                if (!string.IsNullOrEmpty(IsTestSuccess) && IsTestSuccess == "true")
+                {
+                    TempData["MovieName"] = model.MovieName;
+                    TempData["ShowDate"] = model.ShowDate.ToString();
+                    TempData["ShowTime"] = model.ShowTime;
+                    TempData["Seats"] = seatList;
+                    TempData["CinemaRoomName"] = model.CinemaRoomName;
+                    TempData["InvoiceId"] = invoice.InvoiceId;
+                    TempData["BookingTime"] = invoice.BookingDate.ToString();
+                    TempData["OriginalPrice"] = model.TotalPrice.ToString();
+                    TempData["UsedScore"] = model.UseScore.ToString();
+                    TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
+                    return RedirectToAction("Success");
+                }
+
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
             catch (Exception ex)
@@ -255,8 +271,24 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Success()
+        public IActionResult Success(
+            string MovieName, string ShowDate, string ShowTime, string Seats,
+            string CinemaRoomName, string InvoiceId, string BookingTime,
+            decimal? OriginalPrice, int? UsedScore, decimal? FinalPrice)
         {
+            if (!string.IsNullOrEmpty(MovieName))
+            {
+                TempData["MovieName"] = MovieName;
+                TempData["ShowDate"] = ShowDate;
+                TempData["ShowTime"] = ShowTime;
+                TempData["Seats"] = Seats;
+                TempData["CinemaRoomName"] = CinemaRoomName;
+                TempData["InvoiceId"] = InvoiceId;
+                TempData["BookingTime"] = BookingTime;
+                TempData["OriginalPrice"] = OriginalPrice ?? 0;
+                TempData["UsedScore"] = UsedScore ?? 0;
+                TempData["FinalPrice"] = FinalPrice ?? 0;
+            }
             return View();
         }
 
@@ -845,5 +877,7 @@ namespace MovieTheater.Controllers
                 }).ToList();
             return Json(members);
         }
+
+      
     }
 }
