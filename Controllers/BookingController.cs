@@ -235,6 +235,9 @@ namespace MovieTheater.Controllers
                     await _accountService.DeductScoreAsync(userId, model.UseScore);
                 }
 
+                // Lưu MovieShowId vào TempData để PaymentController sử dụng
+                TempData["MovieShowId"] = movieShow.MovieShowId;
+
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
             catch (Exception ex)
@@ -590,13 +593,21 @@ namespace MovieTheater.Controllers
                 return NotFound("Cinema room not found for this movie show.");
             }
             // Prepare seat details
-            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
             var seats = new List<SeatDetailViewModel>();
             foreach (var seatName in seatNamesArr)
             {
                 var seat = _seatService.GetSeatByName(seatName);
+                if (seat == null)
+                {
+                    // Nếu không tìm thấy seat, bỏ qua và tiếp tục
+                    continue;
+                }
                 SeatType seatType = null;
-                if (seat != null && seat.SeatTypeId.HasValue)
+                if (seat.SeatTypeId.HasValue)
                 {
                     seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                 }
@@ -760,13 +771,21 @@ namespace MovieTheater.Controllers
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
             // Prepare seat details
-            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
             var seats = new List<SeatDetailViewModel>();
             foreach (var seatName in seatNamesArr)
             {
                 var seat = _seatService.GetSeatByName(seatName);
+                if (seat == null)
+                {
+                    // Nếu không tìm thấy seat, bỏ qua và tiếp tục
+                    continue;
+                }
                 SeatType seatType = null;
-                if (seat != null && seat.SeatTypeId.HasValue)
+                if (seat.SeatTypeId.HasValue)
                 {
                     seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                 }

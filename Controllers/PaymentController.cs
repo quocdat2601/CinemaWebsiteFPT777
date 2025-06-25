@@ -60,6 +60,7 @@ namespace MovieTheater.Controllers
         public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
         {
             var context = new MovieTheater.Models.MovieTheaterContext();
+            int? movieShowId = null; // Khai báo duy nhất ở đây
             var invoice = context.Invoices
                 .Include(i => i.ScheduleSeats)
                 .ThenInclude(ss => ss.MovieShow)
@@ -88,12 +89,53 @@ namespace MovieTheater.Controllers
                     context.Invoices.Update(invoice);
                     context.SaveChanges();
                 }
+                // --- BẮT ĐẦU: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
+                if (invoice != null && !string.IsNullOrEmpty(invoice.Seat))
+                {
+                    // Gán giá trị, không khai báo lại biến movieShowId
+                    if (TempData["MovieShowId"] != null)
+                        movieShowId = Convert.ToInt32(TempData["MovieShowId"]);
+
+                    var seatNames = invoice.Seat.Split(',');
+                    foreach (var seatName in seatNames)
+                    {
+                        var seat = context.Seats.FirstOrDefault(s => s.SeatName == seatName);
+                        if (seat != null && movieShowId.HasValue)
+                        {
+                            var exist = context.ScheduleSeats.FirstOrDefault(ss => ss.MovieShowId == movieShowId && ss.SeatId == seat.SeatId && ss.InvoiceId == invoice.InvoiceId);
+                            if (exist == null)
+                            {
+                                var scheduleSeat = new Models.ScheduleSeat
+                                {
+                                    MovieShowId = movieShowId.Value,
+                                    InvoiceId = invoice.InvoiceId,
+                                    SeatId = seat.SeatId,
+                                    SeatStatusId = 2 // Booked
+                                };
+                                context.ScheduleSeats.Add(scheduleSeat);
+                            }
+                        }
+                    }
+                    context.SaveChanges();
+                }
+                // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieName ?? "";
                 TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
                 TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
                 TempData["Seats"] = invoice?.Seat ?? "N/A";
-                TempData["CinemaRoomName"] = invoice?.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName ?? "N/A";
+                // Lấy CinemaRoomName trực tiếp từ MovieShowId (TempData)
+                if (movieShowId.HasValue)
+                {
+                    var movieShow = context.MovieShows
+                        .Include(ms => ms.CinemaRoom)
+                        .FirstOrDefault(ms => ms.MovieShowId == movieShowId.Value);
+                    TempData["CinemaRoomName"] = movieShow?.CinemaRoom?.CinemaRoomName ?? "N/A";
+                }
+                else
+                {
+                    TempData["CinemaRoomName"] = "N/A";
+                }
                 TempData["BookingTime"] = invoice?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
                 TempData["OriginalPrice"] = (int.Parse(model.vnp_Amount) / 100).ToString();
                 TempData["UsedScore"] = invoice?.UseScore ?? 0;

@@ -100,6 +100,10 @@ namespace MovieTheater.Controllers
             if (cinemaRoom == null)
                 return NotFound();
 
+            var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(cinemaRoom.CinemaRoomId);
+            var bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2).Select(s => s.SeatId).ToList();
+            ViewBag.BookedSeats = bookedSeats;
+
             var viewModel = new SeatSelectionViewModel
             {
                 CinemaRoomId = cinemaId,
@@ -131,6 +135,10 @@ namespace MovieTheater.Controllers
             var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
             var seatTypes = _seatTypeService.GetAll().ToList();
             ViewBag.MovieId = movieId;
+
+            var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(cinemaRoom.CinemaRoomId);
+            var bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2).Select(s => s.SeatId).ToList();
+            ViewBag.BookedSeats = bookedSeats;
 
             var viewModel = new SeatSelectionViewModel
             {
@@ -188,15 +196,17 @@ namespace MovieTheater.Controllers
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaRoom.CinemaRoomId);
             var seatTypes = _seatTypeService.GetAll().ToList();
 
-            // Get booked seats for this movie show
-            var bookedSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(movieShow.MovieShowId);
-            ViewBag.BookedSeats = bookedSeats.Select(s => s.SeatId).ToList();
+            // Get booked seats for this movie show (SeatStatusId == 2)
+            var bookedScheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(movieShow.MovieShowId);
+            var bookedSeats = bookedScheduleSeats.Where(s => s.SeatStatusId == 2).Select(s => s.SeatId).ToList();
+            ViewBag.BookedSeats = bookedSeats;
             ViewBag.MovieShow = movieShow;
 
             var viewModel = new SeatSelectionViewModel
             {
                 MovieId = movieId,
                 MovieName = movie.MovieNameEnglish,
+                MovieShowId = movieShow.MovieShowId,
                 ShowDate = parsedDate,
                 ShowTime = time,
                 CinemaRoomId = cinemaRoom.CinemaRoomId,
