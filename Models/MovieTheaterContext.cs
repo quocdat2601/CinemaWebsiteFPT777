@@ -273,6 +273,10 @@ public partial class MovieTheaterContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Account_ID");
+            entity.Property(e => e.Score).HasColumnName("Score");
+            entity.Property(e => e.TotalPoints)
+                .HasColumnName("Total_Points")
+                .HasDefaultValue(0);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Members)
                 .HasForeignKey(d => d.AccountId)

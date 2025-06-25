@@ -7,6 +7,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace MovieTheater.Service
 {
@@ -193,20 +194,24 @@ namespace MovieTheater.Service
             if (account == null)
                 return null;
 
-            // --- AUTO-UPGRADE RANK LOGIC ---
-            // Get the user's current score
-            var userScore = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0;
-            // Get all ranks ordered by required points
+            // --- AUTO-UPGRADE RANK LOGIC WITH GLOBAL TOAST ---
+            var userTotalPoints = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.TotalPoints ?? 0;
             using (var context = new MovieTheaterContext())
             {
                 var allRanks = context.Ranks.OrderBy(r => r.RequiredPoints).ToList();
-                // Find the highest rank the user qualifies for
-                var newRank = allRanks.LastOrDefault(r => r.RequiredPoints <= userScore);
+                var prevRank = allRanks.FirstOrDefault(r => r.RankId == account.RankId);
+                var newRank = allRanks.LastOrDefault(r => r.RequiredPoints <= userTotalPoints);
                 if (newRank != null && account.RankId != newRank.RankId)
                 {
                     account.RankId = newRank.RankId;
                     _repository.Update(account);
                     _repository.Save();
+                    // Set Session as fallback for rank up toast
+                    var httpContext = _httpContextAccessor.HttpContext;
+                    if (httpContext != null)
+                    {
+                        httpContext.Session?.SetString("RankUpToastMessage", $"Congratulations! You've been upgraded to {newRank.RankName} rank.");
+                    }
                 }
             }
             // --- END AUTO-UPGRADE RANK LOGIC ---

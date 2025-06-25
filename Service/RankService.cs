@@ -3,6 +3,8 @@ using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Service
 {
@@ -10,11 +12,15 @@ namespace MovieTheater.Service
     {
         private readonly IAccountRepository _accountRepository;
         private readonly MovieTheaterContext _context;
+        private readonly IMemberRepository _memberRepository;
+        private readonly IRankRepository _rankRepository;
 
-        public RankService(IAccountRepository accountRepository, MovieTheaterContext context)
+        public RankService(IAccountRepository accountRepository, MovieTheaterContext context, IMemberRepository memberRepository, IRankRepository rankRepository)
         {
             _accountRepository = accountRepository;
             _context = context;
+            _memberRepository = memberRepository;
+            _rankRepository = rankRepository;
         }
 
         public List<RankInfoViewModel> GetAllRanks()
@@ -32,51 +38,78 @@ namespace MovieTheater.Service
                 }).ToList();
         }
 
+        // Satisfy the interface with a sync wrapper
         public RankInfoViewModel GetRankInfoForUser(string accountId)
         {
-            var account = _accountRepository.GetById(accountId);
-            if (account == null || !account.RankId.HasValue) return null;
+            return GetRankInfoForUserAsync(accountId).GetAwaiter().GetResult();
+        }
 
-            var currentScore = account.Members.FirstOrDefault()?.Score ?? 0;
-            var allRanks = _context.Ranks.OrderBy(r => r.RequiredPoints).ToList();
-            var currentRank = allRanks.FirstOrDefault(r => r.RankId == account.RankId.Value);
+        public async Task<RankInfoViewModel> GetRankInfoForUserAsync(string accountId)
+        {
+            var user = _accountRepository.GetById(accountId);
+            if (user == null) return null;
+
+            var member = _memberRepository.GetByAccountId(user.AccountId);
+            if (member == null || user.RankId == null) return null;
+
+            var allRanks = await _rankRepository.GetAllRanksAsync();
+            var currentRank = allRanks.FirstOrDefault(r => r.RankId == user.RankId);
             if (currentRank == null) return null;
 
-            var nextRank = allRanks.FirstOrDefault(r => r.RequiredPoints > currentRank.RequiredPoints);
+            var requiredPointsForCurrentRank = currentRank.RequiredPoints ?? 0;
+            var nextRank = allRanks.FirstOrDefault(r => (r.RequiredPoints ?? 0) > requiredPointsForCurrentRank);
 
-            var pointsForCurrentRank = currentRank.RequiredPoints ?? 0;
-            var pointsForNextRank = nextRank?.RequiredPoints ?? pointsForCurrentRank;
-            var totalPointsNeededForNextRank = pointsForNextRank - pointsForCurrentRank;
-            var pointsProgressed = currentScore - pointsForCurrentRank;
+            var currentScore = member.Score ?? 0;
+            var totalPoints = member.TotalPoints;
+            var requiredForCurrent = currentRank.RequiredPoints ?? 0;
+            var requiredForNext = nextRank?.RequiredPoints;
 
-            double progressPercentage = 0;
-            if (totalPointsNeededForNextRank > 0)
+            var pointsToNextRank = requiredForNext.HasValue ? requiredForNext.Value - totalPoints : 0;
+            
+            double progressToNextRank = 0.0;
+            if (requiredForNext.HasValue)
             {
-                progressPercentage = ((double)pointsProgressed / totalPointsNeededForNextRank) * 100;
+                var pointsInThisRank = requiredForNext.Value - requiredForCurrent;
+                if (pointsInThisRank > 0)
+                {
+                    var progressInRank = totalPoints - requiredForCurrent;
+                    progressToNextRank = (double)progressInRank * 100 / pointsInThisRank;
+                }
             }
-            else if (currentScore >= pointsForCurrentRank)
+            else
             {
-                progressPercentage = 100;
+                progressToNextRank = 100; // Max rank
             }
 
-            return new RankInfoViewModel
+            var rankModel = new RankInfoViewModel
             {
                 CurrentRankId = currentRank.RankId,
                 CurrentRankName = currentRank.RankName,
-                CurrentDiscountPercentage = currentRank.DiscountPercentage ?? 0,
-                CurrentPointEarningPercentage = currentRank.PointEarningPercentage ?? 0,
+                CurrentDiscountPercentage = currentRank.DiscountPercentage ?? 0m,
+                CurrentPointEarningPercentage = currentRank.PointEarningPercentage ?? 0m,
                 CurrentScore = currentScore,
-                RequiredPointsForCurrentRank = pointsForCurrentRank,
-                RequiredPointsForNextRank = pointsForNextRank,
-                PointsToNextRank = nextRank != null ? pointsForNextRank - currentScore : 0,
-                ProgressToNextRank = progressPercentage,
+                TotalPoints = totalPoints,
+                RequiredPointsForCurrentRank = requiredForCurrent,
+                RequiredPointsForNextRank = requiredForNext ?? requiredForCurrent,
+                PointsToNextRank = pointsToNextRank > 0 ? pointsToNextRank : 0,
+                ProgressToNextRank = Math.Max(0, Math.Min(100, progressToNextRank)),
                 HasNextRank = nextRank != null,
                 NextRankName = nextRank?.RankName,
-                NextRankDiscountPercentage = nextRank?.DiscountPercentage ?? 0,
-                NextRankPointEarningPercentage = nextRank?.PointEarningPercentage ?? 0,
-                ColorGradient = currentRank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)",
-                IconClass = currentRank.IconClass ?? "fa-crown"
+                NextRankDiscountPercentage = nextRank?.DiscountPercentage ?? 0m,
+                NextRankPointEarningPercentage = nextRank?.PointEarningPercentage ?? 0m,
+                AllRanks = allRanks.Select(r => new RankDisplayInfo
+                {
+                    RankId = r.RankId,
+                    RankName = r.RankName,
+                    RequiredPoints = r.RequiredPoints ?? 0,
+                    DiscountPercentage = r.DiscountPercentage ?? 0m,
+                    PointEarningPercentage = r.PointEarningPercentage ?? 0m,
+                    IsCurrentRank = r.RankId == currentRank.RankId,
+                    IsAchieved = totalPoints >= (r.RequiredPoints ?? 0)
+                }).ToList()
             };
+
+            return rankModel;
         }
     }
 }

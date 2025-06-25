@@ -11,6 +11,7 @@ namespace MovieTheater.ViewModels
         public decimal CurrentPointEarningPercentage { get; set; }
         
         public int CurrentScore { get; set; }
+        public int TotalPoints { get; set; } // total lifetime points, not reset on redemption
         public int RequiredPointsForCurrentRank { get; set; }
         public int RequiredPointsForNextRank { get; set; }
         public int PointsToNextRank { get; set; }
@@ -23,11 +24,12 @@ namespace MovieTheater.ViewModels
         
         public string ColorGradient { get; set; }
         public string IconClass { get; set; }
-        
+
         // All ranks in system
         public List<RankDisplayInfo> AllRanks { get; set; } = new List<RankDisplayInfo>();
+
     }
-    
+
     public class RankDisplayInfo
     {
         public int RankId { get; set; }

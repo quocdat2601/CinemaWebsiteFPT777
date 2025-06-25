@@ -117,6 +117,14 @@ namespace MovieTheater
 
             builder.Services.AddHttpContextAccessor();
 
+            // Add session support for rank-up notifications and TempData
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             builder.Services.AddControllersWithViews();
 
             var app = builder.Build();
@@ -131,6 +139,7 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseSession(); // Enable session before authentication/authorization
 
             app.UseAuthentication();
             app.UseAuthorization();

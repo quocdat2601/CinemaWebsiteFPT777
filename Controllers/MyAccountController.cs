@@ -34,6 +34,14 @@ namespace MovieTheater.Controllers
             ViewData["ActiveTab"] = tab;
             var user = _service.GetCurrentUser();
 
+            // Show rank up toast if set in Session
+            var rankUpMsg = HttpContext.Session.GetString("RankUpToastMessage");
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                TempData["ToastMessage"] = rankUpMsg;
+                HttpContext.Session.Remove("RankUpToastMessage");
+            }
+
             if (user == null)
             {
                 return RedirectToAction("Login", "Account");
