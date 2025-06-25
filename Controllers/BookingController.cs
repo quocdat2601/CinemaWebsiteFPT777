@@ -178,7 +178,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model)
+        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
             try
             {
@@ -237,6 +237,22 @@ namespace MovieTheater.Controllers
 
                 // Lưu MovieShowId vào TempData để PaymentController sử dụng
                 TempData["MovieShowId"] = movieShow.MovieShowId;
+
+                // Nếu là test success thì bỏ qua thanh toán, chuyển thẳng sang trang Success
+                if (!string.IsNullOrEmpty(IsTestSuccess) && IsTestSuccess == "true")
+                {
+                    TempData["MovieName"] = model.MovieName;
+                    TempData["ShowDate"] = model.ShowDate.ToString();
+                    TempData["ShowTime"] = model.ShowTime;
+                    TempData["Seats"] = seatList;
+                    TempData["CinemaRoomName"] = model.CinemaRoomName;
+                    TempData["InvoiceId"] = invoice.InvoiceId;
+                    TempData["BookingTime"] = invoice.BookingDate.ToString();
+                    TempData["OriginalPrice"] = model.TotalPrice.ToString();
+                    TempData["UsedScore"] = model.UseScore.ToString();
+                    TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
+                    return RedirectToAction("Success");
+                }
 
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
@@ -872,5 +888,7 @@ namespace MovieTheater.Controllers
                 }).ToList();
             return Json(members);
         }
+
+      
     }
 }

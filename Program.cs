@@ -109,6 +109,8 @@ namespace MovieTheater
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            builder.Services.AddScoped<MovieTheater.Repository.IRankRepository, MovieTheater.Repository.RankRepository>();
+            builder.Services.AddScoped<MovieTheater.Service.IRankService, MovieTheater.Service.RankService>();
             builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
             builder.Services.AddScoped<IVoucherService, VoucherService>();
             builder.Services.AddSignalR(); //ADD SignalR
@@ -118,6 +120,14 @@ namespace MovieTheater
                 );
 
             builder.Services.AddHttpContextAccessor();
+
+            // Add session support for rank-up notifications and TempData
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
 
             builder.Services.AddControllersWithViews();
 
@@ -133,6 +143,7 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseSession(); // Enable session before authentication/authorization
 
             app.UseAuthentication();
             app.UseAuthorization();

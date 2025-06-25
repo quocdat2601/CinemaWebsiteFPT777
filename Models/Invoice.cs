@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 
 namespace MovieTheater.Models;
-
+public enum InvoiceStatus
+{
+    Incomplete = 0,
+    Completed = 1
+}
 public partial class Invoice
 {
     public string InvoiceId { get; set; } = null!;
@@ -17,7 +21,7 @@ public partial class Invoice
 
     public string? ScheduleShowTime { get; set; }
 
-    public int? Status { get; set; }
+    public InvoiceStatus? Status { get; set; }
 
     public int? RoleId { get; set; }
 

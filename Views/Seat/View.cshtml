@@ -17,6 +17,10 @@
 }
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
+<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
+
+@await Html.PartialAsync("~/Views/Shared/_ToastMessages.cshtml")
+
 <div class="container mt-4" id="mainContent">
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>

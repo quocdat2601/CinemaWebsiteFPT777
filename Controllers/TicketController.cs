@@ -5,16 +5,19 @@ using Microsoft.EntityFrameworkCore;
 using MovieTheater.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using MovieTheater.Service;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
     public class TicketController : Controller
     {
         private readonly MovieTheaterContext _context;
+        private readonly IAccountService _accountService;
 
-        public TicketController(MovieTheaterContext context)
+        public TicketController(MovieTheaterContext context, IAccountService accountService)
         {
             _context = context;
+            _accountService = accountService;
         }
         [HttpGet]
         public IActionResult History()
@@ -117,7 +120,7 @@ namespace MovieTheater.Controllers
 
         // AC-04: Cancel ticket
         [HttpPost]
-        public IActionResult Cancel(string id, string returnUrl, [FromServices] Service.IVoucherService voucherService)
+        public async Task<IActionResult> Cancel(string id, string returnUrl, [FromServices] Service.IVoucherService voucherService)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -152,6 +155,7 @@ namespace MovieTheater.Controllers
 
             // Mark as cancelled
             booking.Status = InvoiceStatus.Incomplete;
+            
             // Update schedule seats: mark as available again
             var scheduleSeatsToUpdate = _context.ScheduleSeats
                 .Where(s => s.InvoiceId == booking.InvoiceId)
@@ -161,7 +165,22 @@ namespace MovieTheater.Controllers
             {
                 seat.SeatStatusId = 1; // Available
             }
+            
+            // Handle score operations
+            if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
+            {
+                // Trả lại điểm đã cộng khi đặt vé
+                await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value);
+            }
+            
+            if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
+            {
+                // Trả lại điểm đã sử dụng khi đặt vé
+                await _accountService.AddScoreAsync(accountId, booking.UseScore.Value);
+            }
+            
             _context.SaveChanges();
+            
             // Create voucher with code 'REFUND'
             var voucher = new Voucher
             {
@@ -206,7 +225,7 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult CancelByAdmin(string id, string returnUrl, [FromServices] IVoucherService voucherService)
+        public async Task<IActionResult> CancelByAdmin(string id, string returnUrl, [FromServices] IVoucherService voucherService)
         {
             var booking = _context.Invoices.FirstOrDefault(i => i.InvoiceId == id);
             if (booking == null)
@@ -233,6 +252,19 @@ namespace MovieTheater.Controllers
             foreach (var seat in scheduleSeatsToUpdate)
             {
                 seat.SeatStatusId = 1; // Trạng thái "available"
+            }
+
+            // ✅ Xử lý điểm
+            if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
+            {
+                // Trả lại điểm đã cộng khi đặt vé
+                await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value);
+            }
+            
+            if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
+            {
+                // Trả lại điểm đã sử dụng khi đặt vé
+                await _accountService.AddScoreAsync(booking.AccountId, booking.UseScore.Value);
             }
 
             _context.SaveChanges(); // Lưu lại trước khi tạo voucher
