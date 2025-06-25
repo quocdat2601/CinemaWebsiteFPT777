@@ -495,34 +495,35 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<ScheduleSeat>(entity =>
         {
-            entity.HasKey(e => new { e.MovieShowId, e.SeatId }).HasName("PK__Schedule__0EA436DBD214E0BE");
+            entity.HasKey(e => e.ScheduleSeatId).HasName("PK__Schedule__C3F9AE8521AA330A");
 
             entity.ToTable("Schedule_Seat");
 
-            entity.Property(e => e.MovieShowId).HasColumnName("Movie_Show_ID");
-            entity.Property(e => e.SeatId).HasColumnName("Seat_ID");
+            entity.Property(e => e.ScheduleSeatId).HasColumnName("Schedule_Seat_ID");
             entity.Property(e => e.InvoiceId)
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Invoice_ID");
+            entity.Property(e => e.MovieShowId).HasColumnName("Movie_Show_ID");
+            entity.Property(e => e.SeatId).HasColumnName("Seat_ID");
             entity.Property(e => e.SeatStatusId).HasColumnName("Seat_Status_ID");
 
             entity.HasOne(d => d.Invoice).WithMany(p => p.ScheduleSeats)
                 .HasForeignKey(d => d.InvoiceId)
-                .HasConstraintName("FK__Schedule___Invoi__6A30C649");
+                .HasConstraintName("FK__Schedule___Invoi__45BE5BA9");
 
             entity.HasOne(d => d.MovieShow).WithMany(p => p.ScheduleSeats)
                 .HasForeignKey(d => d.MovieShowId)
-                .HasConstraintName("FK__Schedule___Movie__68487DD7");
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__Schedule___Movie__43D61337");
 
             entity.HasOne(d => d.Seat).WithMany(p => p.ScheduleSeats)
                 .HasForeignKey(d => d.SeatId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Schedule___Seat___693CA210");
+                .HasConstraintName("FK__Schedule___Seat___44CA3770");
 
             entity.HasOne(d => d.SeatStatus).WithMany(p => p.ScheduleSeats)
                 .HasForeignKey(d => d.SeatStatusId)
-                .HasConstraintName("FK__Schedule___Seat___6B24EA82");
+                .HasConstraintName("FK__Schedule___Seat___46B27FE2");
         });
 
         modelBuilder.Entity<Seat>(entity =>
@@ -625,8 +626,6 @@ public partial class MovieTheaterContext : DbContext
             entity.HasKey(e => e.VoucherId).HasName("PK__Voucher__D753929C7D8AB407");
 
             entity.ToTable("Voucher");
-
-            entity.HasIndex(e => e.Code, "UQ__Voucher__A25C5AA7FDAEDEE2").IsUnique();
 
             entity.Property(e => e.VoucherId)
                 .HasMaxLength(10)

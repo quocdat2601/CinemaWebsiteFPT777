@@ -100,8 +100,15 @@ namespace MovieTheater.Controllers
             if (cinemaRoom == null)
                 return NotFound();
 
-            var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(cinemaRoom.CinemaRoomId);
-            var bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2).Select(s => s.SeatId).ToList();
+            // Lấy tất cả movie show của phòng này, lấy movieShowId mới nhất
+            var movieShows = _movieService.GetMovieShow().Where(ms => ms.CinemaRoomId == cinemaRoom.CinemaRoomId).ToList();
+            var latestMovieShow = movieShows.OrderByDescending(ms => ms.MovieShowId).FirstOrDefault();
+            List<int> bookedSeats = new List<int>();
+            if (latestMovieShow != null)
+            {
+                var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(latestMovieShow.MovieShowId);
+                bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
+            }
             ViewBag.BookedSeats = bookedSeats;
 
             var viewModel = new SeatSelectionViewModel
@@ -136,8 +143,15 @@ namespace MovieTheater.Controllers
             var seatTypes = _seatTypeService.GetAll().ToList();
             ViewBag.MovieId = movieId;
 
-            var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(cinemaRoom.CinemaRoomId);
-            var bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2).Select(s => s.SeatId).ToList();
+            // Lấy movie show mới nhất cho phòng này
+            var movieShows = _movieService.GetMovieShow().Where(ms => ms.CinemaRoomId == cinemaRoom.CinemaRoomId).ToList();
+            var latestMovieShow = movieShows.OrderByDescending(ms => ms.MovieShowId).FirstOrDefault();
+            List<int> bookedSeats = new List<int>();
+            if (latestMovieShow != null)
+            {
+                var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(latestMovieShow.MovieShowId);
+                bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
+            }
             ViewBag.BookedSeats = bookedSeats;
 
             var viewModel = new SeatSelectionViewModel
@@ -198,7 +212,11 @@ namespace MovieTheater.Controllers
 
             // Get booked seats for this movie show (SeatStatusId == 2)
             var bookedScheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(movieShow.MovieShowId);
-            var bookedSeats = bookedScheduleSeats.Where(s => s.SeatStatusId == 2).Select(s => s.SeatId).ToList();
+            var bookedSeats = bookedScheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
+            
+            // Log để debug
+            _logger.LogInformation($"MovieShowId: {movieShow.MovieShowId}, Total ScheduleSeats: {bookedScheduleSeats.Count()}, Booked Seats: {string.Join(", ", bookedSeats)}");
+            
             ViewBag.BookedSeats = bookedSeats;
             ViewBag.MovieShow = movieShow;
 
