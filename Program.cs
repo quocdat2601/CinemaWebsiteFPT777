@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -108,6 +109,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            builder.Services.AddSignalR(); //ADD SignalR
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
@@ -154,6 +156,9 @@ namespace MovieTheater
                 name: "seat",
                 pattern: "Seat/{action}/{id?}",
                 defaults: new { controller = "Seat", action = "Select" });
+
+            app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
+            app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
 
             app.Run();
         }
