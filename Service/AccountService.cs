@@ -376,6 +376,19 @@ namespace MovieTheater.Service
         {
             await _repository.DeductScoreAsync(userId, points);
         }
+
+        public async Task AddScoreAsync(string userId, int points)
+        {
+            var account = _repository.GetById(userId);
+            if (account == null) return;
+            var member = account.Members.FirstOrDefault();
+            if (member != null)
+            {
+                member.Score += points;
+                _memberRepository.Update(member);
+                _memberRepository.Save();
+            }
+        }
     }
 }
 

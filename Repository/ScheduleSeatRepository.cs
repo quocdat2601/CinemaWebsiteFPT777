@@ -48,9 +48,17 @@ namespace MovieTheater.Repository
 
         public async Task<IEnumerable<ScheduleSeat>> GetScheduleSeatsByMovieShowAsync(int movieShowId)
         {
-            return await _context.ScheduleSeats
+            var scheduleSeats = await _context.ScheduleSeats
                 .Where(s => s.MovieShowId == movieShowId)
                 .ToListAsync();
+
+            // Lấy bản ghi ScheduleSeatId lớn nhất cho mỗi SeatId
+            var latestSeats = scheduleSeats
+                .GroupBy(s => s.SeatId)
+                .Select(g => g.OrderByDescending(s => s.ScheduleSeatId).First())
+                .ToList();
+
+            return latestSeats;
         }
 
         public async Task<bool> UpdateSeatStatusAsync(int movieShowId, int seatId, int statusId)

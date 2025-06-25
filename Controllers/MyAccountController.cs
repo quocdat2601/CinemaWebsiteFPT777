@@ -12,16 +12,20 @@ namespace MovieTheater.Controllers
     {
         private readonly IAccountService _service;
         private readonly ILogger<MyAccountController> _logger;
+        private readonly IJwtService _jwtService;
+        private readonly IVoucherService _voucherService;
+        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
         private readonly IRankService _rankService;
 
-        public MyAccountController(
-            IAccountService service,
-            ILogger<MyAccountController> logger,
+        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService, 
+            IVoucherService voucherService,
             IRankService rankService)
         {
             _service = service;
             _logger = logger;
             _rankService = rankService;
+            _jwtService = jwtService;
+            _voucherService = voucherService;
         }
 
         /// <summary>
@@ -92,7 +96,11 @@ namespace MovieTheater.Controllers
                 case "Score":
                     return PartialView("~/Views/Account/Tabs/Score.cshtml");
                 case "Voucher":
-                    return PartialView("~/Views/Account/Tabs/Voucher.cshtml");
+                    if (user == null)
+                        return NotFound();
+                    var allVouchers = _voucherService.GetAll();
+                    var userVouchers = allVouchers.Where(v => v.AccountId == user.AccountId).ToList();
+                    return PartialView("~/Views/Account/Tabs/Voucher.cshtml", userVouchers);
                 case "History":
                     return PartialView("~/Views/Account/Tabs/History.cshtml");
                 default:

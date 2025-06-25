@@ -1,100 +1,227 @@
-@model MovieTheater.Models.Invoice
+﻿@model MovieTheater.Models.Invoice
+@using System.Linq;
 @{
-    ViewData["Title"] = "Ticket Details";
+    ViewData["Title"] = "Ticket Information";
+    var invoice = Model;
+    var movieName = invoice.MovieName;
+    var screen = invoice.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName;
+    var showDate = invoice.ScheduleShow?.ToString("dd/MM/yyyy");
+    var showTime = invoice.ScheduleShowTime;
+    var ticketId = invoice.InvoiceId;
+    var totalPrice = invoice.TotalMoney?.ToString("N0");
+    var seatString = invoice.Seat;
+    var addScore = invoice.AddScore;
+    var useScore = invoice.UseScore;
+    var bookingDate = invoice.BookingDate?.ToString("dd/MM/yyyy HH:mm");
+    var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel>;
 }
+<style>
+    .ticket-success-header {
+        background: #e3fcec;
+        border-radius: 12px 12px 0 0;
+        padding: 32px 0 16px 0;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .ticket-success-header h2 {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .ticket-success-header .sub {
+        color: #555;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+    .ticket-info-label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 0.1rem;
+        font-size: 0.98rem;
+        margin-right: 0.5rem;
+    }
+    .ticket-info-value {
+        background: #f8f9fa;
+        border: none;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 0;
+        padding: 0.2rem 0.5rem;
+        font-size: 1rem;
+        color: #222;
+        opacity: 1;
+        cursor: not-allowed;
+        box-shadow: none;
+        min-width: 80px;
+        margin-right: 1.5rem;
+        margin-bottom: 0.2rem;
+    }
+    .ticket-card {
+        max-width: 700px;
+        margin: 0 auto;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .btn-ticket-back {
+        background: #007bff;
+        color: #fff;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 0.6rem 2.2rem;
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+    }
+    .btn-ticket-back:hover {
+        background: #0056b3;
+        color: #fff;
+    }
+    .ticket-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 0.3rem;
+    }
+    .ticket-row .ticket-info-label {
+        min-width: 90px;
+    }
+    .ticket-row .ticket-info-value {
+        flex: 1 1 120px;
+        min-width: 80px;
+        margin-right: 2rem;
+    }
+    .ticket-section-title {
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    .ticket-total-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .ticket-total-label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    .ticket-total-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #007bff;
+    }
 
+    .status-badge {
+        display: inline-block;
+        padding: 0.35em 1.2em;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 1.2em;
+        color: #fff;
+        margin-left: 1rem;
+    }
+
+    .status-completed {
+        background-color: #28a745;
+    }
+
+    .status-cancelled {
+        background-color: #dc3545;
+    }
+</style>
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Ticket Details</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Movie:</div>
-                        <div class="col-md-8">@Model.MovieName</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Show Date:</div>
-                        <div class="col-md-8">@Model.ScheduleShow?.ToString("dd/MM/yyyy")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Show Time:</div>
-                        <div class="col-md-8">@Model.ScheduleShowTime</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Screen:</div>
-                        <div class="col-md-8">@Model.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Seats:</div>
-                        <div class="col-md-8">@Model.Seat</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Booking Date:</div>
-                        <div class="col-md-8">@Model.BookingDate?.ToString("dd/MM/yyyy HH:mm")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Total Amount:</div>
-                        <div class="col-md-8">@Model.TotalMoney?.ToString("N0") VND</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 fw-bold">Status:</div>
-                        <div class="col-md-8">
-                            @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed)
-                            {
-                                <span class="badge bg-success">Completed</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger">Cancelled</span>
-                            }
-                        </div>
-                    </div>
-                    @if (Model.AddScore > 0)
+    <div class="ticket-card card shadow p-0">
+        <div class="ticket-success-header d-flex justify-content-between align-items-center px-4">
+            <div class="ticket-title-left">
+                <h2 class="mb-0" style="text-align:left;">Ticket Information</h2>
+            </div>
+            <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "status-completed" : "status-cancelled")">
+                @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled")
+            </span>
+        </div>
+        <div class="p-4">
+            <div class="ticket-section-title">Movie & Show Info</div>
+            <div class="ticket-row">
+                <label class="ticket-info-label">Movie Name</label>
+                <input type="text" class="ticket-info-value" value="@movieName" readonly />
+                <label class="ticket-info-label">Screen</label>
+                <input type="text" class="ticket-info-value" value="@screen" readonly />
+            </div>
+            <div class="ticket-row">
+                <label class="ticket-info-label">Date</label>
+                <input type="text" class="ticket-info-value" value="@showDate" readonly />
+                <label class="ticket-info-label">Time</label>
+                <input type="text" class="ticket-info-value" value="@showTime" readonly />
+            </div>
+            <div class="ticket-row">
+                <label class="ticket-info-label">Ticket ID</label>
+                <input type="text" class="ticket-info-value" value="@ticketId" readonly />
+            </div>
+            <div class="ticket-section-title">Seat(s)</div>
+            <table class="table table-bordered mb-2">
+                <thead>
+                    <tr>
+                        <th>Seat</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (seatDetails != null && seatDetails.Any())
                     {
-                        <div class="row mb-3">
-                            <div class="col-md-4 fw-bold">Points Earned:</div>
-                            <div class="col-md-8">@Model.AddScore points</div>
-                        </div>
-                    }
-                    @if (Model.UseScore > 0)
-                    {
-                        <div class="row mb-3">
-                            <div class="col-md-4 fw-bold">Points Used:</div>
-                            <div class="col-md-8">@Model.UseScore points</div>
-                        </div>
-                    }
-                </div>
-                <div class="card-footer">
-                    <div class="d-flex justify-content-between">
-                        <a href="/MyAccount/MainPage?tab=History" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to History
-                        </a>
-                        @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed && Model.ScheduleShow.HasValue && 
-                             Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
+                        foreach (var seat in seatDetails)
                         {
-                            <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId" 
-                                  method="post" class="d-inline" 
-                                  onsubmit="return confirm('Are you sure you want to cancel this ticket?');">
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-times"></i> Cancel Ticket
-                                </button>
-                            </form>
+                            <tr>
+                                <td>@seat.SeatName</td>
+                                <td>@seat.SeatType</td>
+                                <td>@(seat.Price > 0 ? seat.Price.ToString("N0") + " VND" : "")</td>
+                            </tr>
                         }
-                    </div>
+                    }
+                    else if (!string.IsNullOrEmpty(seatString))
+                    {
+                        <tr>
+                            <td colspan="3">@seatString</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if ((useScore ?? 0) > 0)
+            {
+                <div class="ticket-row">
+                    <label class="ticket-info-label">Score Used</label>
+                    <input type="text" class="ticket-info-value" value="@useScore" readonly />
                 </div>
+            }
+            @if ((addScore ?? 0) > 0)
+            {
+                <div class="ticket-row">
+                    <label class="ticket-info-label">Points Earned</label>
+                    <input type="text" class="ticket-info-value" value="@addScore" readonly />
+                </div>
+            }
+            <div class="ticket-total-row">
+                <span class="ticket-total-label">Total Price</span>
+                <span class="ticket-total-value">@totalPrice VND</span>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/MyAccount/MainPage?tab=History" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
+                    <i class="fas fa-arrow-left me-1"></i> Back to History
+                </a>
+                @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed
+                    && Model.ScheduleShow.HasValue
+                    /* && Model.ScheduleShow.Value > DateTime.Now
+                    && Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now */)
+                {
+                    <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId"
+                          method="post" class="d-inline"
+                          onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button type="submit" class="btn btn-outline-danger fw-bold px-4" style="min-width: 180px;">
+                            <i class="fas fa-times me-1"></i> Cancel Ticket
+                        </button>
+                    </form>
+                }
             </div>
         </div>
     </div>
 </div>
-
-@section Styles {
-    <style>
-        .badge {
-            font-size: 0.9em;
-            padding: 0.5em 0.8em;
-        }
-    </style>
-} 

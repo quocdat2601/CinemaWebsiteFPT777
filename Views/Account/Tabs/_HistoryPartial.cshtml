@@ -37,15 +37,15 @@
                         </td>
                         <td>
                             <div class="btn-group">
-                                <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId" 
+                                <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId"
                                    class="btn btn-sm btn-info">
                                     <i class="fas fa-info-circle"></i> Details
                                 </a>
-                                @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed && booking.ScheduleShow.HasValue && 
-                                     booking.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
+                                @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed && booking.ScheduleShow.HasValue &&
+                               booking.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
                                 {
-                                    <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId" 
-                                          method="post" class="d-inline" 
+                                    <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId"
+                                          method="post" class="d-inline"
                                           onsubmit="return confirm('Are you sure you want to cancel this ticket?');">
                                         <button type="submit" class="btn btn-sm btn-danger">
                                             <i class="fas fa-times"></i> Cancel

@@ -271,23 +271,16 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Success(
-            string MovieName, string ShowDate, string ShowTime, string Seats,
-            string CinemaRoomName, string InvoiceId, string BookingTime,
-            decimal? OriginalPrice, int? UsedScore, decimal? FinalPrice)
+        public async Task<IActionResult> Success()
         {
-            if (!string.IsNullOrEmpty(MovieName))
+            var invoiceId = TempData["InvoiceId"] as string;
+            if (!string.IsNullOrEmpty(invoiceId))
             {
-                TempData["MovieName"] = MovieName;
-                TempData["ShowDate"] = ShowDate;
-                TempData["ShowTime"] = ShowTime;
-                TempData["Seats"] = Seats;
-                TempData["CinemaRoomName"] = CinemaRoomName;
-                TempData["InvoiceId"] = InvoiceId;
-                TempData["BookingTime"] = BookingTime;
-                TempData["OriginalPrice"] = OriginalPrice ?? 0;
-                TempData["UsedScore"] = UsedScore ?? 0;
-                TempData["FinalPrice"] = FinalPrice ?? 0;
+                var invoice = _invoiceService.GetById(invoiceId);
+                if (invoice != null && invoice.Status == InvoiceStatus.Completed && invoice.AddScore.HasValue && invoice.AddScore.Value > 0)
+                {
+                    await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
+                }
             }
             return View();
         }
@@ -616,13 +609,21 @@ namespace MovieTheater.Controllers
                 return NotFound("Cinema room not found for this movie show.");
             }
             // Prepare seat details
-            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
             var seats = new List<SeatDetailViewModel>();
             foreach (var seatName in seatNamesArr)
             {
                 var seat = _seatService.GetSeatByName(seatName);
+                if (seat == null)
+                {
+                    // Nếu không tìm thấy seat, bỏ qua và tiếp tục
+                    continue;
+                }
                 SeatType seatType = null;
-                if (seat != null && seat.SeatTypeId.HasValue)
+                if (seat.SeatTypeId.HasValue)
                 {
                     seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                 }
@@ -666,7 +667,8 @@ namespace MovieTheater.Controllers
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
-                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null
+                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null,
+                Status = InvoiceStatus.Completed
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
@@ -785,13 +787,21 @@ namespace MovieTheater.Controllers
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
             // Prepare seat details
-            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
             var seats = new List<SeatDetailViewModel>();
             foreach (var seatName in seatNamesArr)
             {
                 var seat = _seatService.GetSeatByName(seatName);
+                if (seat == null)
+                {
+                    // Nếu không tìm thấy seat, bỏ qua và tiếp tục
+                    continue;
+                }
                 SeatType seatType = null;
-                if (seat != null && seat.SeatTypeId.HasValue)
+                if (seat.SeatTypeId.HasValue)
                 {
                     seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                 }
@@ -841,7 +851,8 @@ namespace MovieTheater.Controllers
                 Email = member?.Account?.Email,
                 IdentityCard = member?.Account?.IdentityCard,
                 PhoneNumber = member?.Account?.PhoneNumber,
-                CurrentScore = member?.Score ?? 0
+                CurrentScore = member?.Score ?? 0,
+                Status = (InvoiceStatus)invoice.Status
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });

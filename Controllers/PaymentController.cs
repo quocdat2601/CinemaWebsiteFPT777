@@ -69,17 +69,21 @@ namespace MovieTheater.Controllers
             if (model.vnp_ResponseCode == "00")
             {
                 // Thanh toán thành công
-                if (invoice != null && invoice.AddScore == 0)
+                if (invoice != null)
                 {
-                    int addScore = (int)((invoice.TotalMoney ?? 0) * 0.01m);
-                    invoice.AddScore = addScore;
-                    var member = context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
-                    if (member != null)
+                    invoice.Status = MovieTheater.Models.InvoiceStatus.Completed;
+                    if (invoice.AddScore == 0)
                     {
-                        member.Score += addScore;
-                        if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                        int addScore = (int)((invoice.TotalMoney ?? 0) * 0.01m);
+                        invoice.AddScore = addScore;
+                        var member = context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                        if (member != null)
                         {
-                            member.Score -= invoice.UseScore.Value;
+                            member.Score += addScore;
+                            if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                            {
+                                member.Score -= invoice.UseScore.Value;
+                            }
                         }
                     }
                     context.Invoices.Update(invoice);
@@ -140,6 +144,12 @@ namespace MovieTheater.Controllers
             }
             else
             {
+                if (invoice != null)
+                {
+                    invoice.Status = MovieTheater.Models.InvoiceStatus.Incomplete;
+                    context.Invoices.Update(invoice);
+                    context.SaveChanges();
+                }
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieName ?? "";
                 TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";

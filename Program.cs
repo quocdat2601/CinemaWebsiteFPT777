@@ -111,6 +111,8 @@ namespace MovieTheater
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
             builder.Services.AddScoped<MovieTheater.Repository.IRankRepository, MovieTheater.Repository.RankRepository>();
             builder.Services.AddScoped<MovieTheater.Service.IRankService, MovieTheater.Service.RankService>();
+            builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
+            builder.Services.AddScoped<IVoucherService, VoucherService>();
             builder.Services.AddSignalR(); //ADD SignalR
 
             builder.Services.Configure<VNPayConfig>(
