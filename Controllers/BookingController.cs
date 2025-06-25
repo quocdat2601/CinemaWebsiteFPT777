@@ -217,15 +217,18 @@ namespace MovieTheater.Controllers
                     return Json(new { success = false, message = "Movie show not found for the specified date and time." });
                 }
 
-                var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
+                if (invoice.Status != InvoiceStatus.Incomplete)
                 {
-                    MovieShowId = movieShow.MovieShowId,
-                    InvoiceId = invoice.InvoiceId,
-                    SeatId = (int)seat.SeatId,
-                    SeatStatusId = 2
-                });
+                    var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
+                    {
+                        MovieShowId = movieShow.MovieShowId,
+                        InvoiceId = invoice.InvoiceId,
+                        SeatId = (int)seat.SeatId,
+                        SeatStatusId = 2
+                    });
 
-                await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
+                    await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
+                }
 
                 if (model.UseScore > 0)
                 {

@@ -115,9 +115,9 @@ namespace MovieTheater.Controllers
 
         // AC-04: Cancel ticket
         [HttpPost]
-        public IActionResult Cancel(string id, string returnUrl, [FromServices] MovieTheater.Service.IVoucherService voucherService)
+        public IActionResult Cancel(string id, string returnUrl, [FromServices] Service.IVoucherService voucherService)
         {
-            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
@@ -132,7 +132,7 @@ namespace MovieTheater.Controllers
             }
 
             // Only allow cancel if paid, not already cancelled
-            if (booking.Status != MovieTheater.Models.InvoiceStatus.Completed)
+            if (booking.Status != InvoiceStatus.Completed)
             {
                 TempData["ErrorMessage"] = "Only paid bookings can be cancelled.";
                 if (!string.IsNullOrEmpty(returnUrl))
@@ -140,7 +140,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction(nameof(Index));
             }
             // (Showtime check is commented out as per your logic)
-            if (booking.Status == MovieTheater.Models.InvoiceStatus.Incomplete)
+            if (booking.Status == InvoiceStatus.Incomplete)
             {
                 TempData["ErrorMessage"] = "This ticket has already been cancelled.";
                 if (!string.IsNullOrEmpty(returnUrl))
@@ -149,11 +149,19 @@ namespace MovieTheater.Controllers
             }
 
             // Mark as cancelled
-            booking.Status = MovieTheater.Models.InvoiceStatus.Incomplete;
-            _context.SaveChanges();
+            booking.Status = InvoiceStatus.Incomplete;
+            // Update schedule seats: mark as available again
+            var scheduleSeatsToUpdate = _context.ScheduleSeats
+                .Where(s => s.InvoiceId == booking.InvoiceId)
+                .ToList();
 
+            foreach (var seat in scheduleSeatsToUpdate)
+            {
+                seat.SeatStatusId = 1; // Available
+            }
+            _context.SaveChanges();
             // Create voucher with code 'REFUND'
-            var voucher = new MovieTheater.Models.Voucher
+            var voucher = new Voucher
             {
                 VoucherId = voucherService.GenerateVoucherId(),
                 AccountId = accountId,
