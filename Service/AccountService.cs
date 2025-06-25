@@ -374,7 +374,17 @@ namespace MovieTheater.Service
 
         public async Task DeductScoreAsync(string userId, int points)
         {
-            await _repository.DeductScoreAsync(userId, points);
+            var account = _repository.GetById(userId);
+            if (account == null) return;
+            var member = account.Members.FirstOrDefault();
+            if (member != null && member.Score >= points)
+            {
+                member.Score -= points;
+                member.TotalPoints -= points; // Deduct from lifetime points as well
+                if (member.TotalPoints < 0) member.TotalPoints = 0; // Prevent negative
+                _memberRepository.Update(member);
+                _memberRepository.Save();
+            }
         }
 
         public async Task AddScoreAsync(string userId, int points)
@@ -385,6 +395,7 @@ namespace MovieTheater.Service
             if (member != null)
             {
                 member.Score += points;
+                member.TotalPoints += points; // Always increment lifetime points
                 _memberRepository.Update(member);
                 _memberRepository.Save();
             }
