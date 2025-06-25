@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace MovieTheater.Service
 {
+    /// Service: Handles rank-related business logic
     public class RankService : IRankService
     {
         private readonly IAccountRepository _accountRepository;
@@ -23,6 +24,9 @@ namespace MovieTheater.Service
             _rankRepository = rankRepository;
         }
 
+        // [HttpGet]
+        // /// Get all rank tiers and their info
+        // /// url: /Rank/GetAllRanks
         public List<RankInfoViewModel> GetAllRanks()
         {
             return _context.Ranks.OrderBy(r => r.RequiredPoints)
@@ -38,12 +42,17 @@ namespace MovieTheater.Service
                 }).ToList();
         }
 
-        // Satisfy the interface with a sync wrapper
+        // [HttpGet]
+        // /// Get rank info for a specific user (sync wrapper)
+        // /// url: /Rank/GetRankInfoForUser
         public RankInfoViewModel GetRankInfoForUser(string accountId)
         {
             return GetRankInfoForUserAsync(accountId).GetAwaiter().GetResult();
         }
 
+        // [HttpGet]
+        // /// Get rank info for a specific user (async)
+        // /// url: /Rank/GetRankInfoForUserAsync
         public async Task<RankInfoViewModel> GetRankInfoForUserAsync(string accountId)
         {
             var user = _accountRepository.GetById(accountId);
