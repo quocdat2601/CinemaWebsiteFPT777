@@ -217,19 +217,6 @@ namespace MovieTheater.Controllers
                     return Json(new { success = false, message = "Movie show not found for the specified date and time." });
                 }
 
-                if (invoice.Status != InvoiceStatus.Incomplete)
-                {
-                    var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
-                    {
-                        MovieShowId = movieShow.MovieShowId,
-                        InvoiceId = invoice.InvoiceId,
-                        SeatId = (int)seat.SeatId,
-                        SeatStatusId = 2
-                    });
-
-                    await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
-                }
-
                 if (model.UseScore > 0)
                 {
                     await _accountService.DeductScoreAsync(userId, model.UseScore);
@@ -244,7 +231,21 @@ namespace MovieTheater.Controllers
                     // Cập nhật status thành Completed cho test success
                     invoice.Status = InvoiceStatus.Completed;
                     await _bookingService.UpdateInvoiceAsync(invoice);
-                    
+
+                    // Tạo ScheduleSeat sau khi đã cập nhật status
+                    if (invoice.Status != InvoiceStatus.Incomplete)
+                    {
+                        var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
+                        {
+                            MovieShowId = movieShow.MovieShowId,
+                            InvoiceId = invoice.InvoiceId,
+                            SeatId = (int)seat.SeatId,
+                            SeatStatusId = 2
+                        });
+
+                        await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
+                    }
+
                     TempData["MovieName"] = model.MovieName;
                     TempData["ShowDate"] = model.ShowDate.ToString();
                     TempData["ShowTime"] = model.ShowTime;
@@ -256,6 +257,20 @@ namespace MovieTheater.Controllers
                     TempData["UsedScore"] = model.UseScore.ToString();
                     TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
                     return RedirectToAction("Success");
+                }
+
+                // Tạo ScheduleSeat cho trường hợp thanh toán bình thường
+                if (invoice.Status != InvoiceStatus.Incomplete)
+                {
+                    var scheduleSeats = model.SelectedSeats.Select(seat => new ScheduleSeat
+                    {
+                        MovieShowId = movieShow.MovieShowId,
+                        InvoiceId = invoice.InvoiceId,
+                        SeatId = (int)seat.SeatId,
+                        SeatStatusId = 2
+                    });
+
+                    await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
                 }
 
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
@@ -541,8 +556,8 @@ namespace MovieTheater.Controllers
                 await _bookingService.SaveInvoiceAsync(invoice);
 
                 var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
-                    .FirstOrDefault(ms => 
-                        ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.BookingDetails.ShowDate) && 
+                    .FirstOrDefault(ms =>
+                        ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.BookingDetails.ShowDate) &&
                         ms.Schedule?.ScheduleTime == model.BookingDetails.ShowTime);
 
                 if (movieShow == null)
@@ -739,8 +754,8 @@ namespace MovieTheater.Controllers
             }
 
             var movieShow = _movieService.GetMovieShows(movie.MovieId)
-                .FirstOrDefault(ms => 
-                    ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(invoice.ScheduleShow ?? DateTime.Now) && 
+                .FirstOrDefault(ms =>
+                    ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(invoice.ScheduleShow ?? DateTime.Now) &&
                     ms.Schedule?.ScheduleTime == invoice.ScheduleShowTime);
 
             if (movieShow == null)
@@ -753,7 +768,7 @@ namespace MovieTheater.Controllers
             {
                 var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
                 var newScheduleSeats = new List<ScheduleSeat>();
-                
+
                 foreach (var seatName in seatNames)
                 {
                     var trimmedSeatName = seatName.Trim();
@@ -883,7 +898,8 @@ namespace MovieTheater.Controllers
                 .Select(m => new {
                     memberId = m.MemberId,
                     score = m.Score,
-                    account = new {
+                    account = new
+                    {
                         fullName = m.Account?.FullName,
                         identityCard = m.Account?.IdentityCard,
                         email = m.Account?.Email,
@@ -893,6 +909,6 @@ namespace MovieTheater.Controllers
             return Json(members);
         }
 
-      
+
     }
 }

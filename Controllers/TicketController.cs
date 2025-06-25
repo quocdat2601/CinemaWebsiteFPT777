@@ -155,7 +155,7 @@ namespace MovieTheater.Controllers
 
             // Mark as cancelled
             booking.Status = InvoiceStatus.Incomplete;
-            
+
             // Update schedule seats: mark as available again
             var scheduleSeatsToUpdate = _context.ScheduleSeats
                 .Where(s => s.InvoiceId == booking.InvoiceId)
@@ -165,22 +165,22 @@ namespace MovieTheater.Controllers
             {
                 seat.SeatStatusId = 1; // Available
             }
-            
+
             // Handle score operations
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
                 // Trả lại điểm đã cộng khi đặt vé
                 await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value);
             }
-            
+
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 // Trả lại điểm đã sử dụng khi đặt vé
                 await _accountService.AddScoreAsync(accountId, booking.UseScore.Value);
             }
-            
+
             _context.SaveChanges();
-            
+
             // Create voucher with code 'REFUND'
             var voucher = new Voucher
             {
@@ -260,7 +260,7 @@ namespace MovieTheater.Controllers
                 // Trả lại điểm đã cộng khi đặt vé
                 await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value);
             }
-            
+
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 // Trả lại điểm đã sử dụng khi đặt vé
@@ -285,7 +285,7 @@ namespace MovieTheater.Controllers
             voucherService.Add(voucher);
 
             TempData["ToastMessage"] = $"Ticket cancelled successfully. Voucher value: {voucher.Value:N0} VND (valid for 30 days).";
-            
+
             // Redirect về TicketInfo thay vì returnUrl
             return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
         }
