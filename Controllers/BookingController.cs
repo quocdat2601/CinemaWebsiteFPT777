@@ -585,61 +585,37 @@ namespace MovieTheater.Controllers
 
                 // Calculate subtotal
                 decimal subtotal = seats.Sum(s => s.Price);
-                // Get member's current points and rank earning rate/discount
-                int memberPoints = member?.Score ?? 0;
-                decimal earningRate = 0;
-                decimal discountPercent = 0;
-                if (member?.Account?.RankId != null)
+                // Calculate rank discount as at booking time
+                decimal rankDiscount = 0;
+                if (member?.Account?.Rank != null)
                 {
-                    var rank = member.Account.Rank;
-                    earningRate = rank?.PointEarningPercentage ?? 0;
-                    discountPercent = rank?.DiscountPercentage ?? 0;
+                    var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
                 }
-                decimal discountAmount = subtotal * (discountPercent / 100m);
-                decimal discountedTotal = subtotal - discountAmount;
-
-                // Validate and calculate point usage on discounted total
-                int requestedPoints = model.UsedScore;
-                decimal pointDiscount = 0;
-                int scoreUsed = 0;
-                if (requestedPoints > 0) {
-                    var pointValidation = _pointService.ValidatePointUsage(requestedPoints, discountedTotal, memberPoints);
-                    if (pointValidation.ValidationErrors.Count > 0)
-                    {
-                        return Json(new { success = false, message = string.Join(" ", pointValidation.ValidationErrors) });
-                    }
-                    pointDiscount = pointValidation.DiscountAmount;
-                    scoreUsed = pointValidation.PointsToUse;
-                }
-
-                // Calculate points to earn (on discounted total after points used)
-                int pointsToEarn = _pointService.CalculatePointsToEarn(discountedTotal - pointDiscount, earningRate);
-
-                // Use TempData if present, otherwise use calculated values
-                subtotal = TempData["Subtotal"] != null ? Convert.ToDecimal(TempData["Subtotal"]) : subtotal;
-                decimal rankDiscount = TempData["RankDiscount"] != null ? Convert.ToDecimal(TempData["RankDiscount"]) : discountAmount;
-                int usedScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : scoreUsed;
-                int usedScoreValue = TempData["UsedScoreValue"] != null ? Convert.ToInt32(TempData["UsedScoreValue"]) : scoreUsed * 1000;
-                int addedScore = TempData["AddedScore"] != null ? Convert.ToInt32(TempData["AddedScore"]) : pointsToEarn;
-                int addedScoreValue = TempData["AddedScoreValue"] != null ? Convert.ToInt32(TempData["AddedScoreValue"]) : pointsToEarn * 1000;
-                decimal totalPrice = TempData["TotalPrice"] != null ? Convert.ToDecimal(TempData["TotalPrice"]) : (discountedTotal - pointDiscount);
-                string memberId = TempData["MemberId"] as string ?? member?.MemberId;
-                string memberEmail = TempData["MemberEmail"] as string ?? member?.Account?.Email;
-                string memberIdentityCard = TempData["MemberIdentityCard"] as string ?? member?.Account?.IdentityCard;
-                string memberPhone = TempData["MemberPhone"] as string ?? member?.Account?.PhoneNumber;
+                // Calculate the max possible points used (cannot exceed price after discount)
+                decimal priceAfterDiscount = subtotal - rankDiscount;
+                int usedScore = model.UsedScore;
+                decimal usedScoreValue = Math.Min(usedScore * 1000, priceAfterDiscount); // Cap at price after discount
+                int addedScore = model.AddedScore;
+                int addedScoreValue = addedScore * 1000;
+                decimal totalPrice = model.TotalPrice;
+                string memberId = member?.MemberId;
+                string memberEmail = member?.Account?.Email;
+                string memberIdentityCard = member?.Account?.IdentityCard;
+                string memberPhone = member?.Account?.PhoneNumber;
 
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = member.Account.AccountId,
-                    AddScore = pointsToEarn,
+                    AddScore = addedScore,
                     BookingDate = DateTime.Now,
                     MovieName = model.BookingDetails.MovieName,
                     ScheduleShow = model.BookingDetails.ShowDate,
                     ScheduleShowTime = model.BookingDetails.ShowTime,
                     Status = InvoiceStatus.Completed,
-                    TotalMoney = discountedTotal - pointDiscount,
-                    UseScore = scoreUsed,
+                    TotalMoney = totalPrice,
+                    UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
                 };
 
@@ -658,14 +634,14 @@ namespace MovieTheater.Controllers
                 _accountService.CheckAndUpgradeRank(member.AccountId);
 
                 // Deduct score if used
-                if (scoreUsed > 0 && member != null)
+                if (usedScore > 0 && member != null)
                 {
-                    await _accountService.DeductScoreAsync(member.Account.AccountId, scoreUsed);
+                    await _accountService.DeductScoreAsync(member.Account.AccountId, usedScore);
                 }
                 // Add points (using new calculation)
-                if (pointsToEarn > 0)
+                if (addedScore > 0)
                 {
-                    await _accountService.AddScoreAsync(invoice.AccountId, pointsToEarn);
+                    await _accountService.AddScoreAsync(invoice.AccountId, addedScore);
                 }
 
                 var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
@@ -811,22 +787,43 @@ namespace MovieTheater.Controllers
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 
+            // Calculate subtotal
+            decimal subtotal = seats.Sum(s => s.Price);
+            // Calculate rank discount as at booking time
+            decimal rankDiscount = 0;
+            if (member?.Account?.Rank != null)
+            {
+                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            }
+            // Calculate the max possible points used (cannot exceed price after discount)
+            decimal priceAfterDiscount = subtotal - rankDiscount;
+            int usedScore = invoice.UseScore ?? 0;
+            decimal usedScoreValue = Math.Min(usedScore * 1000, priceAfterDiscount); // Cap at price after discount
+            int addedScore = invoice.AddScore ?? 0;
+            int addedScoreValue = addedScore * 1000;
+            decimal totalPrice = invoice.TotalMoney ?? 0;
+            string memberId = member?.MemberId;
+            string memberEmail = member?.Account?.Email;
+            string memberIdentityCard = member?.Account?.IdentityCard;
+            string memberPhone = member?.Account?.PhoneNumber;
+
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
                 MemberCheckMessage = "",
                 ReturnUrl = returnUrl,
-                MemberId = member?.MemberId,
-                MemberEmail = member?.Account?.Email,
-                MemberIdentityCard = member?.Account?.IdentityCard,
-                MemberPhone = member?.Account?.PhoneNumber,
-                UsedScore = invoice.UseScore ?? 0,
-                UsedScoreValue = invoice.UseScore ?? 0 * 1000,
-                AddedScore = bookingDetails.AddScore,
-                AddedScoreValue = bookingDetails.AddScore * 1000,
-                Subtotal = seats.Sum(s => s.Price),
-                RankDiscount = 0,
-                TotalPrice = invoice.TotalMoney ?? 0
+                MemberId = memberId,
+                MemberEmail = memberEmail,
+                MemberIdentityCard = memberIdentityCard,
+                MemberPhone = memberPhone,
+                UsedScore = usedScore,
+                UsedScoreValue = usedScoreValue,
+                AddedScore = addedScore,
+                AddedScoreValue = addedScoreValue,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
+                TotalPrice = totalPrice
             };
 
             return View("TicketBookingConfirmed", viewModel);

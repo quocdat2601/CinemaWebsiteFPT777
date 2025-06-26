@@ -205,11 +205,11 @@
                                         <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
-                                @if (Model.UsedScoreValue > 0)
+                                @if (Model.UsedScore > 0)
                                 {
                                     <tr>
                                         <td style="white-space: nowrap;">- Points Used</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@Model.UsedScoreValue.ToString("N0") VND (@Model.UsedScore points)</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@Model.UsedScore (@Model.UsedScoreValue.ToString("N0") VND)</td>
                                     </tr>
                                 }
                                 <tr>
