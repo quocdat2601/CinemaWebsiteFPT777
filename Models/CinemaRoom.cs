@@ -18,4 +18,6 @@ public partial class CinemaRoom
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
+
+    public virtual ICollection<Version> Versions { get; set; } = new List<Version>();
 }

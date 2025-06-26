@@ -216,7 +216,7 @@ namespace MovieTheater.Controllers
         {
             foreach (var update in updates)
             {
-                var seat = await _seatService.GetSeatByIdAsync(update.SeatId);
+                var seat = _seatService.GetSeatById(update.SeatId);
                 if (seat != null)
                 {
                     seat.SeatTypeId = update.NewSeatTypeId;

@@ -21,7 +21,9 @@ namespace MovieTheater.Repository
 
         public CinemaRoom? GetById(int? id)
         {
-            return _context.CinemaRooms.FirstOrDefault(a => a.CinemaRoomId == id);
+            return _context.CinemaRooms
+                .Include(c => c.Versions)
+                .FirstOrDefault(a => a.CinemaRoomId == id);
         }
 
         private List<Seat> GenerateSeats(CinemaRoom cinemaRoom)
@@ -61,6 +63,7 @@ namespace MovieTheater.Repository
         {
             var existingCinema = _context.CinemaRooms
                 .Include(c => c.Seats)
+                .Include(c => c.Versions)
                 .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
 
             if (existingCinema == null)
@@ -83,6 +86,16 @@ namespace MovieTheater.Repository
                     _context.Seats.AddRange(newSeats);
                 }
 
+                existingCinema.Versions.Clear();
+                foreach (var version in cinemaRoom.Versions)
+                {
+                    var versionEntity = _context.Versions.Find(version.VersionId);
+                    if (versionEntity != null)
+                    {
+                        existingCinema.Versions.Add(versionEntity);
+                    }
+                }
+
                 _context.SaveChanges();
             }
             catch (Exception ex)
@@ -102,7 +115,11 @@ namespace MovieTheater.Repository
                 {
                     await _seatRepository.DeleteAsync(seat.SeatId);
                 }
-
+                if (cinemaRoom.Versions != null)
+                {
+                    cinemaRoom.Versions.Clear();
+                    await _context.SaveChangesAsync();
+                }
                 _context.CinemaRooms.Remove(cinemaRoom);
                 await _context.SaveChangesAsync();
             }

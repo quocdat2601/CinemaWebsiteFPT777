@@ -21,6 +21,11 @@
         returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
     }
 }
+<!-- Flatpickr CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
 <div class="text-start p-3">
     <a href="@returnUrl" class="btn btn-secondary">&larr; Return</a>
 </div>
@@ -31,14 +36,15 @@
     <!-- Date navigation UI -->
     <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center" id="dateNavForm">
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-        <input type="hidden" name="date" id="dateInput" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" />
         <div class="d-inline-flex align-items-center gap-2">
             <button type="button" id="prevDayBtn" class="btn btn-outline-secondary btn-sm" title="Previous day">&lt;</button>
-            <span id="selectedDate" class="fw-bold" style="cursor:pointer;">
-                @Model.SelectedDate.ToString("dd/MM/yyyy")
-            </span>
+            <div style="position: relative; width: 150px;">
+                <input type="text" id="calendarInput" name="date" class="form-control form-control-sm" style="width: 100%; padding-right: 2em;" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" autocomplete="off" />
+                <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;">
+                    <i class="fa-regular fa-calendar"></i>
+                </span>
+            </div>
             <button type="button" id="nextDayBtn" class="btn btn-outline-secondary btn-sm" title="Next day">&gt;</button>
-            <input type="date" id="calendarInput" style="display:none;" />
         </div>
     </form>
 
@@ -89,28 +95,29 @@
 --> 
 
 <script>
-    // Helper to format Date object as dd/MM/yyyy
-    function formatDate(date) {
+    // Initialize flatpickr with dd/MM/yyyy format
+    flatpickr("#calendarInput", {
+        dateFormat: "d/m/Y",
+        defaultDate: "@Model.SelectedDate.ToString("dd/MM/yyyy")",
+        allowInput: true,
+        onChange: function(selectedDates, dateStr, instance) {
+            document.getElementById('dateNavForm').submit();
+        }
+    });
+
+    function getSelectedDate() {
+        // Get value in dd/MM/yyyy and parse
+        const val = document.getElementById('calendarInput').value;
+        const [d, m, y] = val.split('/');
+        return new Date(`${y}-${m}-${d}`);
+    }
+    function setSelectedDate(date) {
+        // Format as dd/MM/yyyy
         const d = date.getDate().toString().padStart(2, '0');
         const m = (date.getMonth() + 1).toString().padStart(2, '0');
         const y = date.getFullYear();
-        return `${d}/${m}/${y}`;
-    }
-
-    // Parse dd/MM/yyyy to Date object
-    function parseDate(str) {
-        const [d, m, y] = str.split('/');
-        return new Date(`${y}-${m}-${d}`);
-    }
-
-    // Get/set selected date
-    function getSelectedDate() {
-        return parseDate(document.getElementById('selectedDate').innerText.trim());
-    }
-    function setSelectedDate(date) {
-        const formatted = formatDate(date);
-        document.getElementById('selectedDate').innerText = formatted;
-        document.getElementById('dateInput').value = formatted;
+        const formatted = `${d}/${m}/${y}`;
+        document.getElementById('calendarInput')._flatpickr.setDate(formatted, true, "d/m/Y");
         document.getElementById('dateNavForm').submit();
     }
 
@@ -124,25 +131,5 @@
         const date = getSelectedDate();
         date.setDate(date.getDate() + 1);
         setSelectedDate(date);
-    });
-
-    document.getElementById('selectedDate').addEventListener('click', function() {
-        const calendar = document.getElementById('calendarInput');
-        // Set calendar value to current date in yyyy-MM-dd
-        const date = getSelectedDate();
-        calendar.value = date.toISOString().slice(0, 10);
-        calendar.style.display = 'inline-block';
-        calendar.focus();
-    });
-
-    document.getElementById('calendarInput').addEventListener('change', function() {
-        const date = new Date(this.value);
-        setSelectedDate(date);
-        this.style.display = 'none';
-    });
-
-    // Hide calendar if it loses focus
-    document.getElementById('calendarInput').addEventListener('blur', function() {
-        setTimeout(() => { this.style.display = 'none'; }, 200);
     });
 </script>

@@ -60,7 +60,13 @@
 				</div>
 
 				<div class="form-group mb-3">
-					<div><strong>Version:</strong> @Model.Version</div>
+					<div>
+						<strong>Version:</strong>
+						@foreach (var version in Model.AvailableVersions)
+						{
+						<span class="badge bg-info me-1">@version.VersionName</span>
+						}
+					</div>
 				</div>
 
 				<div class="form-group mb-3">

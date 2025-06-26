@@ -7,9 +7,11 @@ namespace MovieTheater.Controllers
     public class CinemaController : Controller
     {
         private readonly ICinemaService _cinemaService;
-        public CinemaController(ICinemaService cinemaService)
+        private readonly IMovieService _movieService;
+        public CinemaController(ICinemaService cinemaService, IMovieService movieService)
         {
             _cinemaService = cinemaService;
+            _movieService = movieService;
         }
 
         // GET: CinemaController
@@ -26,13 +28,19 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(CinemaRoom cinemaRoom)
+        public ActionResult Create(CinemaRoom cinemaRoom, int VersionId)
         {
             if (!ModelState.IsValid)
             {
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
+            var version = _movieService.GetVersionById(VersionId);
+            if (version != null)
+            {
+                cinemaRoom.Versions.Add(version);
+            }
             _cinemaService.Add(cinemaRoom);
+            TempData["ToastMessage"] = "Showroom created successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
         }
 
@@ -44,27 +52,38 @@ namespace MovieTheater.Controllers
             var showroom = _cinemaService.GetById(id);
             if (showroom == null)
                 return NotFound();
-
+            var versions = _movieService.GetAllVersions();
+            ViewBag.Versions = versions;
+            ViewBag.CurrentVersionId = showroom.Versions.FirstOrDefault()?.VersionId ?? 0;
             return View(showroom);
         }
 
         // POST: CinemaController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, CinemaRoom cinemaRoom)
+        public IActionResult Edit(int id, CinemaRoom cinemaRoom, int VersionId)
         {
             if (!ModelState.IsValid)
             {
+                var versions = _movieService.GetAllVersions();
+                ViewBag.Versions = versions;
+                ViewBag.CurrentVersionId = VersionId;
                 return View(cinemaRoom);
             }
-
+            var version = _movieService.GetVersionById(VersionId);
+            cinemaRoom.Versions.Clear();
+            if (version != null)
+            {
+                cinemaRoom.Versions.Add(version);
+            }
             bool success = _cinemaService.Update(id, cinemaRoom);
-
             if (!success)
             {
+                TempData["ErrorMessage"] = "Showroom updated unsuccessfully!";
                 ModelState.AddModelError("", "Failed to update movie.");
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
+            TempData["ToastMessage"] = "Showroom updated successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
         }
 
@@ -84,7 +103,7 @@ namespace MovieTheater.Controllers
                 var cinema = _cinemaService.GetById(id);
                 if (cinema == null)
                 {
-                    TempData["ToastMessage"] = "Cinema not found.";
+                    TempData["ToastMessage"] = "Showroom not found.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
                 }
 
@@ -92,7 +111,7 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
-                    TempData["ToastMessage"] = "Failed to delete showroom.";
+                    TempData["ErrorMessage"] = "Failed to delete showroom.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
                 }
 

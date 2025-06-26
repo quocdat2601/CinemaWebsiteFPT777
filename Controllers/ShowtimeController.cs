@@ -126,13 +126,9 @@ namespace MovieTheater.Controllers
                selectedDateOnly = DateOnly.FromDateTime(DateTime.Today);
            }
 
-           // Only fallback if no date is provided
-            if (string.IsNullOrEmpty(date))
+           if (string.IsNullOrEmpty(date))
             {
-                if (!availableDates.Contains(selectedDateOnly))
-                {
-                    selectedDateOnly = availableDates.FirstOrDefault();
-                }
+                selectedDateOnly = DateOnly.FromDateTime(DateTime.Today);
             }
 
            // 2. Get all MovieShow entries for the selected date

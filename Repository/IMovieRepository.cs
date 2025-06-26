@@ -32,5 +32,8 @@ namespace MovieTheater.Repository
         public List<string> GetShowTimes(string movieId, DateTime date);
         Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);
         public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);
+        public Dictionary<DateOnly, List<string>> GetMovieShowSummaryByMonth(int year, int month);
+        List<Models.Version> GetAllVersions();
+        Models.Version? GetVersionById(int versionId);
     }
 }

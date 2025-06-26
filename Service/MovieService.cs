@@ -203,6 +203,11 @@ namespace MovieTheater.Service
             return _movieRepository.GetTypesAsync().Result;
         }
 
+        public List<Models.Version> GetAllVersions()
+        {
+            return _movieRepository.GetAllVersions();
+        }
+
         public List<Schedule> GetAllSchedules()
         {
             return _movieRepository.GetSchedulesAsync().Result;
@@ -260,6 +265,11 @@ namespace MovieTheater.Service
         public List<MovieShow> GetMovieShowsByMovieId(string movieId)
         {
             return _movieRepository.GetMovieShowsByMovieId(movieId);
+        }
+
+        public Models.Version? GetVersionById(int versionId)
+        {
+            return _movieRepository.GetVersionById(versionId);
         }
     }
 }

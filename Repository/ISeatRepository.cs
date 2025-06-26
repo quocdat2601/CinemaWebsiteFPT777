@@ -6,7 +6,7 @@ namespace MovieTheater.Repository
     {
         Task<List<Seat>> GetAllAsync();
         Task<List<Seat>> GetByCinemaRoomIdAsync(int cinemaRoomId);
-        public Seat? GetById(int id);
+        public Seat? GetById(int? id);
         public void Add(Seat seat);
         public void Update(Seat seat);
         Task DeleteAsync(int id);

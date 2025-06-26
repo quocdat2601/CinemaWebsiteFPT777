@@ -158,7 +158,7 @@ namespace MovieTheater.Controllers
            var seats = new List<SeatDetailViewModel>();
            foreach (var id in selectedSeatIds)
            {
-               var seat = await _seatService.GetSeatByIdAsync(id);
+               var seat = _seatService.GetSeatById(id);
                if (seat == null) continue;
 
                var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
@@ -329,7 +329,7 @@ namespace MovieTheater.Controllers
 
            foreach (var id in selectedSeatIds)
            {
-               var seat = await _seatService.GetSeatByIdAsync(id);
+               var seat = _seatService.GetSeatById(id);
                if (seat == null) continue;
 
                var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);

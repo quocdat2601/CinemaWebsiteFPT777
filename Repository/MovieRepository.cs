@@ -45,6 +45,7 @@ namespace MovieTheater.Repository
         {
             return _context.Movies
                 .Include(m => m.Types)
+                .Include(m => m.Versions)
                 .Include(m => m.MovieShows)
                     .ThenInclude(ms => ms.Schedule)
                 .FirstOrDefault(m => m.MovieId == id);
@@ -75,6 +76,7 @@ namespace MovieTheater.Repository
             {
                 var existingMovie = _context.Movies
                     .Include(m => m.Types)
+                    .Include(m => m.Versions)
                     .FirstOrDefault(m => m.MovieId == movie.MovieId);
                     
                 if (existingMovie != null)
@@ -84,7 +86,6 @@ namespace MovieTheater.Repository
                     existingMovie.Actor = movie.Actor;
                     existingMovie.Director = movie.Director;
                     existingMovie.Duration = movie.Duration;
-                    existingMovie.Version = movie.Version;
                     existingMovie.FromDate = movie.FromDate;
                     existingMovie.ToDate = movie.ToDate;
                     existingMovie.MovieProductionCompany = movie.MovieProductionCompany;
@@ -103,6 +104,19 @@ namespace MovieTheater.Repository
                         if (existingType != null)
                         {
                             existingMovie.Types.Add(existingType);
+                        }
+                    }
+
+                    // Clear existing versions
+                    existingMovie.Versions.Clear();
+                    
+                    // Add new versions
+                    foreach (var version in movie.Versions)
+                    {
+                        var existingVersion = _context.Versions.Find(version.VersionId);
+                        if (existingVersion != null)
+                        {
+                            existingMovie.Versions.Add(existingVersion);
                         }
                     }
                     
@@ -378,6 +392,41 @@ namespace MovieTheater.Repository
                 .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate == showDate)
                 .OrderBy(ms => ms.Schedule.ScheduleTime)
                 .ToList();
+        }
+
+        /// <summary>
+        /// Gets a summary of unique movie names for each date in a given month.
+        /// </summary>
+        /// <param name="year">The year of the month to query.</param>
+        /// <param name="month">The month to query (1-12).</param>
+        /// <returns>A dictionary where the key is the date and the value is a list of unique movie names for that date.</returns>
+        public Dictionary<DateOnly, List<string>> GetMovieShowSummaryByMonth(int year, int month)
+        {
+            var startDate = new DateOnly(year, month, 1);
+            var endDate = startDate.AddMonths(1);
+
+            // Query only the relevant movie shows in the month
+            var query = _context.MovieShows
+                .Where(ms => ms.ShowDate >= startDate && ms.ShowDate < endDate)
+                .Select(ms => new { ms.ShowDate, ms.Movie.MovieNameEnglish })
+                .AsEnumerable() // Grouping in-memory for EF Core limitations with DateOnly
+                .GroupBy(x => x.ShowDate)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.MovieNameEnglish?.Trim()).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList()
+                );
+
+            return query;
+        }
+
+        public List<Models.Version> GetAllVersions()
+        {
+            return _context.Versions.ToList();
+        }
+
+        public Models.Version? GetVersionById(int versionId)
+        {
+            return _context.Versions.FirstOrDefault(v => v.VersionId == versionId);
         }
     }
 }

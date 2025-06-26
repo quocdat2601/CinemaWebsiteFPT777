@@ -88,11 +88,11 @@ namespace MovieTheater.Controllers
                 MovieProductionCompany = movie.MovieProductionCompany,
                 Director = movie.Director,
                 Duration = movie.Duration,
-                Version = movie.Version,
                 Content = movie.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(movie.TrailerUrl),
                 LargeImage = movie.LargeImage,
-                AvailableTypes = movie.Types.ToList()
+                AvailableTypes = movie.Types.ToList(),
+                AvailableVersions = movie.Versions.ToList()
             };
 
             return View(viewModel);
@@ -107,7 +107,8 @@ namespace MovieTheater.Controllers
         {
             var model = new MovieDetailViewModel
             {
-                AvailableTypes = _movieService.GetAllTypes()
+                AvailableTypes = _movieService.GetAllTypes(),
+                AvailableVersions = _movieService.GetAllVersions()
             };
             return View(model);
         }
@@ -123,6 +124,7 @@ namespace MovieTheater.Controllers
             if (!ModelState.IsValid)
             {
                 model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableVersions = _movieService.GetAllVersions();
                 return View(model);
             }
 
@@ -130,6 +132,7 @@ namespace MovieTheater.Controllers
             {
                 TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
                 model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableVersions = _movieService.GetAllVersions();
                 return View(model);
             }
 
@@ -141,7 +144,6 @@ namespace MovieTheater.Controllers
                 Actor = model.Actor,
                 Director = model.Director,
                 Duration = model.Duration,
-                Version = model.Version,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
                 MovieProductionCompany = model.MovieProductionCompany,
@@ -149,7 +151,8 @@ namespace MovieTheater.Controllers
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
                 LargeImage = model.LargeImage,
                 SmallImage = model.SmallImage,
-                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
+                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
+                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList()
             };
 
             if (_movieService.AddMovie(movie))
@@ -164,6 +167,7 @@ namespace MovieTheater.Controllers
 
             TempData["ErrorMessage"] = "Failed to create movie.";
             model.AvailableTypes = _movieService.GetAllTypes();
+            model.AvailableVersions = _movieService.GetAllVersions();
             return View(model);
         }
 
@@ -189,7 +193,6 @@ namespace MovieTheater.Controllers
                 Actor = movie.Actor,
                 Director = movie.Director,
                 Duration = movie.Duration,
-                Version = movie.Version,
                 FromDate = movie.FromDate,
                 ToDate = movie.ToDate,
                 MovieProductionCompany = movie.MovieProductionCompany,
@@ -198,7 +201,9 @@ namespace MovieTheater.Controllers
                 LargeImage = movie.LargeImage,
                 SmallImage = movie.SmallImage,
                 AvailableTypes = _movieService.GetAllTypes(),
-                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList()
+                AvailableVersions = _movieService.GetAllVersions(),
+                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
+                SelectedVersionIds = movie.Versions.Select(v => v.VersionId).ToList()
             };
 
             return View(model);
@@ -236,6 +241,9 @@ namespace MovieTheater.Controllers
             {
                 return NotFound();
             }
+
+            existingMovie.Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList();
+            existingMovie.Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
 
             // Conflict check only if duration has changed
             if (existingMovie.Duration != model.Duration)
@@ -284,7 +292,6 @@ namespace MovieTheater.Controllers
                 Actor = model.Actor,
                 Director = model.Director,
                 Duration = model.Duration,
-                Version = model.Version,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
                 MovieProductionCompany = model.MovieProductionCompany,
@@ -292,7 +299,8 @@ namespace MovieTheater.Controllers
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
                 LargeImage = model.LargeImage,
                 SmallImage = model.SmallImage,
-                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
+                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
+                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList()
             };
 
             if (_movieService.UpdateMovie(movie))
