@@ -20,5 +20,7 @@ namespace MovieTheater.Service
         public Account? GetById(string id);
         Task DeductScoreAsync(string userId, int points, bool deductFromTotalPoints = false);
         Task AddScoreAsync(string userId, int points, bool addToTotalPoints = true);
+        void CheckAndUpgradeRank(string accountId);
+        string GetAndClearRankUpgradeNotification(string accountId);
     }
 }

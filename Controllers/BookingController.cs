@@ -261,6 +261,7 @@ namespace MovieTheater.Controllers
                 invoice.AddScore = pointsToEarn;
 
                 await _bookingService.SaveInvoiceAsync(invoice);
+                _accountService.CheckAndUpgradeRank(userId);
 
                 var movieShow = _movieService.GetMovieShows(model.MovieId)
                     .FirstOrDefault(ms =>
@@ -575,7 +576,7 @@ namespace MovieTheater.Controllers
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
-                    AccountId = member?.Account?.AccountId ?? currentUserId,
+                    AccountId = member.Account.AccountId,
                     AddScore = pointsToEarn,
                     BookingDate = DateTime.Now,
                     MovieName = model.BookingDetails.MovieName,
@@ -599,6 +600,7 @@ namespace MovieTheater.Controllers
                 }
 
                 await _bookingService.SaveInvoiceAsync(invoice);
+                _accountService.CheckAndUpgradeRank(member.AccountId);
 
                 // Deduct score if used
                 if (scoreUsed > 0 && member != null)
@@ -634,7 +636,15 @@ namespace MovieTheater.Controllers
                     await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
                 }
 
-                TempData["ToastMessage"] = "Movie booked successfully!";
+                // Combine booking success and rank upgrade messages if both exist
+                var messages = new List<string> { "Movie booked successfully!" };
+                var rankUpMsg = HttpContext.Session.GetString("RankUpToastMessage");
+                if (!string.IsNullOrEmpty(rankUpMsg))
+                {
+                    messages.Add(rankUpMsg);
+                    HttpContext.Session.Remove("RankUpToastMessage");
+                }
+                TempData["ToastMessage"] = string.Join("<br/>", messages);
 
                 var subtotal = model.BookingDetails.SelectedSeats.Sum(s => s.Price);
                 decimal rankDiscount = 0;

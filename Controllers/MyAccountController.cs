@@ -38,35 +38,12 @@ namespace MovieTheater.Controllers
             ViewData["ActiveTab"] = tab;
             var user = _service.GetCurrentUser();
 
-            // Show rank up toast if set in Session
-            var rankUpMsg = HttpContext.Session.GetString("RankUpToastMessage");
-            if (!string.IsNullOrEmpty(rankUpMsg))
-            {
-                TempData["ToastMessage"] = rankUpMsg;
-                HttpContext.Session.Remove("RankUpToastMessage");
-            }
-
             if (user == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var model = new ProfileUpdateViewModel
-            {
-                AccountId = user.AccountId,
-                Username = user.Username,
-                FullName = user.FullName,
-                DateOfBirth = user.DateOfBirth,
-                Gender = user.Gender,
-                IdentityCard = user.IdentityCard,
-                Email = user.Email,
-                Address = user.Address,
-                PhoneNumber = user.PhoneNumber,
-                Image = user.Image,
-                IsGoogleAccount = user.IsGoogleAccount
-            };
-
-            return View("~/Views/Account/MainPage.cshtml", model);
+            return View("~/Views/Account/MainPage.cshtml", user);
         }
 
         /// <summary>
@@ -82,6 +59,9 @@ namespace MovieTheater.Controllers
             switch (tab)
             {
                 case "Profile":
+                    // Check and update rank when loading Profile tab
+                    _service.CheckAndUpgradeRank(user.AccountId);
+                    
                     var rankInfo = _rankService.GetRankInfoForUser(user.AccountId);
                     var allRanks = _rankService.GetAllRanks();
                     var viewModel = new ProfilePageViewModel
@@ -331,6 +311,14 @@ namespace MovieTheater.Controllers
             };
 
             return View("~/Views/Account/Tabs/ChangePassword.cshtml", viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateProfile(ProfileUpdateViewModel model)
+        {
+            // Implementation of the method
+            // This method should be implemented to handle the update of the profile
+            return View("~/Views/Account/MainPage.cshtml", _service.GetCurrentUser());
         }
     }
 }

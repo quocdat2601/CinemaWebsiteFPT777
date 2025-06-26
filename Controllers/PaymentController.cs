@@ -16,11 +16,13 @@ namespace MovieTheater.Controllers
     {
         private readonly VNPayService _vnPayService;
         private readonly ILogger<PaymentController> _logger;
+        private readonly IAccountService _accountService;
 
-        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger)
+        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService)
         {
             _vnPayService = vnPayService;
             _logger = logger;
+            _accountService = accountService;
         }
 
         /// <summary>
@@ -95,6 +97,7 @@ namespace MovieTheater.Controllers
                     }
                     context.Invoices.Update(invoice);
                     context.SaveChanges();
+                    _accountService.CheckAndUpgradeRank(invoice.AccountId);
                 }
                 // --- BẮT ĐẦU: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 if (invoice != null && !string.IsNullOrEmpty(invoice.Seat))
