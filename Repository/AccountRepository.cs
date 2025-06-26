@@ -52,6 +52,7 @@ namespace MovieTheater.Repository
         {
             return _context.Accounts
                 .Include(a => a.Members)
+                .Include(a => a.Rank)
                 .FirstOrDefault(a => a.AccountId == id);
         }
 

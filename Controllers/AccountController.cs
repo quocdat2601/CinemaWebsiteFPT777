@@ -74,11 +74,20 @@ namespace MovieTheater.Controllers
                     Image = picture,
                     Password = null // Set Password to null for Google login
                 };
+
+                // Set initial rank (Bronze)
+                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
+                if (bronzeRank != null)
+                {
+                    user.RankId = bronzeRank.RankId;
+                }
+
                 _accountRepository.Add(user);
                 _accountRepository.Save();
                 _memberRepository.Add(new Member
                 {
                     Score = 0,
+                    TotalPoints = 0,
                     AccountId = user.AccountId
                 });
                 _memberRepository.Save();
@@ -130,6 +139,12 @@ namespace MovieTheater.Controllers
 
             // Sign in with cookie authentication - match normal login flow
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // Check and update rank
+            if (user.RoleId == 3) // Member
+            {
+                _service.CheckAndUpgradeRank(user.AccountId);
+            }
 
             // Check if it's the first time login and redirect to profile update
             if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
@@ -286,20 +301,19 @@ namespace MovieTheater.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", user.Status.ToString()),
-                new Claim("Email", user.Email)
+                new Claim("Status", user.Status.ToString())
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
+
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
-
-            // Store the token in a cookie
+            
             Response.Cookies.Append("JwtToken", token, new CookieOptions
             {
                 HttpOnly = true,
@@ -320,7 +334,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("Index", "Home");
             }
         }
 

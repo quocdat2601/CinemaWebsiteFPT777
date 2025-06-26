@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
+using System.Diagnostics;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -8,12 +10,14 @@ namespace MovieTheater.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly IMovieService _movieService;
         private readonly IPromotionService _promotionService;
+        private readonly IAccountService _accountService;
 
-        public HomeController(ILogger<HomeController> logger, IPromotionService promotionService, IMovieService movieService)
+        public HomeController(ILogger<HomeController> logger, IPromotionService promotionService, IMovieService movieService, IAccountService accountService)
         {
             _logger = logger;
             _promotionService = promotionService;
             _movieService = movieService;
+            _accountService = accountService;
         }
 
         /// <summary>
@@ -22,6 +26,26 @@ namespace MovieTheater.Controllers
         /// </summary>
         public IActionResult Index()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId) && User.IsInRole("Member"))
+                {
+                    _accountService.CheckAndUpgradeRank(userId);
+                    var notificationMessage = _accountService.GetAndClearRankUpgradeNotification(userId);
+                    if (!string.IsNullOrEmpty(notificationMessage))
+                    {
+                        var messages = new List<string>();
+                        if (TempData["ToastMessage"] is string existingMessage)
+                        {
+                            messages.Add(existingMessage);
+                        }
+                        messages.Add(notificationMessage);
+                        TempData["ToastMessage"] = string.Join("<br/>", messages);
+                    }
+                }
+            }
+
             var movies = _movieService.GetAll();
             var promotions = _promotionService.GetAll();
 

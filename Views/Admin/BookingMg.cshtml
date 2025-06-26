@@ -4,7 +4,7 @@
 <h2 class="text-center">Booking Management</h2>
 
 <div class="text-center mb-2">
-    <a href="@Url.Action("InitiateTicketSellingForMember", "Admin", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-sm btn-primary">Sell Ticket</a>
+    <a href="@Url.Action("InitiateTicketSellingForMember", "Booking", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-sm btn-primary">Sell Ticket</a>
 </div>
 
 <form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchBooking();">

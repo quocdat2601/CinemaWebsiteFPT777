@@ -14,6 +14,8 @@ namespace MovieTheater.ViewModels
 
         // Ghế đã chọn
         public List<SeatDetailViewModel> SelectedSeats { get; set; }
+        public decimal Subtotal { get; set; }
+        public decimal RankDiscount { get; set; }
         public decimal TotalPrice { get; set; }
         public decimal PricePerTicket { get; set; } // optional
 
@@ -27,8 +29,12 @@ namespace MovieTheater.ViewModels
 
         public string InvoiceId { get; set; }
         public int ScoreUsed { get; set; }
-        public string TicketsConverted { get; set; }
 
         public int MovieShowId { get; set; }
+
+        public int AddScore { get; set; }
+
+        public decimal EarningRate { get; set; }
+        public decimal RankDiscountPercent { get; set; }
     }
 }

@@ -115,13 +115,20 @@
                 }
             </tbody>
         </table>
-        <p class="text-end"><strong>Total Price:</strong> @Model.BookingDetails.TotalPrice.ToString("N0") VND</p>
+        <div class="text-end mb-2">
+            <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
+                @Model.BookingDetails.SelectedSeats.Sum(s => s.Price).ToString("N0") VND
+            </span>
+            <span id="discountedTotal" style="display:none;"></span>
+            <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
+            <div id="pointEarningPreview" class="text-muted" style="font-size: 0.95em;"></div>
+            <div id="pointSavings" class="text-success" style="font-size: 0.95em;"></div>
+        </div>
         <hr />
         <!-- Member selection UI -->
         <div class="mb-3">
             <label class="soft-label"><strong>Select Member: *</strong></label>
             <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
-            <div class="alert alert-info mt-2" id="memberMessage" style="display:none;"></div>
         </div>
 
         <!-- AC-03: Member info if found -->
@@ -147,9 +154,10 @@
                 </div>
             </div>
             <div class="mb-3 mt-3">
-                <label for="ticketsToConvert" class="soft-label"><strong>Number of tickets to convert using score:</strong></label>
-                <input type="number" id="ticketsToConvert" class="form-control" min="0" max="@Model.BookingDetails.SelectedSeats.Count" value="0" />
-                <div id="scoreStatus" class="mt-2"></div>
+                <label for="useScore" class="soft-label"><strong>Points to use (1 point = 1,000 VND):</strong></label>
+                <input type="number" id="useScore" class="form-control" min="0" value="0" style="width: 120px; display: inline-block;" />
+                <div class="text-muted mt-1">Max usable: <span id="maxUsablePoints">(calculated)</span> | <span id="pointsEarnedPreview" class="text-success">You will earn 0 points from this transaction</span></div>
+                <div id="pointValidation" class="text-danger" style="font-size: 0.95em;"></div>
             </div>
         </div>
         <div class="text-center mt-4">
@@ -255,10 +263,9 @@
                 $('#memberPhoneNumber').val(member.account.phoneNumber);
                 $('#memberScore').val(member.score);
                 $('#memberDetails').show();
-                $('#memberMessage').hide();
                 $('#confirmTicketAdminBtn').prop('disabled', false);
-                $('#ticketsToConvert').val(0);
-                $('#scoreStatus').html('');
+                updateMaxUsablePoints();
+                onMemberSelected(member.memberId);
             }
 
             // Confirm Ticket Admin Button Click
@@ -271,7 +278,6 @@
                         CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
-                        // This will output PascalCase property names as required by backend
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice,
                         PricePerTicket: @Model.BookingDetails.PricePerTicket
@@ -282,7 +288,7 @@
                     MemberIdentityCard: $('#memberIdentityCard').val(),
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
-                    TicketsToConvert: parseInt($('#ticketsToConvert').val()) || 0
+                    UsedScore: parseInt($('#useScore').val()) || 0
                 };
 
                 $.ajax({
@@ -304,44 +310,109 @@
                 });
             });
 
-            // Real-time score check when number of tickets to convert changes
-            $('#ticketsToConvert').on('input', function () {
-                var ticketsToConvert = parseInt($(this).val()) || 0;
-                var ticketPrices = [];
-                @foreach (var seat in Model.BookingDetails.SelectedSeats)
-                {
-                    @:ticketPrices.push(@seat.Price);
-                }
+            // Remove ticketsToConvert logic, add useScore logic
+            function updateMaxUsablePoints() {
+                // This should be calculated from backend, but for now, estimate:
+                var totalPrice = @Model.BookingDetails.TotalPrice;
                 var memberScore = parseInt($('#memberScore').val()) || 0;
-                if (ticketsToConvert > 0) {
-                    $.ajax({
-                        url: '/Booking/CheckScoreForConversion',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({
-                            TicketPrices: ticketPrices,
-                            TicketsToConvert: ticketsToConvert,
-                            MemberScore: memberScore
-                        }),
-                        success: function (response) {
-                            if (response.success) {
-                                $('#scoreStatus').html('<span class="text-success">Score needed: ' + response.scoreNeeded + '. Tickets will be converted.</span>');
-                                $('#confirmTicketAdminBtn').prop('disabled', false);
-                            } else {
-                                $('#scoreStatus').html('<span class="text-danger">' + response.message + ' (Score needed: ' + response.scoreNeeded + ')</span>');
-                                $('#confirmTicketAdminBtn').prop('disabled', true);
-                            }
-                        },
-                        error: function () {
-                            $('#scoreStatus').html('<span class="text-danger">Error checking score.</span>');
-                            $('#confirmTicketAdminBtn').prop('disabled', true);
-                        }
-                    });
+                var maxPoints = Math.floor((totalPrice * 0.9) / 1000);
+                maxPoints = Math.min(maxPoints, memberScore);
+                $('#maxUsablePoints').text(maxPoints);
+                return maxPoints;
+            }
+            $('#useScore').on('input', function () {
+                var used = parseInt($(this).val()) || 0;
+                var maxPoints = updateMaxUsablePoints();
+                var valid = true;
+                var msg = '';
+                if (used == 0) {
+                    msg = '';
+                    valid = true;   
+                } else if (used < 20) {
+                    msg = 'Minimum 20 points required.';
+                    valid = false;
+                } else if (used > maxPoints) {
+                    msg = 'You can use up to ' + maxPoints + ' points (90% of order, or your balance).';
+                    valid = false;
+                }
+                if (!valid) {
+                    $('#scoreStatus').html('<span class="text-danger">' + msg + '</span>');
+                    $('#confirmTicketAdminBtn').prop('disabled', true);
                 } else {
                     $('#scoreStatus').html('');
                     $('#confirmTicketAdminBtn').prop('disabled', false);
                 }
             });
+            // Set initial value
+            $('#useScore').val(0);
+
+            // Update price and point info when points are entered or member is selected
+            $('#useScore').on('input', function () {
+                updatePriceWithDiscount(currentDiscountPercent);
+            });
+
+            function updatePriceWithDiscount(discountPercent) {
+                var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
+                var discountAmount = Math.round(originalTotal * (discountPercent / 100));
+                var discountedTotal = originalTotal - discountAmount;
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var pointValue = 1000;
+                var memberScore = parseInt($('#memberScore').val()) || 0;
+                var earningRate = currentEarningRate || 0;
+                var maxUsablePoints = Math.floor((discountedTotal * 0.9) / pointValue);
+                // Update max usable display
+                $('#maxUsablePoints').text(maxUsablePoints);
+                // Calculate points to earn (only if valid usage)
+                var savings = useScore * pointValue;
+                var finalTotal = discountedTotal - savings;
+                if (finalTotal < 0) finalTotal = 0;
+                var validationMsg = '';
+                var valid = true;
+                if (useScore === 0) {
+                    validationMsg = '';
+                    valid = true;
+                } else if (useScore < 20) { validationMsg = 'Minimum 20 points required.'; valid = false; }
+                else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
+                var pointsToEarn = Math.round((valid && useScore > 0 ? finalTotal : discountedTotal) * earningRate / 100 / pointValue);
+                $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`);
+                // Always show in green
+                $('#pointsEarnedPreview').addClass('text-success');
+                // Validation error
+                $('#pointValidation').text(validationMsg);
+                // Update price display
+                if (discountPercent > 0) {
+                    $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
+                    if (valid && useScore > 0) {
+                        $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
+                    } else {
+                        $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((discountedTotal).toLocaleString() + ' VND');
+                    }
+                } else {
+                    $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
+                    $('#discountedTotal').hide();
+                }
+                // Rank discount info
+                $('#discountInfo').text(discountPercent > 0 ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)` : '');
+                // Savings (only if valid)
+                if (valid && useScore > 0) {
+                    $('#pointSavings').text(`Using ${useScore} points saves you ${savings.toLocaleString()} VND`);
+                } else {
+                    $('#pointSavings').text('');
+                }
+            }
+
+            // Track current earning rate and discount percent
+            var currentEarningRate = 0;
+            var currentDiscountPercent = 0;
+            function onMemberSelected(memberId) {
+                $.getJSON('/Booking/GetMemberDiscount', { memberId: memberId }, function (data) {
+                    currentDiscountPercent = data.discountPercent || 0;
+                    currentEarningRate = data.earningRate || 0;
+                    updatePriceWithDiscount(currentDiscountPercent);
+                });
+            }
+            // On page load, show initial state
+            updatePriceWithDiscount(0);
         });
     </script>
 } 

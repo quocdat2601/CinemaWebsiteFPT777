@@ -11,7 +11,6 @@
     string showTime = booking?.ShowTime ?? TempData["ShowTime"] as string;
     string ticketId = booking?.InvoiceId ?? TempData["InvoiceId"] as string;
     string totalPrice = booking != null ? booking.TotalPrice.ToString("N0") : TempData["TotalPrice"] as string;
-    string ticketsConverted = booking?.TicketsConverted ?? TempData["TicketsConverted"] as string;  
     string scoreUsed = booking?.ScoreUsed.ToString() ?? TempData["ScoreUsed"] as string;
     string memberId = Model?.MemberId ?? TempData["MemberId"] as string;
     string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
@@ -158,6 +157,8 @@
                 <label for="ticketId" class="ticket-info-label">Ticket ID</label>
                 <input type="text" id="ticketId" class="ticket-info-value" value="@ticketId" readonly />
             </div>
+            <div class="d-flex flex-row justify-content-between align-items-start" style="gap: 2rem;">
+                <div style="flex: 1.5;">
             <div class="ticket-section-title">Seat(s)</div>
             <table class="table table-bordered mb-2">
                 <thead>
@@ -185,17 +186,47 @@
                     }
                 </tbody>
             </table>
-            @if ((!string.IsNullOrEmpty(scoreUsed) && scoreUsed != "0") || (booking != null && booking.ScoreUsed > 0)) {
-                <div class="ticket-row">
-                    <label for="ticketsConverted" class="ticket-info-label">Tickets by Score</label>
-                    <input type="text" id="ticketsConverted" class="ticket-info-value" value="@ticketsConverted" readonly />
-                    <label for="scoreUsed" class="ticket-info-label">Score Used</label>
-                    <input type="text" id="scoreUsed" class="ticket-info-value" value="@scoreUsed" readonly />
+                </div>
+
+                @if (Model.Subtotal > 0)
+                {
+                    <div style="flex: 1;">
+                        <div class="ticket-section-title">Price Breakdown</div>
+                        <table class="table table-borderless mb-2">
+                            <tbody>
+                                <tr>
+                                    <td style="white-space: nowrap;">Subtotal</td>
+                                    <td class="text-end" style="white-space: nowrap;">@Model.Subtotal.ToString("N0") VND</td>
+                                </tr>
+                                @if (Model.RankDiscount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Rank Discount</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
+                                    </tr>
+                                }
+                                @if (Model.UsedScore > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Points Used</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@Model.UsedScore (@Model.UsedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
+                                <tr>
+                                    <th style="white-space: nowrap;">Total Price</th>
+                                    <th class="text-end" style="white-space: nowrap;">@Model.TotalPrice.ToString("N0") VND</th>
+                                </tr>
+                                @if (Model.AddedScore > 0)
+                                {
+                                    <tr style="border-top: 1px solid #dee2e6;">
+                                        <td style="white-space: nowrap; padding-top: 0.8rem;">+ Points Earned</td>
+                                        <td class="text-end text-success" style="white-space: nowrap; padding-top: 0.8rem; font-weight: 500;">+@Model.AddedScore (@Model.AddedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                 </div>
             }
-            <div class="ticket-total-row">
-                <span class="ticket-total-label">Total Price</span>
-                <span class="ticket-total-value">@totalPrice VND</span>
             </div>
             <hr />
             <div class="ticket-section-title">Member Information</div>
