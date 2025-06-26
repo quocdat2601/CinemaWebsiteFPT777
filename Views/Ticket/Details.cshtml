@@ -10,22 +10,15 @@
     var ticketId = invoice.InvoiceId;
     var totalPrice = invoice.TotalMoney?.ToString("N0");
     var seatString = invoice.Seat;
-    var addScore = invoice.AddScore;
-    var useScore = invoice.UseScore;
+    var addScore = invoice.AddScore ?? 0;
+    var useScore = invoice.UseScore ?? 0;
     var bookingDate = invoice.BookingDate?.ToString("dd/MM/yyyy HH:mm");
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel>;
-    
-    // Calculate subtotal and rank discount
+    // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.Price) ?? 0;
-    decimal rankDiscount = 0;
-    if (invoice.Account?.Rank != null)
-    {
-        var rankDiscountPercent = invoice.Account.Rank.DiscountPercentage ?? 0;
-        rankDiscount = subtotal * (rankDiscountPercent / 100m);
-    }
-    decimal usedScoreValue = (useScore ?? 0) * 1000;
-    decimal addedScoreValue = (addScore ?? 0) * 1000;
-    
+    decimal rankDiscount = 0; // Do not recalculate from member rank
+    decimal usedScoreValue = useScore * 1000;
+    decimal addedScoreValue = addScore * 1000;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
 }
