@@ -157,6 +157,8 @@ namespace MovieTheater.Controllers
 
             // Mark as cancelled
             booking.Status = InvoiceStatus.Incomplete;
+
+            // Update schedule seats: mark as available again
             var scheduleSeatsToUpdate = _context.ScheduleSeats
                 .Where(s => s.InvoiceId == booking.InvoiceId)
                 .ToList();
@@ -164,14 +166,18 @@ namespace MovieTheater.Controllers
             {
                 seat.SeatStatusId = 1; // Available
             }
+
+            // Handle score operations
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
                 await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value, true);
             }
+
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 await _accountService.AddScoreAsync(accountId, booking.UseScore.Value, false);
             }
+
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(accountId);
 
@@ -259,6 +265,7 @@ namespace MovieTheater.Controllers
             {
                 await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value, true);
             }
+
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 await _accountService.AddScoreAsync(booking.AccountId, booking.UseScore.Value, false);

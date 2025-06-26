@@ -25,6 +25,8 @@ public partial class MovieTheaterContext : DbContext
 
     public virtual DbSet<Employee> Employees { get; set; }
 
+    public virtual DbSet<Food> Foods { get; set; }
+
     public virtual DbSet<Invoice> Invoices { get; set; }
 
     public virtual DbSet<Member> Members { get; set; }
@@ -59,7 +61,7 @@ public partial class MovieTheaterContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=(local);uid=sa;pwd=12345;database=MovieTheater;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=(local);uid=hi;pwd=12345678;database=MovieTheater;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -221,6 +223,32 @@ public partial class MovieTheaterContext : DbContext
                 .HasConstraintName("FK_Employee_Account");
         });
 
+        modelBuilder.Entity<Food>(entity =>
+        {
+            entity.HasKey(e => e.FoodId).HasName("PK__Food__856DB3EBB3C0C58A");
+
+            entity.ToTable("Food");
+
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.Image)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Status).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+        });
+
         modelBuilder.Entity<Invoice>(entity =>
         {
             entity.HasKey(e => e.InvoiceId).HasName("PK__Invoice__0DE6049425C01B8E");
@@ -272,10 +300,7 @@ public partial class MovieTheaterContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Account_ID");
-            entity.Property(e => e.Score).HasColumnName("Score");
-            entity.Property(e => e.TotalPoints)
-                .HasColumnName("Total_Points")
-                .HasDefaultValue(0);
+            entity.Property(e => e.TotalPoints).HasColumnName("Total_Points");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Members)
                 .HasForeignKey(d => d.AccountId)
@@ -472,14 +497,6 @@ public partial class MovieTheaterContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("Rank_Name");
             entity.Property(e => e.RequiredPoints).HasColumnName("Required_Points");
-            entity.Property(e => e.ColorGradient)
-                .HasMaxLength(200)
-                .IsUnicode(false)
-                .HasDefaultValue("linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)");
-            entity.Property(e => e.IconClass)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasDefaultValue("fa-crown");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -664,6 +681,32 @@ public partial class MovieTheaterContext : DbContext
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Voucher_Account");
+        });
+
+        modelBuilder.Entity<Food>(entity =>
+        {
+            entity.HasKey(e => e.FoodId).HasName("PK__Food__856DB2EB7C8486AE");
+
+            entity.ToTable("Food");
+
+            entity.Property(e => e.FoodId).HasColumnName("FoodId");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.Image)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Status);
+            entity.Property(e => e.CreatedDate).HasColumnName("CreatedDate");
+            entity.Property(e => e.UpdatedDate).HasColumnName("UpdatedDate");
         });
 
         OnModelCreatingPartial(modelBuilder);

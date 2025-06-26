@@ -1,6 +1,6 @@
 @if (TempData["ToastMessage"] != null)
 {
-    <div id="toastMessage" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="toastMessage" aria-live="polite" aria-atomic="true" class="position-fixed end-0 p-3" style="z-index: 1050; top: 80px;">
         <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">
@@ -14,7 +14,7 @@
 
 @if (TempData["ErrorMessage"] != null)
 {
-    <div id="errorToast" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="errorToast" aria-live="polite" aria-atomic="true" class="position-fixed end-0 p-3" style="z-index: 1050; top: 80px;">
         <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">

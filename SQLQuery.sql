@@ -405,3 +405,25 @@ CREATE TABLE Wishlist (
     FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
     FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID)
 );
+
+-- Create Food table
+CREATE TABLE Food (
+    FoodId INT IDENTITY(1,1) PRIMARY KEY,
+    Category VARCHAR(50) NOT NULL, -- food, drink, combo
+    Name VARCHAR(255) NOT NULL,
+    Price DECIMAL(18,2) NOT NULL,
+    Description VARCHAR(500),
+    Image VARCHAR(255),
+    Status BIT NOT NULL DEFAULT 1, -- 1 = active, 0 = inactive
+    CreatedDate DATETIME NOT NULL DEFAULT GETDATE(),
+    UpdatedDate DATETIME
+);
+
+-- Insert sample food data
+INSERT INTO Food (Category, Name, Price, Description, Status) VALUES
+('food', 'Popcorn', 45000, 'Fresh buttered popcorn', 1),
+('drink', 'Coca Cola', 25000, 'Cold Coca Cola 500ml', 1),
+('combo', 'Popcorn + Coke', 65000, 'Popcorn with Coca Cola', 1),
+('food', 'Nachos', 55000, 'Cheese nachos with salsa', 1),
+('drink', 'Pepsi', 25000, 'Cold Pepsi 500ml', 1),
+('combo', 'Nachos + Pepsi', 75000, 'Nachos with Pepsi', 1);
