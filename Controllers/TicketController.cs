@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using MovieTheater.Service;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MovieTheater.Controllers
 {
@@ -14,11 +15,15 @@ namespace MovieTheater.Controllers
     {
         private readonly MovieTheaterContext _context;
         private readonly IAccountService _accountService;
+        private readonly IMovieService _movieService;
+        private readonly ICinemaService _cinemaService;
 
-        public TicketController(MovieTheaterContext context, IAccountService accountService)
+        public TicketController(MovieTheaterContext context, IAccountService accountService, IMovieService movieService, ICinemaService cinemaService)
         {
             _context = context;
             _accountService = accountService;
+            _movieService = movieService;
+            _cinemaService = cinemaService;
         }
         [HttpGet]
         public IActionResult History()
@@ -305,6 +310,17 @@ namespace MovieTheater.Controllers
                 }
             }
             TempData["ToastMessage"] = string.Join("<br/>", messages);
+
+            // Repopulate TempData["CinemaRoomName"] before redirect
+            string roomName = "N/A";
+            var allMovies = _movieService.GetAll();
+            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == booking.MovieName || m.MovieNameVn == booking.MovieName);
+            if (movie != null && movie.CinemaRoomId.HasValue)
+            {
+                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
+                roomName = room?.CinemaRoomName ?? "N/A";
+            }
+            TempData["CinemaRoomName"] = roomName;
 
             return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
         }
