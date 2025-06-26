@@ -35,6 +35,8 @@ namespace MovieTheater.Controllers
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly ILogger<BookingController> _logger;
         private readonly VNPayService _vnPayService;
+        private readonly IPointService _pointService;
+        private readonly IRankService _rankService;
 
         public BookingController(IBookingService bookingService,
                          IMovieService movieService,
@@ -46,7 +48,9 @@ namespace MovieTheater.Controllers
                          IInvoiceService invoiceService,
                          ICinemaService cinemaService,
                          IScheduleSeatRepository scheduleSeatRepository,
-                         VNPayService vnPayService)
+                         VNPayService vnPayService,
+                         IPointService pointService,
+                         IRankService rankService)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -59,6 +63,8 @@ namespace MovieTheater.Controllers
             _cinemaService = cinemaService;
             _scheduleSeatRepository = scheduleSeatRepository;
             _vnPayService = vnPayService;
+            _pointService = pointService;
+            _rankService = rankService;
         }
 
         [HttpGet]
@@ -138,6 +144,19 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Reload account with rank
+            var userAccount = _accountService.GetById(currentUser.AccountId);
+
+            decimal earningRate = 1;
+            decimal rankDiscountPercent = 0;
+            if (userAccount?.Rank != null)
+            {
+                earningRate = userAccount.Rank.PointEarningPercentage ?? 1;
+                rankDiscountPercent = userAccount.Rank.DiscountPercentage ?? 0;
+            }
+            ViewBag.EarningRate = earningRate;
+            ViewBag.RankDiscountPercent = rankDiscountPercent;
+
             var seats = new List<SeatDetailViewModel>();
             foreach (var id in selectedSeatIds)
             {
@@ -156,7 +175,14 @@ namespace MovieTheater.Controllers
                 });
             }
 
-            var totalPrice = seats.Sum(s => s.Price);
+            var subtotal = seats.Sum(s => s.Price);
+            decimal rankDiscount = 0;
+            if (userAccount?.Rank != null)
+            {
+                rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            }
+
+            var totalPrice = subtotal - rankDiscount;
 
             var viewModel = new ConfirmBookingViewModel
             {
@@ -166,12 +192,16 @@ namespace MovieTheater.Controllers
                 ShowDate = showDate,
                 ShowTime = showTime,
                 SelectedSeats = seats,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
                 TotalPrice = totalPrice,
                 FullName = currentUser.FullName,
                 Email = currentUser.Email,
                 IdentityCard = currentUser.IdentityCard,
                 PhoneNumber = currentUser.PhoneNumber,
-                CurrentScore = currentUser.Score
+                CurrentScore = currentUser.Score,
+                EarningRate = earningRate,
+                RankDiscountPercent = rankDiscountPercent
             };
 
             return View("ConfirmBooking", viewModel);
@@ -186,24 +216,49 @@ namespace MovieTheater.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return RedirectToAction("Login", "Account");
 
+                var userAccount = _accountService.GetById(userId);
+
+                // Recalculate prices to prevent tampering
+                var subtotal = model.SelectedSeats.Sum(s => s.Price);
+                decimal rankDiscount = 0;
+                if (userAccount?.Rank != null)
+                {
+                    var rankDiscountPercent = userAccount.Rank.DiscountPercentage ?? 0;
+                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
+                }
+
+                var priceAfterDiscount = subtotal - rankDiscount;
+
+                model.UseScore = Math.Min(model.UseScore, (int)(priceAfterDiscount / 1000));
+                
+                var finalPrice = priceAfterDiscount - (model.UseScore * 1000);
+
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
                 string seatList = string.Join(",", seatNames);
 
-                model.UseScore = Math.Min(model.UseScore, (int)model.TotalPrice);
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = userId,
-                    AddScore = (int)(model.TotalPrice * 0.01m),
                     BookingDate = DateTime.Now,
                     MovieName = model.MovieName,
                     ScheduleShow = model.ShowDate,
                     ScheduleShowTime = model.ShowTime,
                     Status = InvoiceStatus.Incomplete,
-                    TotalMoney = model.TotalPrice - model.UseScore,
+                    TotalMoney = finalPrice,
                     UseScore = model.UseScore,
                     Seat = seatList
                 };
+
+                // Calculate earning rate from user rank
+                decimal earningRate = 1;
+                if (userAccount?.Rank != null)
+                {
+                    earningRate = userAccount.Rank.PointEarningPercentage ?? 1;
+                }
+                // Calculate points to earn using the same logic as admin
+                int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
+                invoice.AddScore = pointsToEarn;
 
                 await _bookingService.SaveInvoiceAsync(invoice);
 
@@ -252,9 +307,9 @@ namespace MovieTheater.Controllers
                     TempData["CinemaRoomName"] = model.CinemaRoomName;
                     TempData["InvoiceId"] = invoice.InvoiceId;
                     TempData["BookingTime"] = invoice.BookingDate.ToString();
-                    TempData["OriginalPrice"] = model.TotalPrice.ToString();
+                    TempData["OriginalPrice"] = subtotal.ToString();
                     TempData["UsedScore"] = model.UseScore.ToString();
-                    TempData["FinalPrice"] = (model.TotalPrice - model.UseScore).ToString();
+                    TempData["FinalPrice"] = finalPrice.ToString();
                     return RedirectToAction("Success");
                 }
 
@@ -483,31 +538,37 @@ namespace MovieTheater.Controllers
                     }
                 }
 
-                decimal discount = 0;
-                int scoreUsed = 0;
-                List<int> convertedTicketIndexes = new List<int>();
-                if (member != null && model.BookingDetails.SelectedSeats != null && model.BookingDetails.SelectedSeats.Count > 0 && model.TicketsToConvert > 0)
+                // Get member's current points and rank earning rate/discount
+                int memberPoints = member?.Score ?? 0;
+                decimal earningRate = 0;
+                decimal discountPercent = 0;
+                if (member?.Account?.RankId != null)
                 {
-                    var sortedSeats = model.BookingDetails.SelectedSeats
-                        .OrderByDescending(s => s.Price)
-                        .Take(model.TicketsToConvert)
-                        .ToList();
-
-                    var totalScoreNeeded = (int)sortedSeats.Sum(s => s.Price);
-
-                    if (member.Score >= totalScoreNeeded)
-                    {
-                        discount = sortedSeats.Sum(s => s.Price);
-                        scoreUsed = totalScoreNeeded;
-                        convertedTicketIndexes = sortedSeats.Select(s => model.BookingDetails.SelectedSeats.IndexOf(s)).ToList();
-                        member.Score -= scoreUsed;
-                        _memberRepository.Update(member);
-                    }
-                    else
-                    {
-                        return Json(new { success = false, message = "Member score is not enough to convert into ticket" });
-                    }
+                    var rank = member.Account.Rank;
+                    earningRate = rank?.PointEarningPercentage ?? 0;
+                    discountPercent = rank?.DiscountPercentage ?? 0;
                 }
+
+                decimal originalTotal = model.BookingDetails.TotalPrice;
+                decimal discountAmount = originalTotal * (discountPercent / 100m);
+                decimal discountedTotal = originalTotal - discountAmount;
+
+                // Validate and calculate point usage on discounted total
+                int requestedPoints = model.UsedScore;
+                decimal pointDiscount = 0;
+                int scoreUsed = 0;
+                if (requestedPoints > 0) {
+                    var pointValidation = _pointService.ValidatePointUsage(requestedPoints, discountedTotal, memberPoints);
+                    if (pointValidation.ValidationErrors.Count > 0)
+                    {
+                        return Json(new { success = false, message = string.Join(" ", pointValidation.ValidationErrors) });
+                    }
+                    pointDiscount = pointValidation.DiscountAmount;
+                    scoreUsed = pointValidation.PointsToUse;
+                }
+
+                // Calculate points to earn (on discounted total after points used)
+                int pointsToEarn = _pointService.CalculatePointsToEarn(discountedTotal - pointDiscount, earningRate);
 
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var currentUser = _accountService.GetById(currentUserId);
@@ -515,16 +576,15 @@ namespace MovieTheater.Controllers
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = member?.Account?.AccountId ?? currentUserId,
-                    AddScore = (int)((model.BookingDetails.TotalPrice - discount) * 0.1m),
+                    AddScore = pointsToEarn,
                     BookingDate = DateTime.Now,
                     MovieName = model.BookingDetails.MovieName,
                     ScheduleShow = model.BookingDetails.ShowDate,
                     ScheduleShowTime = model.BookingDetails.ShowTime,
                     Status = InvoiceStatus.Completed,
-                    TotalMoney = model.BookingDetails.TotalPrice - discount,
+                    TotalMoney = discountedTotal - pointDiscount,
                     UseScore = scoreUsed,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
-                    //RoleId = currentUser?.RoleId
                 };
 
                 string roomName = "N/A";
@@ -539,6 +599,17 @@ namespace MovieTheater.Controllers
                 }
 
                 await _bookingService.SaveInvoiceAsync(invoice);
+
+                // Deduct score if used
+                if (scoreUsed > 0 && member != null)
+                {
+                    await _accountService.DeductScoreAsync(member.Account.AccountId, scoreUsed);
+                }
+                // Add points (using new calculation)
+                if (pointsToEarn > 0)
+                {
+                    await _accountService.AddScoreAsync(invoice.AccountId, pointsToEarn);
+                }
 
                 var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
                     .FirstOrDefault(ms => 
@@ -564,6 +635,31 @@ namespace MovieTheater.Controllers
                 }
 
                 TempData["ToastMessage"] = "Movie booked successfully!";
+
+                var subtotal = model.BookingDetails.SelectedSeats.Sum(s => s.Price);
+                decimal rankDiscount = 0;
+                if (member?.Account?.Rank != null)
+                {
+                    var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
+                }
+                var viewModel = new ConfirmTicketAdminViewModel
+                {
+                    BookingDetails = model.BookingDetails,
+                    MemberCheckMessage = "",
+                    ReturnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }),
+                    MemberId = member?.MemberId,
+                    MemberEmail = member?.Account?.Email,
+                    MemberIdentityCard = member?.Account?.IdentityCard,
+                    MemberPhone = member?.Account?.PhoneNumber,
+                    UsedScore = invoice.UseScore ?? 0,
+                    UsedScoreValue = (invoice.UseScore ?? 0) * 1000,
+                    AddedScore = invoice.AddScore ?? 0,
+                    AddedScoreValue = (invoice.AddScore ?? 0) * 1000,
+                    Subtotal = subtotal,
+                    RankDiscount = rankDiscount,
+                    TotalPrice = invoice.TotalMoney ?? 0
+                };
 
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
             }
@@ -640,7 +736,6 @@ namespace MovieTheater.Controllers
                 });
             }
 
-            int ticketsConverted = 0;
             if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0 && seats.Count > 0)
             {
                 var sortedSeats = seats.OrderByDescending(s => s.Price).ToList();
@@ -649,7 +744,6 @@ namespace MovieTheater.Controllers
                 {
                     if (runningScore >= seat.Price)
                     {
-                        ticketsConverted++;
                         runningScore -= seat.Price;
                     }
                     else
@@ -671,12 +765,19 @@ namespace MovieTheater.Controllers
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
-                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null,
-                Status = InvoiceStatus.Completed
+                Status = InvoiceStatus.Completed,
+                AddScore = invoice.AddScore ?? 0
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 
+            var subtotal = seats.Sum(s => s.Price);
+            decimal rankDiscount = 0;
+            if (member?.Account?.Rank != null)
+            {
+                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            }
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -685,7 +786,14 @@ namespace MovieTheater.Controllers
                 MemberId = member?.MemberId,
                 MemberEmail = member?.Account?.Email,
                 MemberIdentityCard = member?.Account?.IdentityCard,
-                MemberPhone = member?.Account?.PhoneNumber
+                MemberPhone = member?.Account?.PhoneNumber,
+                UsedScore = invoice.UseScore ?? 0,
+                UsedScoreValue = (invoice.UseScore ?? 0) * 1000,
+                AddedScore = invoice.AddScore ?? 0,
+                AddedScoreValue = (invoice.AddScore ?? 0) * 1000,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
+                TotalPrice = invoice.TotalMoney ?? 0
             };
 
             return View("TicketBookingConfirmed", viewModel);
@@ -716,92 +824,38 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult TicketInfo(string invoiceId)
         {
-            if (string.IsNullOrEmpty(invoiceId))
-                return NotFound();
-
             var invoice = _invoiceService.GetById(invoiceId);
             if (invoice == null)
-            {
-                _logger.LogError($"Invoice not found: {invoiceId}");
                 return NotFound();
-            }
-
-            var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId).ToList();
-
-            var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m =>
-                string.Equals(m.MovieNameEnglish?.Trim(), invoice.MovieName?.Trim(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(m.MovieNameVn?.Trim(), invoice.MovieName?.Trim(), StringComparison.OrdinalIgnoreCase)
-            );
-            if (movie == null)
-            {
-                return NotFound("Movie not found for this invoice.");
-            }
-
-            var movieShow = _movieService.GetMovieShows(movie.MovieId)
-                .FirstOrDefault(ms => 
-                    ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(invoice.ScheduleShow ?? DateTime.Now) && 
-                    ms.Schedule?.ScheduleTime == invoice.ScheduleShowTime);
-
-            if (movieShow == null)
-            {
-                return NotFound("Movie show not found for this invoice.");
-            }
-
-            var firstScheduleSeat = scheduleSeats.FirstOrDefault();
-            if (firstScheduleSeat == null)
-            {
-                var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
-                var newScheduleSeats = new List<ScheduleSeat>();
-                
-                foreach (var seatName in seatNames)
-                {
-                    var trimmedSeatName = seatName.Trim();
-                    var seat = _seatService.GetSeatByName(trimmedSeatName);
-                    if (seat == null)
-                    {
-                        continue;
-                    }
-
-                    newScheduleSeats.Add(new ScheduleSeat
-                    {
-                        MovieShowId = movieShow.MovieShowId,
-                        InvoiceId = invoice.InvoiceId,
-                        SeatId = seat.SeatId,
-                        SeatStatusId = 2
-                    });
-                }
-
-                if (newScheduleSeats.Any())
-                {
-                    _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(newScheduleSeats).Wait();
-                    scheduleSeats = newScheduleSeats;
-                }
-                else
-                {
-                    return NotFound("No valid seats found for this invoice.");
-                }
-            }
-
-            var cinemaRoom = movieShow.CinemaRoom;
-            if (cinemaRoom == null)
-            {
-                return NotFound("Cinema room not found.");
-            }
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
-            // Prepare seat details
-            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => s.Trim())
-                .Where(s => !string.IsNullOrEmpty(s))
-                .ToArray();
-            var seats = new List<SeatDetailViewModel>();
-            foreach (var seatName in seatNamesArr)
+
+            // Get room name
+            string roomName = "N/A";
+            var allMovies = _movieService.GetAll();
+            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
+            if (movie != null && movie.CinemaRoomId.HasValue)
             {
-                var seat = _seatService.GetSeatByName(seatName);
+                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
+                roomName = room?.CinemaRoomName ?? "N/A";
+            }
+
+            // Get movie show
+            var movieShow = _movieService.GetMovieShows(movie?.MovieId ?? "")
+                .FirstOrDefault(ms =>
+                    ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(invoice.ScheduleShow ?? DateTime.Now) &&
+                    ms.Schedule?.ScheduleTime == invoice.ScheduleShowTime);
+
+            // Prepare seat details
+            var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var seats = new List<SeatDetailViewModel>();
+            foreach (var seatName in seatNames)
+            {
+                var trimmedSeatName = seatName.Trim();
+                var seat = _seatService.GetSeatByName(trimmedSeatName);
                 if (seat == null)
                 {
-                    // Nếu không tìm thấy seat, bỏ qua và tiếp tục
+                    System.Diagnostics.Debug.WriteLine($"[TicketInfo] Seat not found: '{trimmedSeatName}'");
                     continue;
                 }
                 SeatType seatType = null;
@@ -809,19 +863,20 @@ namespace MovieTheater.Controllers
                 {
                     seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                 }
-
                 seats.Add(new SeatDetailViewModel
                 {
                     SeatId = seat.SeatId,
-                    SeatName = seat.SeatName,
+                    SeatName = trimmedSeatName,
                     SeatType = seatType?.TypeName ?? "N/A",
                     Price = seatType?.PricePercent ?? 0
                 });
             }
 
+            // Calculate tickets converted by score
             int ticketsConverted = 0;
             if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0 && seats.Count > 0)
             {
+                // Sort seats by price descending and count how many could be converted by the used score
                 var sortedSeats = seats.OrderByDescending(s => s.Price).ToList();
                 decimal runningScore = invoice.UseScore.Value;
                 foreach (var seat in sortedSeats)
@@ -840,9 +895,9 @@ namespace MovieTheater.Controllers
 
             var bookingDetails = new ConfirmBookingViewModel
             {
-                MovieId = movieShow.MovieId,
+                MovieId = movie?.MovieId,
                 MovieName = invoice.MovieName,
-                CinemaRoomName = cinemaRoom.CinemaRoomName,
+                CinemaRoomName = roomName,
                 ShowDate = invoice.ScheduleShow ?? DateTime.Now,
                 ShowTime = invoice.ScheduleShowTime,
                 SelectedSeats = seats,
@@ -850,17 +905,19 @@ namespace MovieTheater.Controllers
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
-                TicketsConverted = ticketsConverted > 0 ? ticketsConverted.ToString() : null,
-                FullName = member?.Account?.FullName,
-                Email = member?.Account?.Email,
-                IdentityCard = member?.Account?.IdentityCard,
-                PhoneNumber = member?.Account?.PhoneNumber,
-                CurrentScore = member?.Score ?? 0,
-                Status = (InvoiceStatus)invoice.Status
+                Status = invoice.Status ?? InvoiceStatus.Incomplete,
+                AddScore = invoice.AddScore ?? 0
             };
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 
+            var subtotal = seats.Sum(s => s.Price);
+            decimal rankDiscount = 0;
+            if (member?.Account?.Rank != null)
+            {
+                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            }
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -869,7 +926,14 @@ namespace MovieTheater.Controllers
                 MemberId = member?.MemberId,
                 MemberEmail = member?.Account?.Email,
                 MemberIdentityCard = member?.Account?.IdentityCard,
-                MemberPhone = member?.Account?.PhoneNumber
+                MemberPhone = member?.Account?.PhoneNumber,
+                UsedScore = invoice.UseScore ?? 0,
+                UsedScoreValue = (invoice.UseScore ?? 0) * 1000,
+                AddedScore = invoice.AddScore ?? 0,
+                AddedScoreValue = (invoice.AddScore ?? 0) * 1000,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
+                TotalPrice = invoice.TotalMoney ?? 0
             };
 
             return View("TicketBookingConfirmed", viewModel);
@@ -893,6 +957,31 @@ namespace MovieTheater.Controllers
             return Json(members);
         }
 
-      
+        [Authorize(Roles = "Admin")]
+        [HttpGet("Booking/InitiateTicketSellingForMember/{id}")]
+        public IActionResult InitiateTicketSellingForMember(string id)
+        {
+            // Store the member's AccountId in TempData to use in the ticket selling process
+            TempData["InitiateTicketSellingForMemberId"] = id;
+
+            var returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetMemberDiscount(string memberId)
+        {
+            if (string.IsNullOrEmpty(memberId))
+                return Json(new { discountPercent = 0, earningRate = 0 });
+            var member = _memberRepository.GetByMemberId(memberId);
+            decimal discountPercent = 0;
+            decimal earningRate = 0;
+            if (member?.Account?.Rank != null)
+            {
+                discountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
+            }
+            return Json(new { discountPercent, earningRate });
+        }
     }
 }

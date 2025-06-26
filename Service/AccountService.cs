@@ -372,7 +372,7 @@ namespace MovieTheater.Service
             return _repository.GetById(id);
         }
 
-        public async Task DeductScoreAsync(string userId, int points)
+        public async Task DeductScoreAsync(string userId, int points, bool deductFromTotalPoints = false)
         {
             var account = _repository.GetById(userId);
             if (account == null) return;
@@ -380,14 +380,17 @@ namespace MovieTheater.Service
             if (member != null && member.Score >= points)
             {
                 member.Score -= points;
-                member.TotalPoints -= points; // Deduct from lifetime points as well
-                if (member.TotalPoints < 0) member.TotalPoints = 0; // Prevent negative
+                if (deductFromTotalPoints)
+                {
+                    member.TotalPoints -= points; // Only deduct from lifetime points if requested (e.g., on cancel)
+                    if (member.TotalPoints < 0) member.TotalPoints = 0; // Prevent negative
+                }
                 _memberRepository.Update(member);
                 _memberRepository.Save();
             }
         }
 
-        public async Task AddScoreAsync(string userId, int points)
+        public async Task AddScoreAsync(string userId, int points, bool addToTotalPoints = true)
         {
             var account = _repository.GetById(userId);
             if (account == null) return;
@@ -395,7 +398,10 @@ namespace MovieTheater.Service
             if (member != null)
             {
                 member.Score += points;
-                member.TotalPoints += points; // Always increment lifetime points
+                if (addToTotalPoints)
+                {
+                    member.TotalPoints += points;
+                }
                 _memberRepository.Update(member);
                 _memberRepository.Save();
             }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using MovieTheater.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace MovieTheater.Controllers
 {
@@ -14,10 +15,12 @@ namespace MovieTheater.Controllers
     public class PaymentController : Controller
     {
         private readonly VNPayService _vnPayService;
+        private readonly ILogger<PaymentController> _logger;
 
-        public PaymentController(VNPayService vnPayService)
+        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger)
         {
             _vnPayService = vnPayService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -74,9 +77,13 @@ namespace MovieTheater.Controllers
                     invoice.Status = MovieTheater.Models.InvoiceStatus.Completed;
                     if (invoice.AddScore == 0)
                     {
-                        int addScore = (int)((invoice.TotalMoney ?? 0) * 0.01m);
+                        // Fetch member's earning rate
+                        var member = context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                        decimal earningRate = 1;
+                        if (member?.Account?.Rank != null)
+                            earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
+                        int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(invoice.TotalMoney ?? 0, earningRate);
                         invoice.AddScore = addScore;
-                        var member = context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
                         if (member != null)
                         {
                             member.Score += addScore;

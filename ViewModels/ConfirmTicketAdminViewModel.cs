@@ -22,5 +22,13 @@ namespace MovieTheater.ViewModels
         public string ReturnUrl { get; set; } // For return button to seat selection
         public int MovieShowId { get; set; }
 
+        public int UsedScore { get; set; }
+        public int AddedScore { get; set; } // Points earned from this transaction
+        public decimal UsedScoreValue { get; set; } // VND value of used points
+        public decimal AddedScoreValue { get; set; } // VND value of earned points
+
+        public decimal Subtotal { get; set; } // Sum of seat prices before discounts/points
+        public decimal RankDiscount { get; set; } // Discount from member rank
+        public decimal TotalPrice { get; set; } // Final price after all deductions
     }
 }

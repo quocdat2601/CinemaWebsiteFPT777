@@ -97,6 +97,8 @@ namespace MovieTheater.Controllers
                 .Include(i => i.ScheduleSeats)
                     .ThenInclude(ss => ss.MovieShow)
                         .ThenInclude(ms => ms.CinemaRoom)
+                .Include(i => i.Account)
+                    .ThenInclude(a => a.Rank)
                 .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
 
             if (booking == null)
@@ -169,14 +171,14 @@ namespace MovieTheater.Controllers
             // Handle score operations
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
-                // Trả lại điểm đã cộng khi đặt vé
-                await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value);
+                // Remove points earned from both Score and Total_Points
+                await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value, true);
             }
             
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
-                // Trả lại điểm đã sử dụng khi đặt vé
-                await _accountService.AddScoreAsync(accountId, booking.UseScore.Value);
+                // Refund points used to Score only
+                await _accountService.AddScoreAsync(accountId, booking.UseScore.Value, false);
             }
             
             _context.SaveChanges();
@@ -257,14 +259,14 @@ namespace MovieTheater.Controllers
             // ✅ Xử lý điểm
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
-                // Trả lại điểm đã cộng khi đặt vé
-                await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value);
+                // Remove points earned from both Score and Total_Points
+                await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value, true);
             }
             
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
-                // Trả lại điểm đã sử dụng khi đặt vé
-                await _accountService.AddScoreAsync(booking.AccountId, booking.UseScore.Value);
+                // Refund points used to Score only
+                await _accountService.AddScoreAsync(booking.AccountId, booking.UseScore.Value, false);
             }
 
             _context.SaveChanges(); // Lưu lại trước khi tạo voucher

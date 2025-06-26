@@ -113,6 +113,7 @@ namespace MovieTheater
             builder.Services.AddScoped<MovieTheater.Service.IRankService, MovieTheater.Service.RankService>();
             builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
             builder.Services.AddScoped<IVoucherService, VoucherService>();
+            builder.Services.AddScoped<IPointService, PointService>();
             builder.Services.AddSignalR(); //ADD SignalR
 
             builder.Services.Configure<VNPayConfig>(
