@@ -16,9 +16,10 @@
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel>;
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.Price) ?? 0;
-    decimal rankDiscount = 0; // Do not recalculate from member rank
     decimal usedScoreValue = useScore * 1000;
     decimal addedScoreValue = addScore * 1000;
+    decimal totalPriceValue = invoice.TotalMoney ?? 0;
+    decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
 }
@@ -213,18 +214,18 @@
                                 {
                                     <tr>
                                         <td style="white-space: nowrap;">- Points Used</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@usedScoreValue.ToString("N0") VND (@useScore points)</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
                                     </tr>
                                 }
                                 <tr>
-                                    <th style="white-space: nowrap;">Total Price</th>
-                                    <th class="text-end" style="white-space: nowrap;">@totalPrice VND</th>
+                                    <td class="ticket-total-label">Total Price</td>
+                                    <td class="ticket-total-value">@totalPriceValue.ToString("N0") VND</td>
                                 </tr>
                                 @if (addScore > 0)
                                 {
-                                    <tr style="border-top: 1px solid #dee2e6;">
-                                        <td style="white-space: nowrap; padding-top: 0.8rem;">+ Points Earned</td>
-                                        <td class="text-end text-success" style="white-space: nowrap; padding-top: 0.8rem; font-weight: 500;">+@addScore (@addedScoreValue.ToString("N0") VND)</td>
+                                    <tr>
+                                        <td style="white-space: nowrap; color: #28a745;">+ Points Earned</td>
+                                        <td class="text-end" style="white-space: nowrap; color: #28a745;">+@addScore (@addedScoreValue.ToString("N0") VND)</td>
                                     </tr>
                                 }
                             </tbody>
