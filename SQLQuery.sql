@@ -125,22 +125,13 @@ CREATE TABLE Cinema_Room (
     Cinema_Room_ID INT PRIMARY KEY IDENTITY(1,1),
     Cinema_Room_Name VARCHAR(255),
     Seat_Width INT,
-    Seat_Length INT
+    Seat_Length INT,
+	Version_ID INT,
+	FOREIGN KEY (Version_ID) REFERENCES Version(Version_ID)
 );
 
 ALTER TABLE Cinema_Room
 ADD Seat_Quantity AS (Seat_Width * Seat_Length);
-
-CREATE TABLE Cinema_Room_Version (
-    Cinema_Room_ID INT,
-    Version_ID INT,
-    PRIMARY KEY (Cinema_Room_ID, Version_ID),
-    FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
-    FOREIGN KEY (Version_ID) REFERENCES Version(Version_ID)
-);
-
-INSERT INTO Cinema_Room(Cinema_Room_Name) VALUES
-('Screen 1'), ('Screen 2'), ('Screen 3'), ('Screen 4'), ('Screen 5'), ('Screen 6'), ('Screen 7');
 
 CREATE TABLE Movie_Show (
     Movie_Show_ID INT PRIMARY KEY IDENTITY(1,1),
@@ -321,14 +312,8 @@ INSERT INTO Movie_Version (Movie_ID, Version_ID) VALUES
 ('MV009', 1), 
 ('MV009', 2);
 
-INSERT INTO Cinema_Room_Version (Cinema_Room_ID, Version_ID) VALUES
-(1, 1),
-(2, 1),
-(3, 1),
-(4, 2),
-(5, 2),
-(6, 2),
-(7, 3);
+INSERT INTO Cinema_Room(Cinema_Room_Name, Version_ID) VALUES
+('Screen 1', 1), ('Screen 2', 1), ('Screen 3', 1), ('Screen 4', 2), ('Screen 5', 2), ('Screen 6', 2), ('Screen 7', 3);
 
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,

@@ -35,6 +35,21 @@
             <span class="fw-bold">Duration:</span> @Model.Duration minutes
         </p>
         <input type="hidden" id="movieDuration" value="@Model.Duration" />
+         <p class="text-muted mb-1">
+            <strong>Version: </strong>
+            @foreach (var version in Model.AvailableVersions)
+            {
+                <label class="me-3">
+                    <input type="radio"
+                           name="SelectedVersionIds"
+                           value="@version.VersionId"
+                           @(Model.SelectedVersionIds.Contains(version.VersionId) ? "checked" : "")
+                           class="version-radio" />
+                    @version.VersionName
+                </label>
+            }
+            <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
+        </p>
     </div>
 
     <div class="schedule-form">
@@ -343,6 +358,26 @@
                 console.error('Error saving movie shows:', error);
                 alert('An error occurred while saving the movie shows. Please try again.');
             }
+        });
+
+        const versionRadios = document.querySelectorAll('.version-radio');
+        versionRadios.forEach(radio => {
+            radio.addEventListener('change', async function() {
+                const versionId = this.value;
+                const response = await fetch(`/Cinema/GetRoomsByVersion?versionId=${versionId}`);
+                if (response.ok) {
+                    const rooms = await response.json();
+                    cinemaRoomSelect.innerHTML = '<option value="">-- Select a Cinema Room --</option>';
+                    rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.cinemaRoomId;
+                        option.textContent = room.cinemaRoomName;
+                        cinemaRoomSelect.appendChild(option);
+                    });
+                } else {
+                    cinemaRoomSelect.innerHTML = '<option value="">-- No rooms available --</option>';
+                }
+            });
         });
     });
 </script>

@@ -16,13 +16,15 @@ namespace MovieTheater.Repository
 
         public IEnumerable<CinemaRoom> GetAll()
         {
-            return _context.CinemaRooms.ToList();
+            return _context.CinemaRooms
+                .Include(c => c.Version)
+                .ToList();
         }
 
         public CinemaRoom? GetById(int? id)
         {
             return _context.CinemaRooms
-                .Include(c => c.Versions)
+                .Include(c => c.Version)
                 .FirstOrDefault(a => a.CinemaRoomId == id);
         }
 
@@ -58,12 +60,10 @@ namespace MovieTheater.Repository
             _context.SaveChanges();
         }
 
-
         public void Update(CinemaRoom cinemaRoom)
         {
             var existingCinema = _context.CinemaRooms
                 .Include(c => c.Seats)
-                .Include(c => c.Versions)
                 .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
 
             if (existingCinema == null)
@@ -74,6 +74,7 @@ namespace MovieTheater.Repository
             try
             {
                 existingCinema.CinemaRoomName = cinemaRoom.CinemaRoomName;
+                existingCinema.VersionId = cinemaRoom.VersionId;
 
                 if (existingCinema.SeatLength != cinemaRoom.SeatLength || existingCinema.SeatWidth != cinemaRoom.SeatWidth)
                 {
@@ -84,16 +85,6 @@ namespace MovieTheater.Repository
 
                     var newSeats = GenerateSeats(existingCinema);
                     _context.Seats.AddRange(newSeats);
-                }
-
-                existingCinema.Versions.Clear();
-                foreach (var version in cinemaRoom.Versions)
-                {
-                    var versionEntity = _context.Versions.Find(version.VersionId);
-                    if (versionEntity != null)
-                    {
-                        existingCinema.Versions.Add(versionEntity);
-                    }
                 }
 
                 _context.SaveChanges();
@@ -115,11 +106,6 @@ namespace MovieTheater.Repository
                 {
                     await _seatRepository.DeleteAsync(seat.SeatId);
                 }
-                if (cinemaRoom.Versions != null)
-                {
-                    cinemaRoom.Versions.Clear();
-                    await _context.SaveChangesAsync();
-                }
                 _context.CinemaRooms.Remove(cinemaRoom);
                 await _context.SaveChangesAsync();
             }
@@ -128,6 +114,14 @@ namespace MovieTheater.Repository
         public async Task Save()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId)
+        {
+            return _context.CinemaRooms
+                .Include(c => c.Version)
+                .Where(c => c.VersionId == versionId)
+                .ToList();
         }
     }
 }

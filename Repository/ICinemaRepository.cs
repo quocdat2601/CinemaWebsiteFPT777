@@ -10,6 +10,6 @@ namespace MovieTheater.Repository
         public void Update(CinemaRoom cinemaRoom);
         Task Delete(int id);
         Task Save();
-
+        public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId);
     }
 }

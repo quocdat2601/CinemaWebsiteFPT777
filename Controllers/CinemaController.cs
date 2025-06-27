@@ -34,11 +34,7 @@ namespace MovieTheater.Controllers
             {
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
-            var version = _movieService.GetVersionById(VersionId);
-            if (version != null)
-            {
-                cinemaRoom.Versions.Add(version);
-            }
+            cinemaRoom.VersionId = VersionId;
             _cinemaService.Add(cinemaRoom);
             TempData["ToastMessage"] = "Showroom created successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
@@ -54,7 +50,7 @@ namespace MovieTheater.Controllers
                 return NotFound();
             var versions = _movieService.GetAllVersions();
             ViewBag.Versions = versions;
-            ViewBag.CurrentVersionId = showroom.Versions.FirstOrDefault()?.VersionId ?? 0;
+            ViewBag.CurrentVersionId = showroom.VersionId ?? 0;
             return View(showroom);
         }
 
@@ -70,12 +66,7 @@ namespace MovieTheater.Controllers
                 ViewBag.CurrentVersionId = VersionId;
                 return View(cinemaRoom);
             }
-            var version = _movieService.GetVersionById(VersionId);
-            cinemaRoom.Versions.Clear();
-            if (version != null)
-            {
-                cinemaRoom.Versions.Add(version);
-            }
+            cinemaRoom.VersionId = VersionId;
             bool success = _cinemaService.Update(id, cinemaRoom);
             if (!success)
             {
@@ -123,6 +114,15 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
+        }
+
+        [HttpGet]
+        public IActionResult GetRoomsByVersion(int versionId)
+        {
+            var rooms = _cinemaService.GetRoomsByVersion(versionId)
+                .Select(r => new { r.CinemaRoomId, r.CinemaRoomName })
+                .ToList();
+            return Json(rooms);
         }
     }
 }

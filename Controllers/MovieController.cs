@@ -136,6 +136,8 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
+            var selectedVersions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
+
             var movie = new Movie
             {
                 MovieId = model.MovieId,
@@ -152,7 +154,7 @@ namespace MovieTheater.Controllers
                 LargeImage = model.LargeImage,
                 SmallImage = model.SmallImage,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
-                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList()
+                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
             };
 
             if (_movieService.AddMovie(movie))
@@ -236,6 +238,7 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
+
             var existingMovie = _movieService.GetById(id);
             if (existingMovie == null)
             {
@@ -300,7 +303,8 @@ namespace MovieTheater.Controllers
                 LargeImage = model.LargeImage,
                 SmallImage = model.SmallImage,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
-                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList()
+                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
+
             };
 
             if (_movieService.UpdateMovie(movie))
@@ -315,6 +319,7 @@ namespace MovieTheater.Controllers
 
             TempData["ErrorMessage"] = "Failed to update movie.";
             model.AvailableTypes = _movieService.GetAllTypes();
+            model.AvailableVersions = _movieService.GetAllVersions();
             return View(model);
         }
 
@@ -349,6 +354,8 @@ namespace MovieTheater.Controllers
                 }
 
                 movie.Types?.Clear();
+                movie.Versions?.Clear();
+
                 bool success = _movieService.DeleteMovie(id);
 
                 if (!success)
@@ -423,7 +430,8 @@ namespace MovieTheater.Controllers
                 AvailableCinemaRooms = _cinemaService.GetAll().ToList(),
                 AvailableShowDates = showDates,
                 AvailableSchedules = _movieService.GetSchedules().ToList(),
-                CurrentMovieShows = movieShows
+                CurrentMovieShows = movieShows,
+                AvailableVersions = movie.Versions.ToList()
             };
 
             return View(viewModel);

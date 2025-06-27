@@ -59,6 +59,7 @@ namespace MovieTheater.Repository
                 {
                     movie.MovieId = GenerateMovieId();
                 }
+                
                 _context.Movies.Add(movie);
                 _context.SaveChanges();
                 return true;
@@ -93,11 +94,8 @@ namespace MovieTheater.Repository
                     existingMovie.TrailerUrl = movie.TrailerUrl;
                     existingMovie.LargeImage = movie.LargeImage;
                     existingMovie.SmallImage = movie.SmallImage;
-                    
-                    // Clear existing types
+                
                     existingMovie.Types.Clear();
-                    
-                    // Add new types
                     foreach (var type in movie.Types)
                     {
                         var existingType = _context.Types.Find(type.TypeId);
@@ -107,10 +105,7 @@ namespace MovieTheater.Repository
                         }
                     }
 
-                    // Clear existing versions
                     existingMovie.Versions.Clear();
-                    
-                    // Add new versions
                     foreach (var version in movie.Versions)
                     {
                         var existingVersion = _context.Versions.Find(version.VersionId);
@@ -119,7 +114,7 @@ namespace MovieTheater.Repository
                             existingMovie.Versions.Add(existingVersion);
                         }
                     }
-                    
+
                     _context.SaveChanges();
                     return true;
                 }
@@ -151,6 +146,11 @@ namespace MovieTheater.Repository
                 if (movie.Types != null)
                 {
                     _context.Types.RemoveRange(movie.Types);
+                }
+
+                if (movie.Versions != null)
+                {
+                    _context.Versions.RemoveRange(movie.Versions);
                 }
                 
                 _context.Movies.Remove(movie);
