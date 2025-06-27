@@ -1,0 +1,70 @@
+﻿using MovieTheater.Models;
+using MovieTheater.Repository;
+
+namespace MovieTheater.Service
+{
+    public class SeatService : ISeatService
+    {
+        private readonly ISeatRepository _repository;
+        private readonly MovieTheaterContext _context;
+
+        public SeatService(ISeatRepository repository, MovieTheaterContext context)
+        {
+            _repository = repository;
+            _context = context;
+        }
+
+        public Task<List<Seat>> GetAllSeatsAsync()
+        {
+            return _repository.GetAllAsync();
+        }
+
+        public Task<List<Seat>> GetSeatsByRoomIdAsync(int cinemaRoomId)
+        {
+            return _repository.GetByCinemaRoomIdAsync(cinemaRoomId);
+        }
+
+        public async Task<Seat?> GetSeatByIdAsync(int id)
+        {
+            return await Task.FromResult(_repository.GetById(id));
+        }
+
+        public async Task<List<SeatType>> GetSeatTypesAsync()
+        {
+            return await _repository.GetSeatTypesAsync();
+        }
+
+        public void AddSeatAsync(Seat seat)
+        {
+            _repository.Add(seat);
+            _repository.Save();
+        }
+
+        public void UpdateSeatAsync(Seat seat)
+        {
+            _repository.Update(seat);
+            _repository.Save();
+        }
+
+        public void DeleteSeatAsync(int id)
+        {
+            _repository.DeleteAsync(id);
+            _repository.Save();
+        }
+
+        public void Save()
+        {
+            _repository.Save();
+        }
+
+        public Seat GetSeatByName(string seatName)
+        {
+            return _repository.GetSeatByName(seatName);
+        }
+
+        public Seat GetSeatById(int id)
+        {
+            return _repository.GetById(id);
+        }
+    }
+}

@@ -1,0 +1,102 @@
+@model MovieTheater.ViewModels.ShowtimeSelectionViewModel
+
+<!--
+    MT-20: Select Movie and Showtime View
+    - Displays a date combobox (dropdown) for valid screening dates (AC-01)
+    - Shows movies with posters and showtimes as buttons (AC-02)
+    - If no showtimes, shows a 'No showtime' message (AC-04)
+    - All data is read-only and based on the ViewModel (AC-05)
+-->
+
+@{
+    ViewData["Title"] = "Ticket selling management – Select movie and showtime";
+    var isAuthenticated = User.Identity.IsAuthenticated;
+}
+
+@{
+    var returnUrl = Context.Request.Query["ReturnUrl"].ToString();
+    if (string.IsNullOrEmpty(returnUrl))
+    {
+        // Default to Booking Management if no ReturnUrl is provided
+        returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+    }
+}
+<div class="text-start p-3">
+    <a href="@returnUrl" class="btn btn-secondary">&larr; Return</a>
+</div>
+
+<h2 class="text-center mb-4">SHOWTIMES</h2>
+
+<div class="showtime-container p-4 rounded">
+    <!-- Date selection as a dropdown combobox (AC-01) -->
+    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <select name="date" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
+            @foreach (var date in Model.AvailableDates)
+            {
+                var dateStr = date.ToString("dd/MM/yyyy");
+                var isSelected = date.Date == Model.SelectedDate.Date;
+                <option value="@dateStr" selected="@isSelected">
+                    @date.ToString("dd MMM ddd")
+                </option>
+            }
+        </select>
+    </form>
+
+    @if (Model.Movies == null || !Model.Movies.Any())
+    {
+        <div class="alert alert-warning text-center">No showtime</div> <!-- AC-04 -->
+    }
+    else
+    {
+        foreach (var movie in Model.Movies)
+        {
+            <div class="card mb-4 mx-auto" style="max-width: 700px;">
+                <div class="row g-0 align-items-center">
+                    <div class="col-md-2 text-center">
+                        <img src="@movie.PosterUrl" alt="@movie.MovieName" class="img-fluid rounded" style="max-height: 120px;" />
+                    </div>
+                    <div class="col-md-10">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">@movie.MovieName</h5>
+                            <div class="mb-2 text-muted" style="font-size: 0.95em;">@movie.MovieName</div>
+                            <div>
+                                @foreach (var showtime in movie.Showtimes)
+                                {
+                                    <a asp-action="Select" asp-controller="Seat"
+                                       asp-route-movieId="@movie.MovieId"
+                                       asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
+                                       asp-route-time="@showtime"
+                                       asp-route-isAdminSell="true"
+                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
+                                       class="btn btn-outline-primary btn-sm m-1 bookBtn">
+                                        @showtime
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!--
+    - Date combobox triggers form submit on change (AC-01)
+    - Showtimes are links/buttons that redirect to seat selection with movieId, date, and time (AC-03)
+    - If no showtimes, shows a warning message (AC-04)
+    - All data is based on the ViewModel (active schedule, valid showtimes) (AC-05)
+--> 
+
+<script>
+    document.querySelectorAll('.bookBtn').forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+            if (!isAuthenticated) {
+                event.preventDefault();  
+                window.location.href = '@Url.Action("Login", "Account")';
+            }
+        });
+    });
+</script>
