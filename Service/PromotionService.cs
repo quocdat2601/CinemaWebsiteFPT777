@@ -54,7 +54,7 @@ namespace MovieTheater.Service
             _promotionRepository.Save();
         }
 
-        public List<Promotion> GetEligiblePromotionsForMember(string memberId, int seatCount = 0, DateTime? showDate = null, string movieId = null, string movieName = null)
+        public List<Promotion> GetEligiblePromotionsForMember(string? memberId, int seatCount = 0, DateTime? showDate = null, string? movieId = null, string? movieName = null)
         {
             var today = DateTime.Today;
             string accountId = null;
@@ -239,94 +239,139 @@ namespace MovieTheater.Service
                 .ToList();
         }
 
-        private bool CheckCondition(PromotionCondition condition, string accountId)
-        {
-            if (string.IsNullOrEmpty(condition.TargetField) || string.IsNullOrEmpty(condition.TargetValue))
-                return true;
-
-            var account = _context.Accounts.FirstOrDefault(a => a.AccountId == accountId);
-            if (account == null) return false;
-
-            var propertyValue = GetPropertyValue(account, condition.TargetField);
-            if (propertyValue == null) return true;
-
-            return CompareValues(propertyValue.ToString(), condition.Operator, condition.TargetValue);
-        }
-
         private bool CheckInvoiceCondition(PromotionCondition condition, string accountId)
         {
-            if (string.IsNullOrEmpty(condition.TargetField) || string.IsNullOrEmpty(condition.TargetValue))
-                return true;
+            var query = _context.Invoices.Where(i => i.AccountId == accountId);
 
-            var invoices = _context.Invoices.Where(i => i.AccountId == accountId).ToList();
-            if (!invoices.Any()) return false;
-
-            foreach (var invoice in invoices)
+            switch (condition.TargetField.ToLower())
             {
-                var propertyValue = GetPropertyValue(invoice, condition.TargetField);
-                if (propertyValue != null && CompareValues(propertyValue.ToString(), condition.Operator, condition.TargetValue))
-                {
+                case "accountid":
+                    // If target_value is null, check if accountID has never appeared in Invoice table
+                    if (string.IsNullOrEmpty(condition.TargetValue) || condition.TargetValue.ToLower() == "null")
+                    {
+                        var hasInvoices = query.Any();
+                        switch (condition.Operator)
+                        {
+                            case "=":
+                            case "==":
+                                return !hasInvoices; // accountID should NOT exist in Invoice table
+                            case "!=":
+                                return hasInvoices; // accountID should exist in Invoice table
+                            default:
+                                return true;
+                        }
+                    }
+                    else
+                    {
+                        return CompareValues(accountId, condition.Operator, condition.TargetValue);
+                    }
+                case "totalmoney":
+                    var totalMoney = query.Sum(i => i.TotalMoney ?? 0);
+                    return CompareNumericValues(totalMoney, condition.Operator, condition.TargetValue);
+                case "count":
+                    var count = query.Count();
+                    return CompareNumericValues(count, condition.Operator, condition.TargetValue);
+                default:
                     return true;
-                }
             }
-
-            return false;
         }
 
         private bool CheckMemberCondition(PromotionCondition condition, string memberId)
         {
-            if (string.IsNullOrEmpty(condition.TargetField) || string.IsNullOrEmpty(condition.TargetValue))
-                return true;
+            var member = _context.Members
+                .Include(m => m.Account)
+                .FirstOrDefault(m => m.MemberId == memberId);
 
-            var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
             if (member == null) return false;
 
-            var propertyValue = GetPropertyValue(member, condition.TargetField);
-            if (propertyValue == null) return true;
-
-            return CompareValues(propertyValue.ToString(), condition.Operator, condition.TargetValue);
+            switch (condition.TargetField.ToLower())
+            {
+                case "score":
+                    return CompareNumericValues(member.Score ?? 0, condition.Operator, condition.TargetValue);
+                case "accountid":
+                    // If target_value is null, check if accountID has never appeared in Member table
+                    if (string.IsNullOrEmpty(condition.TargetValue) || condition.TargetValue.ToLower() == "null")
+                    {
+                        var hasMember = member != null;
+                        switch (condition.Operator)
+                        {
+                            case "=":
+                            case "==":
+                                return !hasMember; // accountID should NOT exist in Member table
+                            case "!=":
+                                return hasMember; // accountID should exist in Member table
+                            default:
+                                return true;
+                        }
+                    }
+                    else
+                    {
+                        return CompareValues(member.AccountId, condition.Operator, condition.TargetValue);
+                    }
+                default:
+                    return true;
+            }
         }
 
         private bool CheckAccountCondition(PromotionCondition condition, string accountId)
         {
-            if (string.IsNullOrEmpty(condition.TargetField) || string.IsNullOrEmpty(condition.TargetValue))
-                return true;
-
             var account = _context.Accounts.FirstOrDefault(a => a.AccountId == accountId);
             if (account == null) return false;
 
-            var propertyValue = GetPropertyValue(account, condition.TargetField);
-            if (propertyValue == null) return true;
-
-            return CompareValues(propertyValue.ToString(), condition.Operator, condition.TargetValue);
-        }
-
-        private object? GetPropertyValue(object obj, string propertyName)
-        {
-            var property = obj.GetType().GetProperty(propertyName);
-            return property?.GetValue(obj);
+            switch (condition.TargetField.ToLower())
+            {
+                case "accountid":
+                    // If target_value is null, check if accountID has never appeared in Account table
+                    if (string.IsNullOrEmpty(condition.TargetValue) || condition.TargetValue.ToLower() == "null")
+                    {
+                        var hasAccount = account != null;
+                        switch (condition.Operator)
+                        {
+                            case "=":
+                            case "==":
+                                return !hasAccount; // accountID should NOT exist in Account table
+                            case "!=":
+                                return hasAccount; // accountID should exist in Account table
+                            default:
+                                return true;
+                        }
+                    }
+                    else
+                    {
+                        return CompareValues(account.AccountId, condition.Operator, condition.TargetValue);
+                    }
+                case "registerdate":
+                    if (account.RegisterDate.HasValue)
+                    {
+                        return CompareDateValues(account.RegisterDate.Value, condition.Operator, condition.TargetValue);
+                    }
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         private bool CompareValues(string actualValue, string operatorStr, string targetValue)
         {
-            if (string.IsNullOrEmpty(actualValue) || string.IsNullOrEmpty(targetValue))
-                return false;
+            // If target_value is null or "null", treat it as null for string comparisons
+            if (string.IsNullOrEmpty(targetValue) || targetValue.ToLower() == "null")
+                targetValue = null;
 
             switch (operatorStr)
             {
                 case "==":
                 case "=":
-                    return actualValue.Equals(targetValue, StringComparison.OrdinalIgnoreCase);
+                    return actualValue == targetValue;
                 case "!=":
-                    return !actualValue.Equals(targetValue, StringComparison.OrdinalIgnoreCase);
+                    return actualValue != targetValue;
                 case ">=":
-                    return string.Compare(actualValue, targetValue, StringComparison.OrdinalIgnoreCase) >= 0;
+                    return string.Compare(actualValue, targetValue) >= 0;
                 case ">":
-                    return string.Compare(actualValue, targetValue, StringComparison.OrdinalIgnoreCase) > 0;
+                    return string.Compare(actualValue, targetValue) > 0;
                 case "<=":
-                    return string.Compare(actualValue, targetValue, StringComparison.OrdinalIgnoreCase) <= 0;
+                    return string.Compare(actualValue, targetValue) <= 0;
                 case "<":
-                    return string.Compare(actualValue, targetValue, StringComparison.OrdinalIgnoreCase) < 0;
+                    return string.Compare(actualValue, targetValue) < 0;
                 default:
                     return true;
             }
@@ -334,45 +379,59 @@ namespace MovieTheater.Service
 
         private bool CompareNumericValues(decimal actualValue, string operatorStr, string targetValue)
         {
+            // If target_value is null or "null", treat it as 0
+            if (string.IsNullOrEmpty(targetValue) || targetValue.ToLower() == "null")
+                targetValue = "0";
+
             if (!decimal.TryParse(targetValue, out decimal target))
                 return false;
 
             switch (operatorStr)
             {
-                case ">=": return actualValue >= target;
-                case ">": return actualValue > target;
-                case "<=": return actualValue <= target;
-                case "<": return actualValue < target;
                 case "==":
-                case "=": return actualValue == target;
-                case "!=": return actualValue != target;
-                default: return true;
+                case "=":
+                    return actualValue == target;
+                case "!=":
+                    return actualValue != target;
+                case ">=":
+                    return actualValue >= target;
+                case ">":
+                    return actualValue > target;
+                case "<=":
+                    return actualValue <= target;
+                case "<":
+                    return actualValue < target;
+                default:
+                    return true;
             }
         }
 
         private bool CompareDateValues(DateOnly actualValue, string operatorStr, string targetValue)
         {
-            if (string.IsNullOrEmpty(targetValue))
+            if (string.IsNullOrEmpty(targetValue) || targetValue.ToLower() == "null")
                 return false;
 
-            // Try to parse the target value as a date
-            if (DateOnly.TryParse(targetValue, out DateOnly target))
-            {
-                switch (operatorStr)
-                {
-                    case ">=": return actualValue >= target;
-                    case ">": return actualValue > target;
-                    case "<=": return actualValue <= target;
-                    case "<": return actualValue < target;
-                    case "==":
-                    case "=": return actualValue == target;
-                    case "!=": return actualValue != target;
-                    default: return true;
-                }
-            }
+            if (!DateOnly.TryParse(targetValue, out DateOnly target))
+                return false;
 
-            // If parsing fails, try to compare as strings
-            return CompareValues(actualValue.ToString("yyyy-MM-dd"), operatorStr, targetValue);
+            switch (operatorStr)
+            {
+                case "==":
+                case "=":
+                    return actualValue == target;
+                case "!=":
+                    return actualValue != target;
+                case ">=":
+                    return actualValue >= target;
+                case ">":
+                    return actualValue > target;
+                case "<=":
+                    return actualValue <= target;
+                case "<":
+                    return actualValue < target;
+                default:
+                    return true;
+            }
         }
     }
 }

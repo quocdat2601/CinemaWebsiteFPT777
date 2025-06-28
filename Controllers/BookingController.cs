@@ -22,6 +22,15 @@ namespace MovieTheater.Controllers
         public int MemberScore { get; set; }
     }
 
+    public class GetEligiblePromotionsRequest
+    {
+        public string MemberId { get; set; }
+        public int SeatCount { get; set; }
+        public DateTime ShowDate { get; set; }
+        public string MovieId { get; set; }
+        public string MovieName { get; set; }
+    }
+
     public class BookingController : Controller
     {
         private readonly IBookingService _bookingService;
@@ -37,6 +46,8 @@ namespace MovieTheater.Controllers
         private readonly VNPayService _vnPayService;
         private readonly IPointService _pointService;
         private readonly IRankService _rankService;
+        private readonly IPromotionService _promotionService;
+        private decimal promotionDiscount;
 
         public BookingController(IBookingService bookingService,
                          IMovieService movieService,
@@ -50,7 +61,8 @@ namespace MovieTheater.Controllers
                          IScheduleSeatRepository scheduleSeatRepository,
                          VNPayService vnPayService,
                          IPointService pointService,
-                         IRankService rankService)
+                         IRankService rankService,
+                         IPromotionService promotionService)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -65,6 +77,7 @@ namespace MovieTheater.Controllers
             _vnPayService = vnPayService;
             _pointService = pointService;
             _rankService = rankService;
+            _promotionService = promotionService;
         }
 
         [HttpGet]
@@ -585,15 +598,23 @@ namespace MovieTheater.Controllers
 
                 // Calculate subtotal
                 decimal subtotal = seats.Sum(s => s.Price);
-                // Calculate rank discount as at booking time
+                
+                // Use promotion discount passed from frontend (already calculated)
+                decimal promotionDiscount = model.PromotionDiscount;
+                
+                // Calculate price after promotion discount
+                decimal priceAfterPromotion = subtotal - promotionDiscount;
+                
+                // Calculate rank discount on price after promotion discount
                 decimal rankDiscount = 0;
                 if (member?.Account?.Rank != null)
                 {
                     var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
+                    rankDiscount = priceAfterPromotion * (rankDiscountPercent / 100m);
                 }
-                // Calculate the max possible points used (cannot exceed price after discount)
-                decimal priceAfterDiscount = subtotal - rankDiscount;
+                
+                // Calculate the max possible points used (cannot exceed price after all discounts)
+                decimal priceAfterDiscount = priceAfterPromotion - rankDiscount;
                 int usedScore = model.UsedScore;
                 decimal usedScoreValue = Math.Min(usedScore * 1000, priceAfterDiscount); // Cap at price after discount
                 decimal finalPrice = priceAfterDiscount - usedScoreValue;
@@ -695,13 +716,31 @@ namespace MovieTheater.Controllers
                     AddedScoreValue = addedScoreValue,
                     Subtotal = subtotal,
                     RankDiscount = rankDiscount,
+                    PromotionDiscount = promotionDiscount,
                     TotalPrice = finalPrice
                 };
 
                 // Store CinemaRoomName in TempData before redirect
                 TempData["CinemaRoomName"] = roomName;
 
-                return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
+                return Json(new { 
+                    success = true, 
+                    redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { 
+                        invoiceId = invoice.InvoiceId,
+                        subtotal = subtotal,
+                        promotionDiscount = promotionDiscount,
+                        rankDiscount = rankDiscount,
+                        totalPrice = finalPrice,
+                        usedScore = usedScore,
+                        usedScoreValue = usedScoreValue,
+                        addedScore = pointsToEarn,
+                        addedScoreValue = addedScoreValue,
+                        memberId = memberId,
+                        memberEmail = memberEmail,
+                        memberIdentityCard = memberIdentityCard,
+                        memberPhone = memberPhone
+                    }) 
+                });
             }
             catch (Exception ex)
             {
@@ -711,7 +750,19 @@ namespace MovieTheater.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet]
-        public IActionResult TicketBookingConfirmed(string invoiceId)
+        public IActionResult TicketBookingConfirmed(string invoiceId, 
+            decimal subtotal = 0, 
+            decimal promotionDiscount = 0, 
+            decimal rankDiscount = 0, 
+            decimal totalPrice = 0, 
+            int usedScore = 0, 
+            decimal usedScoreValue = 0, 
+            int addedScore = 0, 
+            decimal addedScoreValue = 0, 
+            string memberId = "", 
+            string memberEmail = "", 
+            string memberIdentityCard = "", 
+            string memberPhone = "")
         {
             if (string.IsNullOrEmpty(invoiceId))
                 return View("TicketBookingConfirmed");
@@ -790,27 +841,7 @@ namespace MovieTheater.Controllers
 
             string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 
-            // Calculate subtotal
-            decimal subtotal = seats.Sum(s => s.Price);
-            // Calculate rank discount as at booking time
-            decimal rankDiscount = 0;
-            if (member?.Account?.Rank != null)
-            {
-                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                rankDiscount = subtotal * (rankDiscountPercent / 100m);
-            }
-            // Calculate the max possible points used (cannot exceed price after discount)
-            decimal priceAfterDiscount = subtotal - rankDiscount;
-            int usedScore = invoice.UseScore ?? 0;
-            decimal usedScoreValue = Math.Min(usedScore * 1000, priceAfterDiscount); // Cap at price after discount
-            int addedScore = invoice.AddScore ?? 0;
-            int addedScoreValue = addedScore * 1000;
-            decimal totalPrice = invoice.TotalMoney ?? 0;
-            string memberId = member?.MemberId;
-            string memberEmail = member?.Account?.Email;
-            string memberIdentityCard = member?.Account?.IdentityCard;
-            string memberPhone = member?.Account?.PhoneNumber;
-
+            // Use the calculated values passed as parameters
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -826,6 +857,7 @@ namespace MovieTheater.Controllers
                 AddedScoreValue = addedScoreValue,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
+                PromotionDiscount = promotionDiscount,
                 TotalPrice = totalPrice
             };
 
@@ -974,6 +1006,7 @@ namespace MovieTheater.Controllers
                 AddedScoreValue = addedScoreValue,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
+                PromotionDiscount = promotionDiscount,
                 TotalPrice = totalPrice
             };
 
@@ -1024,6 +1057,40 @@ namespace MovieTheater.Controllers
                 earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
             }
             return Json(new { discountPercent, earningRate });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> GetEligiblePromotions([FromBody] GetEligiblePromotionsRequest request)
+        {
+            // Allow memberId to be null for general promotions
+            try
+            {
+                var eligiblePromotions = _promotionService.GetEligiblePromotionsForMember(
+                    request.MemberId,
+                    request.SeatCount,
+                    request.ShowDate,
+                    request.MovieId,
+                    request.MovieName
+                );
+                
+                var promotionData = eligiblePromotions.Select(p => new
+                {
+                    promotionId = p.PromotionId,
+                    title = p.Title,
+                    detail = p.Detail,
+                    discountLevel = p.DiscountLevel,
+                    startTime = p.StartTime?.ToString("dd/MM/yyyy"),
+                    endTime = p.EndTime?.ToString("dd/MM/yyyy"),
+                    image = p.Image
+                }).ToList();
+
+                return Json(new { success = true, promotions = promotionData });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error getting eligible promotions: " + ex.Message });
+            }
         }
     }
 }

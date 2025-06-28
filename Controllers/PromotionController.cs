@@ -349,5 +349,38 @@ namespace MovieTheater.Controllers
                 .ToList();
             return Json(promotions);
         }
+
+        // GET: PromotionController/GetEligiblePromotions
+        [HttpPost]
+        public IActionResult GetEligiblePromotions([FromBody] GetEligiblePromotionsRequest request)
+        {
+            try
+            {
+                var eligiblePromotions = _promotionService.GetEligiblePromotionsForMember(
+                    request.MemberId,
+                    request.SeatCount,
+                    request.ShowDate,
+                    request.MovieId,
+                    request.MovieName
+                );
+                
+                var promotionData = eligiblePromotions.Select(p => new
+                {
+                    promotionId = p.PromotionId,
+                    title = p.Title,
+                    detail = p.Detail,
+                    discountLevel = p.DiscountLevel,
+                    startTime = p.StartTime?.ToString("dd/MM/yyyy"),
+                    endTime = p.EndTime?.ToString("dd/MM/yyyy"),
+                    image = p.Image
+                }).ToList();
+
+                return Json(new { success = true, promotions = promotionData });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error getting eligible promotions: " + ex.Message });
+            }
+        }
     }
 }
