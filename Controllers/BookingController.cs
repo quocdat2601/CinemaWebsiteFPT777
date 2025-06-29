@@ -865,7 +865,8 @@ namespace MovieTheater.Controllers
                 AddedScoreValue = addedScoreValue,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
-                TotalPrice = totalPrice
+                TotalPrice = totalPrice,
+                MemberAccountId = member?.AccountId
             };
 
             return View("TicketBookingConfirmed", viewModel);
@@ -1030,6 +1031,7 @@ namespace MovieTheater.Controllers
                     account = new
                     {
                         fullName = m.Account?.FullName,
+                        accountId = m.Account?.AccountId,
                         identityCard = m.Account?.IdentityCard,
                         email = m.Account?.Email,
                         phoneNumber = m.Account?.PhoneNumber

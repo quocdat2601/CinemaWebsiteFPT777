@@ -291,7 +291,9 @@
                 $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
+
                 selectedAccountId = member.account.accountId;
+                console.log("selectedAccountId debug: ", selectedAccountId);
                 $('#openVoucherModalBtn').prop('disabled', false);
             }
 

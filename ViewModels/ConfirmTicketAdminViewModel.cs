@@ -6,6 +6,7 @@ namespace MovieTheater.ViewModels
         public ConfirmBookingViewModel BookingDetails { get; set; }
 
         // Member details for admin confirmation
+        public string MemberAccountId { get; set; }
         public string MemberIdInput { get; set; } // For input by admin
         public string MemberId { get; set; } // Displayed if member found
         public string MemberFullName { get; set; }
