@@ -624,18 +624,36 @@ namespace MovieTheater.Controllers
 
                 // Calculate subtotal
                 decimal subtotal = seats.Sum(s => s.Price);
-                // Calculate rank discount as at booking time
+
+                // 1. Apply voucher first (if selected)
+                decimal voucherAmount = 0;
+                if (!string.IsNullOrEmpty(model.SelectedVoucherId))
+                {
+                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
+                    if (voucher != null && voucher.AccountId == member.Account.AccountId && voucher.RemainingValue > 0 &&
+                        (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
+                    {
+                        voucherAmount = Math.Min(voucher.RemainingValue, subtotal);
+                    }
+                }
+                decimal afterVoucher = subtotal - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+
+                // 2. Apply rank discount
                 decimal rankDiscount = 0;
                 if (member?.Account?.Rank != null)
                 {
                     var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
+                    rankDiscount = afterVoucher * (rankDiscountPercent / 100m);
                 }
-                // Calculate the max possible points used (cannot exceed price after discount)
-                decimal priceAfterDiscount = subtotal - rankDiscount;
+                decimal afterRank = afterVoucher - rankDiscount;
+
+                // 3. Apply points
                 int usedScore = model.UsedScore;
-                decimal usedScoreValue = Math.Min(usedScore * 1000, priceAfterDiscount); // Cap at price after discount
-                decimal finalPrice = priceAfterDiscount - usedScoreValue;
+                decimal usedScoreValue = Math.Min(usedScore * 1000, afterRank); // Cap at price after discount
+                decimal finalPrice = afterRank - usedScoreValue;
+                if (finalPrice < 0) finalPrice = 0;
+
                 // Calculate points to earn using the same logic as user booking
                 decimal earningRate = member?.Account?.Rank?.PointEarningPercentage ?? 1;
                 int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
@@ -659,6 +677,8 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalPrice,
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
+                    // Nếu có trường SelectedVoucherId trong Invoice, thêm dòng này:
+                    // SelectedVoucherId = model.SelectedVoucherId
                 };
 
                 string roomName = "N/A";
@@ -675,15 +695,19 @@ namespace MovieTheater.Controllers
                 await _bookingService.SaveInvoiceAsync(invoice);
                 _accountService.CheckAndUpgradeRank(member.AccountId);
 
-                // Deduct score if used
-                if (usedScore > 0 && member != null)
+                // Update voucher if used
+                if (voucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
-                    await _accountService.DeductScoreAsync(member.Account.AccountId, usedScore);
-                }
-                // Add points (using new calculation)
-                if (addedScore > 0)
-                {
-                    await _accountService.AddScoreAsync(invoice.AccountId, addedScore);
+                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
+                    if (voucher != null)
+                    {
+                        voucher.RemainingValue -= voucherAmount;
+                        if (voucher.RemainingValue <= 0)
+                        {
+                            voucher.IsUsed = true;
+                        }
+                        _voucherService.Update(voucher);
+                    }
                 }
 
                 var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
@@ -734,7 +758,9 @@ namespace MovieTheater.Controllers
                     AddedScoreValue = addedScoreValue,
                     Subtotal = subtotal,
                     RankDiscount = rankDiscount,
-                    TotalPrice = finalPrice
+                    TotalPrice = finalPrice,
+                    // Nếu muốn trả về voucherAmount cho view:
+                    // VoucherAmount = voucherAmount
                 };
 
                 // Store CinemaRoomName in TempData before redirect
