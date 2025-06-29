@@ -12,5 +12,6 @@ namespace MovieTheater.Service
         void Delete(string voucherId);
         string GenerateVoucherId();
         IEnumerable<Member> GetAllMembers();
+        IEnumerable<Voucher> GetAvailableVouchers(string accountId);
     }
 } 

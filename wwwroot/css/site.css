@@ -1111,3 +1111,93 @@ body {
     }
 }
 
+/* Voucher Modal Styles */
+.voucher-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #dee2e6;
+    height: 100%;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    background: #fff;
+    margin-bottom: 0;
+    position: relative;
+}
+
+.voucher-card:hover, .voucher-card.selected {
+    border-color: #1a7f37;
+    box-shadow: 0 4px 16px rgba(26,127,55,0.10);
+    background: #f6fff8;
+}
+
+.voucher-img-top {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background: #f8f9fa;
+}
+
+.voucher-card .card-title {
+    color: #007bff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.voucher-card .card-text {
+    margin-bottom: 0.25rem;
+    font-size: 0.97rem;
+}
+
+.voucher-card .card-text:last-child {
+    color: #6c757d;
+    font-size: 0.93rem;
+}
+
+#selectedVoucherInfo {
+    background: #f6fff8;
+    border: 1.5px solid #1a7f37;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    color: #1a7f37;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#selectedVoucherInfo:empty {
+    display: none;
+}
+
+/* Remove any green bar or progress if present */
+#voucherProgressBar, .voucher-progress-bar {
+    display: none !important;
+    height: 0 !important;
+}
+
+/* Price breakdown styles */
+.price-breakdown {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.price-breakdown .discount-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.price-breakdown .final-price {
+    font-weight: bold;
+    color: #28a745;
+    border-top: 1px solid #dee2e6;
+    padding-top: 0.25rem;
+    margin-top: 0.25rem;
+}
+

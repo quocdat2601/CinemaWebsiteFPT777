@@ -53,5 +53,15 @@ namespace MovieTheater.Repository
             }
             return $"VC{System.DateTime.Now:yyyyMMddHHmmss}";
         }
+        public IEnumerable<Voucher> GetAvailableVouchers(string accountId)
+        {
+            return _context.Vouchers
+                .Where(v => v.AccountId == accountId 
+                           && v.RemainingValue > 0 
+                           && (v.IsUsed == null || v.IsUsed == false)
+                           && v.ExpiryDate > System.DateTime.Now)
+                .OrderBy(v => v.ExpiryDate)
+                .ToList();
+        }
     }
 } 

@@ -10,6 +10,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
 using Serilog;
+using System.Collections.Generic;
 
 namespace MovieTheater.Controllers
 {
@@ -281,6 +282,29 @@ namespace MovieTheater.Controllers
                     }
                 }).ToList();
             return Json(members);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult GetAvailableVouchers(string? accountId = null)
+        {
+            if (string.IsNullOrEmpty(accountId))
+            {
+                accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            }
+            if (string.IsNullOrEmpty(accountId))
+                return Json(new List<object>());
+
+            var vouchers = _voucherService.GetAvailableVouchers(accountId)
+                .Select(v => new {
+                    id = v.VoucherId,
+                    code = v.Code,
+                    remainingValue = v.RemainingValue,
+                    expirationDate = v.ExpiryDate.ToString("yyyy-MM-dd"),
+                    image = v.Image
+                }).ToList();
+
+            return Json(vouchers);
         }
     }
 } 

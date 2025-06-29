@@ -130,8 +130,6 @@
             <label class="soft-label"><strong>Select Member: *</strong></label>
             <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
         </div>
-
-        <!-- AC-03: Member info if found -->
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
             <div class="section-title">Member Information</div>
@@ -151,6 +149,11 @@
                 <div class="ticket-row">
                     <label for="memberScore" class="soft-label">Member Score</label>
                     <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
+                </div>
+                <div class="form-group mt-3">
+                    <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
+                    <div id="selectedVoucherInfo" class="mt-2 text-success"></div>
+                    <input type="hidden" id="selectedVoucherId" />
                 </div>
             </div>
             <div class="mb-3 mt-3">
@@ -194,6 +197,28 @@
               <!-- Members will be loaded here by JS -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Voucher Picker Modal -->
+<div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="voucherModalLabel">My Vouchers</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row" id="voucherListContainer">
+          <!-- Voucher cards will load here -->
+        </div>
+        <div class="row mt-2">
+          <div class="col-12 text-center">
+            <button type="button" class="btn btn-outline-secondary" id="clearVoucherBtn">Clear Voucher</button>
+          </div>
         </div>
       </div>
     </div>
@@ -266,11 +291,12 @@
                 $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
+                selectedAccountId = member.account.accountId;
+                $('#openVoucherModalBtn').prop('disabled', false);
             }
 
             // Confirm Ticket Admin Button Click
             $('#confirmTicketAdminBtn').click(function () {
-                // Ensure SelectedSeats uses PascalCase property names to match backend model
                 var model = {
                     BookingDetails: {
                         MovieId: '@Model.BookingDetails.MovieId',
@@ -288,7 +314,8 @@
                     MemberIdentityCard: $('#memberIdentityCard').val(),
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
-                    UsedScore: parseInt($('#useScore').val()) || 0
+                    UsedScore: parseInt($('#useScore').val()) || 0,
+                    SelectedVoucherId: $('#selectedVoucherId').val()
                 };
 
                 $.ajax({
@@ -413,6 +440,82 @@
             }
             // On page load, show initial state
             updatePriceWithDiscount(0);
+
+            // VOUCHER PICKER LOGIC
+            let voucherModalInstance = null;
+            let selectedVoucher = null;
+            let selectedAccountId = null;
+            $('#openVoucherModalBtn').click(function () {
+                if (!selectedAccountId) {
+                    alert('Please select a member first!');
+                    return;
+                }
+                if (!voucherModalInstance) {
+                    voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
+                }
+                loadVouchers(selectedAccountId);
+                voucherModalInstance.show();
+            });
+            $('#clearVoucherBtn').click(function () {
+                selectedVoucher = null;
+                $('#selectedVoucherInfo').text('');
+                $('#selectedVoucherId').val('');
+                $('.voucher-card').removeClass('selected');
+                updatePriceWithVoucher();
+                if (voucherModalInstance) voucherModalInstance.hide();
+            });
+            function loadVouchers(accountId) {
+                $.ajax({
+                    url: '/Voucher/GetAvailableVouchers?accountId=' + encodeURIComponent(accountId),
+                    method: 'GET',
+                    success: function (data) {
+                        let html = '';
+                        if (data.length === 0) {
+                            html = '<div class="col-12 text-center"><p class="text-muted">No available vouchers found.</p></div>';
+                        } else {
+                            data.forEach(v => {
+                                html += `
+                                <div class="col-md-4 mb-3">
+                                  <div class="card voucher-card d-flex flex-column align-items-center" data-id="${v.id}" data-value="${v.remainingValue}">
+                                    <img src="${v.image ? v.image : '/images/vouchers/voucher.jpg'}" class="voucher-img-top mt-3 mb-2" alt="Voucher Image" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                    <div class="card-body text-center p-2">
+                                      <h5 class="card-title mb-1" style="color:#007bff;font-weight:600;">${v.code}</h5>
+                                      <p class="card-text mb-1">Value: <span style="font-weight:600;">${v.remainingValue.toLocaleString()} VND</span></p>
+                                      <p class="card-text mb-1">Expires: <span style="font-size:0.95em;">${v.expirationDate}</span></p>
+                                    </div>
+                                  </div>
+                                </div>`;
+                            });
+                        }
+                        $('#voucherListContainer').html(html);
+                        $('.voucher-card').click(function () {
+                            $('.voucher-card').removeClass('selected');
+                            $(this).addClass('selected');
+                            selectedVoucher = {
+                                id: $(this).data('id'),
+                                value: $(this).data('value')
+                            };
+                            $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
+                            $('#selectedVoucherId').val(selectedVoucher.id);
+                            updatePriceWithVoucher();
+                            if (voucherModalInstance) voucherModalInstance.hide();
+                        });
+                    },
+                    error: function() {
+                        $('#voucherListContainer').html('<div class="col-12 text-center"><p class="text-danger">Error loading vouchers.</p></div>');
+                    }
+                });
+            }
+            function updatePriceWithVoucher() {
+                var originalTotal = @Model.BookingDetails.SelectedSeats.Sum(s => s.Price);
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = originalTotal - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+                $('#originalTotal').text(originalTotal.toLocaleString() + ' VND');
+                if (voucherAmount > 0) {
+                    $('#discountInfo').prepend(`<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`);
+                }
+            }
         });
     </script>
 } 
