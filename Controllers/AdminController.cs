@@ -26,6 +26,7 @@ namespace MovieTheater.Controllers
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
+        private readonly IRankService _rankService;
 
         public AdminController(
             IMovieService movieService,
@@ -41,7 +42,8 @@ namespace MovieTheater.Controllers
             IScheduleRepository scheduleRepository,
             IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
-            IVoucherService voucherService)
+            IVoucherService voucherService,
+            IRankService rankService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -57,6 +59,7 @@ namespace MovieTheater.Controllers
             _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
+            _rankService = rankService;
         }
 
         // GET: AdminController
@@ -158,6 +161,9 @@ namespace MovieTheater.Controllers
                 case "VoucherMg":
                     var vouchers = _voucherService.GetAll();
                     return PartialView("VoucherMg", vouchers);
+                case "RankMg":
+                    var ranks = _rankService.GetAllRanks();
+                    return PartialView("RankMg", ranks);
                 default:
                     return Content("Tab not found.");
             }
@@ -378,6 +384,110 @@ namespace MovieTheater.Controllers
                 RecentBookings = recentBookings,
                 RecentMembers = recentMembers
             };
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult CreateRank()
+        {
+            return View("~/Views/Rank/Create.cshtml", new RankCreateViewModel());
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateRank(RankCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please correct the errors below.";
+                return View("~/Views/Rank/Create.cshtml", model);
+            }
+            // Map RankCreateViewModel to RankInfoViewModel for service
+            var infoModel = new RankInfoViewModel
+            {
+                CurrentRankName = model.CurrentRankName,
+                RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                ColorGradient = model.ColorGradient,
+                IconClass = model.IconClass
+            };
+            var result = _rankService.Create(infoModel);
+            if (result)
+            {
+                TempData["ToastMessage"] = "Rank created successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "A rank with the same required points already exists. Please choose a different value.";
+                return View("~/Views/Rank/Create.cshtml", model);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult EditRank(int id)
+        {
+            var rank = _rankService.GetById(id);
+            if (rank == null) return NotFound();
+            // Map RankInfoViewModel to RankCreateViewModel
+            var editModel = new RankCreateViewModel
+            {
+                CurrentRankName = rank.CurrentRankName,
+                RequiredPointsForCurrentRank = rank.RequiredPointsForCurrentRank,
+                CurrentDiscountPercentage = rank.CurrentDiscountPercentage,
+                CurrentPointEarningPercentage = rank.CurrentPointEarningPercentage,
+                ColorGradient = rank.ColorGradient,
+                IconClass = rank.IconClass
+            };
+            ViewBag.RankId = rank.CurrentRankId;
+            return View("~/Views/Rank/Edit.cshtml", editModel);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditRank(int id, RankCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.RankId = id;
+                TempData["ErrorMessage"] = "Please correct the errors below.";
+                return View("~/Views/Rank/Edit.cshtml", model);
+            }
+            // Map RankCreateViewModel to RankInfoViewModel for service
+            var infoModel = new RankInfoViewModel
+            {
+                CurrentRankId = id,
+                CurrentRankName = model.CurrentRankName,
+                RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                ColorGradient = model.ColorGradient,
+                IconClass = model.IconClass
+            };
+            var result = _rankService.Update(infoModel);
+            if (result)
+            {
+                TempData["ToastMessage"] = "Rank updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
+            else
+            {
+                ViewBag.RankId = id;
+                TempData["ErrorMessage"] = "A rank with the same required points already exists. Please choose a different value.";
+                return View("~/Views/Rank/Edit.cshtml", model);
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteRank(int id)
+        {
+            _rankService.Delete(id);
+            TempData["ToastMessage"] = "Rank deleted successfully!";
+            return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
         }
     }
 }

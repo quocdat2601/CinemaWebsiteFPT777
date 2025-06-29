@@ -1,0 +1,62 @@
+@model List<MovieTheater.ViewModels.RankInfoViewModel>
+@{
+    ViewData["Title"] = "Rank Management";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Rank Management</h2>
+        <a href="@Url.Action("CreateRank", "Admin")" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Rank
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Required Points</th>
+                                <th>Discount (%)</th>
+                                <th>Point Earning (%)</th>
+                                <th>Color</th>
+                                <th>Icon</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rank in Model)
+                            {
+                                <tr>
+                                    <td>@rank.CurrentRankName</td>
+                                    <td>@rank.RequiredPointsForCurrentRank</td>
+                                    <td>@rank.CurrentDiscountPercentage</td>
+                                    <td>@rank.CurrentPointEarningPercentage</td>
+                                    <td><span style="background: @rank.ColorGradient; padding: 0.3rem 1.2rem; border-radius: 8px; color: #fff;">Color</span></td>
+                                    <td><i class="fas @rank.IconClass"></i></td>
+                                    <td>
+                                        <a href="@Url.Action("EditRank", "Admin", new { id = rank.CurrentRankId })" class="btn btn-sm btn-primary">Edit</a>
+                                        <form asp-action="DeleteRank" asp-controller="Admin" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this rank?');">
+                                            <input type="hidden" name="id" value="@rank.CurrentRankId" />
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">No ranks found.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<partial name="_ToastMessages" /> 

@@ -1,0 +1,114 @@
+@model MovieTheater.ViewModels.RankCreateViewModel
+@{
+    ViewData["Title"] = "Add New Rank";
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
+
+<div class="container mt-4" style="max-width: 600px;">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Add New Rank</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateRank" asp-controller="Admin" method="post">
+                <div class="mb-3">
+                    <label asp-for="CurrentRankName" class="form-label">Rank Name</label>
+                    <input asp-for="CurrentRankName" class="form-control" />
+                    <span asp-validation-for="CurrentRankName" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="RequiredPointsForCurrentRank" class="form-label">Required Points</label>
+                    <input asp-for="RequiredPointsForCurrentRank" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="RequiredPointsForCurrentRank" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="CurrentDiscountPercentage" class="form-label">Discount (%)</label>
+                    <input asp-for="CurrentDiscountPercentage" class="form-control" type="number" step="0.01" min="0" max="100" />
+                    <span asp-validation-for="CurrentDiscountPercentage" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="CurrentPointEarningPercentage" class="form-label">Point Earning (%)</label>
+                    <input asp-for="CurrentPointEarningPercentage" class="form-control" type="number" step="0.01" min="0" max="100" />
+                    <span asp-validation-for="CurrentPointEarningPercentage" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Color</label>
+                    <input type="color" id="colorPicker" class="form-control form-control-color" value="#FFD700" title="Choose color" style="width: 60px; height: 40px; padding: 0;" />
+                    <input asp-for="ColorGradient" class="form-control mt-2" placeholder="Or enter a CSS gradient (optional)" />
+                    <small class="form-text text-muted">Pick a color or enter a CSS gradient.</small>
+                    <span asp-validation-for="ColorGradient" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Icon</label>
+                    <div id="iconPicker" class="d-flex gap-3 flex-wrap">
+                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-crown"><i class="fa fa-crown"></i></button>
+                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-star"><i class="fa fa-star"></i></button>
+                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-gem"><i class="fa fa-gem"></i></button>
+                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-trophy"><i class="fa fa-trophy"></i></button>
+                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-diamond"><i class="fa fa-diamond"></i></button>
+                    </div>
+                    <input type="hidden" asp-for="IconClass" id="IconClass" />
+                    <span asp-validation-for="IconClass" class="text-danger"></span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="@Url.Action("MainPage", "Admin", new { tab = "RankMg" })" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Rank Management
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Add Rank
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<partial name="_ToastMessages" />
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script>
+        // When color picker changes, update the ColorGradient input if not a gradient
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorPicker = document.getElementById('colorPicker');
+            const colorInput = document.getElementById('ColorGradient');
+            if (colorPicker && colorInput) {
+                colorPicker.addEventListener('input', function() {
+                    colorInput.value = colorPicker.value;
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const iconBtns = document.querySelectorAll('.icon-btn');
+            const iconInput = document.getElementById('IconClass');
+            // Set default if not set
+            if (!iconInput.value && iconBtns.length > 0) {
+                iconBtns[0].classList.add('active');
+                iconInput.value = iconBtns[0].getAttribute('data-icon');
+            }
+            iconBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    iconBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    iconInput.value = btn.getAttribute('data-icon');
+                });
+            });
+        });
+    </script>
+    <style>
+        .icon-btn.active {
+            border: 2px solid #007bff;
+            background: #e7f1ff;
+        }
+        .icon-btn i {
+            font-size: 1.5rem;
+        }
+    </style>
+} 

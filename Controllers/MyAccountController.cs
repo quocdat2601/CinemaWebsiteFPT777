@@ -71,8 +71,6 @@ namespace MovieTheater.Controllers
                         AllRanks = allRanks
                     };
                     return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
-                case "Rank":
-                    return PartialView("~/Views/Account/Tabs/Rank.cshtml");
                 case "Score":
                     return PartialView("~/Views/Account/Tabs/Score.cshtml");
                 case "Voucher":
