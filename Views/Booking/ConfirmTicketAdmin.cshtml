@@ -1,4 +1,4 @@
-@using Newtonsoft.Json
+﻿@using Newtonsoft.Json
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
 @{
     ViewBag.Title = "Confirm Ticket Information (Admin)";
@@ -291,10 +291,14 @@
                 $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
-
                 selectedAccountId = member.account.accountId;
-                console.log("selectedAccountId debug: ", selectedAccountId);
                 $('#openVoucherModalBtn').prop('disabled', false);
+                // Reset voucher selection when member changes
+                selectedVoucher = null;
+                $('#selectedVoucherInfo').text('');
+                $('#selectedVoucherId').val('');
+                $('.voucher-card').removeClass('selected');
+                updatePriceAll();
             }
 
             // Confirm Ticket Admin Button Click
@@ -375,26 +379,70 @@
             // Set initial value
             $('#useScore').val(0);
 
-            // Update price and point info when points are entered or member is selected
-            $('#useScore').on('input', function () {
-                updatePriceWithDiscount(currentDiscountPercent);
-            });
-
-            function updatePriceWithDiscount(discountPercent) {
+            // Track current earning rate and discount percent
+            var currentEarningRate = 0;
+            var currentDiscountPercent = 0;
+            let selectedVoucher = null;
+            let selectedAccountId = null;
+            function updatePriceAll() {
                 var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
-                var discountAmount = Math.round(originalTotal * (discountPercent / 100));
-                var discountedTotal = originalTotal - discountAmount;
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = originalTotal - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+
+                var discountPercent = currentDiscountPercent || 0;
+                var discountAmount = 0;
+                if (afterVoucher > 0) {
+                    discountAmount = Math.round(afterVoucher * (discountPercent / 100));
+                }
+                var afterDiscount = afterVoucher - discountAmount;
+                if (afterDiscount < 0) afterDiscount = 0;
+
+                // Điểm
                 var useScore = parseInt($('#useScore').val()) || 0;
                 var pointValue = 1000;
-                var memberScore = parseInt($('#memberScore').val()) || 0;
-                var earningRate = currentEarningRate || 0;
-                var maxUsablePoints = Math.floor((discountedTotal * 0.9) / pointValue);
-                // Update max usable display
-                $('#maxUsablePoints').text(maxUsablePoints);
-                // Calculate points to earn (only if valid usage)
                 var savings = useScore * pointValue;
-                var finalTotal = discountedTotal - savings;
+                var finalTotal = afterDiscount - savings;
                 if (finalTotal < 0) finalTotal = 0;
+
+                // Update hiển thị giá
+                if (voucherAmount > 0 || discountAmount > 0 || useScore > 0) {
+                    $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
+                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
+                } else {
+                    $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
+                    $('#discountedTotal').hide();
+                }
+
+                // Hiển thị voucher
+                let discountInfoHtml = '';
+                if (voucherAmount > 0) {
+                    discountInfoHtml += `<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`;
+                }
+                // Hiển thị rank discount
+                discountInfoHtml +=
+                    discountPercent > 0 && afterVoucher > 0
+                    ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`
+                    : 'Rank discount: 0% (-0 VND)';
+                $('#discountInfo').html(discountInfoHtml);
+
+                // Savings (chỉ khi dùng điểm)
+                if (useScore > 0) {
+                    $('#pointSavings').text(`Using ${useScore} points saves you ${savings.toLocaleString()} VND`);
+                } else {
+                    $('#pointSavings').text('');
+                }
+
+                // Tính điểm thưởng
+                var earningRate = currentEarningRate || 0;
+                var pointsToEarn = Math.round((finalTotal) * earningRate / 100 / pointValue);
+                $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`).addClass('text-success');
+
+                // Validate điểm
+                var memberScore = parseInt($('#memberScore').val()) || 0;
+                var maxUsablePoints = Math.floor((afterDiscount * 0.9) / pointValue);
+                maxUsablePoints = Math.min(maxUsablePoints, memberScore);
+                $('#maxUsablePoints').text(maxUsablePoints);
                 var validationMsg = '';
                 var valid = true;
                 if (useScore === 0) {
@@ -402,51 +450,22 @@
                     valid = true;
                 } else if (useScore < 20) { validationMsg = 'Minimum 20 points required.'; valid = false; }
                 else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
-                var pointsToEarn = Math.round((valid && useScore > 0 ? finalTotal : discountedTotal) * earningRate / 100 / pointValue);
-                $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`);
-                // Always show in green
-                $('#pointsEarnedPreview').addClass('text-success');
-                // Validation error
                 $('#pointValidation').text(validationMsg);
-                // Update price display
-                if (discountPercent > 0) {
-                    $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
-                    if (valid && useScore > 0) {
-                        $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
-                    } else {
-                        $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((discountedTotal).toLocaleString() + ' VND');
-                    }
-                } else {
-                    $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
-                    $('#discountedTotal').hide();
-                }
-                // Rank discount info
-                $('#discountInfo').text(discountPercent > 0 ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)` : '');
-                // Savings (only if valid)
-                if (valid && useScore > 0) {
-                    $('#pointSavings').text(`Using ${useScore} points saves you ${savings.toLocaleString()} VND`);
-                } else {
-                    $('#pointSavings').text('');
-                }
+                $('#confirmTicketAdminBtn').prop('disabled', !valid);
             }
 
-            // Track current earning rate and discount percent
-            var currentEarningRate = 0;
-            var currentDiscountPercent = 0;
             function onMemberSelected(memberId) {
                 $.getJSON('/Booking/GetMemberDiscount', { memberId: memberId }, function (data) {
                     currentDiscountPercent = data.discountPercent || 0;
                     currentEarningRate = data.earningRate || 0;
-                    updatePriceWithDiscount(currentDiscountPercent);
+                    updatePriceAll();
                 });
             }
             // On page load, show initial state
-            updatePriceWithDiscount(0);
+            updatePriceAll();
 
             // VOUCHER PICKER LOGIC
             let voucherModalInstance = null;
-            let selectedVoucher = null;
-            let selectedAccountId = null;
             $('#openVoucherModalBtn').click(function () {
                 if (!selectedAccountId) {
                     alert('Please select a member first!');
@@ -463,7 +482,7 @@
                 $('#selectedVoucherInfo').text('');
                 $('#selectedVoucherId').val('');
                 $('.voucher-card').removeClass('selected');
-                updatePriceWithVoucher();
+                updatePriceAll();
                 if (voucherModalInstance) voucherModalInstance.hide();
             });
             function loadVouchers(accountId) {
@@ -499,7 +518,7 @@
                             };
                             $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
                             $('#selectedVoucherId').val(selectedVoucher.id);
-                            updatePriceWithVoucher();
+                            updatePriceAll();
                             if (voucherModalInstance) voucherModalInstance.hide();
                         });
                     },
@@ -508,16 +527,11 @@
                     }
                 });
             }
-            function updatePriceWithVoucher() {
-                var originalTotal = @Model.BookingDetails.SelectedSeats.Sum(s => s.Price);
-                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-                var afterVoucher = originalTotal - voucherAmount;
-                if (afterVoucher < 0) afterVoucher = 0;
-                $('#originalTotal').text(originalTotal.toLocaleString() + ' VND');
-                if (voucherAmount > 0) {
-                    $('#discountInfo').prepend(`<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`);
-                }
-            }
+
+            // Update price and point info when points are entered or member is selected
+            $('#useScore').on('input', function () {
+                updatePriceAll();
+            });
         });
     </script>
 } 
