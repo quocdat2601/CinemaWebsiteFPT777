@@ -13,14 +13,6 @@
     <None Remove="image\**" />
   </ItemGroup>
 
-  <!-- Exclude Old_code directory from compilation -->
-  <ItemGroup>
-    <Compile Remove="Old_code\**" />
-    <Content Remove="Old_code\**" />
-    <EmbeddedResource Remove="Old_code\**" />
-    <None Remove="Old_code\**" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" />
