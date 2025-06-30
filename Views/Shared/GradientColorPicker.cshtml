@@ -2,288 +2,7 @@
     ViewBag.Title = "Advanced Gradient Color Picker Demo";
 }
 
-<!-- Make sure this style loads after other CSS -->
-<style>
-    body {
-        background-color: #1a1a2e;
-        color: #f0f0f5;
-        margin: 0;
-        font-family: Arial, sans-serif;
-    }
-
-    h2.page-title {
-        background-color: #0f0f1e;
-        color: #ffffff;
-        padding: 12px 16px;
-        margin: 0;
-        font-size: 1.5rem;
-        border-bottom: 1px solid #333;
-    }
-
-    .gradient-flex {
-        display: flex;
-        gap: 24px;
-        flex-wrap: wrap;
-        padding: 24px;
-    }
-
-    .gradient-card {
-        flex: 1 1 350px;
-        min-width: 320px;
-        max-width: 420px;
-        border-radius: 4px;
-    }
-
-    .gradient-fieldset {
-        position: relative;
-        border: 1.5px solid #e0e0e0;
-        border-radius: 4px;
-        padding: 9px 10px 14px;
-        background: #ffffff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        margin: 0;
-    }
-
-    .gradient-legend {
-        position: absolute;
-        width: auto;
-        top: -1px;
-        left: -1px;
-        background: #f5f5f5;
-        padding: 3px 7px;
-        font-weight: bold;
-        font-size: 12px;
-        color: #555;
-        border-radius: 2px 0 2px 0;
-        border: 1px solid #ddd;
-        margin-bottom: 0;
-    }
-
-    .gradient-list {
-        list-style: none;
-        padding: 18px 0 0 0;
-        margin: 0;
-    }
-
-    .gradient-list-item {
-        margin-bottom: 10px;
-    }
-
-    .gradient-list-item:last-child {
-        margin-bottom: 0;
-    }
-
-    .gradient-label, .color-label, .slider-label {
-        color: #222;
-        font-weight: 500;
-    }
-
-    .gradient-label {
-        margin: 8px 0 8px;
-        color: #333;
-        font-weight: 500;
-    }
-
-    .color-label, .slider-label {
-        font-weight: 500;
-        color: #333;
-    }
-
-    /* Only the CSS Gradient String label changes color in dark mode */
-    .css-gradient-label {
-        color: #222;
-        font-weight: 500;
-    }
-    body.dark-mode .css-gradient-label {
-        color: #fff;
-    }
-
-    .gradient-select {
-        width: 100%;
-        padding: 6px 10px;
-        border-radius: 3px;
-        border: 1.5px solid #bdbdbd;
-        background: #f7f7f7;
-        font-size: 0.97rem;
-        outline: none;
-        transition: border 0.2s;
-    }
-
-        .gradient-select:focus {
-            border-color: #6c63ff;
-        }
-
-    .stop-row {
-        display: flex;
-        align-items: flex-end;
-        gap: 18px;
-        margin-bottom: 10px;
-    }
-
-    .stop-colors, .stop-slider {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .stop-colors {
-        min-width: 120px;
-    }
-
-    .stop-slider {
-        flex: 1;
-        padding-top: 8px;
-        padding-bottom: 8px;
-        margin: 0;
-    }
-
-    .color-group {
-        display: flex;
-        align-items: center;
-        gap: 0;
-    }
-
-    .color-square {
-        width: 32px;
-        height: 32px;
-        border-radius: 2px;
-        border: 1.5px solid #bdbdbd;
-        margin-right: -1px;
-        cursor: pointer;
-    }
-
-    .color-hex {
-        width: 90px;
-        border-radius: 0 2px 2px 0;
-        border: 1.5px solid #bdbdbd;
-        padding: 5px 8px;
-        font-size: 0.95rem;
-        margin-left: 0;
-    }
-
-    .gradient-slider {
-        -webkit-appearance: none;
-        width: 100%;
-        height: 6px;
-        border-radius: 3px;
-        background: #f3f3f3;
-        outline: none;
-        opacity: 0.9;
-        transition: opacity .2s;
-    }
-    .gradient-slider:hover {
-        opacity: 1;
-    }
-    .gradient-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #3a3fc1;
-        cursor: pointer;
-        margin-top: -5px;
-    }
-    .gradient-slider::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #3a3fc1;
-        cursor: pointer;
-    }
-    .gradient-slider::-ms-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #3a3fc1;
-        cursor: pointer;
-    }
-
-    .gradient-slider::-webkit-slider-runnable-track {
-        height: 6px;
-        border-radius: 2px;
-        background: #f3f3f3;
-    }
-
-    .gradient-slider::-ms-fill-lower {
-        background: #f3f3f3;
-        border-radius: 2px;
-    }
-
-    .gradient-slider::-ms-fill-upper {
-        background: #f3f3f3;
-        border-radius: 2px;
-    }
-
-    .gradient-slider:focus {
-        outline: none;
-    }
-
-    .gradient-slider:active::-webkit-slider-thumb {
-        background: #23268b;
-    }
-
-    .gradient-slider:active::-moz-range-thumb {
-        background: #23268b;
-    }
-
-    .gradient-slider:active::-ms-thumb {
-        background: #23268b;
-    }
-
-    .gradient-slider::-moz-focus-outer {
-        border: 0;
-    }
-
-    .gradient-slider {
-        -ms-overflow-style: none;
-    }
-
-    .removeStop {
-        font-size: 1.2rem;
-        color: #cf1512;
-        background: none;
-        border: none;
-        cursor: pointer;
-        align-self: flex-start;
-    }
-
-    #addStop {
-        margin-top: 10px;
-        padding: 6px 14px;
-        background: #6c63ff;
-        color: #fff;
-        border: none;
-        border-radius: 3px;
-        font-size: 0.97rem;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-
-        #addStop:hover {
-            background: #4b47b6;
-        }
-
-    #gradientString {
-        width: 100%;
-        padding: 6px 8px;
-        border-radius: 3px;
-        border: 1.5px solid #bdbdbd;
-        background: #f7f7f7;
-        font-size: 0.98rem;
-    }
-
-    #preview {
-        width: 100%;
-        height: 250px;
-        border-radius: 4px;
-        border: 1.5px solid #e0e0e0;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    }
-</style>
-
-<h2 class="page-title">Advanced Gradient Color Picker Demo</h2>
+<link rel="stylesheet" href="~/css/gradient-color-picker.css" asp-append-version="true" />
 
 <div class="gradient-flex">
     <div class="gradient-card">
@@ -307,7 +26,6 @@
                         <option value="135deg">135°</option>
                         <option value="90deg">90°</option>
                         <option value="45deg">45°</option>
-                        <option value="circle">circle (radial)</option>
                     </select>
                 </li>
                 <li class="gradient-list-item">
@@ -336,28 +54,63 @@
     let stops = [{ color: '#121FCF', pos: 23 }, { color: '#CF1512', pos: 100 }];
     function renderStops() {
         const container = document.getElementById('stops'); container.innerHTML = '';
-        stops.forEach((stop,i) => {
+        const sortedStops = [...stops].sort((a, b) => a.pos - b.pos);
+        sortedStops.forEach((stop, i) => {
             const row = document.createElement('div'); row.className='stop-row';
             row.innerHTML = `
                 <div class="stop-colors">
-                  <span class="color-label">${i===0?'Start Color':i===stops.length-1?'End Color':'Stop Color'}</span>
-                  <div class="color-group">
-                    <input type="color" value="${stop.color}" data-idx="${i}" class="color-square">
-                    <input type="text" value="${stop.color}" data-idx="${i}" class="color-hex">
+                  ${i!==0 && i!==sortedStops.length-1 ? `
+                    <div class="stop-label-row">
+                      <span class="color-label">Stop Color</span>
+                      <button type="button" class="removeStop" data-idx="${stops.indexOf(stop)}" aria-label="Remove stop">✕</button>
+                    </div>
+                  ` : `<span class="color-label">${i===0?'Start Color':'End Color'}</span>`}
+                  <div class="color-picker-wrapper">
+                    <div class="color-picker-group">
+                      <div class="color-swatch-wrapper">
+                        <input type="color" value="${stop.color}" data-idx="${stops.indexOf(stop)}" class="native-color-input">
+                        <button type="button" class="custom-color-swatch" aria-label="Pick color" style="background: ${stop.color};"></button>
+                      </div>
+                      <input type="text" value="${stop.color}" data-idx="${stops.indexOf(stop)}" class="form-control text-monospace">
+                    </div>
                   </div>
                 </div>
                 <div class="stop-slider">
-                  <span class="slider-label">${i===0?'Start Position:':i===stops.length-1?'End Position:':'Position:'} <b>${stop.pos}%</b></span>
-                  <input type="range" min="0" max="100" value="${stop.pos}" data-idx="${i}" class="gradient-slider">
+                  <span class="slider-label">${i===0?'Start Position:':i===sortedStops.length-1?'End Position:':'Position:'} <b>${stop.pos}%</b></span>
+                  <input type="range" min="0" max="100" value="${stop.pos}" data-idx="${stops.indexOf(stop)}" class="gradient-slider">
                 </div>
-                ${i!==0 && i!==stops.length-1?`<button type="button" class="removeStop" data-idx="${i}">✕</button>`:''}
             `;
             container.appendChild(row);
         }); attachEvents();
     }
     function attachEvents() {
-        document.querySelectorAll('.color-square').forEach(el=>el.oninput=e=>{stops[e.target.dataset.idx].color=e.target.value; document.querySelectorAll('.color-hex')[e.target.dataset.idx].value=e.target.value; updateGradient(); renderStops();});
-        document.querySelectorAll('.color-hex').forEach(el=>el.oninput=e=>{const v=e.target.value; if(/^#([0-9A-Fa-f]{3}){1,2}$/.test(v)){stops[e.target.dataset.idx].color=v; document.querySelectorAll('.color-square')[e.target.dataset.idx].value=v; updateGradient(); renderStops();}});
+        document.querySelectorAll('.custom-color-swatch').forEach((btn, i) => {
+          btn.addEventListener('click', function() {
+            const colorInput = btn.parentElement.querySelector('input[type=color]');
+            colorInput.click();
+          });
+          const colorInput = btn.parentElement.querySelector('input[type=color]');
+          colorInput.addEventListener('input', function() {
+            btn.style.background = colorInput.value;
+            colorInput.closest('.color-picker-group').querySelector('input[type=text]').value = colorInput.value;
+            stops[i].color = colorInput.value;
+            updateGradient();
+          });
+        });
+        document.querySelectorAll('.color-picker-group input[type=text]').forEach((el, i) => {
+          el.oninput = e => {
+            const v = e.target.value;
+            if(/^#([0-9A-Fa-f]{3}){1,2}$/.test(v)){
+              stops[e.target.dataset.idx].color = v;
+              // Update the swatch and color input
+              const group = el.closest('.color-picker-group');
+              group.querySelector('.custom-color-swatch').style.background = v;
+              group.querySelector('input[type=color]').value = v;
+              updateGradient();
+              renderStops();
+            }
+          };
+        });
         document.querySelectorAll('.gradient-slider').forEach(el=>el.oninput=e=>{
             stops[e.target.dataset.idx].pos=+e.target.value;
             const label = e.target.closest('.stop-slider').querySelector('.slider-label b');
@@ -368,6 +121,15 @@
     }
     document.getElementById('addStop').onclick=()=>{const mid=Math.floor(stops.length/2); const prev=stops[mid-1]?.pos||0; const next=stops[mid]?.pos||100; stops.splice(mid,0,{color:'#FFFFFF',pos:Math.round((prev+next)/2)}); renderStops(); updateGradient();};
     document.getElementById('orientation').onchange=updateGradient; document.getElementById('direction').onchange=updateGradient;
-    function updateGradient(){stops.sort((a,b)=>a.pos-b.pos); const orient=document.getElementById('orientation').value; let dir=document.getElementById('direction').value; if(orient==='radial'&& dir!=='circle') dir='circle'; const s=stops.map(s=>`${s.color} ${s.pos}%`).join(', '); const g=`${orient}-gradient(${dir}, ${s})`; document.getElementById('preview').style.background=g; document.getElementById('gradientString').value=g;}
+    function updateGradient(){
+        const sortedStops = [...stops].sort((a, b) => a.pos - b.pos);
+        const orient = document.getElementById('orientation').value;
+        let dir = document.getElementById('direction').value;
+        if(orient==='radial'&& dir!=='circle') dir='circle';
+        const s = sortedStops.map(s=>`${s.color} ${s.pos}%`).join(', ');
+        const g = `${orient}-gradient(${dir}, ${s})`;
+        document.getElementById('preview').style.background=g;
+        document.getElementById('gradientString').value=g;
+    }
     renderStops(); updateGradient();
 </script>

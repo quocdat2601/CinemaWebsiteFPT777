@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Rank Management</h2>
         <a href="@Url.Action("CreateRank", "Admin")" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Add New Rank
+            <i class="fas fa-plus-circle"></i> Add New Rank
         </a>
     </div>
 
@@ -37,12 +37,16 @@
                                     <td>@rank.CurrentDiscountPercentage</td>
                                     <td>@rank.CurrentPointEarningPercentage</td>
                                     <td><span style="background: @rank.ColorGradient; padding: 0.3rem 1.2rem; border-radius: 8px; color: #fff;">Color</span></td>
-                                    <td><i class="fas @rank.IconClass"></i></td>
+                                    <td><i class="@rank.IconClass" style="font-size: 1.25rem;"></i></td>
                                     <td>
-                                        <a href="@Url.Action("EditRank", "Admin", new { id = rank.CurrentRankId })" class="btn btn-sm btn-primary">Edit</a>
+                                        <a href="@Url.Action("EditRank", "Admin", new { id = rank.CurrentRankId })" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
                                         <form asp-action="DeleteRank" asp-controller="Admin" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this rank?');">
                                             <input type="hidden" name="id" value="@rank.CurrentRankId" />
-                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
@@ -59,4 +63,18 @@
     </div>
 </div>
 
-<partial name="_ToastMessages" /> 
+<partial name="_ToastMessages" />
+
+@section Styles {
+    <style>
+        .table td {
+            vertical-align: middle;
+        }
+        .btn-sm {
+            margin: 0 2px;
+        }
+        .fas {
+            margin-right: 4px;
+        }
+    </style>
+} 

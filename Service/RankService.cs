@@ -148,12 +148,19 @@ namespace MovieTheater.Service
         public bool Create(RankInfoViewModel model)
         {
             if (model == null) return false;
-            // Check for duplicate RequiredPoints before adding
+
+            // Check for duplicate RankName
+            if (_context.Ranks.Any(r => r.RankName.ToLower() == model.CurrentRankName.ToLower()))
+            {
+                throw new InvalidOperationException($"A rank with name '{model.CurrentRankName}' already exists.");
+            }
+
+            // Check for duplicate RequiredPoints
             if (_context.Ranks.Any(r => r.RequiredPoints == model.RequiredPointsForCurrentRank))
             {
-                // Duplicate found, do not add
-                return false;
+                throw new InvalidOperationException($"A rank with {model.RequiredPointsForCurrentRank} required points already exists.");
             }
+
             var rank = new Rank
             {
                 RankName = model.CurrentRankName,
@@ -172,12 +179,19 @@ namespace MovieTheater.Service
         {
             var rank = _context.Ranks.FirstOrDefault(r => r.RankId == model.CurrentRankId);
             if (rank == null) return false;
-            // Prevent duplicate RequiredPoints (excluding self)
+
+            // Check for duplicate RankName (excluding self)
+            if (_context.Ranks.Any(r => r.RankName.ToLower() == model.CurrentRankName.ToLower() && r.RankId != model.CurrentRankId))
+            {
+                throw new InvalidOperationException($"A rank with name '{model.CurrentRankName}' already exists.");
+            }
+
+            // Check for duplicate RequiredPoints (excluding self)
             if (_context.Ranks.Any(r => r.RequiredPoints == model.RequiredPointsForCurrentRank && r.RankId != model.CurrentRankId))
             {
-                // Duplicate found, do not update
-                return false;
+                throw new InvalidOperationException($"A rank with {model.RequiredPointsForCurrentRank} required points already exists.");
             }
+
             rank.RankName = model.CurrentRankName;
             rank.RequiredPoints = model.RequiredPointsForCurrentRank;
             rank.DiscountPercentage = model.CurrentDiscountPercentage;

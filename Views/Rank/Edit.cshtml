@@ -30,6 +30,44 @@
                     <span asp-validation-for="RequiredPointsForCurrentRank" class="text-danger"></span>
                 </div>
 
+                <!-- Color / Gradient Picker -->
+                <div class="mb-3">
+                    <label class="form-label">Color</label>
+                    <div class="input-group">
+                        <input asp-for="ColorGradient"
+                               class="form-control"
+                               placeholder="Pick a color or gradient"
+                               readonly />
+                        <button type="button"
+                                id="ColorPickerBtn"
+                                class="btn btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#colorPickerModal">
+                            <div id="ColorPickerBtnPreview" style="width: 20px; height: 20px; border-radius: 3px;"></div>
+                        </button>
+                    </div>
+                    <span asp-validation-for="ColorGradient" class="text-danger"></span>
+                </div>
+
+                <!-- Icon Picker -->
+                <div class="mb-3">
+                    <label class="form-label">Icon</label>
+                    <div class="input-group">
+                        <input id="IconClass"
+                               name="IconClass"
+                               type="text"
+                               class="form-control"
+                               value="@Model.IconClass"
+                               readonly />
+                        <button id="IconPickerBtn" 
+                                type="button" 
+                                class="btn btn-outline-secondary">
+                            <i id="IconPickerBtnIcon" class="fas @Model.IconClass"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="IconClass" class="text-danger"></span>
+                </div>
+
                 <!-- Discount % -->
                 <div class="mb-3">
                     <label asp-for="CurrentDiscountPercentage" class="form-label">Discount (%)</label>
@@ -54,41 +92,6 @@
                     <span asp-validation-for="CurrentPointEarningPercentage" class="text-danger"></span>
                 </div>
 
-                <!-- Color / Gradient Picker -->
-                <div class="mb-3">
-                    <label class="form-label">Color</label><br />
-                    <button type="button"
-                            class="btn btn-outline-primary mb-2"
-                            data-bs-toggle="modal"
-                            data-bs-target="#colorPickerModal">
-                        Pick Color/Gradient
-                    </button>
-                    <input asp-for="ColorGradient"
-                           class="form-control mt-2"
-                           placeholder="Pick a color or gradient"
-                           readonly />
-                    <small class="form-text text-muted">
-                        Use the picker to select a color or gradient.
-                    </small>
-                    <span asp-validation-for="ColorGradient" class="text-danger"></span>
-                </div>
-
-                <!-- Icon Picker (Bootstrap 4 component style) -->
-                <div class="mb-3">
-                    <label for="IconClass" class="form-label">Icon</label>
-                    <div class="input-group">
-                        <input asp-for="IconClass"
-                               id="IconClass"
-                               type="text"
-                               class="form-control icp icp-auto"
-                               readonly />
-                        <div class="input-group-append">
-                            <span class="input-group-text"></span>
-                        </div>
-                    </div>
-                    <span asp-validation-for="IconClass" class="text-danger"></span>
-                </div>
-
                 <!-- Submit / Cancel -->
                 <button type="submit" class="btn btn-primary">Save Changes</button>
                 <a href="@Url.Action("MainPage", "Admin", new { tab = "RankMg" })"
@@ -108,14 +111,8 @@
      aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="colorPickerModalLabel">
-                    Pick a Color or Gradient
-                </h5>
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+            <div class="modal-header" style="background: #23243a; color: #fff; border-bottom: 2px solid #444;">
+                <h3 class="modal-title" style="font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; margin: 0;">Pick a Color or Gradient</h3>
             </div>
             <div class="modal-body p-0">
                 @await Html.PartialAsync("~/Views/Shared/GradientColorPicker.cshtml")
@@ -137,33 +134,92 @@
 </div>
 
 @section Scripts {
-    <style>
-        /* Ensure the iconpicker popover sits on top */
-        .iconpicker-popover {
-            z-index: 2000 !important;
-        }
-    </style>
-
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fontawesome-iconpicker/3.2.0/css/fontawesome-iconpicker.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fontawesome-iconpicker/3.2.0/js/fontawesome-iconpicker.min.js"></script>
     <script>
         $(function () {
-          // Initialize FontAwesome Icon Picker
-          $('.icp-auto').iconpicker({
-            component: '.input-group-text',  // BS4 component
-            fontAwesome5: true,              // FA5+ mode
-            iconBaseClass: 'fas',
-            iconClassPrefix: 'fa-',
-            placement: 'bottomRight',
-            hideOnSelect: true,
-            searchText: 'Search icons...',
-            filter: true
-          });
+            // Initialize icon picker immediately
+            $('#IconPickerBtn').iconpicker({
+                placement: 'bottom',
+                container: 'body',
+                animation: false,
+                input: '#IconClass',
+                iconBaseClass: '',
+                iconClassPrefix: '',
+                templates: {
+                    iconpickerItem: '<a role="button" href="#" class="iconpicker-item"><i></i></a>'
+                }
+            }).on('iconpickerSelected', function (e) {
+                var iconClass = e.iconpickerValue;
+                $('#IconClass').val(iconClass);
+                // Don't add any prefix, use the full class from the picker
+                $('#IconPickerBtnIcon').attr('class', iconClass);
+            });
 
-          // Confirm Color/Gradient selection
-          $('#confirmColorPick').on('click', function(){
-            var val = $('#gradientString').val();
-            $('#ColorGradient').val(val);
-            $('#colorPickerModal').modal('hide');
-          });
+            // Initialize icon if value exists
+            var initialIcon = $('#IconClass').val();
+            if (initialIcon) {
+                $('#IconPickerBtnIcon').attr('class', initialIcon);
+            }
+
+            // Handle the 'Use Selected' button click for the color picker
+            $('#confirmColorPick').on('click', function() {
+                var gradientValue = $('#gradientString').val();
+                $('input[name="ColorGradient"]').val(gradientValue);
+                $('#ColorPickerBtn').css('background', gradientValue);
+                $('#colorPickerModal').modal('hide');
+            });
+
+            // Initialize color preview if value exists
+            var initialColor = $('input[name="ColorGradient"]').val();
+            if (initialColor) {
+                $('#ColorPickerBtn').css('background', initialColor);
+            }
         });
     </script>
+    <style>
+        .iconpicker-popover {
+            z-index: 2050 !important;
+        }
+        /* Make all iconpicker icons darker and more visible */
+        .iconpicker .iconpicker-item {
+            color: #333;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .iconpicker .iconpicker-item:hover,
+        .iconpicker .iconpicker-item.iconpicker-selected {
+            color: #fff;
+            background: #0d6efd;
+            border-color: #0d6efd;
+        }
+        /* Simple button styles */
+        #IconPickerBtn {
+            min-width: 45px;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ced4da;
+        }
+        #IconPickerBtn:hover {
+            border-color: #86b7fe;
+        }
+        #IconPickerBtnIcon {
+            font-size: 1.25rem;
+        }
+        /* Style for color picker button */
+        #ColorPickerBtn {
+            min-width: 45px;
+            min-height: 38px;
+            padding: 0;
+            border: 1px solid #ced4da;
+            background: #f8f9fa;
+        }
+        #ColorPickerBtn:hover {
+            border-color: #86b7fe;
+        }
+    </style>
 }

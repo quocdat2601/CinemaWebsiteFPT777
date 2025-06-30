@@ -16,83 +16,83 @@
     return;
 }
 
-<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/profile-page.css" asp-append-version="true" />
 
-<div class="signup-title">Profile</div>
-<div class="profile-container">
-    <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm">
-        <div class="profile-banner" style="background: @bannerGradient">
-            <div class="profile-avatar-wrapper" style="margin-bottom: 0.5rem;">
-                <label for="profileImageInput" style="cursor: pointer;">
-                    <img id="profileImagePreview" class="profile-avatar"
-                         src="@(Model.Profile.Image ?? "/image/profile.jpg")"
-                         alt="Profile Image" />
-                </label>
-                <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
-                <div id="avatarBtns" class="avatar-upload-btns">
-                    <button type="submit" name="action" value="updateImage" class="avatar-btn avatar-btn-update">Update</button>
-                    <button type="button" class="avatar-btn avatar-btn-cancel" id="cancelAvatarBtn">Cancel</button>
-                </div>
-            </div>
-            <div class="profile-info">
-                <div style="font-size:1.5rem;font-weight:600;">@profile.FullName</div>
-                <div style="margin-top:0.3rem;">
-                    <span class="rank-badge" style="font-size:0.95rem;padding:0.18rem 0.9rem;margin:0;background:rgba(255,255,255,0.15);color:#fff;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.2);">
-                        <i class="fas @(rank.IconClass ?? "fa-crown")"></i> @rank.CurrentRankName
-                    </span>
-                </div>
-                <div style="font-size:1.1rem; margin-top:0.3rem; display: flex; gap: 2rem; align-items: center;">
-                    <span>
-                        Current Points: <b>@rank.CurrentScore</b>
-                    </span>
-                    <span style="opacity: 0.8;">|</span>
-                    <span>
-                        Total Points: <b>@rank.TotalPoints</b>
-                    </span>
-                </div>
-                @if (isMaxRank)
-                {
-                    <!-- AC-04: Max Rank Achieved Message -->
-                    <span class="max-rank-message" role="status" aria-live="polite">
-                        <i class="fas fa-crown"></i>
-                        Max Rank Achieved!
-                    </span>
-                    <div class="next-rank-row" style="justify-content: flex-start; width: 100%; margin-top: 0.5rem;">
-                        <button type="button" class="btn view-details-btn" data-bs-toggle="modal" data-bs-target="#rankDetailsModal">
-                            <i class="fas fa-info-circle"></i> View Details
-                        </button>
+<div class="container">
+    <div class="signup-title">Profile</div>
+    <div class="profile-container">
+        <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm">
+            <div class="profile-banner" style="background: @bannerGradient">
+                <div class="profile-avatar-wrapper" style="margin-bottom: 0.5rem;">
+                    <label for="profileImageInput" style="cursor: pointer;">
+                        <img id="profileImagePreview" class="profile-avatar"
+                             src="@(Model.Profile.Image ?? "/image/profile.jpg")"
+                             alt="Profile Image" />
+                    </label>
+                    <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
+                    <div id="avatarBtns" class="avatar-upload-btns">
+                        <button type="submit" name="action" value="updateImage" class="avatar-btn avatar-btn-update">Update</button>
+                        <button type="button" class="avatar-btn avatar-btn-cancel" id="cancelAvatarBtn">Cancel</button>
                     </div>
-                }
-                else
-                {
-                    // Progress bar and next rank info as in modal, but without min/max points
-                    var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
-                    var profileNextRankPoints = rank.RequiredPointsForNextRank;
-                    var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
-                    var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
-                    var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
-                    <div class="rank-progress-wrapper" style="margin-bottom: 0.3rem;">
-                        <div class="progress">
-                            <div class="progress-bar" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%; --progress-width: @(profileProgressPercentage.ToString("0.##"))%;"></div>
-                        </div>
-                    </div>
-                    <div class="next-rank-row mt-0" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
-                        <span class="next-rank-info" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
-                            Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed
+                </div>
+                <div class="profile-info">
+                    <div style="font-size:1.5rem;font-weight:600;">@profile.FullName</div>
+                    <div style="margin-top:0.3rem;">
+                        <span class="rank-badge" style="font-size:0.95rem;padding:0.18rem 0.9rem;margin:0;background:rgba(255,255,255,0.15);color:#fff;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.2);">
+                            <i class="fas @(rank.IconClass ?? "fa-crown")"></i> @rank.CurrentRankName
                         </span>
-
-                        <button type="button" class="btn view-details-btn"
-                                style="white-space: nowrap; flex-shrink: 0;"
-                                data-bs-toggle="modal"
-                                data-bs-target="#rankDetailsModal">
-                            <i class="fas fa-info-circle"></i> View Details
-                        </button>
-
                     </div>
-                }
+                    <div style="font-size:1.1rem; margin-top:0.3rem; display: flex; gap: 2rem; align-items: center;">
+                        <span>
+                            Current Points: <b>@rank.CurrentScore</b>
+                        </span>
+                        <span style="opacity: 0.8;">|</span>
+                        <span>
+                            Total Points: <b>@rank.TotalPoints</b>
+                        </span>
+                    </div>
+                    @if (isMaxRank)
+                    {
+                        <!-- AC-04: Max Rank Achieved Message -->
+                        <span class="max-rank-message" role="status" aria-live="polite">
+                            <i class="fas fa-crown"></i>
+                            Max Rank Achieved!
+                        </span>
+                        <div class="next-rank-row" style="justify-content: flex-start; width: 100%; margin-top: 0.5rem;">
+                            <button type="button" class="btn view-details-btn" data-bs-toggle="modal" data-bs-target="#rankDetailsModal">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        // Progress bar and next rank info as in modal, but without min/max points
+                        var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
+                        var profileNextRankPoints = rank.RequiredPointsForNextRank;
+                        var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
+                        var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
+                        var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
+                        <div class="rank-progress-wrapper" style="margin-bottom: 0.3rem;">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%; --progress-width: @(profileProgressPercentage.ToString("0.##"))%;"></div>
+                            </div>
+                        </div>
+                        <div class="next-rank-row mt-0" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
+                            <span class="next-rank-info" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                                Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed
+                            </span>
+
+                            <button type="button" class="btn view-details-btn"
+                                    style="white-space: nowrap; flex-shrink: 0;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#rankDetailsModal">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </button>
+
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
             <div class="container">
                 <div class="row">
                 <div class="col-md-12">
@@ -173,6 +173,7 @@
             </div>
         </div>
     </form>
+    </div>
 </div>
 <partial name="_ToastMessages" />
 
@@ -195,7 +196,10 @@
                         <ol class="carousel-indicators">
                             @for (int i = 0; i < sortedRanks.Count; i++)
                             {
-                                <li data-bs-target="#rankCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></li>
+                                var rankDetail = sortedRanks[i];
+                                // The indicator should be active if its corresponding carousel item is active, matching the slide.
+                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                                <li data-bs-target="#rankCarousel" data-bs-slide-to="@i" class="@activeClass"></li>
                             }
                         </ol>
 

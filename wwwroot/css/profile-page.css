@@ -27,11 +27,12 @@
     text-align: center;
     letter-spacing: 0.5px;
 }
+
 body {
     background: var(--bg-page);
     color: var(--clr-white);
     font-family: Arial, sans-serif;
-    padding: 2rem;
+/*    padding: 2rem;*/
 }
 
 .profile-container {
@@ -89,9 +90,9 @@ body {
     visibility: hidden;
 }
 
-.avatar-upload-btns.is-visible {
-    visibility: visible;
-}
+    .avatar-upload-btns.is-visible {
+        visibility: visible;
+    }
 
 .avatar-btn {
     padding: 0.18rem 0.7rem;
@@ -182,8 +183,13 @@ body {
 }
 
 @keyframes fillProgress {
-    0% { width: 0; }
-    100% { width: var(--progress-width); }
+    0% {
+        width: 0;
+    }
+
+    100% {
+        width: var(--progress-width);
+    }
 }
 
 .progress-bar {
@@ -446,28 +452,27 @@ body {
 
 /* Max‐Rank Banner */
 .max-rank-message {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0;
-  background-color: #e6f4ea;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-  border-radius: 1rem;
-  font-weight: 600;
-  font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+    background-color: #e6f4ea;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 1rem;
 }
 
-.max-rank-message .fa-crown {
-  color: #388e3c;
-  font-size: 1.2rem;
-}
+    .max-rank-message .fa-crown {
+        color: #388e3c;
+        font-size: 1.2rem;
+    }
 
-.max-rank-message:hover {
-  background-color: #d0ebdc;
-  border-color: #81c784;
-  cursor: default;
-}
-
+    .max-rank-message:hover {
+        background-color: #d0ebdc;
+        border-color: #81c784;
+        cursor: default;
+    }

@@ -7,6 +7,7 @@ using MovieTheater.ViewModels;
 using System.Security.Claims;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace MovieTheater.Controllers
 {
@@ -402,25 +403,25 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "Please correct the errors below.";
                 return View("~/Views/Rank/Create.cshtml", model);
             }
-            // Map RankCreateViewModel to RankInfoViewModel for service
-            var infoModel = new RankInfoViewModel
+            try
             {
-                CurrentRankName = model.CurrentRankName,
-                RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
-                CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
-                CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
-                ColorGradient = model.ColorGradient,
-                IconClass = model.IconClass
-            };
-            var result = _rankService.Create(infoModel);
-            if (result)
-            {
+                // Map RankCreateViewModel to RankInfoViewModel for service
+                var infoModel = new RankInfoViewModel
+                {
+                    CurrentRankName = model.CurrentRankName,
+                    RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                    CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                    CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                    ColorGradient = model.ColorGradient,
+                    IconClass = model.IconClass
+                };
+                var result = _rankService.Create(infoModel);
                 TempData["ToastMessage"] = "Rank created successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
             }
-            else
+            catch (InvalidOperationException ex)
             {
-                TempData["ErrorMessage"] = "A rank with the same required points already exists. Please choose a different value.";
+                TempData["ErrorMessage"] = ex.Message;
                 return View("~/Views/Rank/Create.cshtml", model);
             }
         }
@@ -455,27 +456,27 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "Please correct the errors below.";
                 return View("~/Views/Rank/Edit.cshtml", model);
             }
-            // Map RankCreateViewModel to RankInfoViewModel for service
-            var infoModel = new RankInfoViewModel
+            try
             {
-                CurrentRankId = id,
-                CurrentRankName = model.CurrentRankName,
-                RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
-                CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
-                CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
-                ColorGradient = model.ColorGradient,
-                IconClass = model.IconClass
-            };
-            var result = _rankService.Update(infoModel);
-            if (result)
-            {
+                // Map RankCreateViewModel to RankInfoViewModel for service
+                var infoModel = new RankInfoViewModel
+                {
+                    CurrentRankId = id,
+                    CurrentRankName = model.CurrentRankName,
+                    RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                    CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                    CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                    ColorGradient = model.ColorGradient,
+                    IconClass = model.IconClass
+                };
+                var result = _rankService.Update(infoModel);
                 TempData["ToastMessage"] = "Rank updated successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
             }
-            else
+            catch (InvalidOperationException ex)
             {
                 ViewBag.RankId = id;
-                TempData["ErrorMessage"] = "A rank with the same required points already exists. Please choose a different value.";
+                TempData["ErrorMessage"] = ex.Message;
                 return View("~/Views/Rank/Edit.cshtml", model);
             }
         }
