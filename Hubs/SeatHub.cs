@@ -62,5 +62,11 @@ namespace MovieTheater.Hubs
 
             await base.OnDisconnectedAsync(exception);
         }
+
+        // Thông báo realtime khi trạng thái ghế thay đổi
+        public async Task NotifySeatStatusChanged(int movieShowId, int seatId, int newStatusId)
+        {
+            await Clients.Group(movieShowId.ToString()).SendAsync("SeatStatusChanged", seatId, newStatusId);
+        }
     }
 }

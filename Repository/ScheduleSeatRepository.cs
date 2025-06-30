@@ -1,15 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Models;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Repository
 {
     public class ScheduleSeatRepository : IScheduleSeatRepository
     {
         private readonly MovieTheaterContext _context;
+        private readonly IHubContext<SeatHub> _seatHubContext;
 
-        public ScheduleSeatRepository(MovieTheaterContext context)
+        public ScheduleSeatRepository(MovieTheaterContext context, IHubContext<SeatHub> seatHubContext)
         {
             _context = context;
+            _seatHubContext = seatHubContext;
         }
 
         public async Task<bool> CreateScheduleSeatAsync(ScheduleSeat scheduleSeat)
@@ -18,6 +22,8 @@ namespace MovieTheater.Repository
             {
                 await _context.ScheduleSeats.AddAsync(scheduleSeat);
                 await _context.SaveChangesAsync();
+                // Phát sự kiện SignalR khi tạo mới ghế
+                await _seatHubContext.Clients.Group(scheduleSeat.MovieShowId.ToString()).SendAsync("SeatStatusChanged", scheduleSeat.SeatId, scheduleSeat.SeatStatusId);
                 return true;
             }
             catch
@@ -32,6 +38,11 @@ namespace MovieTheater.Repository
             {
                 await _context.ScheduleSeats.AddRangeAsync(scheduleSeats);
                 await _context.SaveChangesAsync();
+                // Phát sự kiện SignalR cho từng ghế
+                foreach (var seat in scheduleSeats)
+                {
+                    await _seatHubContext.Clients.Group(seat.MovieShowId.ToString()).SendAsync("SeatStatusChanged", seat.SeatId, seat.SeatStatusId);
+                }
                 return true;
             }
             catch
@@ -70,6 +81,8 @@ namespace MovieTheater.Repository
 
                 scheduleSeat.SeatStatusId = statusId;
                 await _context.SaveChangesAsync();
+                // Gửi sự kiện SignalR thông báo trạng thái ghế thay đổi
+                await _seatHubContext.Clients.Group(movieShowId.ToString()).SendAsync("SeatStatusChanged", seatId, statusId);
                 return true;
             }
             catch

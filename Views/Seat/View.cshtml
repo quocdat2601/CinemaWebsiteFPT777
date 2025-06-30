@@ -55,6 +55,7 @@
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
 												data-seat-price="@seatType?.PricePercent"
+												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
 												class="@tdClass"
 												@(isDisabledType || isBooked ? "disabled" : "")
 												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
@@ -240,6 +241,24 @@
 				td?.classList.remove("being-held");
 				td?.removeAttribute("title");
 			});
+		});
+
+		connection.on("SeatStatusChanged", (seatId, newStatusId) => {
+			console.log("SeatStatusChanged", seatId, newStatusId);
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			if (!td) return;
+			if (newStatusId === 2) { // 2 = Booked
+				td.classList.add("booked-seat");
+				td.classList.remove("selected-seat", "being-held");
+				td.setAttribute("disabled", "disabled");
+				td.style.backgroundColor = "#19692c";
+			} else {
+				td.classList.remove("booked-seat");
+				td.removeAttribute("disabled");
+				// Set lại màu gốc loại ghế
+				const color = td.getAttribute("data-seat-color") || "#cccbc8";
+				td.style.backgroundColor = color;
+			}
 		});
 
 		connection.start().then(() => {
