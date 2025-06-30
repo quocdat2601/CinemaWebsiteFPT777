@@ -3,8 +3,39 @@
     var originalPrice = TempData["OriginalPrice"] != null ? Convert.ToDecimal(TempData["OriginalPrice"]) : 0;
     var usedScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : 0;
     var finalPrice = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : 0;
+    var invoiceId = TempData["InvoiceId"] as string;
+    var qrCodeUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/GetTicketInfo?invoiceId={invoiceId}";
 }
 
+<style>
+    .qr-code-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    #qrcode {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        display: inline-block;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    #qrcode canvas {
+        border-radius: 8px;
+    }
+    
+    .download-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+</style>
 
 <div class="container mt-5">
     <div class="card shadow-lg p-4 rounded-4">
@@ -34,11 +65,56 @@
             </div>
         </div>
 
+        <!-- QR Code Section: ONLY STAFF QR CODE -->
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">🛡️ QR Code </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="qr-code-container">
+                            <canvas id="qrcode-staff"></canvas>
+                        </div>
+                        <p class="text-muted small mb-2">Only cinema staff can scan this code to check-in</p>
+                        <button id="downloadQRStaff" class="btn btn-outline-success btn-sm download-btn">
+                            <i class="fas fa-download me-1"></i> Download QR
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3">
+            <b>Note:</b> <br>
+            - <b>Staff</b> must log in as Admin/Employee and use the <b>QR Scanner</b> page to scan this QR and confirm check-in.<br>
+        </div>
+
         <div class="text-center mt-4">
             <a asp-controller="Home" asp-action="Index" class="btn btn-primary me-2">🏠️ Home</a>
             <a asp-controller="Booking" asp-action="TicketBooking" class="btn btn-outline-secondary">🎟️ Book Another Ticket</a>
         </div>
     </div>
 </div>
+
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var qrStaffUrl = '@Context.Request.Scheme://@Context.Request.Host/QRCode/Scanner?invoiceId=@invoiceId';
+        var qrStaff = new QRious({
+            element: document.getElementById('qrcode-staff'),
+            value: qrStaffUrl,
+            size: 200
+        });
+        document.getElementById('downloadQRStaff').onclick = function() {
+            var canvas = document.getElementById('qrcode-staff');
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = 'ticket-qr-staff.png';
+            link.click();
+        }
+    });
+</script>
 
 <partial name="_ToastMessages" />

@@ -1025,5 +1025,115 @@ namespace MovieTheater.Controllers
             }
             return Json(new { discountPercent, earningRate });
         }
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult TicketDetails(string invoiceId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account");
+
+            var invoice = _invoiceService.GetById(invoiceId);
+            if (invoice == null || invoice.AccountId != userId)
+                return NotFound();
+
+            // Use robust navigation: get schedule seats and their related MovieShow and CinemaRoom
+            var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId).ToList();
+
+            string roomName = "N/A";
+            if (scheduleSeats.Any())
+            {
+                var movieShow = scheduleSeats.First().MovieShow;
+                if (movieShow != null && movieShow.CinemaRoom != null)
+                {
+                    roomName = movieShow.CinemaRoom.CinemaRoomName;
+                }
+            }
+
+            var member = _memberRepository.GetByAccountId(invoice.AccountId);
+            // Prepare seat details
+            var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
+            var seats = new List<SeatDetailViewModel>();
+            foreach (var seatName in seatNamesArr)
+            {
+                var trimmedSeatName = seatName.Trim();
+                var seat = _seatService.GetSeatByName(seatName);
+                if (seat == null)
+                {
+                    continue;
+                }
+                SeatType seatType = null;
+                if (seat.SeatTypeId.HasValue)
+                {
+                    seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
+                }
+                seats.Add(new SeatDetailViewModel
+                {
+                    SeatId = seat.SeatId,
+                    SeatName = trimmedSeatName,
+                    SeatType = seatType?.TypeName ?? "N/A",
+                    Price = seatType?.PricePercent ?? 0
+                });
+            }
+
+            var bookingDetails = new ConfirmBookingViewModel
+            {
+                MovieName = invoice.MovieName,
+                CinemaRoomName = roomName,
+                ShowDate = invoice.ScheduleShow ?? DateTime.Now,
+                ShowTime = invoice.ScheduleShowTime,
+                SelectedSeats = seats,
+                TotalPrice = invoice.TotalMoney ?? 0,
+                PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
+                InvoiceId = invoice.InvoiceId,
+                ScoreUsed = invoice.UseScore ?? 0,
+                Status = invoice.Status ?? InvoiceStatus.Incomplete,
+                AddScore = invoice.AddScore ?? 0
+            };
+
+            string returnUrl = Url.Action("Index", "Ticket");
+
+            // Calculate values
+            decimal subtotal = seats.Sum(s => s.Price);
+            decimal rankDiscount = 0;
+            if (member?.Account?.Rank != null)
+            {
+                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            }
+            int usedScore = invoice.UseScore ?? 0;
+            int usedScoreValue = usedScore * 1000;
+            int addedScore = invoice.AddScore ?? 0;
+            int addedScoreValue = addedScore * 1000;
+            decimal totalPrice = invoice.TotalMoney ?? 0;
+            string memberId = member?.MemberId;
+            string memberEmail = member?.Account?.Email;
+            string memberIdentityCard = member?.Account?.IdentityCard;
+            string memberPhone = member?.Account?.PhoneNumber;
+
+            var viewModel = new ConfirmTicketAdminViewModel
+            {
+                BookingDetails = bookingDetails,
+                MemberCheckMessage = "",
+                ReturnUrl = returnUrl,
+                MemberId = memberId,
+                MemberEmail = memberEmail,
+                MemberIdentityCard = memberIdentityCard,
+                MemberPhone = memberPhone,
+                UsedScore = usedScore,
+                UsedScoreValue = usedScoreValue,
+                AddedScore = addedScore,
+                AddedScoreValue = addedScoreValue,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
+                TotalPrice = totalPrice
+            };
+
+            return View("TicketDetails", viewModel);
+        }
     }
 }

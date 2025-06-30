@@ -10,5 +10,7 @@ namespace MovieTheater.Repository
         Task<IEnumerable<ScheduleSeat>> GetScheduleSeatsByMovieShowAsync(int movieShowId);
         Task<bool> UpdateSeatStatusAsync(int movieShowId, int seatId, int statusId);
         IEnumerable<ScheduleSeat> GetByInvoiceId(string invoiceId);
+        void Update(ScheduleSeat seat);
+        void Save();
     }
 }
