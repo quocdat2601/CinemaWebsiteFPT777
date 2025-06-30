@@ -22,6 +22,10 @@
                 <li class="nav-item">
                     <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "BookingMg" ? "active" : "text-dark")" data-tab="BookingMg" href="#">Booking Management</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;">
+                        <i class="fas fa-qrcode me-2"></i>QR Scanner
+                    </a>
             </ul>
         </div>
 
