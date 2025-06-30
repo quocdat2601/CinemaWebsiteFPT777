@@ -327,13 +327,7 @@
                 $('#voucherDiscountRow').hide();
             }
 
-            // Promotion discount row (placeholder)
-            if (promotionPercent > 0) {
-                $('#promotionDiscountRow').show();
-                $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
-            } else {
-                $('#promotionDiscountRow').hide();
-            }
+        
 
             // Points used row
             const pointsUsedRow = document.getElementById('pointsUsedRow');
