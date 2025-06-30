@@ -43,11 +43,11 @@
                 var account = AccountService.GetById(Invoice.AccountId);
                 <tr class="text-center booking-row">
                     <td>@Invoice.InvoiceId</td>
-                    <td>@(Invoice.MovieName ?? "N/A")</td>
+                    <td>@(Invoice.MovieShow.Movie.MovieNameEnglish ?? "N/A")</td>
                     <td>@Invoice.AccountId</td>
                     <td>@(account?.IdentityCard ?? "N/A")</td>
                     <td>@(account?.PhoneNumber ?? "N/A")</td>
-                    <td>@(Invoice.ScheduleShowTime ?? "N/A")</td>
+                    <td>@(Invoice.MovieShow.Schedule.ScheduleTime.ToString())</td>
                     <td>
                         <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
                             <i class="fas fa-info-circle"></i> Details

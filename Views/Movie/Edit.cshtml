@@ -26,6 +26,8 @@
 		<h2 class="signup-title">Movie Edit</h2>
         <form asp-controller="Movie" asp-action="Edit" asp-route-id="@Model.MovieId" method="post" enctype="multipart/form-data">
             <input type="hidden" asp-for="MovieId" />
+            <input type="hidden" asp-for="LargeImage" />
+            <input type="hidden" asp-for="SmallImage" />
             <div asp-validation-summary="All" class="text-danger"></div>
 
             <div class="row">   

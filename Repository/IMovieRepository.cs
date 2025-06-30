@@ -28,6 +28,7 @@ namespace MovieTheater.Repository
         public List<Schedule> GetSchedules();
         public List<Models.Type> GetTypes();
         public List<MovieShow> GetMovieShow();
+        public MovieShow? GetMovieShowById(int id);
         public List<DateOnly> GetShowDates(string movieId);
         public List<string> GetShowTimes(string movieId, DateTime date);
         Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);

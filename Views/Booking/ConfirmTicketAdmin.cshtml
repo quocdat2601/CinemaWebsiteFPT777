@@ -94,6 +94,11 @@
             <label for="showTime" class="soft-label">Time</label>
             <input type="text" id="showTime" class="soft-readonly" value="@Model.BookingDetails.ShowTime" readonly />
         </div>
+        <div class="ticket-row">
+            <label for="screen" class="soft-label">Version</label>
+            <input type="text" id="screen" class="soft-readonly" value="@Model.BookingDetails.VersionName" readonly />
+        </div>
+
         <hr />
         <div class="section-title">Seat(s)</div>
         <table class="table table-bordered">
@@ -228,7 +233,8 @@
                         // This will output PascalCase property names as required by backend
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice,
-                        PricePerTicket: @Model.BookingDetails.PricePerTicket
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket,
+                        MovieShowId: @Model.MovieShowId
                     },
                     MemberIdInput: $('#memberInput').val(),
                     MemberId: $('#memberId').val(),
@@ -236,7 +242,8 @@
                     MemberIdentityCard: $('#memberIdentityCard').val(),
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
-                    TicketsToConvert: parseInt($('#ticketsToConvert').val()) || 0
+                    TicketsToConvert: parseInt($('#ticketsToConvert').val()) || 0,
+                    MovieShowId: @Model.MovieShowId
                 };
 
                 $.ajax({

@@ -2,16 +2,18 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.Repository;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
     public class TicketController : Controller
     {
-        private readonly MovieTheaterContext _context;
+        private readonly IInvoiceRepository _invoiceRepository;
 
-        public TicketController(MovieTheaterContext context)
+        public TicketController(IInvoiceRepository invoiceRepository)
         {
-            _context = context;
+            _invoiceRepository = invoiceRepository;
         }
         [HttpGet]
         public IActionResult History()
@@ -21,7 +23,7 @@ namespace MovieTheater.Controllers
         }
         // AC-01: View all booked tickets
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -29,10 +31,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
+            var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId);
 
             return View(bookings);
         }
@@ -40,7 +39,7 @@ namespace MovieTheater.Controllers
 
         // AC-01: View booked tickets with filtering
         [HttpGet]
-        public IActionResult Booked()
+        public async Task<IActionResult> Booked()
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -48,17 +47,14 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.Status == 1)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
+            var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId, 1);
 
             return View("Index", bookings);
         }
 
         // AC-01: View canceled tickets
         [HttpGet]
-        public IActionResult Canceled()
+        public async Task<IActionResult> Canceled()
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -66,17 +62,14 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.Status == 0)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
+            var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId, 0);
 
             return View("Index", bookings);
         }
 
         // AC-01: View ticket details
         [HttpGet]
-        public IActionResult Details(string id)
+        public async Task<IActionResult> Details(string id)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -84,11 +77,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var booking = _context.Invoices
-                .Include(i => i.ScheduleSeats)
-                    .ThenInclude(ss => ss.MovieShow)
-                        .ThenInclude(ms => ms.CinemaRoom)
-                .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
+            var booking = await _invoiceRepository.GetDetailsAsync(id, accountId);
 
             if (booking == null)
             {
@@ -100,7 +89,7 @@ namespace MovieTheater.Controllers
 
         // AC-04: Cancel ticket
         [HttpPost]
-        public IActionResult Cancel(string id)
+        public async Task<IActionResult> Cancel(string id)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -108,8 +97,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var booking = _context.Invoices
-                .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
+            var booking = await _invoiceRepository.GetForCancelAsync(id, accountId);
 
             if (booking == null)
             {
@@ -117,32 +105,30 @@ namespace MovieTheater.Controllers
             }
 
             // Check if ticket can be canceled (24 hours before showtime)
-            if (booking.ScheduleShow.HasValue && booking.ScheduleShow.Value.AddHours(-24) <= DateTime.Now)
+            if (
+                booking.MovieShow.Schedule.ScheduleTime.HasValue &&
+                booking.MovieShow.ShowDate.ToDateTime(booking.MovieShow.Schedule.ScheduleTime.Value).AddHours(-24) <= DateTime.Now
+            )
             {
                 TempData["Error"] = "Cannot cancel ticket within 24 hours of showtime.";
                 return RedirectToAction(nameof(Index));
             }
 
             booking.Status = 0; // 0 = Canceled
-            _context.SaveChanges();
+            await _invoiceRepository.UpdateAsync(booking);
 
             TempData["Success"] = "Ticket canceled successfully.";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
-        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> HistoryPartial(System.DateTime? fromDate, System.DateTime? toDate)
         {
             var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
                 return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
 
-            var query = _context.Invoices.Where(i => i.AccountId == accountId);
-            if (fromDate.HasValue)
-                query = query.Where(i => i.BookingDate >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(i => i.BookingDate <= toDate.Value);
-            var result = query.ToList();
+            var result = await _invoiceRepository.GetByDateRangeAsync(accountId, fromDate, toDate);
             return PartialView("~/Views/Account/Tabs/_HistoryPartial.cshtml", result);
         }
 

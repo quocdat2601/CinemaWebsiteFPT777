@@ -48,6 +48,8 @@ namespace MovieTheater.Repository
                 .Include(m => m.Versions)
                 .Include(m => m.MovieShows)
                     .ThenInclude(ms => ms.Schedule)
+                .Include(m => m.MovieShows)
+                    .ThenInclude(ms => ms.Version)
                 .FirstOrDefault(m => m.MovieId == id);
         }
 
@@ -265,11 +267,22 @@ namespace MovieTheater.Repository
             }
         }
 
+        public MovieShow? GetMovieShowById(int id)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .FirstOrDefault(ms => ms.MovieShowId == id);
+        }
+
         public List<MovieShow> GetMovieShowsByMovieId(string movieId)
         {
             return _context.MovieShows
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
                 .Where(ms => ms.MovieId == movieId)
                 .OrderBy(ms => ms.ShowDate)
                 .ThenBy(ms => ms.Schedule.ScheduleTime)
@@ -337,7 +350,9 @@ namespace MovieTheater.Repository
             return _context.MovieShows
                 .Include(ms => ms.Movie)
                 .Include(ms => ms.Schedule)
-                .Include(ms => ms.CinemaRoom).ToList();
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .ToList();
         }
 
         public List<DateOnly> GetShowDates(string movieId)
@@ -389,6 +404,7 @@ namespace MovieTheater.Repository
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.Movie)
                 .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
                 .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate == showDate)
                 .OrderBy(ms => ms.Schedule.ScheduleTime)
                 .ToList();

@@ -1,6 +1,7 @@
 @model MovieTheater.Models.Invoice
 @{
     ViewData["Title"] = "Ticket Details";
+    var showDateTime = Model.MovieShow.ShowDate.ToDateTime(Model.MovieShow.Schedule.ScheduleTime ?? TimeOnly.MinValue);
 }
 
 <div class="container mt-4">
@@ -13,19 +14,23 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Movie:</div>
-                        <div class="col-md-8">@Model.MovieName</div>
+                        <div class="col-md-8">@Model.MovieShow.Movie.MovieNameEnglish</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Show Date:</div>
-                        <div class="col-md-8">@Model.ScheduleShow?.ToString("dd/MM/yyyy")</div>
+                        <div class="col-md-8">@Model.MovieShow.ShowDate.ToString("dd/MM/yyyy")</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Show Time:</div>
-                        <div class="col-md-8">@Model.ScheduleShowTime</div>
+                        <div class="col-md-8">@Model.MovieShow.Schedule.ScheduleTime</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Screen:</div>
-                        <div class="col-md-8">@Model.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName</div>
+                        <div class="col-md-8">@Model.MovieShow.CinemaRoom.CinemaRoomName</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Version:</div>
+                        <div class="col-md-8">@Model.MovieShow.Version.VersionName</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 fw-bold">Seats:</div>
@@ -72,8 +77,9 @@
                         <a href="/MyAccount/MainPage?tab=History" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to History
                         </a>
-                        @if (Model.Status == 1 && Model.ScheduleShow.HasValue && 
-                             Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
+                        @if (Model.Status == 1 && 
+                             Model.MovieShow.Schedule.ScheduleTime.HasValue &&
+                             showDateTime.AddHours(-24) > DateTime.Now)
                         {
                             <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId" 
                                   method="post" class="d-inline" 

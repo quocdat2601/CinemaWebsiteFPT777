@@ -42,22 +42,6 @@ CREATE TABLE Account (
     CONSTRAINT FK_Account_Rank FOREIGN KEY (Rank_ID) REFERENCES Rank(Rank_ID)
 );
 
-CREATE TABLE Invoice (
-    Invoice_ID VARCHAR(10) PRIMARY KEY,
-    Add_Score INT,
-    BookingDate DATETIME,
-    MovieName VARCHAR(255),
-    Schedule_Show DATETIME,
-    Schedule_Show_Time VARCHAR(255),
-    Status INT,
-	RoleId INT,
-    Total_Money DECIMAL,
-    Use_Score INT,
-    Seat VARCHAR(30),
-    Account_ID VARCHAR(10),
-    CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
-);
-
 CREATE TABLE Employee (
     Employee_ID VARCHAR(10) PRIMARY KEY,
     Account_ID VARCHAR(10),
@@ -139,9 +123,26 @@ CREATE TABLE Movie_Show (
     Cinema_Room_ID INT NOT NULL,
     Show_Date DATE NOT NULL,
     Schedule_ID INT NOT NULL,
+	Version_ID INT NOT NULL,
+	FOREIGN KEY (Version_ID) REFERENCES Version(Version_ID),
     FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID),
     FOREIGN KEY (Cinema_Room_ID) REFERENCES Cinema_Room(Cinema_Room_ID),
     FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID)
+);
+
+CREATE TABLE Invoice (
+    Invoice_ID VARCHAR(10) PRIMARY KEY,
+    Add_Score INT,
+    BookingDate DATETIME,
+    Status INT,
+    RoleId INT,
+    Total_Money DECIMAL,
+    Use_Score INT,
+    Seat VARCHAR(30),
+    Account_ID VARCHAR(10),
+    Movie_Show_Id INT, 
+    CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
+	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID)
 );
 
 CREATE TABLE Seat_Type (

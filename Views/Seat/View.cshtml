@@ -119,6 +119,7 @@
 				<p><strong>Seats:</strong> <span id="selectedSeatNames"></span></p>
 				<p><strong>Date:</strong> @date.ToString("yyyy-MM-dd")</p>
 				<p><strong>Screen:</strong> @Model.CinemaRoomName</p>
+				<p><strong>Version:</strong> @Model.VersionName</p>
 			</div>
 			<div class="col-md-6 mb-2">
 				<p><strong>Movie:</strong> @Model.MovieName</p>
@@ -232,7 +233,8 @@
 				movieId: '@movieId',
 				showDate: '@date.ToString("yyyy-MM-dd")',
 				showTime: '@time',
-				selectedSeatIds: selectedSeatIds
+				selectedSeatIds: selectedSeatIds,
+				movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
 			};
 
 			const params = new URLSearchParams();

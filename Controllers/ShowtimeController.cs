@@ -131,14 +131,15 @@ namespace MovieTheater.Controllers
                 selectedDateOnly = DateOnly.FromDateTime(DateTime.Today);
             }
 
-           // 2. Get all MovieShow entries for the selected date
+           // 2. Get all MovieShow entries for the selected date with Version included
            var movieShowsForDate = _context.MovieShows
                .Where(ms => ms.ShowDate == selectedDateOnly)
                .Include(ms => ms.Movie)
                .Include(ms => ms.Schedule)
+               .Include(ms => ms.Version)
                .ToList();
 
-           // 3. Group by movie and build the view model
+           // 3. Group by movie and version, then build the view model
            var movies = movieShowsForDate
                .GroupBy(ms => ms.Movie) // Group by the related Movie entity
                .Where(g => g.Key != null) // Ensure the Movie is not null after Include
@@ -147,13 +148,23 @@ namespace MovieTheater.Controllers
                    MovieId = g.Key.MovieId,
                    MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
                    PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
-                   Showtimes = g.Where(ms => ms.Schedule != null)
-                                    .Select(ms => ms.Schedule.ScheduleTime.HasValue ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null)
-                                    .Where(t => !string.IsNullOrEmpty(t))
-                                    .OrderBy(t => t)
-                                    .ToList() ?? new List<string>()
+                   VersionShowtimes = g.Where(ms => ms.Schedule != null && ms.Version != null)
+                                       .GroupBy(ms => new { ms.VersionId, ms.Version.VersionName })
+                                       .Select(versionGroup => new VersionShowtimeInfo
+                                       {
+                                           VersionId = versionGroup.Key.VersionId,
+                                           VersionName = versionGroup.Key.VersionName,
+                                           Showtimes = versionGroup
+                                               .Select(ms => ms.Schedule.ScheduleTime.HasValue ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null)
+                                               .Where(t => !string.IsNullOrEmpty(t))
+                                               .OrderBy(t => t)
+                                               .ToList()
+                                       })
+                                       .Where(v => v.Showtimes.Any())
+                                       .OrderBy(v => v.VersionName)
+                                       .ToList()
                })
-               .Where(m => m.Showtimes.Any()) // Only include movies with showtimes
+               .Where(m => m.VersionShowtimes.Any()) // Only include movies with showtimes
                .ToList();
 
            var model = new ShowtimeSelectionViewModel

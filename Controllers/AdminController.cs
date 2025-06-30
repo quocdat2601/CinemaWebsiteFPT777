@@ -295,16 +295,6 @@ namespace MovieTheater.Controllers
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
 
-            // Fix roomName logic
-            string roomName = "N/A";
-            var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
-            if (movie != null && movie.CinemaRoomId.HasValue)
-            {
-                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
-                roomName = room?.CinemaRoomName ?? "N/A";
-            }
-
             // Prepare seat details
             var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
             var seats = new List<SeatDetailViewModel>();
@@ -353,11 +343,11 @@ namespace MovieTheater.Controllers
 
             var bookingDetails = new ConfirmBookingViewModel
             {
-                MovieId = movie?.MovieId,
-                MovieName = invoice.MovieName,
-                CinemaRoomName = roomName,
-                ShowDate = invoice.ScheduleShow ?? DateTime.Now,
-                ShowTime = invoice.ScheduleShowTime,
+                MovieId = invoice.MovieShow.MovieId,
+                MovieName = invoice.MovieShow.Movie.MovieNameEnglish,
+                CinemaRoomName = invoice.MovieShow.CinemaRoom.CinemaRoomName,
+                ShowDate = invoice.MovieShow.ShowDate,
+                ShowTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
                 SelectedSeats = seats,
                 TotalPrice = invoice.TotalMoney ?? 0,
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
@@ -414,16 +404,6 @@ namespace MovieTheater.Controllers
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
 
-            // Fix roomName logic
-            string roomName = "N/A";
-            var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == invoice.MovieName || m.MovieNameVn == invoice.MovieName);
-            if (movie != null && movie.CinemaRoomId.HasValue)
-            {
-                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
-                roomName = room?.CinemaRoomName ?? "N/A";
-            }
-
             // Prepare seat details
             var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
             var seats = new List<SeatDetailViewModel>();
@@ -468,11 +448,11 @@ namespace MovieTheater.Controllers
 
             var bookingDetails = new ConfirmBookingViewModel
             {
-                MovieId = movie?.MovieId,
-                MovieName = invoice.MovieName,
-                CinemaRoomName = roomName,
-                ShowDate = invoice.ScheduleShow ?? DateTime.Now,
-                ShowTime = invoice.ScheduleShowTime,
+                MovieId = invoice.MovieShow.MovieId,
+                MovieName = invoice.MovieShow.Movie.MovieNameEnglish,
+                CinemaRoomName = invoice.MovieShow.CinemaRoom.CinemaRoomName,
+                ShowDate = invoice.MovieShow.ShowDate,
+                ShowTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
                 SelectedSeats = seats,
                 TotalPrice = invoice.TotalMoney ?? 0,
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
@@ -558,7 +538,7 @@ namespace MovieTheater.Controllers
 
             // 4) Top 5 movies & members
             var topMovies = completed
-                .GroupBy(i => i.MovieName)
+                .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
                 .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
@@ -580,7 +560,7 @@ namespace MovieTheater.Controllers
                 {
                     InvoiceId = i.InvoiceId,
                     MemberName = i.Account?.FullName ?? "N/A",
-                    MovieName = i.MovieName,
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish,
                     BookingDate = i.BookingDate ?? DateTime.MinValue,
                     Status = "Completed"
                 })

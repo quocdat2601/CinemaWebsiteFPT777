@@ -11,12 +11,6 @@ public partial class Invoice
 
     public DateTime? BookingDate { get; set; }
 
-    public string? MovieName { get; set; }
-
-    public DateTime? ScheduleShow { get; set; }
-
-    public string? ScheduleShowTime { get; set; }
-
     public int? Status { get; set; }
 
     public int? RoleId { get; set; }
@@ -29,7 +23,11 @@ public partial class Invoice
 
     public string? AccountId { get; set; }
 
+    public int? MovieShowId { get; set; }
+
     public virtual Account? Account { get; set; }
+
+    public virtual MovieShow? MovieShow { get; set; }
 
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
 }

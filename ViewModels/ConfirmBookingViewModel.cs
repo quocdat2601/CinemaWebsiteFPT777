@@ -6,7 +6,8 @@
         public string MovieId { get; set; }
         public string MovieName { get; set; }
         public string CinemaRoomName { get; set; }
-        public DateTime ShowDate { get; set; }
+        public string VersionName { get; set; }
+        public DateOnly ShowDate { get; set; }
         public string ShowTime { get; set; }
 
         // Ghế đã chọn
@@ -25,7 +26,6 @@
         public string InvoiceId { get; set; }
         public int ScoreUsed { get; set; }
         public string TicketsConverted { get; set; }
-
         public int MovieShowId { get; set; }
     }
 }

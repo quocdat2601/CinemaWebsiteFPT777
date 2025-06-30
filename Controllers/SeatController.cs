@@ -104,6 +104,7 @@ namespace MovieTheater.Controllers
             {
                 CinemaRoomId = cinemaId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
+                VersionName = cinemaRoom.Version?.VersionName ?? "N/A",
                 SeatWidth = (int)cinemaRoom.SeatWidth,
                 SeatLength = (int)cinemaRoom.SeatLength,
                 Seats = seats,
@@ -138,6 +139,7 @@ namespace MovieTheater.Controllers
                 MovieName = movie.MovieNameEnglish,
                 CinemaRoomId = movie.CinemaRoomId.Value,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
+                VersionName = cinemaRoom.Version?.VersionName ?? "N/A",
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,
@@ -149,7 +151,7 @@ namespace MovieTheater.Controllers
 
         [HttpGet]
         [Route("Seat/Select")]
-        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time)
+        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId)
         {            
             var movie = _movieService.GetById(movieId);
             if (movie == null)
@@ -166,17 +168,18 @@ namespace MovieTheater.Controllers
             // Get all movie shows for this movie
             var movieShows = _movieService.GetMovieShows(movieId);
 
-            // Get the specific movie show for this date and time
+            // Get the specific movie show for this date, time, and version
             var movieShow = movieShows.FirstOrDefault(ms => 
                 ms.ShowDate == DateOnly.FromDateTime(parsedDate) && 
-                ms.Schedule?.ScheduleTime.HasValue == true && ms.Schedule.ScheduleTime.Value.ToString("HH:mm") == time);
+                ms.Schedule?.ScheduleTime.HasValue == true && 
+                ms.Schedule.ScheduleTime.Value.ToString("HH:mm") == time &&
+                (!versionId.HasValue || ms.VersionId == versionId.Value));
 
             if (movieShow == null)
             {
-                _logger.LogWarning($"No movie show found for movie {movieId} with date {date} and time {time}");
-                return NotFound("Movie show not found for the specified date and time.");
+                _logger.LogWarning($"No movie show found for movie {movieId} with date {date}, time {time}, and version {versionId}");
+                return NotFound("Movie show not found for the specified date, time, and version.");
             }
-
 
             var cinemaRoom = movieShow.CinemaRoom;
             if (cinemaRoom == null)
@@ -201,6 +204,7 @@ namespace MovieTheater.Controllers
                 ShowTime = time,
                 CinemaRoomId = cinemaRoom.CinemaRoomId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
+                VersionName = movieShow.Version?.VersionName ?? "N/A",
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,

@@ -238,11 +238,54 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
-
             var existingMovie = _movieService.GetById(id);
             if (existingMovie == null)
             {
                 return NotFound();
+            }
+
+            // Handle image uploads
+            string largeImagePath = existingMovie.LargeImage ?? "";
+            string smallImagePath = existingMovie.SmallImage ?? "";
+
+            // Process large image upload
+            if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
+            {
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    model.LargeImageFile.CopyTo(fileStream);
+                }
+
+                largeImagePath = "/image/" + uniqueFileName;
+            }
+
+            // Process small image upload
+            if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
+            {
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    model.SmallImageFile.CopyTo(fileStream);
+                }
+
+                smallImagePath = "/image/" + uniqueFileName;
             }
 
             existingMovie.Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList();
@@ -300,11 +343,10 @@ namespace MovieTheater.Controllers
                 MovieProductionCompany = model.MovieProductionCompany,
                 Content = model.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
-                LargeImage = model.LargeImage,
-                SmallImage = model.SmallImage,
+                LargeImage = largeImagePath,
+                SmallImage = smallImagePath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
-
             };
 
             if (_movieService.UpdateMovie(movie))
@@ -409,12 +451,13 @@ namespace MovieTheater.Controllers
                 {
                     ms.MovieShowId,
                     ms.MovieId,
-                    ms.ShowDate,
                     showDate = ms.ShowDate.ToString("dd/MM/yyyy"),
                     ms.ScheduleId,
-                    scheduleTime = ms.Schedule?.ScheduleTime,
+                    scheduleTime = ms.Schedule?.ScheduleTime.HasValue == true ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null,
                     ms.CinemaRoomId,
-                    cinemaRoomName = ms.CinemaRoom?.CinemaRoomName
+                    cinemaRoomName = ms.CinemaRoom?.CinemaRoomName,
+                    ms.VersionId,
+                    versionName = ms.Version?.VersionName
                 }).ToList();
 
                 return Json(showDetails);
@@ -534,7 +577,8 @@ namespace MovieTheater.Controllers
                 MovieId = request.MovieId,
                 ShowDate = request.ShowDate,
                 ScheduleId = request.ScheduleId,
-                CinemaRoomId = request.CinemaRoomId
+                CinemaRoomId = request.CinemaRoomId,
+                VersionId = request.VersionId
             };
 
             var added = _movieService.AddMovieShow(movieShow);

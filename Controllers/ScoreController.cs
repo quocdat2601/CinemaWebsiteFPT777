@@ -32,7 +32,7 @@ namespace MovieTheater.Controllers
                 .Select(i => new ScoreHistoryViewModel
                 {
                     DateCreated = i.BookingDate ?? DateTime.MinValue,
-                    MovieName = i.MovieName ?? "N/A",
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
                     Score = i.AddScore ?? 0
                 }).ToList();
 
@@ -69,7 +69,7 @@ namespace MovieTheater.Controllers
             var result = query.Select(i => new ScoreHistoryViewModel
             {
                 DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
+                MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
                 Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
             }).ToList();
 
@@ -114,7 +114,7 @@ namespace MovieTheater.Controllers
                     result.Add(new ScoreHistoryViewModel
                     {
                         DateCreated = i.BookingDate ?? DateTime.MinValue,
-                        MovieName = i.MovieName ?? "N/A",
+                        MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
                         Score = i.AddScore.Value,
                         Type = "add"
                     });
@@ -124,7 +124,7 @@ namespace MovieTheater.Controllers
                     result.Add(new ScoreHistoryViewModel
                     {
                         DateCreated = i.BookingDate ?? DateTime.MinValue,
-                        MovieName = i.MovieName ?? "N/A",
+                        MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
                         Score = i.UseScore.Value,
                         Type = "use"
                     });

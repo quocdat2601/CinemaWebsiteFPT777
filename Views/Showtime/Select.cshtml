@@ -64,19 +64,27 @@
                     <div class="col-md-10">
                         <div class="card-body">
                             <h5 class="card-title mb-2">@movie.MovieName</h5>
-                            <div class="mb-2 text-muted" style="font-size: 0.95em;">@movie.MovieName</div>
                             <div>
-                                @foreach (var showtime in movie.Showtimes)
+                                @foreach (var versionShowtime in movie.VersionShowtimes)
                                 {
-                                    <a asp-action="Select" asp-controller="Seat"
-                                       asp-route-movieId="@movie.MovieId"
-                                       asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
-                                       asp-route-time="@showtime"
-                                       asp-route-isAdminSell="true"
-                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
-                                       class="btn btn-outline-primary btn-sm m-1 bookBtn">
-                                        @showtime
-                                    </a>
+                                    <div class="mb-2">
+                                        <div class="text-muted mb-1" style="font-size: 0.9em; font-weight: 500;">@versionShowtime.VersionName</div>
+                                        <div>
+                                            @foreach (var showtime in versionShowtime.Showtimes)
+                                            {
+                                                <a asp-action="Select" asp-controller="Seat"
+                                                   asp-route-movieId="@movie.MovieId"
+                                                   asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
+                                                   asp-route-time="@showtime"
+                                                   asp-route-versionId="@versionShowtime.VersionId"
+                                                   asp-route-isAdminSell="true"
+                                                   asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
+                                                   class="btn btn-outline-primary btn-sm m-1 bookBtn">
+                                                    @showtime
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
                                 }
                             </div>
                         </div>

@@ -127,6 +127,10 @@ namespace MovieTheater.Service
 
             return videoId != null ? $"https://www.youtube.com/embed/{videoId}" : trailerUrl;
         }
+        public MovieShow? GetMovieShowById(int id)
+        {
+            return _movieRepository.GetMovieShowById(id);
+        }
 
         public List<MovieShow> GetMovieShows(string movieId)
         {

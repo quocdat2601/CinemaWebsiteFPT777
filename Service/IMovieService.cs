@@ -26,6 +26,7 @@ namespace MovieTheater.Service
         public List<DateOnly> GetShowDates(string movieId);
         public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);
         public List<MovieShow> GetMovieShow();
+        public MovieShow? GetMovieShowById(int id);
         public List<MovieShow> GetMovieShowsByMovieId(string movieId);
         public List<Models.Version> GetAllVersions();
         public Models.Version? GetVersionById(int versionId);

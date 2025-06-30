@@ -137,7 +137,11 @@
             roomId = show.CinemaRoomId,
             roomName = show.CinemaRoom?.CinemaRoomName ?? "N/A",
             scheduleId = show.ScheduleId,
-            scheduleText = show.Schedule?.ScheduleTime?.ToString("HH:mm") ?? "N/A"
+            scheduleText = show.Schedule?.ScheduleTime?.ToString("HH:mm") ?? "N/A",
+            versionId = show.VersionId,
+            versionName = show.Version?.VersionName,
+            cinemaRoomVersionName = show.CinemaRoom?.Version?.VersionName,
+            version = show.Version?.VersionName ?? (show.CinemaRoom?.Version?.VersionName ?? "N/A")
         })));
 
         async function updateAvailableSchedules() {
@@ -257,6 +261,7 @@
                     contentDiv.innerHTML = `
                         <span class="fw-bold me-2">Room:</span><span>${show.roomName}</span>
                         <span class="fw-bold ms-3 me-2">Time:</span><span>[${show.scheduleText}${endTimeText}]</span>
+                        <span class="fw-bold ms-3 me-2">Version:</span><span>${show.version}</span>
                     `;
 
                     const removeButton = document.createElement('button');
@@ -285,6 +290,11 @@
             const roomId = cinemaRoomSelect.value;
             const roomName = cinemaRoomSelect.options[cinemaRoomSelect.selectedIndex].text;
 
+            // Get the selected version ID from the radio button
+            const selectedVersionRadio = document.querySelector('input[name="SelectedVersionIds"]:checked');
+            const versionId = selectedVersionRadio ? parseInt(selectedVersionRadio.value) : null;
+            const versionName = selectedVersionRadio ? selectedVersionRadio.parentElement.textContent.trim() : "N/A";
+
             const isDuplicate = movieShowItems.some(item =>
                 item.dateId === selectedDateId &&
                 item.scheduleId === selectedScheduleId &&
@@ -302,7 +312,9 @@
                 scheduleId: selectedScheduleId,
                 scheduleText: selectedScheduleText,
                 roomId: roomId,
-                roomName: roomName
+                roomName: roomName,
+                versionId: versionId,
+                version: versionName
             };
 
             movieShowItems.push(movieShowItem);
@@ -343,7 +355,8 @@
                             movieId: movieId,
                             showDate: showItem.dateId,
                             scheduleId: showItem.scheduleId,
-                            cinemaRoomId: showItem.roomId
+                            cinemaRoomId: showItem.roomId,
+                            versionId: showItem.versionId
                         })
                     });
 
