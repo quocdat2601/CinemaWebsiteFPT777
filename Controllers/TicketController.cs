@@ -112,14 +112,39 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
-            // Tạo danh sách ghế chi tiết
-            var seatDetails = booking.ScheduleSeats.Select(ss => new SeatDetailViewModel
+            List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
+            if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
             {
-                SeatId = ss.Seat.SeatId,
-                SeatName = ss.Seat.SeatName,
-                SeatType = ss.Seat.SeatType?.TypeName,
-                Price = (decimal)(ss.Seat.SeatType?.PricePercent)
-            }).ToList();
+                seatDetails = booking.ScheduleSeats
+                    .Where(ss => ss.Seat != null)
+                    .Select(ss => new SeatDetailViewModel
+                    {
+                        SeatId = ss.Seat.SeatId,
+                        SeatName = ss.Seat.SeatName,
+                        SeatType = ss.Seat.SeatType?.TypeName,
+                        Price = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0)
+                    }).ToList();
+            }
+            else if (!string.IsNullOrEmpty(booking.Seat))
+            {
+                // Fallback: lấy từ chuỗi tên ghế
+                var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+                foreach (var seatName in seatNamesArr)
+                {
+                    var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
+                    if (seat == null) continue;
+                    seatDetails.Add(new SeatDetailViewModel
+                    {
+                        SeatId = seat.SeatId,
+                        SeatName = seat.SeatName,
+                        SeatType = seat.SeatType?.TypeName ?? "N/A",
+                        Price = seat.SeatType?.PricePercent ?? 0
+                    });
+                }
+            }
 
             ViewBag.SeatDetails = seatDetails;
 

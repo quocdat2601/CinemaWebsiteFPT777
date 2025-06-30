@@ -7,12 +7,15 @@
     var ticketId = TempData["InvoiceId"] as string;
     var seatString = TempData["Seats"] as string;
     var bookingDate = TempData["BookingTime"] as string;
-    decimal subtotal = TempData["OriginalPrice"] != null ? Convert.ToDecimal(TempData["OriginalPrice"]) : 0;
-    int useScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : 0;
-    decimal usedScoreValue = useScore * 1000;
-    decimal totalPriceValue = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : 0;
-    decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
+    decimal subtotal = ViewBag.Subtotal != null ? (decimal)ViewBag.Subtotal : 0;
+    decimal rankDiscount = ViewBag.RankDiscount != null ? (decimal)ViewBag.RankDiscount : 0;
+    int useScore = ViewBag.UsedScore != null ? (int)ViewBag.UsedScore : 0;
+    decimal usedScoreValue = ViewBag.UsedScoreValue != null ? (decimal)ViewBag.UsedScoreValue : useScore * 1000;
+    int addScore = ViewBag.AddScore != null ? (int)ViewBag.AddScore : 0;
+    decimal addedScoreValue = ViewBag.AddedScoreValue != null ? (decimal)ViewBag.AddedScoreValue : addScore * 1000;
+    decimal totalPriceValue = ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0;
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
+    var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
 }
 
 <style>
@@ -172,13 +175,29 @@
                     <table class="table table-bordered mb-2">
                         <thead>
                             <tr>
-                                <th>Seat(s)</th>
+                                <th>Seat</th>
+                                <th>Type</th>
+                                <th>Price</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>@seatString</td>
-                            </tr>
+                            @if (seatDetails.Any())
+                            {
+                                foreach (var seat in seatDetails)
+                                {
+                                    <tr>
+                                        <td>@seat.SeatName</td>
+                                        <td>@seat.SeatType</td>
+                                        <td>@(seat.Price > 0 ? seat.Price.ToString("N0") + " VND" : "")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="3">@seatString</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                     @if (subtotal > 0)
@@ -208,6 +227,13 @@
                                     <td class="ticket-total-label">Total Price</td>
                                     <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
                                 </tr>
+                                @if (addScore > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap; color: #28a745;">+ Points Earned</td>
+                                        <td class="text-end" style="white-space: nowrap; color: #28a745;">+@addScore (@addedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
                             </tbody>
                         </table>
                     }
