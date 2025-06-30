@@ -130,6 +130,18 @@ CREATE TABLE Movie_Show (
     FOREIGN KEY (Schedule_ID) REFERENCES Schedule(Schedule_ID)
 );
 
+CREATE TABLE Voucher (
+    Voucher_ID VARCHAR(10) PRIMARY KEY,           
+    Account_ID VARCHAR(10) NOT NULL,               
+    Code NVARCHAR(20) UNIQUE NOT NULL,
+    Value DECIMAL(18,2) NOT NULL,
+    CreatedDate DATETIME NOT NULL,
+    ExpiryDate DATETIME NOT NULL,
+    IsUsed BIT DEFAULT 0,
+    Image VARCHAR(255) NULL,
+    CONSTRAINT FK_Voucher_Account FOREIGN KEY (Account_ID) REFERENCES [dbo].[Account](Account_ID)
+);
+
 CREATE TABLE Invoice (
     Invoice_ID VARCHAR(10) PRIMARY KEY,
     Add_Score INT,
@@ -141,8 +153,11 @@ CREATE TABLE Invoice (
     Seat VARCHAR(30),
     Account_ID VARCHAR(10),
     Movie_Show_Id INT, 
+	Promotion_Discount INT DEFAULT 0,
+	Voucher_ID VARCHAR(10) NULL,
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
-	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID)
+	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
+	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)
 );
 
 CREATE TABLE Seat_Type (
@@ -176,6 +191,8 @@ CREATE TABLE Schedule_Seat (
 	Invoice_ID VARCHAR(10),
     Seat_ID INT,
     Seat_Status_ID INT,
+	HoldUntil DATETIME NULL,
+    HoldBy NVARCHAR(100) NULL,
     FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID) ON DELETE CASCADE,
     FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
 	FOREIGN KEY (Invoice_ID) REFERENCES Invoice(Invoice_ID),
@@ -205,7 +222,8 @@ INSERT INTO Seat_Type (Type_Name, Price_Percent, ColorHex) VALUES
 
 INSERT INTO Seat_Status (Status_Name) VALUES
 ('Available'),
-('Booked');
+('Booked'),
+('Held');
 
 INSERT INTO Roles (Role_ID, Role_Name) VALUES
 (1, 'Admin'),
@@ -363,19 +381,6 @@ CREATE TABLE Wishlist (
     PRIMARY KEY (Account_ID, Movie_ID),
     FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
     FOREIGN KEY (Movie_ID) REFERENCES Movie(Movie_ID)
-);
-
-CREATE TABLE Voucher (
-    Voucher_ID VARCHAR(10) PRIMARY KEY,           
-    Account_ID VARCHAR(10) NOT NULL,               
-    Code NVARCHAR(20) UNIQUE NOT NULL,
-    Value DECIMAL(18,2) NOT NULL,
-    RemainingValue DECIMAL(18,2) NOT NULL,
-    CreatedDate DATETIME NOT NULL,
-    ExpiryDate DATETIME NOT NULL,
-    IsUsed BIT DEFAULT 0,
-    Image VARCHAR(255) NULL,
-    CONSTRAINT FK_Voucher_Account FOREIGN KEY (Account_ID) REFERENCES [dbo].[Account](Account_ID)
 );
 
 SET ANSI_NULLS ON

@@ -25,9 +25,15 @@ public partial class Invoice
 
     public int? MovieShowId { get; set; }
 
+    public int? PromotionDiscount { get; set; }
+
+    public string? VoucherId { get; set; }
+
     public virtual Account? Account { get; set; }
 
     public virtual MovieShow? MovieShow { get; set; }
 
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
+
+    public virtual Voucher? Voucher { get; set; }
 }
