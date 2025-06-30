@@ -46,7 +46,6 @@
                             @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
                             {
                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                              
                                 <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
                             }
                             else
@@ -132,8 +131,8 @@
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
             <div class="text-center mt-4">
-                
-                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Confirm Booking</button>
+                <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Test Success</button>
             </div>
         </form>
     </div>
@@ -327,7 +326,13 @@
                 $('#voucherDiscountRow').hide();
             }
 
-        
+            // Promotion discount row (placeholder)
+            if (promotionPercent > 0) {
+                $('#promotionDiscountRow').show();
+                $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
+            } else {
+                $('#promotionDiscountRow').hide();
+            }
 
             // Points used row
             const pointsUsedRow = document.getElementById('pointsUsedRow');
@@ -358,20 +363,8 @@
             $('#pointValidation').text(validationMsg);
             $('#confirmBtn').prop('disabled', !valid);
             $('#hiddenUseScore').val(valid ? useScore : 0);
-            // Price display
-            if (discountPercent > 0) {
-                $('#originalTotal').css({'color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
-                if (valid && useScore > 0) {
-                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
-                } else {
-                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((discountedTotal).toLocaleString() + ' VND');
-                }
-            } else {
-                $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
-                $('#discountedTotal').hide();
-            }
             $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
-         
+            $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
         }
 
         $('#useScore').on('input', function () {
