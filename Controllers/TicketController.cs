@@ -8,6 +8,7 @@ using MovieTheater.Service;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MovieTheater.Controllers
 {
@@ -203,6 +204,15 @@ namespace MovieTheater.Controllers
             foreach (var seat in scheduleSeatsToUpdate)
             {
                 seat.SeatStatusId = 1; // Available
+                // Phát sự kiện SignalR cho từng ghế trả lại
+                if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
+                {
+                    var hubContext = HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>)) as Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>;
+                    if (hubContext != null)
+                    {
+                        await hubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                    }
+                }
             }
 
             // Handle score operations
@@ -295,6 +305,15 @@ namespace MovieTheater.Controllers
             foreach (var seat in scheduleSeatsToUpdate)
             {
                 seat.SeatStatusId = 1; // Available
+                // Phát sự kiện SignalR cho từng ghế trả lại
+                if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
+                {
+                    var hubContext = HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>)) as Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>;
+                    if (hubContext != null)
+                    {
+                        await hubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                    }
+                }
             }
 
             // Handle score operations

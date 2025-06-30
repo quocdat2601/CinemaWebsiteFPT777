@@ -16,7 +16,6 @@
     decimal totalPriceValue = ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0;
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
-    int promotionDiscount = ViewBag.PromotionDiscount != null ? (int)ViewBag.PromotionDiscount : 0;
     decimal voucherAmount = ViewBag.VoucherAmount != null ? (decimal)ViewBag.VoucherAmount : 0;
 }
 
@@ -147,7 +146,7 @@
     <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Booking Successful</h2>
-            <span class="status-badge">Success</span>
+            <span class="status-badge status-completed">Success</span>
         </div>
         <div class="p-4">
             <div class="row align-items-stretch">
@@ -198,7 +197,7 @@
                                             }
                                             else
                                             {
-                                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold;">@((seat.PriceAfterPromotion ?? seat.Price).ToString("N0")) VND</span>
                                             }
                                         </td>
                                     </tr>
@@ -226,13 +225,6 @@
                                     <tr>
                                         <td style="white-space: nowrap;">- Rank Discount</td>
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
-                                    </tr>
-                                }
-                                @if (promotionDiscount > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Promotion Discount</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@promotionDiscount%</td>
                                     </tr>
                                 }
                                 @if (voucherAmount > 0)
