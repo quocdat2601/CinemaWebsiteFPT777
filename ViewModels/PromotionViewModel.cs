@@ -2,6 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MovieTheater.ViewModels
 {
+    public class PromotionConditionEditViewModel
+    {
+        public int? ConditionId { get; set; }
+        public string? TargetEntity { get; set; }
+        public string? TargetField { get; set; }
+        public string? Operator { get; set; }
+        public string? TargetValue { get; set; }
+    }
+
     public class PromotionViewModel
     {
         public int PromotionId { get; set; }
@@ -30,5 +39,19 @@ namespace MovieTheater.ViewModels
 
         [Display(Name = "Active Status")]
         public bool IsActive { get; set; }
+
+        [Display(Name = "Target Table")]
+        public string? TargetField { get; set; }
+
+        [Display(Name = "Target Field Column")]
+        public string? TargetFieldColumn { get; set; }
+
+        [Display(Name = "Operator")]
+        public string? Operator { get; set; }
+
+        [Display(Name = "Target Value")]
+        public string? TargetValue { get; set; }
+
+        public List<PromotionConditionEditViewModel> Conditions { get; set; } = new();
     }
 }

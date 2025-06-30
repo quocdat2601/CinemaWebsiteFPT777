@@ -36,6 +36,59 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
+                                    <label asp-for="TargetField" class="control-label">Target Table</label>
+                                    <select asp-for="TargetField" class="form-control" id="TargetField">
+                                        <option value="">-- Select Table --</option>
+                                        <option value="Account">Account</option>
+                                        <option value="Invoice">Invoice</option>
+                                        <option value="Member">Member</option>
+                                        <option value="Movie">Movie</option>
+                                        <option value="Seat">Seat</option>
+                                        <option value="Type">Type</option>
+                                    </select>
+                                    <span asp-validation-for="TargetField" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Operator" class="control-label">Operator</label>
+                                    <select asp-for="Operator" class="form-control">
+                                        <option value="">-- Select Operator --</option>
+                                        <option value=">">&gt; greater</option>
+                                        <option value=">=">&gt;= greater or equal</option>
+                                        <option value="<">&lt; less</option>
+                                        <option value="<=">&lt;= less or equal</option>
+                                        <option value="=">= equal</option>
+                                        <option value="+">+ add</option>
+                                        <option value="-">- minus</option>
+                                        <option value="*">* mulitiply</option>
+                                        <option value="/">/ divine</option>
+                                    </select>
+                                    <span asp-validation-for="Operator" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="TargetFieldColumn" class="control-label">Target Field Column</label>
+                            <select asp-for="TargetFieldColumn" class="form-control" id="TargetFieldColumn">
+                                <option value="">-- Select Column --</option>
+                            </select>
+                            <span asp-validation-for="TargetFieldColumn" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="TargetValue" class="control-label">Target Value</label>
+                            <input asp-for="TargetValue" class="form-control" type="number" step="any" />
+                            <span asp-validation-for="TargetValue" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
                                     <label asp-for="StartTime" class="control-label"></label>
                                     <input asp-for="StartTime" class="form-control" type="datetime-local" />
                                     <span asp-validation-for="StartTime" class="text-danger"></span>
@@ -79,6 +132,141 @@
         // Set min date for EndTime based on StartTime
         document.getElementById('StartTime').addEventListener('change', function () {
             document.getElementById('EndTime').min = this.value;
+        });
+
+        // Table columns mapping (update as needed)
+        const tableColumns = {
+            Account: ["AccountId", "Address", "DateOfBirth", "Email", "FullName", "Gender", "IdentityCard", "Image", "Password", "PhoneNumber", "RegisterDate", "RoleId", "Status", "Username", "RankId"],
+            Invoice: ["InvoiceId", "AddScore", "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "UseScore", "Seat", "AccountId"],
+            Member: ["MemberId", "Score", "AccountId"],
+            Movie: ["MovieId", "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish", "MovieNameVn", "LargeImage", "SmallImage", "TrailerUrl"],
+            Seat: ["SeatId", "CinemaRoomId", "SeatColumn", "SeatRow", "SeatStatusId", "SeatTypeId", "SeatName"],
+            Type: ["TypeId", "TypeName"]
+        };
+
+        // Column type mapping for all tables and columns
+        const columnTypes = {
+            Account: {
+                AccountId: "string",
+                Address: "string",
+                DateOfBirth: "date",
+                Email: "string",
+                FullName: "string",
+                Gender: "string",
+                IdentityCard: "string",
+                Image: "string",
+                Password: "string",
+                PhoneNumber: "string",
+                RegisterDate: "date",
+                RoleId: "number",
+                Status: "number",
+                Username: "string",
+                RankId: "number"
+            },
+            Invoice: {
+                InvoiceId: "string",
+                AddScore: "number",
+                BookingDate: "date",
+                MovieName: "string",
+                ScheduleShow: "date",
+                ScheduleShowTime: "string",
+                Status: "number",
+                TotalMoney: "number",
+                UseScore: "number",
+                Seat: "string",
+                AccountId: "string"
+            },
+            Member: {
+                MemberId: "string",
+                Score: "number",
+                AccountId: "string"
+            },
+            Movie: {
+                MovieId: "string",
+                Actor: "string",
+                CinemaRoomId: "number",
+                Content: "string",
+                Director: "string",
+                Duration: "number",
+                FromDate: "date",
+                MovieProductionCompany: "string",
+                ToDate: "date",
+                Version: "string",
+                MovieNameEnglish: "string",
+                MovieNameVn: "string",
+                LargeImage: "string",
+                SmallImage: "string",
+                TrailerUrl: "string"
+            },
+            Seat: {
+                SeatId: "number",
+                CinemaRoomId: "number",
+                SeatColumn: "string",
+                SeatRow: "number",
+                SeatStatusId: "number",
+                SeatTypeId: "number",
+                SeatName: "string"
+            },
+            Type: {
+                TypeId: "number",
+                TypeName: "string"
+            }
+        };
+
+        document.getElementById('TargetField').addEventListener('change', function () {
+            const table = this.value;
+            const columnSelect = document.getElementById('TargetFieldColumn');
+            columnSelect.innerHTML = '<option value="">-- Select Column --</option>';
+            if (tableColumns[table]) {
+                tableColumns[table].forEach(function (col) {
+                    const option = document.createElement('option');
+                    option.value = col;
+                    option.text = col;
+                    columnSelect.appendChild(option);
+                });
+            }
+        });
+
+        // Change TargetValue input type and restrict operator for string columns
+        document.getElementById('TargetFieldColumn').addEventListener('change', function () {
+            const table = document.getElementById('TargetField').value;
+            const column = this.value;
+            const type = columnTypes[table]?.[column] || "string";
+            const targetValueInput = document.querySelector('input[name="TargetValue"]');
+            const operatorSelect = document.querySelector('select[name="Operator"]');
+            if (targetValueInput) {
+                if (type === "date") {
+                    targetValueInput.type = "date";
+                } else if (type === "number") {
+                    targetValueInput.type = "number";
+                } else {
+                    targetValueInput.type = "text";
+                }
+                targetValueInput.value = ""; // clear previous value
+            }
+            // Allow all operators for all types
+            if (operatorSelect) {
+                for (let i = 0; i < operatorSelect.options.length; i++) {
+                    let opt = operatorSelect.options[i];
+                    opt.disabled = false;
+                    opt.style.display = '';
+                }
+            }
+        });
+
+        // On form submit, format date as dd/MM/yyyy if needed
+        document.querySelector('form[asp-action="Create"]').addEventListener('submit', function (e) {
+            const table = document.getElementById('TargetField').value;
+            const column = document.getElementById('TargetFieldColumn').value;
+            const type = columnTypes[table]?.[column] || "string";
+            const targetValueInput = document.querySelector('input[name="TargetValue"]');
+            if (type === "date" && targetValueInput && targetValueInput.value) {
+                const date = new Date(targetValueInput.value);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                targetValueInput.value = `${day}/${month}/${year}`;
+            }
         });
     </script>
 } 

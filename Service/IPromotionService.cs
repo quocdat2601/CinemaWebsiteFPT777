@@ -10,6 +10,6 @@ namespace MovieTheater.Service
         public bool Update(Promotion promotion);
         public bool Delete(int id);
         public void Save();
-
+        public List<Promotion> GetEligiblePromotionsForMember(string memberId, int seatCount = 0, DateTime? showDate = null, string movieId = null, string movieName = null);
     }
 }
