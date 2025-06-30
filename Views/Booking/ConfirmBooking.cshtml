@@ -48,6 +48,16 @@
             </tbody>
         </table>
 
+        @* === Promotion Button === *@
+        <div class="row mt-4">
+            <div class="col-12">
+                <button type="button" class="btn btn-outline-primary" id="openPromotionModalBtn">
+                    <i class="fas fa-tag me-2"></i>Apply Promotion
+                </button>
+                <span id="selectedPromotionInfo" class="ms-3 text-success fw-bold"></span>
+            </div>
+        </div>
+
         @* === Nhập Use Score & tổng tiền === *@
         <div class="row mt-4 align-items-center">
             <div class="col-md-6">
@@ -65,6 +75,10 @@
                         <tr>
                             <td class="text-start">Original Price:</td>
                             <td><span id="originalTotal">@Model.Subtotal.ToString("N0") VND</span></td>
+                        </tr>
+                        <tr id="promotionDiscountRow" style="display:none;">
+                            <td class="text-start">Promotion discount:</td>
+                            <td id="promotionDiscountDisplay"></td>
                         </tr>
                         <tr id="rankDiscountRow" style="display:none;">
                             <td class="text-start">Rank discount:</td>
@@ -99,6 +113,9 @@
             @Html.HiddenFor(m => m.MovieShowId)
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
             <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
+            <input type="hidden" name="SelectedPromotionId" id="hiddenSelectedPromotionId" value="" />
+            <input type="hidden" name="SelectedPromotionTitle" id="hiddenSelectedPromotionTitle" value="" />
+            <input type="hidden" name="SelectedPromotionDiscount" id="hiddenSelectedPromotionDiscount" value="0" />
             @for (int i = 0; i < Model.SelectedSeats.Count; i++)
             {
                 <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
@@ -107,11 +124,32 @@
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
             <div class="text-center mt-4">
-                <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
-                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Test Success</button>
+                <button id="confirmBtn" type="button" class="btn btn-success btn-lg" onclick="confirmBooking()">Confirm Booking</button>
             </div>
         </form>
     </div>
+</div>
+
+@* === Promotion Modal === *@
+<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="promotionModalLabel">Available Promotions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Promotions will be loaded here by JS as cards -->
+        </div>
+        <div class="row mt-2">
+          <div class="col-12 text-center">
+            <button type="button" class="btn btn-outline-secondary" id="clearPromotionBtn">Clear Promotion</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -119,9 +157,26 @@
         opacity: 0.6;
         cursor: not-allowed;
     }
+    .promotion-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    .promotion-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .promotion-card.selected {
+        border: 3px solid #28a745 !important;
+        box-shadow: 0 0 0 4px rgba(40,167,69,0.15);
+        transition: border 0.2s, box-shadow 0.2s;
+    }
 </style>
 
 <script>
+    // Global variables
+    var selectedPromotion = null;
+    
     $(document).ready(function () {
         // Values from server
         var originalTotal = @Model.Subtotal;
@@ -138,10 +193,24 @@
         }
 
         function updatePriceWithDiscount(discountPercent) {
-            var discountAmount = Math.round(originalTotal * (discountPercent / 100));
-            var discountedTotal = originalTotal - discountAmount;
+            // Step 1: Apply promotion discount first (if selected)
+            var promotionDiscountAmount = 0;
+            var priceAfterPromotion = originalTotal;
+            if (selectedPromotion) {
+                promotionDiscountAmount = Math.round(originalTotal * (selectedPromotion.discountLevel / 100));
+                priceAfterPromotion = originalTotal - promotionDiscountAmount;
+            }
+            
+            // Step 2: Apply rank discount on price after promotion
+            var rankDiscountAmount = 0;
+            var priceAfterRankDiscount = priceAfterPromotion;
+            if (discountPercent > 0) {
+                rankDiscountAmount = Math.round(priceAfterPromotion * (discountPercent / 100));
+                priceAfterRankDiscount = priceAfterPromotion - rankDiscountAmount;
+            }
+            
             var useScore = parseInt($('#useScore').val()) || 0;
-            var maxUsablePoints = updateMaxUsablePoints(discountedTotal);
+            var maxUsablePoints = updateMaxUsablePoints(priceAfterRankDiscount);
             var valid = true;
             var validationMsg = '';
             if (useScore === 0) {
@@ -154,13 +223,23 @@
                 validationMsg = `You can use up to ${maxUsablePoints} points for this order.`;
                 valid = false;
             }
+            
+            // Promotion discount row
+            if (selectedPromotion) {
+                $('#promotionDiscountRow').show();
+                $('#promotionDiscountDisplay').text(`-${promotionDiscountAmount.toLocaleString()} VND (${selectedPromotion.discountLevel}%)`);
+            } else {
+                $('#promotionDiscountRow').hide();
+            }
+            
             // Rank discount row
             if (discountPercent > 0) {
                 $('#rankDiscountRow').show();
-                $('#rankDiscountDisplay').text(`-${discountAmount.toLocaleString()} VND (${discountPercent}%)`);
+                $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${discountPercent}%)`);
             } else {
                 $('#rankDiscountRow').hide();
             }
+            
             // Points used row
             const pointsUsedRow = document.getElementById('pointsUsedRow');
             const pointsUsedDisplay = document.getElementById('pointsUsedDisplay');
@@ -170,59 +249,213 @@
             } else {
                 pointsUsedRow.style.display = 'none';
             }
+            
             // Final total
             var savings = useScore * pointValue;
-            var finalTotal = discountedTotal;
+            var finalTotal = priceAfterRankDiscount;
             if (valid && useScore > 0) {
-                finalTotal = discountedTotal - savings;
+                finalTotal = priceAfterRankDiscount - savings;
                 if (finalTotal < 0) finalTotal = 0;
             }
             $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
+            
             // Point earning preview (always show)
             var pointsToEarn = 0;
             if (valid) {
-                pointsToEarn = Math.round((useScore > 0 ? finalTotal : discountedTotal) * earningRate / 100 / pointValue);
+                pointsToEarn = Math.round((useScore > 0 ? finalTotal : priceAfterRankDiscount) * earningRate / 100 / pointValue);
             }
             $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
+            
             // Savings
             if (valid && useScore > 0) {
                 $('#pointSavings').text(`Using ${useScore} points saves you ${savings.toLocaleString()} VND`);
             } else {
                 $('#pointSavings').text('');
             }
+            
             // Validation
             $('#pointValidation').text(validationMsg);
             $('#confirmBtn').prop('disabled', !valid);
             $('#hiddenUseScore').val(valid ? useScore : 0);
+            
+            // Update hidden fields for promotion
+            if (selectedPromotion) {
+                $('#hiddenSelectedPromotionId').val(selectedPromotion.promotionId);
+                $('#hiddenSelectedPromotionTitle').val(selectedPromotion.title);
+                $('#hiddenSelectedPromotionDiscount').val(promotionDiscountAmount);
+            } else {
+                $('#hiddenSelectedPromotionId').val('');
+                $('#hiddenSelectedPromotionTitle').val('');
+                $('#hiddenSelectedPromotionDiscount').val(0);
+            }
+            
             // Price display
-            if (discountPercent > 0) {
+            if (discountPercent > 0 || selectedPromotion) {
                 $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
                 if (valid && useScore > 0) {
                     $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
                 } else {
-                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((discountedTotal).toLocaleString() + ' VND');
+                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((priceAfterRankDiscount).toLocaleString() + ' VND');
                 }
             } else {
                 $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
                 $('#discountedTotal').hide();
             }
         }
+        
         $('#useScore').on('input', function () {
             updatePriceWithDiscount(discountPercent);
         });
+        
+        // Promotion Modal logic
+        let promotionModalInstance = null;
+        
+        // Always load promotions on page load
+        loadPromotions();
+        
+        $('#openPromotionModalBtn').click(function () {
+            if (!promotionModalInstance) {
+                promotionModalInstance = new bootstrap.Modal(document.getElementById('promotionModal'));
+            }
+            promotionModalInstance.show();
+        });
+
+        // Clear promotion button
+        $('#clearPromotionBtn').click(function () {
+            selectedPromotion = null;
+            $('#selectedPromotionInfo').text('');
+            $('.promotion-card').removeClass('selected');
+            updatePriceWithDiscount(discountPercent);
+            if (promotionModalInstance) promotionModalInstance.hide();
+        });
+
+        function loadPromotions() {
+            // Get current booking details for promotion filtering
+            var seatCount = @Model.SelectedSeats.Count;
+            var showDate = '@Model.ShowDate.ToString("yyyy-MM-dd")';
+            var movieId = '@Model.MovieId';
+            var movieName = '@Model.MovieName';
+
+            var requestData = {
+                memberId: null, // No member ID for user bookings
+                seatCount: seatCount,
+                showDate: showDate,
+                movieId: movieId,
+                movieName: movieName
+            };
+
+            $.ajax({
+                url: '/Booking/GetEligiblePromotionsForUser',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(requestData),
+                success: function(response) {
+                    if (response.success) {
+                        updatePromotionModal(response.promotions);
+                    } else {
+                        console.error('Error loading promotions:', response.message);
+                        updatePromotionModal([]);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    updatePromotionModal([]);
+                }
+            });
+        }
+
+        function updatePromotionModal(promotions) {
+            const modalBody = $('#promotionModal .modal-body');
+            const promotionsRow = modalBody.find('.row').first();
+            promotionsRow.empty();
+            let highestDiscount = -1;
+            let highestPromoId = null;
+            
+            if (promotions.length === 0) {
+                promotionsRow.append('<div class="col-12 text-center text-muted">No eligible promotions available for this booking.</div>');
+            } else {
+                promotions.forEach(function(promo) {
+                    const promoCard = `
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm promotion-card" data-promotion-id="${promo.promotionId}" data-discount="${promo.discountLevel}">
+                                ${promo.image ? `<img src="${promo.image}" class="card-img-top" alt="Promotion Image" style="max-height:180px;object-fit:cover;">` : ''}
+                                <div class="card-body">
+                                    <h5 class="card-title">${promo.title}</h5>
+                                    <p class="card-text">${promo.detail}</p>
+                                    <p class="mb-1"><strong>Discount:</strong> ${promo.discountLevel}%</p>
+                                    <p class="mb-0"><strong>Duration:</strong> ${promo.startTime || 'N/A'} - ${promo.endTime || 'N/A'}</p>
+                                    <button type="button" class="btn btn-success mt-2 select-promotion-btn" data-promotion-id="${promo.promotionId}" data-discount="${promo.discountLevel}">Select</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    promotionsRow.append(promoCard);
+                    // Track highest discount
+                    if (promo.discountLevel > highestDiscount) {
+                        highestDiscount = promo.discountLevel;
+                        highestPromoId = promo.promotionId;
+                    }
+                });
+                
+                // Attach click event for select buttons
+                $('.select-promotion-btn').off('click').on('click', function () {
+                    const card = $(this).closest('.promotion-card');
+                    // Remove 'selected' from all cards, then add to the clicked one
+                    $('.promotion-card').removeClass('selected');
+                    card.addClass('selected');
+                    const promotion = {
+                        promotionId: card.data('promotion-id'),
+                        discountLevel: card.data('discount'),
+                        title: card.find('.card-title').text(),
+                        detail: card.find('.card-text').text()
+                    };
+                    selectedPromotion = promotion;
+                    $('#selectedPromotionInfo').text(`Selected: ${promotion.title} (Discount: ${promotion.discountLevel || 0}%)`);
+                    updatePriceWithDiscount(discountPercent);
+                    if (promotionModalInstance) promotionModalInstance.hide();
+                });
+                
+                // Auto-select the highest discount promotion
+                if (highestPromoId !== null) {
+                    // Simulate click on the select button of the highest discount promotion
+                    setTimeout(function() {
+                        const btn = $(`.select-promotion-btn[data-promotion-id='${highestPromoId}']`);
+                        if (btn.length) btn.trigger('click');
+                    }, 100);
+                }
+            }
+        }
+        
         // Initial state
         updatePriceWithDiscount(discountPercent);
     });
-    function testSuccess() {
+    
+    function confirmBooking() {
+        // Update hidden fields with current values
         var useScoreInput = document.getElementById('useScore');
         var hiddenUseScore = document.getElementById('hiddenUseScore');
         var isTestSuccess = document.getElementById('isTestSuccess');
+        
         if (useScoreInput && hiddenUseScore) {
             hiddenUseScore.value = useScoreInput.value || 0;
         }
+        
+        // Set test success to true to bypass payment
         if (isTestSuccess) {
             isTestSuccess.value = "true";
         }
+        
+        // Update promotion fields if promotion is selected
+        if (selectedPromotion) {
+            $('#hiddenSelectedPromotionId').val(selectedPromotion.promotionId);
+            $('#hiddenSelectedPromotionTitle').val(selectedPromotion.title);
+            // Calculate promotion discount amount using the same logic as updatePriceWithDiscount
+            var originalTotal = @Model.Subtotal;
+            var promotionDiscountAmount = Math.round(originalTotal * (selectedPromotion.discountLevel / 100));
+            $('#hiddenSelectedPromotionDiscount').val(promotionDiscountAmount);
+        }
+        
+        // Submit the form
         document.querySelector('form[method="post"]').submit();
     }
 </script>

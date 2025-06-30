@@ -3,6 +3,9 @@
     var originalPrice = TempData["OriginalPrice"] != null ? Convert.ToDecimal(TempData["OriginalPrice"]) : 0;
     var usedScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : 0;
     var finalPrice = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : 0;
+    var promotionDiscount = TempData["PromotionDiscount"] != null ? Convert.ToDecimal(TempData["PromotionDiscount"]) : 0;
+    var rankDiscount = TempData["RankDiscount"] != null ? Convert.ToDecimal(TempData["RankDiscount"]) : 0;
+    var promotionTitle = TempData["PromotionTitle"] as string;
 }
 
 
@@ -29,7 +32,26 @@
 
                 <hr />
                 <p><strong>💰 Original Price:</strong> @String.Format("{0:N0}", originalPrice) VND</p>
-                <p><strong>🏷️ Used Score:</strong> @String.Format("{0:N0}", usedScore) points</p>
+                
+                @if (promotionDiscount > 0)
+                {
+                    <p><strong>🏷️ Promotion Discount:</strong> <span class="text-success">-@String.Format("{0:N0}", promotionDiscount) VND</span></p>
+                    @if (!string.IsNullOrEmpty(promotionTitle))
+                    {
+                        <p class="text-muted small">(@promotionTitle)</p>
+                    }
+                }
+                
+                @if (rankDiscount > 0)
+                {
+                    <p><strong>⭐ Rank Discount:</strong> <span class="text-success">-@String.Format("{0:N0}", rankDiscount) VND</span></p>
+                }
+                
+                @if (usedScore > 0)
+                {
+                    <p><strong>🎯 Used Score:</strong> @String.Format("{0:N0}", usedScore) points</p>
+                }
+                
                 <p><strong>✅ Final Price:</strong> <span class="text-danger fw-bold">@String.Format("{0:N0}", finalPrice) VND</span></p>
             </div>
         </div>
