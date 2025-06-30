@@ -34,6 +34,7 @@
     // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
+    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={Model.InvoiceId}";
 }
 <style>
     .ticket-success-header {
@@ -145,9 +146,25 @@
         font-size: 1.1rem;
         color: #007bff;
     }
+    .qr-code-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    @@media (max-width: 991px) {
+        .row.mt-4.align-items-start .col-lg-8, .row.mt-4.align-items-start .col-lg-4 {
+            max-width: 100%;
+            flex: 0 0 100%;
+        }
+        .qr-code-container { margin-top: 20px; }
+    }
 </style>
-<div class="container mt-4">
-    <div class="ticket-card card shadow p-0">
+<div class="container mt-4 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Ticket Information</h2>
             <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "status-completed" : "status-cancelled")">
@@ -155,25 +172,25 @@
             </span>
         </div>
         <div class="p-4">
-            <div class="ticket-section-title">Movie & Show Info</div>
-            <div class="ticket-row">
-                <label class="ticket-info-label">Movie Name</label>
-                <input type="text" class="ticket-info-value" value="@movieName" readonly />
-                <label class="ticket-info-label">Screen</label>
-                <input type="text" class="ticket-info-value" value="@screen" readonly />
-            </div>
-            <div class="ticket-row">
-                <label class="ticket-info-label">Date</label>
-                <input type="text" class="ticket-info-value" value="@showDate" readonly />
-                <label class="ticket-info-label">Time</label>
-                <input type="text" class="ticket-info-value" value="@showTime" readonly />
-            </div>
-            <div class="ticket-row">
-                <label class="ticket-info-label">Ticket ID</label>
-                <input type="text" class="ticket-info-value" value="@ticketId" readonly />
-            </div>
-            <div class="d-flex flex-row justify-content-between align-items-start" style="gap: 2rem;">
-                <div style="flex: 1.5;">
+            <div class="row align-items-stretch">
+                <div class="col-lg-8 col-12 mb-3 mb-lg-0 border-end" style="border-color: #e0e0e0 !important;">
+                    <div class="ticket-section-title">Movie & Show Info</div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Movie Name</label>
+                        <input type="text" class="ticket-info-value" value="@movieName" readonly />
+                        <label class="ticket-info-label">Screen</label>
+                        <input type="text" class="ticket-info-value" value="@screen" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Date</label>
+                        <input type="text" class="ticket-info-value" value="@showDate" readonly />
+                        <label class="ticket-info-label">Time</label>
+                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Ticket ID</label>
+                        <input type="text" class="ticket-info-value" value="@ticketId" readonly />
+                    </div>
                     <div class="ticket-section-title">Seat(s)</div>
                     <table class="table table-bordered mb-2">
                         <thead>
@@ -216,11 +233,8 @@
                             }
                         </tbody>
                     </table>
-                </div>
-
-                @if (subtotal > 0)
-                {
-                    <div style="flex: 1;">
+                    @if (subtotal > 0)
+                    {
                         <div class="ticket-section-title">Price Breakdown</div>
                         <table class="table table-borderless mb-2">
                             <tbody>
@@ -262,28 +276,60 @@
                                 }
                             </tbody>
                         </table>
+                    }
+                    <div class="text-center mt-4">
+                        <a href="/MyAccount/MainPage?tab=History" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
+                            <i class="fas fa-arrow-left me-1"></i> Back to History
+                        </a>
+                        @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed)
+                        {
+                            <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
+                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                <button type="submit" class="btn btn-outline-danger fw-bold px-4" style="min-width: 180px;">
+                                    <i class="fas fa-times me-1"></i> Cancel Ticket
+                                </button>
+                            </form>
+                        }
                     </div>
-                }
-            </div>
-            <hr />
-            <div class="text-center mt-4">
-                <a href="/MyAccount/MainPage?tab=History" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
-                    <i class="fas fa-arrow-left me-1"></i> Back to History
-                </a>
-                @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed)
-                    @* && Model.ScheduleShow.HasValue
-                    && Model.ScheduleShow.Value.AddHours(-24) > DateTime.Now) *@
-                {
-                    <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId"
-                          method="post" class="d-inline"
-                          onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
-                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                        <button type="submit" class="btn btn-outline-danger fw-bold px-4" style="min-width: 180px;">
-                            <i class="fas fa-times me-1"></i> Cancel Ticket
-                        </button>
-                    </form>
-                }
+                </div>
+                <div class="col-lg-4 col-12 d-flex flex-column align-items-center justify-content-center">
+                    <div class="card border-success w-100 h-100">
+                        <div class="card-header bg-success text-white text-center">
+                            <h6 class="mb-0">🛡️ QR Code for Ticket Info</h6>
+                        </div>
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                            <div class="qr-code-container mb-2">
+                                <canvas id="qrcode-staff"></canvas>
+                            </div>
+                            <p class="text-muted small mb-2 text-center">Scan this QR code to quickly access this ticket information</p>
+                            <button id="downloadQRStaff" class="btn btn-outline-success btn-sm download-btn">
+                                <i class="fas fa-download me-1"></i> Download QR
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var qrStaffUrl = '@qrStaffUrl';
+        var qrStaff = new QRious({
+            element: document.getElementById('qrcode-staff'),
+            value: qrStaffUrl,
+            size: 200
+        });
+        document.getElementById('downloadQRStaff').onclick = function() {
+            var canvas = document.getElementById('qrcode-staff');
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = 'ticket-info-qr.png';
+            link.click();
+        }
+    });
+</script>
