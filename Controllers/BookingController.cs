@@ -224,7 +224,17 @@ namespace MovieTheater.Controllers
                 // Recalculate prices to prevent tampering
                 var originalTotal = model.SelectedSeats.Sum(s => s.Price);
                 
-                // 1. Apply voucher first (if selected)
+                // 1. Apply rank discount first
+                decimal rankDiscount = 0;
+                if (userAccount?.Rank != null)
+                {
+                    var rankDiscountPercent = userAccount.Rank.DiscountPercentage ?? 0;
+                    rankDiscount = originalTotal * (rankDiscountPercent / 100m);
+                }
+                var afterRank = originalTotal - rankDiscount;
+                if (afterRank < 0) afterRank = 0;
+
+                // 2. Apply voucher (after rank)
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
@@ -232,29 +242,20 @@ namespace MovieTheater.Controllers
                     if (voucher != null && voucher.AccountId == userId && voucher.RemainingValue > 0 && 
                         (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
                     {
-                        voucherAmount = Math.Min(voucher.RemainingValue, originalTotal);
+                        voucherAmount = Math.Min(voucher.RemainingValue, afterRank);
                     }
                 }
-                var afterVoucher = originalTotal - voucherAmount;
+                var afterVoucher = afterRank - voucherAmount;
                 if (afterVoucher < 0) afterVoucher = 0;
 
-                // 2. Apply promotion (placeholder for future implementation)
+                // 3. Apply promotion (placeholder for future implementation)
                 decimal promotionDiscount = 0;
                 decimal afterPromotion = afterVoucher - promotionDiscount;
 
-                // 3. Apply rank discount
-                decimal rankDiscount = 0;
-                if (userAccount?.Rank != null)
-                {
-                    var rankDiscountPercent = userAccount.Rank.DiscountPercentage ?? 0;
-                    rankDiscount = afterPromotion * (rankDiscountPercent / 100m);
-                }
-                var afterRank = afterPromotion - rankDiscount;
-
                 // 4. Apply points
-                model.UseScore = Math.Min(model.UseScore, (int)(afterRank / 1000));
+                model.UseScore = Math.Min(model.UseScore, (int)(afterPromotion / 1000));
                 var pointsValue = model.UseScore * 1000;
-                var finalPrice = afterRank - pointsValue;
+                var finalPrice = afterPromotion - pointsValue;
                 if (finalPrice < 0) finalPrice = 0;
 
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
@@ -625,7 +626,17 @@ namespace MovieTheater.Controllers
                 // Calculate subtotal
                 decimal subtotal = seats.Sum(s => s.Price);
 
-                // 1. Apply voucher first (if selected)
+                // 1. Apply rank discount first
+                decimal rankDiscount = 0;
+                if (member?.Account?.Rank != null)
+                {
+                    var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
+                }
+                decimal afterRank = subtotal - rankDiscount;
+                if (afterRank < 0) afterRank = 0;
+
+                // 2. Apply voucher (after rank)
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
@@ -633,25 +644,16 @@ namespace MovieTheater.Controllers
                     if (voucher != null && voucher.AccountId == member.Account.AccountId && voucher.RemainingValue > 0 &&
                         (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
                     {
-                        voucherAmount = Math.Min(voucher.RemainingValue, subtotal);
+                        voucherAmount = Math.Min(voucher.RemainingValue, afterRank);
                     }
                 }
-                decimal afterVoucher = subtotal - voucherAmount;
+                decimal afterVoucher = afterRank - voucherAmount;
                 if (afterVoucher < 0) afterVoucher = 0;
-
-                // 2. Apply rank discount
-                decimal rankDiscount = 0;
-                if (member?.Account?.Rank != null)
-                {
-                    var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                    rankDiscount = afterVoucher * (rankDiscountPercent / 100m);
-                }
-                decimal afterRank = afterVoucher - rankDiscount;
 
                 // 3. Apply points
                 int usedScore = model.UsedScore;
-                decimal usedScoreValue = Math.Min(usedScore * 1000, afterRank); // Cap at price after discount
-                decimal finalPrice = afterRank - usedScoreValue;
+                decimal usedScoreValue = Math.Min(usedScore * 1000, afterVoucher); // Cap at price after discount
+                decimal finalPrice = afterVoucher - usedScoreValue;
                 if (finalPrice < 0) finalPrice = 0;
 
                 // Calculate points to earn using the same logic as user booking
@@ -758,6 +760,7 @@ namespace MovieTheater.Controllers
                     AddedScoreValue = addedScoreValue,
                     Subtotal = subtotal,
                     RankDiscount = rankDiscount,
+                    VoucherAmount = voucherAmount,
                     TotalPrice = finalPrice,
                     // Nếu muốn trả về voucherAmount cho view:
                     // VoucherAmount = voucherAmount

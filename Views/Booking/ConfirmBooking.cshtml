@@ -70,6 +70,10 @@
                             <td class="text-start">Original Price:</td>
                             <td><span id="originalTotal">@Model.Subtotal.ToString("N0") VND</span></td>
                         </tr>
+                        <tr id="rankDiscountRow" style="display:none;">
+                            <td class="text-start">Rank discount:</td>
+                            <td id="rankDiscountDisplay"></td>
+                        </tr>
                         <tr id="voucherDiscountRow" style="display:none;">
                             <td class="text-start">Voucher discount:</td>
                             <td id="voucherDiscountDisplay"></td>
@@ -77,10 +81,6 @@
                         <tr id="promotionDiscountRow" style="display:none;">
                             <td class="text-start">Promotion discount:</td>
                             <td id="promotionDiscountDisplay"></td>
-                        </tr>
-                        <tr id="rankDiscountRow" style="display:none;">
-                            <td class="text-start">Rank discount:</td>
-                            <td id="rankDiscountDisplay"></td>
                         </tr>
                         <tr id="pointsUsedRow" style="display:none;">
                             <td class="text-start">Points Used:</td>
@@ -257,24 +257,25 @@
         function updatePriceFlow() {
             var originalTotal = @Model.Subtotal;
 
-            // apply voucher first
-            var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-            var afterVoucher = originalTotal - voucherAmount;
-            if (afterVoucher < 0) afterVoucher = 0;
+            // apply rank benefit first
+            var rankDiscountPercent = @Model.RankDiscountPercent;
+            var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
+            var afterRank = originalTotal - rankDiscountAmount;
+            if (afterRank < 0) afterRank = 0;
 
             // apply promotion next (placeholder for future implementation)
             var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
-            var promoDiscountAmount = Math.round(afterVoucher * (promotionPercent / 100));
-            var afterPromo = afterVoucher - promoDiscountAmount;
+            var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
+            var afterPromo = afterRank - promoDiscountAmount;
 
-            // apply rank benefit
-            var rankDiscountPercent = @Model.RankDiscountPercent;
-            var rankDiscountAmount = Math.round(afterPromo * (rankDiscountPercent / 100));
-            var afterRank = afterPromo - rankDiscountAmount;
+            // apply voucher after rank
+            var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+            var afterVoucher = afterPromo - voucherAmount;
+            if (afterVoucher < 0) afterVoucher = 0;
 
             // apply points
             var useScore = parseInt($('#useScore').val()) || 0;
-            var maxUsablePoints = updateMaxUsablePoints(afterRank);
+            var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
             var valid = true;
             var validationMsg = '';
             
@@ -289,15 +290,23 @@
                 valid = false;
             }
 
-            var finalTotal = afterRank;
+            var finalTotal = afterVoucher;
             if (valid && useScore > 0) {
                 var pointsValue = useScore * pointValue;
-                finalTotal = afterRank - pointsValue;
+                finalTotal = afterVoucher - pointsValue;
                 if (finalTotal < 0) finalTotal = 0;
             }
 
             // Update UI
             $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
+
+            // Rank discount row
+            if (rankDiscountPercent > 0) {
+                $('#rankDiscountRow').show();
+                $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${rankDiscountPercent}%)`);
+            } else {
+                $('#rankDiscountRow').hide();
+            }
 
             // Voucher discount row
             if (voucherAmount > 0) {
@@ -313,14 +322,6 @@
                 $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
             } else {
                 $('#promotionDiscountRow').hide();
-            }
-
-            // Rank discount row
-            if (rankDiscountPercent > 0) {
-                $('#rankDiscountRow').show();
-                $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${rankDiscountPercent}%)`);
-            } else {
-                $('#rankDiscountRow').hide();
             }
 
             // Points used row

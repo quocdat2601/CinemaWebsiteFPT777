@@ -197,7 +197,7 @@ namespace MovieTheater.Controllers
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
                 IsUsed = false,
-                Image = "/voucher-img/refund-voucher.jpg"
+                Image = "/images/vouchers/refund-voucher.jpg"
             };
             voucherService.Add(voucher);
 
@@ -289,7 +289,7 @@ namespace MovieTheater.Controllers
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
                 IsUsed = false,
-                Image = "/voucher-img/refund-voucher.jpg"
+                Image = "/images/vouchers/refund-voucher.jpg"
             };
             voucherService.Add(voucher);
 

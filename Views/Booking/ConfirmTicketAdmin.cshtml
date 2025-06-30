@@ -386,23 +386,25 @@
             let selectedAccountId = null;
             function updatePriceAll() {
                 var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
-                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-                var afterVoucher = originalTotal - voucherAmount;
-                if (afterVoucher < 0) afterVoucher = 0;
-
+                // Áp dụng rank benefit trước
                 var discountPercent = currentDiscountPercent || 0;
                 var discountAmount = 0;
-                if (afterVoucher > 0) {
-                    discountAmount = Math.round(afterVoucher * (discountPercent / 100));
+                if (originalTotal > 0) {
+                    discountAmount = Math.round(originalTotal * (discountPercent / 100));
                 }
-                var afterDiscount = afterVoucher - discountAmount;
-                if (afterDiscount < 0) afterDiscount = 0;
+                var afterRank = originalTotal - discountAmount;
+                if (afterRank < 0) afterRank = 0;
+
+                // Sau đó mới áp dụng voucher
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterRank - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
 
                 // Điểm
                 var useScore = parseInt($('#useScore').val()) || 0;
                 var pointValue = 1000;
                 var savings = useScore * pointValue;
-                var finalTotal = afterDiscount - savings;
+                var finalTotal = afterVoucher - savings;
                 if (finalTotal < 0) finalTotal = 0;
 
                 // Update hiển thị giá
@@ -416,14 +418,14 @@
 
                 // Hiển thị voucher
                 let discountInfoHtml = '';
+                // Hiển thị rank discount
+                discountInfoHtml +=
+                    discountPercent > 0 && originalTotal > 0
+                    ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`
+                    : 'Rank discount: 0% (-0 VND)';
                 if (voucherAmount > 0) {
                     discountInfoHtml += `<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`;
                 }
-                // Hiển thị rank discount
-                discountInfoHtml +=
-                    discountPercent > 0 && afterVoucher > 0
-                    ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`
-                    : 'Rank discount: 0% (-0 VND)';
                 $('#discountInfo').html(discountInfoHtml);
 
                 // Savings (chỉ khi dùng điểm)
@@ -440,7 +442,7 @@
 
                 // Validate điểm
                 var memberScore = parseInt($('#memberScore').val()) || 0;
-                var maxUsablePoints = Math.floor((afterDiscount * 0.9) / pointValue);
+                var maxUsablePoints = Math.floor((afterVoucher * 0.9) / pointValue);
                 maxUsablePoints = Math.min(maxUsablePoints, memberScore);
                 $('#maxUsablePoints').text(maxUsablePoints);
                 var validationMsg = '';
