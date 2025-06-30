@@ -42,7 +42,18 @@
                     <tr>
                         <td>@seat.SeatName</td>
                         <td>@seat.SeatType</td>
-                        <td>@seat.Price.ToString("N0") VND</td>
+                        <td>
+                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                            {
+                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                              
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                            }
+                            else
+                            {
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -107,8 +118,8 @@
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
             <div class="text-center mt-4">
-                <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
-                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Test Success</button>
+                
+                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Confirm Booking</button>
             </div>
         </form>
     </div>
@@ -196,7 +207,7 @@
             $('#hiddenUseScore').val(valid ? useScore : 0);
             // Price display
             if (discountPercent > 0) {
-                $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
+                $('#originalTotal').css({'color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
                 if (valid && useScore > 0) {
                     $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
                 } else {

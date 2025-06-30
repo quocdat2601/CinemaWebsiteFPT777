@@ -11,5 +11,6 @@ namespace MovieTheater.Service
         public bool Delete(int id);
         public void Save();
 
+        Promotion? GetBestPromotionForShowDate(DateTime showDate);
     }
 }

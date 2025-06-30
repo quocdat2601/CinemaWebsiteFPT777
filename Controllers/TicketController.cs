@@ -322,6 +322,12 @@ namespace MovieTheater.Controllers
             }
             TempData["CinemaRoomName"] = roomName;
 
+            // Keep ConfirmedSeats TempData for the next request
+            if (TempData["ConfirmedSeats"] != null)
+            {
+                TempData.Keep("ConfirmedSeats");
+            }
+
             return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
         }
     }
