@@ -267,20 +267,17 @@ namespace MovieTheater.Controllers
                 if (afterVoucher < 0) afterVoucher = 0;
 
                 // 3. Apply promotion (get discount level from best promotion)
-                decimal promotionDiscount = 0;
                 decimal promotionDiscountLevel = 0;
                 var bestPromotion = _promotionService.GetBestPromotionForShowDate(model.ShowDate);
                 if (bestPromotion != null && bestPromotion.DiscountLevel.HasValue)
                 {
                     promotionDiscountLevel = bestPromotion.DiscountLevel.Value;
-                    // If you want to apply promotion at this step, you can calculate promotionDiscount here
                 }
-                var afterPromotion = afterVoucher - promotionDiscount;
 
                 // 4. Apply points
-                model.UseScore = Math.Min(model.UseScore, (int)(afterPromotion / 1000));
+                model.UseScore = Math.Min(model.UseScore, (int)(afterVoucher / 1000));
                 var pointsValue = model.UseScore * 1000;
-                var finalPrice = afterPromotion - pointsValue;
+                var finalPrice = afterVoucher - pointsValue;
                 if (finalPrice < 0) finalPrice = 0;
 
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
@@ -422,54 +419,81 @@ namespace MovieTheater.Controllers
                 {
                     await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
                 }
-                // Lấy danh sách ghế chi tiết
-                var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToArray();
-                var seats = new List<SeatDetailViewModel>();
-                foreach (var seatName in seatNamesArr)
-                {
-                    var seat = _seatService.GetSeatByName(seatName);
-                    if (seat == null)
-                    {
-                        continue;
-                    }
-                    SeatType seatType = null;
-                    if (seat.SeatTypeId.HasValue)
-                    {
-                        seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
-                    }
-                    seats.Add(new SeatDetailViewModel
-                    {
-                        SeatId = seat.SeatId,
-                        SeatName = seat.SeatName,
-                        SeatType = seatType?.TypeName ?? "N/A",
-                        Price = seatType?.PricePercent ?? 0
-                    });
-                }
-                ViewBag.SeatDetails = seats;
 
-                // Tính breakdown giá và điểm
-                decimal subtotal = seats.Sum(s => s.Price);
-                decimal rankDiscount = 0;
-                var member = _memberRepository.GetByAccountId(invoice.AccountId);
-                if (member?.Account?.Rank != null)
+                // Get seat details from session first
+                var seats = new List<SeatDetailViewModel>();
+                var sessionKey = "ConfirmedSeats_" + invoiceId;
+                var seatsJson = HttpContext.Session.GetString(sessionKey);
+                
+                if (!string.IsNullOrEmpty(seatsJson))
                 {
-                    var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                    seats = JsonConvert.DeserializeObject<List<SeatDetailViewModel>>(seatsJson);
+                }
+                else
+                {
+                    // Fallback to building seat details from invoice
+                    var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(s => !string.IsNullOrEmpty(s))
+                        .ToArray();
+                    
+                    foreach (var seatName in seatNamesArr)
+                    {
+                        var seat = _seatService.GetSeatByName(seatName);
+                        if (seat == null) continue;
+                        
+                        SeatType seatType = null;
+                        if (seat.SeatTypeId.HasValue)
+                        {
+                            seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
+                        }
+
+                        decimal originalPrice = seatType?.PricePercent ?? 0;
+                        decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
+                        decimal priceAfterPromotion = originalPrice;
+
+                        if (seatPromotionDiscount > 0)
+                        {
+                            priceAfterPromotion = originalPrice * (1 - seatPromotionDiscount / 100m);
+                        }
+
+                        seats.Add(new SeatDetailViewModel
+                        {
+                            SeatId = seat.SeatId,
+                            SeatName = seat.SeatName,
+                            SeatType = seatType?.TypeName ?? "N/A",
+                            Price = priceAfterPromotion,
+                            OriginalPrice = originalPrice,
+                            PromotionDiscount = seatPromotionDiscount,
+                            PriceAfterPromotion = priceAfterPromotion
+                        });
+                    }
+                }
+
+                ViewBag.SeatDetails = seats;
+                
+                // Calculate subtotal from prices after promotion
+                decimal subtotal = seats.Sum(s => s.PriceAfterPromotion ?? s.Price);
+
+                // Calculate rank discount
+                decimal rankDiscount = 0;
+                if (invoice.Account?.Rank != null && invoice.Account.Rank.DiscountPercentage.HasValue)
+                {
+                    var rankDiscountPercent = invoice.Account.Rank.DiscountPercentage.Value;
                     rankDiscount = subtotal * (rankDiscountPercent / 100m);
                 }
-                int usedScore = invoice.UseScore ?? 0;
-                int usedScoreValue = usedScore * 1000;
-                int addedScore = invoice.AddScore ?? 0;
-                int addedScoreValue = addedScore * 1000;
-                decimal totalPrice = invoice.TotalMoney ?? 0;
+
+                // Apply points used
+                decimal usedScoreValue = (invoice.UseScore ?? 0) * 1000m;
+                decimal totalPrice = subtotal - rankDiscount - usedScoreValue;
+                if (totalPrice < 0) totalPrice = 0;
+
                 ViewBag.Subtotal = subtotal;
                 ViewBag.RankDiscount = rankDiscount;
-                ViewBag.UsedScore = usedScore;
+                ViewBag.UsedScore = invoice.UseScore ?? 0;
                 ViewBag.UsedScoreValue = usedScoreValue;
-                ViewBag.AddScore = addedScore;
-                ViewBag.AddedScoreValue = addedScoreValue;
+                ViewBag.AddScore = invoice.AddScore ?? 0;
+                ViewBag.AddedScoreValue = (invoice.AddScore ?? 0) * 1000;
                 ViewBag.TotalPrice = totalPrice;
             }
             return View();
@@ -728,34 +752,8 @@ namespace MovieTheater.Controllers
                     }
                 }
 
-                // Prepare seat details first
-                var seatNamesArr = (model.BookingDetails.SelectedSeats != null)
-                    ? model.BookingDetails.SelectedSeats.Select(s => s.SeatName).ToArray()
-                    : Array.Empty<string>();
-                var seats = new List<SeatDetailViewModel>();
-                foreach (var seatName in seatNamesArr)
-                {
-                    var seat = _seatService.GetSeatByName(seatName);
-                    if (seat == null)
-                    {
-                        continue;
-                    }
-                    SeatType seatType = null;
-                    if (seat.SeatTypeId.HasValue)
-                    {
-                        seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
-                    }
-                    seats.Add(new SeatDetailViewModel
-                    {
-                        SeatId = seat.SeatId,
-                        SeatName = seat.SeatName,
-                        SeatType = seatType?.TypeName ?? "N/A",
-                        Price = seatType?.PricePercent ?? 0
-                    });
-                }
-
-                // Calculate subtotal
-                decimal subtotal = seats.Sum(s => s.Price);
+                // Calculate subtotal from original seat prices
+                decimal subtotal = model.BookingDetails.SelectedSeats.Sum(s => s.Price);
 
                 // 1. Apply rank discount first
                 decimal rankDiscount = 0;
@@ -780,7 +778,15 @@ namespace MovieTheater.Controllers
                 decimal afterVoucher = afterRank - voucherAmount;
                 if (afterVoucher < 0) afterVoucher = 0;
 
-                // 3. Apply points
+                // 3. Get promotion discount level from best promotion
+                decimal promotionDiscountLevel = 0;
+                var bestPromotion = _promotionService.GetBestPromotionForShowDate(model.BookingDetails.ShowDate);
+                if (bestPromotion != null && bestPromotion.DiscountLevel.HasValue)
+                {
+                    promotionDiscountLevel = bestPromotion.DiscountLevel.Value;
+                }
+
+                // 4. Apply points
                 int usedScore = model.UsedScore;
                 decimal usedScoreValue = Math.Min(usedScore * 1000, afterVoucher); // Cap at price after discount
                 decimal finalPrice = afterVoucher - usedScoreValue;
@@ -791,11 +797,8 @@ namespace MovieTheater.Controllers
                 int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
                 int addedScore = pointsToEarn;
                 int addedScoreValue = addedScore * 1000;
-                string memberId = member?.MemberId;
-                string memberEmail = member?.Account?.Email;
-                string memberIdentityCard = member?.Account?.IdentityCard;
-                string memberPhone = member?.Account?.PhoneNumber;
 
+                // Create invoice
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
@@ -809,20 +812,11 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalPrice,
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
-                    VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null
+                    VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
+                    PromotionDiscount = (int?)promotionDiscountLevel // Save the promotion discount level
                 };
 
-                string roomName = "N/A";
-                if (!string.IsNullOrEmpty(model.BookingDetails.MovieId))
-                {
-                    var movie = _movieService.GetById(model.BookingDetails.MovieId);
-                    if (movie != null && movie.CinemaRoomId.HasValue)
-                    {
-                        var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
-                        roomName = room?.CinemaRoomName ?? "N/A";
-                    }
-                }
-
+                // Save invoice
                 await _bookingService.SaveInvoiceAsync(invoice);
                 _accountService.CheckAndUpgradeRank(member.AccountId);
 
@@ -837,6 +831,7 @@ namespace MovieTheater.Controllers
                     }
                 }
 
+                // Update seat statuses
                 var movieShow = _movieService.GetMovieShows(model.BookingDetails.MovieId)
                     .FirstOrDefault(ms =>
                         ms.ShowDate?.ShowDate1 == DateOnly.FromDateTime(model.BookingDetails.ShowDate) &&
@@ -870,32 +865,9 @@ namespace MovieTheater.Controllers
                 }
                 TempData["ToastMessage"] = string.Join("<br/>", messages);
 
-                var viewModel = new ConfirmTicketAdminViewModel
-                {
-                    BookingDetails = model.BookingDetails,
-                    MemberCheckMessage = "",
-                    ReturnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }),
-                    MemberId = memberId,
-                    MemberEmail = memberEmail,
-                    MemberIdentityCard = memberIdentityCard,
-                    MemberPhone = memberPhone,
-                    UsedScore = usedScore,
-                    UsedScoreValue = usedScoreValue,
-                    AddedScore = pointsToEarn,
-                    AddedScoreValue = addedScoreValue,
-                    Subtotal = subtotal,
-                    RankDiscount = rankDiscount,
-                    VoucherAmount = voucherAmount,
-                    TotalPrice = finalPrice,
-                    MemberAccountId = member?.AccountId
-                };
-
-                // Store CinemaRoomName in TempData before redirect
-                TempData["CinemaRoomName"] = roomName;
-                // Store discounted seats in TempData as JSON
-                TempData["ConfirmedSeats"] = JsonConvert.SerializeObject(model.BookingDetails.SelectedSeats);
-                // Store discounted seats in Session for persistence
+                // Store seat information in session for the confirmation view
                 HttpContext.Session.SetString("ConfirmedSeats_" + invoice.InvoiceId, JsonConvert.SerializeObject(model.BookingDetails.SelectedSeats));
+
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
             }
             catch (Exception ex)
@@ -1096,10 +1068,12 @@ namespace MovieTheater.Controllers
             }
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
+            
             // Prepare seat details
             List<SeatDetailViewModel> seats = null;
             var sessionKey = "ConfirmedSeats_" + invoiceId;
             var seatsJson = HttpContext.Session.GetString(sessionKey);
+            
             if (!string.IsNullOrEmpty(seatsJson))
             {
                 seats = JsonConvert.DeserializeObject<List<SeatDetailViewModel>>(seatsJson);
@@ -1128,36 +1102,69 @@ namespace MovieTheater.Controllers
                     {
                         seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
                     }
+
+                    decimal originalPrice = seatType?.PricePercent ?? 0;
+                    decimal promotionDiscount = 0;
+                    decimal priceAfterPromotion = originalPrice;
+
+                    // Calculate promotion discount if it exists in the invoice
+                    if (invoice.PromotionDiscount.HasValue && invoice.PromotionDiscount.Value > 0)
+                    {
+                        promotionDiscount = Math.Round(originalPrice * (invoice.PromotionDiscount.Value / 100m));
+                        priceAfterPromotion = originalPrice - promotionDiscount;
+                    }
+
                     seats.Add(new SeatDetailViewModel
                     {
                         SeatId = seat.SeatId,
                         SeatName = trimmedSeatName,
                         SeatType = seatType?.TypeName ?? "N/A",
-                        Price = seatType?.PricePercent ?? 0
+                        Price = priceAfterPromotion,
+                        OriginalPrice = originalPrice,
+                        PromotionDiscount = promotionDiscount,
+                        PriceAfterPromotion = priceAfterPromotion
                     });
+                }
+
+                // Store the reconstructed seats in session for future use
+                HttpContext.Session.SetString(sessionKey, JsonConvert.SerializeObject(seats));
+            }
+
+            // Calculate subtotal based on seat prices after promotion
+            decimal subtotal = seats.Sum(s => s.Price);
+
+            // Calculate rank discount
+            decimal rankDiscount = 0;
+            if (member?.Account?.Rank != null)
+            {
+                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            }
+
+            // Get voucher amount if used
+            decimal voucherAmount = 0;
+            if (!string.IsNullOrEmpty(invoice.VoucherId))
+            {
+                var voucher = _voucherService.GetById(invoice.VoucherId);
+                if (voucher != null)
+                {
+                    voucherAmount = voucher.Value;
                 }
             }
 
-            // Calculate tickets converted by score
-            int ticketsConverted = 0;
-            if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0 && seats.Count > 0)
-            {
-                // Sort seats by price descending and count how many could be converted by the used score
-                var sortedSeats = seats.OrderByDescending(s => s.Price).ToList();
-                decimal runningScore = invoice.UseScore.Value;
-                foreach (var seat in sortedSeats)
-                {
-                    if (runningScore >= seat.Price)
-                    {
-                        ticketsConverted++;
-                        runningScore -= seat.Price;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            }
+            // Calculate final price
+            int usedScore = invoice.UseScore ?? 0;
+            int usedScoreValue = usedScore * 1000;
+            int addedScore = invoice.AddScore ?? 0;
+            int addedScoreValue = addedScore * 1000;
+            decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
+            if (totalPrice < 0) totalPrice = 0;
+
+            string memberId = member?.MemberId;
+            string memberEmail = member?.Account?.Email;
+            string memberIdentityCard = member?.Account?.IdentityCard;
+            string memberPhone = member?.Account?.PhoneNumber;
+            string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
 
             var bookingDetails = new ConfirmBookingViewModel
             {
@@ -1166,46 +1173,13 @@ namespace MovieTheater.Controllers
                 ShowDate = invoice.ScheduleShow ?? DateTime.Now,
                 ShowTime = invoice.ScheduleShowTime,
                 SelectedSeats = seats,
-                TotalPrice = invoice.TotalMoney ?? 0,
-                PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
+                TotalPrice = totalPrice,
+                PricePerTicket = seats.Any() ? totalPrice / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
-                ScoreUsed = invoice.UseScore ?? 0,
+                ScoreUsed = usedScore,
                 Status = invoice.Status ?? InvoiceStatus.Incomplete,
-                AddScore = invoice.AddScore ?? 0
+                AddScore = addedScore
             };
-
-            string returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
-
-            // Use TempData if present, otherwise recalculate
-            decimal subtotal = TempData["Subtotal"] != null ? Convert.ToDecimal(TempData["Subtotal"]) : seats.Sum(s => s.Price);
-            decimal rankDiscount = TempData["RankDiscount"] != null ? Convert.ToDecimal(TempData["RankDiscount"]) : 0;
-            if (rankDiscount == 0 && member?.Account?.Rank != null)
-            {
-                var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                rankDiscount = subtotal * (rankDiscountPercent / 100m);
-            }
-            int usedScore = invoice.UseScore ?? 0;
-            int usedScoreValue = TempData["UsedScoreValue"] != null ? Convert.ToInt32(TempData["UsedScoreValue"]) : (invoice.UseScore ?? 0) * 1000;
-            int addedScore = TempData["AddedScore"] != null ? Convert.ToInt32(TempData["AddedScore"]) : (invoice.AddScore ?? 0);
-            int addedScoreValue = TempData["AddedScoreValue"] != null ? Convert.ToInt32(TempData["AddedScoreValue"]) : (invoice.AddScore ?? 0) * 1000;
-            // Calculate total price based on seat price after discount
-            decimal voucherAmount = TempData["VoucherAmount"] != null ? Convert.ToDecimal(TempData["VoucherAmount"]) : 0;
-            
-            // If voucher amount is not in TempData, try to get it from the invoice's voucher
-            if (voucherAmount == 0 && !string.IsNullOrEmpty(invoice.VoucherId))
-            {
-                var voucher = _voucherService.GetById(invoice.VoucherId);
-                if (voucher != null)
-                {
-                    voucherAmount = voucher.Value;
-                }
-            }
-            
-            decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
-            string memberId = TempData["MemberId"] as string ?? member?.MemberId;
-            string memberEmail = TempData["MemberEmail"] as string ?? member?.Account?.Email;
-            string memberIdentityCard = TempData["MemberIdentityCard"] as string ?? member?.Account?.IdentityCard;
-            string memberPhone = TempData["MemberPhone"] as string ?? member?.Account?.PhoneNumber;
 
             var viewModel = new ConfirmTicketAdminViewModel
             {

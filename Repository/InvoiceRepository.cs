@@ -24,5 +24,15 @@ namespace MovieTheater.Repository
                 .ThenInclude(a => a.Members)
                 .FirstOrDefault(i => i.InvoiceId == invoiceId);
         }
+
+        public void Update(Invoice invoice)
+        {
+            _context.Entry(invoice).State = EntityState.Modified;
+        }
+
+        public void Save()
+        {
+            _context.SaveChanges();
+        }
     }
 }
