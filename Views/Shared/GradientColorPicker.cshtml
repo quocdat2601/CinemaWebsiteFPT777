@@ -350,7 +350,7 @@
                   <span class="slider-label">${i===0?'Start Position:':i===stops.length-1?'End Position:':'Position:'} <b>${stop.pos}%</b></span>
                   <input type="range" min="0" max="100" value="${stop.pos}" data-idx="${i}" class="gradient-slider">
                 </div>
-                ${stops.length>2?`<button type="button" class="removeStop" data-idx="${i}">✕</button>`:''}
+                ${i!==0 && i!==stops.length-1?`<button type="button" class="removeStop" data-idx="${i}">✕</button>`:''}
             `;
             container.appendChild(row);
         }); attachEvents();

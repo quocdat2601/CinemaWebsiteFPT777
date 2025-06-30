@@ -12,124 +12,158 @@
         </div>
         <div class="card-body">
             <form asp-action="EditRank" asp-controller="Admin" method="post">
+
+                <!-- Rank Name -->
                 <div class="mb-3">
                     <label asp-for="CurrentRankName" class="form-label">Rank Name</label>
                     <input asp-for="CurrentRankName" class="form-control" />
                     <span asp-validation-for="CurrentRankName" class="text-danger"></span>
                 </div>
+
+                <!-- Required Points -->
                 <div class="mb-3">
                     <label asp-for="RequiredPointsForCurrentRank" class="form-label">Required Points</label>
-                    <input asp-for="RequiredPointsForCurrentRank" class="form-control" type="number" min="0" />
+                    <input asp-for="RequiredPointsForCurrentRank"
+                           class="form-control"
+                           type="number"
+                           min="0" />
                     <span asp-validation-for="RequiredPointsForCurrentRank" class="text-danger"></span>
                 </div>
+
+                <!-- Discount % -->
                 <div class="mb-3">
                     <label asp-for="CurrentDiscountPercentage" class="form-label">Discount (%)</label>
-                    <input asp-for="CurrentDiscountPercentage" class="form-control" type="number" step="0.01" min="0" max="100" />
+                    <input asp-for="CurrentDiscountPercentage"
+                           class="form-control"
+                           type="number"
+                           step="0.01"
+                           min="0"
+                           max="100" />
                     <span asp-validation-for="CurrentDiscountPercentage" class="text-danger"></span>
                 </div>
+
+                <!-- Point Earning % -->
                 <div class="mb-3">
                     <label asp-for="CurrentPointEarningPercentage" class="form-label">Point Earning (%)</label>
-                    <input asp-for="CurrentPointEarningPercentage" class="form-control" type="number" step="0.01" min="0" max="100" />
+                    <input asp-for="CurrentPointEarningPercentage"
+                           class="form-control"
+                           type="number"
+                           step="0.01"
+                           min="0"
+                           max="100" />
                     <span asp-validation-for="CurrentPointEarningPercentage" class="text-danger"></span>
                 </div>
+
+                <!-- Color / Gradient Picker -->
                 <div class="mb-3">
-                    <label class="form-label">Color</label>
-                    <button type="button" class="btn btn-outline-primary mb-2" data-bs-toggle="modal" data-bs-target="#colorPickerModal">Pick Color/Gradient</button>
-                    <input asp-for="ColorGradient" class="form-control mt-2" placeholder="Pick a color or gradient" readonly />
-                    <small class="form-text text-muted">Use the picker to select a color or gradient.</small>
+                    <label class="form-label">Color</label><br />
+                    <button type="button"
+                            class="btn btn-outline-primary mb-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#colorPickerModal">
+                        Pick Color/Gradient
+                    </button>
+                    <input asp-for="ColorGradient"
+                           class="form-control mt-2"
+                           placeholder="Pick a color or gradient"
+                           readonly />
+                    <small class="form-text text-muted">
+                        Use the picker to select a color or gradient.
+                    </small>
                     <span asp-validation-for="ColorGradient" class="text-danger"></span>
-                    <!-- Modal for color picker -->
-                    <div class="modal fade" id="colorPickerModal" tabindex="-1" aria-labelledby="colorPickerModalLabel" aria-hidden="true">
-                      <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title" id="colorPickerModalLabel">Pick a Color or Gradient</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <div class="modal-body p-0">
-                            @await Html.PartialAsync("~/Views/Shared/GradientColorPicker.cshtml")
-                          </div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" id="confirmColorPick">Use Selected</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                 </div>
+
+                <!-- Icon Picker (Bootstrap 4 component style) -->
                 <div class="mb-3">
-                    <label class="form-label">Icon</label>
-                    <div id="iconPicker" class="d-flex gap-3 flex-wrap">
-                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-crown"><i class="fa fa-crown"></i></button>
-                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-star"><i class="fa fa-star"></i></button>
-                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-gem"><i class="fa fa-gem"></i></button>
-                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-trophy"><i class="fa fa-trophy"></i></button>
-                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-diamond"><i class="fa fa-diamond"></i></button>
-                        <button type="button" class="icon-btn btn btn-outline-secondary" data-icon="fa-star-of-life"><i class="fa fa-star-of-life"></i></button>
+                    <label for="IconClass" class="form-label">Icon</label>
+                    <div class="input-group">
+                        <input asp-for="IconClass"
+                               id="IconClass"
+                               type="text"
+                               class="form-control icp icp-auto"
+                               readonly />
+                        <div class="input-group-append">
+                            <span class="input-group-text"></span>
+                        </div>
                     </div>
-                    <input type="hidden" asp-for="IconClass" id="IconClass" />
                     <span asp-validation-for="IconClass" class="text-danger"></span>
                 </div>
+
+                <!-- Submit / Cancel -->
                 <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="@Url.Action("MainPage", "Admin", new { tab = "RankMg" })" class="btn btn-secondary ms-2">Cancel</a>
+                <a href="@Url.Action("MainPage", "Admin", new { tab = "RankMg" })"
+                   class="btn btn-secondary ms-2">
+                    Cancel
+                </a>
             </form>
         </div>
     </div>
 </div>
 
+<!-- Gradient Picker Modal -->
+<div class="modal fade"
+     id="colorPickerModal"
+     tabindex="-1"
+     aria-labelledby="colorPickerModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="colorPickerModalLabel">
+                    Pick a Color or Gradient
+                </h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                @await Html.PartialAsync("~/Views/Shared/GradientColorPicker.cshtml")
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-primary"
+                        id="confirmColorPick">
+                    Use Selected
+                </button>
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Color picker logic
-        const colorPicker = document.getElementById('colorPicker');
-        const colorInput = document.getElementById('ColorGradient');
-        if (colorPicker && colorInput) {
-            colorPicker.addEventListener('input', function() {
-                colorInput.value = colorPicker.value;
-            });
-            // Set color picker to current value if it's a color
-            if (colorInput.value && /^#([0-9A-F]{3}){1,2}$/i.test(colorInput.value)) {
-                colorPicker.value = colorInput.value;
-            }
+    <style>
+        /* Ensure the iconpicker popover sits on top */
+        .iconpicker-popover {
+            z-index: 2000 !important;
         }
-        // Icon picker logic
-        const iconBtns = document.querySelectorAll('.icon-btn');
-        const iconInput = document.getElementById('IconClass');
-        // Set default/active icon
-        let foundActive = false;
-        iconBtns.forEach(btn => {
-            if (iconInput.value && btn.getAttribute('data-icon') === iconInput.value) {
-                btn.classList.add('active');
-                foundActive = true;
-            }
+    </style>
+
+    <script>
+        $(function () {
+          // Initialize FontAwesome Icon Picker
+          $('.icp-auto').iconpicker({
+            component: '.input-group-text',  // BS4 component
+            fontAwesome5: true,              // FA5+ mode
+            iconBaseClass: 'fas',
+            iconClassPrefix: 'fa-',
+            placement: 'bottomRight',
+            hideOnSelect: true,
+            searchText: 'Search icons...',
+            filter: true
+          });
+
+          // Confirm Color/Gradient selection
+          $('#confirmColorPick').on('click', function(){
+            var val = $('#gradientString').val();
+            $('#ColorGradient').val(val);
+            $('#colorPickerModal').modal('hide');
+          });
         });
-        if (!foundActive && iconBtns.length > 0) {
-            iconBtns[0].classList.add('active');
-            iconInput.value = iconBtns[0].getAttribute('data-icon');
-        }
-        iconBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                iconBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                iconInput.value = btn.getAttribute('data-icon');
-            });
-        });
-        document.getElementById('confirmColorPick').onclick = function() {
-            // Get the value from the color picker input in the modal
-            var gradientValue = document.getElementById('gradientString').value;
-            document.getElementById('ColorGradient').value = gradientValue;
-            var modal = bootstrap.Modal.getInstance(document.getElementById('colorPickerModal'));
-            modal.hide();
-        };
-    });
-</script>
-<style>
-    .icon-btn.active {
-        border: 2px solid #007bff;
-        background: #e7f1ff;
-    }
-    .icon-btn i {
-        font-size: 1.5rem;
-    }
-</style>
-} 
+    </script>
+}
