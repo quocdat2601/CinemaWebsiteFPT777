@@ -1,0 +1,66 @@
+@model MovieTheater.Models.Voucher
+@{
+    ViewData["Title"] = "Edit Voucher";
+    bool isEditable = (Model.IsUsed != true && Model.ExpiryDate > DateTime.Now);
+}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Edit Voucher</h3>
+                </div>
+                <div class="card-body">
+                    @if (!isEditable)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            This voucher is either used or expired and cannot be edited.
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-action="AdminEdit" asp-controller="Voucher" method="post" enctype="multipart/form-data">
+                            <input type="hidden" asp-for="VoucherId" />
+                            <div class="mb-3">
+                                <label asp-for="Code" class="form-label">Code</label>
+                                <input asp-for="Code" class="form-control" required />
+                                <span asp-validation-for="Code" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Value" class="form-label">Value (VND)</label>
+                                <input asp-for="Value" class="form-control" type="number" min="0" required />
+                                <span asp-validation-for="Value" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="ExpiryDate" class="form-label">Expiry Date</label>
+                                <input asp-for="ExpiryDate" class="form-control" type="date" required />
+                                <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="AccountId" class="form-label">Account ID (optional)</label>
+                                <input asp-for="AccountId" class="form-control" />
+                                <span asp-validation-for="AccountId" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Image (optional)</label>
+                                @if (!string.IsNullOrEmpty(Model.Image))
+                                {
+                                    <div class="mb-2">
+                                        <img src="@Model.Image" alt="Voucher Image" style="height: 80px; object-fit: cover;" class="img-thumbnail" />
+                                    </div>
+                                }
+                                <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                            </div>
+                            <button type="submit" class="btn btn-success">Save Changes</button>
+                            <a href="/Admin/MainPage?tab=VoucherMg" class="btn btn-secondary ms-2">Cancel</a>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+} 

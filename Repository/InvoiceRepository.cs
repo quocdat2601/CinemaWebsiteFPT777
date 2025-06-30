@@ -103,5 +103,15 @@ namespace MovieTheater.Repository
             _context.Invoices.Update(invoice);
             await _context.SaveChangesAsync();
         }
+
+        public void Update(Invoice invoice)
+        {
+            _context.Entry(invoice).State = EntityState.Modified;
+        }
+
+        public void Save()
+        {
+            _context.SaveChanges();
+        }
     }
 }

@@ -4,6 +4,14 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Service
 {
@@ -15,9 +23,11 @@ namespace MovieTheater.Service
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly EmailService _emailService;
         private readonly ILogger<AccountService> _logger;
-        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
+        private static readonly ConcurrentDictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
+        private static readonly ConcurrentDictionary<string, string> _pendingRankNotifications = new();
+        private readonly MovieTheaterContext _context;
 
-        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository, IHttpContextAccessor httpContextAccessor, EmailService emailService, ILogger<AccountService> logger)
+        public AccountService(IAccountRepository repository, IEmployeeRepository employeeRepository, IMemberRepository memberRepository, IHttpContextAccessor httpContextAccessor, EmailService emailService, ILogger<AccountService> logger, MovieTheaterContext context)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
@@ -25,6 +35,7 @@ namespace MovieTheater.Service
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
             _logger = logger;
+            _context = context;
         }
 
         public bool Register(RegisterViewModel model)
@@ -50,7 +61,7 @@ namespace MovieTheater.Service
                 RegisterDate = DateOnly.FromDateTime(DateTime.Now),
                 Status = 1,
                 RoleId = model.RoleId, // 
-                Image = model.Image
+                Image = string.IsNullOrEmpty(model.Image) ? "/image/profile.jpg" : model.Image
             };
 
             _repository.Add(account);
@@ -58,9 +69,18 @@ namespace MovieTheater.Service
 
             if (account.RoleId == 3) // Member
             {
+                // Set initial rank (Bronze)
+                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
+                if (bronzeRank != null)
+                {
+                    account.RankId = bronzeRank.RankId;
+                    _context.SaveChanges();
+                }
+
                 _memberRepository.Add(new Member
                 {
                     Score = 0,
+                    TotalPoints = 0,
                     AccountId = account.AccountId
                 });
                 _memberRepository.Save();
@@ -88,7 +108,7 @@ namespace MovieTheater.Service
                 var duplicate = _repository.GetByUsername(model.Username);
                 if (duplicate != null)
                 {
-                    throw new Exception("Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
+                    throw new Exception("Username already exists. Please choose a different one.");
                 }
             }
 
@@ -111,8 +131,21 @@ namespace MovieTheater.Service
                 account.Status = model.Status;
             }
 
-            if (!string.IsNullOrEmpty(model.Image))
+            if (model.ImageFile != null && model.ImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    model.ImageFile.CopyTo(stream);
+                }
+                account.Image = $"/images/avatars/{uniqueFileName}";
+            }
+            else if (!string.IsNullOrEmpty(model.Image) && model.ImageFile == null)
+            {
                 account.Image = model.Image;
+            }
 
             _repository.Update(account);
             _repository.Save();
@@ -140,7 +173,7 @@ namespace MovieTheater.Service
         //    }
         //}
 
-        //KIỂM TRA ACCOUNT NULL TRƯỚC KHI DÙNG
+        //CHECK ACCOUNT NULL BEFORE USING
         public bool Authenticate(string username, string password, out Account? account)
         {
             account = _repository.Authenticate(username);
@@ -177,13 +210,6 @@ namespace MovieTheater.Service
             if (account == null)
                 return null;
 
-            //CHECK SCORE USER
-            //var member = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId);
-            //int score = member?.Score ?? 0;
-
-            //_logger.LogInformation("User {UserId} - FullName: {FullName} - Score: {Score}", account.AccountId, account.FullName, score);
-
-
             bool isGoogleAccount = account.Password.IsNullOrEmpty();
 
             return new ProfileUpdateViewModel
@@ -199,7 +225,8 @@ namespace MovieTheater.Service
                 PhoneNumber = account.PhoneNumber ?? string.Empty,
                 Password = account.Password ?? string.Empty,
                 IsGoogleAccount = isGoogleAccount,
-                Score = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0
+                Score = account.Members.FirstOrDefault(m => m.AccountId == account.AccountId)?.Score ?? 0,
+                Image = account.Image
             };
         }
         public bool VerifyCurrentPassword(string username, string currentPassword)
@@ -317,17 +344,17 @@ namespace MovieTheater.Service
 
             if (DateTime.UtcNow > otpData.Expiry)
             {
-                _otpStore.Remove(accountId);
+                _otpStore.TryRemove(accountId, out _);
                 return false;
             }
 
-            _logger.LogInformation($"[VerifyOtp] accountId={accountId}, otp={otp}");
+            _logger.LogInformation($"[VerifyOtp] accountId={{accountId}}, otp={{otp}}", accountId, otp);
             return otpData.Otp == otp;
         }
 
         public void ClearOtp(string accountId)
         {
-            _otpStore.Remove(accountId);
+            _otpStore.TryRemove(accountId, out _);
         }
         public bool GetByUsername(string username)
         {
@@ -339,9 +366,84 @@ namespace MovieTheater.Service
             return _repository.GetById(id);
         }
 
-        public async Task DeductScoreAsync(string userId, int points)
+        public async Task DeductScoreAsync(string userId, int points, bool deductFromTotalPoints = false)
         {
-            await _repository.DeductScoreAsync(userId, points);
+            var account = _repository.GetById(userId);
+            if (account == null) return;
+            var member = account.Members.FirstOrDefault();
+            if (member != null && member.Score >= points)
+            {
+                member.Score -= points;
+                if (deductFromTotalPoints)
+                {
+                    member.TotalPoints -= points; // Only deduct from lifetime points if requested (e.g., on cancel)
+                    if (member.TotalPoints < 0) member.TotalPoints = 0; // Prevent negative
+                }
+                _memberRepository.Update(member);
+                _memberRepository.Save();
+                CheckAndUpgradeRank(userId); // This will handle both upgrades and downgrades
+            }
+        }
+
+        public async Task AddScoreAsync(string userId, int points, bool addToTotalPoints = true)
+        {
+            var account = _repository.GetById(userId);
+            if (account == null) return;
+            var member = account.Members.FirstOrDefault();
+            if (member != null)
+            {
+                member.Score += points;
+                if (addToTotalPoints)
+                {
+                    member.TotalPoints += points;
+                }
+                _memberRepository.Update(member);
+                _memberRepository.Save();
+
+                // Check and upgrade rank immediately after points are added
+                CheckAndUpgradeRank(userId);
+            }
+        }
+
+        public string GetAndClearRankUpgradeNotification(string accountId)
+        {
+            if (_pendingRankNotifications.TryRemove(accountId, out var message))
+            {
+                return message;
+            }
+            return null;
+        }
+
+        public void CheckAndUpgradeRank(string accountId)
+        {
+            var member = _context.Members
+                .Include(m => m.Account)
+                .ThenInclude(a => a.Rank)
+                .FirstOrDefault(m => m.AccountId == accountId);
+
+            if (member?.Account == null) return;
+
+            var newRank = _context.Ranks
+                .Where(r => r.RequiredPoints <= member.TotalPoints)
+                .OrderByDescending(r => r.RequiredPoints)
+                .FirstOrDefault();
+
+            if (newRank != null && member.Account.RankId != newRank.RankId)
+            {
+                var oldRankName = member.Account.Rank?.RankName ?? "Not Ranked";
+                member.Account.RankId = newRank.RankId;
+                _context.SaveChanges();
+
+                var memberMessage = $"Congratulations! You've been upgraded to {newRank.RankName} rank!";
+                _pendingRankNotifications[accountId] = memberMessage;
+
+                var httpContext = _httpContextAccessor.HttpContext;
+                if (httpContext != null && httpContext.User.IsInRole("Admin"))
+                {
+                    var adminMessage = $"Member {member.Account.FullName} has been upgraded to {newRank.RankName} rank!";
+                    httpContext.Session.SetString("RankUpToastMessage", adminMessage);
+                }
+            }
         }
     }
 }

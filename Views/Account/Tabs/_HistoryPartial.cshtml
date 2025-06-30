@@ -26,7 +26,7 @@
                         <td>@booking.Seat</td>
                         <td class="text-end">@booking.TotalMoney?.ToString("N0") VND</td>
                         <td>
-                            @if (booking.Status == 1)
+                            @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed)
                             {
                                 <span class="badge bg-success">Completed</span>
                             }
@@ -37,7 +37,7 @@
                         </td>
                         <td>
                             <div class="btn-group">
-                                <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId" 
+                                <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId"
                                    class="btn btn-sm btn-info">
                                     <i class="fas fa-info-circle"></i> Details
                                 </a>

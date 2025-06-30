@@ -29,6 +29,7 @@ namespace MovieTheater.Controllers
             _accountRepository = accountRepository;
             _memberRepository = memberRepository;
             _jwtService = jwtService;
+            _context = context;
         }
 
         [HttpGet]
@@ -63,6 +64,8 @@ namespace MovieTheater.Controllers
 
             if (user == null)
             {
+                // Set initial rank (Bronze)
+                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
                 user = new Account
                 {
                     Email = email,
@@ -71,25 +74,28 @@ namespace MovieTheater.Controllers
                     RoleId = 3,
                     Status = 1,
                     RegisterDate = DateOnly.FromDateTime(DateTime.Now),
-                    Image = picture,
-                    Password = null // Đăng nhập Google thì Password để null
+                    Image = !string.IsNullOrEmpty(picture) ? picture : "/image/profile.jpg",
+                    Password = null, // Set Password to null for Google login
+                    RankId = bronzeRank?.RankId // Always set the lowest rank if available
                 };
+
                 _accountRepository.Add(user);
                 _accountRepository.Save();
                 _memberRepository.Add(new Member
                 {
                     Score = 0,
+                    TotalPoints = 0,
                     AccountId = user.AccountId
                 });
                 _memberRepository.Save();
             }
 
-            // Sau khi thêm user mới (nếu có)
-            user = _accountRepository.GetAccountByEmail(email); // lấy lại user mới nhất
+            // After adding new user (if any)
+            user = _accountRepository.GetAccountByEmail(email); // get the latest user
 
-            // Log các trường thông tin để debug
+            // Log fields for debugging
             _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
-            // Kiểm tra thiếu thông tin
+            // Check for missing information
             bool missingInfo =
                 !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
                 string.IsNullOrWhiteSpace(user.Gender) ||
@@ -130,6 +136,12 @@ namespace MovieTheater.Controllers
 
             // Sign in with cookie authentication - match normal login flow
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // Check and update rank
+            if (user.RoleId == 3) // Member
+            {
+                _service.CheckAndUpgradeRank(user.AccountId);
+            }
 
             // Check if it's the first time login and redirect to profile update
             if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
@@ -286,20 +298,19 @@ namespace MovieTheater.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", user.Status.ToString()),
-                new Claim("Email", user.Email)
+                new Claim("Status", user.Status.ToString())
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
+
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
-
-            // Store the token in a cookie
+            
             Response.Cookies.Append("JwtToken", token, new CookieOptions
             {
                 HttpOnly = true,
@@ -320,7 +331,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("Index", "Home");
             }
         }
 
@@ -362,7 +373,8 @@ namespace MovieTheater.Controllers
 
             if (status.HasValue)
             {
-                query = query.Where(i => i.Status == status);
+                var statusEnum = (MovieTheater.Models.InvoiceStatus?)status;
+                query = query.Where(i => i.Status == statusEnum);
             }
 
             var bookings = query

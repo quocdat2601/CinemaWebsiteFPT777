@@ -1,4 +1,4 @@
-@using Newtonsoft.Json
+﻿@using Newtonsoft.Json
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
 @{
     ViewBag.Title = "Confirm Ticket Information (Admin)";
@@ -77,7 +77,7 @@
 
 <div class="container mt-4">
     <div class="text-start p-3">
-        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
+        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
     <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
     <div class="card shadow p-4">
@@ -115,23 +115,37 @@
                     <tr>
                         <td>@seat.SeatName</td>
                         <td>@seat.SeatType</td>
-                        <td>@seat.Price.ToString("N0") VND</td>
+                        <td>
+                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                            {
+                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                           
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                            }
+                            else
+                            {
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p class="text-end"><strong>Total Price:</strong> @Model.BookingDetails.TotalPrice.ToString("N0") VND</p>
-        <hr />
-        <!-- AC-02: Member lookup textbox -->
-        <div class="mb-3">
-            <label for="memberInput" class="soft-label"><strong>Member ID / Identity Card: *</strong></label>
-            <div class="input-group member-input-group">
-                <input type="text" id="memberInput" name="MemberIdInput" class="form-control" value="@Model.MemberIdInput" required />
-                <button type="button" id="checkMemberBtn" class="btn btn-primary">Check</button>
-            </div>
-            <div class="alert alert-info mt-2" id="memberMessage" style="display:none;"></div>
+        <div class="text-end mb-2">
+            <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
+                @Model.BookingDetails.SelectedSeats.Sum(s => s.Price).ToString("N0") VND
+            </span>
+            <span id="discountedTotal" style="display:none;"></span>
+            <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
+            <div id="pointEarningPreview" class="text-muted" style="font-size: 0.95em;"></div>
+            <div id="pointSavings" class="text-success" style="font-size: 0.95em;"></div>
         </div>
-        <!-- AC-03: Member info if found -->
+        <hr />
+        <!-- Member selection UI -->
+        <div class="mb-3">
+            <label class="soft-label"><strong>Select Member: *</strong></label>
+            <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
+        </div>
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
             <div class="section-title">Member Information</div>
@@ -152,11 +166,17 @@
                     <label for="memberScore" class="soft-label">Member Score</label>
                     <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
                 </div>
+                <div class="form-group mt-3">
+                    <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
+                    <div id="selectedVoucherInfo" class="mt-2 text-success"></div>
+                    <input type="hidden" id="selectedVoucherId" />
+                </div>
             </div>
             <div class="mb-3 mt-3">
-                <label for="ticketsToConvert" class="soft-label"><strong>Number of tickets to convert using score:</strong></label>
-                <input type="number" id="ticketsToConvert" class="form-control" min="0" max="@Model.BookingDetails.SelectedSeats.Count" value="0" />
-                <div id="scoreStatus" class="mt-2"></div>
+                <label for="useScore" class="soft-label"><strong>Points to use (1 point = 1,000 VND):</strong></label>
+                <input type="number" id="useScore" class="form-control" min="0" value="0" style="width: 120px; display: inline-block;" />
+                <div class="text-muted mt-1">Max usable: <span id="maxUsablePoints">(calculated)</span> | <span id="pointsEarnedPreview" class="text-success">You will earn 0 points from this transaction</span></div>
+                <div id="pointValidation" class="text-danger" style="font-size: 0.95em;"></div>
             </div>
         </div>
         <div class="text-center mt-4">
@@ -164,65 +184,163 @@
         </div>
     </div>
 </div>
+
+<!-- Move the modal HTML to the end of the file, outside the main content -->
+
+<!-- Member Picker Modal -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="memberModalLabel">Select a Member</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="memberSearch" class="form-control mb-3" placeholder="Search by name, phone, or email..." />
+        <div style="max-height: 350px; overflow-y: auto;">
+          <table class="table table-bordered table-hover" id="memberTable">
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Full Name</th>
+                <th>Identity Card</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Members will be loaded here by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Voucher Picker Modal -->
+<div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="voucherModalLabel">My Vouchers</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row" id="voucherListContainer">
+          <!-- Voucher cards will load here -->
+        </div>
+        <div class="row mt-2">
+          <div class="col-12 text-center">
+            <button type="button" class="btn btn-outline-secondary" id="clearVoucherBtn">Clear Voucher</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Promotion Picker Modal -->
+<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="promotionModalLabel">All Promotions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Promotions will be loaded here by JS as cards -->
+        </div>
+        <div class="row mt-2">
+          <div class="col-12 text-center">
+            <button type="button" class="btn btn-outline-secondary" id="clearPromotionBtn">Clear Promotion</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // AC-02: Member Check Button Click
-            $('#checkMemberBtn').click(function () {
-                var memberInput = $('#memberInput').val();
-                if (memberInput) {
-                    $.ajax({
-                        url: '@Url.Action("CheckMemberDetails", "Booking")',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ MemberInput: memberInput }),
-                        success: function (response) {
-                            if (response.success) {
-                                $('#memberId').val(response.memberId);
-                                $('#memberFullName').val(response.fullName);
-                                $('#memberIdentityCard').val(response.identityCard);
-                                $('#memberPhoneNumber').val(response.phoneNumber);
-                                $('#memberScore').val(response.memberScore);
-                                $('#memberDetails').show();
-                                $('#memberMessage').hide();
-                                $('#confirmTicketAdminBtn').prop('disabled', false);
-                                $('#ticketsToConvert').val(0);
-                                $('#scoreStatus').html('');
-                            } else {
-                                $('#memberDetails').hide();
-                                $('#memberMessage').text(response.message).show();
-                                $('#confirmTicketAdminBtn').prop('disabled', true);
-                                $('#ticketsToConvert').val(0);
-                                $('#scoreStatus').html('');
-                                // Clear member info fields
-                                $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error("AJAX Error:", error);
-                            $('#memberDetails').hide();
-                            $('#memberMessage').text("An error occurred while checking member details.").show();
-                            $('#confirmTicketAdminBtn').prop('disabled', true);
-                            $('#ticketsToConvert').val(0);
-                            $('#scoreStatus').html('');
-                            // Clear member info fields
-                            $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
-                        }
-                    });
-                } else {
-                    $('#memberDetails').hide();
-                    $('#memberMessage').text("Please enter a Member ID or Identity Card.").show();
-                    $('#confirmTicketAdminBtn').prop('disabled', true);
-                    $('#ticketsToConvert').val(0);
-                    $('#scoreStatus').html('');
-                    // Clear member info fields
-                    $('#memberId, #memberFullName, #memberIdentityCard, #memberPhoneNumber, #memberScore').val('');
+            // Open modal using Bootstrap 5 API
+            let memberModalInstance = null;
+            $('#openMemberModalBtn').click(function () {
+                if (!memberModalInstance) {
+                    memberModalInstance = new bootstrap.Modal(document.getElementById('memberModal'));
                 }
+                memberModalInstance.show();
+                loadMembers();
             });
+
+            // Load all members into the modal table
+            function loadMembers() {
+                $.getJSON('/Booking/GetAllMembers', function (members) {
+                    renderMemberTable(members);
+                    $('#memberSearch').off('input').on('input', function () {
+                        const keyword = $(this).val().toLowerCase().trim();
+                        const filtered = members.filter(m =>
+                            (m.account.fullName && m.account.fullName.toLowerCase().includes(keyword)) ||
+                            (m.account.email && m.account.email.toLowerCase().includes(keyword)) ||
+                            (m.account.phoneNumber && m.account.phoneNumber.toLowerCase().includes(keyword)) ||
+                            (m.account.identityCard && m.account.identityCard.toLowerCase().includes(keyword))
+                        );
+                        renderMemberTable(filtered);
+                    });
+                });
+            }
+
+            function renderMemberTable(members) {
+                const tbody = $('#memberTable tbody');
+                tbody.empty();
+                if (members.length === 0) {
+                    tbody.append('<tr><td colspan="6" class="text-center">No members found.</td></tr>');
+                    return;
+                }
+                members.forEach(m => {
+                    const row = `<tr>
+                        <td>${m.memberId}</td>
+                        <td>${m.account.fullName || ''}</td>
+                        <td>${m.account.identityCard || ''}</td>
+                        <td>${m.account.email || ''}</td>
+                        <td>${m.account.phoneNumber || ''}</td>
+                        <td><button type="button" class="btn btn-sm btn-success select-member-btn" data-member='${JSON.stringify(m)}'>Select</button></td>
+                    </tr>`;
+                    tbody.append(row);
+                });
+                // Attach select event
+                $('.select-member-btn').off('click').on('click', function () {
+                    const member = JSON.parse($(this).attr('data-member'));
+                    fillMemberInfo(member);
+                    if (memberModalInstance) memberModalInstance.hide();
+                });
+            }
+
+            function fillMemberInfo(member) {
+                $('#memberId').val(member.memberId);
+                $('#memberFullName').val(member.account.fullName);
+                $('#memberIdentityCard').val(member.account.identityCard);
+                $('#memberPhoneNumber').val(member.account.phoneNumber);
+                $('#memberScore').val(member.score);
+                $('#memberDetails').show();
+                $('#confirmTicketAdminBtn').prop('disabled', false);
+                updateMaxUsablePoints();
+                onMemberSelected(member.memberId);
+                selectedAccountId = member.account.accountId;
+                $('#openVoucherModalBtn').prop('disabled', false);
+                // Reset voucher selection when member changes
+                selectedVoucher = null;
+                $('#selectedVoucherInfo').text('');
+                $('#selectedVoucherId').val('');
+                $('.voucher-card').removeClass('selected');
+                updatePriceAll();
+            }
 
             // Confirm Ticket Admin Button Click
             $('#confirmTicketAdminBtn').click(function () {
-                // Ensure SelectedSeats uses PascalCase property names to match backend model
                 var model = {
                     BookingDetails: {
                         MovieId: '@Model.BookingDetails.MovieId',
@@ -230,7 +348,6 @@
                         CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
-                        // This will output PascalCase property names as required by backend
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice,
                         PricePerTicket: @Model.BookingDetails.PricePerTicket,
@@ -242,7 +359,8 @@
                     MemberIdentityCard: $('#memberIdentityCard').val(),
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
-                    TicketsToConvert: parseInt($('#ticketsToConvert').val()) || 0,
+                    UsedScore: parseInt($('#useScore').val()) || 0,
+                    SelectedVoucherId: $('#selectedVoucherId').val()
                     MovieShowId: @Model.MovieShowId
                 };
 
@@ -265,43 +383,196 @@
                 });
             });
 
-            // Real-time score check when number of tickets to convert changes
-            $('#ticketsToConvert').on('input', function () {
-                var ticketsToConvert = parseInt($(this).val()) || 0;
-                var ticketPrices = [];
-                @foreach (var seat in Model.BookingDetails.SelectedSeats)
-                {
-                    @:ticketPrices.push(@seat.Price);
-                }
+            // Remove ticketsToConvert logic, add useScore logic
+            function updateMaxUsablePoints() {
+                // This should be calculated from backend, but for now, estimate:
+                var totalPrice = @Model.BookingDetails.TotalPrice;
                 var memberScore = parseInt($('#memberScore').val()) || 0;
-                if (ticketsToConvert > 0) {
-                    $.ajax({
-                        url: '/Booking/CheckScoreForConversion',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({
-                            TicketPrices: ticketPrices,
-                            TicketsToConvert: ticketsToConvert,
-                            MemberScore: memberScore
-                        }),
-                        success: function (response) {
-                            if (response.success) {
-                                $('#scoreStatus').html('<span class="text-success">Score needed: ' + response.scoreNeeded + '. Tickets will be converted.</span>');
-                                $('#confirmTicketAdminBtn').prop('disabled', false);
-                            } else {
-                                $('#scoreStatus').html('<span class="text-danger">' + response.message + ' (Score needed: ' + response.scoreNeeded + ')</span>');
-                                $('#confirmTicketAdminBtn').prop('disabled', true);
-                            }
-                        },
-                        error: function () {
-                            $('#scoreStatus').html('<span class="text-danger">Error checking score.</span>');
-                            $('#confirmTicketAdminBtn').prop('disabled', true);
-                        }
-                    });
+                var maxPoints = Math.floor((totalPrice * 0.9) / 1000);
+                maxPoints = Math.min(maxPoints, memberScore);
+                $('#maxUsablePoints').text(maxPoints);
+                return maxPoints;
+            }
+            $('#useScore').on('input', function () {
+                var used = parseInt($(this).val()) || 0;
+                var maxPoints = updateMaxUsablePoints();
+                var valid = true;
+                var msg = '';
+                if (used == 0) {
+                    msg = '';
+                    valid = true;   
+                } else if (used < 20) {
+                    msg = 'Minimum 20 points required.';
+                    valid = false;
+                } else if (used > maxPoints) {
+                    msg = 'You can use up to ' + maxPoints + ' points (90% of order, or your balance).';
+                    valid = false;
+                }
+                if (!valid) {
+                    $('#scoreStatus').html('<span class="text-danger">' + msg + '</span>');
+                    $('#confirmTicketAdminBtn').prop('disabled', true);
                 } else {
                     $('#scoreStatus').html('');
                     $('#confirmTicketAdminBtn').prop('disabled', false);
                 }
+            });
+            // Set initial value
+            $('#useScore').val(0);
+
+            // Track current earning rate and discount percent
+            var currentEarningRate = 0;
+            var currentDiscountPercent = 0;
+            let selectedVoucher = null;
+            let selectedAccountId = null;
+            function updatePriceAll() {
+                var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
+                // Áp dụng rank benefit trước
+                var discountPercent = currentDiscountPercent || 0;
+                var discountAmount = 0;
+                if (originalTotal > 0) {
+                    discountAmount = Math.round(originalTotal * (discountPercent / 100));
+                }
+                var afterRank = originalTotal - discountAmount;
+                if (afterRank < 0) afterRank = 0;
+
+                // Sau đó mới áp dụng voucher
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterRank - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+
+                // Điểm
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var pointValue = 1000;
+                var savings = useScore * pointValue;
+                var finalTotal = afterVoucher - savings;
+                if (finalTotal < 0) finalTotal = 0;
+
+                // Update hiển thị giá
+                if (voucherAmount > 0 || discountAmount > 0 || useScore > 0) {
+                    $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
+                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
+                } else {
+                    $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
+                    $('#discountedTotal').hide();
+                }
+
+                // Hiển thị voucher
+                let discountInfoHtml = '';
+                // Hiển thị rank discount
+                discountInfoHtml +=
+                    discountPercent > 0 && originalTotal > 0
+                    ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`
+                    : 'Rank discount: 0% (-0 VND)';
+                if (voucherAmount > 0) {
+                    discountInfoHtml += `<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`;
+                }
+                $('#discountInfo').html(discountInfoHtml);
+
+                // Savings (chỉ khi dùng điểm)
+                if (useScore > 0) {
+                    $('#pointSavings').text(`Using ${useScore} points saves you ${savings.toLocaleString()} VND`);
+                } else {
+                    $('#pointSavings').text('');
+                }
+
+                // Tính điểm thưởng
+                var earningRate = currentEarningRate || 0;
+                var pointsToEarn = Math.round((finalTotal) * earningRate / 100 / pointValue);
+                $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`).addClass('text-success');
+
+                // Validate điểm
+                var memberScore = parseInt($('#memberScore').val()) || 0;
+                var maxUsablePoints = Math.floor((afterVoucher * 0.9) / pointValue);
+                maxUsablePoints = Math.min(maxUsablePoints, memberScore);
+                $('#maxUsablePoints').text(maxUsablePoints);
+                var validationMsg = '';
+                var valid = true;
+                if (useScore === 0) {
+                    validationMsg = '';
+                    valid = true;
+                } else if (useScore < 20) { validationMsg = 'Minimum 20 points required.'; valid = false; }
+                else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
+                $('#pointValidation').text(validationMsg);
+                $('#confirmTicketAdminBtn').prop('disabled', !valid);
+            }
+
+            function onMemberSelected(memberId) {
+                $.getJSON('/Booking/GetMemberDiscount', { memberId: memberId }, function (data) {
+                    currentDiscountPercent = data.discountPercent || 0;
+                    currentEarningRate = data.earningRate || 0;
+                    updatePriceAll();
+                });
+            }
+            // On page load, show initial state
+            updatePriceAll();
+
+            // VOUCHER PICKER LOGIC
+            let voucherModalInstance = null;
+            $('#openVoucherModalBtn').click(function () {
+                if (!selectedAccountId) {
+                    alert('Please select a member first!');
+                    return;
+                }
+                if (!voucherModalInstance) {
+                    voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
+                }
+                loadVouchers(selectedAccountId);
+                voucherModalInstance.show();
+            });
+            $('#clearVoucherBtn').click(function () {
+                selectedVoucher = null;
+                $('#selectedVoucherInfo').text('');
+                $('#selectedVoucherId').val('');
+                $('.voucher-card').removeClass('selected');
+                updatePriceAll();
+                if (voucherModalInstance) voucherModalInstance.hide();
+            });
+            function loadVouchers(accountId) {
+                $.ajax({
+                    url: '/Voucher/GetAvailableVouchers?accountId=' + encodeURIComponent(accountId),
+                    method: 'GET',
+                    success: function (data) {
+                        let html = '';
+                        if (data.length === 0) {
+                            html = '<div class="col-12 text-center"><p class="text-muted">No available vouchers found.</p></div>';
+                        } else {
+                            data.forEach(v => {
+                                html += `
+                                <div class="col-md-4 mb-3">
+                                  <div class="card voucher-card d-flex flex-column align-items-center" data-id="${v.id}" data-value="${v.value}">
+                                    <img src="${v.image ? v.image : '/images/vouchers/voucher.jpg'}" class="voucher-img-top mt-3 mb-2" alt="Voucher Image" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                    <div class="card-body text-center p-2">
+                                      <h5 class="card-title mb-1" style="color:#007bff;font-weight:600;">${v.code}</h5>
+                                      <p class="card-text mb-1">Value: <span style="font-weight:600;">${v.value.toLocaleString()} VND</span></p>
+                                      <p class="card-text mb-1">Expires: <span style="font-size:0.95em;">${v.expirationDate}</span></p>
+                                    </div>
+                                  </div>
+                                </div>`;
+                            });
+                        }
+                        $('#voucherListContainer').html(html);
+                        $('.voucher-card').click(function () {
+                            $('.voucher-card').removeClass('selected');
+                            $(this).addClass('selected');
+                            selectedVoucher = {
+                                id: $(this).data('id'),
+                                value: $(this).data('value')
+                            };
+                            $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
+                            $('#selectedVoucherId').val(selectedVoucher.id);
+                            updatePriceAll();
+                            if (voucherModalInstance) voucherModalInstance.hide();
+                        });
+                    },
+                    error: function() {
+                        $('#voucherListContainer').html('<div class="col-12 text-center"><p class="text-danger">Error loading vouchers.</p></div>');
+                    }
+                });
+            }
+
+            // Update price and point info when points are entered or member is selected
+            $('#useScore').on('input', function () {
+                updatePriceAll();
             });
         });
     </script>

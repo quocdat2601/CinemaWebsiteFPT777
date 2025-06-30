@@ -1,2 +1,65 @@
-﻿<h3>This is your voucher</h3>
-<p>You got nothing!!!</p>
+﻿@using MovieTheater.Models;
+@model IEnumerable<Voucher>
+@{
+    ViewData["Title"] = "My Vouchers";
+}
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <h1 class="display-4">My Vouchers</h1>
+        <p class="lead">All your available and used vouchers are listed below.</p>
+    </div>
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center" role="alert">
+            <h4 class="alert-heading">No Vouchers</h4>
+            <p>You don't have any vouchers yet. Earn vouchers by booking and cancelling tickets!</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var v in Model)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        @if (!string.IsNullOrEmpty(v.Image))
+                        {
+                            <img src="@v.Image" class="card-img-top" alt="Voucher Image" style="height:180px;object-fit:cover;">
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center bg-light" style="height:180px;">
+                                <i class="fas fa-ticket-alt fa-4x text-muted"></i>
+                            </div>
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">Voucher Code: <span class="fw-bold">@v.Code</span></h5>
+                            <p class="mb-1">Value: <span class="fw-bold text-success">@v.Value.ToString("N0") VND</span></p>
+                            <p class="mb-1">Created: @v.CreatedDate.ToString("dd/MM/yyyy")</p>
+                            <p class="mb-1">Expires: @v.ExpiryDate.ToString("dd/MM/yyyy")</p>
+                            <p class="mb-1">Status: 
+                                @if (v.IsUsed == true)
+                                {
+                                    <span class="badge bg-secondary">Used</span>
+                                }
+                                else if (v.ExpiryDate < DateTime.Now)
+                                {
+                                    <span class="badge bg-danger">Expired</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<style>
+    .card-title span.fw-bold {
+        color: #007bff;
+    }
+</style>

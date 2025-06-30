@@ -18,7 +18,18 @@
     if (string.IsNullOrEmpty(returnUrl))
     {
         // Default to Booking Management if no ReturnUrl is provided
-        returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+        if (User.IsInRole("Admin"))
+        {
+            returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+        }
+        else if (User.IsInRole("Employee"))
+        {
+            returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+        }
+        else
+        {
+            returnUrl = Url.Action("Index", "Home");
+        }
     }
 }
 <!-- Flatpickr CSS & JS -->

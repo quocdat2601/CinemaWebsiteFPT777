@@ -16,6 +16,11 @@
                 <a class="nav-link admin-tab" data-tab="ShowroomMg" href="javascript:void(0)">Showroom Management</a>
                 <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
                 <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
+                <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
+                <a class="nav-link admin-tab" data-tab="VoucherMg" href="javascript:void(0)">Voucher Management</a>
+                <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;">
+                    <i class="fas fa-qrcode me-2"></i>QR Scanner
+                </a>
             </ul>
         </div>
         <div class="col-md-9 col-lg-10 p-4">
@@ -27,14 +32,14 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function loadTab(tabName, keyword = '') {
+    function loadTab(tabName, keyword = '', category = '', status = '') {
         $('.admin-tab').removeClass('active');
         $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
         const params = new URLSearchParams({ tab: tabName });
-        if (keyword.trim()) {
-            params.append('keyword', keyword);
-        }
+        if (keyword && keyword.trim()) params.append('keyword', keyword);
+        if (category) params.append('categoryFilter', category);
+        if (status) params.append('statusFilter', status);
 
         $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function(response, status) {
             if (status === 'error') {
@@ -90,15 +95,22 @@
         }
     };
 
-        function searchEmployees() {
-            const keyword = document.getElementById('searchKeyword')?.value ?? '';
-            loadTab('EmployeeMg', keyword);
-        }
+    function searchEmployees() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('EmployeeMg', keyword);
+    }
 
-        function searchBooking() {
-            const keyword = document.getElementById('searchKeyword')?.value ?? '';
-            loadTab('BookingMg', keyword);
-        }
+    function searchBooking() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('BookingMg', keyword);
+    }
+
+    function searchFood() {
+        const keyword = document.getElementById('searchKeyword').value;
+        const category = document.getElementById('categoryFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        loadTab('FoodMg', keyword, category, status);
+    }
 
     // Initialize the page
     $(document).ready(function () {

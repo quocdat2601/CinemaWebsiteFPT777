@@ -43,7 +43,18 @@
                     <tr>
                         <td>@seat.SeatName</td>
                         <td>@seat.SeatType</td>
-                        <td>@seat.Price.ToString("N0") VND</td>
+                        <td>
+                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                            {
+                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                              
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                            }
+                            else
+                            {
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -52,21 +63,52 @@
         @* === Nhập Use Score & tổng tiền === *@
         <div class="row mt-4 align-items-center">
             <div class="col-md-6">
-                <label for="useScore" class="form-label"><strong>Use Score:</strong></label>
-                <input type="number" id="useScore" name="UseScore" class="form-control" min="0" max="@Model.CurrentScore" value="0" />
-                <small id="scoreMessage" class="text-danger fw-bold d-block"></small>
-                <small class="text-muted d-block">Use points to reduce the total price</small>
-
+                <div class="form-group">
+                    <label for="useScore"><strong>Points to use (1 point = 1,000 VND):</strong></label>
+                    <input asp-for="UseScore" type="number" class="form-control" id="useScore" min="0" value="0" />
+                    <div class="text-muted mt-1">Max usable: <span id="maxUsablePoints">(calculated)</span> | <span id="pointsEarnedPreview" class="text-success">You will earn 0 points from this transaction</span></div>
+                    <div id="pointValidation" class="text-danger mt-1"></div>
+                    <div id="pointSavings" class="text-success mt-1"></div>
+                </div>
+                <div class="form-group mt-3">
+                    <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
+                    <div id="selectedVoucherInfo" class="mt-2 text-success"></div>
+                </div>
             </div>
             <div class="col-md-6 text-end">
-                <p class="mb-1"><strong>Total Price:</strong></p>
-                <h4><span id="displayTotal">@Model.TotalPrice.ToString("N0")</span> VND</h4>
+                <table class="table table-borderless table-sm" style="max-width: 350px; margin-left: auto;">
+                    <tbody>
+                        <tr>
+                            <td class="text-start">Original Price:</td>
+                            <td><span id="originalTotal">@Model.Subtotal.ToString("N0") VND</span></td>
+                        </tr>
+                        <tr id="rankDiscountRow" style="display:none;">
+                            <td class="text-start">Rank discount:</td>
+                            <td id="rankDiscountDisplay"></td>
+                        </tr>
+                        <tr id="voucherDiscountRow" style="display:none;">
+                            <td class="text-start">Voucher discount:</td>
+                            <td id="voucherDiscountDisplay"></td>
+                        </tr>
+                        <tr id="promotionDiscountRow" style="display:none;">
+                            <td class="text-start">Promotion discount:</td>
+                            <td id="promotionDiscountDisplay"></td>
+                        </tr>
+                        <tr id="pointsUsedRow" style="display:none;">
+                            <td class="text-start">Points Used:</td>
+                            <td id="pointsUsedDisplay">-0 VND</td>
+                        </tr>
+                        <tr style="border-top: 1px solid #dee2e6;">
+                            <td class="text-start pt-2"><strong>Total Price:</strong></td>
+                            <td id="totalPriceDisplay" class="pt-2"><strong>@Model.TotalPrice.ToString("N0") VND</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <hr />
-        <form asp-action="Confirm" method="post">
-            @* Hidden fields *@
+        <form asp-action="Confirm" method="post" id="confirmForm">
             @Html.HiddenFor(m => m.MovieId)
             @Html.HiddenFor(m => m.MovieName)
             @Html.HiddenFor(m => m.CinemaRoomName)
@@ -79,9 +121,10 @@
             @Html.HiddenFor(m => m.PhoneNumber)
             @Html.HiddenFor(m => m.CurrentScore)
             @Html.HiddenFor(m => m.MovieShowId)
-
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
-
+            <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
+            <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
+            <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
             @for (int i = 0; i < Model.SelectedSeats.Count; i++)
             {
                 <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
@@ -89,12 +132,34 @@
                 <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
-
             <div class="text-center mt-4">
-                <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+                
+                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Confirm Booking</button>
             </div>
         </form>
     </div>
+</div>
+
+<!-- Voucher Picker Modal -->
+<div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="voucherModalLabel">My Vouchers</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row" id="voucherListContainer">
+          <!-- Voucher cards will load here -->
+        </div>
+        <div class="row mt-2">
+          <div class="col-12 text-center">
+            <button type="button" class="btn btn-outline-secondary" id="clearVoucherBtn">Clear Voucher</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -102,46 +167,238 @@
         opacity: 0.6;
         cursor: not-allowed;
     }
+    
+    .voucher-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #dee2e6;
+    }
+    
+    .voucher-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .voucher-card.selected {
+        border-color: #28a745;
+        background-color: #f8fff9;
+    }
 </style>
 
 <script>
-    const useScoreInput = document.getElementById("useScore");
-    const displayTotal = document.getElementById("displayTotal");
-    const totalPriceOriginal = @Model.TotalPrice;
-    const currentScore = @Model.CurrentScore;
-    const hiddenUseScore = document.getElementById("hiddenUseScore");
-    const scoreMessage = document.getElementById("scoreMessage");
-    const confirmBtn = document.getElementById("confirmBtn");
+    $(document).ready(function () {
+        // Values from server
+        var originalTotal = @Model.Subtotal;
+        var discountPercent = @Model.RankDiscountPercent;
+        var earningRate = @Model.EarningRate;
+        var currentScore = @Model.CurrentScore;
+        var pointValue = 1000;
 
-    useScoreInput.addEventListener("input", function () {
-        let used = parseInt(useScoreInput.value) || 0;
-        let valid = true;
+        let voucherModalInstance = null;
+        let selectedVoucher = null;
+        let selectedPromotion = null;
 
-        scoreMessage.textContent = "";
+        $('#openVoucherModalBtn').click(function () {
+            if (!voucherModalInstance) {
+                voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
+            }
+            loadVouchers();
+            voucherModalInstance.show();
+        });
 
-        if (used > currentScore) {
-            scoreMessage.textContent = "❌ You do not have enough points.";
-            valid = false;
-        } else if (used > totalPriceOriginal) {
-            scoreMessage.textContent = "❌ You cannot use more points than the total price.";
-            valid = false;
-        } else {
-            const moneyReduced = used.toLocaleString("en-US");
-            const newTotal = Math.max(0, totalPriceOriginal - used);
-            displayTotal.textContent = newTotal.toLocaleString("en-US");
-            scoreMessage.textContent = `✔ ${moneyReduced} points will reduce ${moneyReduced} VND.`;
-            hiddenUseScore.value = used;
+        $('#clearVoucherBtn').click(function () {
+            selectedVoucher = null;
+            $('#selectedVoucherInfo').text('');
+            $('.voucher-card').removeClass('selected');
+            updatePriceFlow();
+            if (voucherModalInstance) voucherModalInstance.hide();
+        });
+
+        // load vouchers via API
+        function loadVouchers() {
+            $.ajax({
+                url: '/Voucher/GetAvailableVouchers',
+                method: 'GET',
+                success: function (data) {
+                    let html = '';
+                    if (data.length === 0) {
+                        html = '<div class="col-12 text-center"><p class="text-muted">No available vouchers found.</p></div>';
+                    } else {
+                        data.forEach(v => {
+                            html += `
+                            <div class="col-md-4 mb-3">
+                              <div class="card voucher-card d-flex flex-column align-items-center" data-id="${v.id}" data-value="${v.value}">
+                                <img src="${v.image ? v.image : '/images/vouchers/voucher.jpg'}" class="voucher-img-top mt-3 mb-2" alt="Voucher Image" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                <div class="card-body text-center p-2">
+                                  <h5 class="card-title mb-1" style="color:#007bff;font-weight:600;">${v.code}</h5>
+                                  <p class="card-text mb-1">Value: <span style="font-weight:600;">${v.value.toLocaleString()} VND</span></p>
+                                  <p class="card-text mb-1">Expires: <span style="font-size:0.95em;">${v.expirationDate}</span></p>
+                                </div>
+                              </div>
+                            </div>`;
+                        });
+                    }
+                    $('#voucherListContainer').html(html);
+
+                    $('.voucher-card').click(function () {
+                        $('.voucher-card').removeClass('selected');
+                        $(this).addClass('selected');
+                        selectedVoucher = {
+                            id: $(this).data('id'),
+                            value: $(this).data('value')
+                        };
+                        $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
+                        updatePriceFlow();
+                        if (voucherModalInstance) voucherModalInstance.hide();
+                    });
+                },
+                error: function() {
+                    $('#voucherListContainer').html('<div class="col-12 text-center"><p class="text-danger">Error loading vouchers.</p></div>');
+                }
+            });
         }
 
-        if (!valid) {
-            displayTotal.textContent = totalPriceOriginal.toLocaleString("en-US");
-            hiddenUseScore.value = 0;
-            confirmBtn.disabled = true; // ❌ Không cho submit
-        } else {
-            confirmBtn.disabled = false; // ✅ Cho phép submit
+        function updateMaxUsablePoints(discountedTotal) {
+            var maxPoints = Math.floor((discountedTotal * 0.9) / pointValue);
+            maxPoints = Math.min(maxPoints, currentScore);
+            $('#maxUsablePoints').text(maxPoints);
+            return maxPoints;
         }
+
+        function updatePriceFlow() {
+            var originalTotal = @Model.Subtotal;
+
+            // apply rank benefit first
+            var rankDiscountPercent = @Model.RankDiscountPercent;
+            var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
+            var afterRank = originalTotal - rankDiscountAmount;
+            if (afterRank < 0) afterRank = 0;
+
+            // apply promotion next (placeholder for future implementation)
+            var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
+            var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
+            var afterPromo = afterRank - promoDiscountAmount;
+
+            // apply voucher after rank
+            var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+            var afterVoucher = afterPromo - voucherAmount;
+            if (afterVoucher < 0) afterVoucher = 0;
+
+            // apply points
+            var useScore = parseInt($('#useScore').val()) || 0;
+            var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
+            var valid = true;
+            var validationMsg = '';
+            
+            if (useScore === 0) {
+                validationMsg = '';
+                valid = true;
+            } else if (useScore < 20) {
+                validationMsg = 'Minimum 20 points required.';
+                valid = false;
+            } else if (useScore > maxUsablePoints) {
+                validationMsg = `You can use up to ${maxUsablePoints} points for this order.`;
+                valid = false;
+            }
+
+            var finalTotal = afterVoucher;
+            if (valid && useScore > 0) {
+                var pointsValue = useScore * pointValue;
+                finalTotal = afterVoucher - pointsValue;
+                if (finalTotal < 0) finalTotal = 0;
+            }
+
+            // Update UI
+            $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
+
+            // Rank discount row
+            if (rankDiscountPercent > 0) {
+                $('#rankDiscountRow').show();
+                $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${rankDiscountPercent}%)`);
+            } else {
+                $('#rankDiscountRow').hide();
+            }
+
+            // Voucher discount row
+            if (voucherAmount > 0) {
+                $('#voucherDiscountRow').show();
+                $('#voucherDiscountDisplay').text(`-${voucherAmount.toLocaleString()} VND`);
+            } else {
+                $('#voucherDiscountRow').hide();
+            }
+
+            // Promotion discount row (placeholder)
+            if (promotionPercent > 0) {
+                $('#promotionDiscountRow').show();
+                $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
+            } else {
+                $('#promotionDiscountRow').hide();
+            }
+
+            // Points used row
+            const pointsUsedRow = document.getElementById('pointsUsedRow');
+            const pointsUsedDisplay = document.getElementById('pointsUsedDisplay');
+            if (useScore > 0 && valid) {
+                pointsUsedDisplay.textContent = `-${(useScore * pointValue).toLocaleString()} VND`;
+                pointsUsedRow.style.display = '';
+            } else {
+                pointsUsedRow.style.display = 'none';
+            }
+
+            // Point earning preview
+            var pointsToEarn = 0;
+            if (valid) {
+                pointsToEarn = Math.round(finalTotal * earningRate / 100 / pointValue);
+            }
+            $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
+
+            // Savings
+            if (valid && useScore > 0) {
+                var savings = useScore * pointValue;
+                $('#pointSavings').text(`Using ${useScore} points saves you ${savings.toLocaleString()} VND`);
+            } else {
+                $('#pointSavings').text('');
+            }
+
+            // Validation
+            $('#pointValidation').text(validationMsg);
+            $('#confirmBtn').prop('disabled', !valid);
+            $('#hiddenUseScore').val(valid ? useScore : 0);
+            // Price display
+            if (discountPercent > 0) {
+                $('#originalTotal').css({'color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
+                if (valid && useScore > 0) {
+                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
+                } else {
+                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((discountedTotal).toLocaleString() + ' VND');
+                }
+            } else {
+                $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
+                $('#discountedTotal').hide();
+            }
+            $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
+         
+        }
+
+        $('#useScore').on('input', function () {
+            updatePriceFlow();
+        });
+
+        // Initial state
+        updatePriceFlow();
     });
 
-    // Đảm bảo trạng thái nút ban đầu là enable
-    confirmBtn.disabled = false;
+    function testSuccess() {
+        var useScoreInput = document.getElementById('useScore');
+        var hiddenUseScore = document.getElementById('hiddenUseScore');
+        var isTestSuccess = document.getElementById('isTestSuccess');
+        if (useScoreInput && hiddenUseScore) {
+            hiddenUseScore.value = useScoreInput.value || 0;
+        }
+        if (isTestSuccess) {
+            isTestSuccess.value = "true";
+        }
+        document.querySelector('form[method="post"]').submit();
+    }
 </script>

@@ -11,5 +11,7 @@ namespace MovieTheater.Repository
         Task<Invoice?> GetForCancelAsync(string invoiceId, string accountId);
         Task UpdateAsync(Invoice invoice);
         Task<IEnumerable<Invoice>> GetByDateRangeAsync(string accountId, DateTime? fromDate, DateTime? toDate);
+        void Update(Invoice invoice);
+        void Save();
     }
 }

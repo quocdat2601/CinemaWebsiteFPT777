@@ -67,7 +67,7 @@
                             <td>@booking.Seat</td>
                             <td class="text-end">@booking.TotalMoney?.ToString("N0") VND</td>
                             <td>
-                                @if (booking.Status == 1)
+                                @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed)
                                 {
                                     <span class="badge bg-success">Booked</span>
                                 }

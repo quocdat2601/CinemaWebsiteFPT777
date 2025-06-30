@@ -1,0 +1,74 @@
+@model IEnumerable<MovieTheater.Models.Voucher>
+
+<div class="text-center">
+    <h2>Voucher List</h2>
+    <div class="mb-3">
+        <a asp-action="AdminCreate" asp-controller="Voucher" class="btn btn-success">
+            <i class="fas fa-plus"></i> Create New Voucher
+        </a>
+    </div>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr class="text-center">
+            <th>ID</th>
+            <th>Image</th>
+            <th>Code</th>
+            <th>Account</th>
+            <th>Value</th>
+            <th>Expiry</th>
+            <th>Status</th>
+            <th style="width: 150px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var voucher in Model)
+        {
+            <tr>
+                <td class="text-center">@voucher.VoucherId</td>
+                <td class="text-center">
+                    @if (!string.IsNullOrEmpty(voucher.Image))
+                    {
+                        <img src="@voucher.Image" alt="Voucher Image" style="height: 50px; width: 50px; object-fit: cover;" class="img-thumbnail" />
+                    }
+                    else
+                    {
+                        <i class="fas fa-ticket-alt fa-2x text-muted"></i>
+                    }
+                </td>
+                <td class="text-center">@voucher.Code</td>
+                <td class="text-center">@voucher.AccountId</td>
+                <td class="text-center">@voucher.Value.ToString("N0") VND</td>
+                <td class="text-center">@voucher.ExpiryDate.ToString("dd/MM/yyyy")</td>
+                <td class="text-center">
+                    @if (voucher.IsUsed == true)
+                    {
+                        <span class="badge bg-secondary">Used</span>
+                    }
+                    else if (voucher.ExpiryDate < DateTime.Now)
+                    {
+                        <span class="badge bg-danger">Expired</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                </td>
+                <td class="text-center">
+                    <div class="btn-group" role="group">
+                        <a asp-action="AdminEdit" asp-controller="Voucher" asp-route-id="@voucher.VoucherId" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form asp-action="AdminDelete" asp-controller="Voucher" method="post" onsubmit="return confirm('Are you sure you want to delete this voucher?');" style="display: inline;">
+                            <input type="hidden" name="id" value="@voucher.VoucherId" />
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table> 
