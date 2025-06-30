@@ -16,10 +16,6 @@ namespace MovieTheater.ViewModels
         [Range(0, double.MaxValue, ErrorMessage = "Value must be greater than 0")]
         public decimal Value { get; set; }
 
-        [Required(ErrorMessage = "Remaining value is required")]
-        [Range(0, double.MaxValue, ErrorMessage = "Remaining value must be greater than or equal to 0")]
-        public decimal RemainingValue { get; set; }
-
         [Required(ErrorMessage = "Created date is required")]
         public DateTime CreatedDate { get; set; }
 

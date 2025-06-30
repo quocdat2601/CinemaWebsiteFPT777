@@ -36,4 +36,8 @@ public partial class Invoice
     public virtual Account? Account { get; set; }
 
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
+    public string? VoucherId { get; set; }
+    public virtual Voucher? Voucher { get; set; }
+
 }
+

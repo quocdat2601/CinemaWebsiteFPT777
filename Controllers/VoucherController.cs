@@ -52,7 +52,7 @@ namespace MovieTheater.Controllers
             voucher.Code = "VOUCHER";
             voucher.CreatedDate = DateTime.Now;
             voucher.ExpiryDate = DateTime.Now.AddDays(30);
-            voucher.RemainingValue = voucher.Value;
+            voucher.Value = voucher.Value;
             voucher.IsUsed = false;
             voucher.Image = "/voucher-img/voucher.jpg";
             _voucherService.Add(voucher);
@@ -122,7 +122,6 @@ namespace MovieTheater.Controllers
                 AccountId = voucher.AccountId,
                 Code = voucher.Code,
                 Value = voucher.Value,
-                RemainingValue = voucher.RemainingValue,
                 CreatedDate = voucher.CreatedDate,
                 ExpiryDate = voucher.ExpiryDate,
                 IsUsed = voucher.IsUsed ?? false,
@@ -150,7 +149,6 @@ namespace MovieTheater.Controllers
                 voucher.AccountId = viewModel.AccountId;
                 voucher.Code = viewModel.Code;
                 voucher.Value = viewModel.Value;
-                voucher.RemainingValue = viewModel.RemainingValue;
                 voucher.CreatedDate = viewModel.CreatedDate;
                 voucher.ExpiryDate = viewModel.ExpiryDate;
                 voucher.IsUsed = viewModel.IsUsed;
@@ -222,7 +220,6 @@ namespace MovieTheater.Controllers
                         AccountId = viewModel.AccountId,
                         Code = viewModel.Code,
                         Value = viewModel.Value,
-                        RemainingValue = viewModel.RemainingValue,
                         CreatedDate = viewModel.CreatedDate,
                         ExpiryDate = viewModel.ExpiryDate,
                         IsUsed = viewModel.IsUsed
@@ -299,7 +296,7 @@ namespace MovieTheater.Controllers
                 .Select(v => new {
                     id = v.VoucherId,
                     code = v.Code,
-                    remainingValue = v.RemainingValue,
+                    value = v.Value,
                     expirationDate = v.ExpiryDate.ToString("yyyy-MM-dd"),
                     image = v.Image
                 }).ToList();

@@ -239,10 +239,9 @@ namespace MovieTheater.Controllers
                 if (!string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
                     var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                    if (voucher != null && voucher.AccountId == userId && voucher.RemainingValue > 0 && 
-                        (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
+                    if (voucher != null && voucher.AccountId == userId && (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
                     {
-                        voucherAmount = Math.Min(voucher.RemainingValue, afterRank);
+                        voucherAmount = Math.Min(voucher.Value, afterRank);
                     }
                 }
                 var afterVoucher = afterRank - voucherAmount;
@@ -294,11 +293,7 @@ namespace MovieTheater.Controllers
                     var voucher = _voucherService.GetById(model.SelectedVoucherId);
                     if (voucher != null)
                     {
-                        voucher.RemainingValue -= voucherAmount;
-                        if (voucher.RemainingValue <= 0)
-                        {
-                            voucher.IsUsed = true;
-                        }
+                        voucher.IsUsed = true;
                         _voucherService.Update(voucher);
                     }
                 }
@@ -641,10 +636,9 @@ namespace MovieTheater.Controllers
                 if (!string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
                     var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                    if (voucher != null && voucher.AccountId == member.Account.AccountId && voucher.RemainingValue > 0 &&
-                        (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
+                    if (voucher != null && voucher.AccountId == member.Account.AccountId && (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
                     {
-                        voucherAmount = Math.Min(voucher.RemainingValue, afterRank);
+                        voucherAmount = Math.Min(voucher.Value, afterRank);
                     }
                 }
                 decimal afterVoucher = afterRank - voucherAmount;
@@ -703,11 +697,7 @@ namespace MovieTheater.Controllers
                     var voucher = _voucherService.GetById(model.SelectedVoucherId);
                     if (voucher != null)
                     {
-                        voucher.RemainingValue -= voucherAmount;
-                        if (voucher.RemainingValue <= 0)
-                        {
-                            voucher.IsUsed = true;
-                        }
+                        voucher.IsUsed = true;
                         _voucherService.Update(voucher);
                     }
                 }

@@ -216,11 +216,11 @@
                         data.forEach(v => {
                             html += `
                             <div class="col-md-4 mb-3">
-                              <div class="card voucher-card d-flex flex-column align-items-center" data-id="${v.id}" data-value="${v.remainingValue}">
+                              <div class="card voucher-card d-flex flex-column align-items-center" data-id="${v.id}" data-value="${v.value}">
                                 <img src="${v.image ? v.image : '/images/vouchers/voucher.jpg'}" class="voucher-img-top mt-3 mb-2" alt="Voucher Image" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                                 <div class="card-body text-center p-2">
                                   <h5 class="card-title mb-1" style="color:#007bff;font-weight:600;">${v.code}</h5>
-                                  <p class="card-text mb-1">Value: <span style="font-weight:600;">${v.remainingValue.toLocaleString()} VND</span></p>
+                                  <p class="card-text mb-1">Value: <span style="font-weight:600;">${v.value.toLocaleString()} VND</span></p>
                                   <p class="card-text mb-1">Expires: <span style="font-size:0.95em;">${v.expirationDate}</span></p>
                                 </div>
                               </div>
