@@ -1,0 +1,212 @@
+@model MovieTheater.ViewModels.VoucherViewModel
+
+@{
+    ViewData["Title"] = "Create Voucher";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Create New Voucher</h4>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger" id="formErrorSummary">
+                            <ul>
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Distinct())
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    <form asp-action="AdminCreate" enctype="multipart/form-data" method="post">
+                        <div class="form-group mb-3">
+                            <label class="control-label"><strong>Select Member: *</strong></label>
+                            <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
+                            <input type="hidden" asp-for="AccountId" id="selectedAccountId" />
+                            <div id="selectedMemberInfo" class="mt-2" style="display: none;">
+                                <div class="alert alert-info">
+                                    <strong>Selected Member:</strong> <span id="memberDisplayName"></span>
+                                </div>
+                            </div>
+                            <span asp-validation-for="AccountId" class="text-danger"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Code" class="control-label">Voucher Code</label>
+                            <input asp-for="Code" class="form-control" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Value" class="control-label">Total Value (VND)</label>
+                                    <input asp-for="Value" class="form-control" type="number" min="1" />
+                                    <span asp-validation-for="Value" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="CreatedDate" class="control-label">Created Date</label>
+                                    <input asp-for="CreatedDate" class="form-control" type="datetime-local" />
+                                    <span asp-validation-for="CreatedDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ExpiryDate" class="control-label">Expiry Date</label>
+                                    <input asp-for="ExpiryDate" class="form-control" type="datetime-local" />
+                                    <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Image" class="control-label">Voucher Image (Optional)</label>
+                            <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                            <span asp-validation-for="Image" class="text-danger"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input asp-for="IsUsed" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsUsed" class="form-check-label">Is Used</label>
+                                <span asp-validation-for="IsUsed" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-success">Create Voucher</button>
+                            <a asp-action="MainPage" asp-controller="Admin" asp-route-tab="VoucherMg" class="btn btn-secondary">Back to List</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member Picker Modal -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="memberModalLabel">Select a Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="memberSearch" class="form-control mb-3" placeholder="Search by name, phone, or email..." />
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-bordered table-hover" id="memberTable">
+                        <thead>
+                            <tr>
+                                <th>Member ID</th>
+                                <th>Account ID</th>
+                                <th>Full Name</th>
+                                <th>Identity Card</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Members will be loaded here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function () {
+            // Open modal using Bootstrap 5 API
+            let memberModalInstance = null;
+            $('#openMemberModalBtn').click(function () {
+                if (!memberModalInstance) {
+                    memberModalInstance = new bootstrap.Modal(document.getElementById('memberModal'));
+                }
+                memberModalInstance.show();
+                loadMembers();
+            });
+
+            // Load all members into the modal table
+            function loadMembers() {
+                $.getJSON('/Voucher/GetAllMembers', function (members) {
+                    renderMemberTable(members);
+                    $('#memberSearch').off('input').on('input', function () {
+                        const keyword = $(this).val().toLowerCase().trim();
+                        const filtered = members.filter(m =>
+                            (m.account.fullName && m.account.fullName.toLowerCase().includes(keyword)) ||
+                            (m.account.email && m.account.email.toLowerCase().includes(keyword)) ||
+                            (m.account.phoneNumber && m.account.phoneNumber.toLowerCase().includes(keyword)) ||
+                            (m.account.identityCard && m.account.identityCard.toLowerCase().includes(keyword))
+                        );
+                        renderMemberTable(filtered);
+                    });
+                });
+            }
+
+            function renderMemberTable(members) {
+                const tbody = $('#memberTable tbody');
+                tbody.empty();
+                if (members.length === 0) {
+                    tbody.append('<tr><td colspan="7" class="text-center">No members found.</td></tr>');
+                    return;
+                }
+                members.forEach(m => {
+                    const row = `<tr>
+                        <td>${m.memberId}</td>
+                        <td>${m.account.accountId || ''}</td>
+                        <td>${m.account.fullName || ''}</td>
+                        <td>${m.account.identityCard || ''}</td>
+                        <td>${m.account.email || ''}</td>
+                        <td>${m.account.phoneNumber || ''}</td>
+                        <td><button type="button" class="btn btn-sm btn-success select-member-btn" data-member='${JSON.stringify(m)}'>Select</button></td>
+                    </tr>`;
+                    tbody.append(row);
+                });
+                // Attach select event
+                $('.select-member-btn').off('click').on('click', function () {
+                    const member = JSON.parse($(this).attr('data-member'));
+                    fillMemberInfo(member);
+                    if (memberModalInstance) memberModalInstance.hide();
+                });
+            }
+
+            function fillMemberInfo(member) {
+                $('#selectedAccountId').val(member.account.accountId);
+                $('#memberDisplayName').text(member.account.accountId || '');
+                $('#selectedMemberInfo').show();
+            }
+
+            // Set default values
+            document.addEventListener('DOMContentLoaded', function() {
+                const now = new Date();
+                const expiryDate = new Date();
+                expiryDate.setDate(now.getDate() + 30); // Default expiry in 30 days
+                
+                document.getElementById('CreatedDate').value = now.toISOString().slice(0, 16);
+                document.getElementById('ExpiryDate').value = expiryDate.toISOString().slice(0, 16);
+            });
+
+            // Set min date for ExpiryDate based on CreatedDate
+            document.getElementById('CreatedDate').addEventListener('change', function () {
+                document.getElementById('ExpiryDate').min = this.value;
+            });
+
+            $(function () {
+                if ($('.alert-danger#formErrorSummary').length) {
+                    $('html, body').animate({
+                        scrollTop: $('.alert-danger#formErrorSummary').offset().top - 30
+                    }, 400);
+                }
+            });
+        });
+    </script>
+} 

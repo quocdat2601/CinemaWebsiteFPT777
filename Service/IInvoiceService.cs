@@ -6,5 +6,7 @@ namespace MovieTheater.Service
     {
         public IEnumerable<Invoice> GetAll();
         Invoice? GetById(string invoiceId);
+        void Update(Invoice invoice);
+        void Save();
     }
 }

@@ -105,6 +105,7 @@ namespace MovieTheater.Controllers
                         .ThenInclude(ms => ms.CinemaRoom)
                 .Include(i => i.Account)
                     .ThenInclude(a => a.Rank)
+                .Include(i => i.Voucher)
                 .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
 
             if (booking == null)
@@ -147,6 +148,13 @@ namespace MovieTheater.Controllers
             }
 
             ViewBag.SeatDetails = seatDetails;
+            
+            // Truyền voucher info vào ViewBag nếu có
+            if (booking.Voucher != null)
+            {
+                ViewBag.VoucherAmount = booking.Voucher.Value;
+                ViewBag.VoucherCode = booking.Voucher.Code;
+            }
 
             return View(booking);
         }
@@ -218,11 +226,10 @@ namespace MovieTheater.Controllers
                 AccountId = accountId,
                 Code = "REFUND",
                 Value = booking.TotalMoney ?? 0,
-                RemainingValue = booking.TotalMoney ?? 0,
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
                 IsUsed = false,
-                Image = "/voucher-img/refund-voucher.jpg"
+                Image = "/images/vouchers/refund-voucher.jpg"
             };
             voucherService.Add(voucher);
 
@@ -310,11 +317,10 @@ namespace MovieTheater.Controllers
                 AccountId = booking.AccountId,
                 Code = "REFUND",
                 Value = booking.TotalMoney ?? 0,
-                RemainingValue = booking.TotalMoney ?? 0,
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
                 IsUsed = false,
-                Image = "/voucher-img/refund-voucher.jpg"
+                Image = "/images/vouchers/refund-voucher.jpg"
             };
             voucherService.Add(voucher);
 
@@ -346,6 +352,12 @@ namespace MovieTheater.Controllers
                 roomName = room?.CinemaRoomName ?? "N/A";
             }
             TempData["CinemaRoomName"] = roomName;
+
+            // Keep ConfirmedSeats TempData for the next request
+            if (TempData["ConfirmedSeats"] != null)
+            {
+                TempData.Keep("ConfirmedSeats");
+            }
 
             return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
         }

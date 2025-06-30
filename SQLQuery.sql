@@ -427,3 +427,14 @@ INSERT INTO Food (Category, Name, Price, Description, Status) VALUES
 ('food', 'Nachos', 55000, 'Cheese nachos with salsa', 1),
 ('drink', 'Pepsi', 25000, 'Cold Pepsi 500ml', 1),
 ('combo', 'Nachos + Pepsi', 75000, 'Nachos with Pepsi', 1);
+
+-- Test Vouchers for Booking Functionality
+-- Replace 'AC001' with an actual AccountId from your database
+INSERT INTO Voucher (Voucher_ID, Account_ID, Code, Value, RemainingValue, CreatedDate, ExpiryDate, IsUsed, Image)
+VALUES 
+('VC001', 'AC001', 'TEST50K', 50000, 50000, GETDATE(), DATEADD(day, 30, GETDATE()), 0, '/images/vouchers/voucher.jpg'),
+('VC002', 'AC001', 'TEST100K', 100000, 100000, GETDATE(), DATEADD(day, 30, GETDATE()), 0, '/images/vouchers/voucher.jpg'),
+('VC003', 'AC001', 'TEST25K', 25000, 25000, GETDATE(), DATEADD(day, 30, GETDATE()), 0, '/images/vouchers/voucher.jpg');
+
+-- Note: Make sure to replace 'AC001' with an actual AccountId that exists in your Account table
+-- You can find existing AccountIds by running: SELECT AccountId FROM Account LIMIT 5;
