@@ -3,12 +3,6 @@
     ViewData["Title"] = "Add New Rank";
 }
 
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-}
-@Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
-
 <div class="container mt-4" style="max-width: 600px;">
     <div class="card">
         <div class="card-header bg-primary text-white">

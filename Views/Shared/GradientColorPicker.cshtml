@@ -73,11 +73,29 @@
         margin-bottom: 0;
     }
 
+    .gradient-label, .color-label, .slider-label {
+        color: #222;
+        font-weight: 500;
+    }
+
     .gradient-label {
-        display: block;
+        margin: 8px 0 8px;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .color-label, .slider-label {
         font-weight: 500;
         color: #333;
-        margin: 8px 0 8px;
+    }
+
+    /* Only the CSS Gradient String label changes color in dark mode */
+    .css-gradient-label {
+        color: #222;
+        font-weight: 500;
+    }
+    body.dark-mode .css-gradient-label {
+        color: #fff;
     }
 
     .gradient-select {
@@ -117,15 +135,6 @@
         padding-top: 8px;
         padding-bottom: 8px;
         margin: 0;
-    }
-
-    .color-label, .slider-label {
-        font-weight: 500;
-        color: #333;
-    }
-
-    .color-label {
-        font-size: 0.97rem;
     }
 
     .color-group {
@@ -258,7 +267,6 @@
     #gradientString {
         width: 100%;
         padding: 6px 8px;
-        margin-top: 18px;
         border-radius: 3px;
         border: 1.5px solid #bdbdbd;
         background: #f7f7f7;
@@ -317,8 +325,10 @@
             <legend class="gradient-legend">Preview</legend>
             <div id="preview"></div>
         </fieldset>
-        <label class="gradient-label" style="margin-top:18px;">CSS Gradient String:</label>
-        <input type="text" id="gradientString" readonly />
+        <div style="margin-top:10px;">
+            <label class="css-gradient-label" for="gradientString" style="margin-bottom:4px;">CSS Gradient String:</label>
+            <input type="text" id="gradientString" readonly />
+        </div>
     </div>
 </div>
 

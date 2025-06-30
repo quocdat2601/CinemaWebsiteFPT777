@@ -3,10 +3,6 @@
     ViewData["Title"] = "Edit Rank";
 }
 
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-}
 <partial name="_ToastMessages" />
 
 <div class="container mt-4" style="max-width: 600px;">
@@ -38,10 +34,28 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Color</label>
-                    <input type="color" id="colorPicker" class="form-control form-control-color" value="@Model.ColorGradient" title="Choose color" style="width: 60px; height: 40px; padding: 0;" />
-                    <input asp-for="ColorGradient" class="form-control mt-2" placeholder="Or enter a CSS gradient (optional)" />
-                    <small class="form-text text-muted">Pick a color or enter a CSS gradient.</small>
+                    <button type="button" class="btn btn-outline-primary mb-2" data-bs-toggle="modal" data-bs-target="#colorPickerModal">Pick Color/Gradient</button>
+                    <input asp-for="ColorGradient" class="form-control mt-2" placeholder="Pick a color or gradient" readonly />
+                    <small class="form-text text-muted">Use the picker to select a color or gradient.</small>
                     <span asp-validation-for="ColorGradient" class="text-danger"></span>
+                    <!-- Modal for color picker -->
+                    <div class="modal fade" id="colorPickerModal" tabindex="-1" aria-labelledby="colorPickerModalLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="colorPickerModalLabel">Pick a Color or Gradient</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body p-0">
+                            @await Html.PartialAsync("~/Views/Shared/GradientColorPicker.cshtml")
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" id="confirmColorPick">Use Selected</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Icon</label>
@@ -100,6 +114,13 @@
                 iconInput.value = btn.getAttribute('data-icon');
             });
         });
+        document.getElementById('confirmColorPick').onclick = function() {
+            // Get the value from the color picker input in the modal
+            var gradientValue = document.getElementById('gradientString').value;
+            document.getElementById('ColorGradient').value = gradientValue;
+            var modal = bootstrap.Modal.getInstance(document.getElementById('colorPickerModal'));
+            modal.hide();
+        };
     });
 </script>
 <style>
