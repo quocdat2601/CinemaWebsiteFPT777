@@ -261,6 +261,22 @@
 			}
 		});
 
+		connection.on("HeldSeats", (seatIds) => {
+			// Xóa trạng thái being-held khỏi tất cả các ghế
+			document.querySelectorAll('.being-held').forEach(td => {
+				td.classList.remove("being-held");
+				td.removeAttribute("title");
+			});
+			// Đánh dấu lại các ghế đang được hold
+			seatIds.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				if (td && !td.classList.contains("selected-seat")) {
+					td.classList.add("being-held");
+					td.setAttribute("title", "Ghế đang được người khác giữ");
+				}
+			});
+		});
+
 		connection.start().then(() => {
 			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
 		});
@@ -281,15 +297,5 @@
 			updateSelectionSummary();
 			updateBookButtonState();
 		}
-
-		connection.on("HeldSeats", (seatIds) => {
-			seatIds.forEach(seatId => {
-				const td = document.querySelector(`[data-seat-id='${seatId}']`);
-				if (td && !td.classList.contains("selected-seat")) {
-					td.classList.add("being-held");
-					td.setAttribute("title", "Ghế đang được người khác giữ");
-				}
-			});
-		});
 	</script>
 }

@@ -34,13 +34,13 @@ namespace MovieTheater.Hubs
                 foreach (var kv in seatsForShow)
                 {
                     var seat = _context.Seats.FirstOrDefault(s => s.SeatId == kv.Key);
-                    if (seat != null && seat.SeatStatusId != 1 && (now - kv.Value.HoldTime).TotalMinutes <= HoldMinutes)
+                    if (seat != null && (now - kv.Value.HoldTime).TotalMinutes <= HoldMinutes)
                     {
                         heldSeatIds.Add(kv.Key);
                     }
                     else
                     {
-                        // Nếu ghế đã available hoặc hết thời gian hold, xóa khỏi hold
+                        // Nếu hết thời gian hold, xóa khỏi hold
                         seatsForShow.TryRemove(kv.Key, out _);
                     }
                 }
@@ -98,6 +98,15 @@ namespace MovieTheater.Hubs
                 seatsForShow.TryRemove(seatId, out _);
             }
             await Clients.Group(movieShowId.ToString()).SendAsync("SeatStatusChanged", seatId, newStatusId);
+        }
+
+        // Static method để xóa trạng thái hold từ bên ngoài (repository/controller)
+        public static void ReleaseHold(int movieShowId, int seatId)
+        {
+            if (_heldSeats.TryGetValue(movieShowId, out var seatsForShow))
+            {
+                seatsForShow.TryRemove(seatId, out _);
+            }
         }
     }
 }
