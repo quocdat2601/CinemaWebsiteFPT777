@@ -1,6 +1,7 @@
 ﻿@model MovieTheater.Models.Invoice
 @using System.Linq;
 @{
+
     ViewData["Title"] = "Ticket Information";
     var invoice = Model;
     var movieName = invoice.MovieName;
@@ -16,10 +17,21 @@
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel>;
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.Price) ?? 0;
+    int promotionDiscount = invoice.PromotionDiscount ?? 0;
+    if (promotionDiscount > 0)
+    {
+        subtotal = subtotal * (100 - promotionDiscount) / 100m;
+    }
     decimal usedScoreValue = useScore * 1000;
     decimal addedScoreValue = addScore * 1000;
     decimal totalPriceValue = invoice.TotalMoney ?? 0;
-    decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
+
+    decimal rankDiscount = 0;
+    if (invoice.Account?.Rank != null && invoice.Account.Rank.DiscountPercentage.HasValue)
+    {
+        rankDiscount = subtotal * (invoice.Account.Rank.DiscountPercentage.Value / 100);
+    }
+    // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
 }
@@ -179,7 +191,20 @@
                                     <tr>
                                         <td>@seat.SeatName</td>
                                         <td>@seat.SeatType</td>
-                                        <td>@(seat.Price > 0 ? seat.Price.ToString("N0") + " VND" : "")</td>
+                                        <td>
+                                            @if (promotionDiscount > 0 && seat.Price > 0)
+                                            {
+                                                var discount = Math.Round(seat.Price * (promotionDiscount / 100m));
+                                                var priceAfterPromotion = seat.Price - discount;
+                                                <span style="color: #888;">@seat.Price.ToString("N0") VND</span>
+                                               
+                                                <span style="color: #1a7f37; font-weight: bold;">@priceAfterPromotion.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
                                     </tr>
                                 }
                             }
@@ -208,6 +233,13 @@
                                     <tr>
                                         <td style="white-space: nowrap;">- Rank Discount</td>
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
+                                    </tr>
+                                }
+                                @if (ViewBag.VoucherAmount != null && (decimal)ViewBag.VoucherAmount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@(((decimal)ViewBag.VoucherAmount).ToString("N0")) VND</td>
                                     </tr>
                                 }
                                 @if (useScore > 0)

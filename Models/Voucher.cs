@@ -13,8 +13,6 @@ public partial class Voucher
 
     public decimal Value { get; set; }
 
-    public decimal RemainingValue { get; set; }
-
     public DateTime CreatedDate { get; set; }
 
     public DateTime ExpiryDate { get; set; }
@@ -24,4 +22,6 @@ public partial class Voucher
     public string? Image { get; set; }
 
     public virtual Account Account { get; set; } = null!;
+
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }
