@@ -205,6 +205,13 @@
                                         <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
+                                @if (Model.VoucherAmount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@Model.VoucherAmount.ToString("N0") VND</td>
+                                    </tr>
+                                }
                                 @if (Model.UsedScore > 0)
                                 {
                                     <tr>

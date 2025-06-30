@@ -271,7 +271,8 @@ namespace MovieTheater.Controllers
                     Status = InvoiceStatus.Incomplete,
                     TotalMoney = finalPrice,
                     UseScore = model.UseScore,
-                    Seat = seatList
+                    Seat = seatList,
+                    VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null
                 };
 
                 // Calculate earning rate from user rank
@@ -673,8 +674,7 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalPrice,
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
-                    // Nếu có trường SelectedVoucherId trong Invoice, thêm dòng này:
-                    // SelectedVoucherId = model.SelectedVoucherId
+                    VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null
                 };
 
                 string roomName = "N/A";
@@ -752,8 +752,7 @@ namespace MovieTheater.Controllers
                     RankDiscount = rankDiscount,
                     VoucherAmount = voucherAmount,
                     TotalPrice = finalPrice,
-                    // Nếu muốn trả về voucherAmount cho view:
-                    // VoucherAmount = voucherAmount
+                    MemberAccountId = member?.AccountId
                 };
 
                 // Store CinemaRoomName in TempData before redirect
@@ -869,6 +868,17 @@ namespace MovieTheater.Controllers
             string memberIdentityCard = member?.Account?.IdentityCard;
             string memberPhone = member?.Account?.PhoneNumber;
 
+            // Get voucher info if exists
+            decimal voucherAmount = 0;
+            if (!string.IsNullOrEmpty(invoice.VoucherId))
+            {
+                var voucher = _voucherService.GetById(invoice.VoucherId);
+                if (voucher != null)
+                {
+                    voucherAmount = voucher.Value;
+                }
+            }
+
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -884,6 +894,7 @@ namespace MovieTheater.Controllers
                 AddedScoreValue = addedScoreValue,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
+                VoucherAmount = voucherAmount,
                 TotalPrice = totalPrice,
                 MemberAccountId = member?.AccountId
             };
@@ -1018,6 +1029,17 @@ namespace MovieTheater.Controllers
             string memberIdentityCard = TempData["MemberIdentityCard"] as string ?? member?.Account?.IdentityCard;
             string memberPhone = TempData["MemberPhone"] as string ?? member?.Account?.PhoneNumber;
 
+            // Get voucher info if exists
+            decimal voucherAmount = 0;
+            if (!string.IsNullOrEmpty(invoice.VoucherId))
+            {
+                var voucher = _voucherService.GetById(invoice.VoucherId);
+                if (voucher != null)
+                {
+                    voucherAmount = voucher.Value;
+                }
+            }
+
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -1033,6 +1055,7 @@ namespace MovieTheater.Controllers
                 AddedScoreValue = addedScoreValue,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
+                VoucherAmount = voucherAmount,
                 TotalPrice = totalPrice
             };
 

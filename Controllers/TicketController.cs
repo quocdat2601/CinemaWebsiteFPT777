@@ -105,6 +105,7 @@ namespace MovieTheater.Controllers
                         .ThenInclude(ms => ms.CinemaRoom)
                 .Include(i => i.Account)
                     .ThenInclude(a => a.Rank)
+                .Include(i => i.Voucher)
                 .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
 
             if (booking == null)
@@ -122,6 +123,13 @@ namespace MovieTheater.Controllers
             }).ToList();
 
             ViewBag.SeatDetails = seatDetails;
+            
+            // Truyền voucher info vào ViewBag nếu có
+            if (booking.Voucher != null)
+            {
+                ViewBag.VoucherAmount = booking.Voucher.Value;
+                ViewBag.VoucherCode = booking.Voucher.Code;
+            }
 
             return View(booking);
         }
