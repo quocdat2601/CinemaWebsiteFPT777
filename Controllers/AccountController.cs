@@ -29,7 +29,6 @@ namespace MovieTheater.Controllers
             _accountRepository = accountRepository;
             _memberRepository = memberRepository;
             _jwtService = jwtService;
-            _context = context;
         }
 
         [HttpGet]
@@ -64,8 +63,6 @@ namespace MovieTheater.Controllers
 
             if (user == null)
             {
-                // Set initial rank (Bronze)
-                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
                 user = new Account
                 {
                     Email = email,
@@ -74,10 +71,16 @@ namespace MovieTheater.Controllers
                     RoleId = 3,
                     Status = 1,
                     RegisterDate = DateOnly.FromDateTime(DateTime.Now),
-                    Image = !string.IsNullOrEmpty(picture) ? picture : "/image/profile.jpg",
-                    Password = null, // Set Password to null for Google login
-                    RankId = bronzeRank?.RankId // Always set the lowest rank if available
+                    Image = picture,
+                    Password = null // Set Password to null for Google login
                 };
+
+                // Set initial rank (Bronze)
+                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
+                if (bronzeRank != null)
+                {
+                    user.RankId = bronzeRank.RankId;
+                }
 
                 _accountRepository.Add(user);
                 _accountRepository.Save();

@@ -596,12 +596,9 @@ namespace MovieTheater.Controllers
                 decimal priceAfterDiscount = subtotal - rankDiscount;
                 int usedScore = model.UsedScore;
                 decimal usedScoreValue = Math.Min(usedScore * 1000, priceAfterDiscount); // Cap at price after discount
-                decimal finalPrice = priceAfterDiscount - usedScoreValue;
-                // Calculate points to earn using the same logic as user booking
-                decimal earningRate = member?.Account?.Rank?.PointEarningPercentage ?? 1;
-                int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
-                int addedScore = pointsToEarn;
+                int addedScore = model.AddedScore;
                 int addedScoreValue = addedScore * 1000;
+                decimal totalPrice = model.TotalPrice;
                 string memberId = member?.MemberId;
                 string memberEmail = member?.Account?.Email;
                 string memberIdentityCard = member?.Account?.IdentityCard;
@@ -611,13 +608,13 @@ namespace MovieTheater.Controllers
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = member.Account.AccountId,
-                    AddScore = pointsToEarn,
+                    AddScore = addedScore,
                     BookingDate = DateTime.Now,
                     MovieName = model.BookingDetails.MovieName,
                     ScheduleShow = model.BookingDetails.ShowDate,
                     ScheduleShowTime = model.BookingDetails.ShowTime,
                     Status = InvoiceStatus.Completed,
-                    TotalMoney = finalPrice,
+                    TotalMoney = totalPrice,
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
                 };
@@ -691,11 +688,11 @@ namespace MovieTheater.Controllers
                     MemberPhone = memberPhone,
                     UsedScore = usedScore,
                     UsedScoreValue = usedScoreValue,
-                    AddedScore = pointsToEarn,
+                    AddedScore = addedScore,
                     AddedScoreValue = addedScoreValue,
                     Subtotal = subtotal,
                     RankDiscount = rankDiscount,
-                    TotalPrice = finalPrice
+                    TotalPrice = totalPrice
                 };
 
                 // Store CinemaRoomName in TempData before redirect
