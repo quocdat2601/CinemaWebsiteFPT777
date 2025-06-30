@@ -185,6 +185,8 @@ namespace MovieTheater.Controllers
                 decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = price - discount;
 
+                string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
+
                 seats.Add(new SeatDetailViewModel
                 {
                     SeatId = seat.SeatId,
@@ -193,7 +195,8 @@ namespace MovieTheater.Controllers
                     Price = priceAfterPromotion,
                     OriginalPrice = price,
                     PromotionDiscount = discount,
-                    PriceAfterPromotion = priceAfterPromotion
+                    PriceAfterPromotion = priceAfterPromotion,
+                    PromotionName = promotionName
                 });
             }
 
@@ -659,6 +662,8 @@ namespace MovieTheater.Controllers
                 decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = price - discount;
 
+                string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
+
                 seats.Add(new SeatDetailViewModel
                 {
                     SeatId = seat.SeatId,
@@ -667,7 +672,8 @@ namespace MovieTheater.Controllers
                     Price = priceAfterPromotion,
                     OriginalPrice = price,
                     PromotionDiscount = discount,
-                    PriceAfterPromotion = priceAfterPromotion
+                    PriceAfterPromotion = priceAfterPromotion,
+                    PromotionName = promotionName
                 });
             }
             var movieShows = _movieService.GetMovieShows(movieId);
