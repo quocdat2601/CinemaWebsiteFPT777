@@ -1,6 +1,7 @@
 ﻿@model MovieTheater.Models.Invoice
 @using System.Linq;
 @{
+
     ViewData["Title"] = "Ticket Information";
     var invoice = Model;
     var movieName = invoice.MovieName;
@@ -19,7 +20,13 @@
     decimal usedScoreValue = useScore * 1000;
     decimal addedScoreValue = addScore * 1000;
     decimal totalPriceValue = invoice.TotalMoney ?? 0;
-    decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
+
+    decimal rankDiscount = 0;
+    if (invoice.Account?.Rank != null && invoice.Account.Rank.DiscountPercentage.HasValue)
+    {
+        rankDiscount = subtotal * (invoice.Account.Rank.DiscountPercentage.Value / 100);
+    }
+    // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
 }
