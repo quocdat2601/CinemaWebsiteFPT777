@@ -17,12 +17,14 @@ namespace MovieTheater.Controllers
         private readonly VNPayService _vnPayService;
         private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
+        private readonly MovieTheater.Models.MovieTheaterContext _context;
 
-        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService)
+        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context)
         {
             _vnPayService = vnPayService;
             _logger = logger;
             _accountService = accountService;
+            _context = context;
         }
 
         /// <summary>
@@ -64,9 +66,8 @@ namespace MovieTheater.Controllers
         [ProducesResponseType(typeof(object), 400)]
         public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
         {
-            var context = new MovieTheater.Models.MovieTheaterContext();
             int? movieShowId = null; // Khai báo duy nhất ở đây
-            var invoice = context.Invoices
+            var invoice = _context.Invoices
                 .Include(i => i.ScheduleSeats)
                 .ThenInclude(ss => ss.MovieShow)
                 .ThenInclude(ms => ms.CinemaRoom)
@@ -80,7 +81,7 @@ namespace MovieTheater.Controllers
                     if (invoice.AddScore == 0)
                     {
                         // Fetch member's earning rate
-                        var member = context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                        var member = _context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.AccountId == invoice.AccountId);
                         decimal earningRate = 1;
                         if (member?.Account?.Rank != null)
                             earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
@@ -95,8 +96,8 @@ namespace MovieTheater.Controllers
                             }
                         }
                     }
-                    context.Invoices.Update(invoice);
-                    context.SaveChanges();
+                    _context.Invoices.Update(invoice);
+                    _context.SaveChanges();
                     _accountService.CheckAndUpgradeRank(invoice.AccountId);
                 }
                 // --- BẮT ĐẦU: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
@@ -109,10 +110,10 @@ namespace MovieTheater.Controllers
                     var seatNames = invoice.Seat.Split(',');
                     foreach (var seatName in seatNames)
                     {
-                        var seat = context.Seats.FirstOrDefault(s => s.SeatName == seatName);
+                        var seat = _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
                         if (seat != null && movieShowId.HasValue)
                         {
-                            var exist = context.ScheduleSeats.FirstOrDefault(ss => ss.MovieShowId == movieShowId && ss.SeatId == seat.SeatId && ss.InvoiceId == invoice.InvoiceId);
+                            var exist = _context.ScheduleSeats.FirstOrDefault(ss => ss.MovieShowId == movieShowId && ss.SeatId == seat.SeatId && ss.InvoiceId == invoice.InvoiceId);
                             if (exist == null)
                             {
                                 var scheduleSeat = new Models.ScheduleSeat
@@ -122,11 +123,11 @@ namespace MovieTheater.Controllers
                                     SeatId = seat.SeatId,
                                     SeatStatusId = 2 // Booked
                                 };
-                                context.ScheduleSeats.Add(scheduleSeat);
+                                _context.ScheduleSeats.Add(scheduleSeat);
                             }
                         }
                     }
-                    context.SaveChanges();
+                    _context.SaveChanges();
                 }
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 TempData["InvoiceId"] = model.vnp_TxnRef;
@@ -137,7 +138,7 @@ namespace MovieTheater.Controllers
                 // Lấy CinemaRoomName trực tiếp từ MovieShowId (TempData)
                 if (movieShowId.HasValue)
                 {
-                    var movieShow = context.MovieShows
+                    var movieShow = _context.MovieShows
                         .Include(ms => ms.CinemaRoom)
                         .FirstOrDefault(ms => ms.MovieShowId == movieShowId.Value);
                     TempData["CinemaRoomName"] = movieShow?.CinemaRoom?.CinemaRoomName ?? "N/A";
@@ -157,8 +158,8 @@ namespace MovieTheater.Controllers
                 if (invoice != null)
                 {
                     invoice.Status = MovieTheater.Models.InvoiceStatus.Incomplete;
-                    context.Invoices.Update(invoice);
-                    context.SaveChanges();
+                    _context.Invoices.Update(invoice);
+                    _context.SaveChanges();
                 }
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieName ?? "";

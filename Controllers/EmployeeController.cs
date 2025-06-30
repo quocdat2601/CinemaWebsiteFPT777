@@ -23,6 +23,7 @@ namespace MovieTheater.Controllers
             _invoiceService = invoiceService;
         }
         // GET: EmployeeController
+        [Authorize(Roles = "Employee")]
         public IActionResult MainPage(string tab = "MemberMg")
         {
             ViewData["ActiveTab"] = tab;

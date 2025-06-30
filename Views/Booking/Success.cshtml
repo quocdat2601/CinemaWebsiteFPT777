@@ -1,44 +1,316 @@
 ﻿@{
     ViewBag.Title = "Booking Successful";
-    var originalPrice = TempData["OriginalPrice"] != null ? Convert.ToDecimal(TempData["OriginalPrice"]) : 0;
-    var usedScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : 0;
-    var finalPrice = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : 0;
+    var movieName = TempData["MovieName"] as string;
+    var screen = TempData["CinemaRoomName"] as string;
+    var showDate = TempData["ShowDate"] as string;
+    var showTime = TempData["ShowTime"] as string;
+    var ticketId = TempData["InvoiceId"] as string;
+    var seatString = TempData["Seats"] as string;
+    var bookingDate = TempData["BookingTime"] as string;
+    decimal subtotal = ViewBag.Subtotal != null ? (decimal)ViewBag.Subtotal : 0;
+    decimal rankDiscount = ViewBag.RankDiscount != null ? (decimal)ViewBag.RankDiscount : 0;
+    int useScore = ViewBag.UsedScore != null ? (int)ViewBag.UsedScore : 0;
+    decimal usedScoreValue = ViewBag.UsedScoreValue != null ? (decimal)ViewBag.UsedScoreValue : useScore * 1000;
+    int addScore = ViewBag.AddScore != null ? (int)ViewBag.AddScore : 0;
+    decimal addedScoreValue = ViewBag.AddedScoreValue != null ? (decimal)ViewBag.AddedScoreValue : addScore * 1000;
+    decimal totalPriceValue = ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0;
+    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
+    var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
+    int promotionDiscount = ViewBag.PromotionDiscount != null ? (int)ViewBag.PromotionDiscount : 0;
+    decimal voucherAmount = ViewBag.VoucherAmount != null ? (decimal)ViewBag.VoucherAmount : 0;
 }
 
+<style>
+    .ticket-success-header {
+        background: #e3fcec;
+        border-radius: 12px 12px 0 0;
+        padding: 32px 0 16px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    .ticket-success-header h2 {
+        font-weight: bold;
+        margin-bottom: 0;
+        text-align: left;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.35em 1.2em;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 1.2em;
+        color: #fff;
+        margin-left: 1rem;
+        background-color: #28a745;
+    }
+    .ticket-info-label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 0.1rem;
+        font-size: 0.98rem;
+        margin-right: 0.5rem;
+    }
+    .ticket-info-value {
+        background: #f8f9fa;
+        border: none;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 0;
+        padding: 0.2rem 0.5rem;
+        font-size: 1rem;
+        color: #222;
+        opacity: 1;
+        cursor: not-allowed;
+        box-shadow: none;
+        min-width: 80px;
+        margin-right: 1.5rem;
+        margin-bottom: 0.2rem;
+    }
+    .ticket-card {
+        max-width: 700px;
+        margin: 0 auto;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .btn-ticket-back {
+        background: #007bff;
+        color: #fff;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 0.6rem 2.2rem;
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+    }
+    .btn-ticket-back:hover {
+        background: #0056b3;
+        color: #fff;
+    }
+    .ticket-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 0.3rem;
+    }
+    .ticket-row .ticket-info-label {
+        min-width: 90px;
+    }
+    .ticket-row .ticket-info-value {
+        flex: 1 1 120px;
+        min-width: 80px;
+        margin-right: 2rem;
+    }
+    .ticket-section-title {
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    .ticket-total-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .ticket-total-label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    .ticket-total-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #007bff;
+    }
+    .qr-code-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    @@media (max-width: 991px) {
+        .row.mt-4.align-items-start .col-lg-8, .row.mt-4.align-items-start .col-lg-4 {
+            max-width: 100%;
+            flex: 0 0 100%;
+        }
+        .qr-code-container { margin-top: 20px; }
+    }
+</style>
 
-<div class="container mt-5">
-    <div class="card shadow-lg p-4 rounded-4">
-        <h2 class="text-center text-success mb-4">🎉 Booking Successful!</h2>
-
-        <p class="text-center">Thank you for booking with us. Here is your booking summary:</p>
-
-        <hr class="mb-4" />
-
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <p><strong>🎬 Movie:</strong> @TempData["MovieName"]</p>
-                <p><strong>📅 Date:</strong> @TempData["ShowDate"]</p>
-                <p><strong>⏰ Time:</strong> @TempData["ShowTime"]</p>
-                <p><strong>💺 Seats:</strong> @TempData["Seats"]</p>
-                <p><strong>📽 Screen: </strong> @TempData["CinemaRoomName"]</p>
-            </div>
-
-            <div class="col-md-6">
-                <p><strong>🧾 Invoice ID:</strong> @TempData["InvoiceId"]</p>
-                <p><strong>🕓 Booking Time:</strong> @TempData["BookingTime"]</p>
-
-                <hr />
-                <p><strong>💰 Original Price:</strong> @String.Format("{0:N0}", originalPrice) VND</p>
-                <p><strong>🏷️ Used Score:</strong> @String.Format("{0:N0}", usedScore) points</p>
-                <p><strong>✅ Final Price:</strong> <span class="text-danger fw-bold">@String.Format("{0:N0}", finalPrice) VND</span></p>
-            </div>
+<div class="container mt-4 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
+        <div class="ticket-success-header">
+            <h2 class="mb-0">Booking Successful</h2>
+            <span class="status-badge">Success</span>
         </div>
-
-        <div class="text-center mt-4">
-            <a asp-controller="Home" asp-action="Index" class="btn btn-primary me-2">🏠️ Home</a>
-            <a asp-controller="Booking" asp-action="TicketBooking" class="btn btn-outline-secondary">🎟️ Book Another Ticket</a>
+        <div class="p-4">
+            <div class="row align-items-stretch">
+                <div class="col-lg-8 col-12 mb-3 mb-lg-0 border-end" style="border-color: #e0e0e0 !important;">
+                    <div class="ticket-section-title">Movie & Show Info</div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Movie Name</label>
+                        <input type="text" class="ticket-info-value" value="@movieName" readonly />
+                        <label class="ticket-info-label">Screen</label>
+                        <input type="text" class="ticket-info-value" value="@screen" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Date</label>
+                        <input type="text" class="ticket-info-value" value="@showDate" readonly />
+                        <label class="ticket-info-label">Time</label>
+                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Ticket ID</label>
+                        <input type="text" class="ticket-info-value" value="@ticketId" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Booking Time</label>
+                        <input type="text" class="ticket-info-value" value="@bookingDate" readonly />
+                    </div>
+                    <div class="ticket-section-title">Seat(s)</div>
+                    <table class="table table-bordered mb-2">
+                        <thead>
+                            <tr>
+                                <th>Seat</th>
+                                <th>Type</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (seatDetails.Any())
+                            {
+                                foreach (var seat in seatDetails)
+                                {
+                                    <tr>
+                                        <td>@seat.SeatName</td>
+                                        <td>@seat.SeatType</td>
+                                        <td>
+                                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="3">@seatString</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (subtotal > 0)
+                    {
+                        <div class="ticket-section-title">Price Breakdown</div>
+                        <table class="table table-borderless mb-2">
+                            <tbody>
+                                <tr>
+                                    <td style="white-space: nowrap;">Subtotal</td>
+                                    <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
+                                </tr>
+                                @if (rankDiscount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Rank Discount</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
+                                    </tr>
+                                }
+                                @if (promotionDiscount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Promotion Discount</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@promotionDiscount%</td>
+                                    </tr>
+                                }
+                                @if (voucherAmount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
+                                    </tr>
+                                }
+                                @if (useScore > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Points Used</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
+                                <tr>
+                                    <td class="ticket-total-label">Total Price</td>
+                                    <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
+                                </tr>
+                                @if (addScore > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap; color: #28a745;">+ Points Earned</td>
+                                        <td class="text-end" style="white-space: nowrap; color: #28a745;">+@addScore (@addedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    <div class="text-center mt-4">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                        <a asp-controller="Booking" asp-action="TicketBooking" class="btn btn-outline-secondary fw-bold px-4" style="min-width: 180px;">
+                            <i class="fas fa-plus me-1"></i> Book Another Ticket
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-12 d-flex flex-column align-items-center justify-content-center">
+                    <div class="card border-success w-100 h-100">
+                        <div class="card-header bg-success text-white text-center">
+                            <h6 class="mb-0">🛡️ QR Code for Ticket Info</h6>
+                        </div>
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                            <div class="qr-code-container mb-2">
+                                <canvas id="qrcode-staff"></canvas>
+                            </div>
+                            <p class="text-muted small mb-2 text-center">Scan this QR code to quickly access this ticket information</p>
+                            <button id="downloadQRStaff" class="btn btn-outline-success btn-sm download-btn">
+                                <i class="fas fa-download me-1"></i> Download QR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var qrStaffUrl = '@qrStaffUrl';
+        var qrStaff = new QRious({
+            element: document.getElementById('qrcode-staff'),
+            value: qrStaffUrl,
+            size: 200
+        });
+        document.getElementById('downloadQRStaff').onclick = function() {
+            var canvas = document.getElementById('qrcode-staff');
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = 'ticket-info-qr.png';
+            link.click();
+        }
+    });
+</script>
 
 <partial name="_ToastMessages" />

@@ -62,5 +62,8 @@ namespace MovieTheater.ViewModels
         public List<ShowDate>? AvailableShowDates { get; set; }
         public List<Models.Type> AvailableTypes { get; set; } = new();
         public List<CinemaRoom> AvailableCinemaRooms { get; set; } = new();
+
+        // Thêm property để truyền thông tin vé
+        public ConfirmBookingViewModel TicketDetails { get; set; }
     }
 }

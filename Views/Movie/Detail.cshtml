@@ -1,8 +1,11 @@
 ﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+@using System.Security.Claims
 
 @{
 	ViewData["Title"] = "Movie Detail";
 	var isAuthenticated = User.Identity.IsAuthenticated;
+	var ticket = Model.TicketDetails;
+	var booking = ticket;
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />

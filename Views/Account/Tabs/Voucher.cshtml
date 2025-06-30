@@ -35,11 +35,10 @@
                         <div class="card-body">
                             <h5 class="card-title mb-2">Voucher Code: <span class="fw-bold">@v.Code</span></h5>
                             <p class="mb-1">Value: <span class="fw-bold text-success">@v.Value.ToString("N0") VND</span></p>
-                            <p class="mb-1">Remaining: <span class="fw-bold">@v.RemainingValue.ToString("N0") VND</span></p>
                             <p class="mb-1">Created: @v.CreatedDate.ToString("dd/MM/yyyy")</p>
                             <p class="mb-1">Expires: @v.ExpiryDate.ToString("dd/MM/yyyy")</p>
                             <p class="mb-1">Status: 
-                                @if (v.IsUsed == true || v.RemainingValue == 0)
+                                @if (v.IsUsed == true)
                                 {
                                     <span class="badge bg-secondary">Used</span>
                                 }

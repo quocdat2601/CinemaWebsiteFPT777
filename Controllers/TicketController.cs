@@ -105,6 +105,7 @@ namespace MovieTheater.Controllers
                         .ThenInclude(ms => ms.CinemaRoom)
                 .Include(i => i.Account)
                     .ThenInclude(a => a.Rank)
+                .Include(i => i.Voucher)
                 .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
 
             if (booking == null)
@@ -112,16 +113,48 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
-            // Tạo danh sách ghế chi tiết
-            var seatDetails = booking.ScheduleSeats.Select(ss => new SeatDetailViewModel
+            List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
+            if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
             {
-                SeatId = ss.Seat.SeatId,
-                SeatName = ss.Seat.SeatName,
-                SeatType = ss.Seat.SeatType?.TypeName,
-                Price = (decimal)(ss.Seat.SeatType?.PricePercent)
-            }).ToList();
+                seatDetails = booking.ScheduleSeats
+                    .Where(ss => ss.Seat != null)
+                    .Select(ss => new SeatDetailViewModel
+                    {
+                        SeatId = ss.Seat.SeatId,
+                        SeatName = ss.Seat.SeatName,
+                        SeatType = ss.Seat.SeatType?.TypeName,
+                        Price = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0)
+                    }).ToList();
+            }
+            else if (!string.IsNullOrEmpty(booking.Seat))
+            {
+                // Fallback: lấy từ chuỗi tên ghế
+                var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+                foreach (var seatName in seatNamesArr)
+                {
+                    var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
+                    if (seat == null) continue;
+                    seatDetails.Add(new SeatDetailViewModel
+                    {
+                        SeatId = seat.SeatId,
+                        SeatName = seat.SeatName,
+                        SeatType = seat.SeatType?.TypeName ?? "N/A",
+                        Price = seat.SeatType?.PricePercent ?? 0
+                    });
+                }
+            }
 
             ViewBag.SeatDetails = seatDetails;
+            
+            // Truyền voucher info vào ViewBag nếu có
+            if (booking.Voucher != null)
+            {
+                ViewBag.VoucherAmount = booking.Voucher.Value;
+                ViewBag.VoucherCode = booking.Voucher.Code;
+            }
 
             return View(booking);
         }
@@ -193,11 +226,10 @@ namespace MovieTheater.Controllers
                 AccountId = accountId,
                 Code = "REFUND",
                 Value = booking.TotalMoney ?? 0,
-                RemainingValue = booking.TotalMoney ?? 0,
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
                 IsUsed = false,
-                Image = "/voucher-img/refund-voucher.jpg"
+                Image = "/images/vouchers/refund-voucher.jpg"
             };
             voucherService.Add(voucher);
 
@@ -285,11 +317,10 @@ namespace MovieTheater.Controllers
                 AccountId = booking.AccountId,
                 Code = "REFUND",
                 Value = booking.TotalMoney ?? 0,
-                RemainingValue = booking.TotalMoney ?? 0,
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
                 IsUsed = false,
-                Image = "/voucher-img/refund-voucher.jpg"
+                Image = "/images/vouchers/refund-voucher.jpg"
             };
             voucherService.Add(voucher);
 
@@ -321,6 +352,12 @@ namespace MovieTheater.Controllers
                 roomName = room?.CinemaRoomName ?? "N/A";
             }
             TempData["CinemaRoomName"] = roomName;
+
+            // Keep ConfirmedSeats TempData for the next request
+            if (TempData["ConfirmedSeats"] != null)
+            {
+                TempData.Keep("ConfirmedSeats");
+            }
 
             return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
         }

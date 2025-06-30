@@ -1,7 +1,7 @@
 @model MovieTheater.Models.Voucher
 @{
     ViewData["Title"] = "Edit Voucher";
-    bool isEditable = (Model.IsUsed != true && Model.RemainingValue > 0 && Model.ExpiryDate > DateTime.Now);
+    bool isEditable = (Model.IsUsed != true && Model.ExpiryDate > DateTime.Now);
 }
 <div class="container mt-4">
     <div class="row justify-content-center">
