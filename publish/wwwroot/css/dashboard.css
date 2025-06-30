@@ -1,0 +1,123 @@
+﻿/* Dashboard KPI Cards */
+.dashboard-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+    height: 100%;
+    gap: 1rem;
+}
+
+    .dashboard-card:hover {
+        transform: translateY(-4px);
+    }
+    /* Color variants */
+    .dashboard-card.success {
+        background: linear-gradient(135deg, #28a745, #218838);
+    }
+
+    .dashboard-card.primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+    }
+
+    .dashboard-card.info {
+        background: linear-gradient(135deg, #17a2b8, #117a8b);
+    }
+
+    .dashboard-card.gray {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+    }
+
+    .dashboard-card .icon {
+        font-size: 2.25rem;
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .dashboard-card .text {
+        text-align: right;
+    }
+
+/* Chart containers */
+canvas {
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Top lists and new members */
+.top-list-card li,
+.new-members-card li,
+.list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.35rem;
+    background-color: #fefefe;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+    .top-list-card li:hover,
+    .new-members-card li:hover,
+    .list-group-item:hover {
+        background-color: #f1f3f5;
+        cursor: pointer;
+    }
+
+/* Scrollable recent bookings */
+.recent-bookings-container {
+    background-color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+    .recent-bookings-container table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .recent-bookings-container thead {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .recent-bookings-container tbody {
+        display: block;
+        max-height: 185px;
+        overflow-y: auto;
+    }
+
+        .recent-bookings-container thead tr,
+        .recent-bookings-container tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+    .recent-bookings-container th,
+    .recent-bookings-container td {
+        padding: 0.5rem;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+/* Sticky table header for safety */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+}

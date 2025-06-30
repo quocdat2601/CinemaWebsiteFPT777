@@ -1,0 +1,198 @@
+﻿table.table {
+    border-collapse: separate;
+    border-spacing: 8px;
+    width: auto;
+    margin: 20px auto;
+}
+
+    table.table td {
+        width: 50px;
+        height: 50px;
+        vertical-align: middle;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 6px;
+        border: 2px solid;
+        text-align: center;
+        user-select: none;
+        transition: background-color 0.2s ease;
+    }
+
+        table.table td:hover {
+            background-color: #c3e6cb;
+            border-color: #19692c;
+        }
+
+        table.table td:empty {
+            border: 2px dashed;
+            cursor: default;
+        }
+
+table.table td[data-seat-type="Disabled"] {
+    cursor: default !important;
+    background-color: transparent !important;
+    border: none !important;
+    pointer-events: none;
+}
+
+table.table td[data-seat-type="Disabled"]:hover {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* 
+.selected-seat-type {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+} */
+
+.selected-seat {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+}
+
+.booked-seat {
+    background-color: #19692c !important;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.disabled-seat {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.booked-seat:hover {
+    background-color: #19692c !important;
+}
+body {
+    background-color: white;
+}
+
+.seat-map-wrapper {
+    background-color: transparent;
+}
+
+.screen-label {
+    border-top: 3px solid #8B0000;
+    width: 700px;
+    margin: 0 auto 20px auto;
+    font-weight: bold;
+    color: #8B0000;
+    padding-top: 10px;
+    letter-spacing: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.seat-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.screen-label {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.seat-layout-bordered-area {
+    flex-grow: 1;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    margin-right: 32px;
+    background: #fff;
+    padding: 32px 0 32px 0;
+    box-sizing: border-box;
+}
+
+.seat-container table {
+    margin: 0 auto;
+}
+
+.seat-container td {
+    padding: 10px 12px !important;
+}
+
+.material-icons {
+    font-size: 2.1rem !important;
+}
+
+#selectionSummary {
+    width: 320px;
+    min-width: 220px;
+    max-width: 350px;
+    padding: 0;
+    margin-left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border-radius: 18px;
+    background: #fff;
+    align-self: center;
+}
+
+.summary-block {
+    width: 100%;
+    padding: 18px 24px 12px 24px;
+    border-bottom: 1px solid #e6e6e6;
+    border-radius: 18px 18px 0 0;
+    background: #f6fcfa;
+}
+
+.summary-info {
+    width: 100%;
+    padding: 12px 24px 8px 24px;
+    border-bottom: 1px solid #e6e6e6;
+    background: #fff;
+}
+
+.summary-movie {
+    font-weight: bold;
+    font-size: 1.15rem;
+    color: #1a3e72;
+    margin-bottom: 8px;
+}
+
+.summary-seat {
+    width: 100%;
+    padding: 12px 24px 18px 24px;
+    background: #fff;
+    border-radius: 0 0 18px 18px;
+    text-align: left;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: #555;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #1a3e72;
+}
+
+.summary-alert {
+    color: #d32f2f;
+    background: #fff0f0;
+    border: 1px solid #f5c2c7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 10px 0 0 0;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.selected-seat {
+    outline: 3px solid #ffc107 !important;
+    border-radius: 5px;
+}
+
+.being-held {
+    background-color: #f3c623 !important;
+    cursor: not-allowed;
+}
