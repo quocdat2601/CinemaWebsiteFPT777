@@ -16,6 +16,8 @@
     decimal totalPriceValue = ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0;
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
+    int promotionDiscount = ViewBag.PromotionDiscount != null ? (int)ViewBag.PromotionDiscount : 0;
+    decimal voucherAmount = ViewBag.VoucherAmount != null ? (decimal)ViewBag.VoucherAmount : 0;
 }
 
 <style>
@@ -226,11 +228,18 @@
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
-                                @if (seatDetails.Any() && seatDetails.First().PromotionDiscount > 0)
+                                @if (promotionDiscount > 0)
                                 {
                                     <tr>
                                         <td style="white-space: nowrap;">- Promotion Discount</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@((subtotal * seatDetails.First().PromotionDiscount.Value / 100m).ToString("N0")) VND (@seatDetails.First().PromotionDiscount.Value%)</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@promotionDiscount%</td>
+                                    </tr>
+                                }
+                                @if (voucherAmount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
                                     </tr>
                                 }
                                 @if (useScore > 0)

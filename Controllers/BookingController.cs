@@ -498,6 +498,17 @@ namespace MovieTheater.Controllers
                 ViewBag.AddScore = invoice.AddScore ?? 0;
                 ViewBag.AddedScoreValue = (invoice.AddScore ?? 0) * 1000;
                 ViewBag.TotalPrice = totalPrice;
+                ViewBag.PromotionDiscount = invoice.PromotionDiscount ?? 0;
+                decimal voucherAmount = 0;
+                if (!string.IsNullOrEmpty(invoice.VoucherId))
+                {
+                    var voucher = _voucherService.GetById(invoice.VoucherId);
+                    if (voucher != null)
+                    {
+                        voucherAmount = voucher.Value;
+                    }
+                }
+                ViewBag.VoucherAmount = voucherAmount;
             }
             return View();
         }
@@ -580,6 +591,17 @@ namespace MovieTheater.Controllers
                     decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
                     TempData["RankDiscount"] = rankDiscount;
                 }
+                TempData["PromotionDiscount"] = invoice.PromotionDiscount ?? 0;
+                decimal voucherAmount = 0;
+                if (!string.IsNullOrEmpty(invoice.VoucherId))
+                {
+                    var voucher = _voucherService.GetById(invoice.VoucherId);
+                    if (voucher != null)
+                    {
+                        voucherAmount = voucher.Value;
+                    }
+                }
+                TempData["VoucherAmount"] = voucherAmount;
                 return RedirectToAction("Failed");
             }
         }
@@ -598,6 +620,13 @@ namespace MovieTheater.Controllers
                     _context.Invoices.Update(invoice);
                     _context.SaveChanges();
                 }
+                // Giữ lại các trường cần thiết trong TempData để View sử dụng
+                TempData.Keep("PromotionDiscount");
+                TempData.Keep("VoucherAmount");
+                TempData.Keep("RankDiscount");
+                TempData.Keep("OriginalPrice");
+                TempData.Keep("UsedScore");
+                TempData.Keep("FinalPrice");
                 // Lấy danh sách ghế chi tiết
                 var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.Trim())
