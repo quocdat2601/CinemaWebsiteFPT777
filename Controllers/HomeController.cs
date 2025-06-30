@@ -81,5 +81,9 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        public IActionResult GradientColorPicker()
+        {
+            return View("GradientColorPicker");
+        }
     }
 }

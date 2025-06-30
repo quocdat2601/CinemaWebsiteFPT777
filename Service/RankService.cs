@@ -61,11 +61,15 @@ namespace MovieTheater.Service
             var member = _memberRepository.GetByAccountId(user.AccountId);
             if (member == null || user.RankId == null) return null;
 
-            var allRanks = await _rankRepository.GetAllRanksAsync();
+            // Always sort allRanks by RequiredPoints ascending for correct next-rank logic
+            var allRanks = (await _rankRepository.GetAllRanksAsync())
+                .OrderBy(r => r.RequiredPoints ?? 0)
+                .ToList();
             var currentRank = allRanks.FirstOrDefault(r => r.RankId == user.RankId);
             if (currentRank == null) return null;
 
             var requiredPointsForCurrentRank = currentRank.RequiredPoints ?? 0;
+            // Find the next rank by RequiredPoints, not by RankId
             var nextRank = allRanks.FirstOrDefault(r => (r.RequiredPoints ?? 0) > requiredPointsForCurrentRank);
 
             var currentScore = member.Score ?? 0;
@@ -114,11 +118,97 @@ namespace MovieTheater.Service
                     DiscountPercentage = r.DiscountPercentage ?? 0m,
                     PointEarningPercentage = r.PointEarningPercentage ?? 0m,
                     IsCurrentRank = r.RankId == currentRank.RankId,
-                    IsAchieved = totalPoints >= (r.RequiredPoints ?? 0)
+                    IsAchieved = totalPoints >= (r.RequiredPoints ?? 0),
+                    ColorGradient = r.ColorGradient,
+                    IconClass = r.IconClass
                 }).ToList()
             };
 
             return rankModel;
+        }
+
+        // [HttpGet]
+        // /// Get rank by id
+        public RankInfoViewModel GetById(int id)
+        {
+            var rank = _context.Ranks.FirstOrDefault(r => r.RankId == id);
+            if (rank == null) return null;
+            return new RankInfoViewModel
+            {
+                CurrentRankId = rank.RankId,
+                CurrentRankName = rank.RankName,
+                RequiredPointsForCurrentRank = rank.RequiredPoints ?? 0,
+                CurrentDiscountPercentage = rank.DiscountPercentage ?? 0,
+                CurrentPointEarningPercentage = rank.PointEarningPercentage ?? 0,
+                ColorGradient = rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)",
+                IconClass = rank.IconClass ?? "fa-crown"
+            };
+        }
+
+        public bool Create(RankInfoViewModel model)
+        {
+            if (model == null) return false;
+
+            // Check for duplicate RankName
+            if (_context.Ranks.Any(r => r.RankName.ToLower() == model.CurrentRankName.ToLower()))
+            {
+                throw new InvalidOperationException($"A rank with name '{model.CurrentRankName}' already exists.");
+            }
+
+            // Check for duplicate RequiredPoints
+            if (_context.Ranks.Any(r => r.RequiredPoints == model.RequiredPointsForCurrentRank))
+            {
+                throw new InvalidOperationException($"A rank with {model.RequiredPointsForCurrentRank} required points already exists.");
+            }
+
+            var rank = new Rank
+            {
+                RankName = model.CurrentRankName,
+                RequiredPoints = model.RequiredPointsForCurrentRank,
+                DiscountPercentage = model.CurrentDiscountPercentage,
+                PointEarningPercentage = model.CurrentPointEarningPercentage,
+                ColorGradient = model.ColorGradient,
+                IconClass = model.IconClass
+            };
+            _context.Ranks.Add(rank);
+            _context.SaveChanges();
+            return true;
+        }
+
+        public bool Update(RankInfoViewModel model)
+        {
+            var rank = _context.Ranks.FirstOrDefault(r => r.RankId == model.CurrentRankId);
+            if (rank == null) return false;
+
+            // Check for duplicate RankName (excluding self)
+            if (_context.Ranks.Any(r => r.RankName.ToLower() == model.CurrentRankName.ToLower() && r.RankId != model.CurrentRankId))
+            {
+                throw new InvalidOperationException($"A rank with name '{model.CurrentRankName}' already exists.");
+            }
+
+            // Check for duplicate RequiredPoints (excluding self)
+            if (_context.Ranks.Any(r => r.RequiredPoints == model.RequiredPointsForCurrentRank && r.RankId != model.CurrentRankId))
+            {
+                throw new InvalidOperationException($"A rank with {model.RequiredPointsForCurrentRank} required points already exists.");
+            }
+
+            rank.RankName = model.CurrentRankName;
+            rank.RequiredPoints = model.RequiredPointsForCurrentRank;
+            rank.DiscountPercentage = model.CurrentDiscountPercentage;
+            rank.PointEarningPercentage = model.CurrentPointEarningPercentage;
+            rank.ColorGradient = model.ColorGradient;
+            rank.IconClass = model.IconClass;
+            _context.SaveChanges();
+            return true;
+        }
+
+        public bool Delete(int id)
+        {
+            var rank = _context.Ranks.FirstOrDefault(r => r.RankId == id);
+            if (rank == null) return false;
+            _context.Ranks.Remove(rank);
+            _context.SaveChanges();
+            return true;
         }
     }
 }

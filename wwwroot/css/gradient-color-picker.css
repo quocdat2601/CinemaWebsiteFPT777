@@ -1,0 +1,379 @@
+body {
+    background-color: #1a1a2e;
+    color: #f0f0f5;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+h2.page-title {
+    background-color: #0f0f1e;
+    color: #ffffff;
+    padding: 12px 16px;
+    margin: 0;
+    font-size: 1.5rem;
+    border-bottom: 1px solid #333;
+}
+
+.gradient-flex {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 24px;
+}
+
+.gradient-card {
+    flex: 1 1 350px;
+    min-width: 320px;
+    max-width: 420px;
+    border-radius: 4px;
+}
+
+.gradient-fieldset {
+    position: relative;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 9px 10px 14px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin: 0;
+}
+
+.gradient-legend {
+    position: absolute;
+    width: auto;
+    top: -1px;
+    left: -1px;
+    background: #f5f5f5;
+    padding: 3px 7px;
+    font-weight: bold;
+    font-size: 12px;
+    color: #555;
+    border-radius: 2px 0 2px 0;
+    border: 1px solid #ddd;
+    margin-bottom: 0;
+}
+
+.gradient-list {
+    list-style: none;
+    padding: 18px 0 0 0;
+    margin: 0;
+}
+
+.gradient-list-item:last-child {
+    margin-bottom: 0;
+}
+
+.gradient-label, .color-label, .slider-label {
+    color: #222;
+    font-weight: 500;
+}
+
+.gradient-label {
+    margin: 8px 0 8px;
+    color: #333;
+    font-weight: 500;
+}
+
+.color-label, .slider-label {
+    font-weight: 500;
+    color: #333;
+}
+
+/* Only the CSS Gradient String label changes color in dark mode */
+.css-gradient-label {
+    color: #222;
+    font-weight: 500;
+}
+
+body.dark-mode .css-gradient-label {
+    color: #fff;
+}
+
+.gradient-select {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 3px;
+    border: 1.5px solid #bdbdbd;
+    background: #f7f7f7;
+    font-size: 0.97rem;
+    outline: none;
+    transition: border 0.2s;
+}
+
+    .gradient-select:focus {
+        border-color: #6c63ff;
+    }
+
+.stop-row {
+    display: flex;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    align-items: end;
+}
+
+.stop-colors, .stop-slider {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stop-slider {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    margin: 0;
+}
+
+.color-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.color-square {
+    width: 32px;
+    height: 32px;
+    border-radius: 2px;
+    border: 1.5px solid #bdbdbd;
+    margin-right: -1px;
+    cursor: pointer;
+}
+
+.color-hex {
+    width: 90px;
+    border-radius: 0 2px 2px 0;
+    border: 1.5px solid #bdbdbd;
+    padding: 5px 8px;
+    font-size: 0.95rem;
+    margin-left: 0;
+}
+
+.gradient-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #f3f3f3;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+}
+
+    .gradient-slider:hover {
+        opacity: 1;
+    }
+
+    .gradient-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3a3fc1;
+        cursor: pointer;
+        margin-top: -5px;
+    }
+
+    .gradient-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3a3fc1;
+        cursor: pointer;
+    }
+
+    .gradient-slider::-ms-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3a3fc1;
+        cursor: pointer;
+    }
+
+    .gradient-slider::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 2px;
+        background: #f3f3f3;
+    }
+
+    .gradient-slider::-ms-fill-lower {
+        background: #f3f3f3;
+        border-radius: 2px;
+    }
+
+    .gradient-slider::-ms-fill-upper {
+        background: #f3f3f3;
+        border-radius: 2px;
+    }
+
+    .gradient-slider:focus {
+        outline: none;
+    }
+
+    .gradient-slider:active::-webkit-slider-thumb {
+        background: #23268b;
+    }
+
+    .gradient-slider:active::-moz-range-thumb {
+        background: #23268b;
+    }
+
+    .gradient-slider:active::-ms-thumb {
+        background: #23268b;
+    }
+
+    .gradient-slider::-moz-focus-outer {
+        border: 0;
+    }
+
+.gradient-slider {
+    -ms-overflow-style: none;
+}
+
+.removeStop {
+    font-size: 1.2rem;
+    color: #cf1512;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+    .removeStop:hover {
+        color: #a00;
+        background: #f8d7da;
+        border-radius: 3px;
+    }
+
+#addStop {
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: #6c63ff;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 0.97rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    #addStop:hover {
+        background: #4b47b6;
+    }
+
+#gradientString {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 3px;
+    border: 1.5px solid #bdbdbd;
+    background: #f7f7f7;
+    font-size: 0.98rem;
+}
+
+#preview {
+    width: 100%;
+    height: 250px;
+    border-radius: 4px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* --- Clean, Correct Color Picker CSS --- */
+.color-swatch-wrapper {
+    position: relative;
+    width: 2.4rem;
+    flex: 0 0 2.4rem;
+}
+
+.native-color-input {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.custom-color-swatch {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 4px 0 0 4px;
+    pointer-events: none;
+}
+
+.color-picker-group {
+    display: flex;
+    width: 100%;
+    border: 2px solid #bdbdbd;
+    border-radius: 6px;
+    background: #fff;
+    align-items: stretch;
+    height: 2.4rem;
+}
+
+    .color-picker-group .form-control {
+        flex: 1 1 auto;
+        min-width: 0;
+        border: none;
+        border-radius: 0 6px 6px 0;
+        padding: 0 0.75rem;
+        font-family: Menlo, Consolas, monospace;
+        height: 100%;
+        box-shadow: none;
+        background: none;
+        line-height: 1.2;
+    }
+
+.color-picker-border {
+    border: 1.5px solid #bdbdbd;
+    border-radius: 0.375rem;
+    background: #fff;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 0.5rem;
+}
+/* .color-picker-group {
+        flex: 1 1 auto;
+    } */
+.color-picker-group .input-group-text {
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+}
+
+.color-picker-group .form-control-color {
+    width: 2.4rem !important;
+    min-width: 2.4rem !important;
+    height: auto !important;
+    border: none !important;
+    border-radius: 0.375rem 0 0 0.375rem !important;
+    box-shadow: none !important;
+    background: none !important;
+}
+
+.color-picker-group .form-control {
+    border: none !important;
+    border-radius: 0 !important;
+    height: 2.4rem !important;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    box-shadow: none !important;
+    background: none !important;
+}
+
+.stop-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
