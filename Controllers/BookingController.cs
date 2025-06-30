@@ -486,19 +486,6 @@ namespace MovieTheater.Controllers
                     rankDiscount = subtotal * (rankDiscountPercent / 100m);
                 }
 
-                // Apply points used
-                decimal usedScoreValue = (invoice.UseScore ?? 0) * 1000m;
-                decimal totalPrice = subtotal - rankDiscount - usedScoreValue;
-                if (totalPrice < 0) totalPrice = 0;
-
-                ViewBag.Subtotal = subtotal;
-                ViewBag.RankDiscount = rankDiscount;
-                ViewBag.UsedScore = invoice.UseScore ?? 0;
-                ViewBag.UsedScoreValue = usedScoreValue;
-                ViewBag.AddScore = invoice.AddScore ?? 0;
-                ViewBag.AddedScoreValue = (invoice.AddScore ?? 0) * 1000;
-                ViewBag.TotalPrice = totalPrice;
-                ViewBag.PromotionDiscount = invoice.PromotionDiscount ?? 0;
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(invoice.VoucherId))
                 {
@@ -508,6 +495,21 @@ namespace MovieTheater.Controllers
                         voucherAmount = voucher.Value;
                     }
                 }
+
+                // TotalPrice = subtotal - rankDiscount - voucherAmount
+                decimal totalPrice = subtotal - rankDiscount - voucherAmount;
+                if (totalPrice < 0) totalPrice = 0;
+
+                // Apply points used
+                decimal usedScoreValue = (invoice.UseScore ?? 0) * 1000m;
+                ViewBag.Subtotal = subtotal;
+                ViewBag.RankDiscount = rankDiscount;
+                ViewBag.UsedScore = invoice.UseScore ?? 0;
+                ViewBag.UsedScoreValue = usedScoreValue;
+                ViewBag.AddScore = invoice.AddScore ?? 0;
+                ViewBag.AddedScoreValue = (invoice.AddScore ?? 0) * 1000;
+                ViewBag.TotalPrice = totalPrice;
+                ViewBag.PromotionDiscount = invoice.PromotionDiscount ?? 0;
                 ViewBag.VoucherAmount = voucherAmount;
             }
             return View();

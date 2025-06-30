@@ -55,6 +55,7 @@
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
 												data-seat-price="@seatType?.PricePercent"
+												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
 												class="@tdClass"
 												@(isDisabledType || isBooked ? "disabled" : "")
 												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
@@ -242,6 +243,40 @@
 			});
 		});
 
+		connection.on("SeatStatusChanged", (seatId, newStatusId) => {
+			console.log("SeatStatusChanged", seatId, newStatusId);
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			if (!td) return;
+			if (newStatusId === 2) { // 2 = Booked
+				td.classList.add("booked-seat");
+				td.classList.remove("selected-seat", "being-held");
+				td.setAttribute("disabled", "disabled");
+				td.style.backgroundColor = "#19692c";
+			} else {
+				td.classList.remove("booked-seat");
+				td.removeAttribute("disabled");
+				// Set lại màu gốc loại ghế
+				const color = td.getAttribute("data-seat-color") || "#cccbc8";
+				td.style.backgroundColor = color;
+			}
+		});
+
+		connection.on("HeldSeats", (seatIds) => {
+			// Xóa trạng thái being-held khỏi tất cả các ghế
+			document.querySelectorAll('.being-held').forEach(td => {
+				td.classList.remove("being-held");
+				td.removeAttribute("title");
+			});
+			// Đánh dấu lại các ghế đang được hold
+			seatIds.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				if (td && !td.classList.contains("selected-seat")) {
+					td.classList.add("being-held");
+					td.setAttribute("title", "Ghế đang được người khác giữ");
+				}
+			});
+		});
+
 		connection.start().then(() => {
 			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
 		});
@@ -262,15 +297,5 @@
 			updateSelectionSummary();
 			updateBookButtonState();
 		}
-
-		connection.on("HeldSeats", (seatIds) => {
-			seatIds.forEach(seatId => {
-				const td = document.querySelector(`[data-seat-id='${seatId}']`);
-				if (td && !td.classList.contains("selected-seat")) {
-					td.classList.add("being-held");
-					td.setAttribute("title", "Ghế đang được người khác giữ");
-				}
-			});
-		});
 	</script>
 }
