@@ -1,0 +1,210 @@
+@model MovieTheater.ViewModels.TicketVerificationResultViewModel
+
+@{
+    ViewData["Title"] = "Verification Result";
+    var headerClass = Model.IsSuccess ? "success-bg" : "fail-bg";
+}
+
+<style>
+    .result-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .result-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .result-header.success-bg {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .result-header.fail-bg {
+        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .result-header h2 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.8rem;
+    }
+
+    .result-body {
+        padding: 2rem;
+    }
+
+    .ticket-details {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .ticket-details h5 {
+        color: #495057;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: #6c757d;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .verification-time {
+        background: #e3f2fd;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .verification-time p {
+        margin: 0;
+        color: #1976d2;
+        font-weight: 500;
+    }
+
+    .action-buttons {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .btn-custom {
+        border-radius: 25px;
+        padding: 12px 30px;
+        font-weight: 600;
+        margin: 0 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<div class="result-container">
+    <div class="result-card">
+        <div class="result-header @headerClass">
+            <h2>
+                @if (Model.IsSuccess)
+                {
+                    <span><i class="fas fa-check-circle me-2"></i>Ticket Verified Successfully!</span>
+                }
+                else
+                {
+                    <span><i class="fas fa-times-circle me-2"></i>Verification Failed</span>
+                }
+            </h2>
+            <p class="mb-0">
+                @if (Model.IsSuccess)
+                {
+                    <span>Customer can enter the cinema</span>
+                }
+                else
+                {
+                    <span>Please check the ticket details</span>
+                }
+            </p>
+        </div>
+        
+        <div class="result-body">
+            <div class="ticket-details">
+                <h5><i class="fas fa-ticket-alt me-2"></i>Ticket Information</h5>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Invoice ID:</span>
+                    <span class="detail-value">@Model.InvoiceId</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Movie:</span>
+                    <span class="detail-value">@Model.MovieName</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">@Model.ShowDate</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value">@Model.ShowTime</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Customer:</span>
+                    <span class="detail-value">@Model.CustomerName</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Phone:</span>
+                    <span class="detail-value">@Model.CustomerPhone</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Seats:</span>
+                    <span class="detail-value">@Model.Seats</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Amount:</span>
+                    <span class="detail-value">@Model.TotalAmount</span>
+                </div>
+            </div>
+
+            <div class="verification-time">
+                <p><i class="fas fa-clock me-2"></i>Verified at: @Model.VerificationTime</p>
+            </div>
+
+            <div class="action-buttons">
+                <a href="@Url.Action("Scanner", "QRCode")" class="btn btn-primary btn-custom">
+                    <i class="fas fa-qrcode me-2"></i>Scan Another Ticket
+                </a>
+                
+                @if (User.IsInRole("Admin"))
+                {
+                    <a href="@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })" class="btn btn-secondary btn-custom">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Admin
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("MainPage", "Employee")" class="btn btn-secondary btn-custom">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Employee
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div> 

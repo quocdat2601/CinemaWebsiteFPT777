@@ -73,11 +73,6 @@
         font-weight: 600;
         font-size: 1.1rem;
     }
-    .promotion-card.selected {
-        border: 3px solid #28a745 !important;
-        box-shadow: 0 0 0 4px rgba(40,167,69,0.15);
-        transition: border 0.2s, box-shadow 0.2s;
-    }
 </style>
 
 <div class="container mt-4">
@@ -115,7 +110,22 @@
                     <tr>
                         <td>@seat.SeatName</td>
                         <td>@seat.SeatType</td>
-                        <td>@seat.Price.ToString("N0") VND</td>
+                        <td>
+                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                            {
+                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                           
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                @if (!string.IsNullOrEmpty(seat.PromotionName))
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@seat.PromotionName</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -134,8 +144,6 @@
         <div class="mb-3">
             <label class="soft-label"><strong>Select Member: *</strong></label>
             <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
-            <button type="button" id="openPromotionModalBtn" class="btn btn-warning ms-2">Select Promotion</button>
-            <span id="selectedPromotionInfo" class="ms-2 text-success" style="font-weight:500;"></span>
         </div>
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
@@ -328,92 +336,6 @@
                 $('#selectedVoucherId').val('');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
-            }
-
-            // Promotion Modal logic
-            let promotionModalInstance = null;
-            let selectedPromotion = null;
-            // Always load promotions on page load
-            loadPromotions();
-            $('#openPromotionModalBtn').click(function () {
-                if (!promotionModalInstance) {
-                    promotionModalInstance = new bootstrap.Modal(document.getElementById('promotionModal'));
-                }
-                promotionModalInstance.show();
-            });
-
-            // Clear promotion button
-            $('#clearPromotionBtn').click(function () {
-                selectedPromotion = null;
-                $('#selectedPromotionInfo').text('');
-                $('.promotion-card').removeClass('selected');
-                updatePriceWithDiscount();
-                if (promotionModalInstance) promotionModalInstance.hide();
-            });
-
-            function loadPromotions() {
-                $.getJSON('/Promotion/GetAllActive', function (promotions) {
-                    updatePromotionModal(promotions);
-                });
-            }
-
-            function updatePromotionModal(promotions) {
-                const modalBody = $('#promotionModal .modal-body');
-                const promotionsRow = modalBody.find('.row').first();
-                promotionsRow.empty();
-                let highestDiscount = -1;
-                let highestPromoId = null;
-                if (promotions.length === 0) {
-                    promotionsRow.append('<div class="col-12 text-center text-muted">No eligible promotions available. Please select a member to see member-specific promotions.</div>');
-                } else {
-                    promotions.forEach(function(promo) {
-                        const promoCard = `
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100 shadow-sm promotion-card" data-promotion-id="${promo.promotionId}" data-discount="${promo.discountLevel}">
-                                    ${promo.image ? `<img src="${promo.image}" class="card-img-top" alt="Promotion Image" style="max-height:180px;object-fit:cover;">` : ''}
-                                    <div class="card-body">
-                                        <h5 class="card-title">${promo.title}</h5>
-                                        <p class="card-text">${promo.detail}</p>
-                                        <p class="mb-1"><strong>Discount:</strong> ${promo.discountLevel}%</p>
-                                        <p class="mb-0"><strong>Duration:</strong> ${promo.startTime || 'N/A'} - ${promo.endTime || 'N/A'}</p>
-                                        <button type="button" class="btn btn-success mt-2 select-promotion-btn" data-promotion-id="${promo.promotionId}" data-discount="${promo.discountLevel}">Select</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        promotionsRow.append(promoCard);
-                        // Track highest discount
-                        if (promo.discountLevel > highestDiscount) {
-                            highestDiscount = promo.discountLevel;
-                            highestPromoId = promo.promotionId;
-                        }
-                    });
-                    // Attach click event for select buttons
-                    $('.select-promotion-btn').off('click').on('click', function () {
-                        const card = $(this).closest('.promotion-card');
-                        // Remove 'selected' from all cards, then add to the clicked one
-                        $('.promotion-card').removeClass('selected');
-                        card.addClass('selected');
-                        const promotion = {
-                            promotionId: card.data('promotion-id'),
-                            discountLevel: card.data('discount'),
-                            title: card.find('.card-title').text(),
-                            detail: card.find('.card-text').text()
-                        };
-                        selectedPromotion = promotion;
-                        $('#selectedPromotionInfo').text(`Selected: ${promotion.title} (Discount: ${promotion.discountLevel || 0}%)`);
-                        updatePriceWithDiscount();
-                        if (promotionModalInstance) promotionModalInstance.hide();
-                    });
-                    // Auto-select the highest discount promotion
-                    if (highestPromoId !== null) {
-                        // Simulate click on the select button of the highest discount promotion
-                        setTimeout(function() {
-                            const btn = $(`.select-promotion-btn[data-promotion-id='${highestPromoId}']`);
-                            if (btn.length) btn.trigger('click');
-                        }, 100);
-                    }
-                }
             }
 
             // Confirm Ticket Admin Button Click

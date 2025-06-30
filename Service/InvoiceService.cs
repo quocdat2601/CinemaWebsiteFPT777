@@ -22,5 +22,15 @@ namespace MovieTheater.Service
         {
             return _invoiceRepository.GetById(invoiceId);
         }
+
+        public void Update(Invoice invoice)
+        {
+            _invoiceRepository.Update(invoice);
+        }
+
+        public void Save()
+        {
+            _invoiceRepository.Save();
+        }
     }
 }

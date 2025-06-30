@@ -38,6 +38,8 @@ public partial class Invoice
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
     public string? VoucherId { get; set; }
     public virtual Voucher? Voucher { get; set; }
+    public int? PromotionDiscount { get; set; }
 
 }
+
 

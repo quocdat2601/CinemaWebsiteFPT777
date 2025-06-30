@@ -105,5 +105,15 @@ namespace MovieTheater.Repository
                 .Where(s => s.InvoiceId == invoiceId)
                 .ToList();
         }
+
+        public void Update(ScheduleSeat seat)
+        {
+            _context.ScheduleSeats.Update(seat);
+        }
+
+        public void Save()
+        {
+            _context.SaveChanges();
+        }
     }
 }
