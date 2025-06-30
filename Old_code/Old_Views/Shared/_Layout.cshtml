@@ -1,0 +1,197 @@
+﻿@using System.Security.Claims
+@{
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var Name = User.FindFirst(ClaimTypes.Name)?.Value;
+    var isAuthenticated = User.Identity.IsAuthenticated;
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MovieTheater</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MovieTheater.styles.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.css" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Caught global error:');
+            console.error('Message:', message);
+            console.error('Source:', source);
+            console.error('Line:', lineno);
+            console.error('Column:', colno);
+            console.error('Error object:', error);
+            // Return true to prevent the default browser error handling (optional)
+            // return true;
+        };
+    </script>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar border-bottom box-shadow mb-0">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MovieTheater</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
+                        </li>
+                        @if (userRole == "Member")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
+                            </li>
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <button id="toggle-dark-mode" class="btn btn-outline-secondary nav-link">🌙 Dark Mode</button>
+                        </li>
+                        @if (userRole == "Admin")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
+                            </li>
+                         
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else if (userRole == "Employee")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else if (isAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link">Hello, @Name!</span>
+                            </li>
+                            <li  class="nav-item">
+                                <a class="nav-link" asp-controller="MyAccount" asp-action="MainPage">My Account</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+                            </li>
+                        }
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="fade-in">
+        @RenderBody()
+    </main>
+
+<partial name="_ToastMessages" />
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/plugin/jquery.cycle2.swipe.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize and show success toast if it exists
+            var toastMessageContainer = document.getElementById('toastMessage');
+            if (toastMessageContainer) {
+                var toastEl = toastMessageContainer.querySelector('.toast');
+                if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay
+                    });
+                    toast.show();
+                }
+            }
+
+            // Initialize and show error toast if it exists
+            var errorToastContainer = document.getElementById('errorToast');
+            if (errorToastContainer) {
+                 var toastEl = errorToastContainer.querySelector('.toast');
+                 if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay (adjust to 4000 if preferred)
+                    });
+                    toast.show();
+                 }
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // Dark mode toggle
+        const darkModeBtn = document.getElementById("toggle-dark-mode");
+        const currentMode = localStorage.getItem("theme");
+        const navbar = document.querySelector('.app-navbar');
+        const content = document.getElementById("content"); // Get the content element
+
+        if (currentMode === "dark") {
+            document.body.classList.add("dark-mode");
+            navbar.classList.add("dark-mode");
+            if (content) { // Check if content element exists
+                content.classList.add("dark-mode");
+            }
+            darkModeBtn.textContent = "☀️ Light Mode";
+        }
+
+        darkModeBtn.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            const isDark = document.body.classList.contains("dark-mode");
+            darkModeBtn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+
+            if (isDark) {
+                navbar.classList.add('dark-mode');
+                if (content) {
+                    content.classList.add("dark-mode");
+                }
+            } else {
+                navbar.classList.remove('dark-mode');
+                if (content) {
+                    content.classList.remove("dark-mode");
+                }
+            }
+        });
+    </script>
+</body>
+</html>

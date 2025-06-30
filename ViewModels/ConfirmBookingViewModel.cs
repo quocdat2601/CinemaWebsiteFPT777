@@ -16,7 +16,6 @@ namespace MovieTheater.ViewModels
         public List<SeatDetailViewModel> SelectedSeats { get; set; }
         public decimal Subtotal { get; set; }
         public decimal RankDiscount { get; set; }
-        public decimal PromotionDiscount { get; set; }
         public decimal TotalPrice { get; set; }
         public decimal PricePerTicket { get; set; } // optional
 
@@ -37,10 +36,5 @@ namespace MovieTheater.ViewModels
 
         public decimal EarningRate { get; set; }
         public decimal RankDiscountPercent { get; set; }
-        
-        // Promotion properties
-        public int? SelectedPromotionId { get; set; }
-        public string SelectedPromotionTitle { get; set; }
-        public decimal SelectedPromotionDiscount { get; set; }
     }
 }

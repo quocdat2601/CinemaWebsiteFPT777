@@ -319,38 +319,8 @@
             });
 
             function loadPromotions() {
-                // Get current booking details for promotion filtering
-                var memberId = $('#memberId').val() || '';
-                var seatCount = @Model.BookingDetails.SelectedSeats.Count;
-                var showDate = '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")';
-                var movieId = '@Model.BookingDetails.MovieId';
-                var movieName = '@Model.BookingDetails.MovieName';
-
-                var requestData = {
-                    memberId: memberId,
-                    seatCount: seatCount,
-                    showDate: showDate,
-                    movieId: movieId,
-                    movieName: movieName
-                };
-
-                $.ajax({
-                    url: '/Booking/GetEligiblePromotions',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(requestData),
-                    success: function(response) {
-                        if (response.success) {
-                            updatePromotionModal(response.promotions);
-                        } else {
-                            console.error('Error loading promotions:', response.message);
-                            updatePromotionModal([]);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX Error:', error);
-                        updatePromotionModal([]);
-                    }
+                $.getJSON('/Promotion/GetAllActive', function (promotions) {
+                    updatePromotionModal(promotions);
                 });
             }
 
@@ -415,25 +385,6 @@
 
             // Confirm Ticket Admin Button Click
             $('#confirmTicketAdminBtn').click(function () {
-                // Manually construct SelectedSeats to avoid serialization issues
-                var selectedSeats = [];
-                @foreach (var seat in Model.BookingDetails.SelectedSeats)
-                {
-                    <text>
-                    selectedSeats.push({
-                        SeatId: @(seat.SeatId?.ToString() ?? "null"),
-                        SeatName: '@seat.SeatName',
-                        SeatType: '@seat.SeatType',
-                        Price: @seat.Price
-                    });
-                    </text>
-                }
-
-                // Calculate promotion discount amount
-                var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
-                var promotionDiscountPercent = selectedPromotion ? (selectedPromotion.discountLevel || 0) : 0;
-                var promotionDiscountAmount = Math.round(originalTotal * (promotionDiscountPercent / 100));
-
                 // Ensure SelectedSeats uses PascalCase property names to match backend model
                 var model = {
                     BookingDetails: {
@@ -442,7 +393,7 @@
                         CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
-                        SelectedSeats: selectedSeats,
+                        SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice,
                         PricePerTicket: @Model.BookingDetails.PricePerTicket
                     },
@@ -453,13 +404,8 @@
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
                     UsedScore: parseInt($('#useScore').val()) || 0,
-                    SelectedPromotionId: selectedPromotion ? selectedPromotion.promotionId : null,
-                    PromotionDiscount: promotionDiscountAmount
+                    SelectedPromotionId: selectedPromotion ? selectedPromotion.promotionId : null
                 };
-
-                // Debug logging
-                console.log('Sending model to backend:', model);
-                console.log('JSON string:', JSON.stringify(model));
 
                 $.ajax({
                     url: '@Url.Action("ConfirmTicketForAdmin", "Booking")',
@@ -467,7 +413,6 @@
                     contentType: 'application/json',
                     data: JSON.stringify(model),
                     success: function (response) {
-                        console.log('Success response:', response);
                         if (response.success) {
                             window.location.href = response.redirectUrl; // Redirect to success page
                         } else {
@@ -476,8 +421,6 @@
                     },
                     error: function (xhr, status, error) {
                         console.error("AJAX Error:", error);
-                        console.error("Status:", status);
-                        console.error("Response Text:", xhr.responseText);
                         $('#memberMessage').text("An error occurred during booking confirmation.").show();
                     }
                 });
@@ -592,8 +535,6 @@
                     currentDiscountPercent = data.discountPercent || 0;
                     currentEarningRate = data.earningRate || 0;
                     updatePriceWithDiscount();
-                    // Reload promotions since member-specific promotions might now be available
-                    loadPromotions();
                 });
             }
             // On page load, show initial state

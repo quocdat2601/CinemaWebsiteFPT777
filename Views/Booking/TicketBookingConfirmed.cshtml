@@ -198,13 +198,6 @@
                                     <td style="white-space: nowrap;">Subtotal</td>
                                     <td class="text-end" style="white-space: nowrap;">@Model.Subtotal.ToString("N0") VND</td>
                                 </tr>
-                                @if (Model.PromotionDiscount >= 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Promotion Discount</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@Model.PromotionDiscount.ToString("N0") VND</td>
-                                    </tr>
-                                }
                                 @if (Model.RankDiscount > 0)
                                 {
                                     <tr>

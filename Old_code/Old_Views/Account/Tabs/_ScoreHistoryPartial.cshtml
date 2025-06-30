@@ -1,0 +1,46 @@
+﻿@model IEnumerable<MovieTheater.ViewModels.ScoreHistoryViewModel>
+
+@if (ViewBag.CurrentScore != null)
+{
+    <div class="text-center mb-3">
+        <div class="alert alert-info d-inline-block">
+            <strong>🎯 Current Score:</strong> @ViewBag.CurrentScore pts
+        </div>
+    </div>
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">No data found.</div>
+}
+else
+{
+    <table class="table table-bordered table-striped mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Date</th>
+                <th>Movie</th>
+                <th class="text-end">Score</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.DateCreated.ToString("dd/MM/yyyy")</td>
+                <td>@item.MovieName</td>
+                <td class="text-end">
+                    @if (item.Type == "add")
+                    {
+                        <span class="badge bg-success">+@item.Score</span>
+                    }
+                    else if (item.Type == "use")
+                    {
+                        <span class="badge bg-danger">-@item.Score</span>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+} 

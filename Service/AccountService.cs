@@ -61,7 +61,7 @@ namespace MovieTheater.Service
                 RegisterDate = DateOnly.FromDateTime(DateTime.Now),
                 Status = 1,
                 RoleId = model.RoleId, // 
-                Image = string.IsNullOrEmpty(model.Image) ? "/image/profile.jpg" : model.Image
+                Image = model.Image
             };
 
             _repository.Add(account);

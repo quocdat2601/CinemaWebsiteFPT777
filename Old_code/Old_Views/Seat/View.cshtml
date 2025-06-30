@@ -1,0 +1,276 @@
+﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
+
+@{
+	var movieId = Model.MovieId;
+	var date = Model.ShowDate;
+	var time = Model.ShowTime;
+	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
+	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
+	var seatTypes = Model.SeatTypes;
+	var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
+	var movieShowId = Model.MovieShowId.ToString();
+
+	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
+	string returnLink = isAdminSell
+		? Url.Action("Select", "Showtime", new { area = "Admin" })
+		: Url.Action("TicketBooking", "Booking");
+}
+<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
+
+<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
+
+@await Html.PartialAsync("~/Views/Shared/_ToastMessages.cshtml")
+
+<div class="container mt-4" id="mainContent">
+	<div class="text-start p-3">
+		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+	</div>
+
+	<h2 class="text-center mb-4">SELECT SEATS</h2>
+
+	<div class="seat-section">
+		<div class="flex-grow-1 seat-layout-bordered-area" id="seatLayoutArea">
+			<div class="screen-label text-center mb-4">Screen</div>
+			<div class="seat-layout-bordered-area border p-3 mb-4">
+				<div class="seat-container">
+					<table class="table table-bordered text-center">
+						<tbody>
+							@for (int row = 1; row <= Model.SeatLength; row++)
+							{
+								<tr>
+									@for (int col = 1; col <= Model.SeatWidth; col++)
+									{
+										var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+										if (seat != null)
+										{
+											var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+											bool isDisabledType = seatType?.TypeName == "Disabled";
+											bool isBooked = bookedSeats.Contains(seat.SeatId);
+
+											var seatStyle = isDisabledType ? "border: none;" : isBooked ? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+											var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
+
+											<td style="@seatStyle"
+												data-seat-id="@seat.SeatId"
+												data-seat-name="@seat.SeatName"
+												data-seat-type="@seatType?.TypeName"
+												data-seat-price="@seatType?.PricePercent"
+												class="@tdClass"
+												@(isDisabledType || isBooked ? "disabled" : "")
+												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
+												<span class="material-icons">
+													@(isDisabledType ? "" : "chair")
+												</span>
+											</td>
+										}
+									}
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
+				@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+				{
+					<div class="d-flex align-items-center me-3">
+						<span style="display: inline-block; width: 20px; height: 20px; background-color: @type.ColorHex; margin-right: 5px; border-radius: 3px;"></span>
+						<span>@type.TypeName</span>
+					</div>
+				}
+				<div class="d-flex align-items-center me-3">
+					<span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
+					<span>Selected</span>
+				</div>
+				<div class="d-flex align-items-center me-3">
+					<span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
+					<span>Booked</span>
+				</div>
+			</div>
+		</div>
+		<div id="selectionSummary">
+			<div class="summary-block">
+				<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+					<span class="summary-value">@Model.CinemaRoomName</span>
+					<span style="color:#4caf50; font-weight:600;">@date.ToString("yyyy-MM-dd")</span>
+					<span style="color:#1976d2; font-weight:600;">@time</span>
+				</div>
+			</div>
+			<div class="summary-info">
+				<div class="summary-movie">@Model.MovieName</div>
+			</div>
+			<div class="summary-seat" id="summarySeatBlock">
+				<div id="noSeatAlert" class="summary-alert" style="display:none;">Bạn chưa chọn ghế nào. Vui lòng chọn ghế.</div>
+				<div id="seatInfo" style="display:none;">
+					<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
+					<p><span class="summary-label">Total Price:</span> <span id="totalPrice"></span> VND</p>
+					<p id="countdownTimer" class="text-danger fw-bold"></p>
+				</div>
+			</div>
+		</div>
+		<!-- Timeout message in seat-section -->
+		<div id="timeoutMessage" style="display:none; flex:1; justify-content:center; align-items:center; flex-direction:column;">
+			<h2 style="font-weight:bold; margin-bottom:18px; color:#374151;">Đã hết thời gian chọn ghế.</h2>
+			<p style="margin-bottom:24px; font-size:1.1rem; color:#374151;">Rất tiếc, phiên giao dịch của bạn đã hết hạn. Bạn có thể bắt đầu lại bằng cách nhấn vào nút bên dưới.</p>
+			<a id="retryBtn" class="btn btn-outline-success" style="font-weight:bold; font-size:1.1rem; padding:8px 32px; border-radius:8px; cursor:pointer;">CHỌN LẠI</a>
+		</div>
+	</div>
+
+	@if (!string.IsNullOrEmpty(time))
+	{
+		<div class="text-center mb-4 mt-4">
+			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+		</div>
+	}
+</div>
+
+@section Scripts{
+	<script>
+		let selectedSeats = new Set();
+		let countdownTimer = null;
+		let secondsLeft = 100; // 10 seconds for testing
+
+		function startCountdown() {
+			const timerEl = document.getElementById("countdownTimer");
+			if (countdownTimer) clearInterval(countdownTimer);
+			countdownTimer = setInterval(() => {
+				if (secondsLeft <= 0) {
+					clearInterval(countdownTimer);
+					document.getElementById('seatLayoutArea').style.display = 'none';
+					document.getElementById('selectionSummary').style.display = 'none';
+					document.getElementById('timeoutMessage').style.display = 'flex';
+					var bookBtn = document.getElementById('bookButton');
+					if (bookBtn) bookBtn.style.display = 'none';
+				} else {
+					const min = Math.floor(secondsLeft / 60);
+					const sec = secondsLeft % 60;
+					timerEl.textContent = `⏳ Time left: ${min}:${sec.toString().padStart(2, '0')}`;
+					secondsLeft--;
+				}
+			}, 1000);
+		}
+
+		function updateBookButtonState() {
+			document.getElementById('bookButton').disabled = (selectedSeats.size === 0);
+		}
+
+		function updateSelectionSummary() {
+			const selectedSeatNames = document.getElementById('selectedSeatNames');
+			const totalPrice = document.getElementById('totalPrice');
+			const seatInfo = document.getElementById('seatInfo');
+			const noSeatAlert = document.getElementById('noSeatAlert');
+
+			if (selectedSeats.size > 0) {
+				let total = 0;
+				let seatNames = [];
+				document.querySelectorAll('.selected-seat').forEach(td => {
+					const seatName = td.getAttribute('data-seat-name');
+					const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+					seatNames.push(seatName);
+					total += pricePercent;
+				});
+				selectedSeatNames.textContent = seatNames.join(', ');
+				totalPrice.textContent = total.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+				seatInfo.style.display = 'block';
+				noSeatAlert.style.display = 'none';
+			} else {
+				selectedSeatNames.textContent = '';
+				totalPrice.textContent = '';
+				seatInfo.style.display = 'none';
+				noSeatAlert.style.display = 'block';
+			}
+		}
+
+		document.getElementById('bookButton').addEventListener('click', function () {
+			if (this.disabled || selectedSeats.size === 0) return;
+			const selectedSeatIds = Array.from(selectedSeats);
+			const data = {
+				movieId: '@movieId',
+				showDate: '@date.ToString("yyyy-MM-dd")',
+				showTime: '@time',
+				selectedSeatIds: selectedSeatIds
+			};
+			const params = new URLSearchParams();
+			for (const key in data) {
+				if (Array.isArray(data[key])) {
+					data[key].forEach(item => params.append(key, item));
+				} else {
+					params.append(key, data[key]);
+				}
+			}
+			const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+			window.location.href = isAdminSell
+				? `/Booking/ConfirmTicketForAdmin?${params.toString()}`
+				: `/Booking/Information?${params.toString()}`;
+		});
+
+		document.getElementById('retryBtn').addEventListener('click', function(e) {
+			e.preventDefault();
+			window.location.href = '@returnLink';
+		});
+
+		document.addEventListener('DOMContentLoaded', function () {
+			updateBookButtonState();
+			updateSelectionSummary();
+		});
+	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+	<script>
+		const connection = new signalR.HubConnectionBuilder()
+			.withUrl("/seathub")
+			.build();
+
+		connection.on("SeatSelected", (seatId) => {
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			if (td && !td.classList.contains("selected-seat")) {
+				td.classList.add("being-held");
+				td.setAttribute("title", "Ghế đang được người khác giữ");
+			}
+		});
+
+		connection.on("SeatDeselected", (seatId) => {
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			td?.classList.remove("being-held");
+			td?.removeAttribute("title");
+		});
+
+		connection.on("SeatsReleased", (seatIds) => {
+			seatIds.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				td?.classList.remove("being-held");
+				td?.removeAttribute("title");
+			});
+		});
+
+		connection.start().then(() => {
+			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
+		});
+
+		function selectSeat(clickedTd) {
+			const seatId = clickedTd.getAttribute('data-seat-id');
+			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+
+			clickedTd.classList.toggle('selected-seat');
+			if (selectedSeats.has(seatId)) {
+				selectedSeats.delete(seatId);
+				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+			} else {
+				selectedSeats.add(seatId);
+				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+				if (selectedSeats.size === 1) startCountdown();
+			}
+			updateSelectionSummary();
+			updateBookButtonState();
+		}
+
+		connection.on("HeldSeats", (seatIds) => {
+			seatIds.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				if (td && !td.classList.contains("selected-seat")) {
+					td.classList.add("being-held");
+					td.setAttribute("title", "Ghế đang được người khác giữ");
+				}
+			});
+		});
+	</script>
+}

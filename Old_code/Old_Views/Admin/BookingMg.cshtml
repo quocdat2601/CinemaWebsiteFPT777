@@ -1,0 +1,145 @@
+﻿@model IEnumerable<MovieTheater.Models.Invoice>
+@inject MovieTheater.Service.IAccountService AccountService
+
+<h2 class="text-center">Booking Management</h2>
+
+<div class="text-center mb-2">
+    <a href="@Url.Action("InitiateTicketSellingForMember", "Admin", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-sm btn-primary">Sell Ticket</a>
+</div>
+
+<form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchBooking();">
+    <input type="hidden" name="tab" value="EmployeeMg" />
+    <div class="input-group" style="max-width: 600px;">
+        <input type="text" id="searchKeyword" name="keyword" value="@ViewBag.Keyword" maxlength="50" class="form-control" placeholder="🔍 Search by Booking ID, Account ID, Phone Number, or Identity Card..." />
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+
+<table class="table table-bordered table-striped table-hover">
+    <thead class="table-dark">
+        <tr class="text-center">
+            <th>Booking_ID</th>
+            <th>Movie Name</th>
+            <th>AccountID</th>
+            <th>Identity Card</th>
+            <th>Phone Number</th>
+            <th>Schedule Time</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="8" class="text-center">No bookings found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var Invoice in Model)
+            {   
+                var account = AccountService.GetById(Invoice.AccountId);
+                <tr class="text-center booking-row">
+                    <td>@Invoice.InvoiceId</td>
+                    <td>@(Invoice.MovieName ?? "N/A")</td>
+                    <td>@Invoice.AccountId</td>
+                    <td>@(account?.IdentityCard ?? "N/A")</td>
+                    <td>@(account?.PhoneNumber ?? "N/A")</td>
+                    <td>@(Invoice.ScheduleShowTime ?? "N/A")</td>
+                    <td>
+                        @if (Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed)
+                        {
+                            <span class="badge bg-success">Completed</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Cancelled</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                            <i class="fas fa-info-circle"></i> Details
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination" id="pagination">
+            <!-- Pagination will be dynamically generated here -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+    const BOOKING_ITEMS_PER_PAGE = 7;
+    let bookingCurrentPage = 1;
+    let bookingFilteredRows = [];
+
+    function initializeBookingMgPagination() {
+        bookingFilteredRows = Array.from(document.querySelectorAll('.booking-row'));
+        displayBookingPage(bookingCurrentPage);
+        updateBookingPagination();
+    }
+
+    function displayBookingPage(page) {
+        const startIndex = (page - 1) * BOOKING_ITEMS_PER_PAGE;
+        const endIndex = startIndex + BOOKING_ITEMS_PER_PAGE;
+        
+        // Hide all rows first
+        bookingFilteredRows.forEach(row => row.style.display = 'none');
+        
+        // Show only the rows for the current page
+        bookingFilteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+    }
+
+    function updateBookingPagination() {
+        const totalPages = Math.ceil(bookingFilteredRows.length / BOOKING_ITEMS_PER_PAGE);
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${bookingCurrentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeBookingPage(${bookingCurrentPage - 1})">Previous</a>`;
+        pagination.appendChild(prevLi);
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${bookingCurrentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changeBookingPage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${bookingCurrentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeBookingPage(${bookingCurrentPage + 1})">Next</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function changeBookingPage(page) {
+        if (page < 1 || page > Math.ceil(bookingFilteredRows.length / BOOKING_ITEMS_PER_PAGE)) return;
+        bookingCurrentPage = page;
+        displayBookingPage(bookingCurrentPage);
+        updateBookingPagination();
+    }
+
+    // Initialize pagination when the content is loaded
+    $(document).ready(function() {
+        initializeBookingMgPagination();
+    });
+
+    // Re-initialize pagination when the tab content is loaded
+    $(document).on('bookingTabLoaded', function() {
+        initializeBookingMgPagination();
+    });
+</script>

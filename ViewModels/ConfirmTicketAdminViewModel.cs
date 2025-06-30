@@ -29,7 +29,6 @@ namespace MovieTheater.ViewModels
 
         public decimal Subtotal { get; set; } // Sum of seat prices before discounts/points
         public decimal RankDiscount { get; set; } // Discount from member rank
-        public decimal PromotionDiscount { get; set; } // Discount from promotion
         public decimal TotalPrice { get; set; } // Final price after all deductions
     }
 }

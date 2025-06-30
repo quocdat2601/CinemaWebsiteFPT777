@@ -1,0 +1,139 @@
+﻿@model MovieTheater.ViewModels.AdminDashboardViewModel
+@using System.Globalization
+@using Newtonsoft.Json
+<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<div class="container-fluid mt-4">
+	<h2 class="mb-4">🎬 Admin Dashboard</h2>
+
+	<!-- KPI Cards -->
+	<div class="row mb-5">
+		<div class="col-md-3 mb-3">
+			<div class="card text-white bg-success h-100">
+				<div class="card-body text-center">
+					<h5><i class="bi bi-cash-coin"></i> Revenue Today</h5>
+					<p class="display-6">@Model.RevenueToday.ToString("#,##0", new CultureInfo("vi-VN")) đ</p>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 mb-3">
+			<div class="card text-white bg-primary h-100">
+				<div class="card-body text-center">
+					<h5><i class="bi bi-receipt"></i> Bookings Today</h5>
+					<p class="display-6">@Model.BookingsToday</p>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 mb-3">
+			<div class="card text-white bg-info h-100">
+				<div class="card-body text-center">
+					<h5><i class="bi bi-ticket-perforated"></i> Tickets Sold</h5>
+					<p class="display-6">@Model.TicketsSoldToday</p>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 mb-3">
+			<div class="card text-white bg-secondary h-100">
+				<div class="card-body text-center">
+					<h5><i class="bi bi-graph-up"></i> Occupancy Rate</h5>
+					<p class="display-6">@Model.OccupancyRateToday.ToString("F1")%</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Trend Charts -->
+	<div class="row mb-5">
+		<div class="col-md-6">
+			<h5><i class="bi bi-bar-chart-line"></i> Revenue (Last 7 days)</h5>
+			<canvas id="revenueChart"></canvas>
+		</div>
+		<div class="col-md-6">
+			<h5><i class="bi bi-calendar-check"></i> Bookings (Last 7 days)</h5>
+			<canvas id="bookingChart"></canvas>
+		</div>
+	</div>
+
+	<!-- Top Lists -->
+	<div class="row mb-5">
+		<div class="col-md-6">
+			<h5><i class="bi bi-film"></i> Top 5 Movies</h5>
+			<ul class="list-group">
+				@foreach (var m in Model.TopMovies)
+				{
+					<li class="list-group-item d-flex justify-content-between">
+						@m.MovieName
+						<span class="badge bg-primary">@m.TicketsSold</span>
+					</li>
+				}
+			</ul>
+		</div>
+		<div class="col-md-6">
+			<h5><i class="bi bi-people-fill"></i> Top 5 Members</h5>
+			<ul class="list-group">
+				@foreach (var m in Model.TopMembers)
+				{
+					<li class="list-group-item d-flex justify-content-between">
+						@m.MemberName
+						<span class="badge bg-success">@m.Bookings</span>
+					</li>
+				}
+			</ul>
+		</div>
+	</div>
+
+	<!-- New Members -->
+	<div class="row mb-5">
+		<div class="col">
+			<h5><i class="bi bi-person-plus"></i> New Members (Last 5)</h5>
+			<ul class="list-group">
+				@foreach (var m in Model.RecentMembers)
+				{
+					<li class="list-group-item">
+						<strong>@m.FullName</strong> (@m.Email) joined @m.JoinDate?.ToString("yyyy-MM-dd")
+					</li>
+				}
+			</ul>
+		</div>
+	</div>
+
+	<!-- Recent Bookings -->
+	<div class="row mb-5">
+		<div class="col">
+			<h5><i class="bi bi-clock-history"></i> Recent Bookings</h5>
+			<div class="recent-bookings-container">
+				<table>
+					<thead>
+						<tr>
+							<th>Invoice</th>
+							<th>Member</th>
+							<th>Movie</th>
+							<th>Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var booking in Model.RecentBookings)
+						{
+							<tr>
+								<td>@booking.InvoiceId</td>
+								<td>@booking.MemberName</td>
+								<td>@booking.MovieName</td>
+								<td>@booking.BookingDate.ToString("yyyy-MM-dd HH:mm")</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+<!-- Charts JSON -->
+<script id="dashboard-data" type="application/json">
+	{
+	  "revenueDates": @Html.Raw(JsonConvert.SerializeObject(Model.RevenueTrendDates.Select(d => d.ToString("MM-dd")))),
+	  "revenueValues": @Html.Raw(JsonConvert.SerializeObject(Model.RevenueTrendValues)),
+	  "bookingDates": @Html.Raw(JsonConvert.SerializeObject(Model.BookingTrendDates.Select(d => d.ToString("MM-dd")))),
+	  "bookingValues": @Html.Raw(JsonConvert.SerializeObject(Model.BookingTrendValues))
+	}
+</script>

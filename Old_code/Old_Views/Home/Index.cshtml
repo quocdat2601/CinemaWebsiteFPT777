@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
+    var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
+}
+<link rel="stylesheet" href="~/css/home-page.css" asp-append-version="true" />
+
+
+<div class="container-xl py-4">
+    <!-- Slideshow banner -->
+    <div class="slideshow-container">
+        <ul id="home_big_banner" class="slideshow"
+            data-cycle-fx="fade"
+            data-cycle-timeout="5000"
+            data-cycle-slides="> li"
+            data-cycle-pager=".home_big_banner_pager"
+            data-cycle-pager-template="<span class='pager-bullet'></span>"
+            data-cycle-prev=".home_big_banner_prev"
+            data-cycle-next=".home_big_banner_next"
+            data-cycle-swipe="true"
+            data-cycle-swipe-fx="fade">
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h_1_-min_6.jpg" alt="Banner 1" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h-duoidayho.jpg" alt="Banner 2" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://i.ytimg.com/vi/8Yj61CP1Sic/maxresdefault.jpg" alt="Banner 3" />
+                </a>
+            </li>
+            <li class="slide-item">
+                <a href="">
+                    <img src="https://www.bhdstar.vn/wp-content/uploads/2024/08/referenceSchemeHeadOfficeallowPlaceHoldertrueheight360ldapp.png" alt="Banner 4" />
+                </a>
+            </li>
+        </ul>
+        <button type="button" class="slideshow-prev home_big_banner_prev" aria-label="Previous slide">&#10094;</button>
+        <button type="button" class="slideshow-next home_big_banner_next" aria-label="Next slide">&#10095;</button>
+        <div class="home_big_banner_pager pager-container"></div>
+    </div>
+
+    <div class="mb-5"></div>
+
+    <h2 class="section-title">MOVIE</h2>
+    <!-- Hero Section OUTSIDE container -->
+<div class="hero-section">
+    <div class="hero-bg" id="hero-bg" style="background-image: url('@Url.Content(movies.FirstOrDefault()?.LargeImage)');"></div>
+    <div class="hero-content row no-gutters">
+        <div class="col-md-7 hero-info" id="hero-info">
+
+            <h1 class="movie-title">@movies.FirstOrDefault()?.MovieNameEnglish</h1>
+            <div class="movie-meta">
+                <span class="movie-duration">@movies.FirstOrDefault()?.Duration</span>
+                <span class="movie-director">@movies.FirstOrDefault()?.Director</span>
+                <span class="movie-actor">@movies.FirstOrDefault()?.Actor</span>
+                <span class="movie-version">@movies.FirstOrDefault()?.Version</span>
+            </div>
+            <p class="movie-desc">@movies.FirstOrDefault()?.Content</p>
+            <div class="movie-actions">
+                <a href="Movie/Detail/@movies.FirstOrDefault()?.MovieId" class="btn btn-danger">Book</a>
+            </div>
+        </div>
+        <div class="col-md-5 d-flex align-items-center justify-content-end">
+            <div class="movie-slider-glass">
+                <div class="swiper movie-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach (var movie in movies)
+                        {
+                            <div class="swiper-slide" 
+                                 data-large="@movie.LargeImage"
+                                 data-title="@movie.MovieNameEnglish"
+                                 data-duration="@movie.Duration"
+                                 data-director="@movie.Director"
+                                 data-actor="@movie.Actor"
+                                 data-version="@movie.Version"
+                                 data-desc="@movie.Content">
+                                <img src="@movie.SmallImage" class="slider-img" alt="@movie.MovieNameEnglish">
+                            </div>
+                        }
+                    </div>
+                    <div class="swiper-pagination movie-pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-xl py-4">
+    <!-- Promotion Slider -->
+    <h2 class="section-title">PROMOTION</h2>
+    <div class="swiper promo-swiper mb-5">
+        <div class="swiper-wrapper">
+            @foreach (var promo in promotions)
+            {
+                <div class="swiper-slide">
+                    <div class="card promo-card h-100 shadow-sm">
+                        <img src="@promo.Image" class="card-img-top" alt="Promotion">
+                        <div class="card-body text-center">
+                            <p class="card-text">@promo.Detail</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="swiper-pagination promo-pagination"></div>
+        <div class="swiper-button-next promo-next"></div>
+        <div class="swiper-button-prev promo-prev"></div>
+    </div>
+</div>
+
+<script src="~/js/home-page.js"></script>
