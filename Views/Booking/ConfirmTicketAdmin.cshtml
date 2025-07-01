@@ -295,6 +295,7 @@
         $(document).ready(function () {
             // Open modal using Bootstrap 5 API
             let memberModalInstance = null;
+            let selectedAccountId = null;
             $('#openMemberModalBtn').click(function () {
                 if (!memberModalInstance) {
                     memberModalInstance = new bootstrap.Modal(document.getElementById('memberModal'));
@@ -353,6 +354,7 @@
                 $('#memberPhoneNumber').val(member.account.phoneNumber);
                 $('#memberScore').val(member.score);
                 $('#accountId').val(member.account.accountId || '');
+                selectedAccountId = member.account.accountId;
                 $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
                 $('#memberDetails').show();
                 $('#confirmTicketAdminBtn').prop('disabled', false);
