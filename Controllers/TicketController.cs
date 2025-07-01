@@ -17,16 +17,17 @@ namespace MovieTheater.Controllers
     public class TicketController : Controller
     {
         private readonly MovieTheaterContext _context;
-
+        private readonly IVoucherService _voucherService;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IAccountService _accountService;
 
 
-        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService)
+        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService)
         {
             _invoiceRepository = invoiceRepository;
             _context = context;
             _accountService = accountService;
+            _voucherService = voucherService;
         }
 
         [HttpGet]

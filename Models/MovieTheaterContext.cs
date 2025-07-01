@@ -59,21 +59,17 @@ public partial class MovieTheaterContext : DbContext
 
     public virtual DbSet<Voucher> Vouchers { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=(local);uid=sa;pwd=123456;database=MovieTheater;TrustServerCertificate=True;");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
         {
-            entity.HasKey(e => e.AccountId).HasName("PK__Account__B19E45C989D63A74");
+            entity.HasKey(e => e.AccountId).HasName("PK__Account__B19E45C9A69D8108");
 
             entity.ToTable("Account");
 
-            entity.HasIndex(e => e.Email, "UQ__Account__A9D105341AC88349").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Account__A9D10534F6DB88E7").IsUnique();
 
-            entity.HasIndex(e => e.Username, "UQ__Account__B15BE12E86A1F9F7").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Account__B15BE12EDBC5CC46").IsUnique();
 
             entity.Property(e => e.AccountId)
                 .HasMaxLength(10)
@@ -137,7 +133,7 @@ public partial class MovieTheaterContext : DbContext
                         .HasConstraintName("FK__Wishlist__Accoun__01D345B0"),
                     j =>
                     {
-                        j.HasKey("AccountId", "MovieId").HasName("PK__Wishlist__F636C589526F85BE");
+                        j.HasKey("AccountId", "MovieId").HasName("PK__Wishlist__F636C5895798D58D");
                         j.ToTable("Wishlist");
                         j.IndexerProperty<string>("AccountId")
                             .HasMaxLength(10)
@@ -152,7 +148,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<CinemaRoom>(entity =>
         {
-            entity.HasKey(e => e.CinemaRoomId).HasName("PK__Cinema_R__E15FECAAA8914A3C");
+            entity.HasKey(e => e.CinemaRoomId).HasName("PK__Cinema_R__E15FECAA372326D2");
 
             entity.ToTable("Cinema_Room");
 
@@ -175,7 +171,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<ConditionType>(entity =>
         {
-            entity.HasKey(e => e.ConditionTypeId).HasName("PK__Conditio__8DF87998770571D2");
+            entity.HasKey(e => e.ConditionTypeId).HasName("PK__Conditio__8DF87998E718133E");
 
             entity.ToTable("ConditionType");
 
@@ -189,7 +185,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<CoupleSeat>(entity =>
         {
-            entity.HasKey(e => e.CoupleSeatId).HasName("PK__CoupleSe__B9EB0208A7D8889E");
+            entity.HasKey(e => e.CoupleSeatId).HasName("PK__CoupleSe__B9EB0208EE0F26C7");
 
             entity.ToTable("CoupleSeat");
 
@@ -210,7 +206,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Employee>(entity =>
         {
-            entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__78113481BFFEFB72");
+            entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__781134817430DC7D");
 
             entity.ToTable("Employee");
 
@@ -230,7 +226,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Food>(entity =>
         {
-            entity.HasKey(e => e.FoodId).HasName("PK__Food__856DB3EB3BBFDBE6");
+            entity.HasKey(e => e.FoodId).HasName("PK__Food__856DB3EBA7026316");
 
             entity.ToTable("Food");
 
@@ -256,7 +252,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Invoice>(entity =>
         {
-            entity.HasKey(e => e.InvoiceId).HasName("PK__Invoice__0DE60494CFE0605A");
+            entity.HasKey(e => e.InvoiceId).HasName("PK__Invoice__0DE60494F42964FE");
 
             entity.ToTable("Invoice");
 
@@ -274,6 +270,7 @@ public partial class MovieTheaterContext : DbContext
             entity.Property(e => e.PromotionDiscount)
                 .HasDefaultValue(0)
                 .HasColumnName("Promotion_Discount");
+            entity.Property(e => e.RankDiscountPercentage).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.Seat)
                 .HasMaxLength(30)
                 .IsUnicode(false);
@@ -301,7 +298,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Member>(entity =>
         {
-            entity.HasKey(e => e.MemberId).HasName("PK__Member__42A68F27591A2D99");
+            entity.HasKey(e => e.MemberId).HasName("PK__Member__42A68F275D630B96");
 
             entity.ToTable("Member");
 
@@ -322,7 +319,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Movie>(entity =>
         {
-            entity.HasKey(e => e.MovieId).HasName("PK__Movie__7A88040592717011");
+            entity.HasKey(e => e.MovieId).HasName("PK__Movie__7A8804050226B36B");
 
             entity.ToTable("Movie");
 
@@ -379,7 +376,7 @@ public partial class MovieTheaterContext : DbContext
                         .HasConstraintName("FK__Movie_Typ__Movie__4A8310C6"),
                     j =>
                     {
-                        j.HasKey("MovieId", "TypeId").HasName("PK__Movie_Ty__856109DA438F7308");
+                        j.HasKey("MovieId", "TypeId").HasName("PK__Movie_Ty__856109DA3F55619F");
                         j.ToTable("Movie_Type");
                         j.IndexerProperty<string>("MovieId")
                             .HasMaxLength(10)
@@ -401,7 +398,7 @@ public partial class MovieTheaterContext : DbContext
                         .HasConstraintName("FK__Movie_Ver__Movie__46B27FE2"),
                     j =>
                     {
-                        j.HasKey("MovieId", "VersionId").HasName("PK__Movie_Ve__9A8607D56BDA43E9");
+                        j.HasKey("MovieId", "VersionId").HasName("PK__Movie_Ve__9A8607D526408715");
                         j.ToTable("Movie_Version");
                         j.IndexerProperty<string>("MovieId")
                             .HasMaxLength(10)
@@ -413,7 +410,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<MovieShow>(entity =>
         {
-            entity.HasKey(e => e.MovieShowId).HasName("PK__Movie_Sh__7616F8A065EE3DE0");
+            entity.HasKey(e => e.MovieShowId).HasName("PK__Movie_Sh__7616F8A0CF7742E2");
 
             entity.ToTable("Movie_Show");
 
@@ -450,7 +447,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Promotion>(entity =>
         {
-            entity.HasKey(e => e.PromotionId).HasName("PK__Promotio__DAF79AFBF80E2FB5");
+            entity.HasKey(e => e.PromotionId).HasName("PK__Promotio__DAF79AFB94AB82B2");
 
             entity.ToTable("Promotion");
 
@@ -480,7 +477,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<PromotionCondition>(entity =>
         {
-            entity.HasKey(e => e.ConditionId).HasName("PK__Promotio__D4F58B850536FB12");
+            entity.HasKey(e => e.ConditionId).HasName("PK__Promotio__D4F58B85B2F9BD8E");
 
             entity.ToTable("PromotionCondition");
 
@@ -538,7 +535,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__D80AB49BF2A74CE0");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__D80AB49B85585E83");
 
             entity.Property(e => e.RoleId)
                 .ValueGeneratedNever()
@@ -551,7 +548,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Schedule>(entity =>
         {
-            entity.HasKey(e => e.ScheduleId).HasName("PK__Schedule__8C4D3BBB9739158F");
+            entity.HasKey(e => e.ScheduleId).HasName("PK__Schedule__8C4D3BBB15973B2B");
 
             entity.ToTable("Schedule");
 
@@ -561,7 +558,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<ScheduleSeat>(entity =>
         {
-            entity.HasKey(e => e.ScheduleSeatId).HasName("PK__Schedule__C3F9AE855C895D45");
+            entity.HasKey(e => e.ScheduleSeatId).HasName("PK__Schedule__C3F9AE85C6200986");
 
             entity.ToTable("Schedule_Seat");
 
@@ -596,7 +593,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Seat>(entity =>
         {
-            entity.HasKey(e => e.SeatId).HasName("PK__Seat__8B2CE7B6D541059B");
+            entity.HasKey(e => e.SeatId).HasName("PK__Seat__8B2CE7B6761A1CE1");
 
             entity.ToTable("Seat");
 
@@ -628,7 +625,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<SeatStatus>(entity =>
         {
-            entity.HasKey(e => e.SeatStatusId).HasName("PK__Seat_Sta__228AAF670D2FC07B");
+            entity.HasKey(e => e.SeatStatusId).HasName("PK__Seat_Sta__228AAF67B0051587");
 
             entity.ToTable("Seat_Status");
 
@@ -641,7 +638,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<SeatType>(entity =>
         {
-            entity.HasKey(e => e.SeatTypeId).HasName("PK__Seat_Typ__BDB07EDCE9AE99D8");
+            entity.HasKey(e => e.SeatTypeId).HasName("PK__Seat_Typ__BDB07EDCA71E7E77");
 
             entity.ToTable("Seat_Type");
 
@@ -662,7 +659,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Type>(entity =>
         {
-            entity.HasKey(e => e.TypeId).HasName("PK__Type__FE90DDFEE9D6E449");
+            entity.HasKey(e => e.TypeId).HasName("PK__Type__FE90DDFEEE14460B");
 
             entity.ToTable("Type");
 
@@ -677,7 +674,7 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Version>(entity =>
         {
-            entity.HasKey(e => e.VersionId).HasName("PK__Version__00E03D0F124F04FA");
+            entity.HasKey(e => e.VersionId).HasName("PK__Version__00E03D0F6AC377BA");
 
             entity.ToTable("Version");
 
@@ -693,11 +690,11 @@ public partial class MovieTheaterContext : DbContext
 
         modelBuilder.Entity<Voucher>(entity =>
         {
-            entity.HasKey(e => e.VoucherId).HasName("PK__Voucher__D753929CEB5943CA");
+            entity.HasKey(e => e.VoucherId).HasName("PK__Voucher__D753929CA59C6C02");
 
             entity.ToTable("Voucher");
 
-            entity.HasIndex(e => e.Code, "UQ__Voucher__A25C5AA72D19BA54").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__Voucher__A25C5AA7849A240E").IsUnique();
 
             entity.Property(e => e.VoucherId)
                 .HasMaxLength(10)

@@ -158,7 +158,6 @@ CREATE TABLE Invoice (
     Add_Score INT,
     BookingDate DATETIME,
     Status INT,
-    RoleId INT,
     Total_Money DECIMAL,
     Use_Score INT,
     Seat VARCHAR(30),
@@ -166,6 +165,7 @@ CREATE TABLE Invoice (
     Movie_Show_Id INT, 
 	Promotion_Discount INT DEFAULT 0,
 	Voucher_ID VARCHAR(10) NULL,
+	RankDiscountPercentage DECIMAL(5,2) NULL,
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
 	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
 	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)

@@ -358,7 +358,7 @@ namespace MovieTheater.Controllers
                     Seat = seatList,
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
                     PromotionDiscount = (int?)promotionDiscountLevel, // Save the discount level
-                    RankDiscountPercentage = userAccount?.Rank?.DiscountPercentage ?? 0 // Lưu discount của rank tại thời điểm booking
+                    RankDiscountPercentage = userAccount?.Rank?.DiscountPercentage ?? 0, // Lưu discount của rank tại thời điểm booking
                     MovieShowId = model.MovieShowId
                 };
 
@@ -442,9 +442,6 @@ namespace MovieTheater.Controllers
 
                     await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
                 }
-
-                // Always set CinemaRoomName in TempData before redirect
-                TempData["CinemaRoomName"] = invoice.MovieShow.CinemaRoom.CinemaRoomName;
 
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
@@ -912,7 +909,7 @@ namespace MovieTheater.Controllers
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
                     PromotionDiscount = (int?)promotionDiscountLevel, // Save the promotion discount level
-                    RankDiscountPercentage = member?.Account?.Rank?.DiscountPercentage ?? 0 // Lưu discount của rank tại thời điểm booking
+                    RankDiscountPercentage = member?.Account?.Rank?.DiscountPercentage ?? 0, // Lưu discount của rank tại thời điểm booking
                     MovieShowId = model.MovieShowId
                 };
 
@@ -1234,6 +1231,7 @@ namespace MovieTheater.Controllers
                 MovieName = invoice.MovieShow.Movie.MovieNameEnglish,
                 CinemaRoomName = invoice.MovieShow.CinemaRoom.CinemaRoomName,
                 ShowDate = invoice.MovieShow.ShowDate,
+                VersionName = invoice.MovieShow.Version?.VersionName ?? "N/A",
                 ShowTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
                 SelectedSeats = seats,
                 TotalPrice = totalPrice,

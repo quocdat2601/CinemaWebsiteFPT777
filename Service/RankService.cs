@@ -142,7 +142,8 @@ namespace MovieTheater.Service
                 CurrentRankName = rank.RankName,
                 RequiredPointsForCurrentRank = rank.RequiredPoints ?? 0,
                 CurrentDiscountPercentage = rank.DiscountPercentage ?? 0,
-                CurrentPointEarningPercentage = rank.PointEarningPercentage ?? 0,
+                //CurrentPointEarningPercentage = rank.PointEarningPercentage ?? 0,
+                CurrentPointEarningPercentage = rank.PointEarningPercentage,
                 ColorGradient = rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)",
                 IconClass = rank.IconClass ?? "fa-crown"
             };
