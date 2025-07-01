@@ -16,8 +16,7 @@
 			<th>ID</th>
 			<th>Image</th>
 			<th>Name</th>
-			<th>Start Date</th>
-			<th>End Date</th>
+			<th>Promotion Period</th>
 			<th>Status</th>
 			<th style="width: 150px;">Actions</th>
 		</tr>
@@ -38,8 +37,9 @@
 					}
 				</td>
 				<td>@promotion.Title</td>
-				<td class="text-center">@promotion.StartTime?.ToString("dd/MM/yyyy")</td>
-				<td class="text-center">@promotion.EndTime?.ToString("dd/MM/yyyy")</td>
+				<td class="text-center">
+					@((promotion.StartTime.HasValue && promotion.EndTime.HasValue) ? ($"{promotion.StartTime.Value:dd/MM/yyyy}-{promotion.EndTime.Value:dd/MM/yyyy}") : "N/A")
+				</td>
 				<td class="text-center">
 					@if (promotion.IsActive)
 					{
