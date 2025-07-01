@@ -36,6 +36,8 @@ namespace MovieTheater.Controllers
         /// [GET] api/movie/movielist
         /// Tìm kiếm và hiển thị danh sách phim. Nếu là Ajax request thì trả về partial view.
         /// </summary>
+        [HttpGet]
+        [Route("Movie/MovieList")]
         public IActionResult MovieList(string searchTerm)
         {
             var movies = _movieService.SearchMovies(searchTerm)
@@ -63,6 +65,8 @@ namespace MovieTheater.Controllers
         /// [GET] api/movie/detail/{id}
         /// Hiển thị thông tin chi tiết của một bộ phim.
         /// </summary>
+        [HttpGet]
+        [Route("Movie/Detail/{id}")]
         public ActionResult Detail(string id)
         {
             var movie = _movieService.GetById(id);
@@ -103,6 +107,7 @@ namespace MovieTheater.Controllers
         /// Trả về form tạo mới phim.
         /// </summary>
         [HttpGet]
+        [Route("Movie/Create")]
         public IActionResult Create()
         {
             var model = new MovieDetailViewModel
@@ -118,6 +123,7 @@ namespace MovieTheater.Controllers
         /// Tạo mới một bộ phim kèm theo các lịch chiếu và ngày chiếu.
         /// </summary>
         [HttpPost]
+        [Route("Movie/Create")]
         [ValidateAntiForgeryToken]
         public IActionResult Create(MovieDetailViewModel model)
         {
@@ -370,6 +376,7 @@ namespace MovieTheater.Controllers
         /// Xóa phim khỏi hệ thống dựa trên ID. Role xác định route sau khi xóa.
         /// </summary>
         [HttpPost]
+        [Route("Movie/Delete/{id}")]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {

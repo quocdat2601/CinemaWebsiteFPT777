@@ -4,10 +4,6 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System.Security.Claims;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace MovieTheater.Controllers
 {

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using MovieTheater.Models;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.ViewModels;
@@ -69,4 +66,4 @@ namespace MovieTheater.Repository
             };
         }
     }
-} 
+}

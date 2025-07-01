@@ -12,4 +12,4 @@ namespace MovieTheater.Service
         Task<bool> ToggleStatusAsync(int id);
         Task<List<string>> GetCategoriesAsync();
     }
-} 
+}

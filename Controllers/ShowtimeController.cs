@@ -13,82 +13,110 @@ namespace MovieTheater.Controllers
            _context = context;
        }
 
-       // GET: ShowtimeController
-       public IActionResult List()
-       {
-           return View();
-       }
+        /// <summary>
+        /// Danh sách suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/List (GET)</remarks>
+        public IActionResult List()
+        {
+            return View();
+        }
 
-       // GET: ShowtimeController/Details/5
-       public ActionResult Details(int id)
-       {
-           return View();
-       }
+        /// <summary>
+        /// Xem chi tiết suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Details (GET)</remarks>
+        public ActionResult Details(int id)
+        {
+            return View();
+        }
 
-       // GET: ShowtimeController/Create
-       public ActionResult Create()
-       {
-           return View();
-       }
+        /// <summary>
+        /// Trang tạo suất chiếu mới
+        /// </summary>
+        /// <remarks>url: /Showtime/Create (GET)</remarks>
+        public ActionResult Create()
+        {
+            return View();
+        }
 
-       // POST: ShowtimeController/Create
-       [HttpPost]
-       [ValidateAntiForgeryToken]
-       public ActionResult Create(IFormCollection collection)
-       {
-           try
-           {
-               return RedirectToAction(nameof(Index));
-           }
-           catch
-           {
-               return View();
-           }
-       }
+        /// <summary>
+        /// Tạo suất chiếu mới
+        /// </summary>
+        /// <remarks>url: /Showtime/Create (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create(IFormCollection collection)
+        {
+            try
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
 
-       // GET: ShowtimeController/Edit/5
-       public ActionResult Edit(int id)
-       {
-           return View();
-       }
+        /// <summary>
+        /// Trang sửa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Edit (GET)</remarks>
+        public ActionResult Edit(int id)
+        {
+            return View();
+        }
 
-       // POST: ShowtimeController/Edit/5
-       [HttpPost]
-       [ValidateAntiForgeryToken]
-       public ActionResult Edit(int id, IFormCollection collection)
-       {
-           try
-           {
-               return RedirectToAction(nameof(Index));
-           }
-           catch
-           {
-               return View();
-           }
-       }
+        /// <summary>
+        /// Sửa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Edit (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit(int id, IFormCollection collection)
+        {
+            try
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
 
-       // GET: ShowtimeController/Delete/5
-       public ActionResult Delete(int id)
-       {
-           return View();
-       }
+        /// <summary>
+        /// Trang xóa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Delete (GET)</remarks>
+        public ActionResult Delete(int id)
+        {
+            return View();
+        }
 
-       // POST: ShowtimeController/Delete/5
-       [HttpPost]
-       [ValidateAntiForgeryToken]
-       public ActionResult Delete(int id, IFormCollection collection)
-       {
-           try
-           {
-               return RedirectToAction(nameof(Index));
-           }
-           catch
-           {
-               return View();
-           }
-       }
+        /// <summary>
+        /// Xóa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Delete (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Delete(int id, IFormCollection collection)
+        {
+            try
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
 
-       public IActionResult Select(string date, string returnUrl)
+        /// <summary>
+        /// Chọn suất chiếu theo ngày
+        /// </summary>
+        /// <remarks>url: /Showtime/Select (GET)</remarks>
+        public IActionResult Select(string date, string returnUrl)
        {
            // 1. Get all available screening dates from MovieShows
            var availableDates = _context.MovieShows

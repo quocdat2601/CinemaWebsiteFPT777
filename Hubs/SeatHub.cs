@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Models;
 using System.Collections.Concurrent;
 using System.Security.Claims;
-using MovieTheater.Models;
 
 namespace MovieTheater.Hubs
 {

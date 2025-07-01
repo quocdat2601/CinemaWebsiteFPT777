@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
+using MovieTheater.Models;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Configuration;
-using MovieTheater.Models;
-using System.Linq;
 using System.Web;
 
 namespace MovieTheater.Service
@@ -39,7 +35,7 @@ namespace MovieTheater.Service
             // topup: Nạp tiền
             // fashion: Thời trang
             // other: Khác
-            vnpay.Add("vnp_OrderType", "billpayment"); 
+            vnpay.Add("vnp_OrderType", "billpayment");
             vnpay.Add("vnp_ReturnUrl", _config.ReturnUrl);
             vnpay.Add("vnp_TxnRef", orderId); // Mã đơn hàng
             vnpay.Add("vnp_ExpireDate", createDate.AddMinutes(_config.ExpiredTime).ToString("yyyyMMddHHmmss")); // Thời gian hết hạn
@@ -122,4 +118,4 @@ namespace MovieTheater.Service
             return _compareInfo.Compare(x, y, CompareOptions.Ordinal);
         }
     }
-} 
+}

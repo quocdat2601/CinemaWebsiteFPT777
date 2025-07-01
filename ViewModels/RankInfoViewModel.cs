@@ -1,6 +1,3 @@
-using MovieTheater.Models;
-using System.Collections.Generic;
-
 namespace MovieTheater.ViewModels
 {
     public class RankInfoViewModel
@@ -9,19 +6,19 @@ namespace MovieTheater.ViewModels
         public string CurrentRankName { get; set; }
         public decimal CurrentDiscountPercentage { get; set; }
         public decimal CurrentPointEarningPercentage { get; set; }
-        
+
         public int CurrentScore { get; set; }
         public int TotalPoints { get; set; } // total lifetime points, not reset on redemption
         public int RequiredPointsForCurrentRank { get; set; }
         public int RequiredPointsForNextRank { get; set; }
         public int PointsToNextRank { get; set; }
         public double ProgressToNextRank { get; set; } // Percentage (0-100)
-        
+
         public bool HasNextRank { get; set; }
         public string NextRankName { get; set; }
         public decimal NextRankDiscountPercentage { get; set; }
         public decimal NextRankPointEarningPercentage { get; set; }
-        
+
         public string ColorGradient { get; set; }
         public string IconClass { get; set; }
 
@@ -42,4 +39,4 @@ namespace MovieTheater.ViewModels
         public string ColorGradient { get; set; }
         public string IconClass { get; set; }
     }
-} 
+}

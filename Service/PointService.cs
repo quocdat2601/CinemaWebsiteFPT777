@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace MovieTheater.Service
 {
     public class PointService : IPointService
@@ -44,4 +41,4 @@ namespace MovieTheater.Service
             return result;
         }
     }
-} 
+}

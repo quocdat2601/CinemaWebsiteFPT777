@@ -81,7 +81,7 @@ namespace MovieTheater.Repository
                     .Include(m => m.Types)
                     .Include(m => m.Versions)
                     .FirstOrDefault(m => m.MovieId == movie.MovieId);
-                    
+
                 if (existingMovie != null)
                 {
                     existingMovie.MovieNameEnglish = movie.MovieNameEnglish;
@@ -96,8 +96,11 @@ namespace MovieTheater.Repository
                     existingMovie.TrailerUrl = movie.TrailerUrl;
                     existingMovie.LargeImage = movie.LargeImage;
                     existingMovie.SmallImage = movie.SmallImage;
-                
+
+                    // Clear existing types
                     existingMovie.Types.Clear();
+
+                    // Add new types
                     foreach (var type in movie.Types)
                     {
                         var existingType = _context.Types.Find(type.TypeId);
@@ -367,7 +370,7 @@ namespace MovieTheater.Repository
         public List<string> GetShowTimes(string movieId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
-            
+
             return _context.MovieShows
                 .Include(ms => ms.Schedule)
                 .Where(ms => ms.MovieId == movieId && 

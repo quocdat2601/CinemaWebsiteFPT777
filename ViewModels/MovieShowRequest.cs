@@ -9,4 +9,4 @@ namespace MovieTheater.ViewModels
         public int VersionId { get; set; }
         public DateOnly ShowDate { get; set; }
     }
-} 
+}

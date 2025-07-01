@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Models;
-using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.Authorization;
+using MovieTheater.Models;
 using MovieTheater.Service;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -11,6 +10,8 @@ using System.Linq;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Repository;
 using System.Threading.Tasks;
+using MovieTheater.ViewModels;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -29,14 +30,20 @@ namespace MovieTheater.Controllers
             _accountService = accountService;
             _voucherService = voucherService;
         }
-
+        /// <summary>
+        /// Chuyển hướng lịch sử vé sang trang Index
+        /// </summary>
+        /// <remarks>url: /Ticket/History (GET)</remarks>
         [HttpGet]
         public IActionResult History()
         {
             // Redirect /Ticket/History to /Ticket/Index
             return RedirectToAction("Index");
         }
-        // AC-01: View all booked tickets
+        /// <summary>
+        /// Xem tất cả vé đã đặt
+        /// </summary>
+        /// <remarks>url: /Ticket/Index (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -52,7 +59,10 @@ namespace MovieTheater.Controllers
         }
 
 
-        // AC-01: View booked tickets with filtering
+        /// <summary>
+        /// Xem vé đã đặt (lọc trạng thái completed)
+        /// </summary>
+        /// <remarks>url: /Ticket/Booked (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> Booked()
         {
@@ -67,7 +77,10 @@ namespace MovieTheater.Controllers
             return View("Index", bookings);
         }
 
-        // AC-01: View canceled tickets
+        /// <summary>
+        /// Xem vé đã hủy (lọc trạng thái incomplete)
+        /// </summary>
+        /// <remarks>url: /Ticket/Canceled (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> Canceled()
         {
@@ -82,7 +95,10 @@ namespace MovieTheater.Controllers
             return View("Index", bookings);
         }
 
-        // AC-01: View ticket details
+        /// <summary>
+        /// Xem chi tiết vé
+        /// </summary>
+        /// <remarks>url: /Ticket/Details (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> Details(string id)
         {
@@ -134,7 +150,7 @@ namespace MovieTheater.Controllers
             }
 
             ViewBag.SeatDetails = seatDetails;
-            
+
             // Truyền voucher info vào ViewBag nếu có
             if (booking.Voucher != null)
             {
@@ -145,7 +161,10 @@ namespace MovieTheater.Controllers
             return View(booking);
         }
 
-        // AC-04: Cancel ticket
+        /// <summary>
+        /// Hủy vé đã đặt
+        /// </summary>
+        /// <remarks>url: /Ticket/Cancel (POST)</remarks>
         [HttpPost]
         public async Task<IActionResult> Cancel(string id, string returnUrl)
         {
@@ -243,12 +262,12 @@ namespace MovieTheater.Controllers
 
             // Combine cancellation and rank upgrade notifications (member only)
             var messages = new List<string> { "Ticket cancelled successfully." };
-            
+
             if (refundVoucher != null)
             {
                 messages.Add($"Refund voucher value: {refundVoucher.Value:N0} VND (valid for 30 days).");
             }
-            
+
             if (usedVoucher != null)
             {
                 messages.Add($"Original voucher '{usedVoucher.Code}' has been restored.");
@@ -265,6 +284,10 @@ namespace MovieTheater.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        /// <summary>
+        /// Xem lịch sử vé theo khoảng ngày và trạng thái
+        /// </summary>
+        /// <remarks>url: /Ticket/HistoryPartial (GET)</remarks>
         [HttpGet]
         public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate, string status = "all")
         {
@@ -288,11 +311,19 @@ namespace MovieTheater.Controllers
             return Json(new { success = true, data = result });
         }
 
+        /// <summary>
+        /// Test chức năng (dùng cho dev)
+        /// </summary>
+        /// <remarks>url: /Ticket/Test (GET)</remarks>
         public IActionResult Test()
         {
             return Content("Test OK");
         }
 
+        /// <summary>
+        /// Hủy vé bởi admin
+        /// </summary>
+        /// <remarks>url: /Ticket/CancelByAdmin (POST)</remarks>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
@@ -373,12 +404,12 @@ namespace MovieTheater.Controllers
 
             // Combine cancellation and rank upgrade notifications
             var messages = new List<string> { "Ticket cancelled successfully." };
-            
+
             if (refundVoucher != null)
             {
                 messages.Add($"Refund voucher value: {refundVoucher.Value:N0} VND (valid for 30 days).");
             }
-            
+
             if (usedVoucher != null)
             {
                 messages.Add($"Original voucher '{usedVoucher.Code}' has been restored.");

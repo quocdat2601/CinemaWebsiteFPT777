@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace MovieTheater.Service
 {
     public interface IVNPayService
@@ -7,4 +5,4 @@ namespace MovieTheater.Service
         string CreatePaymentUrl(decimal amount, string orderInfo, string orderId);
         bool ValidateSignature(IDictionary<string, string> vnpayData, string vnpSecureHash);
     }
-} 
+}

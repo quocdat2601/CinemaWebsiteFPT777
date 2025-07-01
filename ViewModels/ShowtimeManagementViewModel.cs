@@ -1,6 +1,4 @@
 using MovieTheater.Models;
-using System;
-using System.Collections.Generic;
 
 namespace MovieTheater.ViewModels
 {
@@ -11,4 +9,4 @@ namespace MovieTheater.ViewModels
         public List<Schedule> AvailableSchedules { get; set; } = new List<Schedule>();
         public List<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
     }
-} 
+}

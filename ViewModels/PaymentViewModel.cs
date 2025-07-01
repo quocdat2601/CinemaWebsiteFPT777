@@ -1,5 +1,3 @@
-using System;
-
 namespace MovieTheater.ViewModels
 {
     public class PaymentViewModel
@@ -12,4 +10,4 @@ namespace MovieTheater.ViewModels
         public decimal TotalAmount { get; set; }
         public string OrderInfo { get; set; }
     }
-} 
+}
