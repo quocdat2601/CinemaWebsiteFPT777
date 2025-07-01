@@ -17,6 +17,7 @@
 			<th>Image</th>
 			<th>Name</th>
 			<th>Promotion Period</th>
+			<th>Discount Value%</th>
 			<th>Status</th>
 			<th style="width: 150px;">Actions</th>
 		</tr>
@@ -38,7 +39,10 @@
 				</td>
 				<td>@promotion.Title</td>
 				<td class="text-center">
-					@((promotion.StartTime.HasValue && promotion.EndTime.HasValue) ? ($"{promotion.StartTime.Value:dd/MM/yyyy}-{promotion.EndTime.Value:dd/MM/yyyy}") : "N/A")
+					@((promotion.StartTime.HasValue && promotion.EndTime.HasValue) ? ($"{promotion.StartTime.Value:dd/MM/yyyy} - {promotion.EndTime.Value:dd/MM/yyyy}") : "N/A")
+				</td>
+				<td class="text-center">
+					@promotion.DiscountLevel
 				</td>
 				<td class="text-center">
 					@if (promotion.IsActive)
