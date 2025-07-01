@@ -39,7 +39,7 @@
                     <div style="font-size:1.5rem;font-weight:600;">@profile.FullName</div>
                     <div style="margin-top:0.3rem;">
                         <span class="rank-badge" style="font-size:0.95rem;padding:0.18rem 0.9rem;margin:0;background:rgba(255,255,255,0.15);color:#fff;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.2);">
-                            <i class="fas @(rank.IconClass ?? "fa-crown")"></i> @rank.CurrentRankName
+                            <i class="@(currentRankDisplay?.IconClass ?? rank.IconClass ?? "fa-crown")" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0; margin-right: 0.5rem;"></i> @rank.CurrentRankName
                         </span>
                     </div>
                     <div style="font-size:1.1rem; margin-top:0.3rem; display: flex; gap: 2rem; align-items: center;">
@@ -208,7 +208,7 @@
                             {
                                 var rankDetail = sortedRanks[i];
                                 var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
-                                var rankIcon = rankDetail.IconClass ?? "fa-crown";
+                                var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
                                 var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
                                 var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
 
@@ -237,7 +237,7 @@
                                 <div class="carousel-item @activeClass">
                                     <div class="rank-card" style="--rank-gradient: @rankGradient;">
                                         <div class="rank-card-header">
-                                            <i class="fas @rankIcon"></i>
+                                            <i class="@rankIcon" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0;"></i>
                                             <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
                                             <span class="rank-status">@rankStatus</span>
                                         </div>
