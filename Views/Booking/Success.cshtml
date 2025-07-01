@@ -219,22 +219,9 @@
                         <div class="ticket-section-title">Price Breakdown</div>
                         <table class="table table-borderless mb-2">
                             <tbody>
-                                @if (promotionDiscount > 0)
-                                {
-                                    var originalSubtotal = subtotal / (1 - promotionDiscount / 100m);
-                                    var promotionDiscountAmount = originalSubtotal - subtotal;
-                                    <tr>
-                                        <td style="white-space: nowrap;">Original Subtotal</td>
-                                        <td class="text-end" style="white-space: nowrap;">@originalSubtotal.ToString("N0") VND</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Promotion Discount (@promotionDiscount%)</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@promotionDiscountAmount.ToString("N0") VND</td>
-                                    </tr>
-                                }
                                 <tr>
                                     <td style="white-space: nowrap;">Subtotal</td>
-                                    <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
+                                    <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td> 
                                 </tr>
                                 @if (rankDiscount > 0)
                                 {
