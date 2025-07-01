@@ -5,7 +5,8 @@
     ViewData["Title"] = "Ticket Information";
     var invoice = Model;
     var movieName = invoice.MovieShow.Movie.MovieNameEnglish;
-    var screen = invoice.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName;
+    var screen = invoice.MovieShow.CinemaRoom.CinemaRoomName;
+    var version = invoice.MovieShow.Version.VersionName;
     var showDate = invoice.MovieShow.ShowDate;
     var showTime = invoice.MovieShow.Schedule.ScheduleTime;
     var ticketId = invoice.InvoiceId;
@@ -180,6 +181,7 @@
                         <input type="text" class="ticket-info-value" value="@movieName" readonly />
                         <label class="ticket-info-label">Screen</label>
                         <input type="text" class="ticket-info-value" value="@screen" readonly />
+                       
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Date</label>
@@ -190,7 +192,10 @@
                     <div class="ticket-row">
                         <label class="ticket-info-label">Ticket ID</label>
                         <input type="text" class="ticket-info-value" value="@ticketId" readonly />
+                         <label class="ticket-info-label">Version</label>
+                        <input type="text" class="ticket-info-value" value="@version" readonly />
                     </div>
+                    
                     <div class="ticket-section-title">Seat(s)</div>
                     <table class="table table-bordered mb-2">
                         <thead>
