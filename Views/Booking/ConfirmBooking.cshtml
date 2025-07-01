@@ -74,7 +74,7 @@
                 </div>
                 <div class="form-group mt-3">
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
-                    <div id="selectedVoucherInfo" class="mt-2 text-success"></div>
+                    <div id="selectedVoucherInfo" class="mt-2 text-success position-relative"></div>
                 </div>
             </div>
             <div class="col-md-6 text-end">
@@ -186,6 +186,34 @@
         border-color: #28a745;
         background-color: #f8fff9;
     }
+    /* Nút xoá voucher */
+    .remove-voucher-btn {
+        position: absolute;
+        top: 50%;
+        right: 0.5rem;
+        transform: translateY(-50%);
+        background: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        transition: background 0.2s;
+        color: #dc3545;
+        z-index: 2;
+    }
+    .remove-voucher-btn:hover {
+        background: #ffeaea;
+        color: #a71d2a;
+    }
+    #selectedVoucherInfo {
+        min-height: 36px;
+        padding-right: 40px;
+        position: relative;
+    }
 </style>
 
 <script>
@@ -250,7 +278,7 @@
                             id: $(this).data('id'),
                             value: $(this).data('value')
                         };
-                        $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
+                        renderSelectedVoucherInfo();
                         updatePriceFlow();
                         if (voucherModalInstance) voucherModalInstance.hide();
                     });
@@ -259,6 +287,27 @@
                     $('#voucherListContainer').html('<div class="col-12 text-center"><p class="text-danger">Error loading vouchers.</p></div>');
                 }
             });
+        }
+
+        function renderSelectedVoucherInfo() {
+            if (selectedVoucher) {
+                $('#selectedVoucherInfo').html(`
+                    <span class='fw-bold'>Selected Voucher:</span> 
+                    <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - 
+                    <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>
+                    <button type="button" id="removeVoucherBtn" class="remove-voucher-btn" title="Remove voucher">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                `);
+                $('#removeVoucherBtn').off('click').on('click', function () {
+                    selectedVoucher = null;
+                    $('#selectedVoucherInfo').text('');
+                    $('.voucher-card').removeClass('selected');
+                    updatePriceFlow();
+                });
+            } else {
+                $('#selectedVoucherInfo').text('');
+            }
         }
 
         function updateMaxUsablePoints(discountedTotal) {
