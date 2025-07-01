@@ -130,6 +130,7 @@
 		let selectedSeats = new Set();
 		let countdownTimer = null;
 		let secondsLeft = 100; // 10 seconds for testing
+		const MAX_SEATS = 8; // Giới hạn tối đa 8 ghế
 
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
@@ -285,11 +286,19 @@
 			const seatId = clickedTd.getAttribute('data-seat-id');
 			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
 
-			clickedTd.classList.toggle('selected-seat');
+			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
 			if (selectedSeats.has(seatId)) {
+				clickedTd.classList.remove('selected-seat');
 				selectedSeats.delete(seatId);
 				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
 			} else {
+				// Kiểm tra giới hạn số ghế trước khi chọn thêm
+				if (selectedSeats.size >= MAX_SEATS) {
+					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+					return;
+				}
+				
+				clickedTd.classList.add('selected-seat');
 				selectedSeats.add(seatId);
 				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
 				if (selectedSeats.size === 1) startCountdown();
