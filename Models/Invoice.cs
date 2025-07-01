@@ -23,8 +23,6 @@ public partial class Invoice
 
     public InvoiceStatus? Status { get; set; }
 
-    public int? RoleId { get; set; }
-
     public decimal? TotalMoney { get; set; }
 
     public int? UseScore { get; set; }
@@ -33,13 +31,15 @@ public partial class Invoice
 
     public string? AccountId { get; set; }
 
+    public string? VoucherId { get; set; }
+
+    public int? PromotionDiscount { get; set; }
+
+    public decimal? RankDiscountPercentage { get; set; }
+
     public virtual Account? Account { get; set; }
 
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
-    public string? VoucherId { get; set; }
+
     public virtual Voucher? Voucher { get; set; }
-    public int? PromotionDiscount { get; set; }
-
 }
-
-

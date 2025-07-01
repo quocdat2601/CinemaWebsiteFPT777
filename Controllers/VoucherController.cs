@@ -31,11 +31,106 @@ namespace MovieTheater.Controllers
             return View(vouchers);
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminIndex(string keyword = "", string statusFilter = "", string expiryFilter = "")
+        {
+            var allVouchers = _voucherService.GetAll();
+            var now = DateTime.Now;
+
+            // Apply filters
+            var filteredVouchers = allVouchers.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filteredVouchers = filteredVouchers.Where(v => 
+                    v.Code.ToLower().Contains(keyword.ToLower()) ||
+                    v.AccountId.ToLower().Contains(keyword.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                switch (statusFilter.ToLower())
+                {
+                    case "active":
+                        filteredVouchers = filteredVouchers.Where(v => (!v.IsUsed.HasValue || !v.IsUsed.Value) && v.ExpiryDate > now);
+                        break;
+                    case "used":
+                        filteredVouchers = filteredVouchers.Where(v => v.IsUsed.HasValue && v.IsUsed.Value);
+                        break;
+                    case "expired":
+                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate <= now);
+                        break;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(expiryFilter))
+            {
+                switch (expiryFilter.ToLower())
+                {
+                    case "expiring-soon":
+                        var sevenDaysFromNow = now.AddDays(7);
+                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate > now && v.ExpiryDate <= sevenDaysFromNow);
+                        break;
+                    case "expired":
+                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate <= now);
+                        break;
+                    case "valid":
+                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate > now);
+                        break;
+                }
+            }
+
+            // Pass filter values to ViewBag for maintaining state
+            ViewBag.Keyword = keyword;
+            ViewBag.StatusFilter = statusFilter;
+            ViewBag.ExpiryFilter = expiryFilter;
+
+            return View("VoucherMg", filteredVouchers.ToList());
+        }
+
         public IActionResult Details(string id)
         {
             var voucher = _voucherService.GetById(id);
             if (voucher == null) return NotFound();
             return View(voucher);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetVoucherDetails(string id)
+        {
+            var voucher = _voucherService.GetById(id);
+            if (voucher == null)
+            {
+                return Json(new { success = false, message = "Voucher not found" });
+            }
+
+            var now = DateTime.Now;
+            var isExpired = voucher.ExpiryDate <= now;
+            var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
+            var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
+
+            var details = new
+            {
+                success = true,
+                voucher = new
+                {
+                    id = voucher.VoucherId,
+                    code = voucher.Code,
+                    accountId = voucher.AccountId,
+                    value = voucher.Value,
+                    createdDate = voucher.CreatedDate.ToString("dd/MM/yyyy HH:mm"),
+                    expiryDate = voucher.ExpiryDate.ToString("dd/MM/yyyy HH:mm"),
+                    isUsed = voucher.IsUsed,
+                    image = voucher.Image,
+                    status = isUsed ? "Used" : isExpired ? "Expired" : "Active",
+                    daysUntilExpiry = daysUntilExpiry,
+                    isExpiringSoon = daysUntilExpiry <= 7 && daysUntilExpiry > 0
+                }
+            };
+
+            return Json(details);
         }
 
         [HttpGet]
@@ -116,6 +211,17 @@ namespace MovieTheater.Controllers
                 return Redirect("/Admin/MainPage?tab=VoucherMg");
             }
 
+            // Check if voucher can be edited
+            var now = DateTime.Now;
+            var isExpired = voucher.ExpiryDate <= now;
+            var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
+
+            if (isUsed || isExpired)
+            {
+                TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
+                return Redirect("/Admin/MainPage?tab=VoucherMg");
+            }
+
             var viewModel = new VoucherViewModel
             {
                 VoucherId = voucher.VoucherId,
@@ -146,6 +252,17 @@ namespace MovieTheater.Controllers
                     return Redirect("/Admin/MainPage?tab=VoucherMg");
                 }
 
+                // Check if voucher can be edited
+                var now = DateTime.Now;
+                var isExpired = voucher.ExpiryDate <= now;
+                var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
+
+                if (isUsed || isExpired)
+                {
+                    TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
+                    return Redirect("/Admin/MainPage?tab=VoucherMg");
+                }
+
                 voucher.AccountId = viewModel.AccountId;
                 voucher.Code = viewModel.Code;
                 voucher.Value = viewModel.Value;
@@ -155,7 +272,7 @@ namespace MovieTheater.Controllers
 
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "voucher-img");
+                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "vouchers");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
@@ -179,7 +296,7 @@ namespace MovieTheater.Controllers
                         await imageFile.CopyToAsync(fileStream);
                     }
 
-                    voucher.Image = "/voucher-img/" + uniqueFileName;
+                    voucher.Image = "/images/vouchers/" + uniqueFileName;
                 }
 
                 _voucherService.Update(voucher);
