@@ -1,4 +1,7 @@
-﻿namespace MovieTheater.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace MovieTheater.Models;
 
 public partial class Rank
 {
@@ -10,7 +13,7 @@ public partial class Rank
 
     public int? RequiredPoints { get; set; }
 
-    public decimal PointEarningPercentage { get; set; }
+    public decimal? PointEarningPercentage { get; set; }
 
     public string ColorGradient { get; set; } = null!;
 

@@ -32,8 +32,7 @@ namespace MovieTheater.Service
                     CurrentRankName = r.RankName,
                     RequiredPointsForCurrentRank = r.RequiredPoints ?? 0,
                     CurrentDiscountPercentage = r.DiscountPercentage ?? 0,
-                    //CurrentPointEarningPercentage = r.PointEarningPercentage ?? 0,
-                    CurrentPointEarningPercentage = r.PointEarningPercentage,
+                    CurrentPointEarningPercentage = r.PointEarningPercentage ?? 0,
                     ColorGradient = r.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)",
                     IconClass = r.IconClass ?? "fa-crown"
                 }).ToList();
@@ -96,8 +95,7 @@ namespace MovieTheater.Service
                 CurrentRankId = currentRank.RankId,
                 CurrentRankName = currentRank.RankName,
                 CurrentDiscountPercentage = currentRank.DiscountPercentage ?? 0m,
-                //CurrentPointEarningPercentage = currentRank.PointEarningPercentage ?? 0m,
-                CurrentPointEarningPercentage = currentRank.PointEarningPercentage,
+                CurrentPointEarningPercentage = currentRank.PointEarningPercentage ?? 0m,
                 CurrentScore = currentScore,
                 TotalPoints = totalPoints,
                 RequiredPointsForCurrentRank = requiredForCurrent,
@@ -114,8 +112,7 @@ namespace MovieTheater.Service
                     RankName = r.RankName,
                     RequiredPoints = r.RequiredPoints ?? 0,
                     DiscountPercentage = r.DiscountPercentage ?? 0m,
-                    //PointEarningPercentage = r.PointEarningPercentage ?? 0m,
-                    PointEarningPercentage = r.PointEarningPercentage,
+                    PointEarningPercentage = r.PointEarningPercentage ?? 0m,
                     IsCurrentRank = r.RankId == currentRank.RankId,
                     IsAchieved = totalPoints >= (r.RequiredPoints ?? 0),
                     ColorGradient = r.ColorGradient,
@@ -138,8 +135,7 @@ namespace MovieTheater.Service
                 CurrentRankName = rank.RankName,
                 RequiredPointsForCurrentRank = rank.RequiredPoints ?? 0,
                 CurrentDiscountPercentage = rank.DiscountPercentage ?? 0,
-                //CurrentPointEarningPercentage = rank.PointEarningPercentage ?? 0,
-                CurrentPointEarningPercentage = rank.PointEarningPercentage,
+                CurrentPointEarningPercentage = rank.PointEarningPercentage ?? 0,
                 ColorGradient = rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)",
                 IconClass = rank.IconClass ?? "fa-crown"
             };
