@@ -41,5 +41,3 @@ public partial class Invoice
 
     public virtual Voucher? Voucher { get; set; }
 }
-
-

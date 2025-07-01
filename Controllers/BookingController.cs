@@ -221,7 +221,8 @@ namespace MovieTheater.Controllers
             decimal rankDiscountPercent = 0;
             if (userAccount?.Rank != null)
             {
-                earningRate = userAccount.Rank.PointEarningPercentage ?? 1;
+                //earningRate = userAccount.Rank.PointEarningPercentage ?? 1;
+                earningRate = userAccount.Rank.PointEarningPercentage;
                 rankDiscountPercent = userAccount.Rank.DiscountPercentage ?? 0;
             }
             ViewBag.EarningRate = earningRate;
@@ -361,7 +362,8 @@ namespace MovieTheater.Controllers
                 decimal earningRate = 1;
                 if (userAccount?.Rank != null)
                 {
-                    earningRate = userAccount.Rank.PointEarningPercentage ?? 1;
+                    //earningRate = userAccount.Rank.PointEarningPercentage ?? 1;
+                    earningRate = userAccount.Rank.PointEarningPercentage;
                 }
                 // Calculate points to earn using final price after all discounts
                 int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
@@ -1256,7 +1258,8 @@ namespace MovieTheater.Controllers
             if (member?.Account?.Rank != null)
             {
                 discountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
+                //earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
+                earningRate = member.Account.Rank.PointEarningPercentage;
             }
             return Json(new { discountPercent, earningRate });
         }

@@ -84,7 +84,9 @@ namespace MovieTheater.Controllers
                         var member = _context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.AccountId == invoice.AccountId);
                         decimal earningRate = 1;
                         if (member?.Account?.Rank != null)
-                            earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
+                            //earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
+                            earningRate = member.Account.Rank.PointEarningPercentage;
+
                         int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(invoice.TotalMoney ?? 0, earningRate);
                         invoice.AddScore = addScore;
                         if (member != null)

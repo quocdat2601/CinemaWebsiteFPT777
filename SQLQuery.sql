@@ -16,10 +16,15 @@ CREATE TABLE Roles(
 );
 
 CREATE TABLE Rank (
-    Rank_ID INT PRIMARY KEY IDENTITY(1,1),
-    Rank_Name VARCHAR(50) UNIQUE,
-    Discount_Percentage DECIMAL(5,2),
-    Required_Points INT
+    Rank_ID INT IDENTITY(1,1) NOT NULL,
+	Rank_Name VARCHAR(50) NULL,
+    Discount_Percentage DECIMAL(5,2) NULL,
+    Required_Points INT NULL,
+    PointEarningPercentage DECIMAL(5,2) NOT NULL DEFAULT (0),
+    ColorGradient NVARCHAR(200) NOT NULL DEFAULT ('linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)'),
+    IconClass NVARCHAR(50) NOT NULL DEFAULT ('fa-crown'),
+    CONSTRAINT PK_Rank PRIMARY KEY CLUSTERED (Rank_ID ASC),
+	CONSTRAINT UQ_Rank_RankName UNIQUE (Rank_Name)
 );
 
 CREATE TABLE Account (
@@ -53,8 +58,14 @@ CREATE TABLE Member (
     Member_ID VARCHAR(10) PRIMARY KEY,
     Score INT,
     Account_ID VARCHAR(10),
+	Total_Points INT NOT NULL DEFAULT (0),
     CONSTRAINT FK_Member_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
 );
+
+ALTER TABLE [dbo].[Member]
+ADD CONSTRAINT [CK_Member_TotalPoints]
+CHECK ([Total_Points] >= ISNULL([Score], 0));
+GO
 
 CREATE TABLE Movie (
     Movie_ID VARCHAR(10) PRIMARY KEY,
@@ -230,11 +241,15 @@ INSERT INTO Roles (Role_ID, Role_Name) VALUES
 (2, 'Employee'),
 (3, 'Member');
 
-INSERT INTO Rank (Rank_Name, Discount_Percentage, Required_Points) VALUES
-('Bronze', 0.00, 0),
-('Gold', 5.00, 30000),
-('Diamond', 10.00, 50000),
-('Elite', 15.00, 80000);
+SET IDENTITY_INSERT [dbo].[Rank] ON;
+INSERT [dbo].[Rank] ([Rank_ID], [Rank_Name], [Discount_Percentage], [Required_Points], [PointEarningPercentage], [ColorGradient], [IconClass]) VALUES 
+(1, 'Bronze', 0.00, 0, 5.00, 'linear-gradient(135deg, #804A00 0%, #B87333 50%, #CD7F32 100%)', 'fa-medal'),
+(2, 'Gold', 5.00, 30000, 7.00, 'linear-gradient(135deg, #FFD700 0%, #FDB931 50%, #DAA520 100%)', 'fa-trophy'),
+(3, 'Diamond', 10.00, 50000, 10.00, 'linear-gradient(135deg, #89CFF0 0%, #A0E9FF 50%, #B9F2FF 100%)', 'fa-gem'),
+(4, 'Elite', 15.00, 80000, 12.00, 'linear-gradient(135deg, #1a1a1a 0%, #2C3E50 50%, #2c3e50 100%)', 'fa-star');
+SET IDENTITY_INSERT [dbo].[Rank] OFF;
+GO
+
 
 INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gender, Identity_Card, Image, Password, Phone_Number, Register_Date, Role_ID, STATUS, USERNAME) VALUES
 ('AC001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/profile.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
@@ -247,9 +262,11 @@ INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gende
 ('AC008', '123 Street', '1999-01-01', 'dat.nguyen@example.com', 'Nguyen Le Quoc Dat', 'Male', '111111115', '/image/profile.jpg', '1', '0900000005', '2023-01-01', 2, 1, 'datnguyen'),
 ('AC009', '123 Street', '1999-01-01', 'dat.thai@example.com', 'Thai Cong Dat', 'Male', '111111116', '/image/profile.jpg', '1', '0900000006', '2023-01-01', 2, 1, 'datthai');
 
-INSERT INTO Member (Member_ID, Score, Account_ID) VALUES
-('MB001', 10000000, 'AC002'),  
-('MB002', 0,'AC003');  
+INSERT INTO [dbo].[Member] ([Member_ID], [Score], [Account_ID], [Total_Points])
+VALUES 
+('MB001', 10000, 'AC002', 50000),
+('MB002', 10000, 'AC003', 10000);
+GO
 
 -- Insert Employees
 INSERT INTO Employee (Employee_ID, Account_ID) VALUES
