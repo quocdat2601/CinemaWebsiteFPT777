@@ -116,21 +116,29 @@ namespace MovieTheater.Controllers
             }
 
             List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
+            decimal promotionDiscount = booking.PromotionDiscount ?? 0;
             if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
             {
                 seatDetails = booking.ScheduleSeats
                     .Where(ss => ss.Seat != null)
-                    .Select(ss => new SeatDetailViewModel
-                    {
-                        SeatId = ss.Seat.SeatId,
-                        SeatName = ss.Seat.SeatName,
-                        SeatType = ss.Seat.SeatType?.TypeName,
-                        Price = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0)
+                    .Select(ss => {
+                        var originalPrice = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0);
+                        var discount = Math.Round(originalPrice * (promotionDiscount / 100m));
+                        var priceAfterPromotion = originalPrice - discount;
+                        return new SeatDetailViewModel
+                        {
+                            SeatId = ss.Seat.SeatId,
+                            SeatName = ss.Seat.SeatName,
+                            SeatType = ss.Seat.SeatType?.TypeName,
+                            Price = priceAfterPromotion,
+                            OriginalPrice = originalPrice,
+                            PromotionDiscount = discount,
+                            PriceAfterPromotion = priceAfterPromotion
+                        };
                     }).ToList();
             }
             else if (!string.IsNullOrEmpty(booking.Seat))
             {
-                // Fallback: lấy từ chuỗi tên ghế
                 var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.Trim())
                     .Where(s => !string.IsNullOrEmpty(s))
@@ -139,16 +147,21 @@ namespace MovieTheater.Controllers
                 {
                     var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
                     if (seat == null) continue;
+                    var originalPrice = seat.SeatType?.PricePercent ?? 0;
+                    var discount = Math.Round(originalPrice * (promotionDiscount / 100m));
+                    var priceAfterPromotion = originalPrice - discount;
                     seatDetails.Add(new SeatDetailViewModel
                     {
                         SeatId = seat.SeatId,
                         SeatName = seat.SeatName,
                         SeatType = seat.SeatType?.TypeName ?? "N/A",
-                        Price = seat.SeatType?.PricePercent ?? 0
+                        Price = priceAfterPromotion,
+                        OriginalPrice = originalPrice,
+                        PromotionDiscount = discount,
+                        PriceAfterPromotion = priceAfterPromotion
                     });
                 }
             }
-
             ViewBag.SeatDetails = seatDetails;
 
             // Truyền voucher info vào ViewBag nếu có
@@ -222,13 +235,11 @@ namespace MovieTheater.Controllers
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
                 await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value, true);
-                booking.AddScore = 0;
             }
 
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 await _accountService.AddScoreAsync(accountId, booking.UseScore.Value, false);
-                booking.UseScore = 0;
             }
 
             // Handle voucher refund - if booking used a voucher, restore it
