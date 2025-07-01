@@ -141,7 +141,6 @@
                             @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
                             {
                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                           
                                 <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
                                 @if (!string.IsNullOrEmpty(seat.PromotionName))
                                 {
@@ -191,6 +190,8 @@
                 <div class="ticket-row">
                     <label for="memberScore" class="soft-label">Member Score</label>
                     <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
+                    <input type="hidden" id="accountId" value="@Model.MemberAccountId" />
+                    <input type="hidden" id="rankDiscountPercent" value="@Model.BookingDetails.RankDiscountPercent" />
                 </div>
                 <div class="form-group mt-3">
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
@@ -351,11 +352,12 @@
                 $('#memberIdentityCard').val(member.account.identityCard);
                 $('#memberPhoneNumber').val(member.account.phoneNumber);
                 $('#memberScore').val(member.score);
+                $('#accountId').val(member.account.accountId || '');
+                $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
                 $('#memberDetails').show();
                 $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
-                selectedAccountId = member.account.accountId;
                 $('#openVoucherModalBtn').prop('disabled', false);
                 // Reset voucher selection when member changes
                 selectedVoucher = null;
@@ -385,7 +387,9 @@
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
                     UsedScore: parseInt($('#useScore').val()) || 0,
-                    SelectedVoucherId: $('#selectedVoucherId').val()
+                    SelectedVoucherId: $('#selectedVoucherId').val(),
+                    AccountId: $('#accountId').val(),
+                    RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0
                 };
 
                 $.ajax({
@@ -447,7 +451,6 @@
             var currentEarningRate = 0;
             var currentDiscountPercent = 0;
             let selectedVoucher = null;
-            let selectedAccountId = null;
             function updatePriceAll() {
                 var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
                 // Áp dụng rank benefit trước

@@ -791,16 +791,14 @@ namespace MovieTheater.Controllers
                     }
                 }
 
+                // Always get rank discount percent from member's rank
+                var rankDiscountPercent = member.Account.Rank?.DiscountPercentage ?? 0;
+
                 // Calculate subtotal from original seat prices
                 decimal subtotal = model.BookingDetails.SelectedSeats.Sum(s => s.Price);
 
                 // 1. Apply rank discount first
-                decimal rankDiscount = 0;
-                if (member?.Account?.Rank != null)
-                {
-                    var rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-                    rankDiscount = subtotal * (rankDiscountPercent / 100m);
-                }
+                decimal rankDiscount = subtotal * (rankDiscountPercent / 100m);
                 decimal afterRank = subtotal - rankDiscount;
                 if (afterRank < 0) afterRank = 0;
 
@@ -848,7 +846,9 @@ namespace MovieTheater.Controllers
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
-                    PromotionDiscount = (int?)promotionDiscountLevel // Save the promotion discount level
+                    PromotionDiscount = (int?)promotionDiscountLevel, // Save the promotion discount level
+                    AccountId = member.Account.AccountId,
+                    RankDiscountPercentage = rankDiscountPercent
                 };
 
                 // Save invoice
@@ -1368,7 +1368,9 @@ namespace MovieTheater.Controllers
             int usedScoreValue = usedScore * 1000;
             int addedScore = invoice.AddScore ?? 0;
             int addedScoreValue = addedScore * 1000;
-            decimal totalPrice = invoice.TotalMoney ?? 0;
+            decimal totalPrice = subtotal - rankDiscount - usedScoreValue;
+            if (totalPrice < 0) totalPrice = 0;
+
             string memberId = member?.MemberId;
             string memberEmail = member?.Account?.Email;
             string memberIdentityCard = member?.Account?.IdentityCard;
