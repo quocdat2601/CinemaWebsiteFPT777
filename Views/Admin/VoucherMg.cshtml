@@ -18,7 +18,7 @@
         <div class="card-body">
             <form id="voucherSearchForm" class="row g-3" onsubmit="searchVouchers(); return false;">
                 <div class="col-md-3">
-                    <input type="text" class="form-control" id="searchKeyword" name="keyword" 
+                    <input type="text" class="form-control" id="searchKeyword" name="keyword"
                            placeholder="Search by code or account..." value="@ViewBag.Keyword">
                 </div>
                 <div class="col-md-2">
@@ -168,8 +168,8 @@
                     </div>
                 </div>
             </div>
+        </div>
     </div>
-</div>
 
     <!-- Voucher List -->
     <div class="card">
@@ -180,40 +180,40 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-            <th>Image</th>
+                                <th>Image</th>
                                 <th>Voucher ID</th>
-            <th>Code</th>
+                                <th>Code</th>
                                 <th>Account ID</th>
-            <th>Value</th>
+                                <th>Value</th>
                                 <th>Created Date</th>
                                 <th>Expiry Date</th>
-            <th>Status</th>
+                                <th>Status</th>
                                 <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var voucher in Model)
-        {
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var voucher in Model)
+                            {
                                 var isExpired = voucher.ExpiryDate <= now;
                                 var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
                                 var isActive = !isUsed && !isExpired;
                                 var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
                                 var isExpiringSoon = daysUntilExpiry <= 7 && daysUntilExpiry > 0;
-                                
+
                                 <tr class="@(isExpired ? "table-danger" : isUsed ? "table-secondary" : "")">
                                     <td>
-                    @if (!string.IsNullOrEmpty(voucher.Image))
-                    {
-                                            <img src="@voucher.Image" alt="Voucher" class="img-thumbnail voucher-image" 
+                                        @if (!string.IsNullOrEmpty(voucher.Image))
+                                        {
+                                            <img src="@voucher.Image" alt="Voucher" class="img-thumbnail voucher-image"
                                                  style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
-                                                 data-bs-toggle="modal" 
-                                                 data-bs-target="#imageModal" 
+                                                 data-bs-toggle="modal"
+                                                 data-bs-target="#imageModal"
                                                  data-image="@voucher.Image"
                                                  data-code="@voucher.Code">
                                         }
                                         else
                                         {
-                                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
                                                  style="width: 50px; height: 50px; font-size: 12px;">
                                                 <i class="bi bi-ticket-perforated"></i>
                                             </div>
@@ -253,12 +253,12 @@
                                                 @voucher.ExpiryDate.ToString("dd/MM/yyyy")
                                                 <i class="bi bi-x-circle ms-1"></i>
                                             </span>
-                    }
-                    else
-                    {
+                                        }
+                                        else
+                                        {
                                             <span class="text-success">@voucher.ExpiryDate.ToString("dd/MM/yyyy")</span>
-                    }
-                </td>
+                                        }
+                                    </td>
                                     <td>
                                         @if (isUsed)
                                         {
@@ -273,17 +273,17 @@
                                                 <i class="bi bi-x-circle me-1"></i>
                                                 Expired
                                             </span>
-                    }
-                    else
-                    {
+                                        }
+                                        else
+                                        {
                                             <span class="badge bg-success">
                                                 <i class="bi bi-check-circle me-1"></i>
                                                 Active
                                             </span>
-                    }
-                </td>
+                                        }
+                                    </td>
                                     <td>
-                    <div class="btn-group" role="group">
+                                        <div class="btn-group" role="group">
                                             <form asp-action="AdminEdit" asp-controller="Voucher" method="get" style="display:inline;">
                                                 <input type="hidden" name="id" value="@voucher.VoucherId" />
                                                 <button type="submit"
@@ -293,25 +293,25 @@
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
                                             </form>
-                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                            <button type="button" class="btn btn-sm btn-outline-info"
                                                     onclick="viewVoucherDetails('@voucher.VoucherId')"
                                                     title="View details">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <form asp-action="AdminDelete" asp-controller="Voucher" method="post" 
-                                                  onsubmit="return confirm('Are you sure you want to delete this voucher? This action cannot be undone.');" 
+                                            <form asp-action="AdminDelete" asp-controller="Voucher" method="post"
+                                                  onsubmit="return confirm('Are you sure you want to delete this voucher? This action cannot be undone.');"
                                                   style="display: inline;">
-                            <input type="hidden" name="id" value="@voucher.VoucherId" />
+                                                <input type="hidden" name="id" value="@voucher.VoucherId" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete voucher">
                                                     <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table> 
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
             else
@@ -363,139 +363,139 @@
     .font-monospace {
         font-family: 'Courier New', monospace;
     }
-    
+
     .voucher-image:hover {
         transform: scale(1.1);
         transition: transform 0.2s ease-in-out;
     }
-    
+
     .table-hover tbody tr:hover {
         background-color: rgba(0, 123, 255, 0.05);
     }
-    
+
     .card {
         border: none;
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
-    
+
     .btn-group .btn {
         border-radius: 0.375rem;
     }
-    
-    .btn-group .btn:not(:last-child) {
-        margin-right: 0.25rem;
-    }
-    
+
+        .btn-group .btn:not(:last-child) {
+            margin-right: 0.25rem;
+        }
+
     .badge {
         font-size: 0.75em;
     }
 </style>
 
 <script>
-$(document).ready(function() {
-    // Image modal functionality
-    $('#imageModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget);
-        var image = button.data('image');
-        var code = button.data('code');
-        var modal = $(this);
-        modal.find('#modalImage').attr('src', image);
-        modal.find('#modalImageCode').text('Code: ' + code);
-    });
-    
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
+    $(document).ready(function() {
+        // Image modal functionality
+        $('#imageModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var image = button.data('image');
+            var code = button.data('code');
+            var modal = $(this);
+            modal.find('#modalImage').attr('src', image);
+            modal.find('#modalImageCode').text('Code: ' + code);
+        });
 
-function searchVouchers() {
-    const keyword = document.getElementById('searchKeyword').value;
-    const status = document.getElementById('statusFilter').value;
-    const expiry = document.getElementById('expiryFilter').value;
-    loadTab('VoucherMg', keyword, status, expiry);
-}
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 
-// Voucher details function
-function viewVoucherDetails(voucherId) {
-    $('#voucherDetailsContent').html(`
-        <div class="text-center">
-            <i class="bi bi-arrow-clockwise fa-spin fa-2x text-primary mb-3"></i>
-            <p>Loading voucher details...</p>
-        </div>
-    `);
-    $('#voucherDetailsModal').modal('show');
-    
-    // Load voucher details via AJAX
-    $.getJSON('/Voucher/GetVoucherDetails', { id: voucherId }, function(response) {
-        if (response.success) {
-            var voucher = response.voucher;
-            var statusBadge = '';
-            
-            if (voucher.status === 'Active') {
-                statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>';
-            } else if (voucher.status === 'Used') {
-                statusBadge = '<span class="badge bg-secondary"><i class="bi bi-check2-all me-1"></i>Used</span>';
+    function searchVouchers() {
+        const keyword = document.getElementById('searchKeyword').value;
+        const status = document.getElementById('statusFilter').value;
+        const expiry = document.getElementById('expiryFilter').value;
+        loadTab('VoucherMg', keyword, status, expiry);
+    }
+
+    // Voucher details function
+    function viewVoucherDetails(voucherId) {
+        $('#voucherDetailsContent').html(`
+            <div class="text-center">
+                <i class="bi bi-arrow-clockwise fa-spin fa-2x text-primary mb-3"></i>
+                <p>Loading voucher details...</p>
+            </div>
+        `);
+        $('#voucherDetailsModal').modal('show');
+
+        // Load voucher details via AJAX
+        $.getJSON('/Voucher/GetVoucherDetails', { id: voucherId }, function(response) {
+            if (response.success) {
+                var voucher = response.voucher;
+                var statusBadge = '';
+
+                if (voucher.status === 'Active') {
+                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>';
+                } else if (voucher.status === 'Used') {
+                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-check2-all me-1"></i>Used</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>';
+                }
+
+                var expiryWarning = '';
+                if (voucher.isExpiringSoon) {
+                    expiryWarning = `<div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        This voucher expires in ${voucher.daysUntilExpiry} day${voucher.daysUntilExpiry === 1 ? '' : 's'}!
+                    </div>`;
+                }
+
+                var imageSection = '';
+                if (voucher.image) {
+                    imageSection = `
+                        <div class="text-center mb-3">
+                            <img src="${voucher.image}" alt="Voucher Image" class="img-fluid rounded" style="max-height: 200px;">
+                        </div>
+                    `;
+                }
+
+                $('#voucherDetailsContent').html(`
+                    ${expiryWarning}
+                    ${imageSection}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-ticket-perforated me-2 text-primary"></i>Voucher Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Voucher ID:</strong></td><td>${voucher.id}</td></tr>
+                                <tr><td><strong>Code:</strong></td><td><span class="badge bg-light text-dark font-monospace">${voucher.code}</span></td></tr>
+                                <tr><td><strong>Value:</strong></td><td><span class="fw-bold text-success">${voucher.value.toLocaleString()} VND</span></td></tr>
+                                <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-calendar me-2 text-primary"></i>Date Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Created:</strong></td><td>${voucher.createdDate}</td></tr>
+                                <tr><td><strong>Expires:</strong></td><td>${voucher.expiryDate}</td></tr>
+                                <tr><td><strong>Account ID:</strong></td><td>${voucher.accountId || '<span class="text-muted fst-italic">Unassigned</span>'}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                `);
             } else {
-                statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>';
-            }
-            
-            var expiryWarning = '';
-            if (voucher.isExpiringSoon) {
-                expiryWarning = `<div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    This voucher expires in ${voucher.daysUntilExpiry} day${voucher.daysUntilExpiry === 1 ? '' : 's'}!
-                </div>`;
-            }
-            
-            var imageSection = '';
-            if (voucher.image) {
-                imageSection = `
-                    <div class="text-center mb-3">
-                        <img src="${voucher.image}" alt="Voucher Image" class="img-fluid rounded" style="max-height: 200px;">
+                $('#voucherDetailsContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        ${response.message}
                     </div>
-                `;
+                `);
             }
-            
-            $('#voucherDetailsContent').html(`
-                ${expiryWarning}
-                ${imageSection}
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-ticket-perforated me-2 text-primary"></i>Voucher Information</h6>
-                        <table class="table table-sm">
-                            <tr><td><strong>Voucher ID:</strong></td><td>${voucher.id}</td></tr>
-                            <tr><td><strong>Code:</strong></td><td><span class="badge bg-light text-dark font-monospace">${voucher.code}</span></td></tr>
-                            <tr><td><strong>Value:</strong></td><td><span class="fw-bold text-success">${voucher.value.toLocaleString()} VND</span></td></tr>
-                            <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-calendar me-2 text-primary"></i>Date Information</h6>
-                        <table class="table table-sm">
-                            <tr><td><strong>Created:</strong></td><td>${voucher.createdDate}</td></tr>
-                            <tr><td><strong>Expires:</strong></td><td>${voucher.expiryDate}</td></tr>
-                            <tr><td><strong>Account ID:</strong></td><td>${voucher.accountId || '<span class="text-muted fst-italic">Unassigned</span>'}</td></tr>
-                        </table>
-                    </div>
-                </div>
-            `);
-        } else {
+        }).fail(function() {
             $('#voucherDetailsContent').html(`
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    ${response.message}
+                    Failed to load voucher details. Please try again.
                 </div>
             `);
-        }
-    }).fail(function() {
-        $('#voucherDetailsContent').html(`
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                Failed to load voucher details. Please try again.
-            </div>
-        `);
-    });
-}
+        });
+    }
 </script> 
