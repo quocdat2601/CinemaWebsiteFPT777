@@ -34,5 +34,7 @@ namespace MovieTheater.ViewModels
         public decimal TotalPrice { get; set; } // Final price after all deductions
 
         public string SelectedVoucherId { get; set; }
+        public string AccountId { get; set; }
+        public decimal RankDiscountPercent { get; set; }
     }
 }

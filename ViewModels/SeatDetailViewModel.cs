@@ -9,6 +9,7 @@
         public decimal? OriginalPrice { get; set; }
         public decimal? PromotionDiscount { get; set; }
         public decimal? PriceAfterPromotion { get; set; }
+        public string PromotionName { get; set; }
     }
 
 }

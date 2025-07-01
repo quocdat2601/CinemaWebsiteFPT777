@@ -7,6 +7,7 @@ using MovieTheater.ViewModels;
 using System.Security.Claims;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace MovieTheater.Controllers
 {
@@ -26,6 +27,7 @@ namespace MovieTheater.Controllers
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
+        private readonly IRankService _rankService;
 
         public AdminController(
             IMovieService movieService,
@@ -41,7 +43,8 @@ namespace MovieTheater.Controllers
             IScheduleRepository scheduleRepository,
             IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
-            IVoucherService voucherService)
+            IVoucherService voucherService,
+            IRankService rankService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -57,6 +60,7 @@ namespace MovieTheater.Controllers
             _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
+            _rankService = rankService;
         }
 
         // GET: AdminController
@@ -147,6 +151,9 @@ namespace MovieTheater.Controllers
                 case "VoucherMg":
                     var vouchers = _voucherService.GetAll();
                     return PartialView("VoucherMg", vouchers);
+                case "RankMg":
+                    var ranks = _rankService.GetAllRanks();
+                    return PartialView("RankMg", ranks);
                 default:
                     return Content("Tab not found.");
             }
@@ -422,6 +429,110 @@ namespace MovieTheater.Controllers
             );
 
             return Json(jsonFriendlySummary);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult CreateRank()
+        {
+            return View("~/Views/Rank/Create.cshtml", new RankCreateViewModel());
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateRank(RankCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please correct the errors below.";
+                return View("~/Views/Rank/Create.cshtml", model);
+            }
+            try
+            {
+                // Map RankCreateViewModel to RankInfoViewModel for service
+                var infoModel = new RankInfoViewModel
+                {
+                    CurrentRankName = model.CurrentRankName,
+                    RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                    CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                    CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                    ColorGradient = model.ColorGradient,
+                    IconClass = model.IconClass
+                };
+                var result = _rankService.Create(infoModel);
+                TempData["ToastMessage"] = "Rank created successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return View("~/Views/Rank/Create.cshtml", model);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult EditRank(int id)
+        {
+            var rank = _rankService.GetById(id);
+            if (rank == null) return NotFound();
+            // Map RankInfoViewModel to RankCreateViewModel
+            var editModel = new RankCreateViewModel
+            {
+                CurrentRankName = rank.CurrentRankName,
+                RequiredPointsForCurrentRank = rank.RequiredPointsForCurrentRank,
+                CurrentDiscountPercentage = rank.CurrentDiscountPercentage,
+                CurrentPointEarningPercentage = rank.CurrentPointEarningPercentage,
+                ColorGradient = rank.ColorGradient,
+                IconClass = rank.IconClass
+            };
+            ViewBag.RankId = rank.CurrentRankId;
+            return View("~/Views/Rank/Edit.cshtml", editModel);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditRank(int id, RankCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.RankId = id;
+                TempData["ErrorMessage"] = "Please correct the errors below.";
+                return View("~/Views/Rank/Edit.cshtml", model);
+            }
+            try
+            {
+                // Map RankCreateViewModel to RankInfoViewModel for service
+                var infoModel = new RankInfoViewModel
+                {
+                    CurrentRankId = id,
+                    CurrentRankName = model.CurrentRankName,
+                    RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                    CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                    CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                    ColorGradient = model.ColorGradient,
+                    IconClass = model.IconClass
+                };
+                var result = _rankService.Update(infoModel);
+                TempData["ToastMessage"] = "Rank updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.RankId = id;
+                TempData["ErrorMessage"] = ex.Message;
+                return View("~/Views/Rank/Edit.cshtml", model);
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteRank(int id)
+        {
+            _rankService.Delete(id);
+            TempData["ToastMessage"] = "Rank deleted successfully!";
+            return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
         }
     }
 }

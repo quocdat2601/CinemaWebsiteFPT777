@@ -53,6 +53,7 @@
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
 												data-seat-price="@seatType?.PricePercent"
+												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
 												class="@tdClass"
 												@(isDisabledType || isBooked ? "disabled" : "")
 												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
@@ -132,6 +133,7 @@
 		let selectedSeats = new Set();
 		let countdownTimer = null;
 		let secondsLeft = 100; // 10 seconds for testing
+		const MAX_SEATS = 8; // Giới hạn tối đa 8 ghế
 
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
@@ -246,28 +248,31 @@
 			});
 		});
 
-		connection.start().then(() => {
-			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
+		connection.on("SeatStatusChanged", (seatId, newStatusId) => {
+			console.log("SeatStatusChanged", seatId, newStatusId);
+			const td = document.querySelector(`[data-seat-id='${seatId}']`);
+			if (!td) return;
+			if (newStatusId === 2) { // 2 = Booked
+				td.classList.add("booked-seat");
+				td.classList.remove("selected-seat", "being-held");
+				td.setAttribute("disabled", "disabled");
+				td.style.backgroundColor = "#19692c";
+			} else {
+				td.classList.remove("booked-seat");
+				td.removeAttribute("disabled");
+				// Set lại màu gốc loại ghế
+				const color = td.getAttribute("data-seat-color") || "#cccbc8";
+				td.style.backgroundColor = color;
+			}
 		});
 
-		function selectSeat(clickedTd) {
-			const seatId = clickedTd.getAttribute('data-seat-id');
-			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
-
-			clickedTd.classList.toggle('selected-seat');
-			if (selectedSeats.has(seatId)) {
-				selectedSeats.delete(seatId);
-				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
-			} else {
-				selectedSeats.add(seatId);
-				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
-				if (selectedSeats.size === 1) startCountdown();
-			}
-			updateSelectionSummary();
-			updateBookButtonState();
-		}
-
 		connection.on("HeldSeats", (seatIds) => {
+			// Xóa trạng thái being-held khỏi tất cả các ghế
+			document.querySelectorAll('.being-held').forEach(td => {
+				td.classList.remove("being-held");
+				td.removeAttribute("title");
+			});
+			// Đánh dấu lại các ghế đang được hold
 			seatIds.forEach(seatId => {
 				const td = document.querySelector(`[data-seat-id='${seatId}']`);
 				if (td && !td.classList.contains("selected-seat")) {
@@ -276,5 +281,34 @@
 				}
 			});
 		});
+
+		connection.start().then(() => {
+			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
+		});
+
+		function selectSeat(clickedTd) {
+			const seatId = clickedTd.getAttribute('data-seat-id');
+			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+
+			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
+			if (selectedSeats.has(seatId)) {
+				clickedTd.classList.remove('selected-seat');
+				selectedSeats.delete(seatId);
+				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+			} else {
+				// Kiểm tra giới hạn số ghế trước khi chọn thêm
+				if (selectedSeats.size >= MAX_SEATS) {
+					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+					return;
+				}
+				
+				clickedTd.classList.add('selected-seat');
+				selectedSeats.add(seatId);
+				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+				if (selectedSeats.size === 1) startCountdown();
+			}
+			updateSelectionSummary();
+			updateBookButtonState();
+		}
 	</script>
 }

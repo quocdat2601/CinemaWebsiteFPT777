@@ -8,6 +8,7 @@ using MovieTheater.Service;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Repository;
 using System.Threading.Tasks;
 
@@ -145,7 +146,7 @@ namespace MovieTheater.Controllers
 
         // AC-04: Cancel ticket
         [HttpPost]
-        public async Task<IActionResult> Cancel(string id, string returnUrl, [FromServices] Service.IVoucherService voucherService)
+        public async Task<IActionResult> Cancel(string id, string returnUrl)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -186,38 +187,71 @@ namespace MovieTheater.Controllers
             foreach (var seat in scheduleSeatsToUpdate)
             {
                 seat.SeatStatusId = 1; // Available
+                // Phát sự kiện SignalR cho từng ghế trả lại
+                if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
+                {
+                    var hubContext = HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>)) as Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>;
+                    if (hubContext != null)
+                    {
+                        await hubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                    }
+                }
             }
 
             // Handle score operations
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
                 await _accountService.DeductScoreAsync(accountId, booking.AddScore.Value, true);
+                booking.AddScore = 0;
             }
 
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 await _accountService.AddScoreAsync(accountId, booking.UseScore.Value, false);
+                booking.UseScore = 0;
+            }
+
+            // Handle voucher refund - if booking used a voucher, restore it
+            var usedVoucher = !string.IsNullOrEmpty(booking.VoucherId) ? _voucherService.GetById(booking.VoucherId) : null;
+            if (usedVoucher != null)
+            {
+                usedVoucher.IsUsed = false; // Restore the used voucher
+                _voucherService.Update(usedVoucher);
             }
 
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(accountId);
 
-            // Create voucher
-            var voucher = new Voucher
+            // Create refund voucher only if TotalMoney > 0
+            Voucher refundVoucher = null;
+            if ((booking.TotalMoney ?? 0) > 0)
             {
-                VoucherId = voucherService.GenerateVoucherId(),
-                AccountId = accountId,
-                Code = "REFUND",
-                Value = booking.TotalMoney ?? 0,
-                CreatedDate = DateTime.Now,
-                ExpiryDate = DateTime.Now.AddDays(30),
-                IsUsed = false,
-                Image = "/images/vouchers/refund-voucher.jpg"
-            };
-            voucherService.Add(voucher);
+                refundVoucher = new Voucher
+                {
+                    VoucherId = _voucherService.GenerateVoucherId(),
+                    AccountId = accountId,
+                    Code = "REFUND",
+                    Value = booking.TotalMoney ?? 0,
+                    CreatedDate = DateTime.Now,
+                    ExpiryDate = DateTime.Now.AddDays(30),
+                    IsUsed = false,
+                    Image = "/images/vouchers/refund-voucher.jpg"
+                };
+                _voucherService.Add(refundVoucher);
+            }
 
             // Combine cancellation and rank upgrade notifications (member only)
-            var messages = new List<string> { $"Ticket cancelled successfully. Voucher value: {voucher.Value:N0} VND (valid for 30 days)." };
+            var messages = new List<string> { "Ticket cancelled successfully." };
+            
+            if (refundVoucher != null)
+            {
+                messages.Add($"Refund voucher value: {refundVoucher.Value:N0} VND (valid for 30 days).");
+            }
+            
+            if (usedVoucher != null)
+            {
+                messages.Add($"Original voucher '{usedVoucher.Code}' has been restored.");
+            }
             var rankUpMsg = _accountService.GetAndClearRankUpgradeNotification(accountId);
             if (!string.IsNullOrEmpty(rankUpMsg))
             {
@@ -231,14 +265,26 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> HistoryPartial(System.DateTime? fromDate, System.DateTime? toDate)
+        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate, string status = "all")
         {
             var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
+                return Json(new { success = false, message = "Not logged in." });
 
-            var result = await _invoiceRepository.GetByDateRangeAsync(accountId, fromDate, toDate);
-            return PartialView("~/Views/Account/Tabs/_HistoryPartial.cshtml", result);
+            var query = _context.Invoices.Where(i => i.AccountId == accountId);
+            if (fromDate.HasValue)
+                query = query.Where(i => i.BookingDate >= fromDate.Value);
+            if (toDate.HasValue)
+                query = query.Where(i => i.BookingDate <= toDate.Value);
+            if (!string.IsNullOrEmpty(status) && status != "all")
+            {
+                if (status == "booked")
+                    query = query.Where(i => i.Status == MovieTheater.Models.InvoiceStatus.Completed);
+                else if (status == "canceled")
+                    query = query.Where(i => i.Status == MovieTheater.Models.InvoiceStatus.Incomplete);
+            }
+            var result = query.OrderByDescending(i => i.BookingDate).ToList();
+            return Json(new { success = true, data = result });
         }
 
         public IActionResult Test()
@@ -248,7 +294,7 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CancelByAdmin(string id, string returnUrl, [FromServices] IVoucherService voucherService)
+        public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
         {
             var booking = _invoiceRepository.GetById(id);
             if (booking == null)
@@ -272,37 +318,70 @@ namespace MovieTheater.Controllers
             foreach (var seat in scheduleSeatsToUpdate)
             {
                 seat.SeatStatusId = 1; // Available
+                // Phát sự kiện SignalR cho từng ghế trả lại
+                if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
+                {
+                    var hubContext = HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>)) as Microsoft.AspNetCore.SignalR.IHubContext<MovieTheater.Hubs.SeatHub>;
+                    if (hubContext != null)
+                    {
+                        await hubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                    }
+                }
             }
 
             // Handle score operations
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
                 await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value, true);
+                booking.AddScore = 0;
             }
 
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 await _accountService.AddScoreAsync(booking.AccountId, booking.UseScore.Value, false);
+                booking.UseScore = 0;
             }
+            // Handle voucher refund - if booking used a voucher, restore it
+            var usedVoucher = !string.IsNullOrEmpty(booking.VoucherId) ? _voucherService.GetById(booking.VoucherId) : null;
+            if (usedVoucher != null)
+            {
+                usedVoucher.IsUsed = false; // Restore the used voucher
+                _voucherService.Update(usedVoucher);
+            }
+
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(booking.AccountId);
 
-            // Create voucher
-            var voucher = new Voucher
+            // Create refund voucher only if TotalMoney > 0
+            Voucher refundVoucher = null;
+            if ((booking.TotalMoney ?? 0) > 0)
             {
-                VoucherId = voucherService.GenerateVoucherId(),
-                AccountId = booking.AccountId,
-                Code = "REFUND",
-                Value = booking.TotalMoney ?? 0,
-                CreatedDate = DateTime.Now,
-                ExpiryDate = DateTime.Now.AddDays(30),
-                IsUsed = false,
-                Image = "/images/vouchers/refund-voucher.jpg"
-            };
-            voucherService.Add(voucher);
+                refundVoucher = new Voucher
+                {
+                    VoucherId = _voucherService.GenerateVoucherId(),
+                    AccountId = booking.AccountId,
+                    Code = "REFUND",
+                    Value = booking.TotalMoney ?? 0,
+                    CreatedDate = DateTime.Now,
+                    ExpiryDate = DateTime.Now.AddDays(30),
+                    IsUsed = false,
+                    Image = "/images/vouchers/refund-voucher.jpg"
+                };
+                _voucherService.Add(refundVoucher);
+            }
 
             // Combine cancellation and rank upgrade notifications
-            var messages = new List<string> { $"Ticket cancelled successfully. Voucher value: {voucher.Value:N0} VND (valid for 30 days)." };
+            var messages = new List<string> { "Ticket cancelled successfully." };
+            
+            if (refundVoucher != null)
+            {
+                messages.Add($"Refund voucher value: {refundVoucher.Value:N0} VND (valid for 30 days).");
+            }
+            
+            if (usedVoucher != null)
+            {
+                messages.Add($"Original voucher '{usedVoucher.Code}' has been restored.");
+            }
             var adminRankUpMsg = HttpContext.Session.GetString("RankUpToastMessage");
             if (!string.IsNullOrEmpty(adminRankUpMsg))
             {

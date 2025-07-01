@@ -17,8 +17,6 @@ public partial class Invoice
 
     public InvoiceStatus? Status { get; set; }
 
-    public int? RoleId { get; set; }
-
     public decimal? TotalMoney { get; set; }
 
     public int? UseScore { get; set; }
@@ -32,6 +30,8 @@ public partial class Invoice
     public int? PromotionDiscount { get; set; }
 
     public string? VoucherId { get; set; }
+
+    public decimal? RankDiscountPercentage { get; set; }
 
     public virtual Account? Account { get; set; }
 

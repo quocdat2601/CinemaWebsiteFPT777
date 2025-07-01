@@ -2,64 +2,278 @@
 @model IEnumerable<Voucher>
 @{
     ViewData["Title"] = "My Vouchers";
+    
+    // Phân loại voucher
+    var now = DateTime.Now;
+    var activeVouchers = Model?.Where(v => !v.IsUsed.HasValue || !v.IsUsed.Value)
+                               .Where(v => v.ExpiryDate > now)
+                               .OrderBy(v => v.ExpiryDate)
+                               .ToList() ?? new List<Voucher>();
+    
+    var expiredOrUsedVouchers = Model?.Where(v => (v.IsUsed.HasValue && v.IsUsed.Value) || v.ExpiryDate <= now)
+                                      .OrderByDescending(v => v.ExpiryDate)
+                                      .ToList() ?? new List<Voucher>();
 }
 <div class="container mt-4">
     <div class="text-center mb-5">
-        <h1 class="display-4">My Vouchers</h1>
-        <p class="lead">All your available and used vouchers are listed below.</p>
+        <h1 class="display-4 text-primary">My Vouchers</h1>
+        <p class="lead text-muted">Manage your available and used vouchers</p>
     </div>
-    @if (Model == null || !Model.Any())
-    {
-        <div class="alert alert-info text-center" role="alert">
-            <h4 class="alert-heading">No Vouchers</h4>
-            <p>You don't have any vouchers yet. Earn vouchers by booking and cancelling tickets!</p>
-        </div>
-    }
-    else
-    {
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            @foreach (var v in Model)
+
+    <!-- Active Vouchers Section -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h3 text-success">
+                <i class="fas fa-ticket-alt me-2"></i>
+                Active Vouchers (@activeVouchers.Count)
+            </h2>
+            @if (activeVouchers.Any())
             {
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        @if (!string.IsNullOrEmpty(v.Image))
-                        {
-                            <img src="@v.Image" class="card-img-top" alt="Voucher Image" style="height:180px;object-fit:cover;">
-                        }
-                        else
-                        {
-                            <div class="d-flex align-items-center justify-content-center bg-light" style="height:180px;">
-                                <i class="fas fa-ticket-alt fa-4x text-muted"></i>
-                            </div>
-                        }
-                        <div class="card-body">
-                            <h5 class="card-title mb-2">Voucher Code: <span class="fw-bold">@v.Code</span></h5>
-                            <p class="mb-1">Value: <span class="fw-bold text-success">@v.Value.ToString("N0") VND</span></p>
-                            <p class="mb-1">Created: @v.CreatedDate.ToString("dd/MM/yyyy")</p>
-                            <p class="mb-1">Expires: @v.ExpiryDate.ToString("dd/MM/yyyy")</p>
-                            <p class="mb-1">Status: 
-                                @if (v.IsUsed == true)
-                                {
-                                    <span class="badge bg-secondary">Used</span>
-                                }
-                                else if (v.ExpiryDate < DateTime.Now)
-                                {
-                                    <span class="badge bg-danger">Expired</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                            </p>
-                        </div>
-                    </div>
+                <div class="text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Ordered by expiration date (soonest first)
                 </div>
             }
         </div>
+
+        @if (!activeVouchers.Any())
+        {
+            <div class="alert alert-info text-center" role="alert">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="fas fa-ticket-alt fa-3x text-info me-3"></i>
+                    <div>
+                        <h4 class="alert-heading mb-1">No Active Vouchers</h4>
+                        <p class="mb-0">You don't have any active vouchers at the moment.</p>
+                    </div>
+                </div>
+                <hr>
+                <p class="mb-0">Earn vouchers by booking and cancelling tickets!</p>
+            </div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @foreach (var voucher in activeVouchers)
+                {
+                    var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
+                    var isExpiringSoon = daysUntilExpiry <= 7;
+                    
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0 position-relative @(isExpiringSoon ? "border-warning" : "")">
+                            @if (isExpiringSoon)
+                            {
+                                <div class="position-absolute top-0 start-0 w-100">
+                                    <div class="bg-warning text-dark text-center py-1 small fw-bold">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Expires in @daysUntilExpiry day@(daysUntilExpiry == 1 ? "" : "s")
+                                    </div>
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(voucher.Image))
+                            {
+                                <img src="@voucher.Image" class="card-img-top" alt="Voucher Image" 
+                                     style="height: 200px; object-fit: cover; @(isExpiringSoon ? "filter: brightness(0.9);" : "")">
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-gradient-primary text-white" 
+                                     style="height: 200px; @(isExpiringSoon ? "opacity: 0.9;" : "")">
+                                    <i class="fas fa-ticket-alt fa-4x"></i>
+                                </div>
+                            }
+                            
+                            <div class="card-body d-flex flex-column">
+                                <div class="mb-3">
+                                    <h5 class="card-title mb-2">
+                                        <span class="badge bg-primary me-2">CODE</span>
+                                        <span class="fw-bold text-primary font-monospace">@voucher.Code</span>
+                                    </h5>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-coins text-warning me-2"></i>
+                                        <span class="fw-bold fs-5 text-success">@voucher.Value.ToString("N0") VND</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <div class="row text-muted small mb-2">
+                                        <div class="col-6">
+                                            <i class="fas fa-calendar-plus me-1"></i>
+                                            Created
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            @voucher.CreatedDate.ToString("dd/MM/yyyy")
+                                        </div>
+                                    </div>
+                                    <div class="row text-muted small mb-3">
+                                        <div class="col-6">
+                                            <i class="fas fa-calendar-times me-1"></i>
+                                            Expires
+                                        </div>
+                                        <div class="col-6 text-end @(isExpiringSoon ? "text-warning fw-bold" : "")">
+                                            @voucher.ExpiryDate.ToString("dd/MM/yyyy")
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-grid">
+                                        <span class="badge bg-success fs-6 py-2">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            Active & Ready to Use
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Used or Expired Vouchers Section -->
+    @if (expiredOrUsedVouchers.Any())
+    {
+        <div class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h3 text-secondary">
+                    <i class="fas fa-history me-2"></i>
+                    Used or Expired Vouchers (@expiredOrUsedVouchers.Count)
+                </h2>
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#expiredVouchers">
+                    <i class="fas fa-chevron-down me-1"></i>
+                    Toggle View
+                </button>
+            </div>
+
+            <div class="collapse show" id="expiredVouchers">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var voucher in expiredOrUsedVouchers)
+                    {
+                        var isExpired = voucher.ExpiryDate <= now;
+                        var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
+                        
+                        <div class="col">
+                            <div class="card h-100 shadow-sm border-0 opacity-75">
+                                @if (!string.IsNullOrEmpty(voucher.Image))
+                                {
+                                    <img src="@voucher.Image" class="card-img-top" alt="Voucher Image" 
+                                         style="height: 200px; object-fit: cover; filter: grayscale(100%);">
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-secondary text-white" 
+                                         style="height: 200px;">
+                                        <i class="fas fa-ticket-alt fa-4x"></i>
+                                    </div>
+                                }
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <div class="mb-3">
+                                        <h5 class="card-title mb-2">
+                                            <span class="badge bg-secondary me-2">CODE</span>
+                                            <span class="fw-bold text-muted font-monospace">@voucher.Code</span>
+                                        </h5>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-coins text-muted me-2"></i>
+                                            <span class="fw-bold fs-5 text-muted">@voucher.Value.ToString("N0") VND</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        <div class="row text-muted small mb-2">
+                                            <div class="col-6">
+                                                <i class="fas fa-calendar-plus me-1"></i>
+                                                Created
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                @voucher.CreatedDate.ToString("dd/MM/yyyy")
+                                            </div>
+                                        </div>
+                                        <div class="row text-muted small mb-3">
+                                            <div class="col-6">
+                                                <i class="fas fa-calendar-times me-1"></i>
+                                                Expired
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                @voucher.ExpiryDate.ToString("dd/MM/yyyy")
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-grid">
+                                            @if (isUsed)
+                                            {
+                                                <span class="badge bg-secondary fs-6 py-2">
+                                                    <i class="fas fa-check-double me-1"></i>
+                                                    Used
+                                                </span>
+                                            }
+                                            else if (isExpired)
+                                            {
+                                                <span class="badge bg-danger fs-6 py-2">
+                                                    <i class="fas fa-times-circle me-1"></i>
+                                                    Expired
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
     }
 </div>
+
 <style>
-    .card-title span.fw-bold {
-        color: #007bff;
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+    }
+    
+    .opacity-75 {
+        opacity: 0.75;
+    }
+    
+    .border-warning {
+        border: 2px solid #ffc107 !important;
+    }
+    
+    .text-warning {
+        color: #ffc107 !important;
+    }
+    
+    .badge {
+        border-radius: 8px;
+    }
+    
+    .card-img-top {
+        border-top-left-radius: 0.375rem;
+        border-top-right-radius: 0.375rem;
+    }
+    
+    .alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
     }
 </style>

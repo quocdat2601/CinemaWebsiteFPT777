@@ -215,7 +215,7 @@
                                 @if (Model.RankDiscount > 0)
                                 {
                                     <tr>
-                                        <td style="white-space: nowrap;">- Rank Discount</td>
+                                        <td style="white-space: nowrap;">- Rank Discount (@Model.RankDiscountPercent.ToString("0.##")%)</td>
                                         <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }

@@ -58,5 +58,8 @@ namespace MovieTheater.ViewModels
         public List<Models.Version> AvailableVersions { get; set; } = new();
         public List<CinemaRoom> AvailableCinemaRooms { get; set; } = new();
         public List<MovieShow> CurrentMovieShows { get; set; } = new();
+
+        // Thêm property để truyền thông tin vé
+        public ConfirmBookingViewModel TicketDetails { get; set; }
     }
 }

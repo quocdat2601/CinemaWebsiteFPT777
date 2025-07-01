@@ -28,9 +28,9 @@
     decimal totalPriceValue = invoice.TotalMoney ?? 0;
 
     decimal rankDiscount = 0;
-    if (invoice.Account?.Rank != null && invoice.Account.Rank.DiscountPercentage.HasValue)
+    if (invoice.Account?.Rank != null && invoice.RankDiscountPercentage.HasValue)
     {
-        rankDiscount = subtotal * (invoice.Account.Rank.DiscountPercentage.Value / 100);
+        rankDiscount = subtotal * (invoice.RankDiscountPercentage.Value / 100);
     }
     // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available

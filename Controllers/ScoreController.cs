@@ -87,12 +87,12 @@ namespace MovieTheater.Controllers
             var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {
-                return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
+                return Json(new { success = false, message = "Not logged in." });
             }
 
             // Get current score
             var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
-            ViewBag.CurrentScore = member?.Score ?? 0;
+            var currentScore = member?.Score ?? 0;
 
             var query = _context.Invoices.Where(i => i.AccountId == accountId);
 
@@ -106,34 +106,38 @@ namespace MovieTheater.Controllers
                 query = query.Where(i => i.BookingDate >= fromDateValue && i.BookingDate <= toDateValue);
             }
 
-            var result = new List<ScoreHistoryViewModel>();
+            var result = new List<object>();
             foreach (var i in query)
             {
                 if (historyType != "use" && i.AddScore.HasValue && i.AddScore.Value > 0)
                 {
-                    result.Add(new ScoreHistoryViewModel
+                    result.Add(new
                     {
-                        DateCreated = i.BookingDate ?? DateTime.MinValue,
-                        MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
-                        Score = i.AddScore.Value,
-                        Type = "add"
+                        dateCreated = i.BookingDate ?? DateTime.MinValue,
+                        movieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
+                        score = i.AddScore.Value,
+                        type = "add"
                     });
                 }
                 if (historyType != "add" && i.UseScore.HasValue && i.UseScore.Value > 0)
                 {
-                    result.Add(new ScoreHistoryViewModel
+                    result.Add(new
                     {
-                        DateCreated = i.BookingDate ?? DateTime.MinValue,
-                        MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
-                        Score = i.UseScore.Value,
-                        Type = "use"
+                        dateCreated = i.BookingDate ?? DateTime.MinValue,
+                        movieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
+                        score = i.UseScore.Value,
+                        type = "use"
                     });
                 }
             }
 
-            result = result.OrderByDescending(x => x.DateCreated).ToList();
+            result = result.OrderByDescending(x => ((dynamic)x).dateCreated).ToList();
 
-            return PartialView("~/Views/Account/Tabs/_ScoreHistoryPartial.cshtml", result);
+            return Json(new { 
+                success = true, 
+                currentScore = currentScore,
+                data = result 
+            });
         }
 
     }
