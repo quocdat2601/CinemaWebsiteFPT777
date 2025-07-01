@@ -1,5 +1,4 @@
-﻿@model List<MovieTheater.ViewModels.ScoreHistoryViewModel>
-@{
+﻿@{
     ViewData["Title"] = "Score History";
 }
 
@@ -11,14 +10,11 @@
                     <h2 class="text-center mb-0">Score History</h2>
                 </div>
                 <div class="card-body">
-                    <div class="text-center mb-4">
-                        @if (ViewBag.CurrentScore != null)
-                        {
-                            <div class="alert alert-info d-inline-block p-3 rounded-pill">
-                                <i class="fas fa-star text-warning"></i>
-                                <strong class="fs-4">Current Score: @ViewBag.CurrentScore pts</strong>
-                            </div>
-                        }
+                    <div class="text-center mb-4" id="currentScoreDisplay">
+                        <div class="alert alert-info d-inline-block p-3 rounded-pill">
+                            <i class="fas fa-star text-warning"></i>
+                            <strong class="fs-4">Current Score: <span id="currentScoreValue">Loading...</span> pts</strong>
+                        </div>
                     </div>
 
                     <form id="scoreFilterForm" class="row g-3 p-4 bg-light rounded-3 shadow-sm mb-4">
@@ -58,53 +54,14 @@
                     </form>
 
                     <div id="scoreResult">
-                        @if (ViewBag.Message != null)
-                        {
-                            <div class="alert alert-warning mt-3 text-center">
-                                <i class="fas fa-exclamation-circle"></i> @ViewBag.Message
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                        }
-                        else if (Model != null && Model.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover table-striped">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Movie</th>
-                                            <th class="text-end">Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in Model)
-                                        {
-                                            <tr>
-                                                <td>@item.DateCreated.ToString("dd/MM/yyyy")</td>
-                                                <td>@item.MovieName</td>
-                                                <td class="text-end">
-                                                    @if (ViewBag.HistoryType == "add")
-                                                    {
-                                                        <span class="badge bg-success">+@item.Score</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-danger">-@item.Score</span>
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center text-muted py-5">
-                                <i class="fas fa-info-circle fa-3x mb-3"></i>
-                                <p class="lead">No data found for the selected period.</p>
-                            </div>
-                        }
+                            <p class="mt-3">Loading score history...</p>
+                        </div>
                     </div>
+                    <nav id="scorePagination" class="mt-3"></nav>
                 </div>
             </div>
         </div>
@@ -118,6 +75,10 @@
         $('#scoreFilterForm').attr('action', 'javascript:void(0)');
         $('#scoreFilterForm').removeAttr('method');
         
+        let scoreDataCache = [];
+        let currentPage = 1;
+        const pageSize = 10;
+
         // Function to load score history
         function loadScoreHistory(fromDate, toDate, historyType) {
             // Show loading state
@@ -128,8 +89,13 @@
                 url: '/Score/ScoreHistoryPartial',
                 type: 'GET',
                 data: { fromDate: fromDate, toDate: toDate, historyType: historyType },
-                success: function (result) {
-                    $('#scoreResult').html(result);
+                success: function (response) {
+                    if (response.success) {
+                        currentPage = 1;
+                        renderScoreTable(response.data, response.currentScore);
+                    } else {
+                        $('#scoreResult').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ' + response.message + '</div>');
+                    }
                     $('#accountTabs .nav-link').removeClass('active');
                     $('#accountTabs .nav-link[data-tab="Score"]').addClass('active');
                 },
@@ -140,6 +106,65 @@
                     // Reset button state
                     $('#viewScoreBtn, #viewAllBtn').prop('disabled', false);
                     $('#viewScoreBtn').html('<i class="fas fa-search"></i> Filter');
+                }
+            });
+        }
+
+        // Function to render score table
+        function renderScoreTable(scoreData, currentScore) {
+            scoreDataCache = scoreData || [];
+            if (currentScore !== undefined) {
+                $('#currentScoreValue').text(currentScore);
+            }
+            renderScorePage(currentPage);
+            renderScorePagination();
+        }
+
+        function renderScorePage(page) {
+            let html = '';
+            const start = (page - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = scoreDataCache.slice(start, end);
+            if (pageData.length > 0) {
+                html += '<div class="table-responsive"><table class="table table-hover table-striped"><thead class="table-dark"><tr><th>Date</th><th>Movie</th><th class="text-end">Score</th></tr></thead><tbody>';
+                pageData.forEach(function(item) {
+                    var date = new Date(item.dateCreated).toLocaleDateString('vi-VN');
+                    var scoreBadge = '';
+                    if (item.type === "add") {
+                        scoreBadge = '<span class="badge bg-success">+' + item.score + '</span>';
+                    } else if (item.type === "use") {
+                        scoreBadge = '<span class="badge bg-danger">-' + item.score + '</span>';
+                    }
+                    html += '<tr><td>' + date + '</td><td>' + (item.movieName || 'N/A') + '</td><td class="text-end">' + scoreBadge + '</td></tr>';
+                });
+                html += '</tbody></table></div>';
+            } else {
+                html += '<div class="text-center text-muted py-5"><i class="fas fa-info-circle fa-3x mb-3"></i><p class="lead">No data found for the selected period.</p></div>';
+            }
+            $('#scoreResult').html(html);
+        }
+
+        function renderScorePagination() {
+            const totalPages = Math.ceil(scoreDataCache.length / pageSize);
+            if (totalPages <= 1) {
+                $('#scorePagination').html('');
+                return;
+            }
+            let html = '<ul class="pagination justify-content-center">';
+            html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            }
+            html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+            html += '</ul>';
+            $('#scorePagination').html(html);
+            $('#scorePagination .page-link').off('click').on('click', function (e) {
+                e.preventDefault();
+                const page = parseInt($(this).data('page'));
+                if (!isNaN(page) && page >= 1 && page <= totalPages && page !== currentPage) {
+                    currentPage = page;
+                    renderScorePage(currentPage);
+                    renderScorePagination();
                 }
             });
         }

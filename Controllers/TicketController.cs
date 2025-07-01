@@ -282,19 +282,26 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate)
+        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate, string status = "all")
         {
             var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
+                return Json(new { success = false, message = "Not logged in." });
 
             var query = _context.Invoices.Where(i => i.AccountId == accountId);
             if (fromDate.HasValue)
                 query = query.Where(i => i.BookingDate >= fromDate.Value);
             if (toDate.HasValue)
                 query = query.Where(i => i.BookingDate <= toDate.Value);
-            var result = query.ToList();
-            return PartialView("~/Views/Account/Tabs/_HistoryPartial.cshtml", result);
+            if (!string.IsNullOrEmpty(status) && status != "all")
+            {
+                if (status == "booked")
+                    query = query.Where(i => i.Status == MovieTheater.Models.InvoiceStatus.Completed);
+                else if (status == "canceled")
+                    query = query.Where(i => i.Status == MovieTheater.Models.InvoiceStatus.Incomplete);
+            }
+            var result = query.OrderByDescending(i => i.BookingDate).ToList();
+            return Json(new { success = true, data = result });
         }
 
         public IActionResult Test()

@@ -72,7 +72,7 @@ namespace MovieTheater.Controllers
                     };
                     return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
                 case "Score":
-                    return PartialView("~/Views/Account/Tabs/Score.cshtml");
+                    return PartialView("~/Views/Account/Tabs/Score.cshtml", new List<MovieTheater.ViewModels.ScoreHistoryViewModel>());
                 case "Voucher":
                     if (user == null)
                         return NotFound();
@@ -80,7 +80,7 @@ namespace MovieTheater.Controllers
                     var userVouchers = allVouchers.Where(v => v.AccountId == user.AccountId).ToList();
                     return PartialView("~/Views/Account/Tabs/Voucher.cshtml", userVouchers);
                 case "History":
-                    return PartialView("~/Views/Account/Tabs/History.cshtml");
+                    return PartialView("~/Views/Account/Tabs/History.cshtml", new List<MovieTheater.Models.Invoice>());
                 default:
                     return Content("Tab not found.");
             }
