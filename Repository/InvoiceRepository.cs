@@ -43,7 +43,7 @@ namespace MovieTheater.Repository
                 .FirstOrDefault(i => i.InvoiceId == invoiceId);
         }
 
-        public async Task<IEnumerable<Invoice>> GetByAccountIdAsync(string accountId, int? status = null)
+        public async Task<IEnumerable<Invoice>> GetByAccountIdAsync(string accountId, InvoiceStatus? status = null)
         {
             var query = _context.Invoices.Where(i => i.AccountId == accountId);
 

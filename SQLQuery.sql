@@ -417,4 +417,3 @@ GO
 ALTER TABLE [dbo].[Food] ADD  DEFAULT (getdate()) FOR [CreatedDate]
 GO
 
-

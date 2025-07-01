@@ -15,7 +15,7 @@ public partial class Invoice
 
     public DateTime? BookingDate { get; set; }
 
-    public int? Status { get; set; }
+    public InvoiceStatus? Status { get; set; }
 
     public int? RoleId { get; set; }
 

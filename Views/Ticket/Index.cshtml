@@ -85,7 +85,7 @@
                                     @{
                                         var showDateTime = booking.MovieShow.ShowDate.ToDateTime(booking.MovieShow.Schedule.ScheduleTime ?? TimeOnly.MinValue);
                                     }
-                                    @if (booking.Status == 1 && booking.MovieShow.Schedule.ScheduleTime.HasValue &&
+                                    @if (booking.Status.Equals("Completed") && booking.MovieShow.Schedule.ScheduleTime.HasValue &&
                                                                 showDateTime.AddHours(-24) > DateTime.Now)
                                     {
                                         <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId"

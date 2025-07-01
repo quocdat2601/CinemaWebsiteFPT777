@@ -18,12 +18,16 @@ namespace MovieTheater.Controllers
         private readonly MovieTheaterContext _context;
 
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IAccountService _accountService;
 
-        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository)
+
+        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService)
         {
             _invoiceRepository = invoiceRepository;
             _context = context;
+            _accountService = accountService;
         }
+
         [HttpGet]
         public IActionResult History()
         {
@@ -56,7 +60,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId, 1);
+            var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId, InvoiceStatus.Completed);
 
             return View("Index", bookings);
         }
@@ -246,13 +250,12 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CancelByAdmin(string id, string returnUrl, [FromServices] IVoucherService voucherService)
         {
-            var booking = _context.Invoices.FirstOrDefault(i => i.InvoiceId == id);
+            var booking = _invoiceRepository.GetById(id);
             if (booking == null)
             {
                 TempData["ErrorMessage"] = "Booking not found.";
                 return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
             }
-
             if (booking.Status == InvoiceStatus.Incomplete)
             {
                 TempData["ErrorMessage"] = "This ticket has already been cancelled.";
@@ -316,16 +319,7 @@ namespace MovieTheater.Controllers
             }
             TempData["ToastMessage"] = string.Join("<br/>", messages);
 
-            // Repopulate TempData["CinemaRoomName"] before redirect
-            string roomName = "N/A";
-            var allMovies = _movieService.GetAll();
-            var movie = allMovies.FirstOrDefault(m => m.MovieNameEnglish == booking.MovieName || m.MovieNameVn == booking.MovieName);
-            if (movie != null && movie.CinemaRoomId.HasValue)
-            {
-                var room = _cinemaService.GetById(movie.CinemaRoomId.Value);
-                roomName = room?.CinemaRoomName ?? "N/A";
-            }
-            TempData["CinemaRoomName"] = roomName;
+            TempData["CinemaRoomName"] = booking.MovieShow.CinemaRoom.CinemaRoomName;
 
             // Keep ConfirmedSeats TempData for the next request
             if (TempData["ConfirmedSeats"] != null)

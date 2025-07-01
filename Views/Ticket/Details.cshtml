@@ -4,10 +4,10 @@
 
     ViewData["Title"] = "Ticket Information";
     var invoice = Model;
-    var movieName = invoice.MovieName;
+    var movieName = invoice.MovieShow.Movie.MovieNameEnglish;
     var screen = invoice.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName;
-    var showDate = invoice.ScheduleShow?.ToString("yyyy-MM-dd");
-    var showTime = invoice.ScheduleShowTime;
+    var showDate = invoice.MovieShow.ShowDate;
+    var showTime = invoice.MovieShow.Schedule.ScheduleTime;
     var ticketId = invoice.InvoiceId;
     var totalPrice = invoice.TotalMoney?.ToString("N0");
     var seatString = invoice.Seat;

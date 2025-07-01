@@ -131,9 +131,9 @@ namespace MovieTheater.Controllers
                 }
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 TempData["InvoiceId"] = model.vnp_TxnRef;
-                TempData["MovieName"] = invoice?.MovieName ?? "";
-                TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
-                TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
+                TempData["MovieName"] = invoice?.MovieShow.Movie.MovieNameEnglish ?? "";
+                TempData["ShowDate"] = invoice?.MovieShow.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";
+                TempData["ShowTime"] = invoice?.MovieShow.Schedule.ScheduleTime.ToString() ?? "N/A";
                 TempData["Seats"] = invoice?.Seat ?? "N/A";
                 // Lấy CinemaRoomName trực tiếp từ MovieShowId (TempData)
                 if (movieShowId.HasValue)
@@ -162,9 +162,9 @@ namespace MovieTheater.Controllers
                     _context.SaveChanges();
                 }
                 TempData["InvoiceId"] = model.vnp_TxnRef;
-                TempData["MovieName"] = invoice?.MovieName ?? "";
-                TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
-                TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
+                TempData["MovieName"] = invoice?.MovieShow.Movie.MovieNameEnglish ?? "";
+                TempData["ShowDate"] = invoice?.MovieShow.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";
+                TempData["ShowTime"] = invoice?.MovieShow.Schedule.ScheduleTime.ToString() ?? "N/A";
                 TempData["Seats"] = invoice?.Seat ?? "N/A";
                 TempData["BookingTime"] = invoice?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
                 return RedirectToAction("Failed", "Booking");

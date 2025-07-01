@@ -6,7 +6,7 @@ namespace MovieTheater.Repository
     {
         public IEnumerable<Invoice> GetAll();
         Invoice? GetById(string invoiceId);
-        Task<IEnumerable<Invoice>> GetByAccountIdAsync(string accountId, int? status = null);
+        Task<IEnumerable<Invoice>> GetByAccountIdAsync(string accountId, InvoiceStatus? status = null);
         Task<Invoice?> GetDetailsAsync(string invoiceId, string accountId);
         Task<Invoice?> GetForCancelAsync(string invoiceId, string accountId);
         Task UpdateAsync(Invoice invoice);
