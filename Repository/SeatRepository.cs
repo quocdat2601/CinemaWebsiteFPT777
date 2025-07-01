@@ -53,7 +53,7 @@ namespace MovieTheater.Repository
             _context.SaveChanges();
         }
 
-       
+
 
         public async Task<List<SeatType>> GetSeatTypesAsync()
         {

@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.SignalR;
-using MovieTheater.Models;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Hubs;
+using MovieTheater.Models;
 
 namespace MovieTheater.Repository
 {

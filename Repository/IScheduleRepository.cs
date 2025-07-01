@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace MovieTheater.Repository
 {
     public interface IScheduleRepository
@@ -8,4 +5,4 @@ namespace MovieTheater.Repository
         List<string> GetAllScheduleTimes();
         List<DateTime> GetAllShowDates();
     }
-} 
+}

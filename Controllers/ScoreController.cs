@@ -15,6 +15,10 @@ namespace MovieTheater.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Xem lịch sử điểm cộng
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistory (GET)</remarks>
         [HttpGet]
         public IActionResult ScoreHistory()
         {
@@ -40,6 +44,10 @@ namespace MovieTheater.Controllers
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
+        /// <summary>
+        /// Xem lịch sử điểm theo khoảng ngày và loại điểm
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistory (POST)</remarks>
         [HttpPost]
         public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
@@ -81,6 +89,10 @@ namespace MovieTheater.Controllers
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
+        /// <summary>
+        /// Lấy lịch sử điểm (partial, ajax)
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistoryPartial (GET)</remarks>
         [HttpGet]
         public IActionResult ScoreHistoryPartial(string fromDate, string toDate, string historyType)
         {
@@ -133,10 +145,11 @@ namespace MovieTheater.Controllers
 
             result = result.OrderByDescending(x => ((dynamic)x).dateCreated).ToList();
 
-            return Json(new { 
-                success = true, 
+            return Json(new
+            {
+                success = true,
                 currentScore = currentScore,
-                data = result 
+                data = result
             });
         }
 

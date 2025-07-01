@@ -1,12 +1,7 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Service;
-using System.Linq;
-using System.Collections.Generic;
-using MovieTheater.ViewModels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using MovieTheater.Service;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
@@ -30,6 +25,7 @@ namespace MovieTheater.Controllers
         /// <summary>
         /// Tạo URL thanh toán VNPay
         /// </summary>
+        /// <remarks>url: /api/Payment/create-payment (POST)</remarks>
         /// <param name="request">Thông tin thanh toán</param>
         /// <returns>URL thanh toán VNPay</returns>
         /// <response code="200">Trả về URL thanh toán</response>
@@ -58,6 +54,7 @@ namespace MovieTheater.Controllers
         /// <summary>
         /// Xử lý kết quả thanh toán từ VNPay
         /// </summary>
+        /// <remarks>url: /api/Payment/vnpay-return (GET)</remarks>
         /// <returns>Kết quả thanh toán</returns>
         /// <response code="200">Thanh toán thành công</response>
         /// <response code="400">Thanh toán thất bại hoặc chữ ký không hợp lệ</response>
@@ -174,6 +171,7 @@ namespace MovieTheater.Controllers
         /// <summary>
         /// Nhận callback IPN (server-to-server) từ VNPay
         /// </summary>
+        /// <remarks>url: /api/Payment/vnpay-ipn (GET)</remarks>
         /// <returns>Kết quả xử lý IPN</returns>
         [HttpGet("vnpay-ipn")]
         public IActionResult VNPayIpn()
@@ -216,4 +214,4 @@ namespace MovieTheater.Controllers
         /// </summary>
         public string OrderId { get; set; }
     }
-} 
+}

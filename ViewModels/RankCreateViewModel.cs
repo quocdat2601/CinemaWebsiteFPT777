@@ -27,4 +27,4 @@ namespace MovieTheater.ViewModels
         [Display(Name = "Icon Class")]
         public string? IconClass { get; set; }
     }
-} 
+}

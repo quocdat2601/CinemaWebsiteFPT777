@@ -13,12 +13,14 @@ namespace MovieTheater.Controllers
         }
 
         // GET: CinemaController
+        [HttpGet]
         public ActionResult Index()
         {
             return View();
         }
 
         // GET: CinemaController/Details/5
+        [HttpGet]
         public ActionResult Details(int id)
         {
             return View();

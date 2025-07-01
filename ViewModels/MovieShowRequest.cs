@@ -7,4 +7,4 @@ namespace MovieTheater.ViewModels
         public int ScheduleId { get; set; }
         public int CinemaRoomId { get; set; }
     }
-} 
+}

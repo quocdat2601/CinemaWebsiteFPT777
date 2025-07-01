@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace MovieTheater.Service
 {
     public class PointCalculationResult
@@ -16,4 +14,4 @@ namespace MovieTheater.Service
         int CalculateMaxUsablePoints(decimal orderValue, int userPoints);
         PointCalculationResult ValidatePointUsage(int requestedPoints, decimal orderValue, int userPoints);
     }
-} 
+}

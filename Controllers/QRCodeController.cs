@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
-using MovieTheater.Service;
 using MovieTheater.Repository;
-using MovieTheater.ViewModels;
-using System.Security.Claims;
-using System.Text.Json;
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {
@@ -229,8 +226,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// API xác nhận check-in vé (sau khi đã quét QR và kiểm tra hợp lệ)
+        /// Xác nhận check-in vé (sau khi quét QR và kiểm tra hợp lệ)
         /// </summary>
+        /// <remarks>url: /QRCode/ConfirmCheckIn (POST)</remarks>
         [Authorize(Roles = "Admin,Employee")]
         [HttpPost]
         public IActionResult ConfirmCheckIn([FromBody] ConfirmCheckInRequest request)
@@ -324,4 +322,4 @@ namespace MovieTheater.Controllers
         public bool IsSuccess { get; set; }
         public string VerificationTime { get; set; }
     }
-} 
+}

@@ -13,25 +13,37 @@ namespace MovieTheater.Controllers
             _context = context;
         }
 
-        // GET: ShowtimeController
+        /// <summary>
+        /// Danh sách suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/List (GET)</remarks>
         public IActionResult List()
         {
             return View();
         }
 
-        // GET: ShowtimeController/Details/5
+        /// <summary>
+        /// Xem chi tiết suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Details (GET)</remarks>
         public ActionResult Details(int id)
         {
             return View();
         }
 
-        // GET: ShowtimeController/Create
+        /// <summary>
+        /// Trang tạo suất chiếu mới
+        /// </summary>
+        /// <remarks>url: /Showtime/Create (GET)</remarks>
         public ActionResult Create()
         {
             return View();
         }
 
-        // POST: ShowtimeController/Create
+        /// <summary>
+        /// Tạo suất chiếu mới
+        /// </summary>
+        /// <remarks>url: /Showtime/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create(IFormCollection collection)
@@ -46,13 +58,19 @@ namespace MovieTheater.Controllers
             }
         }
 
-        // GET: ShowtimeController/Edit/5
+        /// <summary>
+        /// Trang sửa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Edit (GET)</remarks>
         public ActionResult Edit(int id)
         {
             return View();
         }
 
-        // POST: ShowtimeController/Edit/5
+        /// <summary>
+        /// Sửa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, IFormCollection collection)
@@ -67,13 +85,19 @@ namespace MovieTheater.Controllers
             }
         }
 
-        // GET: ShowtimeController/Delete/5
+        /// <summary>
+        /// Trang xóa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Delete (GET)</remarks>
         public ActionResult Delete(int id)
         {
             return View();
         }
 
-        // POST: ShowtimeController/Delete/5
+        /// <summary>
+        /// Xóa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Delete (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, IFormCollection collection)
@@ -88,6 +112,10 @@ namespace MovieTheater.Controllers
             }
         }
 
+        /// <summary>
+        /// Chọn suất chiếu theo ngày
+        /// </summary>
+        /// <remarks>url: /Showtime/Select (GET)</remarks>
         public IActionResult Select(string date, string returnUrl)
         {
             // 1. Get all available screening dates as DateTime

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using MovieTheater.Models;
 
 namespace MovieTheater.Repository
@@ -33,4 +30,4 @@ namespace MovieTheater.Repository
                 .ToList();
         }
     }
-} 
+}

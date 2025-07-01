@@ -310,7 +310,7 @@ namespace MovieTheater.Controllers
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
-            
+
             Response.Cookies.Append("JwtToken", token, new CookieOptions
             {
                 HttpOnly = true,

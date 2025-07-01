@@ -78,7 +78,7 @@ namespace MovieTheater.Repository
                 var existingMovie = _context.Movies
                     .Include(m => m.Types)
                     .FirstOrDefault(m => m.MovieId == movie.MovieId);
-                    
+
                 if (existingMovie != null)
                 {
                     existingMovie.MovieNameEnglish = movie.MovieNameEnglish;
@@ -94,10 +94,10 @@ namespace MovieTheater.Repository
                     existingMovie.TrailerUrl = movie.TrailerUrl;
                     existingMovie.LargeImage = movie.LargeImage;
                     existingMovie.SmallImage = movie.SmallImage;
-                    
+
                     // Clear existing types
                     existingMovie.Types.Clear();
-                    
+
                     // Add new types
                     foreach (var type in movie.Types)
                     {
@@ -107,7 +107,7 @@ namespace MovieTheater.Repository
                             existingMovie.Types.Add(existingType);
                         }
                     }
-                    
+
                     _context.SaveChanges();
                     return true;
                 }
@@ -140,7 +140,7 @@ namespace MovieTheater.Repository
                 {
                     _context.Types.RemoveRange(movie.Types);
                 }
-                
+
                 _context.Movies.Remove(movie);
 
                 try
@@ -222,11 +222,11 @@ namespace MovieTheater.Repository
         public async Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
-            
+
             var movieShows = await _context.MovieShows
                 .Include(ms => ms.ShowDate)
                 .Include(ms => ms.Schedule)
-                .Where(ms => ms.MovieId == movieId && 
+                .Where(ms => ms.MovieId == movieId &&
                        ms.ShowDate.ShowDate1 == dateOnly &&
                        ms.Schedule != null)
                 .Select(ms => ms.Schedule.ScheduleTime)
@@ -301,7 +301,7 @@ namespace MovieTheater.Repository
                 var existingShows = _context.MovieShows
                     .Include(ms => ms.Movie)
                     .Include(ms => ms.Schedule)
-                    .Where(ms => ms.ShowDateId == showDateId 
+                    .Where(ms => ms.ShowDateId == showDateId
                         && ms.CinemaRoomId == cinemaRoomId
                         && ms.ScheduleId == scheduleId)
                     .ToList();
@@ -363,11 +363,11 @@ namespace MovieTheater.Repository
         public List<string> GetShowTimes(string movieId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
-            
+
             return _context.MovieShows
                 .Include(ms => ms.ShowDate)
                 .Include(ms => ms.Schedule)
-                .Where(ms => ms.MovieId == movieId && 
+                .Where(ms => ms.MovieId == movieId &&
                        ms.ShowDate.ShowDate1 == dateOnly &&
                        ms.Schedule != null)
                 .Select(ms => ms.Schedule.ScheduleTime)

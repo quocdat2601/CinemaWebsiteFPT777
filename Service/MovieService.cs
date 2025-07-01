@@ -1,7 +1,6 @@
 ﻿using MovieTheater.Models;
 using MovieTheater.Repository;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 
 namespace MovieTheater.Service
 {

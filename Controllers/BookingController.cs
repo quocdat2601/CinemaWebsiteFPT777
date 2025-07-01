@@ -4,11 +4,9 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace MovieTheater.Controllers
 {
@@ -57,9 +55,9 @@ namespace MovieTheater.Controllers
                          IPointService pointService,
                          IRankService rankService,
                          IPromotionService promotionService,
-                        
+
                          IVoucherService voucherService,
-                        
+
                          MovieTheater.Models.MovieTheaterContext context)
         {
             _bookingService = bookingService;
@@ -80,6 +78,10 @@ namespace MovieTheater.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Trang chọn phim và suất chiếu để đặt vé
+        /// </summary>
+        /// <remarks>url: /Booking/TicketBooking (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> TicketBooking(string movieId = null)
         {
@@ -105,6 +107,10 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Lấy danh sách ngày chiếu cho một phim
+        /// </summary>
+        /// <remarks>url: /Booking/GetDates (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> GetDates(string movieId)
         {
@@ -112,6 +118,10 @@ namespace MovieTheater.Controllers
             return Json(dates.Select(d => d.ToString("yyyy-MM-dd")));
         }
 
+        /// <summary>
+        /// Lấy danh sách giờ chiếu cho một phim vào ngày cụ thể
+        /// </summary>
+        /// <remarks>url: /Booking/GetTimes (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> GetTimes(string movieId, DateTime date)
         {
@@ -119,6 +129,10 @@ namespace MovieTheater.Controllers
             return Json(times);
         }
 
+        /// <summary>
+        /// Trang xác nhận thông tin đặt vé (chọn ghế, xem giá, khuyến mãi...)
+        /// </summary>
+        /// <remarks>url: /Booking/Information (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> Information(string movieId, DateTime showDate, string showTime, List<int>? selectedSeatIds)
         {
@@ -232,6 +246,10 @@ namespace MovieTheater.Controllers
             return View("ConfirmBooking", viewModel);
         }
 
+        /// <summary>
+        /// Xác nhận đặt vé (tính toán giá, lưu invoice, chuyển sang thanh toán)
+        /// </summary>
+        /// <remarks>url: /Booking/Confirm (POST)</remarks>
         [HttpPost]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
@@ -245,7 +263,7 @@ namespace MovieTheater.Controllers
 
                 // Recalculate prices to prevent tampering
                 var originalTotal = model.SelectedSeats.Sum(s => s.Price);
-                
+
                 // 1. Apply rank discount first
                 decimal rankDiscount = 0;
                 if (userAccount?.Rank != null)
@@ -407,6 +425,10 @@ namespace MovieTheater.Controllers
             }
         }
 
+        /// <summary>
+        /// Trang thông báo đặt vé thành công, cộng/trừ điểm
+        /// </summary>
+        /// <remarks>url: /Booking/Success (GET)</remarks>
         [HttpGet]
         public async Task<IActionResult> Success()
         {
@@ -421,7 +443,7 @@ namespace MovieTheater.Controllers
                     {
                         await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
                     }
-                    
+
                     // Xử lý UseScore (điểm đã sử dụng)
                     if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
                     {
@@ -433,7 +455,7 @@ namespace MovieTheater.Controllers
                 var seats = new List<SeatDetailViewModel>();
                 var sessionKey = "ConfirmedSeats_" + invoiceId;
                 var seatsJson = HttpContext.Session.GetString(sessionKey);
-                
+
                 if (!string.IsNullOrEmpty(seatsJson))
                 {
                     seats = JsonConvert.DeserializeObject<List<SeatDetailViewModel>>(seatsJson);
@@ -445,12 +467,12 @@ namespace MovieTheater.Controllers
                         .Select(s => s.Trim())
                         .Where(s => !string.IsNullOrEmpty(s))
                         .ToArray();
-                    
+
                     foreach (var seatName in seatNamesArr)
                     {
                         var seat = _seatService.GetSeatByName(seatName);
                         if (seat == null) continue;
-                        
+
                         SeatType seatType = null;
                         if (seat.SeatTypeId.HasValue)
                         {
@@ -480,7 +502,7 @@ namespace MovieTheater.Controllers
                 }
 
                 ViewBag.SeatDetails = seats;
-                
+
                 // Calculate subtotal from prices after promotion
                 decimal subtotal = seats.Sum(s => s.PriceAfterPromotion ?? s.Price);
 
@@ -521,6 +543,10 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Trang thanh toán VNPay
+        /// </summary>
+        /// <remarks>url: /Booking/Payment (GET)</remarks>
         [HttpGet]
         public IActionResult Payment(string invoiceId)
         {
@@ -545,6 +571,10 @@ namespace MovieTheater.Controllers
             return View("Payment", viewModel);
         }
 
+        /// <summary>
+        /// Xử lý tạo URL thanh toán VNPay
+        /// </summary>
+        /// <remarks>url: /Booking/ProcessPayment (POST)</remarks>
         [HttpPost]
         public IActionResult ProcessPayment(PaymentViewModel model)
         {
@@ -614,6 +644,10 @@ namespace MovieTheater.Controllers
             }
         }
 
+        /// <summary>
+        /// Trang thông báo thanh toán thất bại
+        /// </summary>
+        /// <remarks>url: /Booking/Failed (GET)</remarks>
         [HttpGet]
         public IActionResult Failed()
         {
@@ -666,6 +700,10 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Trang xác nhận bán vé cho admin (chọn ghế, nhập member...)
+        /// </summary>
+        /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> ConfirmTicketForAdmin(string movieId, DateTime showDate, string showTime, List<int>? selectedSeatIds)
@@ -745,6 +783,10 @@ namespace MovieTheater.Controllers
             return View("ConfirmTicketAdmin", new ConfirmTicketAdminViewModel { BookingDetails = bookingDetails });
         }
 
+        /// <summary>
+        /// Kiểm tra thông tin member khi bán vé cho admin
+        /// </summary>
+        /// <remarks>url: /Booking/CheckMemberDetails (POST)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CheckMemberDetails([FromBody] MemberCheckRequest request)
@@ -769,6 +811,10 @@ namespace MovieTheater.Controllers
             });
         }
 
+        /// <summary>
+        /// Xác nhận bán vé cho admin (lưu invoice, cập nhật điểm, trạng thái ghế...)
+        /// </summary>
+        /// <remarks>url: /Booking/ConfirmTicketForAdmin (POST)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> ConfirmTicketForAdmin([FromBody] ConfirmTicketAdminViewModel model)
@@ -920,6 +966,10 @@ namespace MovieTheater.Controllers
             }
         }
 
+        /// <summary>
+        /// Trang xác nhận bán vé thành công cho admin
+        /// </summary>
+        /// <remarks>url: /Booking/TicketBookingConfirmed (GET)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult TicketBookingConfirmed(string invoiceId)
@@ -1030,7 +1080,7 @@ namespace MovieTheater.Controllers
             int addedScoreValue = TempData["AddedScoreValue"] != null ? Convert.ToInt32(TempData["AddedScoreValue"]) : (invoice.AddScore ?? 0) * 1000;
             // Calculate total price based on seat price after discount
             decimal voucherAmount = TempData["VoucherAmount"] != null ? Convert.ToDecimal(TempData["VoucherAmount"]) : 0;
-            
+
             // If voucher amount is not in TempData, try to get it from the invoice's voucher
             if (voucherAmount == 0 && !string.IsNullOrEmpty(invoice.VoucherId))
             {
@@ -1040,7 +1090,7 @@ namespace MovieTheater.Controllers
                     voucherAmount = voucher.Value;
                 }
             }
-            
+
             decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
             string memberId = TempData["MemberId"] as string ?? member?.MemberId;
             string memberEmail = TempData["MemberEmail"] as string ?? member?.Account?.Email;
@@ -1070,6 +1120,10 @@ namespace MovieTheater.Controllers
             return View("TicketBookingConfirmed", viewModel);
         }
 
+        /// <summary>
+        /// Kiểm tra điểm để quy đổi vé cho admin
+        /// </summary>
+        /// <remarks>url: /Booking/CheckScoreForConversion (POST)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult CheckScoreForConversion([FromBody] ScoreConversionRequest request)
@@ -1091,6 +1145,10 @@ namespace MovieTheater.Controllers
             }
         }
 
+        /// <summary>
+        /// Xem thông tin vé (admin/employee)
+        /// </summary>
+        /// <remarks>url: /Booking/TicketInfo (GET)</remarks>
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
         public IActionResult TicketInfo(string invoiceId)
@@ -1113,12 +1171,12 @@ namespace MovieTheater.Controllers
             }
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
-            
+
             // Prepare seat details
             List<SeatDetailViewModel> seats = null;
             var sessionKey = "ConfirmedSeats_" + invoiceId;
             var seatsJson = HttpContext.Session.GetString(sessionKey);
-            
+
             if (!string.IsNullOrEmpty(seatsJson))
             {
                 seats = JsonConvert.DeserializeObject<List<SeatDetailViewModel>>(seatsJson);
@@ -1249,12 +1307,17 @@ namespace MovieTheater.Controllers
             return View("TicketBookingConfirmed", viewModel);
         }
 
+        /// <summary>
+        /// Lấy danh sách member (admin)
+        /// </summary>
+        /// <remarks>url: /Booking/GetAllMembers (GET)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult GetAllMembers()
         {
             var members = _memberRepository.GetAll()
-                .Select(m => new {
+                .Select(m => new
+                {
                     memberId = m.MemberId,
                     score = m.Score,
                     account = new
@@ -1269,6 +1332,10 @@ namespace MovieTheater.Controllers
             return Json(members);
         }
 
+        /// <summary>
+        /// Khởi tạo bán vé cho member (admin)
+        /// </summary>
+        /// <remarks>url: /Booking/InitiateTicketSellingForMember/{id} (GET)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpGet("Booking/InitiateTicketSellingForMember/{id}")]
         public IActionResult InitiateTicketSellingForMember(string id)
@@ -1280,6 +1347,10 @@ namespace MovieTheater.Controllers
             return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
         }
 
+        /// <summary>
+        /// Lấy discount và earning rate của member (admin)
+        /// </summary>
+        /// <remarks>url: /Booking/GetMemberDiscount (GET)</remarks>
         [Authorize(Roles = "Admin")]
         public IActionResult GetMemberDiscount(string memberId)
         {
@@ -1296,6 +1367,10 @@ namespace MovieTheater.Controllers
             return Json(new { discountPercent, earningRate });
         }
 
+        /// <summary>
+        /// Xem chi tiết vé của user
+        /// </summary>
+        /// <remarks>url: /Booking/TicketDetails (GET)</remarks>
         [Authorize]
         [HttpGet]
         public IActionResult TicketDetails(string invoiceId)

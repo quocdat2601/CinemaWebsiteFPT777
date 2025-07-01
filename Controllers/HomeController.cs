@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
-using System.Diagnostics;
 using System.Security.Claims;
 
 namespace MovieTheater.Controllers
