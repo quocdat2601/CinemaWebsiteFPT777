@@ -289,25 +289,45 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Ticket/HistoryPartial (GET)</remarks>
         [HttpGet]
-        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate, string status = "all")
+        public async Task<IActionResult> HistoryPartial(DateTime? fromDate, DateTime? toDate, string status = "all")
         {
             var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
                 return Json(new { success = false, message = "Not logged in." });
 
-            var query = _context.Invoices.Where(i => i.AccountId == accountId);
+            var invoices = await _invoiceRepository.GetByAccountIdAsync(accountId);
+
             if (fromDate.HasValue)
-                query = query.Where(i => i.BookingDate >= fromDate.Value);
+                invoices = invoices.Where(i => i.BookingDate >= fromDate.Value);
             if (toDate.HasValue)
-                query = query.Where(i => i.BookingDate <= toDate.Value);
+                invoices = invoices.Where(i => i.BookingDate <= toDate.Value);
             if (!string.IsNullOrEmpty(status) && status != "all")
             {
                 if (status == "booked")
-                    query = query.Where(i => i.Status == MovieTheater.Models.InvoiceStatus.Completed);
+                    invoices = invoices.Where(i => i.Status == InvoiceStatus.Completed);
                 else if (status == "canceled")
-                    query = query.Where(i => i.Status == MovieTheater.Models.InvoiceStatus.Incomplete);
+                    invoices = invoices.Where(i => i.Status == InvoiceStatus.Incomplete);
             }
-            var result = query.OrderByDescending(i => i.BookingDate).ToList();
+
+            var result = invoices
+                .OrderByDescending(i => i.BookingDate)
+                .Select(i => new {
+                    invoiceId = i.InvoiceId,
+                    bookingDate = i.BookingDate,
+                    seat = i.Seat,
+                    totalMoney = i.TotalMoney,
+                    status = i.Status,
+                    MovieShow = i.MovieShow == null ? null : new {
+                        showDate = i.MovieShow.ShowDate,
+                        Movie = i.MovieShow.Movie == null ? null : new {
+                            MovieNameEnglish = i.MovieShow.Movie.MovieNameEnglish
+                        },
+                        Schedule = i.MovieShow.Schedule == null ? null : new {
+                            ScheduleTime = i.MovieShow.Schedule.ScheduleTime
+                        }
+                    }
+                }).ToList();
+
             return Json(new { success = true, data = result });
         }
 
