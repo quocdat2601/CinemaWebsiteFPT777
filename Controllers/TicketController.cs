@@ -376,13 +376,11 @@ namespace MovieTheater.Controllers
             if (booking.AddScore.HasValue && booking.AddScore.Value > 0)
             {
                 await _accountService.DeductScoreAsync(booking.AccountId, booking.AddScore.Value, true);
-                booking.AddScore = 0;
             }
 
             if (booking.UseScore.HasValue && booking.UseScore.Value > 0)
             {
                 await _accountService.AddScoreAsync(booking.AccountId, booking.UseScore.Value, false);
-                booking.UseScore = 0;
             }
             // Handle voucher refund - if booking used a voucher, restore it
             var usedVoucher = !string.IsNullOrEmpty(booking.VoucherId) ? _voucherService.GetById(booking.VoucherId) : null;

@@ -1001,7 +1001,6 @@ namespace MovieTheater.Controllers
 
                 // Store seat information in session for the confirmation view
                 HttpContext.Session.SetString("ConfirmedSeats_" + invoice.InvoiceId, JsonConvert.SerializeObject(model.BookingDetails.SelectedSeats));
-               TempData["ToastMessage"] = "Movie booked successfully!";
 
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
             }
