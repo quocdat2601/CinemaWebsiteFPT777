@@ -387,7 +387,6 @@ namespace MovieTheater.Controllers
                 invoice.AddScore = pointsToEarnFromRank;
 
                 await _bookingService.SaveInvoiceAsync(invoice);
-                _accountService.CheckAndUpgradeRank(userId);
 
                 // Lưu MovieShowId vào TempData để PaymentController sử dụng
                 TempData["MovieShowId"] = invoice.MovieShowId;
@@ -477,6 +476,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public async Task<IActionResult> Success()
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var invoiceId = TempData["InvoiceId"] as string;
             if (!string.IsNullOrEmpty(invoiceId))
             {
@@ -504,6 +504,7 @@ namespace MovieTheater.Controllers
                     {
                         await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
                     }
+                    _accountService.CheckAndUpgradeRank(userId);
                 }
 
                 // Get seat details from invoice.Seat_IDs (preferred) or fallback to seat names
