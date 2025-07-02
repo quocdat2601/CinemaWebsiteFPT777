@@ -395,25 +395,6 @@ namespace MovieTheater.Controllers
                     invoice.Status = InvoiceStatus.Completed;
                     await _bookingService.UpdateInvoiceAsync(invoice);
 
-                    // --- Add back voucher and score logic for test success ---
-                    if (voucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
-                    {
-                        var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                        if (voucher != null)
-                        {
-                            voucher.IsUsed = true;
-                            _voucherService.Update(voucher);
-                        }
-                    }
-                    if (model.UseScore > 0)
-                    {
-                        await _accountService.DeductScoreAsync(userId, model.UseScore);
-                    }
-                    if (invoice.AddScore.HasValue && invoice.AddScore.Value > 0)
-                    {
-                        await _accountService.AddScoreAsync(userId, invoice.AddScore.Value);
-                    }
-
                     // Tạo ScheduleSeat sau khi đã cập nhật status
                     if (invoice.Status != InvoiceStatus.Incomplete)
                     {
@@ -484,15 +465,27 @@ namespace MovieTheater.Controllers
                 var invoice = _invoiceService.GetById(invoiceId);
                 if (invoice != null && invoice.Status == InvoiceStatus.Completed)
                 {
-                    // Remove AddScore and UseScore updates from here. They will be handled after payment is successful.
-                    // if (invoice.AddScore.HasValue && invoice.AddScore.Value > 0)
-                    // {
-                    //     await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
-                    // }
-                    // if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
-                    // {
-                    //     await _accountService.DeductScoreAsync(invoice.AccountId, invoice.UseScore.Value);
-                    // }
+                    // --- Voucher and point logic after payment or test success ---
+                    // Mark voucher as used
+                    if (!string.IsNullOrEmpty(invoice.VoucherId))
+                    {
+                        var voucher = _voucherService.GetById(invoice.VoucherId);
+                        if (voucher != null && (voucher.IsUsed == false))
+                        {
+                            voucher.IsUsed = true;
+                            _voucherService.Update(voucher);
+                        }
+                    }
+                    // Deduct used points
+                    if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                    {
+                        await _accountService.DeductScoreAsync(invoice.AccountId, invoice.UseScore.Value);
+                    }
+                    // Add earned points
+                    if (invoice.AddScore.HasValue && invoice.AddScore.Value > 0)
+                    {
+                        await _accountService.AddScoreAsync(invoice.AccountId, invoice.AddScore.Value);
+                    }
                 }
 
                 // Get seat details from session first
@@ -969,7 +962,7 @@ namespace MovieTheater.Controllers
                 if (voucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
                     var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                    if (voucher != null)
+                    if (voucher != null && (voucher.IsUsed == false))
                     {
                         voucher.IsUsed = true;
                         _voucherService.Update(voucher);
