@@ -83,7 +83,11 @@
                     <tbody>
                         <tr>
                             <td class="text-start">Original Price:</td>
-                            <td><span id="originalTotal">@Model.Subtotal.ToString("N0") VND</span></td>
+                            <td><span id="originalTotal">@Model.OriginalTotal.ToString("N0") VND</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-start">Subtotal:</td>
+                            <td><span id="subtotal">@Model.Subtotal.ToString("N0") VND</span></td>
                         </tr>
                         <tr id="rankDiscountRow" style="display:none;">
                             <td class="text-start">Rank discount:</td>
@@ -220,7 +224,8 @@
 <script>
     $(document).ready(function () {
         // Values from server
-        var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var originalTotal = @Model.OriginalTotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -319,12 +324,13 @@
         }
 
         function updatePriceFlow() {
-            var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var originalTotal = @Model.OriginalTotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-            // apply rank benefit first
+            // Rank discount is applied to subtotal (after promotion)
             var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
-            var afterRank = originalTotal - rankDiscountAmount;
+            var rankDiscountAmount = Math.round(subtotal * (rankDiscountPercent / 100));
+            var afterRank = subtotal - rankDiscountAmount;
             if (afterRank < 0) afterRank = 0;
 
             // apply promotion next (placeholder for future implementation)
@@ -362,6 +368,8 @@
             }
 
             // Update UI
+            $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
+            $('#subtotal').text(Number(subtotal).toLocaleString() + ' VND');
             $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
 
             // Rank discount row

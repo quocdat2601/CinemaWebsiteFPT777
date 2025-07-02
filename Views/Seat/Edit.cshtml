@@ -237,6 +237,9 @@
 		});
 
 		selectedSeats.clear();
+		document.querySelectorAll('td.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+		// Uncheck all row, column, and select-all checkboxes
+		document.querySelectorAll('.row-checkbox, .column-checkbox, #selectAll').forEach(cb => cb.checked = false);
 		if (hasUpdates) {
 			document.getElementById("saveChangesBtn").disabled = false;
 		}

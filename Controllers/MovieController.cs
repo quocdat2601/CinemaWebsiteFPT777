@@ -625,6 +625,77 @@ namespace MovieTheater.Controllers
                 return BadRequest();
             }
         }
+
+        [HttpGet]
+        public IActionResult GetMovieShowsByRoomAndDate(int cinemaRoomId, string showDate)
+        {
+            if (!DateOnly.TryParse(showDate, out var parsedDate))
+                return BadRequest("Invalid date format.");
+
+            var shows = _movieService.GetMovieShowsByRoomAndDate(cinemaRoomId, parsedDate)
+                .Select(ms => new {
+                    scheduleText = ms.Schedule?.ScheduleTime?.ToString("HH:mm"),
+                    roomId = ms.CinemaRoomId,
+                    dateId = ms.ShowDate.ToString("yyyy-MM-dd"),
+                }).ToList();
+
+            return Json(shows);
+        }
+
+        [HttpGet]
+        [Route("Movie/ViewShow/{id}")]
+        public IActionResult ViewShow(string id)
+        {
+            var movie = _movieService.GetById(id);
+            if (movie == null)
+            {
+                return NotFound();
+            }
+
+            var showDates = new List<DateOnly>();
+            if (movie.FromDate.HasValue && movie.ToDate.HasValue)
+            {
+                for (var date = movie.FromDate.Value; date <= movie.ToDate.Value; date = date.AddDays(1))
+                {
+                    showDates.Add(date);
+                }
+            }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                var movieShowsJson = _movieService.GetMovieShows(id);
+                var showDetails = movieShowsJson.Select(ms => new
+                {
+                    ms.MovieShowId,
+                    ms.MovieId,
+                    showDate = ms.ShowDate.ToString("dd/MM/yyyy"),
+                    ms.ScheduleId,
+                    scheduleTime = ms.Schedule?.ScheduleTime.HasValue == true ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null,
+                    ms.CinemaRoomId,
+                    cinemaRoomName = ms.CinemaRoom?.CinemaRoomName,
+                    ms.VersionId,
+                    versionName = ms.Version?.VersionName
+                }).ToList();
+
+                return Json(showDetails);
+            }
+
+            var movieShows = _movieService.GetMovieShows(id);
+
+            var viewModel = new MovieDetailViewModel
+            {
+                MovieId = movie.MovieId,
+                MovieNameEnglish = movie.MovieNameEnglish,
+                Duration = movie.Duration,
+                AvailableCinemaRooms = _cinemaService.GetAll().ToList(),
+                AvailableShowDates = showDates,
+                AvailableSchedules = _movieService.GetSchedules().ToList(),
+                CurrentMovieShows = movieShows,
+                AvailableVersions = movie.Versions.ToList()
+            };
+
+            return View(viewModel);
+        }
     }
 }
 

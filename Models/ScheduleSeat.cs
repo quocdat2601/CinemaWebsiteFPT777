@@ -19,6 +19,12 @@ public partial class ScheduleSeat
 
     public string? HoldBy { get; set; }
 
+    public int? BookedSeatTypeId { get; set; }
+
+    public decimal? BookedPrice { get; set; }
+
+    public virtual SeatType? BookedSeatType { get; set; }
+
     public virtual Invoice? Invoice { get; set; }
 
     public virtual MovieShow? MovieShow { get; set; }

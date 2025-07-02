@@ -34,11 +34,17 @@
                     <label for="dateSelect" class="form-label"><strong>Date</strong></label>
                     <select id="dateSelect" class="form-select" onchange="updateVersions()">
                         <option value="">— Select Date —</option>
-                        @foreach (var date in showsByDate.Keys.OrderBy(d => DateTime.ParseExact(d, "dd/MM/yyyy", null)))
-                        {
-                            var parsedDate = DateTime.ParseExact(date, "dd/MM/yyyy", null);
-                            var value = parsedDate.ToString("yyyy-MM-dd");
-                            <option value="@value">@date</option>
+                        @{
+                            var today = DateTime.Today;
+                            foreach (var date in showsByDate.Keys.OrderBy(d => DateTime.ParseExact(d, "dd/MM/yyyy", null)))
+                            {
+                                var parsedDate = DateTime.ParseExact(date, "dd/MM/yyyy", null);
+                                if (parsedDate >= today)
+                                {
+                                    var value = parsedDate.ToString("yyyy-MM-dd");
+                                    <option value="@value">@date</option>
+                                }
+                            }
                         }
                     </select>
                 </div>

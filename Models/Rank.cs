@@ -15,9 +15,9 @@ public partial class Rank
 
     public decimal? PointEarningPercentage { get; set; }
 
-    public string? ColorGradient { get; set; } = null!;
+    public string ColorGradient { get; set; } = null!;
 
-    public string? IconClass { get; set; } = null!;
+    public string IconClass { get; set; } = null!;
 
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 }

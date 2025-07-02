@@ -43,5 +43,7 @@ namespace MovieTheater.ViewModels
         public decimal VoucherAmount { get; set; }
         public string SelectedPromotionId { get; set; }
         public decimal PromotionDiscountPercent { get; set; }
+
+        public decimal OriginalTotal { get; set; }
     }
 }
