@@ -286,6 +286,10 @@ public partial class MovieTheaterContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Voucher_ID");
+            entity.Property(e => e.Seat_IDs)
+                .HasColumnName("Seat_IDs")
+                .HasMaxLength(100)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.AccountId)

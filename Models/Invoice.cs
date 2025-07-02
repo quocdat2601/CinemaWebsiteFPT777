@@ -33,6 +33,8 @@ public partial class Invoice
 
     public decimal? RankDiscountPercentage { get; set; }
 
+    public string? Seat_IDs { get; set; } // Comma-separated seat IDs for this invoice
+
     public virtual Account? Account { get; set; }
 
     public virtual MovieShow? MovieShow { get; set; }
