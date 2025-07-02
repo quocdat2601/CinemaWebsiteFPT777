@@ -2,6 +2,7 @@
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -32,11 +33,14 @@ namespace MovieTheater.Controllers
             ViewBag.CurrentScore = member?.Score ?? 0;
 
             var result = _context.Invoices
+                .Include(i => i.MovieShow)
+                .ThenInclude(ms => ms.Movie)
                 .Where(i => i.AccountId == accountId && i.AddScore > 0)
+                .ToList()
                 .Select(i => new ScoreHistoryViewModel
                 {
                     DateCreated = i.BookingDate ?? DateTime.MinValue,
-                    MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
+                    MovieName = i.MovieShow?.Movie?.MovieNameEnglish ?? "N/A",
                     Score = i.AddScore ?? 0
                 }).ToList();
 
@@ -61,23 +65,26 @@ namespace MovieTheater.Controllers
             ViewBag.CurrentScore = member?.Score ?? 0;
 
             var query = _context.Invoices
+                .Include(i => i.MovieShow)
+                .ThenInclude(ms => ms.Movie)
                 .Where(i => i.AccountId == accountId &&
                             i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
+                            i.BookingDate <= toDate)
+                .ToList();
 
             if (historyType == "add")
             {
-                query = query.Where(i => i.AddScore > 0);
+                query = query.Where(i => i.AddScore > 0).ToList();
             }
             else if (historyType == "use")
             {
-                query = query.Where(i => i.UseScore > 0);
+                query = query.Where(i => i.UseScore > 0).ToList();
             }
 
             var result = query.Select(i => new ScoreHistoryViewModel
             {
                 DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
+                MovieName = i.MovieShow?.Movie?.MovieNameEnglish ?? "N/A",
                 Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
             }).ToList();
 
@@ -106,7 +113,11 @@ namespace MovieTheater.Controllers
             var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
             var currentScore = member?.Score ?? 0;
 
-            var query = _context.Invoices.Where(i => i.AccountId == accountId);
+            var query = _context.Invoices
+                .Include(i => i.MovieShow)
+                .ThenInclude(ms => ms.Movie)
+                .Where(i => i.AccountId == accountId)
+                .ToList();
 
             // Parse dates if provided
             DateTime fromDateValue, toDateValue;
@@ -115,7 +126,7 @@ namespace MovieTheater.Controllers
 
             if (hasFrom && hasTo)
             {
-                query = query.Where(i => i.BookingDate >= fromDateValue && i.BookingDate <= toDateValue);
+                query = query.Where(i => i.BookingDate >= fromDateValue && i.BookingDate <= toDateValue).ToList();
             }
 
             var result = new List<object>();
@@ -126,7 +137,7 @@ namespace MovieTheater.Controllers
                     result.Add(new
                     {
                         dateCreated = i.BookingDate ?? DateTime.MinValue,
-                        movieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
+                        movieName = i.MovieShow?.Movie?.MovieNameEnglish ?? "N/A",
                         score = i.AddScore.Value,
                         type = "add"
                     });
@@ -136,7 +147,7 @@ namespace MovieTheater.Controllers
                     result.Add(new
                     {
                         dateCreated = i.BookingDate ?? DateTime.MinValue,
-                        movieName = i.MovieShow.Movie.MovieNameEnglish ?? "N/A",
+                        movieName = i.MovieShow?.Movie?.MovieNameEnglish ?? "N/A",
                         score = i.UseScore.Value,
                         type = "use"
                     });
