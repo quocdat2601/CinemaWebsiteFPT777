@@ -39,8 +39,8 @@
 				<td>
 					<div class="d-flex align-items-center gap-2">
 						<a href="@Url.Action("Edit", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-primary">Edit</a>
-						<form asp-action="Delete" asp-controller="Movie" method="post" onsubmit="return confirm('Are you sure you want to delete this movie?');">
-							<input type="hidden" name="id" value="@movie.MovieId" />
+						<form action="@Url.Action("Delete", "Movie", new { id = movie.MovieId })" method="post" onsubmit="return confirm('Are you sure you want to delete this movie?');">
+							@Html.AntiForgeryToken()
 							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
 						</form>
 						<a href="@Url.Action("MovieShow", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-secondary">Edit Show</a>

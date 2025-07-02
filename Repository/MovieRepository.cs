@@ -208,7 +208,9 @@ namespace MovieTheater.Repository
 
         public async Task<List<Movie>> GetAllMoviesAsync()
         {
+            // Only return movies that have at least one MovieShow
             return await _context.Movies
+                .Where(m => m.MovieShows.Any())
                 .GroupBy(m => m.MovieId)
                 .Select(g => g.First())
                 .ToListAsync();
