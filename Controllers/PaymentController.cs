@@ -82,16 +82,26 @@ namespace MovieTheater.Controllers
                         decimal earningRate = 1;
                         if (member?.Account?.Rank != null)
                             earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
-
                         int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(invoice.TotalMoney ?? 0, earningRate);
                         invoice.AddScore = addScore;
-                        if (member != null)
+                        // Use the service to add and deduct score
+                        if (addScore > 0)
                         {
-                            member.Score += addScore;
-                            if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
-                            {
-                                member.Score -= invoice.UseScore.Value;
-                            }
+                            _accountService.AddScoreAsync(invoice.AccountId, addScore);
+                        }
+                        if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                        {
+                            _accountService.DeductScoreAsync(invoice.AccountId, invoice.UseScore.Value);
+                        }
+                    }
+                    // --- NEW: Mark voucher as used if present ---
+                    if (!string.IsNullOrEmpty(invoice.VoucherId))
+                    {
+                        var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                        if (voucher != null)
+                        {
+                            voucher.IsUsed = true;
+                            _context.Vouchers.Update(voucher);
                         }
                     }
                     _context.Invoices.Update(invoice);
