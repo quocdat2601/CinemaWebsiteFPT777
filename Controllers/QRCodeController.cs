@@ -111,9 +111,9 @@ namespace MovieTheater.Controllers
                     ticketInfo = new
                     {
                         invoiceId = invoice.InvoiceId,
-                        movieName = invoice.MovieName,
-                        showDate = invoice.ScheduleShow?.ToString("dd/MM/yyyy"),
-                        showTime = invoice.ScheduleShowTime,
+                        movieName = invoice.MovieShow.Movie.MovieNameEnglish,
+                        showDate = invoice.MovieShow.ShowDate,
+                        showTime = invoice.MovieShow.Schedule.ScheduleTime,
                         customerName = member?.Account?.FullName ?? "N/A",
                         customerPhone = member?.Account?.PhoneNumber ?? "N/A",
                         seats = seatDetails,
@@ -150,9 +150,9 @@ namespace MovieTheater.Controllers
             var viewModel = new TicketVerificationResultViewModel
             {
                 InvoiceId = invoice.InvoiceId,
-                MovieName = invoice.MovieName,
-                ShowDate = invoice.ScheduleShow?.ToString("dd/MM/yyyy"),
-                ShowTime = invoice.ScheduleShowTime,
+                MovieName = invoice.MovieShow.Movie.MovieNameEnglish,
+                ShowDate = invoice.MovieShow.ShowDate.ToString(),
+                ShowTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
                 CustomerName = member?.Account?.FullName ?? "N/A",
                 CustomerPhone = member?.Account?.PhoneNumber ?? "N/A",
                 Seats = string.Join(", ", seatNames),
@@ -206,9 +206,9 @@ namespace MovieTheater.Controllers
                     ticketInfo = new
                     {
                         invoiceId = invoice.InvoiceId,
-                        movieName = invoice.MovieName,
-                        showDate = invoice.ScheduleShow?.ToString("dd/MM/yyyy"),
-                        showTime = invoice.ScheduleShowTime,
+                        movieName = invoice.MovieShow.Movie.MovieNameEnglish,
+                        showDate = invoice.MovieShow.ShowDate.ToString(),
+                        showTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
                         customerName = member?.Account?.FullName ?? "N/A",
                         customerPhone = member?.Account?.PhoneNumber ?? "N/A",
                         seats = seatDetails,

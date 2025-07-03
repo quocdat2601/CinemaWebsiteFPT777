@@ -102,12 +102,10 @@ namespace MovieTheater.Controllers
                 case "ShowroomMg":
                     var cinema = _cinemaService.GetAll();
                     var seatTypes = _seatTypeService.GetAll();
-
+                    var versions = _movieService.GetAllVersions();
+                    ViewBag.Versions = versions;
                     ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
-                case "ScheduleMg":
-                    var scheduleMovies = _movieService.GetAll();
-                    return PartialView("ScheduleMg", scheduleMovies);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
@@ -130,15 +128,6 @@ namespace MovieTheater.Controllers
                     }
 
                     return PartialView("BookingMg", invoices);
-                case "ShowtimeMg":
-                    var showtimeModel = new ShowtimeManagementViewModel
-                    {
-                        AvailableDates = _scheduleRepository.GetAllShowDates(),
-                        SelectedDate = DateTime.Today,
-                        AvailableSchedules = _movieService.GetAllSchedules(),
-                        MovieShows = _movieService.GetMovieShow()
-                    };
-                    return PartialView("ShowtimeMg", showtimeModel);
                 case "FoodMg":
                     // Sử dụng parameter keyword thay vì Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
@@ -306,7 +295,7 @@ namespace MovieTheater.Controllers
                 ? Math.Round((decimal)ticketsSoldToday / totalSeats * 100, 1)
                 : 0m;
 
-            // 3) 7‑day trends
+            // 3) 7-day trends
             var last7 = Enumerable.Range(0, 7)
                            .Select(i => today.AddDays(-i))
                            .Reverse()
@@ -323,7 +312,7 @@ namespace MovieTheater.Controllers
 
             // 4) Top 5 movies & members
             var topMovies = completed
-                .GroupBy(i => i.MovieName)
+                .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
                 .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
@@ -345,7 +334,7 @@ namespace MovieTheater.Controllers
                 {
                     InvoiceId = i.InvoiceId,
                     MemberName = i.Account?.FullName ?? "N/A",
-                    MovieName = i.MovieName,
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish,
                     BookingDate = i.BookingDate ?? DateTime.MinValue,
                     Status = "Completed"
                 })
@@ -381,6 +370,61 @@ namespace MovieTheater.Controllers
                 RecentBookings = recentBookings,
                 RecentMembers = recentMembers
             };
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult ShowtimeMg(string date)
+        {
+            DateOnly selectedDate;
+            if (!string.IsNullOrEmpty(date) && DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out selectedDate))
+            {
+                // parsed successfully
+            }
+            else
+            {
+                selectedDate = DateOnly.FromDateTime(DateTime.Today);
+            }
+
+            var allMovieShows = _movieService.GetMovieShow();
+            var filteredMovieShows = allMovieShows.Where(ms => ms.ShowDate == selectedDate).ToList();
+
+            // Get summary for the month
+            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as IMovieRepository;
+            var summary = new Dictionary<DateOnly, List<string>>();
+            if (repo is MovieRepository concreteRepo)
+            {
+                summary = concreteRepo.GetMovieShowSummaryByMonth(selectedDate.Year, selectedDate.Month);
+            }
+            ViewBag.MovieShowSummaryByDate = summary;
+
+            var showtimeModel = new ShowtimeManagementViewModel
+            {
+                SelectedDate = selectedDate,
+                AvailableSchedules = _movieService.GetAllSchedules(),
+                MovieShows = filteredMovieShows
+            };
+            return View(showtimeModel);
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult GetMovieShowSummary(int year, int month)
+        {
+            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as MovieRepository;
+            if (repo == null)
+            {
+                return Json(new Dictionary<string, List<string>>());
+            }
+
+            var summary = repo.GetMovieShowSummaryByMonth(year, month);
+
+            var jsonFriendlySummary = summary.ToDictionary(
+                kvp => kvp.Key.ToString("yyyy-MM-dd"),
+                kvp => kvp.Value
+            );
+
+            return Json(jsonFriendlySummary);
         }
 
         [Authorize(Roles = "Admin")]

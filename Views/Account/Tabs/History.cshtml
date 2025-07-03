@@ -129,7 +129,7 @@
                 html += '<div class="table-responsive"><table class="table table-hover table-striped"><thead class="table-dark"><tr><th>Booking Date</th><th>Movie</th><th>Show Date</th><th>Show Time</th><th>Seats</th><th class="text-end">Total Amount</th><th>Status</th><th class="text-center">Actions</th></tr></thead><tbody>';
                 pageData.forEach(function(booking) {
                     var bookingDate = booking.bookingDate ? new Date(booking.bookingDate).toLocaleString('vi-VN', {day: '2-digit',month: '2-digit',year: 'numeric',hour: '2-digit',minute: '2-digit'}) : 'N/A';
-                    var showDate = booking.scheduleShow ? new Date(booking.scheduleShow).toLocaleDateString('vi-VN') : 'N/A';
+                    var showDate = booking.movieShow && booking.movieShow.showDate ? new Date(booking.movieShow.showDate).toLocaleDateString('vi-VN') : 'N/A';
                     var totalMoney = booking.totalMoney ? new Intl.NumberFormat('vi-VN').format(booking.totalMoney) + ' VND' : 'N/A';
                     var statusBadge = booking.status === 1 ? '<span class="badge bg-success">Booked</span>' : '<span class="badge bg-danger">Canceled</span>';
                     var cancelButton = '';
@@ -147,9 +147,13 @@
                     }
                     html += '<tr>' +
                         '<td>' + bookingDate + '</td>' +
-                        '<td>' + (booking.movieName || 'N/A') + '</td>' +
-                        '<td>' + showDate + '</td>' +
-                        '<td>' + (booking.scheduleShowTime || 'N/A') + '</td>' +
+                        '<td>' + (booking.movieShow && booking.movieShow.movie ? booking.movieShow.movie.movieNameEnglish : 'N/A') + '</td>' +
+                        '<td>' + (booking.movieShow && booking.movieShow.showDate ? booking.movieShow.showDate : 'N/A') + '</td>' +
+                        '<td>' + (
+                            booking.movieShow && booking.movieShow.schedule && booking.movieShow.schedule.scheduleTime
+                                ? booking.movieShow.schedule.scheduleTime.substring(0, 5)
+                                : 'N/A'
+                        ) + '</td>' +
                         '<td>' + (booking.seat || 'N/A') + '</td>' +
                         '<td class="text-end">' + totalMoney + '</td>' +
                         '<td>' + statusBadge + '</td>' +

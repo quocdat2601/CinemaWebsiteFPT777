@@ -30,12 +30,7 @@ namespace MovieTheater.Service
             return _repo.GetSchedulesByIds(ids);
         }
 
-        public List<ShowDate> GetShowDatesByIds(List<int> ids)
-        {
-            return _repo.GetShowDatesByIds(ids);
-        }
-
-        public Task<List<DateTime>> GetShowDatesAsync(string movieId)
+        public Task<List<DateOnly>> GetShowDatesAsync(string movieId)
         {
             return _repo.GetShowDatesAsync(movieId);
         }

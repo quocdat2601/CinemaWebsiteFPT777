@@ -1,4 +1,7 @@
-﻿namespace MovieTheater.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace MovieTheater.Models;
 
 public partial class ScheduleSeat
 {
@@ -11,6 +14,10 @@ public partial class ScheduleSeat
     public int? SeatId { get; set; }
 
     public int? SeatStatusId { get; set; }
+
+    public DateTime? HoldUntil { get; set; }
+
+    public string? HoldBy { get; set; }
 
     public virtual Invoice? Invoice { get; set; }
 

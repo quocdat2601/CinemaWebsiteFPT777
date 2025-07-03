@@ -6,5 +6,7 @@ namespace MovieTheater.ViewModels
         public int ShowDateId { get; set; }
         public int ScheduleId { get; set; }
         public int CinemaRoomId { get; set; }
+        public int VersionId { get; set; }
+        public DateOnly ShowDate { get; set; }
     }
 }

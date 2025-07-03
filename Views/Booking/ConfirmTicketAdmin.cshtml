@@ -121,6 +121,11 @@
             <label for="showTime" class="soft-label">Time</label>
             <input type="text" id="showTime" class="soft-readonly" value="@Model.BookingDetails.ShowTime" readonly />
         </div>
+        <div class="ticket-row">
+            <label for="screen" class="soft-label">Version</label>
+            <input type="text" id="screen" class="soft-readonly" value="@Model.BookingDetails.VersionName" readonly />
+        </div>
+
         <hr />
         <div class="section-title">Seat(s)</div>
         <table class="table table-bordered">
@@ -380,7 +385,8 @@
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice,
-                        PricePerTicket: @Model.BookingDetails.PricePerTicket
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket,
+                        MovieShowId: @Model.MovieShowId
                     },
                     MemberIdInput: $('#memberInput').val(),
                     MemberId: $('#memberId').val(),
@@ -391,7 +397,8 @@
                     UsedScore: parseInt($('#useScore').val()) || 0,
                     SelectedVoucherId: $('#selectedVoucherId').val(),
                     AccountId: $('#accountId').val(),
-                    RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0
+                    RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0,
+                    MovieShowId: @Model.MovieShowId
                 };
 
                 $.ajax({

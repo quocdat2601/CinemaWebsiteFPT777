@@ -51,5 +51,9 @@ namespace MovieTheater.Service
                 return false;
             }
         }
+
+        public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId){
+            return _repository.GetRoomsByVersion(versionId);
+        }
     }
 }

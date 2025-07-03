@@ -11,6 +11,7 @@
                 <h5>Movie & Show Info</h5>
                 <p><strong>Movie:</strong> @Model.MovieName</p>
                 <p><strong>Screen:</strong> @Model.CinemaRoomName</p>
+                <p><strong>Version:</strong> @Model.VersionName</p>
                 <p><strong>Date:</strong> @Model.ShowDate.ToString("yyyy-MM-dd")</p>
                 <p><strong>Time:</strong> @Model.ShowTime</p>
             </div>
@@ -219,10 +220,10 @@
 <script>
     $(document).ready(function () {
         // Values from server
-        var originalTotal = @Model.Subtotal;
-        var discountPercent = @Model.RankDiscountPercent;
-        var earningRate = @Model.EarningRate;
-        var currentScore = @Model.CurrentScore;
+        var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var pointValue = 1000;
 
         let voucherModalInstance = null;
@@ -318,10 +319,10 @@
         }
 
         function updatePriceFlow() {
-            var originalTotal = @Model.Subtotal;
+            var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             // apply rank benefit first
-            var rankDiscountPercent = @Model.RankDiscountPercent;
+            var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
             var afterRank = originalTotal - rankDiscountAmount;
             if (afterRank < 0) afterRank = 0;

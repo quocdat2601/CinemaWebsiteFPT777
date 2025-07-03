@@ -32,18 +32,27 @@
             {
                 <div class="mb-4">
                     <label for="dateSelect" class="form-label"><strong>Date</strong></label>
-                    <select id="dateSelect" class="form-select" onchange="updateTimes(this.value)">
+                    <select id="dateSelect" class="form-select" onchange="updateVersions()">
                         <option value="">— Select Date —</option>
                         @foreach (var date in showsByDate.Keys.OrderBy(d => DateTime.ParseExact(d, "dd/MM/yyyy", null)))
                         {
-                            <option value="@date">@date</option>
+                            var parsedDate = DateTime.ParseExact(date, "dd/MM/yyyy", null);
+                            var value = parsedDate.ToString("yyyy-MM-dd");
+                            <option value="@value">@date</option>
                         }
                     </select>
                 </div>
 
                 <div class="mb-4">
+                    <label for="versionSelect" class="form-label"><strong>Version</strong></label>
+                    <select id="versionSelect" class="form-select" disabled onchange="updateTimes()">
+                        <option value="">— Select Version —</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
                     <label for="timeSelect" class="form-label"><strong>Time</strong></label>
-                    <select id="timeSelect" class="form-select">
+                    <select id="timeSelect" class="form-select" disabled>
                         <option value="">— Select Time —</option>
                     </select>
                 </div>
@@ -60,31 +69,73 @@
     <script>
         const showsByDate = @Html.Raw(Json.Serialize(showsByDate));
 
-        function updateTimes(date) {
+        function updateVersions() {
+            const movieId = document.getElementById('movieSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+            versionSelect.disabled = true;
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+
+            if (movieId && date) {
+                fetch(`/Booking/GetVersions?movieId=${movieId}&date=${date}`)
+                    .then(response => response.json())
+                    .then(versions => {
+                        if (versions.length > 0) {
+                            versions.forEach(v => {
+                                const option = document.createElement('option');
+                                option.value = v.versionId;
+                                option.textContent = v.versionName;
+                                versionSelect.appendChild(option);
+                            });
+                            versionSelect.disabled = false;
+                        }
+                    });
+            }
+        }
+
+        function updateTimes() {
+            const movieId = document.getElementById('movieSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
             const timeSelect = document.getElementById('timeSelect');
             timeSelect.innerHTML = '<option value="">— Select Time —</option>';
-            
-            if (date && showsByDate[date]) {
-                showsByDate[date].forEach(time => {
-                    const option = document.createElement('option');
-                    option.value = time;
-                    option.textContent = time;
-                    timeSelect.appendChild(option);
-                });
+            timeSelect.disabled = true;
+
+            if (movieId && date && versionId) {
+                fetch(`/Booking/GetTimes?movieId=${movieId}&date=${date}&versionId=${versionId}`)
+                    .then(response => response.json())
+                    .then(times => {
+                        if (times.length > 0) {
+                            times.forEach(time => {
+                                const option = document.createElement('option');
+                                option.value = time;
+                                option.textContent = time;
+                                timeSelect.appendChild(option);
+                            });
+                            timeSelect.disabled = false;
+                        }
+                    });
             }
         }
 
         function continueToSeats() {
             const movieId = document.getElementById('movieSelect').value;
             const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
             const time = document.getElementById('timeSelect').value;
 
-            if (!movieId || !date || !time) {
+            if (!movieId || !date || !versionId || !time) {
                 alert('Please select all options');
                 return;
             }
 
-            window.location.href = `/Seat/Select?movieId=${movieId}&date=${date}&time=${time}`;
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${versionId}&time=${time}`;
         }
     </script>
 }

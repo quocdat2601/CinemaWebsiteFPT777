@@ -19,9 +19,7 @@
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
-@await Html.PartialAsync("~/Views/Shared/_ToastMessages.cshtml")
-
-<div class="container mt-4" id="mainContent">
+<div class="container mt-4 seat-view-page">
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
 	</div>
@@ -31,6 +29,7 @@
 	<div class="seat-section">
 		<div class="flex-grow-1 seat-layout-bordered-area" id="seatLayoutArea">
 			<div class="screen-label text-center mb-4">Screen</div>
+
 			<div class="seat-layout-bordered-area border p-3 mb-4">
 				<div class="seat-container">
 					<table class="table table-bordered text-center">
@@ -46,11 +45,10 @@
 											var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
 											bool isDisabledType = seatType?.TypeName == "Disabled";
 											bool isBooked = bookedSeats.Contains(seat.SeatId);
-
-											var seatStyle = isDisabledType ? "border: none;" : isBooked ? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+											var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
 											var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-											<td style="@seatStyle"
+											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
 												data-seat-id="@seat.SeatId"
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
@@ -60,9 +58,10 @@
 												@(isDisabledType || isBooked ? "disabled" : "")
 												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
 												<span class="material-icons">
-													@(isDisabledType ? "" : "chair")
+													@(isDisabledType ? "" : seat.SeatName)
 												</span>
 											</td>
+
 										}
 									}
 								</tr>
@@ -71,11 +70,12 @@
 					</table>
 				</div>
 			</div>
+
 			<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
 				@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
 				{
 					<div class="d-flex align-items-center me-3">
-						<span style="display: inline-block; width: 20px; height: 20px; background-color: @type.ColorHex; margin-right: 5px; border-radius: 3px;"></span>
+						<span style="display: inline-block; width: 20px; height: 20px; background-color: @(type.ColorHex ?? "#FFFFFF"); margin-right: 5px; border-radius: 3px;"></span>
 						<span>@type.TypeName</span>
 					</div>
 				}
@@ -89,6 +89,7 @@
 				</div>
 			</div>
 		</div>
+
 		<div id="selectionSummary">
 			<div class="summary-block">
 				<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
@@ -109,6 +110,8 @@
 				</div>
 			</div>
 		</div>
+
+
 		<!-- Timeout message in seat-section -->
 		<div id="timeoutMessage" style="display:none; flex:1; justify-content:center; align-items:center; flex-direction:column;">
 			<h2 style="font-weight:bold; margin-bottom:18px; color:#374151;">Đã hết thời gian chọn ghế.</h2>
@@ -125,7 +128,7 @@
 	}
 </div>
 
-@section Scripts{
+@section Scripts {
 	<script>
 		let selectedSeats = new Set();
 		let countdownTimer = null;
@@ -190,7 +193,8 @@
 				movieId: '@movieId',
 				showDate: '@date.ToString("yyyy-MM-dd")',
 				showTime: '@time',
-				selectedSeatIds: selectedSeatIds
+				selectedSeatIds: selectedSeatIds,
+				movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
 			};
 			const params = new URLSearchParams();
 			for (const key in data) {

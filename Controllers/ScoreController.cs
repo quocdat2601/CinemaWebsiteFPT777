@@ -2,17 +2,18 @@
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {
     public class ScoreController : Controller
     {
-        private readonly MovieTheaterContext _context;
+        private readonly IScoreService _scoreService;
 
-        public ScoreController(
-       MovieTheaterContext context)
+        public ScoreController(IScoreService scoreService)
         {
-            _context = context;
+            _scoreService = scoreService;
         }
 
         /// <summary>
@@ -28,18 +29,8 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
-            ViewBag.CurrentScore = member?.Score ?? 0;
-
-            var result = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.AddScore > 0)
-                .Select(i => new ScoreHistoryViewModel
-                {
-                    DateCreated = i.BookingDate ?? DateTime.MinValue,
-                    MovieName = i.MovieName ?? "N/A",
-                    Score = i.AddScore ?? 0
-                }).ToList();
-
+            ViewBag.CurrentScore = _scoreService.GetCurrentScore(accountId);
+            var result = _scoreService.GetScoreHistory(accountId, null, null, "add");
             ViewBag.HistoryType = "add";
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
@@ -57,35 +48,12 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
-            ViewBag.CurrentScore = member?.Score ?? 0;
-
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-
-            if (historyType == "add")
-            {
-                query = query.Where(i => i.AddScore > 0);
-            }
-            else if (historyType == "use")
-            {
-                query = query.Where(i => i.UseScore > 0);
-            }
-
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-            }).ToList();
-
+            ViewBag.CurrentScore = _scoreService.GetCurrentScore(accountId);
+            var result = _scoreService.GetScoreHistory(accountId, fromDate, toDate, historyType);
             if (!result.Any())
             {
                 ViewBag.Message = "No score history found for the selected period.";
             }
-
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
@@ -102,55 +70,18 @@ namespace MovieTheater.Controllers
                 return Json(new { success = false, message = "Not logged in." });
             }
 
-            // Get current score
-            var member = _context.Members.FirstOrDefault(m => m.AccountId == accountId);
-            var currentScore = member?.Score ?? 0;
-
-            var query = _context.Invoices.Where(i => i.AccountId == accountId);
-
-            // Parse dates if provided
-            DateTime fromDateValue, toDateValue;
-            bool hasFrom = DateTime.TryParse(fromDate, out fromDateValue);
-            bool hasTo = DateTime.TryParse(toDate, out toDateValue);
-
-            if (hasFrom && hasTo)
-            {
-                query = query.Where(i => i.BookingDate >= fromDateValue && i.BookingDate <= toDateValue);
-            }
-
-            var result = new List<object>();
-            foreach (var i in query)
-            {
-                if (historyType != "use" && i.AddScore.HasValue && i.AddScore.Value > 0)
-                {
-                    result.Add(new
-                    {
-                        dateCreated = i.BookingDate ?? DateTime.MinValue,
-                        movieName = i.MovieName ?? "N/A",
-                        score = i.AddScore.Value,
-                        type = "add"
-                    });
-                }
-                if (historyType != "add" && i.UseScore.HasValue && i.UseScore.Value > 0)
-                {
-                    result.Add(new
-                    {
-                        dateCreated = i.BookingDate ?? DateTime.MinValue,
-                        movieName = i.MovieName ?? "N/A",
-                        score = i.UseScore.Value,
-                        type = "use"
-                    });
-                }
-            }
-
-            result = result.OrderByDescending(x => ((dynamic)x).dateCreated).ToList();
-
-            return Json(new
-            {
-                success = true,
-                currentScore = currentScore,
-                data = result
-            });
+            int currentScore = _scoreService.GetCurrentScore(accountId);
+            DateTime? from = null, to = null;
+            if (DateTime.TryParse(fromDate, out var f)) from = f;
+            if (DateTime.TryParse(toDate, out var t)) to = t;
+            var data = _scoreService.GetScoreHistory(accountId, from, to, historyType);
+            var result = data.Select(i => new {
+                dateCreated = i.DateCreated,
+                movieName = i.MovieName,
+                score = i.Score,
+                type = i.Type
+            }).OrderByDescending(x => x.dateCreated).ToList();
+            return Json(new { success = true, currentScore = currentScore, data = result });
         }
 
     }

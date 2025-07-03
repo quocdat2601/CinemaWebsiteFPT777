@@ -4,7 +4,7 @@ namespace MovieTheater.ViewModels
     {
         public string InvoiceId { get; set; }
         public string MovieName { get; set; }
-        public DateTime ShowDate { get; set; }
+        public DateOnly ShowDate { get; set; }
         public string ShowTime { get; set; }
         public string Seats { get; set; }
         public decimal TotalAmount { get; set; }
