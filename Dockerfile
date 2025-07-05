@@ -1,22 +1,30 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy csproj and restore dependencies
+COPY ["MovieTheater.csproj", "./"]
+RUN dotnet restore
+
+# Copy everything else and build
+COPY . .
+RUN dotnet build "MovieTheater.csproj" -c Release -o /app/build
+
+# Publish stage
+FROM build AS publish
+RUN dotnet publish "MovieTheater.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+COPY --from=publish /app/publish .
+
+# Set environment variables for Windows compatibility
+ENV ASPNETCORE_URLS=http://+:80;https://+:443
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Expose port
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY ["MovieTheater.sln", "./"]
-COPY ["MovieTheater.csproj", "./"]
-RUN dotnet restore "MovieTheater.sln"
-
-COPY . .
-WORKDIR "/src"
-RUN dotnet build "MovieTheater.sln" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "MovieTheater.sln" -c Release -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "MovieTheater.dll"]
