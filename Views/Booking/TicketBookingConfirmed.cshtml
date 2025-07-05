@@ -141,21 +141,24 @@
         </div>
         <div class="p-4">
             <div class="ticket-section-title">Movie & Show Info</div>
-            <div class="ticket-row">
-                <label for="movieName" class="ticket-info-label">Movie Name</label>
-                <input type="text" id="movieName" class="ticket-info-value" value="@movieName" readonly />
-                <label for="screen" class="ticket-info-label">Screen</label>
-                <input type="text" id="screen" class="ticket-info-value" value="@Model.BookingDetails.CinemaRoomName" readonly />
-            </div>
-            <div class="ticket-row">
-                <label for="showDate" class="ticket-info-label">Date</label>
-                <input type="text" id="showDate" class="ticket-info-value" value="@showDate" readonly />
-                <label for="showTime" class="ticket-info-label">Time</label>
-                <input type="text" id="showTime" class="ticket-info-value" value="@showTime" readonly />
-            </div>
-            <div class="ticket-row">
-                <label for="ticketId" class="ticket-info-label">Ticket ID</label>
-                <input type="text" id="ticketId" class="ticket-info-value" value="@ticketId" readonly />
+            <div class="ticket-row row">
+                <div class="col">
+                    <label for="movieName" class="ticket-info-label">Movie Name</label>
+                    <input type="text" id="movieName" class="ticket-info-value" value="@movieName" readonly />
+                    <label for="screen" class="ticket-info-label">Screen</label>
+                    <input type="text" id="screen" class="ticket-info-value" value="@Model.BookingDetails.CinemaRoomName" readonly />
+                    <label for="version" class="ticket-info-label">Version</label>
+                    <input type="text" id="version" class="ticket-info-value" value="@Model.BookingDetails.VersionName" readonly />
+                </div>
+
+                <div class="col">
+                    <label for="showDate" class="ticket-info-label">Date</label>
+                    <input type="text" id="showDate" class="ticket-info-value" value="@showDate" readonly />
+                    <label for="showTime" class="ticket-info-label">Time</label>
+                    <input type="text" id="showTime" class="ticket-info-value" value="@showTime" readonly />
+                    <label for="ticketId" class="ticket-info-label">Ticket ID</label>
+                    <input type="text" id="ticketId" class="ticket-info-value" value="@ticketId" readonly />
+                </div>
             </div>
             <div class="d-flex flex-row justify-content-between align-items-start" style="gap: 2rem;">
                 <div style="flex: 1.5;">
@@ -179,9 +182,10 @@
                                 <td>
                                     @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
                                     {
-                                        <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                   
-                                        <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                        <span style="white-space: nowrap;">
+                                            <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                            <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                        </span>
                                     }
                                     else
                                     {
@@ -212,7 +216,7 @@
                                 @if (Model.RankDiscount > 0)
                                 {
                                     <tr>
-                                        <td style="white-space: nowrap;">- Rank Discount</td>
+                                        <td style="white-space: nowrap;">- Rank Discount (@Model.RankDiscountPercent.ToString("0.##")%)</td>
                                         <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }

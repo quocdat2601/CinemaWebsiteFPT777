@@ -5,6 +5,7 @@ using MovieTheater.ViewModels;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using MovieTheater.Repository;
 
 namespace MovieTheater.Controllers
 {
@@ -13,12 +14,14 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly ICinemaService _cinemaService;
         private readonly ILogger<MovieController> _logger;
+        private readonly IScheduleRepository _scheduleRepository;
 
-        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger)
+        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IScheduleRepository scheduleRepository)
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
             _logger = logger;
+            _scheduleRepository = scheduleRepository;
         }
 
         /// <summary>
@@ -33,6 +36,8 @@ namespace MovieTheater.Controllers
         /// [GET] api/movie/movielist
         /// Tìm kiếm và hiển thị danh sách phim. Nếu là Ajax request thì trả về partial view.
         /// </summary>
+        [HttpGet]
+        [Route("Movie/MovieList")]
         public IActionResult MovieList(string searchTerm)
         {
             var movies = _movieService.SearchMovies(searchTerm)
@@ -60,6 +65,8 @@ namespace MovieTheater.Controllers
         /// [GET] api/movie/detail/{id}
         /// Hiển thị thông tin chi tiết của một bộ phim.
         /// </summary>
+        [HttpGet]
+        [Route("Movie/Detail/{id}")]
         public ActionResult Detail(string id)
         {
             var movie = _movieService.GetById(id);
@@ -85,11 +92,11 @@ namespace MovieTheater.Controllers
                 MovieProductionCompany = movie.MovieProductionCompany,
                 Director = movie.Director,
                 Duration = movie.Duration,
-                Version = movie.Version,
                 Content = movie.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(movie.TrailerUrl),
                 LargeImage = movie.LargeImage,
-                AvailableTypes = movie.Types.ToList()
+                AvailableTypes = movie.Types.ToList(),
+                AvailableVersions = movie.Versions.ToList()
             };
 
             return View(viewModel);
@@ -100,11 +107,13 @@ namespace MovieTheater.Controllers
         /// Trả về form tạo mới phim.
         /// </summary>
         [HttpGet]
+        [Route("Movie/Create")]
         public IActionResult Create()
         {
             var model = new MovieDetailViewModel
             {
-                AvailableTypes = _movieService.GetAllTypes()
+                AvailableTypes = _movieService.GetAllTypes(),
+                AvailableVersions = _movieService.GetAllVersions()
             };
             return View(model);
         }
@@ -114,12 +123,14 @@ namespace MovieTheater.Controllers
         /// Tạo mới một bộ phim kèm theo các lịch chiếu và ngày chiếu.
         /// </summary>
         [HttpPost]
+        [Route("Movie/Create")]
         [ValidateAntiForgeryToken]
         public IActionResult Create(MovieDetailViewModel model)
         {
             if (!ModelState.IsValid)
             {
                 model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableVersions = _movieService.GetAllVersions();
                 return View(model);
             }
 
@@ -127,8 +138,11 @@ namespace MovieTheater.Controllers
             {
                 TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
                 model.AvailableTypes = _movieService.GetAllTypes();
+                model.AvailableVersions = _movieService.GetAllVersions();
                 return View(model);
             }
+
+            var selectedVersions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
 
             var movie = new Movie
             {
@@ -138,7 +152,6 @@ namespace MovieTheater.Controllers
                 Actor = model.Actor,
                 Director = model.Director,
                 Duration = model.Duration,
-                Version = model.Version,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
                 MovieProductionCompany = model.MovieProductionCompany,
@@ -146,7 +159,8 @@ namespace MovieTheater.Controllers
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
                 LargeImage = model.LargeImage,
                 SmallImage = model.SmallImage,
-                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
+                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
+                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
             };
 
             if (_movieService.AddMovie(movie))
@@ -161,6 +175,7 @@ namespace MovieTheater.Controllers
 
             TempData["ErrorMessage"] = "Failed to create movie.";
             model.AvailableTypes = _movieService.GetAllTypes();
+            model.AvailableVersions = _movieService.GetAllVersions();
             return View(model);
         }
 
@@ -186,7 +201,6 @@ namespace MovieTheater.Controllers
                 Actor = movie.Actor,
                 Director = movie.Director,
                 Duration = movie.Duration,
-                Version = movie.Version,
                 FromDate = movie.FromDate,
                 ToDate = movie.ToDate,
                 MovieProductionCompany = movie.MovieProductionCompany,
@@ -195,7 +209,9 @@ namespace MovieTheater.Controllers
                 LargeImage = movie.LargeImage,
                 SmallImage = movie.SmallImage,
                 AvailableTypes = _movieService.GetAllTypes(),
-                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList()
+                AvailableVersions = _movieService.GetAllVersions(),
+                SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
+                SelectedVersionIds = movie.Versions.Select(v => v.VersionId).ToList()
             };
 
             return View(model);
@@ -210,7 +226,7 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(string id, MovieDetailViewModel model)
         {
-            if (id != model.MovieId || !ModelState.IsValid || model.FromDate >= model.ToDate)
+            if (id != model.MovieId)
             {
                 return NotFound();
             }
@@ -228,6 +244,98 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
+            var existingMovie = _movieService.GetById(id);
+            if (existingMovie == null)
+            {
+                return NotFound();
+            }
+
+            // Handle image uploads
+            string largeImagePath = existingMovie.LargeImage ?? "";
+            string smallImagePath = existingMovie.SmallImage ?? "";
+
+            // Process large image upload
+            if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
+            {
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    model.LargeImageFile.CopyTo(fileStream);
+                }
+
+                largeImagePath = "/image/" + uniqueFileName;
+            }
+
+            // Process small image upload
+            if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
+            {
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    model.SmallImageFile.CopyTo(fileStream);
+                }
+
+                smallImagePath = "/image/" + uniqueFileName;
+            }
+
+            existingMovie.Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList();
+            existingMovie.Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
+
+            // Conflict check only if duration has changed
+            if (existingMovie.Duration != model.Duration)
+            {
+                const int CLEANING_TIME_MINUTES = 15;
+                var movieShows = _movieService.GetMovieShows(id);
+                var allMovieShows = _movieService.GetMovieShow();
+
+                foreach (var show in movieShows)
+                {
+                    var start = show.Schedule?.ScheduleTime;
+                    if (start == null) continue;
+                    var newEnd = start.Value.AddMinutes((model.Duration ?? 0) + CLEANING_TIME_MINUTES);
+
+                    // Get all other shows in the same room and date (any movie, not just this one)
+                    var otherShows = allMovieShows
+                        .Where(ms => ms.CinemaRoomId == show.CinemaRoomId
+                                  && ms.ShowDate == show.ShowDate
+                                  && ms.MovieShowId != show.MovieShowId
+                                  && ms.Schedule != null
+                                  && ms.Movie != null)
+                        .ToList();
+
+                    foreach (var other in otherShows)
+                    {
+                        var otherStart = other.Schedule.ScheduleTime;
+                        var otherEnd = otherStart?.AddMinutes((other.Movie.Duration ?? 0) + CLEANING_TIME_MINUTES);
+                        if (otherStart == null || otherEnd == null) continue;
+
+                        // Check for overlap (including buffer)
+                        if (start < otherEnd && newEnd > otherStart)
+                        {
+                            TempData["ErrorMessage"] = $"Duration update causes conflict on {show.ShowDate:dd/MM/yyyy} in room {show.CinemaRoom.CinemaRoomName} with another movie show ({other.Movie.MovieNameEnglish}) between {otherStart:HH\\:mm} and {otherEnd:HH\\:mm}. Consider updating movie show before changing duration.";
+                            model.AvailableTypes = _movieService.GetAllTypes();
+                            return View(model);
+                        }
+                    }
+                }
+            }
+
             var movie = new Movie
             {
                 MovieId = model.MovieId,
@@ -236,15 +344,15 @@ namespace MovieTheater.Controllers
                 Actor = model.Actor,
                 Director = model.Director,
                 Duration = model.Duration,
-                Version = model.Version,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
                 MovieProductionCompany = model.MovieProductionCompany,
                 Content = model.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
-                LargeImage = model.LargeImage,
-                SmallImage = model.SmallImage,
-                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList()
+                LargeImage = largeImagePath,
+                SmallImage = smallImagePath,
+                Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
+                Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
             };
 
             if (_movieService.UpdateMovie(movie))
@@ -259,6 +367,7 @@ namespace MovieTheater.Controllers
 
             TempData["ErrorMessage"] = "Failed to update movie.";
             model.AvailableTypes = _movieService.GetAllTypes();
+            model.AvailableVersions = _movieService.GetAllVersions();
             return View(model);
         }
 
@@ -267,6 +376,7 @@ namespace MovieTheater.Controllers
         /// Xóa phim khỏi hệ thống dựa trên ID. Role xác định route sau khi xóa.
         /// </summary>
         [HttpPost]
+        [Route("Movie/Delete/{id}")]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {
@@ -293,6 +403,8 @@ namespace MovieTheater.Controllers
                 }
 
                 movie.Types?.Clear();
+                movie.Versions?.Clear();
+
                 bool success = _movieService.DeleteMovie(id);
 
                 if (!success)
@@ -330,31 +442,46 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
+            var showDates = new List<DateOnly>();
+            if (movie.FromDate.HasValue && movie.ToDate.HasValue)
+            {
+                for (var date = movie.FromDate.Value; date <= movie.ToDate.Value; date = date.AddDays(1))
+                {
+                    showDates.Add(date);
+                }
+            }
+
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                var movieShows = _movieService.GetMovieShows(id);
-                var showDetails = movieShows.Select(ms => new
+                var movieShowsJson = _movieService.GetMovieShows(id);
+                var showDetails = movieShowsJson.Select(ms => new
                 {
                     ms.MovieShowId,
                     ms.MovieId,
-                    ms.ShowDateId,
-                    showDate = ms.ShowDate?.ShowDate1?.ToString("dd/MM/yyyy") ?? ms.ShowDate?.DateName,
+                    showDate = ms.ShowDate.ToString("dd/MM/yyyy"),
                     ms.ScheduleId,
-                    scheduleTime = ms.Schedule?.ScheduleTime,
+                    scheduleTime = ms.Schedule?.ScheduleTime.HasValue == true ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null,
                     ms.CinemaRoomId,
-                    cinemaRoomName = ms.CinemaRoom?.CinemaRoomName
+                    cinemaRoomName = ms.CinemaRoom?.CinemaRoomName,
+                    ms.VersionId,
+                    versionName = ms.Version?.VersionName
                 }).ToList();
 
                 return Json(showDetails);
             }
 
+            var movieShows = _movieService.GetMovieShows(id);
+
             var viewModel = new MovieDetailViewModel
             {
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
+                Duration = movie.Duration,
                 AvailableCinemaRooms = _cinemaService.GetAll().ToList(),
-                AvailableShowDates = _movieService.GetShowDates().ToList(),
-                AvailableSchedules = _movieService.GetSchedules().ToList()
+                AvailableShowDates = showDates,
+                AvailableSchedules = _movieService.GetSchedules().ToList(),
+                CurrentMovieShows = movieShows,
+                AvailableVersions = movie.Versions.ToList()
             };
 
             return View(viewModel);
@@ -373,7 +500,7 @@ namespace MovieTheater.Controllers
             if (!ModelState.IsValid)
             {
                 model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
-                model.AvailableShowDates = _movieService.GetShowDates().ToList();
+                model.AvailableShowDates = _movieService.GetShowDates(model.MovieId).ToList();
                 model.AvailableSchedules = _movieService.GetSchedules().ToList();
                 return View(model);
             }
@@ -383,86 +510,113 @@ namespace MovieTheater.Controllers
                 // The actual movie show creation is handled by the JavaScript AJAX calls
                 TempData["SuccessMessage"] = "Movie shows updated successfully!";
                 return View(model);
-                //string role = GetUserRole();
-                //if (role == "Admin")
-                //    return RedirectToAction("MainPage", "Admin", new { tab = "ScheduleMg" });
-                //else
-                //    return RedirectToAction("MainPage", "Employee", new { tab = "ScheduleMg" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating movie shows for movie {MovieId}", id);
                 TempData["ErrorMessage"] = "An error occurred while updating movie shows.";
                 model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
-                model.AvailableShowDates = _movieService.GetShowDates().ToList();
+                model.AvailableShowDates = _movieService.GetShowDates(model.MovieId).ToList();
                 model.AvailableSchedules = _movieService.GetSchedules().ToList();
                 return View(model);
             }
         }
 
-        [HttpPost]
-        public IActionResult AddMovieShow([FromBody] MovieShowRequest request)
+        [HttpGet]
+        [Route("Movie/GetAvailableScheduleTimes")]
+        public async Task<IActionResult> GetAvailableScheduleTimes(int cinemaRoomId, string showDate, int movieDurationMinutes, int cleaningTimeMinutes)
         {
-            try
+            if (!DateOnly.TryParse(showDate, out var parsedDate))
             {
-                var movieShow = new MovieShow
-                {
-                    MovieId = request.MovieId,
-                    ShowDateId = request.ShowDateId,
-                    ScheduleId = request.ScheduleId,
-                    CinemaRoomId = request.CinemaRoomId
-                };
+                return BadRequest("Invalid date format.");
+            }
 
-                _movieService.AddMovieShow(movieShow);
+            var availableSchedules = await _movieService.GetAvailableSchedulesAsync(parsedDate, cinemaRoomId);
+            
+            var lastShowInRoom = _movieService.GetMovieShowsByRoomAndDate(cinemaRoomId, parsedDate)
+                .OrderByDescending(ms => ms.Schedule.ScheduleTime)
+                .FirstOrDefault();
+
+            string lastShowEndTime = "N/A";
+            TimeOnly? lastEndTimeForFiltering = null;
+
+            if (lastShowInRoom != null && lastShowInRoom.Schedule != null && lastShowInRoom.Schedule.ScheduleTime.HasValue)
+            {
+                var startTime = lastShowInRoom.Schedule.ScheduleTime.Value;
+                var movie = _movieService.GetById(lastShowInRoom.MovieId);
+                if (movie != null && movie.Duration.HasValue)
+                {
+                    var endTime = startTime.AddMinutes(movie.Duration.Value + cleaningTimeMinutes);
+                    lastShowEndTime = endTime.ToString("HH:mm");
+                    lastEndTimeForFiltering = endTime;
+                }
+            }
+            
+            var filteredSchedules = availableSchedules;
+            if (lastEndTimeForFiltering.HasValue)
+            {
+                filteredSchedules = availableSchedules.Where(s => s.ScheduleTime.HasValue && s.ScheduleTime.Value > lastEndTimeForFiltering.Value).ToList();
+            }
+
+            var nextAvailableTime = "N/A";
+            if(filteredSchedules.Any()){
+                nextAvailableTime = filteredSchedules.First().ScheduleTime?.ToString("HH:mm") ?? "N/A";
+            }
+
+            var scheduleVms = filteredSchedules.Select(s => new {
+                scheduleId = s.ScheduleId,
+                scheduleTime = s.ScheduleTime?.ToString("HH:mm")
+            }).ToList();
+
+            return Ok(new { schedules = scheduleVms, lastShowEndTime = lastShowEndTime, nextAvailableTime = nextAvailableTime });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddMovieShow([FromBody] MovieShowRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest("Invalid request data.");
+            }
+
+            var movieShow = new MovieShow
+            {
+                MovieId = request.MovieId,
+                ShowDate = request.ShowDate,
+                ScheduleId = request.ScheduleId,
+                CinemaRoomId = request.CinemaRoomId,
+                VersionId = request.VersionId
+            };
+
+            var added = _movieService.AddMovieShow(movieShow);
+
+            if (added)
+            {
+                return Ok(new { success = true, message = "Movie show added successfully." });
+            }
+            else
+            {
+                return BadRequest(new { success = false, message = "Failed to add movie show. The schedule might be unavailable." });
+            }
+        }
+        
+        [HttpPost]
+        public async Task<IActionResult> DeleteAllMovieShows(string movieId)
+        {
+            var success = _movieService.DeleteAllMovieShows(movieId);
+            if (success)
+            {
                 return Ok();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error adding movie show");
-                return BadRequest();
-            }
+            return BadRequest("Could not delete all movie shows.");
         }
 
         [HttpGet]
-        public IActionResult CheckScheduleAvailability(int showDateId, int scheduleId, int cinemaRoomId)
+        public async Task<IActionResult> GetAvailableSchedules(DateOnly showDate, int cinemaRoomId)
         {
             try
             {
-                var isAvailable = _movieService.IsScheduleAvailable(showDateId, scheduleId, cinemaRoomId);
-                return Json(new { isAvailable });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking schedule availability");
-                return BadRequest();
-            }
-        }
-
-        [HttpPost]
-        public IActionResult DeleteAllMovieShows(string movieId)
-        {
-            try
-            {
-                var success = _movieService.DeleteAllMovieShows(movieId);
-                if (success)
-                {
-                    return Ok();
-                }
-                return BadRequest("Failed to delete movie shows");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting movie shows for movie {MovieId}", movieId);
-                return BadRequest();
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAvailableSchedules(int showDateId, int cinemaRoomId)
-        {
-            try
-            {
-                var availableSchedules = await _movieService.GetAvailableSchedulesAsync(showDateId, cinemaRoomId);
+                var availableSchedules = await _movieService.GetAvailableSchedulesAsync(showDate, cinemaRoomId);
                 return Json(availableSchedules);
             }
             catch (Exception ex)
@@ -473,3 +627,4 @@ namespace MovieTheater.Controllers
         }
     }
 }
+

@@ -13,4 +13,4 @@ namespace MovieTheater.ViewModels
         public bool IsSuccess { get; set; }
         public string VerificationTime { get; set; }
     }
-} 
+}

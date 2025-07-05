@@ -1,4 +1,5 @@
 ﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+@using System.Security.Claims
 
 @{
 	ViewData["Title"] = "Movie Detail";
@@ -60,7 +61,13 @@
 				</div>
 
 				<div class="form-group mb-3">
-					<div><strong>Version:</strong> @Model.Version</div>
+					<div>
+						<strong>Version:</strong>
+						@foreach (var version in Model.AvailableVersions)
+						{
+						<span class="badge bg-info me-1">@version.VersionName</span>
+						}
+					</div>
 				</div>
 
 				<div class="form-group mb-3">
@@ -136,20 +143,26 @@
 			const container = document.getElementById('movieShowsContainer');
 			container.innerHTML = ''; // Clear container
 
-			// Group shows by date only
+			// Group shows by date and version
 			const groupedShows = shows.reduce((acc, show) => {
-				if (!acc[show.showDate]) {
-					acc[show.showDate] = {
-						dateText: show.showDate,
-						times: new Set() // Use Set to store unique times
+				const dateKey = show.showDate;
+				if (!acc[dateKey]) {
+					acc[dateKey] = {
+						dateText: dateKey,
+						versions: {}
 					};
 				}
-				acc[show.showDate].times.add(show.scheduleTime);
+				
+				const versionKey = show.versionName || 'Unknown';
+				if (!acc[dateKey].versions[versionKey]) {
+					acc[dateKey].versions[versionKey] = new Set();
+				}
+				acc[dateKey].versions[versionKey].add(show.scheduleTime);
 				return acc;
 			}, {});
 
 			const sortedGroups = Object.values(groupedShows).sort((a, b) =>
-				new Date(a.dateText) - new Date(b.dateText)
+				new Date(a.dateText.split('/').reverse().join('-')) - new Date(b.dateText.split('/').reverse().join('-'))
 			);
 
 			if (sortedGroups.length === 0) {
@@ -162,23 +175,38 @@
 				groupDiv.className = 'movie-show-date-group mb-4';
 
 				const heading = document.createElement('h5');
-				heading.className = 'text-primary fw-bold border-bottom pb-1 mb-2';
+				heading.className = 'text-primary fw-bold border-bottom pb-1 mb-3';
 				heading.innerHTML = `Date: ${group.dateText}`;
 				groupDiv.appendChild(heading);
 
-				const timeContainer = document.createElement('div');
-				timeContainer.className = 'd-flex flex-wrap gap-2';
+				// Sort versions alphabetically
+				const sortedVersions = Object.keys(group.versions).sort();
+				
+				sortedVersions.forEach(versionName => {
+					const versionDiv = document.createElement('div');
+					versionDiv.className = 'mb-3';
 
-				// Convert Set to Array and sort times
-				const sortedTimes = Array.from(group.times).sort((a, b) => a.localeCompare(b));
-				sortedTimes.forEach(time => {
-					const timeBadge = document.createElement('span');
-					timeBadge.className = 'badge bg-primary text-white px-3 py-2 rounded-pill shadow-sm';
-					timeBadge.innerText = time;
-					timeContainer.appendChild(timeBadge);
+					const versionLabel = document.createElement('div');
+					versionLabel.className = 'fw-bold text-secondary mb-2';
+					versionLabel.innerHTML = versionName;
+					versionDiv.appendChild(versionLabel);
+
+					const timeContainer = document.createElement('div');
+					timeContainer.className = 'd-flex flex-wrap gap-2';
+
+					// Convert Set to Array and sort times
+					const sortedTimes = Array.from(group.versions[versionName]).sort((a, b) => a.localeCompare(b));
+					sortedTimes.forEach(time => {
+						const timeBadge = document.createElement('span');
+						timeBadge.className = 'badge bg-primary text-white px-3 py-2 rounded-pill shadow-sm';
+						timeBadge.innerText = time;
+						timeContainer.appendChild(timeBadge);
+					});
+
+					versionDiv.appendChild(timeContainer);
+					groupDiv.appendChild(versionDiv);
 				});
 
-				groupDiv.appendChild(timeContainer);
 				container.appendChild(groupDiv);
 			});
 		} catch (error) {

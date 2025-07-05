@@ -82,7 +82,11 @@ canvas {
     .recent-bookings-container table {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed;
+        background: #23263a;
+        color: #f1f1f1;
+        border-radius: 10px;
+        overflow: hidden;
+        font-size: 1rem;
     }
 
     .recent-bookings-container thead {
@@ -107,11 +111,35 @@ canvas {
 
     .recent-bookings-container th,
     .recent-bookings-container td {
-        padding: 0.5rem;
+        padding: 0.75rem 1rem;
         text-align: left;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .recent-bookings-container th {
+        background: #2d314d;
+        color: #fff;
+        font-weight: 600;
+        border-bottom: 2px solid #393e5c;
+    }
+
+    .recent-bookings-container tr {
+        border-bottom: 1px solid #393e5c;
+    }
+
+    .recent-bookings-container tbody tr:nth-child(even) {
+        background: #282b40;
+    }
+
+    .recent-bookings-container tbody tr:nth-child(odd) {
+        background: #23263a;
+    }
+
+    .recent-bookings-container tr:hover {
+        background: #393e5c;
+        color: #fff;
     }
 
 /* Sticky table header for safety */

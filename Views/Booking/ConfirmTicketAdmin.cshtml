@@ -73,6 +73,33 @@
         font-weight: 600;
         font-size: 1.1rem;
     }
+    .remove-voucher-btn {
+        position: absolute;
+        top: 50%;
+        right: 0.5rem;
+        transform: translateY(-50%);
+        background: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        transition: background 0.2s;
+        color: #dc3545;
+        z-index: 2;
+    }
+    .remove-voucher-btn:hover {
+        background: #ffeaea;
+        color: #a71d2a;
+    }
+    #selectedVoucherInfo {
+        min-height: 36px;
+        padding-right: 40px;
+        position: relative;
+    }
 </style>
 
 <div class="container mt-4">
@@ -94,6 +121,11 @@
             <label for="showTime" class="soft-label">Time</label>
             <input type="text" id="showTime" class="soft-readonly" value="@Model.BookingDetails.ShowTime" readonly />
         </div>
+        <div class="ticket-row">
+            <label for="screen" class="soft-label">Version</label>
+            <input type="text" id="screen" class="soft-readonly" value="@Model.BookingDetails.VersionName" readonly />
+        </div>
+
         <hr />
         <div class="section-title">Seat(s)</div>
         <table class="table table-bordered">
@@ -114,8 +146,11 @@
                             @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
                             {
                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                           
                                 <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                @if (!string.IsNullOrEmpty(seat.PromotionName))
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@seat.PromotionName</span>
+                                }
                             }
                             else
                             {
@@ -160,10 +195,12 @@
                 <div class="ticket-row">
                     <label for="memberScore" class="soft-label">Member Score</label>
                     <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
+                    <input type="hidden" id="accountId" value="@Model.MemberAccountId" />
+                    <input type="hidden" id="rankDiscountPercent" value="@Model.BookingDetails.RankDiscountPercent" />
                 </div>
                 <div class="form-group mt-3">
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
-                    <div id="selectedVoucherInfo" class="mt-2 text-success"></div>
+                    <div id="selectedVoucherInfo" class="mt-2 text-success position-relative"></div>
                     <input type="hidden" id="selectedVoucherId" />
                 </div>
             </div>
@@ -263,6 +300,7 @@
         $(document).ready(function () {
             // Open modal using Bootstrap 5 API
             let memberModalInstance = null;
+            let selectedAccountId = null;
             $('#openMemberModalBtn').click(function () {
                 if (!memberModalInstance) {
                     memberModalInstance = new bootstrap.Modal(document.getElementById('memberModal'));
@@ -320,11 +358,13 @@
                 $('#memberIdentityCard').val(member.account.identityCard);
                 $('#memberPhoneNumber').val(member.account.phoneNumber);
                 $('#memberScore').val(member.score);
+                $('#accountId').val(member.account.accountId || '');
+                selectedAccountId = member.account.accountId;
+                $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
                 $('#memberDetails').show();
                 $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
-                selectedAccountId = member.account.accountId;
                 $('#openVoucherModalBtn').prop('disabled', false);
                 // Reset voucher selection when member changes
                 selectedVoucher = null;
@@ -345,7 +385,8 @@
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice,
-                        PricePerTicket: @Model.BookingDetails.PricePerTicket
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket,
+                        MovieShowId: @Model.MovieShowId
                     },
                     MemberIdInput: $('#memberInput').val(),
                     MemberId: $('#memberId').val(),
@@ -354,7 +395,10 @@
                     MemberPhoneNumber: $('#memberPhoneNumber').val(),
                     MemberScore: parseInt($('#memberScore').val()) || 0,
                     UsedScore: parseInt($('#useScore').val()) || 0,
-                    SelectedVoucherId: $('#selectedVoucherId').val()
+                    SelectedVoucherId: $('#selectedVoucherId').val(),
+                    AccountId: $('#accountId').val(),
+                    RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0,
+                    MovieShowId: @Model.MovieShowId
                 };
 
                 $.ajax({
@@ -416,7 +460,6 @@
             var currentEarningRate = 0;
             var currentDiscountPercent = 0;
             let selectedVoucher = null;
-            let selectedAccountId = null;
             function updatePriceAll() {
                 var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
                 // Áp dụng rank benefit trước
@@ -551,7 +594,7 @@
                                 id: $(this).data('id'),
                                 value: $(this).data('value')
                             };
-                            $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
+                            renderSelectedVoucherInfo();
                             $('#selectedVoucherId').val(selectedVoucher.id);
                             updatePriceAll();
                             if (voucherModalInstance) voucherModalInstance.hide();
@@ -567,6 +610,28 @@
             $('#useScore').on('input', function () {
                 updatePriceAll();
             });
+
+            function renderSelectedVoucherInfo() {
+                if (selectedVoucher) {
+                    $('#selectedVoucherInfo').html(`
+                        <span class='fw-bold'>Selected Voucher:</span> 
+                        <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - 
+                        <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>
+                        <button type="button" id="removeVoucherBtn" class="remove-voucher-btn" title="Remove voucher">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    `);
+                    $('#removeVoucherBtn').off('click').on('click', function () {
+                        selectedVoucher = null;
+                        $('#selectedVoucherInfo').text('');
+                        $('#selectedVoucherId').val('');
+                        $('.voucher-card').removeClass('selected');
+                        updatePriceAll();
+                    });
+                } else {
+                    $('#selectedVoucherInfo').text('');
+                }
+            }
         });
     </script>
 } 

@@ -205,4 +205,4 @@ namespace MovieTheater.Service
             return foods.Select(f => f.Category).Distinct().ToList();
         }
     }
-} 
+}

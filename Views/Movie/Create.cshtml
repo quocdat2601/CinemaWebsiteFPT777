@@ -62,68 +62,63 @@
 				<div class="col-md-6">
 					<div class="form-group mb-3">
 						<strong>Movie Name (EN)</strong>
-						<input type="text" class="form-control" asp-for="MovieNameEnglish"/>
+						<input type="text" class="form-control" asp-for="MovieNameEnglish" />
 						<span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
 						<strong>Movie Name (VN)</strong>
-						<input type="text" class="form-control" asp-for="MovieNameVn"/>
+						<input type="text" class="form-control" asp-for="MovieNameVn" />
 						<span asp-validation-for="MovieNameVn" class="text-danger"></span>
 					</div>
 
 					<div class="row mb-3">
 						<div class="col">
 							<strong>From Date</strong>
-							<input type="date" class="form-control" asp-for="FromDate"/>
+							<input type="date" class="form-control" asp-for="FromDate" />
 							<span asp-validation-for="FromDate" class="text-danger"></span>
 						</div>
 						<div class="col">
 							<strong>To Date</strong>
-							<input type="date" class="form-control" asp-for="ToDate"/>
+							<input type="date" class="form-control" asp-for="ToDate" />
 							<span asp-validation-for="ToDate" class="text-danger"></span>
 						</div>
 					</div>
 
 					<div class="form-group mb-3">
 						<strong>Actor</strong>
-						<input type="text" class="form-control" asp-for="Actor"/>
+						<input type="text" class="form-control" asp-for="Actor" />
 						<span asp-validation-for="Actor" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
 						<strong>Production Company</strong>
-						<input type="text" class="form-control" asp-for="MovieProductionCompany"/>
+						<input type="text" class="form-control" asp-for="MovieProductionCompany" />
 						<span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
 						<strong>Director</strong>
-						<input type="text" class="form-control" asp-for="Director"/>
+						<input type="text" class="form-control" asp-for="Director" />
 						<span asp-validation-for="Director" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
 						<strong>Duration (min)</strong>
-						<input type="number" class="form-control" asp-for="Duration"/>
+						<input type="number" class="form-control" asp-for="Duration" />
 						<span asp-validation-for="Duration" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
 						<strong>Version:</strong><br />
-						<div class="form-check form-check-inline">
-							<input class="form-check-input" type="radio" asp-for="Version" value="2D" id="version2D" />
-							<label class="form-check-label" for="version2D">2D</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input" type="radio" asp-for="Version" value="3D" id="version3D" />
-							<label class="form-check-label" for="version3D">3D</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input" type="radio" asp-for="Version" value="IMAX" id="versionIMAX" />
-							<label class="form-check-label" for="versionIMAX">IMAX</label>
-						</div>
-						<span asp-validation-for="Version" class="text-danger"></span>
+						@foreach (var version in Model.AvailableVersions)
+						{
+							<label class="me-3">
+								<input type="checkbox" name="SelectedVersionIds" value="@version.VersionId" />
+								@version.VersionName
+							</label>
+						}
+						<span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">

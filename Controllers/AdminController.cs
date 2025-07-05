@@ -4,9 +4,6 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System.Security.Claims;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -26,6 +23,7 @@ namespace MovieTheater.Controllers
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
+        private readonly IRankService _rankService;
 
         public AdminController(
             IMovieService movieService,
@@ -41,7 +39,8 @@ namespace MovieTheater.Controllers
             IScheduleRepository scheduleRepository,
             IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
-            IVoucherService voucherService)
+            IVoucherService voucherService,
+            IRankService rankService)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -57,6 +56,7 @@ namespace MovieTheater.Controllers
             _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
+            _rankService = rankService;
         }
 
         // GET: AdminController
@@ -102,12 +102,10 @@ namespace MovieTheater.Controllers
                 case "ShowroomMg":
                     var cinema = _cinemaService.GetAll();
                     var seatTypes = _seatTypeService.GetAll();
-
+                    var versions = _movieService.GetAllVersions();
+                    ViewBag.Versions = versions;
                     ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
-                case "ScheduleMg":
-                    var scheduleMovies = _movieService.GetAll();
-                    return PartialView("ScheduleMg", scheduleMovies);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
@@ -130,15 +128,6 @@ namespace MovieTheater.Controllers
                     }
 
                     return PartialView("BookingMg", invoices);
-                case "ShowtimeMg":
-                    var showtimeModel = new ShowtimeManagementViewModel
-                    {
-                        AvailableDates = _scheduleRepository.GetAllShowDates(),
-                        SelectedDate = DateTime.Today,
-                        AvailableSchedules = _movieService.GetAllSchedules(),
-                        MovieShows = _movieService.GetMovieShow()
-                    };
-                    return PartialView("ShowtimeMg", showtimeModel);
                 case "FoodMg":
                     // Sử dụng parameter keyword thay vì Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
@@ -158,6 +147,9 @@ namespace MovieTheater.Controllers
                 case "VoucherMg":
                     var vouchers = _voucherService.GetAll();
                     return PartialView("VoucherMg", vouchers);
+                case "RankMg":
+                    var ranks = _rankService.GetAllRanks();
+                    return PartialView("RankMg", ranks);
                 default:
                     return Content("Tab not found.");
             }
@@ -303,7 +295,7 @@ namespace MovieTheater.Controllers
                 ? Math.Round((decimal)ticketsSoldToday / totalSeats * 100, 1)
                 : 0m;
 
-            // 3) 7‑day trends
+            // 3) 7-day trends
             var last7 = Enumerable.Range(0, 7)
                            .Select(i => today.AddDays(-i))
                            .Reverse()
@@ -320,7 +312,7 @@ namespace MovieTheater.Controllers
 
             // 4) Top 5 movies & members
             var topMovies = completed
-                .GroupBy(i => i.MovieName)
+                .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
                 .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
@@ -342,7 +334,7 @@ namespace MovieTheater.Controllers
                 {
                     InvoiceId = i.InvoiceId,
                     MemberName = i.Account?.FullName ?? "N/A",
-                    MovieName = i.MovieName,
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish,
                     BookingDate = i.BookingDate ?? DateTime.MinValue,
                     Status = "Completed"
                 })
@@ -378,6 +370,165 @@ namespace MovieTheater.Controllers
                 RecentBookings = recentBookings,
                 RecentMembers = recentMembers
             };
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult ShowtimeMg(string date)
+        {
+            DateOnly selectedDate;
+            if (!string.IsNullOrEmpty(date) && DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out selectedDate))
+            {
+                // parsed successfully
+            }
+            else
+            {
+                selectedDate = DateOnly.FromDateTime(DateTime.Today);
+            }
+
+            var allMovieShows = _movieService.GetMovieShow();
+            var filteredMovieShows = allMovieShows.Where(ms => ms.ShowDate == selectedDate).ToList();
+
+            // Get summary for the month
+            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as IMovieRepository;
+            var summary = new Dictionary<DateOnly, List<string>>();
+            if (repo is MovieRepository concreteRepo)
+            {
+                summary = concreteRepo.GetMovieShowSummaryByMonth(selectedDate.Year, selectedDate.Month);
+            }
+            ViewBag.MovieShowSummaryByDate = summary;
+
+            var showtimeModel = new ShowtimeManagementViewModel
+            {
+                SelectedDate = selectedDate,
+                AvailableSchedules = _movieService.GetAllSchedules(),
+                MovieShows = filteredMovieShows
+            };
+            return View(showtimeModel);
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult GetMovieShowSummary(int year, int month)
+        {
+            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as MovieRepository;
+            if (repo == null)
+            {
+                return Json(new Dictionary<string, List<string>>());
+            }
+
+            var summary = repo.GetMovieShowSummaryByMonth(year, month);
+
+            var jsonFriendlySummary = summary.ToDictionary(
+                kvp => kvp.Key.ToString("yyyy-MM-dd"),
+                kvp => kvp.Value
+            );
+
+            return Json(jsonFriendlySummary);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult CreateRank()
+        {
+            return View("~/Views/Rank/Create.cshtml", new RankCreateViewModel());
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateRank(RankCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please correct the errors below.";
+                return View("~/Views/Rank/Create.cshtml", model);
+            }
+            try
+            {
+                // Map RankCreateViewModel to RankInfoViewModel for service
+                var infoModel = new RankInfoViewModel
+                {
+                    CurrentRankName = model.CurrentRankName,
+                    RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                    CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                    CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                    ColorGradient = model.ColorGradient,
+                    IconClass = model.IconClass
+                };
+                var result = _rankService.Create(infoModel);
+                TempData["ToastMessage"] = "Rank created successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return View("~/Views/Rank/Create.cshtml", model);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult EditRank(int id)
+        {
+            var rank = _rankService.GetById(id);
+            if (rank == null) return NotFound();
+            // Map RankInfoViewModel to RankCreateViewModel
+            var editModel = new RankCreateViewModel
+            {
+                CurrentRankName = rank.CurrentRankName,
+                RequiredPointsForCurrentRank = rank.RequiredPointsForCurrentRank,
+                CurrentDiscountPercentage = rank.CurrentDiscountPercentage,
+                CurrentPointEarningPercentage = rank.CurrentPointEarningPercentage,
+                ColorGradient = rank.ColorGradient,
+                IconClass = rank.IconClass
+            };
+            ViewBag.RankId = rank.CurrentRankId;
+            return View("~/Views/Rank/Edit.cshtml", editModel);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditRank(int id, RankCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.RankId = id;
+                TempData["ErrorMessage"] = "Please correct the errors below.";
+                return View("~/Views/Rank/Edit.cshtml", model);
+            }
+            try
+            {
+                // Map RankCreateViewModel to RankInfoViewModel for service
+                var infoModel = new RankInfoViewModel
+                {
+                    CurrentRankId = id,
+                    CurrentRankName = model.CurrentRankName,
+                    RequiredPointsForCurrentRank = model.RequiredPointsForCurrentRank,
+                    CurrentDiscountPercentage = model.CurrentDiscountPercentage ?? 0,
+                    CurrentPointEarningPercentage = model.CurrentPointEarningPercentage ?? 0,
+                    ColorGradient = model.ColorGradient,
+                    IconClass = model.IconClass
+                };
+                var result = _rankService.Update(infoModel);
+                TempData["ToastMessage"] = "Rank updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.RankId = id;
+                TempData["ErrorMessage"] = ex.Message;
+                return View("~/Views/Rank/Edit.cshtml", model);
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteRank(int id)
+        {
+            _rankService.Delete(id);
+            TempData["ToastMessage"] = "Rank deleted successfully!";
+            return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
         }
     }
 }

@@ -35,7 +35,7 @@ namespace MovieTheater.Controllers
             {
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.CreateAsync(model, webRootPath);
-                
+
                 if (result)
                 {
                     TempData["SuccessMessage"] = "Food created successfully!";
@@ -46,7 +46,7 @@ namespace MovieTheater.Controllers
                     TempData["ErrorMessage"] = "Failed to create food. Please try again.";
                 }
             }
-            
+
             return View(model);
         }
 
@@ -58,7 +58,7 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "Food not found.";
                 return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
             }
-            
+
             return View(food);
         }
 
@@ -70,7 +70,7 @@ namespace MovieTheater.Controllers
             {
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.UpdateAsync(model, webRootPath);
-                
+
                 if (result)
                 {
                     TempData["SuccessMessage"] = "Food updated successfully!";
@@ -81,7 +81,7 @@ namespace MovieTheater.Controllers
                     TempData["ErrorMessage"] = "Failed to update food. Please try again.";
                 }
             }
-            
+
             return View(model);
         }
 
@@ -90,7 +90,7 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _foodService.DeleteAsync(id);
-            
+
             if (result)
             {
                 TempData["SuccessMessage"] = "Food deleted successfully!";
@@ -99,7 +99,7 @@ namespace MovieTheater.Controllers
             {
                 TempData["ErrorMessage"] = "Failed to delete food. Please try again.";
             }
-            
+
             return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
         }
 
@@ -108,7 +108,7 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var result = await _foodService.ToggleStatusAsync(id);
-            
+
             if (result)
             {
                 TempData["SuccessMessage"] = "Food status updated successfully!";
@@ -117,8 +117,8 @@ namespace MovieTheater.Controllers
             {
                 TempData["ErrorMessage"] = "Failed to update food status. Please try again.";
             }
-            
+
             return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
         }
     }
-} 
+}

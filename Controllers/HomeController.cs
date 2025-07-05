@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
-using System.Diagnostics;
 using System.Security.Claims;
 
 namespace MovieTheater.Controllers
@@ -28,21 +27,10 @@ namespace MovieTheater.Controllers
         {
             if (User.Identity.IsAuthenticated)
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (!string.IsNullOrEmpty(userId) && User.IsInRole("Member"))
                 {
                     _accountService.CheckAndUpgradeRank(userId);
-                    var notificationMessage = _accountService.GetAndClearRankUpgradeNotification(userId);
-                    if (!string.IsNullOrEmpty(notificationMessage))
-                    {
-                        var messages = new List<string>();
-                        if (TempData["ToastMessage"] is string existingMessage)
-                        {
-                            messages.Add(existingMessage);
-                        }
-                        messages.Add(notificationMessage);
-                        TempData["ToastMessage"] = string.Join("<br/>", messages);
-                    }
                 }
             }
 
@@ -81,5 +69,9 @@ namespace MovieTheater.Controllers
             return View();
         }
 
+        public IActionResult GradientColorPicker()
+        {
+            return View("GradientColorPicker");
+        }
     }
 }

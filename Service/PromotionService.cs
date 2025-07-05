@@ -47,11 +47,14 @@ namespace MovieTheater.Service
             _promotionRepository.Save();
         }
 
-        public Promotion? GetBestPromotionForShowDate(DateTime showDate)
+        public Promotion? GetBestPromotionForShowDate(DateOnly showDate)
         {
             var allPromotions = _promotionRepository.GetAll();
             var validPromotions = allPromotions
-                .Where(p => p.IsActive && p.StartTime <= showDate && p.EndTime >= showDate && p.DiscountLevel.HasValue)
+                .Where(p => p.IsActive &&
+                            DateOnly.FromDateTime((DateTime)p.StartTime) <= showDate &&
+                            DateOnly.FromDateTime((DateTime)p.EndTime) >= showDate &&
+                            p.DiscountLevel.HasValue)
                 .OrderByDescending(p => p.DiscountLevel)
                 .ToList();
             return validPromotions.FirstOrDefault();

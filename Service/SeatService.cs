@@ -24,11 +24,6 @@ namespace MovieTheater.Service
             return _repository.GetByCinemaRoomIdAsync(cinemaRoomId);
         }
 
-        public async Task<Seat?> GetSeatByIdAsync(int id)
-        {
-            return await Task.FromResult(_repository.GetById(id));
-        }
-
         public async Task<List<SeatType>> GetSeatTypesAsync()
         {
             return await _repository.GetSeatTypesAsync();
@@ -62,7 +57,7 @@ namespace MovieTheater.Service
             return _repository.GetSeatByName(seatName);
         }
 
-        public Seat GetSeatById(int id)
+        public Seat GetSeatById(int? id)
         {
             return _repository.GetById(id);
         }

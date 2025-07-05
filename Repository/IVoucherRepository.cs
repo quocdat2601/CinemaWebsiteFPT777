@@ -1,5 +1,4 @@
 using MovieTheater.Models;
-using System.Collections.Generic;
 
 namespace MovieTheater.Repository
 {
@@ -13,4 +12,4 @@ namespace MovieTheater.Repository
         string GenerateVoucherId();
         IEnumerable<Voucher> GetAvailableVouchers(string accountId);
     }
-} 
+}

@@ -77,4 +77,4 @@ namespace MovieTheater.Repository
             return await _context.Foods.AnyAsync(f => f.FoodId == id);
         }
     }
-} 
+}

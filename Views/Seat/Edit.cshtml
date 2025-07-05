@@ -20,7 +20,7 @@
 	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
 }
 
-<div class="table-responsive">
+<div class="table-responsive seat-edit-page">
 	<table class="table table-bordered text-center">
 		<thead>
 			<tr>
@@ -45,13 +45,19 @@
 					@for (int col = 1; col <= Model.SeatWidth; col++)
 					{
 						var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-						<td style="background-color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
+						var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+						bool isDisabledType = seatType?.TypeName == "Disabled";
+
+						<td style="border-color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
 							data-seat-id="@seat.SeatId"
 							data-seat-row="@row"
 							data-seat-col="@col"
-							@(seat.SeatType.Equals("Couple") ? "data-couple-seat=true" : "")>
+							data-seat-name="@seat.SeatName"
+							data-seat-type="@seatType?.TypeName"
+							@(seat.SeatType.Equals("Couple") ? "data-couple-seat=true" : "")
+							@(isDisabledType ? "class=disabled-seat" : "")>
 							<span class="material-icons" onclick="selectSeat(this)">
-								chair
+								@seat.SeatName
 							</span>
 						</td>
 					}

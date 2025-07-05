@@ -11,6 +11,7 @@
                 <h5>Movie & Show Info</h5>
                 <p><strong>Movie:</strong> @Model.MovieName</p>
                 <p><strong>Screen:</strong> @Model.CinemaRoomName</p>
+                <p><strong>Version:</strong> @Model.VersionName</p>
                 <p><strong>Date:</strong> @Model.ShowDate.ToString("yyyy-MM-dd")</p>
                 <p><strong>Time:</strong> @Model.ShowTime</p>
             </div>
@@ -46,8 +47,11 @@
                             @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
                             {
                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                              
                                 <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                @if (!string.IsNullOrEmpty(seat.PromotionName))
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@seat.PromotionName</span>
+                                }
                             }
                             else
                             {
@@ -71,7 +75,7 @@
                 </div>
                 <div class="form-group mt-3">
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
-                    <div id="selectedVoucherInfo" class="mt-2 text-success"></div>
+                    <div id="selectedVoucherInfo" class="mt-2 text-success position-relative"></div>
                 </div>
             </div>
             <div class="col-md-6 text-end">
@@ -132,8 +136,8 @@
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
             <div class="text-center mt-4">
-                
-                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Confirm Booking</button>
+                <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+                <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Test Success</button>
             </div>
         </form>
     </div>
@@ -183,15 +187,43 @@
         border-color: #28a745;
         background-color: #f8fff9;
     }
+    /* Nút xoá voucher */
+    .remove-voucher-btn {
+        position: absolute;
+        top: 50%;
+        right: 0.5rem;
+        transform: translateY(-50%);
+        background: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        transition: background 0.2s;
+        color: #dc3545;
+        z-index: 2;
+    }
+    .remove-voucher-btn:hover {
+        background: #ffeaea;
+        color: #a71d2a;
+    }
+    #selectedVoucherInfo {
+        min-height: 36px;
+        padding-right: 40px;
+        position: relative;
+    }
 </style>
 
 <script>
     $(document).ready(function () {
         // Values from server
-        var originalTotal = @Model.Subtotal;
-        var discountPercent = @Model.RankDiscountPercent;
-        var earningRate = @Model.EarningRate;
-        var currentScore = @Model.CurrentScore;
+        var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var pointValue = 1000;
 
         let voucherModalInstance = null;
@@ -247,7 +279,7 @@
                             id: $(this).data('id'),
                             value: $(this).data('value')
                         };
-                        $('#selectedVoucherInfo').html(`<span class='fw-bold'>Selected Voucher:</span> <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>`);
+                        renderSelectedVoucherInfo();
                         updatePriceFlow();
                         if (voucherModalInstance) voucherModalInstance.hide();
                     });
@@ -258,6 +290,27 @@
             });
         }
 
+        function renderSelectedVoucherInfo() {
+            if (selectedVoucher) {
+                $('#selectedVoucherInfo').html(`
+                    <span class='fw-bold'>Selected Voucher:</span> 
+                    <span class='badge bg-primary text-light'>${selectedVoucher.id}</span> - 
+                    <span class='fw-bold text-success'>${selectedVoucher.value.toLocaleString()} VND</span>
+                    <button type="button" id="removeVoucherBtn" class="remove-voucher-btn" title="Remove voucher">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                `);
+                $('#removeVoucherBtn').off('click').on('click', function () {
+                    selectedVoucher = null;
+                    $('#selectedVoucherInfo').text('');
+                    $('.voucher-card').removeClass('selected');
+                    updatePriceFlow();
+                });
+            } else {
+                $('#selectedVoucherInfo').text('');
+            }
+        }
+
         function updateMaxUsablePoints(discountedTotal) {
             var maxPoints = Math.floor((discountedTotal * 0.9) / pointValue);
             maxPoints = Math.min(maxPoints, currentScore);
@@ -266,10 +319,10 @@
         }
 
         function updatePriceFlow() {
-            var originalTotal = @Model.Subtotal;
+            var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             // apply rank benefit first
-            var rankDiscountPercent = @Model.RankDiscountPercent;
+            var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
             var afterRank = originalTotal - rankDiscountAmount;
             if (afterRank < 0) afterRank = 0;
@@ -364,20 +417,8 @@
             $('#pointValidation').text(validationMsg);
             $('#confirmBtn').prop('disabled', !valid);
             $('#hiddenUseScore').val(valid ? useScore : 0);
-            // Price display
-            if (discountPercent > 0) {
-                $('#originalTotal').css({'color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
-                if (valid && useScore > 0) {
-                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
-                } else {
-                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text((discountedTotal).toLocaleString() + ' VND');
-                }
-            } else {
-                $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
-                $('#discountedTotal').hide();
-            }
             $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
-         
+            $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
         }
 
         $('#useScore').on('input', function () {

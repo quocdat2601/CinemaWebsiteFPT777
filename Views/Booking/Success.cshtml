@@ -7,15 +7,17 @@
     var ticketId = TempData["InvoiceId"] as string;
     var seatString = TempData["Seats"] as string;
     var bookingDate = TempData["BookingTime"] as string;
-    decimal subtotal = ViewBag.Subtotal != null ? (decimal)ViewBag.Subtotal : 0;
-    decimal rankDiscount = ViewBag.RankDiscount != null ? (decimal)ViewBag.RankDiscount : 0;
-    int useScore = ViewBag.UsedScore != null ? (int)ViewBag.UsedScore : 0;
-    decimal usedScoreValue = ViewBag.UsedScoreValue != null ? (decimal)ViewBag.UsedScoreValue : useScore * 1000;
-    int addScore = ViewBag.AddScore != null ? (int)ViewBag.AddScore : 0;
-    decimal addedScoreValue = ViewBag.AddedScoreValue != null ? (decimal)ViewBag.AddedScoreValue : addScore * 1000;
-    decimal totalPriceValue = ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0;
+    decimal subtotal = (ViewBag.Subtotal != null ? (decimal)ViewBag.Subtotal : 0);
+    decimal rankDiscount = TempData["RankDiscount"] != null ? Convert.ToDecimal(TempData["RankDiscount"]) : (ViewBag.RankDiscount != null ? (decimal)ViewBag.RankDiscount : 0);
+    int useScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : (ViewBag.UsedScore != null ? (int)ViewBag.UsedScore : 0);
+    decimal usedScoreValue = TempData["UsedScoreValue"] != null ? Convert.ToDecimal(TempData["UsedScoreValue"]) : useScore * 1000;
+    int addScore = TempData["AddScore"] != null ? Convert.ToInt32(TempData["AddScore"]) : (ViewBag.AddScore != null ? (int)ViewBag.AddScore : 0);
+    decimal addedScoreValue = TempData["AddedScoreValue"] != null ? Convert.ToDecimal(TempData["AddedScoreValue"]) : addScore * 1000;
+    decimal totalPriceValue = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : (ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0);
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
+    decimal voucherAmount = TempData["VoucherAmount"] != null ? Convert.ToDecimal(TempData["VoucherAmount"]) : (ViewBag.VoucherAmount != null ? (decimal)ViewBag.VoucherAmount : 0);
+    int promotionDiscount = TempData["PromotionDiscount"] != null ? Convert.ToInt32(TempData["PromotionDiscount"]) : 0;
 }
 
 <style>
@@ -145,7 +147,7 @@
     <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Booking Successful</h2>
-            <span class="status-badge">Success</span>
+            <span class="status-badge status-completed">Success</span>
         </div>
         <div class="p-4">
             <div class="row align-items-stretch">
@@ -189,10 +191,14 @@
                                         <td>@seat.SeatName</td>
                                         <td>@seat.SeatType</td>
                                         <td>
-                                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                            @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
                                             {
                                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
                                                 <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                            }
+                                            else if (seat.OriginalPrice.HasValue)
+                                            {
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
                                             }
                                             else
                                             {
@@ -217,7 +223,7 @@
                             <tbody>
                                 <tr>
                                     <td style="white-space: nowrap;">Subtotal</td>
-                                    <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
+                                    <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td> 
                                 </tr>
                                 @if (rankDiscount > 0)
                                 {
@@ -226,11 +232,11 @@
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
-                                @if (seatDetails.Any() && seatDetails.First().PromotionDiscount > 0)
+                                @if (voucherAmount > 0)
                                 {
                                     <tr>
-                                        <td style="white-space: nowrap;">- Promotion Discount</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@((subtotal * seatDetails.First().PromotionDiscount.Value / 100m).ToString("N0")) VND (@seatDetails.First().PromotionDiscount.Value%)</td>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
                                     </tr>
                                 }
                                 @if (useScore > 0)

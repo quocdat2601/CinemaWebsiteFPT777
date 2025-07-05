@@ -17,7 +17,7 @@ namespace MovieTheater.Controllers
         private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
         private readonly IRankService _rankService;
 
-        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService, 
+        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService,
             IVoucherService voucherService,
             IRankService rankService)
         {
@@ -29,9 +29,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// [GET] api/MyAccount/MainPage
         /// Trang chính tài khoản người dùng, hiển thị tab mặc định là 'Profile'.
         /// </summary>
+        /// <remarks>url: /MyAccount/MainPage (GET)</remarks>
         [HttpGet]
         public IActionResult MainPage(string tab = "Profile")
         {
@@ -47,9 +47,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// [GET] api/MyAccount/LoadTab
         /// Load nội dung tab tương ứng trong tài khoản (Profile, Rank, Score, Voucher, History).
         /// </summary>
+        /// <remarks>url: /MyAccount/LoadTab (GET)</remarks>
         [HttpGet]
         public IActionResult LoadTab(string tab)
         {
@@ -61,7 +61,7 @@ namespace MovieTheater.Controllers
                 case "Profile":
                     // Check and update rank when loading Profile tab
                     _service.CheckAndUpgradeRank(user.AccountId);
-                    
+
                     var rankInfo = _rankService.GetRankInfoForUser(user.AccountId);
                     var allRanks = _rankService.GetAllRanks();
                     var viewModel = new ProfilePageViewModel
@@ -71,10 +71,8 @@ namespace MovieTheater.Controllers
                         AllRanks = allRanks
                     };
                     return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
-                case "Rank":
-                    return PartialView("~/Views/Account/Tabs/Rank.cshtml");
                 case "Score":
-                    return PartialView("~/Views/Account/Tabs/Score.cshtml");
+                    return PartialView("~/Views/Account/Tabs/Score.cshtml", new List<MovieTheater.ViewModels.ScoreHistoryViewModel>());
                 case "Voucher":
                     if (user == null)
                         return NotFound();
@@ -82,16 +80,16 @@ namespace MovieTheater.Controllers
                     var userVouchers = allVouchers.Where(v => v.AccountId == user.AccountId).ToList();
                     return PartialView("~/Views/Account/Tabs/Voucher.cshtml", userVouchers);
                 case "History":
-                    return PartialView("~/Views/Account/Tabs/History.cshtml");
+                    return PartialView("~/Views/Account/Tabs/History.cshtml", new List<MovieTheater.Models.Invoice>());
                 default:
                     return Content("Tab not found.");
             }
         }
 
         /// <summary>
-        /// [POST] api/MyAccount/Edit
         /// Cập nhật thông tin hồ sơ người dùng.
         /// </summary>
+        /// <remarks>url: /MyAccount/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProfilePageViewModel model, string action)
@@ -194,9 +192,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// [POST] api/MyAccount/SendOtp
         /// Gửi mã OTP đến email người dùng để xác thực thay đổi mật khẩu.
         /// </summary>
+        /// <remarks>url: /MyAccount/SendOtp (POST)</remarks>
         [HttpPost]
         public IActionResult SendOtp()
         {
@@ -221,9 +219,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// [POST] api/MyAccount/VerifyOtp
         /// Kiểm tra mã OTP do người dùng nhập.
         /// </summary>
+        /// <remarks>url: /MyAccount/VerifyOtp (POST)</remarks>
         [HttpPost]
         public IActionResult VerifyOtp([FromBody] VerifyOtpViewModel model)
         {
@@ -242,9 +240,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// [POST] api/MyAccount/ChangePasswordAsync
         /// Đổi mật khẩu người dùng sau khi xác thực OTP.
         /// </summary>
+        /// <remarks>url: /MyAccount/ChangePasswordAsync (POST)</remarks>
         [HttpPost]
         public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword)
         {
@@ -294,9 +292,9 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// [GET] api/MyAccount/ChangePassword
-        /// Trả về view đổi mật khẩu người dùng.
+        /// Trang đổi mật khẩu (hiển thị form)
         /// </summary>
+        /// <remarks>url: /MyAccount/ChangePassword (GET)</remarks>
         [HttpGet]
         public IActionResult ChangePassword()
         {
@@ -313,6 +311,10 @@ namespace MovieTheater.Controllers
             return View("~/Views/Account/Tabs/ChangePassword.cshtml", viewModel);
         }
 
+        /// <summary>
+        /// Cập nhật thông tin profile (AJAX)
+        /// </summary>
+        /// <remarks>url: /MyAccount/UpdateProfile (POST)</remarks>
         [HttpPost]
         public async Task<IActionResult> UpdateProfile(ProfileUpdateViewModel model)
         {

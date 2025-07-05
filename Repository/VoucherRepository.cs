@@ -1,6 +1,4 @@
 using MovieTheater.Models;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Repository
 {
@@ -56,11 +54,11 @@ namespace MovieTheater.Repository
         public IEnumerable<Voucher> GetAvailableVouchers(string accountId)
         {
             return _context.Vouchers
-                .Where(v => v.AccountId == accountId 
+                .Where(v => v.AccountId == accountId
                            && (v.IsUsed == null || v.IsUsed == false)
                            && v.ExpiryDate > System.DateTime.Now)
                 .OrderBy(v => v.ExpiryDate)
                 .ToList();
         }
     }
-} 
+}

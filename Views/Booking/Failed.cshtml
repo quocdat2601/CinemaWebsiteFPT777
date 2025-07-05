@@ -12,6 +12,8 @@
     decimal usedScoreValue = useScore * 1000;
     decimal totalPriceValue = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : 0;
     decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
+    int promotionDiscount = TempData["PromotionDiscount"] != null ? Convert.ToInt32(TempData["PromotionDiscount"]) : 0;
+    decimal voucherAmount = TempData["VoucherAmount"] != null ? Convert.ToDecimal(TempData["VoucherAmount"]) : 0;
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
 }
 <style>
@@ -201,6 +203,20 @@
                                     <tr>
                                         <td style="white-space: nowrap;">- Points Used</td>
                                         <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
+                                @if (promotionDiscount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Promotion Discount</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@promotionDiscount%</td>
+                                    </tr>
+                                }
+                                @if (voucherAmount > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
                                     </tr>
                                 }
                                 <tr>

@@ -1,7 +1,5 @@
 using MovieTheater.Models;
 using MovieTheater.Repository;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Service
 {
@@ -48,4 +46,4 @@ namespace MovieTheater.Service
             return _voucherRepository.GetAvailableVouchers(accountId);
         }
     }
-} 
+}

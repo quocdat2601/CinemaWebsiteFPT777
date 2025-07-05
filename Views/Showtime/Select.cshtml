@@ -32,6 +32,11 @@
         }
     }
 }
+<!-- Flatpickr CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
 <div class="text-start p-3">
     <a href="@returnUrl" class="btn btn-secondary">&larr; Return</a>
 </div>
@@ -39,19 +44,19 @@
 <h2 class="text-center mb-4">SHOWTIMES</h2>
 
 <div class="showtime-container p-4 rounded">
-    <!-- Date selection as a dropdown combobox (AC-01) -->
-    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center">
+    <!-- Date navigation UI -->
+    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center" id="dateNavForm">
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-        <select name="date" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-            @foreach (var date in Model.AvailableDates)
-            {
-                var dateStr = date.ToString("dd/MM/yyyy");
-                var isSelected = date.Date == Model.SelectedDate.Date;
-                <option value="@dateStr" selected="@isSelected">
-                    @date.ToString("dd MMM ddd")
-                </option>
-            }
-        </select>
+        <div class="d-inline-flex align-items-center gap-2">
+            <button type="button" id="prevDayBtn" class="btn btn-outline-secondary btn-sm" title="Previous day">&lt;</button>
+            <div style="position: relative; width: 150px;">
+                <input type="text" id="calendarInput" name="date" class="form-control form-control-sm" style="width: 100%; padding-right: 2em;" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" autocomplete="off" />
+                <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;">
+                    <i class="fa-regular fa-calendar"></i>
+                </span>
+            </div>
+            <button type="button" id="nextDayBtn" class="btn btn-outline-secondary btn-sm" title="Next day">&gt;</button>
+        </div>
     </form>
 
     @if (Model.Movies == null || !Model.Movies.Any())
@@ -70,19 +75,27 @@
                     <div class="col-md-10">
                         <div class="card-body">
                             <h5 class="card-title mb-2">@movie.MovieName</h5>
-                            <div class="mb-2 text-muted" style="font-size: 0.95em;">@movie.MovieName</div>
                             <div>
-                                @foreach (var showtime in movie.Showtimes)
+                                @foreach (var versionShowtime in movie.VersionShowtimes)
                                 {
-                                    <a asp-action="Select" asp-controller="Seat"
-                                       asp-route-movieId="@movie.MovieId"
-                                       asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
-                                       asp-route-time="@showtime"
-                                       asp-route-isAdminSell="true"
-                                       asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
-                                       class="btn btn-outline-primary btn-sm m-1 bookBtn">
-                                        @showtime
-                                    </a>
+                                    <div class="mb-2">
+                                        <div class="text-muted mb-1" style="font-size: 0.9em; font-weight: 500;">@versionShowtime.VersionName</div>
+                                        <div>
+                                            @foreach (var showtime in versionShowtime.Showtimes)
+                                            {
+                                                <a asp-action="Select" asp-controller="Seat"
+                                                   asp-route-movieId="@movie.MovieId"
+                                                   asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
+                                                   asp-route-time="@showtime"
+                                                   asp-route-versionId="@versionShowtime.VersionId"
+                                                   asp-route-isAdminSell="true"
+                                                   asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
+                                                   class="btn btn-outline-primary btn-sm m-1 bookBtn">
+                                                    @showtime
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
                                 }
                             </div>
                         </div>
@@ -101,13 +114,41 @@
 --> 
 
 <script>
-    document.querySelectorAll('.bookBtn').forEach(function(button) {
-        button.addEventListener('click', function(event) {
-            var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
-            if (!isAuthenticated) {
-                event.preventDefault();  
-                window.location.href = '@Url.Action("Login", "Account")';
-            }
-        });
+    // Initialize flatpickr with dd/MM/yyyy format
+    flatpickr("#calendarInput", {
+        dateFormat: "d/m/Y",
+        defaultDate: "@Model.SelectedDate.ToString("dd/MM/yyyy")",
+        allowInput: true,
+        onChange: function(selectedDates, dateStr, instance) {
+            document.getElementById('dateNavForm').submit();
+        }
+    });
+
+    function getSelectedDate() {
+        // Get value in dd/MM/yyyy and parse
+        const val = document.getElementById('calendarInput').value;
+        const [d, m, y] = val.split('/');
+        return new Date(`${y}-${m}-${d}`);
+    }
+    function setSelectedDate(date) {
+        // Format as dd/MM/yyyy
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear();
+        const formatted = `${d}/${m}/${y}`;
+        document.getElementById('calendarInput')._flatpickr.setDate(formatted, true, "d/m/Y");
+        document.getElementById('dateNavForm').submit();
+    }
+
+    document.getElementById('prevDayBtn').addEventListener('click', function() {
+        const date = getSelectedDate();
+        date.setDate(date.getDate() - 1);
+        setSelectedDate(date);
+    });
+
+    document.getElementById('nextDayBtn').addEventListener('click', function() {
+        const date = getSelectedDate();
+        date.setDate(date.getDate() + 1);
+        setSelectedDate(date);
     });
 </script>
