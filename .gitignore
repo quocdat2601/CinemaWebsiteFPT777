@@ -50,3 +50,6 @@ yarn-error.log*
 
 # Windows system files
 Thumbs.db
+
+# Old code folder - exclude from tracking
+Old_code/
