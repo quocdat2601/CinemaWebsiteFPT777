@@ -6,17 +6,12 @@ build-job:
   stage: build
   tags:
     - datthai
-  before_script:
-    # Xóa tất cả các credential đã được cache bởi Git
-    - git config --global --unset-all credential.helper
-    # Thiết lập lại credential helper
-    - git config --global credential.helper store
-    - echo "https://$GITLAB_USER:$GITLAB_PAT@git.fa.edu.vn" > ~/.git-credentials
   script:
     - echo "Navigating to project directory..."
     - cd $CI_PROJECT_DIR
-    - echo "Pulling latest code..."
-    - git pull origin main
+    - echo "Attempting to pull code with embedded credentials..."
+    # Lệnh git pull được sửa đổi để xác thực trực tiếp, thay thế URL và tên nhánh của bạn nếu cần
+    - git pull https://$GITLAB_USER:$GITLAB_PAT@git.fa.edu.vn/hcm25_cpl_net_05/team03.git main
     - echo "Restoring packages..."
     - dotnet restore
     - echo "Building and publishing project..."
