@@ -24,6 +24,7 @@ namespace MovieTheater.Controllers
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
+        private readonly IVersionRepository _versionRepository;
 
         public AdminController(
             IMovieService movieService,
@@ -40,7 +41,7 @@ namespace MovieTheater.Controllers
             IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
             IVoucherService voucherService,
-            IRankService rankService)
+            IRankService rankService, IVersionRepository versionRepository)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -57,6 +58,7 @@ namespace MovieTheater.Controllers
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
+            _versionRepository = versionRepository;
         }
 
         // GET: AdminController
@@ -106,6 +108,11 @@ namespace MovieTheater.Controllers
                     ViewBag.Versions = versions;
                     ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
+                case "VersionMg":
+                    var versionMg = _versionRepository.GetAll();
+                    var seatTypesForVersion = _seatTypeService.GetAll();
+                    ViewBag.SeatTypes = seatTypesForVersion;
+                    return PartialView("VersionMg", versionMg);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);

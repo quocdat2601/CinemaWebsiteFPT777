@@ -43,6 +43,16 @@
             font-weight: 500;
         }
 
+        /* Style for seat price display */
+        table.table td .seat-price {
+            font-size: 0.7em;
+            margin-top: 2px;
+            font-weight: 600;
+            color: #2c3e50;
+            line-height: 1;
+            font-family: 'Outfit', sans-serif;
+        }
+
         /* Tooltip for seat names */
         table.table td::after {
             content: attr(data-seat-name);

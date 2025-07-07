@@ -48,11 +48,18 @@
 											var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
 											var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
+
+											var versionMulti = ViewBag.MovieShow?.Version?.Multi ?? 1m;
+											var basePrice = seatType?.PricePercent ?? 0;
+											var calculatedPrice = basePrice * versionMulti;
+
 											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
 												data-seat-id="@seat.SeatId"
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
-												data-seat-price="@seatType?.PricePercent"
+												data-seat-price="@calculatedPrice"
+												data-base-price="@basePrice"
+												data-version-multi="@versionMulti"
 												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
 												class="@tdClass"
 												@(isDisabledType || isBooked ? "disabled" : "")
@@ -170,9 +177,9 @@
 				let seatNames = [];
 				document.querySelectorAll('.selected-seat').forEach(td => {
 					const seatName = td.getAttribute('data-seat-name');
-					const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+					const calculatedPrice = parseFloat(td.getAttribute('data-seat-price')) || 0;
 					seatNames.push(seatName);
-					total += pricePercent;
+					total += calculatedPrice;
 				});
 				selectedSeatNames.textContent = seatNames.join(', ');
 				totalPrice.textContent = total.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -301,7 +308,7 @@
 					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
 					return;
 				}
-				
+
 				clickedTd.classList.add('selected-seat');
 				selectedSeats.add(seatId);
 				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));

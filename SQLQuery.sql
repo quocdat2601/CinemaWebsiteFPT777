@@ -95,9 +95,9 @@ CREATE TABLE Type (
 );
 
 CREATE TABLE Version (
-    Version_ID INT PRIMARY KEY,
+    Version_ID INT PRIMARY KEY IDENTITY(1,1),
     Version_Name VARCHAR(255),
-	Multi DECIMAL
+	Multi DECIMAL(10,2)
 );
 
 CREATE TABLE Movie_Version (
@@ -330,10 +330,11 @@ INSERT INTO Movie_Type (Movie_ID, Type_ID) VALUES
 ('MV009', 1), 
 ('MV009', 5);
 
-INSERT INTO Version (Version_ID, Version_Name, Multi) VALUES
-(1, '2D', 1),
-(2, '4DX', 1.5),	
-(3, 'IMAX', 2);
+INSERT INTO Version (Version_Name, Multi) VALUES
+('2D', 1),
+('4DX', 1.5),	
+('IMAX', 2.0);
+
 
 INSERT INTO Movie_Version (Movie_ID, Version_ID) VALUES
 ('MV001', 1),

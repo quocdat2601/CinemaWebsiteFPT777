@@ -1,0 +1,202 @@
+﻿@model IEnumerable<MovieTheater.Models.Version>
+
+<div class="text-center mb-2">
+	<h2>Version List</h2>
+</div>
+
+<div class="text-center mb-2">
+	<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createVersionModal">
+		Create a Version
+	</button>
+</div>
+
+<table class="table table-bordered table-striped">
+	<thead class="table-dark">
+		<tr class="text-center">
+			<th>ID</th>
+			<th>Name</th>
+			<th>Multiplier</th>
+			<th style="width: 210px;">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var version in Model)
+		{
+			<tr>
+				<td class="text-center">@version.VersionId</td>
+				<td class="text-center">@version.VersionName</td>
+				<td class="text-center">@version.Multi</td>
+
+				<td>
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn btn-sm btn-primary edit-version-btn" data-id="@version.VersionId">
+							<i class="bi bi-pencil"></i>
+						</button>
+						
+						<form asp-action="Delete" asp-controller="Version" method="post" onsubmit="return confirm('Are you sure you want to delete this showroom?');">
+							<input type="hidden" name="id" value="@version.VersionId" />
+							<button type="submit" class="btn btn-danger btn-sm">
+								<i class="bi bi-trash"></i>
+							</button>
+						</form>
+					</div>
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>
+
+<partial name="_ToastMessages" />
+
+<div id="inlineEditArea" class="container mt-4" style="display:none;">
+	<div class="row">
+		<div class="col-md-6">
+			<form id="inlineEditVersionForm">
+				<input type="hidden" id="inlineEditVersionId" name="VersionId">
+				<div class="mb-3">
+					<label for="inlineEditVersionName" class="form-label">Name</label>
+					<input type="text" class="form-control" id="inlineEditVersionName" name="VersionName" required>
+				</div>
+				<div class="mb-3">
+					<label for="inlineEditMulti" class="form-label">Multiplier</label>
+					<input type="number" step="0.01" class="form-control" id="inlineEditMulti" name="Multi" required>
+				</div>
+				<div class="mb-3 text-center">
+					<button type="submit" class="btn btn-primary">Update</button>
+					<button type="button" class="btn btn-secondary ms-2" id="cancelInlineEdit">Cancel</button>
+				</div>
+			</form>
+		</div>
+		<div class="col-md-6">
+			<h5>Seat Type Prices</h5>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>Type Name</th>
+						<th>Base Price</th>
+						<th>New Price</th>
+					</tr>
+				</thead>
+				<tbody id="seatTypePriceTable">
+					@foreach (var seatType in ViewBag.SeatTypes as List<MovieTheater.Models.SeatType>)
+					{
+						<tr data-base-price="@seatType.PricePercent" data-color="@seatType.ColorHex">
+							<td>@seatType.TypeName</td>
+							<td>@seatType.PricePercent.ToString("N0")</td>
+							<td class="calculated-price">-</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<!-- Create Version Modal -->
+<div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<form asp-action="Create" asp-controller="Version" method="post">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="createVersionModalLabel">Create Version</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="createVersionName" class="form-label">Name</label>
+						<input type="text" class="form-control" id="createVersionName" name="VersionName" required>
+					</div>
+					<div class="mb-3">
+						<label for="createMulti" class="form-label">Multiplier</label>
+						<input type="number" step="0.01" class="form-control" id="createMulti" name="Multi" required>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary">Create</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+<script>
+$(document).ready(function () {
+	// Handle Create
+	$('#createVersionForm').submit(function (e) {
+		e.preventDefault();
+		var data = {
+			VersionName: $('#createVersionName').val(),
+			Multi: parseFloat($('#createMulti').val())
+		};
+		$.ajax({
+			url: '/Version/Create',
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify(data),
+			success: function (res) {
+				if (res.success) {
+					location.reload();
+				} else {
+					alert(res.error || 'Failed to create version.');
+				}
+			}
+		});
+	});
+
+	// Open Inline Edit Area and populate fields
+	$('.edit-version-btn').click(function () {
+		var id = $(this).data('id');
+		$.get('/Version/Get/' + id, function (version) {
+			$('#inlineEditVersionId').val(version.versionId);
+			$('#inlineEditVersionName').val(version.versionName);
+			$('#inlineEditMulti').val(version.multi);
+			$('#inlineEditArea').slideDown();
+			updateSeatTypePrices(version.multi);
+			$('html, body').animate({ scrollTop: $('#inlineEditArea').offset().top - 80 }, 400);
+		});
+	});
+
+	// Cancel Inline Edit
+	$('#cancelInlineEdit').click(function () {
+		$('#inlineEditArea').slideUp();
+	});
+
+	// Handle Inline Edit
+	$('#inlineEditVersionForm').submit(function (e) {
+		e.preventDefault();
+		var data = {
+			VersionId: $('#inlineEditVersionId').val(),
+			VersionName: $('#inlineEditVersionName').val(),
+			Multi: parseFloat($('#inlineEditMulti').val())
+		};
+		$.ajax({
+			url: '/Version/Edit',
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify(data),
+			success: function (res) {
+				if (res.success) {
+					location.reload();
+				} else {
+					alert(res.error || 'Failed to update version.');
+				}
+			}
+		});
+	});
+
+	// Update seat type prices when multiplier changes
+	$('#inlineEditMulti').on('input', function () {
+		var multi = parseFloat($(this).val()) || 1;
+		updateSeatTypePrices(multi);
+	});
+
+	function updateSeatTypePrices(multi) {
+		$('#seatTypePriceTable tr').each(function () {
+			var base = parseFloat($(this).attr('data-base-price')) || 0;
+			var price = Math.round(base * multi);
+			$(this).find('.calculated-price').text(price.toLocaleString('en-US'));
+		});
+	}
+});
+</script>
+

@@ -14,6 +14,7 @@
                 <a class="nav-link admin-tab" data-tab="EmployeeMg" href="javascript:void(0)">Employee Management</a>
                 <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
                 <a class="nav-link admin-tab" data-tab="ShowroomMg" href="javascript:void(0)">Showroom Management</a>
+                <a class="nav-link admin-tab" data-tab="VersionMg" href="javascript:void(0)">Version Management</a>
                 <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
                 <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
                 <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
@@ -124,6 +125,65 @@
             loadTab(tabName);
         });
     });
+
+    // Delegated event for edit button
+    $(document).on('click', '.edit-version-btn', function () {
+        var id = $(this).data('id');
+        $.get('/Version/Get/' + id, function (version) {
+            // Set the form fields with the fetched values
+            $('#inlineEditVersionId').val(version.versionId);
+            $('#inlineEditVersionName').val(version.versionName);
+            $('#inlineEditMulti').val(version.multi);
+            // Calculate and update prices immediately
+            updateSeatTypePrices(version.multi);
+            // Show the edit area
+            $('#inlineEditArea').slideDown();
+            // Scroll to the edit area
+            $('html, body').animate({ scrollTop: $('#inlineEditArea').offset().top - 80 }, 400);
+        });
+    });
+
+    // Delegated event for cancel button
+    $(document).on('click', '#cancelInlineEdit', function () {
+        $('#inlineEditArea').slideUp();
+    });
+
+    // Delegated event for form submit
+    $(document).on('submit', '#inlineEditVersionForm', function (e) {
+        e.preventDefault();
+        var data = {
+            VersionId: $('#inlineEditVersionId').val(),
+            VersionName: $('#inlineEditVersionName').val(),
+            Multi: parseFloat($('#inlineEditMulti').val())
+        };
+        $.ajax({
+            url: '/Version/Edit',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.success) {
+                    loadTab('VersionMg');
+                } else {
+                    alert(res.error || 'Failed to update version.');
+                }
+            }
+        });
+    });
+
+    // Delegated event for multiplier input
+    $(document).on('input', '#inlineEditMulti', function () {
+        var multi = parseFloat($(this).val()) || 1;
+        updateSeatTypePrices(multi);
+    });
+
+    function updateSeatTypePrices(multi) {
+        $('#seatTypePriceTable tr').each(function () {
+            var base = parseFloat($(this).attr('data-base-price')) || 0;
+            var price = Math.round(base * multi);
+            $(this).find('.calculated-price').text(price.toLocaleString('en-US'));
+        });
+    }
 </script>
 
 <partial name="_ToastMessages" />

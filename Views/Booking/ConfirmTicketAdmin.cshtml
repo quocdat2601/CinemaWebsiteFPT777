@@ -163,7 +163,7 @@
         </table>
         <div class="text-end mb-2">
             <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
-                @Model.BookingDetails.SelectedSeats.Sum(s => s.Price).ToString("N0") VND
+                @Model.BookingDetails.TotalPrice.ToString("N0") VND
             </span>
             <span id="discountedTotal" style="display:none;"></span>
             <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
@@ -461,7 +461,7 @@
             var currentDiscountPercent = 0;
             let selectedVoucher = null;
             function updatePriceAll() {
-                var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
                 // Áp dụng rank benefit trước
                 var discountPercent = currentDiscountPercent || 0;
                 var discountAmount = 0;

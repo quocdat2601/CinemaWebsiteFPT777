@@ -2,6 +2,7 @@
     ViewBag.Title = "Booking Successful";
     var movieName = TempData["MovieName"] as string;
     var screen = TempData["CinemaRoomName"] as string;
+    var version = TempData["VersionName"] as string;
     var showDate = TempData["ShowDate"] as string;
     var showTime = TempData["ShowTime"] as string;
     var ticketId = TempData["InvoiceId"] as string;
@@ -162,12 +163,14 @@
                     <div class="ticket-row">
                         <label class="ticket-info-label">Date</label>
                         <input type="text" class="ticket-info-value" value="@showDate" readonly />
-                        <label class="ticket-info-label">Time</label>
-                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
+                        <label class="ticket-info-label">Version</label>
+                        <input type="text" class="ticket-info-value" value="@version" readonly />
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Ticket ID</label>
                         <input type="text" class="ticket-info-value" value="@ticketId" readonly />
+                        <label class="ticket-info-label">Time</label>
+                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Booking Time</label>
