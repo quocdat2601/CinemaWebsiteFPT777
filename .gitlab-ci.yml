@@ -7,15 +7,15 @@ build-job:
   tags:
     - datthai
   script:
-    - echo "Navigating to project directory..."
-    - cd $CI_PROJECT_DIR
-    - echo "Current directory is: $(pwd)"
-    - echo "Pulling latest code..."
-    - git pull origin main
-    - echo "Restoring packages..."
-    - dotnet restore
-    - echo "Building and publishing project..."
-    - dotnet publish -c Release -o ./publish --no-restore
+  - echo "Navigating to project directory..."
+  - cd $CI_PROJECT_DIR
+  - 'echo "Current directory is: $CI_PROJECT_DIR"' # <-- DÒNG ĐÃ SỬA
+  - echo "Pulling latest code..."
+  - git pull origin main
+  - echo "Restoring packages..."
+  - dotnet restore
+  - echo "Building and publishing project..."
+  - dotnet publish -c Release -o ./publish --no-restore
   only:
     - main
 
