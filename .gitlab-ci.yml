@@ -2,6 +2,8 @@ image: mcr.microsoft.com/dotnet/sdk:8.0
 
 before_script:
   - dotnet restore
+  - git config --global credential.helper store
+  - echo "https://$GITLAB_USER:$GITLAB_PAT@git.fa.edu.vn" > ~/.git-credentials
 
 stages:          # List of stages for jobs, and their order of execution
   - build-n-test
