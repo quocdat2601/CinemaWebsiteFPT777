@@ -40,6 +40,7 @@ namespace MovieTheater.Controllers
         private readonly IPromotionService _promotionService;
         private readonly IVoucherService _voucherService;
         private readonly MovieTheaterContext _context;
+        private readonly IFoodService _foodService;
 
         public BookingController(IBookingService bookingService,
                          IMovieService movieService,
@@ -58,7 +59,8 @@ namespace MovieTheater.Controllers
 
                          IVoucherService voucherService,
 
-                         MovieTheater.Models.MovieTheaterContext context)
+                         MovieTheater.Models.MovieTheaterContext context,
+                         IFoodService foodService)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -76,6 +78,7 @@ namespace MovieTheater.Controllers
             _voucherService = voucherService;
             _promotionService = promotionService;
             _context = context;
+            _foodService = foodService;
         }
 
         /// <summary>
@@ -183,7 +186,7 @@ namespace MovieTheater.Controllers
        /// <param name="movieShowId">Id của suất chiếu cụ thể.</param>
        /// <returns>View xác nhận đặt vé.</returns>
        [HttpGet]
-       public async Task<IActionResult> Information(string movieId, DateOnly showDate, string showTime, List<int>? selectedSeatIds, int movieShowId)
+       public async Task<IActionResult> Information(string movieId, DateOnly showDate, string showTime, List<int>? selectedSeatIds, int movieShowId, List<int>? foodIds, List<int>? foodQtys)
        {
            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
            {
@@ -270,8 +273,36 @@ namespace MovieTheater.Controllers
             {
                 rankDiscount = subtotal * (rankDiscountPercent / 100m);
             }
+            var totalPriceSeats = subtotal - rankDiscount;
 
-            var totalPrice = subtotal - rankDiscount;
+            // Xử lý food đã chọn
+            List<FoodViewModel> selectedFoods = new List<FoodViewModel>();
+            decimal totalFoodPrice = 0;
+            if (foodIds != null && foodQtys != null && foodIds.Count == foodQtys.Count)
+            {
+                for (int i = 0; i < foodIds.Count; i++)
+                {
+                    var food = (await _foodService.GetByIdAsync(foodIds[i]));
+                    if (food != null)
+                    {
+                        var foodClone = new FoodViewModel
+                        {
+                            FoodId = food.FoodId,
+                            Name = food.Name,
+                            Price = food.Price,
+                            Image = food.Image,
+                            Description = food.Description,
+                            Category = food.Category,
+                            Status = food.Status,
+                            CreatedDate = food.CreatedDate,
+                            UpdatedDate = food.UpdatedDate,
+                            Quantity = foodQtys[i] // Số lượng món ăn đã chọn
+                        };
+                        selectedFoods.Add(foodClone);
+                        totalFoodPrice += food.Price * foodQtys[i];
+                    }
+                }
+            }
 
             var viewModel = new ConfirmBookingViewModel
             {
@@ -284,7 +315,7 @@ namespace MovieTheater.Controllers
                 SelectedSeats = seats,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
-                TotalPrice = totalPrice,
+                TotalPrice = totalPriceSeats + totalFoodPrice,
                 FullName = currentUser.FullName,
                 Email = currentUser.Email,
                 IdentityCard = currentUser.IdentityCard,
@@ -293,6 +324,8 @@ namespace MovieTheater.Controllers
                 EarningRate = earningRate,
                 RankDiscountPercent = rankDiscountPercent,
                 MovieShowId = movieShowId,
+                SelectedFoods = selectedFoods,
+                TotalFoodPrice = totalFoodPrice
             };
 
            return View("ConfirmBooking", viewModel);
@@ -1526,6 +1559,17 @@ namespace MovieTheater.Controllers
             };
 
             return View("TicketDetails", viewModel);
+        }
+
+        /// <summary>
+        /// Lấy danh sách food
+        /// </summary>
+        /// <remarks>url: /Booking/GetFoods (GET)</remarks>
+        [HttpGet]
+        public async Task<IActionResult> GetFoods()
+        {
+            var foods = await _foodService.GetAllAsync();
+            return Json(foods.Foods);
         }
     }
 }

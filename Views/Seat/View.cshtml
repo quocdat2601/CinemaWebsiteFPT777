@@ -90,6 +90,30 @@
 			</div>
 		</div>
 
+		<!-- FOOD & DRINK SECTION -->
+		<div class="food-section mt-5">
+			<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">ĐỒ ĂN & NƯỚC UỐNG</h2>
+			<div class="row justify-content-center">
+				@if (ViewBag.Foods != null)
+				{
+					foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
+					{
+						<div class="col-md-3 col-6 mb-4 d-flex flex-column align-items-center">
+							<img src="@food.Image" alt="@food.Name" style="width:120px; height:120px; object-fit:cover; border-radius:12px;"/>
+							<div class="fw-bold mt-2">@food.Name</div>
+							<div class="text-muted small">@food.Description</div>
+							<div class="fw-bold mb-2">@food.Price.ToString("N0") VND</div>
+							<div class="input-group" style="width:110px;">
+								<button class="btn btn-outline-secondary btn-food-minus" type="button" data-food-id="@food.FoodId">-</button>
+								<input type="text" class="form-control text-center food-qty" data-food-id="@food.FoodId" value="0" readonly style="background:#e9ecef;"/>
+								<button class="btn btn-outline-secondary btn-food-plus" type="button" data-food-id="@food.FoodId">+</button>
+							</div>
+						</div>
+					}
+				}
+			</div>
+		</div>
+
 		<div id="selectionSummary">
 			<div class="summary-block">
 				<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
@@ -106,6 +130,8 @@
 				<div id="seatInfo" style="display:none;">
 					<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
 					<p><span class="summary-label">Total Price:</span> <span id="totalPrice"></span> VND</p>
+					<p><span class="summary-label">Tổng tiền đồ ăn:</span> <span id="totalFoodPrice">0</span> VND</p>
+					<p><span class="summary-label">Tổng cộng:</span> <span id="grandTotal">0</span> VND</p>
 					<p id="countdownTimer" class="text-danger fw-bold"></p>
 				</div>
 			</div>
@@ -134,6 +160,17 @@
 		let countdownTimer = null;
 		let secondsLeft = 100; // 10 seconds for testing
 		const MAX_SEATS = 8; // Giới hạn tối đa 8 ghế
+
+		// FOOD SELECTION
+		let selectedFoods = {}; // { foodId: quantity }
+		let foodPrices = {};
+		@if (ViewBag.Foods != null)
+		{
+			foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
+			{
+				<text>foodPrices[@food.FoodId] = @food.Price;</text>
+			}
+		}
 
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
@@ -178,11 +215,13 @@
 				totalPrice.textContent = total.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 				seatInfo.style.display = 'block';
 				noSeatAlert.style.display = 'none';
+				updateFoodTotal(); // cập nhật tổng cộng khi chọn ghế
 			} else {
 				selectedSeatNames.textContent = '';
 				totalPrice.textContent = '';
 				seatInfo.style.display = 'none';
 				noSeatAlert.style.display = 'block';
+				updateFoodTotal();
 			}
 		}
 
@@ -204,6 +243,13 @@
 					params.append(key, data[key]);
 				}
 			}
+			// Gửi foodId và quantity
+			for (const foodId in selectedFoods) {
+				if (selectedFoods[foodId] > 0) {
+					params.append('foodIds', foodId);
+					params.append('foodQtys', selectedFoods[foodId]);
+				}
+			}
 			const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
 			window.location.href = isAdminSell
 				? `/Booking/ConfirmTicketForAdmin?${params.toString()}`
@@ -216,9 +262,46 @@
 		});
 
 		document.addEventListener('DOMContentLoaded', function () {
+			// Food plus
+			document.querySelectorAll('.btn-food-plus').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const foodId = this.getAttribute('data-food-id');
+					let qtyInput = document.querySelector(`.food-qty[data-food-id='${foodId}']`);
+					let qty = parseInt(qtyInput.value) || 0;
+					qty++;
+					qtyInput.value = qty;
+					selectedFoods[foodId] = qty;
+					updateFoodTotal();
+				});
+			});
+			// Food minus
+			document.querySelectorAll('.btn-food-minus').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const foodId = this.getAttribute('data-food-id');
+					let qtyInput = document.querySelector(`.food-qty[data-food-id='${foodId}']`);
+					let qty = parseInt(qtyInput.value) || 0;
+					if (qty > 0) qty--;
+					qtyInput.value = qty;
+					if (qty === 0) delete selectedFoods[foodId];
+					else selectedFoods[foodId] = qty;
+					updateFoodTotal();
+				});
+			});
 			updateBookButtonState();
 			updateSelectionSummary();
+			updateFoodTotal();
 		});
+
+		function updateFoodTotal() {
+			let totalFood = 0;
+			for (let foodId in selectedFoods) {
+				totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
+			}
+			document.getElementById('totalFoodPrice').textContent = totalFood.toLocaleString();
+			// Cộng với tổng tiền ghế
+			let seatTotal = parseInt(document.getElementById('totalPrice').textContent.replace(/,/g, '')) || 0;
+			document.getElementById('grandTotal').textContent = (seatTotal + totalFood).toLocaleString();
+		}
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 	<script>
