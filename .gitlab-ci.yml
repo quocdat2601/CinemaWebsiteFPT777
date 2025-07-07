@@ -5,17 +5,16 @@ stages:
 build-job:
   stage: build
   tags:
-    - datthai # Tag của runner SSH
+    - datthai
   script:
-    - echo "Navigating to project directory: C:/OJT/team03"
-    - cd C:/OJT/team03
-    - echo "Pulling latest code from main branch..."
-    - git config --global credential.helper store
-    - echo "https://$GITLAB_USER:$GITLAB_PAT@git.fa.edu.vn" > ~/.git-credentials
+    - echo "Navigating to project directory..."
+    - cd $CI_PROJECT_DIR
+    - echo "Current directory is: $(pwd)"
+    - echo "Pulling latest code..."
     - git pull origin main
-    - echo "Restoring .NET packages..."
+    - echo "Restoring packages..."
     - dotnet restore
-    - echo "Building and publishing the project..."
+    - echo "Building and publishing project..."
     - dotnet publish -c Release -o ./publish --no-restore
   only:
     - main
@@ -23,12 +22,12 @@ build-job:
 deploy-job:
   stage: deploy
   tags:
-    - datthai # Tag của runner SSH
+    - datthai
   needs:
-    - build-job # Chờ build xong mới deploy
+    - build-job
   script:
     - echo "Restarting the application service..."
-    - Restart-Service -Name "MovieTheaterService" # Tên service trên máy Windows
+    - Restart-Service -Name "MovieTheaterService"
     - echo "Deployment successful!"
   only:
     - main
