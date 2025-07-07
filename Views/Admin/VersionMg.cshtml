@@ -8,6 +8,9 @@
 	<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createVersionModal">
 		Create a Version
 	</button>
+	<button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSeatTypeModal">
+		Show Seat Types
+	</button>
 </div>
 
 <table class="table table-bordered table-striped">
@@ -200,3 +203,54 @@ $(document).ready(function () {
 });
 </script>
 
+@{
+	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
+}
+
+<div class="modal fade" id="editSeatTypeModal" tabindex="-1" aria-labelledby="editSeatTypeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 30vw;">
+		<div class="modal-content">
+			<form asp-action="Edit" asp-controller="SeatType" method="post">
+
+				<div class="modal-header">
+					<h5 class="modal-title w-100 text-center" id="editSeatTypeModalLabel">Edit Seat Type</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+
+				<div class="modal-body">
+					<table class="table table-bordered">
+						<thead>
+							<tr>
+								<th>Type Name</th>
+								<th>Price</th>
+								<th>Color</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for (int i = 0; i < seatTypes.Count; i++)
+							{
+								<tr>
+									<td>
+										@seatTypes[i].TypeName
+										<input type="hidden" name="[@i].SeatTypeId" value="@seatTypes[i].SeatTypeId" />
+										<input type="hidden" name="[@i].TypeName" value="@seatTypes[i].TypeName" />
+									</td>
+									<td>
+										<input type="number" step="0.01" min="0" name="[@i].PricePercent" value="@seatTypes[i].PricePercent" class="form-control" required />
+									</td>
+									<td>
+										<input type="color" name="[@i].ColorHex" value="@seatTypes[i].ColorHex" class="form-control form-control-color" />
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+
+				<div class="modal-footer justify-content-center">
+					<button type="submit" class="btn btn-primary">Save Changes</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

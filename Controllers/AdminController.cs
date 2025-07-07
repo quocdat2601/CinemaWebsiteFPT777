@@ -103,12 +103,12 @@ namespace MovieTheater.Controllers
                     return PartialView("MovieMg", movies);
                 case "ShowroomMg":
                     var cinema = _cinemaService.GetAll();
-                    var seatTypes = _seatTypeService.GetAll();
                     var versions = _movieService.GetAllVersions();
                     ViewBag.Versions = versions;
-                    ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
                 case "VersionMg":
+                    var seatTypes = _seatTypeService.GetAll();
+                    ViewBag.SeatTypes = seatTypes;
                     var versionMg = _versionRepository.GetAll();
                     var seatTypesForVersion = _seatTypeService.GetAll();
                     ViewBag.SeatTypes = seatTypesForVersion;

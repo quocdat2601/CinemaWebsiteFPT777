@@ -161,9 +161,10 @@
                 }
             </tbody>
         </table>
+
         <div class="text-end mb-2">
             <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
-                @Model.BookingDetails.TotalPrice.ToString("N0") VND
+                Total Price: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) VND
             </span>
             <span id="discountedTotal" style="display:none;"></span>
             <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
@@ -384,8 +385,8 @@
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
-                        TotalPrice: @Model.BookingDetails.TotalPrice,
-                        PricePerTicket: @Model.BookingDetails.PricePerTicket,
+                        TotalPrice: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         MovieShowId: @Model.MovieShowId
                     },
                     MemberIdInput: $('#memberInput').val(),
@@ -423,7 +424,7 @@
             // Remove ticketsToConvert logic, add useScore logic
             function updateMaxUsablePoints() {
                 // This should be calculated from backend, but for now, estimate:
-                var totalPrice = @Model.BookingDetails.TotalPrice;
+                var totalPrice = @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 var memberScore = parseInt($('#memberScore').val()) || 0;
                 var maxPoints = Math.floor((totalPrice * 0.9) / 1000);
                 maxPoints = Math.min(maxPoints, memberScore);
@@ -491,7 +492,6 @@
                     $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
                     $('#discountedTotal').hide();
                 }
-
                 // Hiển thị voucher
                 let discountInfoHtml = '';
                 // Hiển thị rank discount

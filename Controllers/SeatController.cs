@@ -249,7 +249,21 @@ namespace MovieTheater.Controllers
 
             ViewBag.BookedSeats = bookedSeats;
             ViewBag.MovieShow = movieShow;
-
+            // Fetch couple seats for this cinema room
+            var allCoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            var roomSeatIds = seats.Select(s => s.SeatId).ToHashSet();
+            var coupleSeatsForRoom = allCoupleSeats.Where(cs => roomSeatIds.Contains(cs.FirstSeatId) && roomSeatIds.Contains(cs.SecondSeatId)).ToList();
+            ViewBag.CoupleSeats = coupleSeatsForRoom;
+            var coupleSeatPairs = new Dictionary<int, int>();
+            if (ViewBag.CoupleSeats != null)
+            {
+                foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
+                {
+                    coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
+                    coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
+                }
+            }
+            ViewBag.CoupleSeatPairs = coupleSeatPairs;
             var viewModel = new SeatSelectionViewModel
             {
                 MovieId = movieId,
@@ -334,6 +348,25 @@ namespace MovieTheater.Controllers
             {
                 return View();
             }
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <remarks>url: /Seat/DeleteCoupleSeat (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCoupleSeat([FromBody] SeatIdsRequest request)
+        {
+            if (request.SeatIds == null || request.SeatIds.Count != 2)
+                return BadRequest("Exactly two seat IDs required.");
+
+            await _seatService.DeleteCoupleSeatBySeatIdsAsync(request.SeatIds[0], request.SeatIds[1]);
+            return Ok();
+        }
+
+        public class SeatIdsRequest
+        {
+            public List<int> SeatIds { get; set; }
         }
     }
 }

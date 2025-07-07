@@ -276,12 +276,12 @@ table.table td[data-seat-type="Disabled"]:hover {
 
 /* Special handling for couple seats */
 table.table td[data-couple-seat="true"] {
-    background-color: #ffeb3b;
+    background-color: transparent !important;
     border-color: #f57f17;
 }
 
 table.table td[data-couple-seat="true"]:hover {
-    background-color: #fff59d;
+    background-color: transparent !important;
     border-color: #f57f17;
 }
 
@@ -426,11 +426,6 @@ body {
     text-align: center;
 }
 
-.selected-seat {
-    outline: 3px solid #ffc107 !important;
-    border-radius: 5px;
-}
-
 .being-held {
     background-color: #f3c623 !important;
     cursor: not-allowed;
@@ -442,4 +437,9 @@ body {
 
 .seat-view-page table.table td .material-icons {
     font-size: 24px;
+}
+
+td[data-seat-id] {
+    border-width: 3px !important;
+    border-style: solid !important;
 }
