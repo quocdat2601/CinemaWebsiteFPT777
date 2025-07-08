@@ -1,6 +1,6 @@
 before_script:
   - git config --global credential.helper store
-  - git clone http://25_CPL_NET_05_SE170183:glpat-fjsW9SCPPsmEgDeexoy_@my-gitlab-site/my-github-repo.git
+  - git clone https://25_CPL_NET_05_SE170183:glpat-fjsW9SCPPsmEgDeexoy_@git.fa.edu.vn/hcm25_cpl_net_05/team03.git
 
 stages:
   - build
