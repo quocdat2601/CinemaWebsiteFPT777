@@ -2,6 +2,8 @@
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -9,11 +11,13 @@ namespace MovieTheater.Controllers
     {
         private readonly IPromotionService _promotionService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public PromotionController(IPromotionService promotionService, IWebHostEnvironment webHostEnvironment)
+        public PromotionController(IPromotionService promotionService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _promotionService = promotionService;
             _webHostEnvironment = webHostEnvironment;
+            _dashboardHubContext = dashboardHubContext;
         }
 
         /// <summary>
@@ -114,7 +118,7 @@ namespace MovieTheater.Controllers
 
                     _promotionService.Add(promotion);
                     _promotionService.Save();
-
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Promotion created successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
                 }
@@ -215,7 +219,7 @@ namespace MovieTheater.Controllers
 
                     _promotionService.Update(promotion);
                     _promotionService.Save();
-
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Promotion updated successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
                 }
@@ -248,7 +252,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Promotion/Delete (POST)</remarks>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
+        public async Task<ActionResult> DeleteConfirmed(int id)
         {
             try
             {
@@ -264,7 +268,7 @@ namespace MovieTheater.Controllers
 
                 _promotionService.Delete(id);
                 _promotionService.Save();
-
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 TempData["ToastMessage"] = "Promotion deleted successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
             }

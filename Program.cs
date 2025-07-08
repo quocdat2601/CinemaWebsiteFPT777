@@ -176,6 +176,7 @@ namespace MovieTheater
 
             app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
             app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
+            app.MapHub<DashboardHub>("/dashboardhub"); //Tuyen duong cho hub
 
             app.Run();
         }
