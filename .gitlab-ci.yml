@@ -1,3 +1,7 @@
+before_script:
+  - git config --global credential.helper store
+  - git clone http://25_CPL_NET_05_SE170183:glpat-fjsW9SCPPsmEgDeexoy_@my-gitlab-site/my-github-repo.git
+
 stages:
   - build
   - deploy
