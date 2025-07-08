@@ -1,0 +1,57 @@
+﻿@model IEnumerable<MovieTheater.Models.Invoice>
+@inject MovieTheater.Service.IAccountService AccountService
+
+<h2 class="text-center">Booking Management</h2>
+
+<form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchBooking();">
+    <input type="hidden" name="tab" value="EmployeeMg" />
+    <div class="input-group" style="max-width: 600px;">
+        <input type="text" id="searchKeyword" name="keyword" value="@ViewBag.Keyword" maxlength="50" class="form-control" placeholder="🔍 Search by Booking ID, Account ID, Phone Number, or Identity Card..." />
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+
+<table class="table table-bordered table-striped table-hover">
+    <thead class="table-dark">
+        <tr class="text-center">
+            <th>Booking_ID</th>
+            <th>Movie Name</th>
+            <th>AccountID</th>
+            <th>Identity Card</th>
+            <th>Phone Number</th>
+            <th>Schedule Time</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="7" class="text-center">No bookings found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var Invoice in Model)
+            {   
+                var account = AccountService.GetById(Invoice.AccountId);
+                <tr class="text-center">
+                    <td>@Invoice.InvoiceId</td>
+                    <td>@(Invoice.MovieShow.Movie.MovieNameEnglish)</td>
+                    <td>@Invoice.AccountId</td>
+                    <td>@(account?.IdentityCard ?? "N/A")</td>
+                    <td>@(account?.PhoneNumber ?? "N/A")</td>
+                    <td>@(Invoice.MovieShow.Schedule.ScheduleTime.ToString())</td>
+                    <td>
+                        <a href="@Url.Action("TicketInfo", "Admin", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                            <i class="fas fa-info-circle"></i> Details
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+

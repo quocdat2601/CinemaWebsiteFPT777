@@ -1,108 +1,82 @@
-﻿@{
+﻿@model MovieTheater.ViewModels.ProfileUpdateViewModel
+
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "My Account";
+    var activeTab = ViewData["ActiveTab"]?.ToString() ?? "Profile";
 }
+
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar Tabs -->
-        <div class="col-2 bg-light border-end vh-100 pt-3">
+        <div class="col-2 border-end vh-50 pt-3" id="account-sidebar">
             <ul class="nav flex-column nav-pills" id="accountTabs">
                 <li class="nav-item">
-                    <a class="nav-link active" href="#" data-tab="Information">Information</a>
+                    <a class="nav-link @(activeTab == "Profile" ? "active" : "")" data-tab="Profile" href="#">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="Profile">Profile</a>
+                    <a class="nav-link @(activeTab == "Score" ? "active" : "")" data-tab="Score" href="#">Score</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="Rank">Rank</a>
+                    <a class="nav-link @(activeTab == "Voucher" ? "active" : "")" data-tab="Voucher" href="#">Voucher</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="Score">Score</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="Voucher">Voucher</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="History">History Booking Ticket</a>
+                    <a class="nav-link @(activeTab == "History" ? "active" : "")" data-tab="History" href="#">History Booking Ticket</a>
                 </li>
             </ul>
         </div>
 
         <!-- Tab Content -->
-        <div class="col-10 p-4">
-            <div id="tabContent">
-                Loading...
-            </div>
+        <div class="col-10 p-4" id="tabContent">
+            <h3>Loading...</h3>
         </div>
     </div>
 </div>
 
+
 @section Scripts {
     <script>
-        function loadTab(tab) {
-            $('#accountTabs .nav-link').removeClass('active');
-            $(`#accountTabs .nav-link[data-tab="${tab}"]`).addClass('active');
-            $('#tabContent').html('<h3>Loading...</h3>');
+        $(document).ready(function () {
+            // Function to load tab content
+            function loadTab(tabName) {
+                // Show loading
+                $('#tabContent').html('<h3>Loading...</h3>');
+                
+                // Update active tab
+                $('#accountTabs .nav-link').removeClass('active');
+                $(`#accountTabs .nav-link[data-tab="${tabName}"]`).addClass('active');
 
-            var url = '@Url.Action("LoadTab", "MyAccount")';
-            $.get(url, { tab: tab }, function (data) {
-                $('#tabContent').html(data);
-            });
-        }
+                // Load tab content
+                $.get(`/MyAccount/LoadTab?tab=${tabName}`, function (data) {
+                    $('#tabContent').html(data);
+                }).fail(function() {
+                    $('#tabContent').html('<div class="alert alert-danger">Failed to load tab content. Please try again.</div>');
+                });
+            }
 
-        $(function () {
+            // Handle tab clicks
             $('#accountTabs .nav-link').click(function (e) {
                 e.preventDefault();
                 loadTab($(this).data('tab'));
             });
 
-            // Ưu tiên đọc từ URL ?tab=..., nếu không có thì dùng ViewData
+            // Load initial tab
             const urlParams = new URLSearchParams(window.location.search);
-            const activeTab = urlParams.get('tab') || '@ViewData["ActiveTab"]' || 'Information';
-            loadTab(activeTab);
+            const initialTab = urlParams.get('tab') || '@activeTab';
+            loadTab(initialTab);
 
-            // Hiển thị toast nếu có ?toast=...
+            // Show toast if present
             const toastMessage = urlParams.get('toast');
             if (toastMessage && typeof showToast === 'function') {
                 showToast(decodeURIComponent(toastMessage));
             }
-        });
 
-        // AJAX submit form
-        $(document).on('submit', 'form', function (e) {
-            e.preventDefault();
-
-            var form = $(this);
-            var url = form.attr('action');
-            var formData = new FormData(this);
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (result) {
-                    if (result.success) {
-                        loadTab(result.reloadTab);
-                        if (result.toast) showToast(result.toast);
-                    } else if (result.error) {
-                        showErrorToast(result.error);
-                    } else {
-                        $('#tabContent').html(result); // Hiển thị lại form nếu có lỗi ModelState
-                    }
-                },
-                error: function () {
-                    $('#tabContent').html('<div class="text-danger">Lỗi không xác định từ server.</div>');
-                }
-            });
-
-            // Ẩn alert sau vài giây (nếu có)
+            // Hide alerts after 3 seconds
             setTimeout(() => $(".alert").fadeOut("slow"), 3000);
         });
 
-        // Hiển thị TempData toast khi DOM sẵn sàng
+        // Show TempData toast when DOM is ready
         document.addEventListener("DOMContentLoaded", function () {
             const toastEl = document.getElementById('toastMessage');
             if (toastEl && toastEl.querySelector('.toast-body').innerText.trim() !== "") {
@@ -110,19 +84,6 @@
                 toast.show();
             }
         });
-
-        // Toast tiện ích
-        function showToast(message) {
-            const toastEl = document.getElementById('toastMessage');
-            toastEl.querySelector('.toast-body').innerText = message;
-            new bootstrap.Toast(toastEl, { delay: 3000 }).show();
-        }
-
-        function showErrorToast(message) {
-            const errorToastEl = document.getElementById('errorToast');
-            errorToastEl.querySelector('.toast-body').innerText = message;
-            new bootstrap.Toast(errorToastEl, { delay: 4000 }).show();
-        }
     </script>
 }
 

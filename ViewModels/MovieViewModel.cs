@@ -1,6 +1,4 @@
-﻿using MovieTheater.Models;
-
-namespace MovieTheater.ViewModels
+﻿namespace MovieTheater.ViewModels
 {
     public class MovieViewModel
     {

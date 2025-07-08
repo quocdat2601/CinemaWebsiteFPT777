@@ -1,6 +1,52 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
+@model IEnumerable<MovieTheater.Models.Promotion>
+
 @{
-    <h2>Yo its protmotion</h2>
+    ViewData["Title"] = "Current Promotions";
 }
+
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <h1 class="display-4">Current Promotions</h1>
+        <p class="lead">Check out our latest offers and discounts!</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center" role="alert">
+            <h4 class="alert-heading">No Active Promotions</h4>
+            <p>There are currently no active promotions. Please check back later!</p>
+        </div>
+    }
+    else
+    {
+        <div class="promotion-grid">
+            @foreach (var promotion in Model)
+            {
+                <div class="promotion-item">
+                    @if (!string.IsNullOrEmpty(promotion.Image))
+                    {
+                        <img src="@promotion.Image" alt="@promotion.Title">
+                    }
+                    else
+                    {
+                        <div class="promotion-image-placeholder bg-light text-center">
+                            <i class="fas fa-ticket-alt fa-4x text-muted"></i>
+                        </div>
+                    }
+                    <div class="promotion-content">
+                        <h3>@promotion.Title</h3>
+                        <p>@promotion.Detail</p>
+                        <div class="promotion-details">
+                            <p>Discount: <span class="discount">@promotion.DiscountLevel%</span></p>
+                            <p>Start: @promotion.StartTime?.ToString("MMM dd, yyyy HH:mm")</p>
+                            <p>End: @promotion.EndTime?.ToString("MMM dd, yyyy HH:mm")</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

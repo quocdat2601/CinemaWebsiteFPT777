@@ -1,7 +1,7 @@
 ﻿@using System.Security.Claims
 @{
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-    var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+    var Name = User.FindFirst(ClaimTypes.Name)?.Value;
     var isAuthenticated = User.Identity.IsAuthenticated;
 }
 
@@ -12,32 +12,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MovieTheater</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MovieTheater.styles.css" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.css" />
 
-    <style>
-        html {
-            position: relative;
-            min-height: 100vh;
-        }
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        main {
-            flex: 1 0 auto;
-            padding-bottom: 4rem;
-        }
-        footer {
-            flex-shrink: 0;
-        }
-    </style>
+    <!-- FontAwesome 5.11.2 CSS (CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" />
+    <!-- IconPicker 1.5.0 CSS/JS (CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fontawesome-iconpicker/1.5.0/css/fontawesome-iconpicker.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
+    <!-- jQuery (first, only once) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- IconPicker 1.5.0 JS (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fontawesome-iconpicker/1.5.0/js/fontawesome-iconpicker.min.js"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             console.error('Caught global error:');
@@ -51,9 +51,9 @@
         };
     </script>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-0">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar border-bottom box-shadow mb-0">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Movie" asp-action="MovieList">MovieTheater</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MovieTheater</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -62,19 +62,29 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Showtime" asp-action="List">Showtime</a>
+                            <a class="nav-link" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
                         </li>
+                        @if (userRole == "Member")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
+                            </li>
+                        }
                     </ul>
 
                     <ul class="navbar-nav">
-                        @if (userRole == "1")
+                        <li class="nav-item">
+                            <button id="toggle-dark-mode" class="btn btn-outline-secondary nav-link">🌙 Dark Mode</button>
+                        </li>
+                        @if (userRole == "Admin")
                         {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
+                            </li>
+
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
                             </li>
@@ -83,7 +93,7 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
                             </li>
                         }
-                        else if (userRole == "2")
+                        else if (userRole == "Employee")
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
@@ -95,19 +105,11 @@
                         else if (isAuthenticated)
                         {
                             <li class="nav-item">
-                                <span class="nav-link">Hello, @userName!</span>
+                                <span class="nav-link">Hello, @Name!</span>
                             </li>
                             <li  class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="MainPage">My Account</a>
+                                <a class="nav-link" asp-controller="MyAccount" asp-action="MainPage">My Account</a>
                             </li>
-
-                            @* ✅ Hiển thị Score History nếu là Member *@
-                            @if (userRole == "3")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Account" asp-action="ScoreHistory">Score History</a>
-                                </li>
-                            }
 
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
@@ -126,49 +128,84 @@
         </nav>
     </header>
 
-    <main role="main">
+    <main role="main" class="fade-in">
         @RenderBody()
     </main>
 
-    <!-- SUCCESS TOAST -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-        <div id="toastMessage" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    @TempData["ToastMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ERROR TOAST -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1081">
-        <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <!-- sẽ được set bằng JavaScript -->
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-
-
-    <footer class="border-top footer text-muted">
-        <div class="container text-center">
-            &copy; 2025 - MovieTheater
-        </div>
-    </footer>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<partial name="_ToastMessages" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/plugin/jquery.cycle2.swipe.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-    @* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> *@
+
+    <script>
+        $(document).ready(function() {
+            // Initialize and show success toast if it exists
+            var toastMessageContainer = document.getElementById('toastMessage');
+            if (toastMessageContainer) {
+                var toastEl = toastMessageContainer.querySelector('.toast');
+                if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay
+                    });
+                    toast.show();
+                }
+            }
+
+            // Initialize and show error toast if it exists
+            var errorToastContainer = document.getElementById('errorToast');
+            if (errorToastContainer) {
+                 var toastEl = errorToastContainer.querySelector('.toast');
+                 if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay (adjust to 4000 if preferred)
+                    });
+                    toast.show();
+                 }
+            }
+        });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // Dark mode toggle
+        const darkModeBtn = document.getElementById("toggle-dark-mode");
+        const currentMode = localStorage.getItem("theme");
+        const navbar = document.querySelector('.app-navbar');
+        const content = document.getElementById("content"); // Get the content element
+
+        if (currentMode === "dark") {
+            document.body.classList.add("dark-mode");
+            navbar.classList.add("dark-mode");
+            if (content) { // Check if content element exists
+                content.classList.add("dark-mode");
+            }
+            darkModeBtn.textContent = "☀️ Light Mode";
+        }
+
+        darkModeBtn.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            const isDark = document.body.classList.contains("dark-mode");
+            darkModeBtn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+
+            if (isDark) {
+                navbar.classList.add('dark-mode');
+                if (content) {
+                    content.classList.add("dark-mode");
+                }
+            } else {
+                navbar.classList.remove('dark-mode');
+                if (content) {
+                    content.classList.remove("dark-mode");
+                }
+            }
+        });
+    </script>
 </body>
 </html>

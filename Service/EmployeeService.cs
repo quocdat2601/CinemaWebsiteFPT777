@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 
@@ -33,23 +32,10 @@ namespace MovieTheater.Service
         {
             model.RoleId = 2;
             var result = _accountService.Register(model);
-
-            if (result)
-            {
-                var account = _accountRepo.GetByUsername(model.Username);
-                var employee = new Employee
-                {
-                    AccountId = account.AccountId,
-                    EmployeeId = _repository.GenerateEmployeeId(),
-                    Account = account
-                };
-                _repository.Add(employee);
-            }
-
             return result;
         }
 
-        
+
         public bool Update(string id, RegisterViewModel model)
         {
             var employee = _repository.GetById(id);

@@ -5,14 +5,29 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 bg-light min-vh-100 border-end">
-            <div class="nav flex-column nav-pills">
-                <a class="nav-link" href="#" onclick="loadTab('MemberMg')">Member Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('MovieMg')">Movie Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ShowroomMg')">Showroom Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ScheduleMg')">Schedule Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('PromotionMg')">Promotion Management</a>
-            </div>
+        <div class="col-md-3 col-lg-2 min-vh-100 border-end" id="account-sidebar">
+            <ul class="nav flex-column nav-pills" id="employeeTabs">
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "MemberMg" ? "active" : "text-dark")" data-tab="MemberMg" href="#">Member Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "MovieMg" ? "active" : "text-dark")" data-tab="MovieMg" href="#">Movie Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "ShowroomMg" ? "active" : "text-dark")" data-tab="ShowroomMg" href="#">Showroom Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "ScheduleMg" ? "active" : "text-dark")" data-tab="ScheduleMg" href="#">Schedule Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "BookingMg" ? "active" : "text-dark")" data-tab="BookingMg" href="#">Booking Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;" target="_self">
+                        <i class="fas fa-qrcode me-2"></i>QR Scanner
+                    </a>
+                </li>
+            </ul>
         </div>
 
         <!-- Tab Content -->
@@ -24,17 +39,40 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    function loadTab(tabName) {
-        $('.nav-link').removeClass('active');
-        $(`a.nav-link:contains(${tabName.replace('Mg', ' Management')})`).addClass('active');
-        $('#tabContent').load(`/Employee/LoadTab?tab=${tabName}`);
+    function loadTab(tabName, keyword = '') {
+        // Show loading
+        $('#tabContent').html('Loading...');
+
+        // Update active tab
+        $('#employeeTabs .nav-link').removeClass('active');
+        $(`#employeeTabs .nav-link[data-tab="${tabName}"]`).addClass('active');
+
+        let url = `/Employee/LoadTab?tab=${tabName}`;
+        if (keyword) {
+            url += `&keyword=${encodeURIComponent(keyword)}`;
+        }
+        $('#tabContent').load(url);
     }
-        $(document).ready(function () {
+
+    $(document).ready(function () {
+        // Handle tab clicks
+        $('#employeeTabs .nav-link').click(function (e) {
+            // Nếu là QR Scanner thì không ngăn chặn mặc định
+            if ($(this).text().includes('QR Scanner')) return;
+            e.preventDefault();
+            loadTab($(this).data('tab'));
+        });
+
+        // Load initial tab
         var tabToLoad = '@ViewData["ActiveTab"]' || 'MovieMg';
         loadTab(tabToLoad);
     });
+
+    function searchBooking() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('BookingMg', keyword);
+    }
 </script>
 
 

@@ -1,11 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace MovieTheater.ViewModels
 {
     public class MovieDetailViewModel
     {
+        public string? MovieId { get; set; }
+
         [Required(ErrorMessage = "Movie name (English) is required.")]
         public string? MovieNameEnglish { get; set; }
 
@@ -31,15 +32,11 @@ namespace MovieTheater.ViewModels
         [Range(1, 500, ErrorMessage = "Duration must be between 1 and 500 minutes.")]
         public int? Duration { get; set; }
 
-        [Required(ErrorMessage = "Version is required.")]
-        public string? Version { get; set; }
-
         [Required(ErrorMessage = "Description is required.")]
         public string? Content { get; set; }
 
-        [Required(ErrorMessage = "Cinema Room is required.")]
         public int? CinemaRoomId { get; set; }
-
+        public string? TrailerUrl { get; set; }
         public IFormFile? LargeImageFile { get; set; }
 
         public IFormFile? SmallImageFile { get; set; }
@@ -47,19 +44,20 @@ namespace MovieTheater.ViewModels
         public string? LargeImage { get; set; }
         public string? SmallImage { get; set; }
 
-        [Required(ErrorMessage = "At least one schedule must be selected.")]
         public List<int> SelectedScheduleIds { get; set; } = new();
 
         [Required(ErrorMessage = "At least one type must be selected.")]
         public List<int> SelectedTypeIds { get; set; } = new();
-
+        public List<int> SelectedVersionIds { get; set; } = new();
+        public List<int> SelectedCinemaRoomIds { get; set; } = new();
         public List<int> SelectedShowDateIds { get; set; } = new();
-
         public string? CinemaRoomName { get; set; }
-
         public List<Schedule>? AvailableSchedules { get; set; }
-        public List<ShowDate>? AvailableShowDates { get; set; }
-        public List<Models.Type>? AvailableTypes { get; set; }
+        public List<DateOnly>? AvailableShowDates { get; set; }
+        public List<Models.Type> AvailableTypes { get; set; } = new();
+        public List<Models.Version> AvailableVersions { get; set; } = new();
         public List<CinemaRoom> AvailableCinemaRooms { get; set; } = new();
+        public List<MovieShow> CurrentMovieShows { get; set; } = new();
+
     }
 }

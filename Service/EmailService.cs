@@ -1,5 +1,4 @@
-using System.Net.Mail;
-using Microsoft.Extensions.Configuration;
+﻿using System.Net.Mail;
 
 namespace MovieTheater.Service
 {
@@ -39,12 +38,14 @@ namespace MovieTheater.Service
                 mailMessage.To.Add(toEmail);
 
                 smtpClient.Send(mailMessage);
+                _logger.LogInformation($"Email successfully sent to {toEmail}. Please check your inbox, including the Spam or Junk folder.");
                 return true;
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Failed to send email to {toEmail}. Error: {ex.Message}");
                 return false;
             }
         }
     }
-} 
+}

@@ -19,7 +19,7 @@ namespace MovieTheater.Repository
         {
             var existing = _context.SeatTypes.FirstOrDefault(a => a.SeatTypeId == seatType.SeatTypeId);
             if (existing == null) return;
-            
+
             existing.PricePercent = seatType.PricePercent;
             existing.ColorHex = seatType.ColorHex;
             _context.Entry(existing).State = EntityState.Modified;

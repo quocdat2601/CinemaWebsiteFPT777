@@ -1,18 +1,34 @@
 ﻿using MovieTheater.Models;
-using MovieTheater.ViewModels;
 
-namespace MovieTheater.Services
+namespace MovieTheater.Service
 {
     public interface IMovieService
     {
-        IEnumerable<Movie> GetAll();
-        Movie? GetById(string id);
-        bool AddMovie(MovieDetailViewModel movie);
-        public bool UpdateMovie(string id, MovieDetailViewModel model);
+        public IEnumerable<Movie> GetAll();
+        public Movie? GetById(string id);
+        public bool AddMovie(Movie movie);
+        public bool UpdateMovie(Movie movie);
         public bool DeleteMovie(string id);
-        void Save();
-        Task<List<Schedule>> GetSchedulesAsync();
-        Task<List<ShowDate>> GetShowDatesAsync();
-        Task<List<Models.Type>> GetTypesAsync();
+        public void Save();
+        public List<Schedule> GetSchedules();
+        public List<Models.Type> GetTypes();
+        public List<CinemaRoom> GetAllCinemaRooms();
+        public IEnumerable<Movie> SearchMovies(string searchTerm);
+        public string ConvertToEmbedUrl(string trailerUrl);
+        public List<MovieShow> GetMovieShows(string movieId);
+        public bool IsScheduleAvailable(DateOnly showDate, int scheduleId, int cinemaRoomId, int movieDuration);
+        public bool AddMovieShow(MovieShow movieShow);
+        public bool AddMovieShows(List<MovieShow> movieShows);
+        public List<Models.Type> GetAllTypes();
+        public List<Schedule> GetAllSchedules();
+        public bool DeleteAllMovieShows(string movieId);
+        public Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);
+        public List<DateOnly> GetShowDates(string movieId);
+        public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);
+        public List<MovieShow> GetMovieShow();
+        public MovieShow? GetMovieShowById(int id);
+        public List<MovieShow> GetMovieShowsByMovieId(string movieId);
+        public List<Models.Version> GetAllVersions();
+        public Models.Version? GetVersionById(int versionId);
     }
 }

@@ -8,97 +8,256 @@
 
 
     <link rel="stylesheet" href="~/css/signupstyle.css" asp-append-version="true" />
+<style>
+.signup-main-container {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background: var(--body-bg, #fcfbf7);
+}
+.signup-left {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 32px;
+    box-sizing: border-box;
+    background: var(--container-bg, #fcfbf7);
+    transition: background 0.3s;
+}
+body.dark-mode .signup-left {
+    background: var(--dark-bg, #18181a);
+}
+.signup-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 40px;
+    margin-bottom: 48px;
+    width: 100%;
+}
+.signup-logo-img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    margin-bottom: 2.2rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+body.dark-mode .signup-logo-img {
+    background: #232336;
+    box-shadow: 0 2px 12px rgba(99,102,241,0.13);
+}
+.signup-title-big {
+    font-size: 2.3rem;
+    font-family: 'Georgia', serif;
+    font-weight: 600;
+    color: #18181a;
+    text-align: center;
+    margin-bottom: 1.1rem;
+    line-height: 1.1;
+    transition: color 0.3s;
+}
+body.dark-mode .signup-title-big {
+    color: #e2e8f0;
+}
+.signup-desc {
+    font-size: 1.1rem;
+    color: #444;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    font-family: 'Poppins', sans-serif;
+    transition: color 0.3s;
+}
+body.dark-mode .signup-desc {
+    color: #b3b3c6;
+}
+.signup-card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+    padding: 2.5rem 2.2rem 2.2rem 2.2rem;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+body.dark-mode .signup-card {
+    background: var(--card-bg, #232336) !important;
+    box-shadow: 0 4px 32px rgba(99,102,241,0.13) !important;
+}
+.form-control {
+    border-radius: 10px;
+    border: 1.5px solid #e0e0e0;
+    padding: 0.7rem 1rem;
+    font-size: 1.08rem;
+    margin-bottom: 0.5rem;
+    background: #fff;
+    color: #18181a;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+body.dark-mode .form-control {
+    background: #232336 !important;
+    color: #e2e8f0 !important;
+    border-color: #6366f1 !important;
+}
+.form-control::placeholder {
+    color: #888;
+    opacity: 1;
+}
+body.dark-mode .form-control::placeholder {
+    color: #b3b3c6;
+    opacity: 1;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+body.dark-mode .btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+}
+@@media (max-width: 900px) {
+    .signup-main-container {
+        flex-direction: column;
+    }
+    .signup-left {
+        width: 100%;
+        min-width: 0;
+        padding: 0 10px;
+    }
+    .signup-header { margin-top: 18px; margin-bottom: 12px; }
+    .signup-title-big { font-size: 1.5rem; }
+    .signup-logo-img { width: 40px; height: 40px; }
+    .signup-card { padding: 1.5rem 1rem; }
+}
+@@media (max-width: 600px) {
+    .signup-header { margin-top: 10px; margin-bottom: 8px; }
+    .signup-title-big { font-size: 1.1rem; }
+    .signup-card { padding: 1rem 0.5rem; }
+}
+</style>
 
 
 
     <body>
-        <div class="signup-wrapper">
-            <div class="signup-card">
-                <h2 class="signup-title">Sign Up</h2>               
-                <form asp-controller="Account" asp-action="Signup" method="post">
-                    <div asp-validation-summary="All" class="text-danger"></div>
-                    <input type="hidden" asp-for="RoleId" value="3" />
+        <div class="signup-main-container">
+            <div class="signup-left">
+                <div class="signup-header">
+                    <img class="signup-logo-img" src="https://png.pngtree.com/png-clipart/20240701/original/pngtree-judging-cat-meme-sticker-illustration-png-image_15457509.png" alt="Logo" />
+                    <div class="signup-title-big">Create your account</div>
+                    <div class="signup-desc">Join us for a cinematic experience crafted for you.</div>
+                </div>
+                <div class="signup-card">
+                    <h2 class="signup-title">Sign Up</h2>
+                    <form asp-controller="Account" asp-action="Signup" method="post">
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                        <input type="hidden" asp-for="RoleId" value="3" />
 
-                    <div class="form-group">
-                        <input type="text" class="form-control" asp-for="Username" placeholder="Username" />
-                        <span asp-validation-for="Username" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="password" class="form-control" asp-for="Password" placeholder="Password" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="password" class="form-control" asp-for="ConfirmPassword" placeholder="Confirm Password" />
-                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="text" class="form-control" asp-for="FullName" placeholder="Full Name" />
-                        <span asp-validation-for="FullName" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="date" class="form-control" asp-for="DateOfBirth" />
-                        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group gender-group">
-                        <label class="radio-label">
-                            <input type="radio" asp-for="Gender" value="male" /> Male
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" asp-for="Gender" value="female" /> Female
-                        </label>
-                        <span asp-validation-for="Gender" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="text" class="form-control" asp-for="IdentityCard" placeholder="Identity Card" />
-                        <span asp-validation-for="IdentityCard" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="email" class="form-control" asp-for="Email" placeholder="Email" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="text" class="form-control" asp-for="Address" placeholder="Address" />
-                        <span asp-validation-for="Address" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="tel" class="form-control" asp-for="PhoneNumber" placeholder="Phone Number" />
-                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 mt-3">Sign Up</button>
-                    <p class="mt-3 text-center">
-                        Already have an account? <a asp-controller="Account" asp-action="Login">Login</a>
-                    </p>
-                </form>
-            </div>
-        </div>
-        @if (TempData["ToastMessage"] != null)
-        {
-            <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-                <div class="toast show align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            @TempData["ToastMessage"]
+                        <div class="form-group">
+                            <strong>Username</strong>
+                            <input type="text" class="form-control" asp-for="Username" placeholder="Username" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
                         </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
+
+                        <div class="form-group">
+                            <strong>Password</strong>
+                            <input type="password" class="form-control" asp-for="Password" placeholder="Password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Confirm Password</strong>
+                            <input type="password" class="form-control" asp-for="ConfirmPassword" placeholder="Confirm Password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Full Name</strong>
+                            <input type="text" class="form-control" asp-for="FullName" placeholder="Full Name" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Date of Birth</strong>
+                            <input type="date" class="form-control" asp-for="DateOfBirth" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group gender-group">
+                            <strong>Gender</strong>
+                            <label class="radio-label">
+                                <input type="radio" asp-for="Gender" value="male" /> Male
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" asp-for="Gender" value="female" /> Female
+                            </label>
+                            <span asp-validation-for="Gender" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Identity Number</strong>
+                            <input type="text" class="form-control" asp-for="IdentityCard" placeholder="Identity Number" />
+                            <span asp-validation-for="IdentityCard" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Email</strong>
+                            <input type="email" class="form-control" asp-for="Email" placeholder="Email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Address</strong>
+                            <input type="text" class="form-control" asp-for="Address" placeholder="Address" />
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <strong>Phone Number</strong>
+                            <input type="tel" class="form-control" asp-for="PhoneNumber" placeholder="Phone Number" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Sign Up</button>
+                        <p class="mt-3 text-center">
+                            Already have an account? <a asp-controller="Account" asp-action="Login">Login</a>
+                        </p>
+                    </form>
                 </div>
             </div>
-        
-        <script>
-            setTimeout(function () {
-                window.location.href = '@Url.Action("Login", "Account")';
-            }, 3000);
-        </script>
-        }
+        </div>
+
+    @if (TempData["ToastMessage"] != null) 
+    {
+    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+        <div class="toast show align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    @TempData["ToastMessage"]
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        setTimeout(function () {
+            window.location.href = '@Url.Action("Login", "Account")';
+        }, 3000);
+    </script>
+    }
+
+    <partial name="_ToastMessages" />
+
     </body>
 

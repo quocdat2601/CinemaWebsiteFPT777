@@ -33,6 +33,7 @@ namespace MovieTheater.ViewModels
 
         [Required(ErrorMessage = "Identity card is required")]
         [StringLength(20, ErrorMessage = "Identity card cannot be longer than 20 characters")]
+        [RegularExpression(@"^\d*$", ErrorMessage = "Identity card must contain digits only")]
         public string? IdentityCard { get; set; }
 
         [Required(ErrorMessage = "Email is required")]

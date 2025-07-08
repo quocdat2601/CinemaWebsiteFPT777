@@ -24,7 +24,7 @@ namespace MovieTheater.Repository
                 .ToListAsync();
         }
 
-        public Seat? GetById(int id)
+        public Seat? GetById(int? id)
         {
             return _context.Seats.FirstOrDefault(s => s.SeatId == id);
         }
@@ -52,6 +52,18 @@ namespace MovieTheater.Repository
         {
             _context.SaveChanges();
         }
-    }
 
+
+
+        public async Task<List<SeatType>> GetSeatTypesAsync()
+        {
+            return await _context.SeatTypes.ToListAsync();
+        }
+
+        public Seat GetSeatByName(string seatName)
+        {
+            return _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
+        }
+
+    }
 }

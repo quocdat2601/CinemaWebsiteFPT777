@@ -6,8 +6,8 @@
 }
 
     table.table td {
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
         vertical-align: middle;
         font-weight: 600;
         cursor: pointer;
@@ -16,6 +16,12 @@
         text-align: center;
         user-select: none;
         transition: background-color 0.2s ease;
+        position: relative;
+        font-size: 16px;
+        line-height: 1.2;
+        padding: 4px;
+        word-wrap: break-word;
+        overflow: hidden;
     }
 
         table.table td:hover {
@@ -28,10 +34,266 @@
             cursor: default;
         }
 
+        /* Style for seat name text */
+        table.table td .material-icons {
+            font-size: 16px;
+            display: block;
+            line-height: 1;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+        }
+
+        /* Tooltip for seat names */
+        table.table td::after {
+            content: attr(data-seat-name);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 400;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            pointer-events: none;
+        }
+
+        table.table td:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* For longer seat names, use smaller font */
+        table.table td[data-seat-name*="10"] .material-icons,
+        table.table td[data-seat-name*="11"] .material-icons,
+        table.table td[data-seat-name*="12"] .material-icons {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* For very long seat names, use even smaller font */
+        table.table td[data-seat-name*="13"] .material-icons,
+        table.table td[data-seat-name*="14"] .material-icons,
+        table.table td[data-seat-name*="15"] .material-icons {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+table.table td[data-seat-type="Disabled"] {
+    cursor: default !important;
+    background-color: #6c757d !important;
+    border: 2px solid #495057 !important;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* View page specific - disabled seats with no background */
+.seat-view-page table.table td[data-seat-type="Disabled"] {
+    background-color: transparent !important;
+    border: none !important;
+    opacity: 1;
+}
+
+/* Edit page specific - disabled seats can be clicked */
+.seat-edit-page table.table td[data-seat-type="Disabled"] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 0.6;
+}
+
+table.table td[data-seat-type="Disabled"]:hover {
+    background-color: #6c757d !important;
+    border: 2px solid #495057 !important;
+    opacity: 0.6;
+}
+
+/* View page specific - disabled seats hover with no background */
+.seat-view-page table.table td[data-seat-type="Disabled"]:hover {
+    background-color: transparent !important;
+    border: none !important;
+    opacity: 1;
+}
+
+/* Edit page specific - disabled seats hover can be clicked */
+.seat-edit-page table.table td[data-seat-type="Disabled"]:hover {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 0.6;
+}
+
+/* 
 .selected-seat-type {
     background-color: #c3e6cb !important;
     border-color: #19692c !important;
     box-shadow: 0 0 0 2px white inset;
+} */
+
+.selected-seat {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+}
+
+/* Edit page specific - selected disabled seats show selection color */
+.seat-edit-page .disabled-seat.selected-seat {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+    opacity: 1;
+}
+
+/* Edit page specific - selected disabled seats with data-seat-type show selection color */
+.seat-edit-page table.table td[data-seat-type="Disabled"].selected-seat {
+    background-color: #c3e6cb !important;
+    border-color: #19692c !important;
+    box-shadow: 0 0 0 2px white inset;
+    opacity: 1;
+}
+
+.booked-seat {
+    background-color: #2baf4a !important;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.disabled-seat {
+    background-color: #6c757d !important;
+    border: 2px solid #495057 !important;
+    pointer-events: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Edit page specific - disabled seats can be clicked */
+.seat-edit-page .disabled-seat {
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+/* View page specific - disabled-seat class with no background */
+.seat-view-page .disabled-seat {
+    background-color: transparent !important;
+    border: none !important;
+    opacity: 1;
+}
+
+.booked-seat:hover {
+    background-color: #2baf4a !important;
+}
+
+/* Responsive design for different screen sizes */
+@media (max-width: 768px) {
+    table.table td {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+        padding: 2px;
+    }
+    
+    table.table td .material-icons {
+        font-size: 20px;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 500;
+    }
+    
+    table.table td[data-seat-name*="10"] .material-icons,
+    table.table td[data-seat-name*="11"] .material-icons,
+    table.table td[data-seat-name*="12"] .material-icons {
+        font-size: 20px;
+        font-weight: 400;
+    }
+    
+    table.table td[data-seat-name*="13"] .material-icons,
+    table.table td[data-seat-name*="14"] .material-icons,
+    table.table td[data-seat-name*="15"] .material-icons {
+        font-size: 20px;
+        font-weight: 400;
+    }
+    
+    .screen-label {
+        width: 90%;
+        max-width: 500px;
+    }
+}
+
+@media (max-width: 576px) {
+    table.table td {
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+        padding: 1px;
+    }
+    
+    table.table td .material-icons {
+        font-size: 16px;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 500;
+    }
+    
+    table.table td[data-seat-name*="10"] .material-icons,
+    table.table td[data-seat-name*="11"] .material-icons,
+    table.table td[data-seat-name*="12"] .material-icons {
+        font-size: 16px;
+        font-weight: 400;
+    }
+    
+    table.table td[data-seat-name*="13"] .material-icons,
+    table.table td[data-seat-name*="14"] .material-icons,
+    table.table td[data-seat-name*="15"] .material-icons {
+        font-size: 16px;
+        font-weight: 400;
+    }
+}
+
+/* Ensure seat container is responsive */
+.seat-container {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.seat-layout-bordered-area {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+/* Special handling for couple seats */
+table.table td[data-couple-seat="true"] {
+    background-color: #ffeb3b;
+    border-color: #f57f17;
+}
+
+table.table td[data-couple-seat="true"]:hover {
+    background-color: #fff59d;
+    border-color: #f57f17;
+}
+
+/* Ensure disabled seats don't show tooltips */
+table.table td.disabled-seat::after,
+table.table td[data-seat-type="Disabled"]::after {
+    display: none;
+}
+
+/* Ensure booked seats don't show tooltips */
+table.table td.booked-seat::after {
+    display: none;
+}
+
+/* Better spacing for seat type options */
+.seat-type-option {
+    min-width: 80px;
+    transition: transform 0.2s ease;
+}
+
+.seat-type-option:hover {
+    transform: scale(1.05);
 }
 
 body {
@@ -44,11 +306,130 @@ body {
 
 .screen-label {
     border-top: 3px solid #8B0000;
-    width: 600px;
+    width: 700px;
     margin: 0 auto 20px auto;
     font-weight: bold;
     color: #8B0000;
     padding-top: 10px;
     letter-spacing: 4px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.seat-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.screen-label {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.seat-layout-bordered-area {
+    flex-grow: 1;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    margin-right: 32px;
+    background: #fff;
+    padding: 32px 0 32px 0;
+    box-sizing: border-box;
+}
+
+.seat-container table {
+    margin: 0 auto;
+}
+
+.seat-container td {
+    padding: 10px 12px !important;
+}
+
+.material-icons {
+    font-size: 2.1rem !important;
+}
+
+#selectionSummary {
+    width: 320px;
+    min-width: 220px;
+    max-width: 350px;
+    padding: 0;
+    margin-left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border-radius: 18px;
+    background: #fff;
+    align-self: center;
+}
+
+.summary-block {
+    width: 100%;
+    padding: 18px 24px 12px 24px;
+    border-bottom: 1px solid #e6e6e6;
+    border-radius: 18px 18px 0 0;
+    background: #f6fcfa;
+}
+
+.summary-info {
+    width: 100%;
+    padding: 12px 24px 8px 24px;
+    border-bottom: 1px solid #e6e6e6;
+    background: #fff;
+}
+
+.summary-movie {
+    font-weight: bold;
+    font-size: 1.15rem;
+    color: #1a3e72;
+    margin-bottom: 8px;
+}
+
+.summary-seat {
+    width: 100%;
+    padding: 12px 24px 18px 24px;
+    background: #fff;
+    border-radius: 0 0 18px 18px;
+    text-align: left;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: #555;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #1a3e72;
+}
+
+.summary-alert {
+    color: #d32f2f;
+    background: #fff0f0;
+    border: 1px solid #f5c2c7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 10px 0 0 0;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.selected-seat {
+    outline: 3px solid #ffc107 !important;
+    border-radius: 5px;
+}
+
+.being-held {
+    background-color: #f3c623 !important;
+    cursor: not-allowed;
+}
+
+.seat-edit-page table.table td .material-icons {
+    font-size: 24px;
+}
+
+.seat-view-page table.table td .material-icons {
+    font-size: 24px;
 }

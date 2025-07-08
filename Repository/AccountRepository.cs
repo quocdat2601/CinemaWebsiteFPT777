@@ -50,7 +50,10 @@ namespace MovieTheater.Repository
         }
         public Account? GetById(string id)
         {
-            return _context.Accounts.FirstOrDefault(a => a.AccountId == id);
+            return _context.Accounts
+                .Include(a => a.Members)
+                .Include(a => a.Rank)
+                .FirstOrDefault(a => a.AccountId == id);
         }
 
         public Account? GetByUsername(string username)
@@ -69,7 +72,7 @@ namespace MovieTheater.Repository
         public void Update(Account account)
         {
             var existing = _context.Accounts.FirstOrDefault(a => a.AccountId == account.AccountId);
-            if (existing == null) return; 
+            if (existing == null) return;
             existing.Address = account.Address;
             existing.DateOfBirth = account.DateOfBirth;
             existing.Email = account.Email;
@@ -90,10 +93,29 @@ namespace MovieTheater.Repository
         {
             return _context.Accounts.ToList();
         }
-        public Account? Authenticate(string username, string password)
+        public Account? Authenticate(string username)
         {
             return _context.Accounts
-                .FirstOrDefault(a => a.Username == username && a.Password == password);
+                .FirstOrDefault(a => a.Username == username);
+        }
+
+        //DEDUCT SCORE AFTER USE SCORE
+        public async Task DeductScoreAsync(string accountId, int scoreToDeduct)
+        {
+            var account = await _context.Accounts
+                .Include(a => a.Members)
+                .FirstOrDefaultAsync(a => a.AccountId == accountId);
+
+            if (account == null) return;
+
+            // Nếu có nhiều Member, lấy member chính hoặc member đầu tiên
+            var member = account.Members.FirstOrDefault();
+
+            if (member != null && member.Score >= scoreToDeduct)
+            {
+                member.Score -= scoreToDeduct;
+                await _context.SaveChangesAsync();
+            }
         }
 
     }

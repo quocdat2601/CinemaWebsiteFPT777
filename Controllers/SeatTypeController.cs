@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 
@@ -14,25 +12,37 @@ namespace MovieTheater.Controllers
         {
             _seatTypeService = seatTypeService;
         }
-        // GET: SeatTypeController
+        /// <summary>
+        /// Trang danh sách loại ghế
+        /// </summary>
+        /// <remarks>url: /SeatType/Index (GET)</remarks>
         public ActionResult Index()
         {
             return View();
         }
 
-        // GET: SeatTypeController/Details/5
+        /// <summary>
+        /// Xem chi tiết loại ghế
+        /// </summary>
+        /// <remarks>url: /SeatType/Details (GET)</remarks>
         public ActionResult Details(int id)
         {
             return View();
         }
 
-        // GET: SeatTypeController/Create
+        /// <summary>
+        /// Trang tạo loại ghế mới
+        /// </summary>
+        /// <remarks>url: /SeatType/Create (GET)</remarks>
         public ActionResult Create()
         {
             return View();
         }
 
-        // POST: SeatTypeController/Create
+        /// <summary>
+        /// Tạo loại ghế mới
+        /// </summary>
+        /// <remarks>url: /SeatType/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create(IFormCollection collection)
@@ -53,7 +63,10 @@ namespace MovieTheater.Controllers
         //    return View();
         //}
 
-        // POST: SeatTypeController/Edit/5
+        /// <summary>
+        /// Sửa loại ghế
+        /// </summary>
+        /// <remarks>url: /SeatType/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit([FromForm] List<SeatType> seatTypes)
@@ -86,13 +99,19 @@ namespace MovieTheater.Controllers
             }
         }
 
-        // GET: SeatTypeController/Delete/5
+        /// <summary>
+        /// Trang xóa loại ghế
+        /// </summary>
+        /// <remarks>url: /SeatType/Delete (GET)</remarks>
         public ActionResult Delete(int id)
         {
             return View();
         }
 
-        // POST: SeatTypeController/Delete/5
+        /// <summary>
+        /// Xóa loại ghế
+        /// </summary>
+        /// <remarks>url: /SeatType/Delete (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, IFormCollection collection)

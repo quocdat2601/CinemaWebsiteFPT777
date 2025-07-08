@@ -1,0 +1,95 @@
+@model MovieTheater.ViewModels.PaymentViewModel
+
+@{
+    ViewData["Title"] = "Payment";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Payment Information</h3>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger">
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Invoice ID:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.InvoiceId
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Movie:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.MovieName
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Show Date:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.ShowDate.ToString("dd/MM/yyyy")
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Show Time:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.ShowTime
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Seats:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.Seats
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Total Amount:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.TotalAmount.ToString("N0") VND
+                        </div>
+                    </div>
+
+                    <form asp-action="ProcessPayment" method="post">
+                        <input type="hidden" asp-for="InvoiceId" />
+                        <input type="hidden" asp-for="MovieName" />
+                        <input type="hidden" asp-for="ShowDate" />
+                        <input type="hidden" asp-for="ShowTime" />
+                        <input type="hidden" asp-for="Seats" />
+                        <input type="hidden" asp-for="TotalAmount" />
+                        <input type="hidden" asp-for="OrderInfo" />
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Pay with VNPAY
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

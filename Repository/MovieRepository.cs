@@ -1,16 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Repository
 {
     public class MovieRepository : IMovieRepository
     {
         private readonly MovieTheaterContext _context;
-        public MovieRepository(MovieTheaterContext context)
+        private readonly ILogger<MovieRepository> _logger;
+
+        public MovieRepository(MovieTheaterContext context, ILogger<MovieRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public string GenerateMovieId()
@@ -29,7 +30,6 @@ namespace MovieTheater.Repository
                 return $"MV{(number + 1):D3}";
             }
 
-
             return $"MV{DateTime.Now:yyyyMMddHHmmss}";
         }
 
@@ -40,59 +40,147 @@ namespace MovieTheater.Repository
                 .OrderBy(comparer => comparer.MovieId)
                 .ToList();
         }
-       
+
         public Movie? GetById(string id)
         {
             return _context.Movies
-                .Include(m => m.Schedules)
-                .Include(m => m.ShowDates)
                 .Include(m => m.Types)
+                .Include(m => m.Versions)
+                .Include(m => m.MovieShows)
+                    .ThenInclude(ms => ms.Schedule)
+                .Include(m => m.MovieShows)
+                    .ThenInclude(ms => ms.Version)
                 .FirstOrDefault(m => m.MovieId == id);
         }
 
-
-        public void Add(Movie movie)
+        public bool Add(Movie movie)
         {
-            if (string.IsNullOrEmpty(movie.MovieId))
+            try
             {
-                movie.MovieId = GenerateMovieId();
+                if (string.IsNullOrEmpty(movie.MovieId))
+                {
+                    movie.MovieId = GenerateMovieId();
+                }
+                
+                _context.Movies.Add(movie);
+                _context.SaveChanges();
+                return true;
             }
-            _context.Movies.Add(movie);
-        }
-
-        public void Update(Movie movie)
-        {
-            var existingMovie = _context.Movies.FirstOrDefault(m => m.MovieId == movie.MovieId);
-            if (existingMovie != null)
+            catch (Exception ex)
             {
-                existingMovie.MovieNameEnglish = movie.MovieNameEnglish;
-                existingMovie.Duration = movie.Duration;
-                existingMovie.Types = movie.Types; 
-
+                _logger.LogError(ex, "Error adding movie: {MovieId}", movie.MovieId);
+                return false;
             }
         }
+
+        public bool Update(Movie movie)
+        {
+            try
+            {
+                var existingMovie = _context.Movies
+                    .Include(m => m.Types)
+                    .Include(m => m.Versions)
+                    .FirstOrDefault(m => m.MovieId == movie.MovieId);
+
+                if (existingMovie != null)
+                {
+                    existingMovie.MovieNameEnglish = movie.MovieNameEnglish;
+                    existingMovie.MovieNameVn = movie.MovieNameVn;
+                    existingMovie.Actor = movie.Actor;
+                    existingMovie.Director = movie.Director;
+                    existingMovie.Duration = movie.Duration;
+                    existingMovie.FromDate = movie.FromDate;
+                    existingMovie.ToDate = movie.ToDate;
+                    existingMovie.MovieProductionCompany = movie.MovieProductionCompany;
+                    existingMovie.Content = movie.Content;
+                    existingMovie.TrailerUrl = movie.TrailerUrl;
+                    existingMovie.LargeImage = movie.LargeImage;
+                    existingMovie.SmallImage = movie.SmallImage;
+
+                    // Clear existing types
+                    existingMovie.Types.Clear();
+
+                    // Add new types
+                    foreach (var type in movie.Types)
+                    {
+                        var existingType = _context.Types.Find(type.TypeId);
+                        if (existingType != null)
+                        {
+                            existingMovie.Types.Add(existingType);
+                        }
+                    }
+
+                    existingMovie.Versions.Clear();
+                    foreach (var version in movie.Versions)
+                    {
+                        var existingVersion = _context.Versions.Find(version.VersionId);
+                        if (existingVersion != null)
+                        {
+                            existingMovie.Versions.Add(existingVersion);
+                        }
+                    }
+
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating movie: {MovieId}", movie.MovieId);
+                return false;
+            }
+        }
+
         public void Delete(string id)
         {
             var movie = _context.Movies
-                .Include(m => m.Schedules)
                 .Include(m => m.Types)
-                .Include(m => m.ShowDates)
+                .Include(m => m.MovieShows)
                 .FirstOrDefault(m => m.MovieId == id);
-                
+
             if (movie != null)
             {
-                // Clear all relationships
-                movie.Schedules?.Clear();
-                movie.Types?.Clear();
-                movie.ShowDates?.Clear();
+                // Remove all related movie shows
+                if (movie.MovieShows != null)
+                {
+                    _context.MovieShows.RemoveRange(movie.MovieShows);
+                }
+
+                // Remove all related types
+                if (movie.Types != null)
+                {
+                    _context.Types.RemoveRange(movie.Types);
+                }
+
+                if (movie.Versions != null)
+                {
+                    _context.Versions.RemoveRange(movie.Versions);
+                }
                 
-                // Remove the movie
                 _context.Movies.Remove(movie);
-                
-                // Save changes immediately
-                _context.SaveChanges();
+
+                try
+                {
+                    _context.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deleting movie: {MovieId}", id);
+                    throw;
+                }
             }
         }
+
+        public void DeleteMovieShow(int movieShowId)
+        {
+            var movieShow = _context.MovieShows.Find(movieShowId);
+            if (movieShow != null)
+            {
+                _context.MovieShows.Remove(movieShow);
+            }
+        }
+
         public void Save()
         {
             _context.SaveChanges();
@@ -103,28 +191,263 @@ namespace MovieTheater.Repository
             return await _context.Schedules.ToListAsync();
         }
 
-        public async Task<List<ShowDate>> GetShowDatesAsync()
-        {
-            return await _context.ShowDates.ToListAsync();
-        }
-
         public async Task<List<Models.Type>> GetTypesAsync()
         {
             return await _context.Types.ToListAsync();
         }
+
         public List<Schedule> GetSchedulesByIds(List<int> ids)
         {
             return _context.Schedules.Where(s => ids.Contains(s.ScheduleId)).ToList();
         }
 
-        public List<ShowDate> GetShowDatesByIds(List<int> ids)
-        {
-            return _context.ShowDates.Where(d => ids.Contains(d.ShowDateId)).ToList();
-        }
-
         public List<Models.Type> GetTypesByIds(List<int> ids)
         {
             return _context.Types.Where(t => ids.Contains(t.TypeId)).ToList();
+        }
+
+        public async Task<List<Movie>> GetAllMoviesAsync()
+        {
+            // Only return movies that have at least one MovieShow
+            return await _context.Movies
+                .Where(m => m.MovieShows.Any())
+                .GroupBy(m => m.MovieId)
+                .Select(g => g.First())
+                .ToListAsync();
+        }
+
+        public async Task<List<DateOnly>> GetShowDatesAsync(string movieId)
+        {
+            var dates = await _context.MovieShows
+                .Where(ms => ms.MovieId == movieId)
+                .Select(ms => ms.ShowDate)
+                .Distinct()
+                .ToListAsync();
+
+            return dates;
+        }
+
+        public async Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
+        {
+            var dateOnly = DateOnly.FromDateTime(date);
+            
+            var showTimes = await _context.MovieShows
+                .Include(ms => ms.Schedule)
+                .Where(ms => ms.MovieId == movieId && 
+                       ms.ShowDate == dateOnly &&
+                       ms.Schedule != null &&
+                       ms.Schedule.ScheduleTime.HasValue)
+                .Select(ms => ms.Schedule.ScheduleTime.Value)
+                .Distinct()
+                .OrderBy(t => t)
+                .Select(t => t.ToString("HH:mm"))
+                .ToListAsync();
+
+            return showTimes;
+        }
+
+        public void AddMovieShow(MovieShow movieShow)
+        {
+            try
+            {
+                _context.MovieShows.Add(movieShow);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding movie show: {MovieShowId}", movieShow.MovieShowId);
+                throw;
+            }
+        }
+
+        public void AddMovieShows(List<MovieShow> movieShows)
+        {
+            try
+            {
+                _context.MovieShows.AddRange(movieShows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding movie shows");
+                throw;
+            }
+        }
+
+        public MovieShow? GetMovieShowById(int id)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .FirstOrDefault(ms => ms.MovieShowId == id);
+        }
+
+        public List<MovieShow> GetMovieShowsByMovieId(string movieId)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .Where(ms => ms.MovieId == movieId)
+                .OrderBy(ms => ms.ShowDate)
+                .ThenBy(ms => ms.Schedule.ScheduleTime)
+                .ToList();
+        }
+
+        public bool IsScheduleAvailable(DateOnly showDate, int scheduleId, int cinemaRoomId, int movieDuration)
+        {
+            const int CLEANING_TIME_MINUTES = 15;
+
+            var scheduleToAdd = _context.Schedules.Find(scheduleId);
+            if (scheduleToAdd == null || !scheduleToAdd.ScheduleTime.HasValue)
+            {
+                return false; 
+            }
+            var scheduleTimeToAdd = scheduleToAdd.ScheduleTime.Value;
+
+            var existingShowsInRoom = _context.MovieShows
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.Movie) // Need this for duration
+                .Where(ms => ms.ShowDate == showDate && ms.CinemaRoomId == cinemaRoomId)
+                .ToList();
+
+            var proposedStartTime = scheduleTimeToAdd;
+            var proposedEndTime = proposedStartTime.AddMinutes(movieDuration + CLEANING_TIME_MINUTES);
+
+            foreach (var existingShow in existingShowsInRoom)
+            {
+                if (existingShow.Schedule?.ScheduleTime == null || existingShow.Movie?.Duration == null)
+                {
+                    continue; // Skip invalid records
+                }
+
+                var existingShowStartTime = existingShow.Schedule.ScheduleTime.Value;
+                var existingShowEndTime = existingShowStartTime.AddMinutes((existingShow.Movie.Duration.Value) + CLEANING_TIME_MINUTES);
+
+                // Check for overlap:
+                // A new show is not available if it starts before an existing one ends
+                // AND it ends after that existing one starts.
+                if (proposedStartTime < existingShowEndTime && proposedEndTime > existingShowStartTime)
+                {
+                    return false; // Conflict found
+                }
+            }
+
+            return true; // No conflicts
+        }
+
+        public List<CinemaRoom> GetAllCinemaRooms()
+        {
+            return _context.CinemaRooms.ToList();
+        }
+
+        public List<Schedule> GetSchedules()
+        {
+            return _context.Schedules.ToList();
+        }
+
+        public List<Models.Type> GetTypes()
+        {
+            return _context.Types.ToList();
+        }
+        public List<MovieShow> GetMovieShow()
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .ToList();
+        }
+
+        public List<DateOnly> GetShowDates(string movieId)
+        {
+            return _context.MovieShows
+                .Where(ms => ms.MovieId == movieId)
+                .Select(ms => ms.ShowDate)
+                .Distinct()
+                .ToList();
+        }
+
+        public List<string> GetShowTimes(string movieId, DateTime date)
+        {
+            var dateOnly = DateOnly.FromDateTime(date);
+
+            return _context.MovieShows
+                .Include(ms => ms.Schedule)
+                .Where(ms => ms.MovieId == movieId && 
+                       ms.ShowDate == dateOnly &&
+                       ms.Schedule != null &&
+                        ms.Schedule.ScheduleTime.HasValue)
+                .Select(ms => ms.Schedule.ScheduleTime.Value)
+                .Distinct()
+                .OrderBy(t => t)
+                .Select(t => t.ToString("HH:mm"))
+                .ToList();
+        }
+
+        public async Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId)
+        {
+            // Get all schedules
+            var allSchedules = await _context.Schedules.OrderBy(s => s.ScheduleTime).ToListAsync();
+
+            // Get booked schedules for this room and date
+            var bookedScheduleIds = await _context.MovieShows
+                .Where(ms => ms.ShowDate == showDate && ms.CinemaRoomId == cinemaRoomId)
+                .Select(ms => ms.ScheduleId)
+                .ToListAsync();
+
+            // Return schedules that are not booked
+            return allSchedules
+                .Where(s => !bookedScheduleIds.Contains(s.ScheduleId))
+                .ToList();
+        }
+
+        public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate == showDate)
+                .OrderBy(ms => ms.Schedule.ScheduleTime)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets a summary of unique movie names for each date in a given month.
+        /// </summary>
+        /// <param name="year">The year of the month to query.</param>
+        /// <param name="month">The month to query (1-12).</param>
+        /// <returns>A dictionary where the key is the date and the value is a list of unique movie names for that date.</returns>
+        public Dictionary<DateOnly, List<string>> GetMovieShowSummaryByMonth(int year, int month)
+        {
+            var startDate = new DateOnly(year, month, 1);
+            var endDate = startDate.AddMonths(1);
+
+            // Query only the relevant movie shows in the month
+            var query = _context.MovieShows
+                .Where(ms => ms.ShowDate >= startDate && ms.ShowDate < endDate)
+                .Select(ms => new { ms.ShowDate, ms.Movie.MovieNameEnglish })
+                .AsEnumerable() // Grouping in-memory for EF Core limitations with DateOnly
+                .GroupBy(x => x.ShowDate)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.MovieNameEnglish?.Trim()).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList()
+                );
+
+            return query;
+        }
+
+        public List<Models.Version> GetAllVersions()
+        {
+            return _context.Versions.ToList();
+        }
+
+        public Models.Version? GetVersionById(int versionId)
+        {
+            return _context.Versions.FirstOrDefault(v => v.VersionId == versionId);
         }
     }
 }
