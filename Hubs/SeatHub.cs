@@ -27,29 +27,29 @@ namespace MovieTheater.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, movieShowId.ToString());
 
+            var accountId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var heldByMe = new List<int>();
+            var heldByOthers = new List<int>();
+
             if (_heldSeats.TryGetValue(movieShowId, out var seatsForShow))
             {
                 var now = DateTime.UtcNow;
-                var heldSeatIds = new List<int>();
                 foreach (var kv in seatsForShow)
                 {
-                    var seat = _context.Seats.FirstOrDefault(s => s.SeatId == kv.Key);
-                    if (seat != null && (now - kv.Value.HoldTime).TotalMinutes <= HoldMinutes)
+                    if ((now - kv.Value.HoldTime).TotalMinutes <= HoldMinutes)
                     {
-                        heldSeatIds.Add(kv.Key);
+                        if (kv.Value.AccountId == accountId)
+                            heldByMe.Add(kv.Key);
+                        else
+                            heldByOthers.Add(kv.Key);
                     }
                     else
                     {
-                        // Nếu hết thời gian hold, xóa khỏi hold
                         seatsForShow.TryRemove(kv.Key, out _);
                     }
                 }
-                await Clients.Caller.SendAsync("HeldSeats", heldSeatIds);
             }
-            else
-            {
-                await Clients.Caller.SendAsync("HeldSeats", new List<int>());
-            }
+            await Clients.Caller.SendAsync("HeldSeats", heldByMe, heldByOthers);
         }
 
         public async Task SelectSeat(int movieShowId, int seatId)
