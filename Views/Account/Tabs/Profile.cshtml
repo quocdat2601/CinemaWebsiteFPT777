@@ -44,11 +44,11 @@
                     </div>
                     <div style="font-size:1.1rem; margin-top:0.3rem; display: flex; gap: 2rem; align-items: center;">
                         <span>
-                            Current Points: <b>@rank.CurrentScore</b>
+                            Current Points: <b>@(rank.CurrentScore.ToString("N0"))</b>
                         </span>
                         <span style="opacity: 0.8;">|</span>
                         <span>
-                            Total Points: <b>@rank.TotalPoints</b>
+                            Total Points: <b>@(rank.TotalPoints.ToString("N0"))</b>
                         </span>
                     </div>
                     @if (isMaxRank)
@@ -79,7 +79,7 @@
                         </div>
                         <div class="next-rank-row mt-0" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
                             <span class="next-rank-info" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
-                                Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed
+                                Next: <b>@rank.NextRankName</b> &mdash; <b>@((profileNextRankPoints - rank.TotalPoints).ToString("N0"))</b> points needed
                             </span>
 
                             <button type="button" class="btn view-details-btn"
@@ -249,8 +249,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="rank-points">
-                                                    <span>@prevRankPoints.ToString("N0") pts</span>
-                                                    <span>@targetRankPoints.ToString("N0") pts</span>
+                                                    <span>@(prevRankPoints.ToString("N0")) pts</span>
+                                                    <span>@(targetRankPoints.ToString("N0")) pts</span>
                                                 </div>
                                             </div>
 
@@ -280,7 +280,7 @@
 
                                             <div class="auto-upgrade">
                                                 <i class="fas fa-sync-alt"></i>
-                                                Auto-upgrade at @targetRankPoints.ToString("N0") pts
+                                                Auto-upgrade at @(targetRankPoints.ToString("N0")) pts
                                             </div>
                                         </div>
                                     </div>
