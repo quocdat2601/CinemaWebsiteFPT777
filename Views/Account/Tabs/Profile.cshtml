@@ -22,7 +22,7 @@
     <div class="signup-title">Profile</div>
     <div class="profile-container">
         <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm">
-            <div class="profile-banner" style="background: @bannerGradient">
+            <div id="profileBanner" class="profile-banner" style="background: @bannerGradient">
                 <div class="profile-avatar-wrapper" style="margin-bottom: 0.5rem;">
                     <label for="profileImageInput" style="cursor: pointer;">
                         <img id="profileImagePreview" class="profile-avatar"
@@ -306,32 +306,58 @@
     </div>
 </div>
 <script>
-    function initProfileAvatarUpload() {
-        const imageInput = document.getElementById('profileImageInput');
-        const imagePreview = document.getElementById('profileImagePreview');
-        const avatarBtns = document.getElementById('avatarBtns');
-        const cancelBtn = document.getElementById('cancelAvatarBtn');
-        const originalSrc = imagePreview ? imagePreview.src : '';
+function initProfileAvatarUpload() {
+    const imageInput = document.getElementById('profileImageInput');
+    const imagePreview = document.getElementById('profileImagePreview');
+    const avatarBtns = document.getElementById('avatarBtns');
+    const cancelBtn = document.getElementById('cancelAvatarBtn');
+    const originalSrc = imagePreview ? imagePreview.src : '';
 
-        if (!imageInput || !imagePreview || !avatarBtns || !cancelBtn) return;
+    if (!imageInput || !imagePreview || !avatarBtns || !cancelBtn) return;
 
-        imageInput.addEventListener('change', function(event) {
-            if (event.target.files && event.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    avatarBtns.classList.add('is-visible');
-                }
-                reader.readAsDataURL(event.target.files[0]);
+    imageInput.addEventListener('change', function(event) {
+        if (event.target.files && event.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                avatarBtns.classList.add('is-visible');
             }
-        });
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    });
 
-        cancelBtn.addEventListener('click', function() {
-            imagePreview.src = originalSrc;
-            imageInput.value = '';
-            avatarBtns.classList.remove('is-visible');
-        });
+    cancelBtn.addEventListener('click', function() {
+        imagePreview.src = originalSrc;
+        imageInput.value = '';
+        avatarBtns.classList.remove('is-visible');
+    });
+}
+
+function setProfileBannerTextColor() {
+    const banner = document.getElementById('profileBanner');
+    if (banner) {
+        const bg = window.getComputedStyle(banner).backgroundImage;
+        const match = bg.match(/rgba?\(([^)]+)\)/g);
+        if (match) {
+            let r=0,g=0,b=0;
+            match.forEach(c => {
+                const parts = c.match(/\d+/g).map(Number);
+                r += parts[0];
+                g += parts[1];
+                b += parts[2];
+            });
+            r = Math.round(r / match.length);
+            g = Math.round(g / match.length);
+            b = Math.round(b / match.length);
+            const yiq = ((r*299)+(g*587)+(b*114))/1000;
+            const textColor = yiq >= 128 ? 'black' : 'white';
+            banner.style.setProperty('color', textColor, 'important');
+            banner.querySelectorAll('*').forEach(el => el.style.setProperty('color', textColor, 'important'));
+        }
     }
-    @* document.addEventListener('DOMContentLoaded', initProfileAvatarUpload); *@
-      initProfileAvatarUpload();
+}
+
+// Call avatar upload on script load, but run text color on window load for reliability
+initProfileAvatarUpload();
+window.addEventListener('load', setProfileBannerTextColor);
 </script>
