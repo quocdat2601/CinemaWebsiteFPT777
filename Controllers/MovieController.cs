@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using MovieTheater.Repository;
 
 namespace MovieTheater.Controllers
-{
+{//movie
     public class MovieController : Controller
     {
         private readonly IMovieService _movieService;
