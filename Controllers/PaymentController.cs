@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Newtonsoft.Json;
 
 namespace MovieTheater.Controllers
 {
@@ -13,13 +14,15 @@ namespace MovieTheater.Controllers
         private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
         private readonly MovieTheater.Models.MovieTheaterContext _context;
+        private readonly IFoodInvoiceService _foodInvoiceService;
 
-        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context)
+        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context, IFoodInvoiceService foodInvoiceService)
         {
             _vnPayService = vnPayService;
             _logger = logger;
             _accountService = accountService;
             _context = context;
+            _foodInvoiceService = foodInvoiceService;
         }
 
         /// <summary>
@@ -61,7 +64,7 @@ namespace MovieTheater.Controllers
         [HttpGet("vnpay-return")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
-        public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
+        public async Task<IActionResult> VNPayReturn([FromQuery] VnPayReturnModel model)
         {
             int? movieShowId = null; // Khai báo duy nhất ở đây
             //var invoice = _context.Invoices
@@ -90,17 +93,26 @@ namespace MovieTheater.Controllers
                         decimal earningRate = 1;
                         if (member?.Account?.Rank != null)
                             earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
-                        int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(invoice.TotalMoney ?? 0, earningRate);
+                        
+                        // Calculate points based on seat price only (not including food)
+                        var selectedFoodsList = new List<FoodViewModel>();
+                        var foodsJson = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
+                        if (!string.IsNullOrEmpty(foodsJson))
+                        {
+                            try
+                            {
+                                selectedFoodsList = JsonConvert.DeserializeObject<List<FoodViewModel>>(foodsJson) ?? new List<FoodViewModel>();
+                            }
+                            catch
+                            {
+                                selectedFoodsList = new List<FoodViewModel>();
+                            }
+                        }
+                        
+                        decimal totalFoodPrice = selectedFoodsList.Sum(f => f.Price * f.Quantity);
+                        decimal seatOnlyPrice = (invoice.TotalMoney ?? 0) - totalFoodPrice;
+                        int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(seatOnlyPrice, earningRate);
                         invoice.AddScore = addScore;
-                        // Use the service to add and deduct score
-                        //if (addScore > 0)
-                        //{
-                        //    _accountService.AddScoreAsync(invoice.AccountId, addScore);
-                        //}
-                        //if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
-                        //{
-                        //    _accountService.DeductScoreAsync(invoice.AccountId, invoice.UseScore.Value);
-                        //}
                     }
                     // --- NEW: Mark voucher as used if present ---
                     //if (!string.IsNullOrEmpty(invoice.VoucherId))
@@ -129,7 +141,7 @@ namespace MovieTheater.Controllers
                         var seat = _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
                         if (seat != null && movieShowId.HasValue)
                         {
-                            var exist = _context.ScheduleSeats.FirstOrDefault(ss => ss.MovieShowId == movieShowId && ss.SeatId == seat.SeatId && ss.InvoiceId == invoice.InvoiceId);
+                            var exist = _context.ScheduleSeats.FirstOrDefault(ss => ss.MovieShowId == movieShowId.Value && ss.SeatId == seat.SeatId && ss.InvoiceId == invoice.InvoiceId);
                             if (exist == null)
                             {
                                 var scheduleSeat = new Models.ScheduleSeat
@@ -147,6 +159,25 @@ namespace MovieTheater.Controllers
                 }
 
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
+                
+                // --- Lưu food orders nếu có ---
+                var selectedFoods = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
+                if (!string.IsNullOrEmpty(selectedFoods))
+                {
+                    try
+                    {
+                        var foods = JsonConvert.DeserializeObject<List<FoodViewModel>>(selectedFoods);
+                        if (foods != null && foods.Any())
+                        {
+                            await _foodInvoiceService.SaveFoodOrderAsync(invoice.InvoiceId, foods);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error saving food orders for invoice {InvoiceId}", invoice.InvoiceId);
+                    }
+                }
+                
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieShow.Movie.MovieNameEnglish ?? "";
                 TempData["ShowDate"] = invoice?.MovieShow.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";

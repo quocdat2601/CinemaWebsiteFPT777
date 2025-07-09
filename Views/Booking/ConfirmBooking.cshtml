@@ -178,6 +178,20 @@
                 <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
             }
+            @* Thêm input hidden cho từng món food *@
+            @for (int i = 0; i < Model.SelectedFoods.Count; i++)
+            {
+                <input type="hidden" name="SelectedFoods[@i].FoodId" value="@Model.SelectedFoods[i].FoodId" />
+                <input type="hidden" name="SelectedFoods[@i].Name" value="@Model.SelectedFoods[i].Name" />
+                <input type="hidden" name="SelectedFoods[@i].Price" value="@Model.SelectedFoods[i].Price" />
+                <input type="hidden" name="SelectedFoods[@i].Quantity" value="@Model.SelectedFoods[i].Quantity" />
+                <input type="hidden" name="SelectedFoods[@i].Image" value="@Model.SelectedFoods[i].Image" />
+                <input type="hidden" name="SelectedFoods[@i].Description" value="@Model.SelectedFoods[i].Description" />
+                <input type="hidden" name="SelectedFoods[@i].Category" value="@Model.SelectedFoods[i].Category" />
+                <input type="hidden" name="SelectedFoods[@i].Status" value="@Model.SelectedFoods[i].Status" />
+                <input type="hidden" name="SelectedFoods[@i].CreatedDate" value="@Model.SelectedFoods[i].CreatedDate" />
+                <input type="hidden" name="SelectedFoods[@i].UpdatedDate" value="@Model.SelectedFoods[i].UpdatedDate" />
+            }
             <div class="text-center mt-4">
                 <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
                 <button type="button" class="btn btn-success ms-2" onclick="testSuccess()">Test Success</button>

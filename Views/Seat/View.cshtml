@@ -17,141 +17,149 @@
 }
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
-<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
-
-<div class="container mt-4 seat-view-page">
+<div class="container-fluid mt-4 seat-view-page">
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
 	</div>
 
-	<h2 class="text-center mb-4">SELECT SEATS</h2>
+	<div class="row">
+		<!-- MAIN CONTENT AREA -->
+		<div class="col-lg-8 col-md-12">
+			<h2 class="text-center mb-4">SELECT SEATS</h2>
 
-	<div class="seat-section">
-		<div class="flex-grow-1 seat-layout-bordered-area" id="seatLayoutArea">
-			<div class="screen-label text-center mb-4">Screen</div>
+			<!-- SEAT SELECTION SECTION -->
+			<div class="seat-selection-section">
+				<div class="seat-layout-container" id="seatLayoutArea">
+					<div class="screen-label text-center mb-4">Screen</div>
 
-			<div class="seat-layout-bordered-area border p-3 mb-4">
-				<div class="seat-container">
-					<table class="table table-bordered text-center">
-						<tbody>
-							@for (int row = 1; row <= Model.SeatLength; row++)
-							{
-								<tr>
-									@for (int col = 1; col <= Model.SeatWidth; col++)
+					<div class="seat-layout-bordered-area border p-3 mb-4">
+						<div class="seat-container">
+							<table class="table table-bordered text-center">
+								<tbody>
+									@for (int row = 1; row <= Model.SeatLength; row++)
 									{
-										var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-										if (seat != null)
-										{
-											var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-											bool isDisabledType = seatType?.TypeName == "Disabled";
-											bool isBooked = bookedSeats.Contains(seat.SeatId);
-											var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
-											var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
+										<tr>
+											@for (int col = 1; col <= Model.SeatWidth; col++)
+											{
+												var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+												if (seat != null)
+												{
+													var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+													bool isDisabledType = seatType?.TypeName == "Disabled";
+													bool isBooked = bookedSeats.Contains(seat.SeatId);
+													var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+													var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
-												data-seat-id="@seat.SeatId"
-												data-seat-name="@seat.SeatName"
-												data-seat-type="@seatType?.TypeName"
-												data-seat-price="@seatType?.PricePercent"
-												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
-												class="@tdClass"
-												@(isDisabledType || isBooked ? "disabled" : "")
-												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
-												<span class="material-icons">
-													@(isDisabledType ? "" : seat.SeatName)
-												</span>
-											</td>
+													<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
+														data-seat-id="@seat.SeatId"
+														data-seat-name="@seat.SeatName"
+														data-seat-type="@seatType?.TypeName"
+														data-seat-price="@seatType?.PricePercent"
+														data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
+														class="@tdClass"
+														@(isDisabledType || isBooked ? "disabled" : "")
+														@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
+														<span class="material-icons">
+															@(isDisabledType ? "" : seat.SeatName)
+														</span>
+													</td>
 
-										}
+												}
+											}
+										</tr>
 									}
-								</tr>
-							}
-						</tbody>
-					</table>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
+						@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+						{
+							<div class="d-flex align-items-center me-3">
+								<span style="display: inline-block; width: 20px; height: 20px; background-color: @(type.ColorHex ?? "#FFFFFF"); margin-right: 5px; border-radius: 3px;"></span>
+								<span>@type.TypeName</span>
+							</div>
+						}
+						<div class="d-flex align-items-center me-3">
+							<span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
+							<span>Selected</span>
+						</div>
+						<div class="d-flex align-items-center me-3">
+							<span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
+							<span>Booked</span>
+						</div>
+					</div>
 				</div>
 			</div>
 
-			<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
-				@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+			<!-- FOOD & DRINK SECTION -->
+			<div class="food-selection-section">
+				<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">POP CORN AND COKE</h2>
+				<div class="row justify-content-center">
+					@if (ViewBag.Foods != null)
+					{
+						foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
+						{
+							<div class="col-md-3 col-6 mb-4 d-flex flex-column align-items-center">
+								<img src="@food.Image" alt="@food.Name" style="width:120px; height:120px; object-fit:cover; border-radius:12px;"/>
+								<div class="fw-bold mt-2">@food.Name</div>
+								<div class="text-muted small">@food.Description</div>
+								<div class="fw-bold mb-2">@food.Price.ToString("N0") VND</div>
+								<div class="input-group" style="width:110px;">
+									<button class="btn btn-outline-secondary btn-food-minus" type="button" data-food-id="@food.FoodId">-</button>
+									<input type="text" class="form-control text-center food-qty" data-food-id="@food.FoodId" value="0" readonly style="background:#e9ecef;"/>
+									<button class="btn btn-outline-secondary btn-food-plus" type="button" data-food-id="@food.FoodId">+</button>
+								</div>
+							</div>
+						}
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- FIXED SIDEBAR -->
+		<div class="col-lg-4 col-md-12">
+			<div class="fixed-sidebar">
+				<div id="selectionSummary">
+					<div class="summary-block">
+						<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+							<span class="summary-value">@Model.CinemaRoomName</span>
+							<span style="color:#4caf50; font-weight:600;">@date.ToString("yyyy-MM-dd")</span>
+							<span style="color:#1976d2; font-weight:600;">@time</span>
+						</div>
+					</div>
+					<div class="summary-info">
+						<div class="summary-movie">@Model.MovieName</div>
+					</div>
+					<div class="summary-seat" id="summarySeatBlock">
+						<div id="noSeatAlert" class="summary-alert" style="display:none;">You have not selected any seats. Please select a seat >.0</div>
+						<div id="seatInfo" style="display:none;">
+							<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
+							<p><span class="summary-label">Total Seats:</span> <span id="totalPrice"></span> VND</p>
+							<p><span class="summary-label">Total Foods:</span> <span id="totalFoodPrice">0</span> VND</p>
+							<p><span class="summary-label">Total:</span> <span id="grandTotal">0</span> VND</p>
+							<p id="countdownTimer" class="text-danger fw-bold"></p>
+						</div>
+					</div>
+				</div>
+
+				@if (!string.IsNullOrEmpty(time))
 				{
-					<div class="d-flex align-items-center me-3">
-						<span style="display: inline-block; width: 20px; height: 20px; background-color: @(type.ColorHex ?? "#FFFFFF"); margin-right: 5px; border-radius: 3px;"></span>
-						<span>@type.TypeName</span>
+					<div class="continue-button-container">
+						<button id="bookButton" class="btn btn-primary w-100" style="font-weight:bold; font-size:large" disabled>Continue</button>
 					</div>
 				}
-				<div class="d-flex align-items-center me-3">
-					<span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
-					<span>Selected</span>
-				</div>
-				<div class="d-flex align-items-center me-3">
-					<span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
-					<span>Booked</span>
-				</div>
 			</div>
-		</div>
-
-		<!-- FOOD & DRINK SECTION -->
-		<div class="food-section mt-5">
-			<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">ĐỒ ĂN & NƯỚC UỐNG</h2>
-			<div class="row justify-content-center">
-				@if (ViewBag.Foods != null)
-				{
-					foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
-					{
-						<div class="col-md-3 col-6 mb-4 d-flex flex-column align-items-center">
-							<img src="@food.Image" alt="@food.Name" style="width:120px; height:120px; object-fit:cover; border-radius:12px;"/>
-							<div class="fw-bold mt-2">@food.Name</div>
-							<div class="text-muted small">@food.Description</div>
-							<div class="fw-bold mb-2">@food.Price.ToString("N0") VND</div>
-							<div class="input-group" style="width:110px;">
-								<button class="btn btn-outline-secondary btn-food-minus" type="button" data-food-id="@food.FoodId">-</button>
-								<input type="text" class="form-control text-center food-qty" data-food-id="@food.FoodId" value="0" readonly style="background:#e9ecef;"/>
-								<button class="btn btn-outline-secondary btn-food-plus" type="button" data-food-id="@food.FoodId">+</button>
-							</div>
-						</div>
-					}
-				}
-			</div>
-		</div>
-
-		<div id="selectionSummary">
-			<div class="summary-block">
-				<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
-					<span class="summary-value">@Model.CinemaRoomName</span>
-					<span style="color:#4caf50; font-weight:600;">@date.ToString("yyyy-MM-dd")</span>
-					<span style="color:#1976d2; font-weight:600;">@time</span>
-				</div>
-			</div>
-			<div class="summary-info">
-				<div class="summary-movie">@Model.MovieName</div>
-			</div>
-			<div class="summary-seat" id="summarySeatBlock">
-				<div id="noSeatAlert" class="summary-alert" style="display:none;">Bạn chưa chọn ghế nào. Vui lòng chọn ghế.</div>
-				<div id="seatInfo" style="display:none;">
-					<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
-					<p><span class="summary-label">Total Price:</span> <span id="totalPrice"></span> VND</p>
-					<p><span class="summary-label">Tổng tiền đồ ăn:</span> <span id="totalFoodPrice">0</span> VND</p>
-					<p><span class="summary-label">Tổng cộng:</span> <span id="grandTotal">0</span> VND</p>
-					<p id="countdownTimer" class="text-danger fw-bold"></p>
-				</div>
-			</div>
-		</div>
-
-
-		<!-- Timeout message in seat-section -->
-		<div id="timeoutMessage" style="display:none; flex:1; justify-content:center; align-items:center; flex-direction:column;">
-			<h2 style="font-weight:bold; margin-bottom:18px; color:#374151;">Đã hết thời gian chọn ghế.</h2>
-			<p style="margin-bottom:24px; font-size:1.1rem; color:#374151;">Rất tiếc, phiên giao dịch của bạn đã hết hạn. Bạn có thể bắt đầu lại bằng cách nhấn vào nút bên dưới.</p>
-			<a id="retryBtn" class="btn btn-outline-success" style="font-weight:bold; font-size:1.1rem; padding:8px 32px; border-radius:8px; cursor:pointer;">CHỌN LẠI</a>
 		</div>
 	</div>
 
-	@if (!string.IsNullOrEmpty(time))
-	{
-		<div class="text-center mb-4 mt-4">
-			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
-		</div>
-	}
+	<!-- Timeout message -->
+	<div id="timeoutMessage" style="display:none; justify-content:center; align-items:center; flex-direction:column; text-align:center; padding:2rem;">
+		<h2 style="font-weight:bold; margin-bottom:18px; color:#374151;">Time to choose a seat is up..</h2>
+		<p style="margin-bottom:24px; font-size:1.1rem; color:#374151;">Sorry, your trading session has expired. You can restart it by clicking the button below.</p>
+		<a id="retryBtn" class="btn btn-outline-success" style="font-weight:bold; font-size:1.1rem; padding:8px 32px; border-radius:8px; cursor:pointer;">CHOOSE AGAIN !!!</a>
+	</div>
 </div>
 
 @section Scripts {
@@ -223,6 +231,9 @@
 				noSeatAlert.style.display = 'block';
 				updateFoodTotal();
 			}
+			
+			// Cập nhật progress bar
+			updateProgressBar();
 		}
 
 		document.getElementById('bookButton').addEventListener('click', function () {
@@ -287,10 +298,31 @@
 					updateFoodTotal();
 				});
 			});
+			
+			// Initialize
 			updateBookButtonState();
 			updateSelectionSummary();
 			updateFoodTotal();
+			updateProgressBar();
 		});
+
+		function updateProgressBar() {
+			const page = document.querySelector('.seat-view-page');
+			const hasSeats = selectedSeats.size > 0;
+			const hasFood = Object.keys(selectedFoods).length > 0;
+			
+			// Xóa tất cả progress classes
+			page.classList.remove('progress-33', 'progress-66', 'progress-100');
+			
+			// Cập nhật progress dựa trên trạng thái
+			if (hasSeats && hasFood) {
+				page.classList.add('progress-100');
+			} else if (hasSeats) {
+				page.classList.add('progress-66');
+			} else {
+				page.classList.add('progress-33');
+			}
+		}
 
 		function updateFoodTotal() {
 			let totalFood = 0;
@@ -301,6 +333,9 @@
 			// Cộng với tổng tiền ghế
 			let seatTotal = parseInt(document.getElementById('totalPrice').textContent.replace(/,/g, '')) || 0;
 			document.getElementById('grandTotal').textContent = (seatTotal + totalFood).toLocaleString();
+			
+			// Cập nhật progress bar khi thay đổi đồ ăn
+			updateProgressBar();
 		}
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>

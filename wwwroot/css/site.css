@@ -625,7 +625,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    color: var(--text-color);
+    color: #b51c1c;
     background-color: var(--light-bg);
     transition: background-color var(--transition-speed);
 }

@@ -27,6 +27,8 @@ public partial class MovieTheaterContext : DbContext
 
     public virtual DbSet<Food> Foods { get; set; }
 
+    public virtual DbSet<FoodInvoice> FoodInvoices { get; set; }
+
     public virtual DbSet<Invoice> Invoices { get; set; }
 
     public virtual DbSet<Member> Members { get; set; }
@@ -61,7 +63,7 @@ public partial class MovieTheaterContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=(local);uid=hi;pwd=12345678;database=MovieTheater;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=(local);uid=hi;pwd=123456;database=MovieTheater;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -252,6 +254,30 @@ public partial class MovieTheaterContext : DbContext
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Status).HasDefaultValue(true);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<FoodInvoice>(entity =>
+        {
+            entity.HasKey(e => e.FoodInvoiceId).HasName("PK__FoodInvo__B9EB02089DBA9921");
+
+            entity.ToTable("FoodInvoice");
+
+            entity.Property(e => e.FoodInvoiceId).HasColumnName("FoodInvoice_ID");
+            entity.Property(e => e.InvoiceId)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("Invoice_ID");
+            entity.Property(e => e.FoodId).HasColumnName("Food_ID");
+            entity.Property(e => e.Quantity).HasColumnName("Quantity");
+            entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.Invoice).WithMany()
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("FK_FoodInvoice_Invoice");
+
+            entity.HasOne(d => d.Food).WithMany()
+                .HasForeignKey(d => d.FoodId)
+                .HasConstraintName("FK_FoodInvoice_Food");
         });
 
         modelBuilder.Entity<Invoice>(entity =>

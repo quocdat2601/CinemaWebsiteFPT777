@@ -13,7 +13,7 @@
     decimal usedScoreValue = TempData["UsedScoreValue"] != null ? Convert.ToDecimal(TempData["UsedScoreValue"]) : useScore * 1000;
     int addScore = TempData["AddScore"] != null ? Convert.ToInt32(TempData["AddScore"]) : (ViewBag.AddScore != null ? (int)ViewBag.AddScore : 0);
     decimal addedScoreValue = TempData["AddedScoreValue"] != null ? Convert.ToDecimal(TempData["AddedScoreValue"]) : addScore * 1000;
-    decimal totalPriceValue = TempData["FinalPrice"] != null ? Convert.ToDecimal(TempData["FinalPrice"]) : (ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0);
+    decimal totalPriceValue = (ViewBag.TotalPrice != null ? (decimal)ViewBag.TotalPrice : 0);
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
     decimal voucherAmount = TempData["VoucherAmount"] != null ? Convert.ToDecimal(TempData["VoucherAmount"]) : (ViewBag.VoucherAmount != null ? (decimal)ViewBag.VoucherAmount : 0);
@@ -216,6 +216,44 @@
                             }
                         </tbody>
                     </table>
+
+                    @{
+                        var selectedFoods = ViewBag.SelectedFoods as List<MovieTheater.ViewModels.FoodViewModel> ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+                        var totalFoodPrice = ViewBag.TotalFoodPrice != null ? (decimal)ViewBag.TotalFoodPrice : 0;
+                    }
+
+                    @if (selectedFoods.Any())
+                    {
+                        <div class="ticket-section-title">Food & Drinks</div>
+                        <table class="table table-bordered mb-2">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var food in selectedFoods)
+                                {
+                                    <tr>
+                                        <td>@food.Name</td>
+                                        <td>@food.Quantity</td>
+                                        <td>@food.Price.ToString("N0") VND</td>
+                                        <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                                    <td><strong>@totalFoodPrice.ToString("N0") VND</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    }
+
                     @if (subtotal > 0)
                     {
                         <div class="ticket-section-title">Price Breakdown</div>
@@ -244,6 +282,13 @@
                                     <tr>
                                         <td style="white-space: nowrap;">- Points Used</td>
                                         <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
+                                    </tr>
+                                }
+                                @if (totalFoodPrice > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">+ Food & Drinks</td>
+                                        <td class="text-end" style="white-space: nowrap;">+@totalFoodPrice.ToString("N0") VND</td>
                                     </tr>
                                 }
                                 <tr>

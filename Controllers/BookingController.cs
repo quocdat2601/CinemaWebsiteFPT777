@@ -7,6 +7,7 @@ using MovieTheater.ViewModels;
 using Newtonsoft.Json;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -41,6 +42,7 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly MovieTheaterContext _context;
         private readonly IFoodService _foodService;
+        private readonly IFoodInvoiceService _foodInvoiceService;
 
         public BookingController(IBookingService bookingService,
                          IMovieService movieService,
@@ -60,7 +62,8 @@ namespace MovieTheater.Controllers
                          IVoucherService voucherService,
 
                          MovieTheater.Models.MovieTheaterContext context,
-                         IFoodService foodService)
+                         IFoodService foodService,
+                         IFoodInvoiceService foodInvoiceService)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -79,6 +82,7 @@ namespace MovieTheater.Controllers
             _promotionService = promotionService;
             _context = context;
             _foodService = foodService;
+            _foodInvoiceService = foodInvoiceService;
         }
 
         /// <summary>
@@ -383,15 +387,19 @@ namespace MovieTheater.Controllers
                 // 4. Apply points
                 model.UseScore = Math.Min(model.UseScore, (int)(afterVoucher / 1000));
                 var pointsValue = model.UseScore * 1000;
-                var finalPrice = afterVoucher - pointsValue;
-                if (finalPrice < 0) finalPrice = 0;
+                var finalSeatPrice = afterVoucher - pointsValue;
+                if (finalSeatPrice < 0) finalSeatPrice = 0;
+
+                // Add food price to total
+                decimal totalFoodPrice = model.SelectedFoods?.Sum(f => f.Price * f.Quantity) ?? 0;
+                var finalPrice = finalSeatPrice + totalFoodPrice;
 
                 var seatNames = model.SelectedSeats.Select(s => s.SeatName);
                 string seatList = string.Join(",", seatNames);
 
-                // Calculate points to earn using the same logic as user booking
+                // Calculate points to earn using the same logic as user booking (only for seat price)
                 decimal earningRate = userAccount?.Rank?.PointEarningPercentage ?? 1;
-                int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
+                int pointsToEarn = _pointService.CalculatePointsToEarn(finalSeatPrice, earningRate);
 
                 var invoice = new Invoice
                 {
@@ -399,7 +407,7 @@ namespace MovieTheater.Controllers
                     AccountId = userId,
                     BookingDate = DateTime.Now,
                     Status = InvoiceStatus.Completed,
-                    TotalMoney = finalPrice,
+                    TotalMoney = finalSeatPrice,
                     UseScore = model.UseScore,
                     Seat = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName)),
                     Seat_IDs = string.Join(",", model.SelectedSeats.Select(s => s.SeatId)),
@@ -484,6 +492,12 @@ namespace MovieTheater.Controllers
                         messages.Add(notificationMessage);
                         TempData["ToastMessage"] = string.Join("<br/>", messages);
                     }
+                }
+
+                // Save selected foods to session for payment
+                if (model.SelectedFoods != null && model.SelectedFoods.Any())
+                {
+                    await _foodInvoiceService.SaveFoodOrderAsync(invoice.InvoiceId, model.SelectedFoods);
                 }
 
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
@@ -627,9 +641,35 @@ namespace MovieTheater.Controllers
                     }
                 }
 
-                // TotalPrice = subtotal - rankDiscount - voucherAmount
-                decimal totalPrice = subtotal - rankDiscount - voucherAmount;
+                // Get food information from database
+                var foodInvoicesList = await _context.FoodInvoices
+                    .Include(fi => fi.Food)
+                    .Where(fi => fi.InvoiceId == invoiceId)
+                    .ToListAsync();
+
+                var selectedFoodsList = foodInvoicesList.Select(fi => new FoodViewModel
+                {
+                    FoodId = fi.Food.FoodId,
+                    Name = fi.Food.Name,
+                    Price = fi.Price,
+                    Quantity = fi.Quantity,
+                    Image = fi.Food.Image,
+                    Description = fi.Food.Description,
+                    Category = fi.Food.Category,
+                    Status = fi.Food.Status,
+                    CreatedDate = fi.Food.CreatedDate,
+                    UpdatedDate = fi.Food.UpdatedDate
+                }).ToList();
+
+                decimal totalFoodPrice = selectedFoodsList.Sum(f => f.Price * f.Quantity);
+
+                ViewBag.SelectedFoods = selectedFoodsList;
+                ViewBag.TotalFoodPrice = totalFoodPrice;
+
+                // TotalPrice = subtotal - rankDiscount - voucherAmount + totalFoodPrice
+                decimal totalPrice = subtotal - rankDiscount - voucherAmount + totalFoodPrice;
                 if (totalPrice < 0) totalPrice = 0;
+                ViewBag.TotalPrice = totalPrice;
 
                 // Apply points used
                 decimal usedScoreValue = (invoice.UseScore ?? 0) * 1000m;
@@ -644,6 +684,29 @@ namespace MovieTheater.Controllers
                 ViewBag.VoucherAmount = voucherAmount;
                 string versionName = invoice?.MovieShow?.Version?.VersionName ?? "N/A";
                 ViewBag.VersionName = versionName;
+
+                // Get food information from database
+                var foodInvoices = await _context.FoodInvoices
+                    .Include(fi => fi.Food)
+                    .Where(fi => fi.InvoiceId == invoiceId)
+                    .ToListAsync();
+
+                var selectedFoods = foodInvoices.Select(fi => new FoodViewModel
+                {
+                    FoodId = fi.Food.FoodId,
+                    Name = fi.Food.Name,
+                    Price = fi.Price,
+                    Quantity = fi.Quantity,
+                    Image = fi.Food.Image,
+                    Description = fi.Food.Description,
+                    Category = fi.Food.Category,
+                    Status = fi.Food.Status,
+                    CreatedDate = fi.Food.CreatedDate,
+                    UpdatedDate = fi.Food.UpdatedDate
+                }).ToList();
+
+                ViewBag.SelectedFoods = selectedFoods;
+                ViewBag.TotalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
             }
             return View();
         }
@@ -653,13 +716,19 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Payment (GET)</remarks>
         [HttpGet]
-        public IActionResult Payment(string invoiceId)
+        public async Task<IActionResult> Payment(string invoiceId)
         {
             var invoice = _invoiceService.GetById(invoiceId);
             if (invoice == null)
             {
                 return NotFound();
             }
+
+            // Lấy food từ DB
+            var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
+            decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
+            decimal totalSeatPrice = invoice.TotalMoney ?? 0;
+            decimal totalAmount = totalSeatPrice + totalFoodPrice;
 
             var sanitizedMovieName = Regex.Replace(invoice.MovieShow.Movie.MovieNameEnglish, @"[^a-zA-Z0-9\s]", "");
             var viewModel = new PaymentViewModel
@@ -669,8 +738,11 @@ namespace MovieTheater.Controllers
                 ShowDate = invoice.MovieShow.ShowDate,
                 ShowTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
                 Seats = invoice.Seat,
-                TotalAmount = invoice.TotalMoney ?? 0,
-                OrderInfo = $"Payment for movie ticket {sanitizedMovieName} - {invoice.Seat.Replace(",", " ")}"
+                TotalAmount = totalAmount,
+                OrderInfo = $"Payment for movie ticket {sanitizedMovieName} - {invoice.Seat.Replace(",", " ")}",
+                SelectedFoods = selectedFoods,
+                TotalFoodPrice = totalFoodPrice,
+                TotalSeatPrice = totalSeatPrice
             };
 
             return View("Payment", viewModel);
@@ -686,7 +758,7 @@ namespace MovieTheater.Controllers
             try
             {
                 var paymentUrl = _vnPayService.CreatePaymentUrl(
-                    model.TotalAmount,
+                    (int)model.TotalAmount,
                     model.OrderInfo,
                     model.InvoiceId
                 );
