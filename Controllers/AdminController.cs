@@ -7,6 +7,7 @@ using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
+    //ADmin
     public class AdminController : Controller
     {
         private readonly IMovieService _movieService;
