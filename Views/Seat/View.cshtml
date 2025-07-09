@@ -1,5 +1,105 @@
 ﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
+<style>
+    .login-modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(30, 41, 59, 0.45);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(1.5px);
+    }
+    .login-modal-modern {
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(30,41,59,0.16), 0 1.5px 8px rgba(56,189,248,0.08);
+        border: none;
+        background: #fff;
+        padding: 0;
+        max-width: 320px;
+        width: 100%;
+    }
+    .login-modal-modern .modal-header {
+        border-bottom: none;
+        background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+        color: #fff;
+        border-radius: 18px 18px 0 0;
+        padding: 1.2rem 1.2rem 0.7rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .login-modal-modern .modal-header .login-icon-bg {
+        background: #fff;
+        border-radius: 50%;
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 1px 6px rgba(56,189,248,0.10);
+    }
+    .login-modal-modern .modal-header .login-icon {
+        font-size: 2.1rem;
+        color: #2563eb;
+    }
+    .login-modal-modern .modal-header .user-icon {
+        font-size: 1.3rem;
+        color: #60a5fa;
+        margin-left: 0.2rem;
+    }
+    .login-modal-modern .modal-title {
+        font-size: 1.08rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        margin-bottom: 0.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .login-modal-modern .modal-body {
+        padding: 1.1rem 1.2rem 0.7rem 1.2rem;
+        text-align: center;
+    }
+    .login-modal-modern .modal-body p {
+        font-size: 0.99rem;
+        color: #334155;
+        margin-bottom: 0;
+        line-height: 1.5;
+    }
+    .login-modal-modern .modal-footer {
+        border-top: none;
+        padding: 0.7rem 1.2rem 1.2rem 1.2rem;
+        display: flex;
+        justify-content: center;
+    }
+    .login-modal-modern .btn-login-modern {
+        background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.01rem;
+        border: none;
+        border-radius: 999px;
+        padding: 0.65rem 2.1rem;
+        box-shadow: 0 2px 8px rgba(56,189,248,0.10);
+        transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .login-modal-modern .btn-login-modern:hover {
+        background: linear-gradient(90deg, #1e40af 0%, #0ea5e9 100%);
+        color: #fff;
+        transform: translateY(-1px) scale(1.03);
+        box-shadow: 0 4px 16px rgba(56,189,248,0.13);
+    }
+</style>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 @{
 	var movieId = Model.MovieId;
 	var date = Model.ShowDate;
@@ -14,12 +114,14 @@
 	string returnLink = isAdminSell
 		? Url.Action("Select", "Showtime", new { area = "Admin" })
 		: Url.Action("TicketBooking", "Booking");
+
+    var isAuthenticated = User.Identity.IsAuthenticated;
 }
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
-<div class="container mt-4 seat-view-page">
+<div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
 	</div>
@@ -127,6 +229,37 @@
 		</div>
 	}
 </div>
+
+@if (!isAuthenticated)
+{
+    <div class="login-modal-overlay">
+        <div class="modal-content login-modal-modern">
+            <div class="modal-header">
+                <div class="login-icon-bg">
+                    <span class="login-icon material-icons">login</span>
+                </div>
+                <span class="modal-title">
+                    Login Required
+                    <span class="user-icon material-icons">person</span>
+                </span>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Please <b>log in</b> to select seats and book tickets.<br>
+                    <span style="color:#2563eb;font-weight:500;">Sign in to continue.</span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <a href="@Url.Action("Login", "Account")" class="btn btn-login-modern">
+                    <span class="material-icons">login</span> Go to Login
+                </a>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.body.classList.add('modal-open');
+    </script>
+}
 
 @section Scripts {
 	<script>
