@@ -85,32 +85,42 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public async Task<IActionResult> TicketBooking(string movieId = null)
         {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            // Get all movies with their shows
             var movies = await _bookingService.GetAvailableMoviesAsync();
-            ViewBag.MovieList = movies;
+
+            // Filter: Only movies with at least one show today or in the future
+            var filteredMovies = movies
+                .Where(m => _movieService.GetMovieShows(m.MovieId)
+                    .Any(ms => ms.ShowDate >= today))
+                .ToList();
+
+            ViewBag.MovieList = filteredMovies;
             ViewBag.SelectedMovieId = movieId;
 
-           if (!string.IsNullOrEmpty(movieId))
-           {
-               // Get movie shows for the selected movie
-               var movieShows = _movieService.GetMovieShows(movieId);
+            if (!string.IsNullOrEmpty(movieId))
+            {
+                // Get movie shows for the selected movie
+                var movieShows = _movieService.GetMovieShows(movieId);
                 
-               // Group by date and time
-               var showsByDate = movieShows
-                   .Where(ms => ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
-                   .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
-                   .ToDictionary(
-                       g => g.Key,
-                       g => g.Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
-                             .Distinct()
-                             .OrderBy(t => t)
-                             .ToList()
-                   );
+                // Group by date and time
+                var showsByDate = movieShows
+                    .Where(ms => ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
+                    .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
+                              .Distinct()
+                              .OrderBy(t => t)
+                              .ToList()
+                    );
 
-               ViewBag.ShowsByDate = showsByDate;
-           }
+                ViewBag.ShowsByDate = showsByDate;
+            }
 
-           return View();
-       }
+            return View();
+        }
 
         /// <summary>
         /// Lấy danh sách ngày chiếu cho một phim
@@ -364,6 +374,7 @@ namespace MovieTheater.Controllers
                 decimal earningRate = userAccount?.Rank?.PointEarningPercentage ?? 1;
                 int pointsToEarn = _pointService.CalculatePointsToEarn(finalPrice, earningRate);
 
+                var movieShow = _movieService.GetMovieShowById(model.MovieShowId);
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
@@ -373,11 +384,11 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalPrice,
                     UseScore = model.UseScore,
                     Seat = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName)),
-                    Seat_IDs = string.Join(",", model.SelectedSeats.Select(s => s.SeatId)),
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
                     PromotionDiscount = (int?)promotionDiscountLevel,
                     RankDiscountPercentage = userAccount?.Rank?.DiscountPercentage ?? 0,
-                    MovieShowId = model.MovieShowId
+                    MovieShowId = model.MovieShowId,
+                    MovieShow = movieShow
                 };
 
                 // Calculate earning rate from user rank
@@ -531,38 +542,15 @@ namespace MovieTheater.Controllers
 
                 // Get seat details from invoice.Seat_IDs (preferred) or fallback to seat names
                 var seats = new List<SeatDetailViewModel>();
-                if (!string.IsNullOrEmpty(invoice.Seat_IDs))
-                {
-                    var seatIdArr = invoice.Seat_IDs
-                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(id => int.Parse(id.Trim()))
-                        .ToList();
+                var sessionKey = "ConfirmedSeats_" + invoiceId;
+                var seatsJson = HttpContext.Session.GetString(sessionKey);
 
-                    foreach (var seatId in seatIdArr)
-                    {
-                        var seat = _seatService.GetSeatById(seatId);
-                        if (seat == null) continue;
-                        var seatType = seat.SeatTypeId.HasValue ? _seatTypeService.GetById(seat.SeatTypeId.Value) : null;
-                        decimal originalPrice = seatType?.PricePercent ?? 0;
-                        decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
-                        decimal priceAfterPromotion = originalPrice;
-                        if (seatPromotionDiscount > 0)
-                        {
-                            priceAfterPromotion = originalPrice * (1 - seatPromotionDiscount / 100m);
-                        }
-                        seats.Add(new SeatDetailViewModel
-                        {
-                            SeatId = seat.SeatId,
-                            SeatName = seat.SeatName,
-                            SeatType = seatType?.TypeName ?? "N/A",
-                            Price = priceAfterPromotion,
-                            OriginalPrice = originalPrice,
-                            PromotionDiscount = seatPromotionDiscount,
-                            PriceAfterPromotion = priceAfterPromotion
-                        });
-                    }
+                if (!string.IsNullOrEmpty(seatsJson))
+                {
+                    seats = JsonConvert.DeserializeObject<List<SeatDetailViewModel>>(seatsJson);
                 }
-                else
+
+            else
                 {
                     // Fallback: Use ScheduleSeat to get booked type/price
                     var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId)
@@ -870,7 +858,8 @@ namespace MovieTheater.Controllers
                TotalPrice = totalPrice,
                PricePerTicket = seats.Any() ? totalPrice / seats.Count : 0,
                MovieShowId = movieShowId,
-               VersionName = movieShow.Version.VersionName
+               VersionName = movieShow.Version.VersionName,
+               VersionId = movieShow.Version.VersionId
            };
 
            var adminConfirmUrl = Url.Action("ConfirmTicketForAdmin", "Admin");
@@ -995,6 +984,7 @@ namespace MovieTheater.Controllers
                 int addedScoreValue = addedScore * 1000;
 
                 // Create invoice
+                var movieShow = _movieService.GetMovieShowById(model.MovieShowId);
                 var invoice = new Invoice
                 {
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
@@ -1005,11 +995,11 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalPrice,
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
-                    Seat_IDs = string.Join(",", model.BookingDetails.SelectedSeats.Select(s => s.SeatId)),
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
                     PromotionDiscount = (int?)promotionDiscountLevel,
                     RankDiscountPercentage = member?.Account?.Rank?.DiscountPercentage ?? 0,
-                    MovieShowId = model.MovieShowId
+                    MovieShowId = model.MovieShowId,
+                    MovieShow = movieShow
                 };
 
                 // Save invoice
@@ -1294,7 +1284,7 @@ namespace MovieTheater.Controllers
                     SeatTypeId = seatType?.SeatTypeId,
                     Price = priceAfterPromotion,
                     OriginalPrice = originalPrice,
-                    PromotionDiscount = promotionDiscount,
+                    PromotionDiscount = seatPromotionDiscount,
                     PriceAfterPromotion = priceAfterPromotion
                 };
             }).ToList();

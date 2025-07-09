@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Repository
 {
@@ -36,5 +37,7 @@ namespace MovieTheater.Repository
         public Dictionary<DateOnly, List<string>> GetMovieShowSummaryByMonth(int year, int month);
         List<Models.Version> GetAllVersions();
         Models.Version? GetVersionById(int versionId);
+        
+
     }
 }

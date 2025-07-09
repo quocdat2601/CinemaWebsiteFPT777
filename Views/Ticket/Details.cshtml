@@ -162,7 +162,7 @@
     }
 </style>
 <div class="container mt-4 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
+    <div class="ticket-card card shadow p-0 w-100" style="max-width: 1000px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Ticket Information</h2>
             <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "status-completed" : "status-cancelled")">
@@ -176,21 +176,25 @@
                     <div class="ticket-row">
                         <label class="ticket-info-label">Movie Name</label>
                         <input type="text" class="ticket-info-value" value="@movieName" readonly />
-                        <label class="ticket-info-label">Screen</label>
-                        <input type="text" class="ticket-info-value" value="@screen" readonly />
-                       
+
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Date</label>
                         <input type="text" class="ticket-info-value" value="@showDate" readonly />
-                        <label class="ticket-info-label">Time</label>
-                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
+                        <label class="ticket-info-label">Screen</label>
+                        <input type="text" class="ticket-info-value" value="@screen" readonly />
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Ticket ID</label>
                         <input type="text" class="ticket-info-value" value="@ticketId" readonly />
-                         <label class="ticket-info-label">Version</label>
+                        <label class="ticket-info-label">Version</label>
                         <input type="text" class="ticket-info-value" value="@version" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Booking Time</label>
+                        <input type="text" class="ticket-info-value" value="@(DateTime.Parse(bookingDate).ToString("dd/MM/yyyy HH:mm"))" readonly />
+                        <label class="ticket-info-label">Time</label>
+                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
                     </div>
                     
                     <div class="ticket-section-title">Seat(s)</div>

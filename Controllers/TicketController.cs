@@ -117,40 +117,37 @@ namespace MovieTheater.Controllers
 
             List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
             decimal promotionDiscount = booking.PromotionDiscount ?? 0;
-            if (!string.IsNullOrEmpty(booking.Seat_IDs))
+
+            if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
             {
-                var seatIdArr = booking.Seat_IDs
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(id => int.Parse(id.Trim()))
-                    .ToList();
-                foreach (var seatId in seatIdArr)
-                {
-                    var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatId == seatId);
-                    if (seat == null) continue;
-                    var seatType = seat.SeatType;
-                    decimal originalPrice = seatType?.PricePercent ?? 0;
-                    decimal priceAfterPromotion = originalPrice;
-                    if (promotionDiscount > 0)
+                seatDetails = booking.ScheduleSeats
+                    .Where(ss => ss.Seat != null)
+                    .Select(ss =>
                     {
-                        priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
-                    }
-                    seatDetails.Add(new SeatDetailViewModel
-                    {
-                        SeatId = seat.SeatId,
-                        SeatName = seat.SeatName,
-                        SeatType = seatType?.TypeName ?? "N/A",
-                        Price = priceAfterPromotion,
-                        OriginalPrice = originalPrice,
-                        PromotionDiscount = promotionDiscount,
-                        PriceAfterPromotion = priceAfterPromotion
-                    });
-                }
+                        var originalPrice = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0);
+                        decimal priceAfterPromotion = originalPrice;
+                        if (promotionDiscount > 0)
+                        {
+                            priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
+                        }
+                        return new SeatDetailViewModel
+                        {
+                            SeatId = ss.Seat.SeatId,
+                            SeatName = ss.Seat.SeatName,
+                            SeatType = ss.Seat.SeatType?.TypeName,
+                            Price = priceAfterPromotion,
+                            OriginalPrice = originalPrice,
+                            PromotionDiscount = promotionDiscount,
+                            PriceAfterPromotion = priceAfterPromotion
+                        };
+                    }).ToList();
             }
             else if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
             {
                 seatDetails = booking.ScheduleSeats
                     .Where(ss => ss.Seat != null)
-                    .Select(ss => {
+                    .Select(ss =>
+                    {
                         var originalPrice = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0);
                         decimal priceAfterPromotion = originalPrice;
                         if (promotionDiscount > 0)
@@ -358,18 +355,22 @@ namespace MovieTheater.Controllers
 
             var result = invoices
                 .OrderByDescending(i => i.BookingDate)
-                .Select(i => new {
+                .Select(i => new
+                {
                     invoiceId = i.InvoiceId,
                     bookingDate = i.BookingDate,
                     seat = i.Seat,
                     totalMoney = i.TotalMoney,
                     status = i.Status,
-                    MovieShow = i.MovieShow == null ? null : new {
+                    MovieShow = i.MovieShow == null ? null : new
+                    {
                         showDate = i.MovieShow.ShowDate,
-                        Movie = i.MovieShow.Movie == null ? null : new {
+                        Movie = i.MovieShow.Movie == null ? null : new
+                        {
                             MovieNameEnglish = i.MovieShow.Movie.MovieNameEnglish
                         },
-                        Schedule = i.MovieShow.Schedule == null ? null : new {
+                        Schedule = i.MovieShow.Schedule == null ? null : new
+                        {
                             ScheduleTime = i.MovieShow.Schedule.ScheduleTime
                         }
                     }

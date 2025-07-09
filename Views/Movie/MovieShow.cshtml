@@ -372,20 +372,51 @@
             }
 
             try {
-                const deleteResponse = await fetch(`/Movie/DeleteAllMovieShows?movieId=${movieId}`, {
-                    method: 'POST'
+                // 1. Fetch current shows from backend (get all for this movie)
+                const resp = await fetch(`/Movie/ViewShow/${movieId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
+                const backendShows = await resp.json();
 
-                if (!deleteResponse.ok) {
-                    throw new Error('Failed to clear existing movie shows');
+                // 2. Find shows to delete (in backend but not in UI)
+                const showsToDelete = backendShows.filter(b =>
+                    !movieShowItems.some(u =>
+                        u.dateId === b.showDate.split('/').reverse().join('-') &&
+                        u.roomId == b.cinemaRoomId &&
+                        u.scheduleId == b.scheduleId &&
+                        u.versionId == b.versionId
+                    )
+                );
+
+                // 3. Find shows to add (in UI but not in backend)
+                const showsToAdd = movieShowItems.filter(u =>
+                    !backendShows.some(b =>
+                        u.dateId === b.showDate.split('/').reverse().join('-') &&
+                        u.roomId == b.cinemaRoomId &&
+                        u.scheduleId == b.scheduleId &&
+                        u.versionId == b.versionId
+                    )
+                );
+
+                // 4. Try to delete shows (one by one, safely)
+                let undeletableShows = [];
+                for (const show of showsToDelete) {
+                    const delResp = await fetch('/Movie/DeleteMovieShowIfNotReferenced', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(show.movieShowId)
+                    });
+                    const delResult = await delResp.json();
+                    if (!delResult.success) {
+                        undeletableShows.push(show);
+                    }
                 }
 
-                for (const showItem of movieShowItems) {
+                // 5. Add new shows
+                for (const showItem of showsToAdd) {
                     const response = await fetch('/Movie/AddMovieShow', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             movieId: movieId,
                             showDate: showItem.dateId,
@@ -394,13 +425,16 @@
                             versionId: showItem.versionId
                         })
                     });
-
                     if (!response.ok) {
                         throw new Error(`Failed to add movie show for schedule ${showItem.scheduleText}`);
                     }
                 }
 
-                alert('Movie shows saved successfully!');
+                if (undeletableShows.length > 0) {
+                    alert('Some shows could not be deleted because they are referenced by invoices.');
+                } else {
+                    alert('Movie shows saved successfully!');
+                }
                 window.location.reload();
             } catch (error) {
                 console.error('Error saving movie shows:', error);

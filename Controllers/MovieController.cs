@@ -696,6 +696,24 @@ namespace MovieTheater.Controllers
 
             return View(viewModel);
         }
+
+        [HttpPost]
+        public IActionResult DeleteMovieShowIfNotReferenced([FromBody] int movieShowId)
+        {
+            // Find the show
+            var show = _movieService.GetMovieShowById(movieShowId);
+            if (show == null)
+                return Json(new { success = false, message = "Show not found." });
+
+            // Check for references in Invoice
+            bool isReferenced = show.Invoices != null && show.Invoices.Any();
+            if (isReferenced)
+                return Json(new { success = false, message = "Show is referenced by invoices." });
+
+            // Delete the show
+            bool deleted = _movieService.DeleteMovieShows(movieShowId);
+            return Json(new { success = deleted, message = deleted ? "Show deleted." : "Failed to delete show." });
+        }
     }
 }
 

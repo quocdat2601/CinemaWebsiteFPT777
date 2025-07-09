@@ -45,5 +45,7 @@ namespace MovieTheater.ViewModels
         public decimal PromotionDiscountPercent { get; set; }
 
         public decimal OriginalTotal { get; set; }
+        public int VersionId { get; set; }
+
     }
 }
