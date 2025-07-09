@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
-{
+{//movie
     public class MovieController : Controller
     {
         private readonly IMovieService _movieService;
