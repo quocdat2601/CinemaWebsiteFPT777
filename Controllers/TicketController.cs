@@ -12,6 +12,7 @@ using MovieTheater.Repository;
 using System.Threading.Tasks;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -21,14 +22,16 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IAccountService _accountService;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
 
-        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService)
+        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService, IHubContext<DashboardHub> dashboardHubContext)
         {
             _invoiceRepository = invoiceRepository;
             _context = context;
             _accountService = accountService;
             _voucherService = voucherService;
+            _dashboardHubContext = dashboardHubContext;
         }
         /// <summary>
         /// Chuyển hướng lịch sử vé sang trang Index
@@ -285,6 +288,7 @@ namespace MovieTheater.Controllers
 
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(accountId);
+            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
 
             // Create refund voucher only if TotalMoney > 0
             Voucher refundVoucher = null;
@@ -449,6 +453,7 @@ namespace MovieTheater.Controllers
 
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(booking.AccountId);
+            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
 
             // Create refund voucher only if TotalMoney > 0
             Voucher refundVoucher = null;

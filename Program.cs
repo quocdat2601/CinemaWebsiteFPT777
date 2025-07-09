@@ -114,6 +114,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
             builder.Services.AddScoped<IVoucherService, VoucherService>();
             builder.Services.AddScoped<IPointService, PointService>();
+            builder.Services.AddScoped<IScoreService, ScoreService>();
             builder.Services.AddSignalR(); //ADD SignalR
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
@@ -176,6 +177,7 @@ namespace MovieTheater
 
             app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
             app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
+            app.MapHub<DashboardHub>("/dashboardhub"); //Tuyen duong cho hub
 
             app.Run();
         }
