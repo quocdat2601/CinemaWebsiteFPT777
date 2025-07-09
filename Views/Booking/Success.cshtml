@@ -8,7 +8,7 @@
     var ticketId = TempData["InvoiceId"] as string;
     var seatString = TempData["Seats"] as string;
     var bookingDate = TempData["BookingTime"] as string;
-    decimal subtotal = TempData["OriginalPrice"] != null ? Convert.ToDecimal(TempData["OriginalPrice"]) : (ViewBag.Subtotal != null ? (decimal)ViewBag.Subtotal : 0);
+    decimal subtotal = (ViewBag.Subtotal != null ? (decimal)ViewBag.Subtotal : 0);
     decimal rankDiscount = TempData["RankDiscount"] != null ? Convert.ToDecimal(TempData["RankDiscount"]) : (ViewBag.RankDiscount != null ? (decimal)ViewBag.RankDiscount : 0);
     int useScore = TempData["UsedScore"] != null ? Convert.ToInt32(TempData["UsedScore"]) : (ViewBag.UsedScore != null ? (int)ViewBag.UsedScore : 0);
     decimal usedScoreValue = TempData["UsedScoreValue"] != null ? Convert.ToDecimal(TempData["UsedScoreValue"]) : useScore * 1000;
