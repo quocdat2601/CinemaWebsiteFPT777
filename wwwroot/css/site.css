@@ -612,7 +612,7 @@ body.dark-mode .badge.bg-info {
 }
 
 .dark-mode .footer.text-muted {
-    color: #aaaaaa;
+    
 }
 
 html {
@@ -625,7 +625,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    color: #b51c1c;
+    color: var(--text-color);
     background-color: var(--light-bg);
     transition: background-color var(--transition-speed);
 }
