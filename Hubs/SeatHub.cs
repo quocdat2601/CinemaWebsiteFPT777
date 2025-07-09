@@ -15,6 +15,8 @@ namespace MovieTheater.Hubs
     {
         // movieShowId -> (seatId -> HoldInfo)
         private static readonly ConcurrentDictionary<int, ConcurrentDictionary<int, HoldInfo>> _heldSeats = new();
+        // movieShowId + accountId -> connectionId
+        private static readonly ConcurrentDictionary<(int movieShowId, string accountId), string> _accountConnections = new();
         private const int HoldMinutes = 5;
         private readonly MovieTheaterContext _context;
 
@@ -28,6 +30,20 @@ namespace MovieTheater.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, movieShowId.ToString());
 
             var accountId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(accountId))
+            {
+                // Kiểm tra nếu accountId này đã có kết nối khác ở showtime này
+                var key = (movieShowId, accountId);
+                if (_accountConnections.TryGetValue(key, out var existingConnId) && existingConnId != Context.ConnectionId)
+                {
+                    // Gửi sự kiện AccountInUse cho client mới
+                    await Clients.Caller.SendAsync("AccountInUse");
+                    return;
+                }
+                // Lưu lại connectionId cho accountId này ở showtime này
+                _accountConnections[key] = Context.ConnectionId;
+            }
+
             var heldByMe = new List<int>();
             var heldByOthers = new List<int>();
 
@@ -85,7 +101,18 @@ namespace MovieTheater.Hubs
         // KHÔNG release ghế trong OnDisconnectedAsync nữa, chỉ giữ logic thông báo SeatsReleased nếu cần
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            // Không release ghế ở đây nữa
+            // Xóa mapping accountId khỏi _accountConnections
+            var accountId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(accountId))
+            {
+                foreach (var key in _accountConnections.Keys)
+                {
+                    if (key.accountId == accountId && _accountConnections[key] == Context.ConnectionId)
+                    {
+                        _accountConnections.TryRemove(key, out _);
+                    }
+                }
+            }
             await base.OnDisconnectedAsync(exception);
         }
 
