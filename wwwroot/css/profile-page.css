@@ -8,9 +8,9 @@
     --bg-modal: #0f1215;
     --bg-modal-body: #232b4a;
     --clr-white: #fff;
-    --clr-light: rgba(255,255,255,0.15);
-    --clr-light-strong: rgba(255,255,255,0.25);
-    --clr-border: rgba(255,255,255,0.2);
+    --clr-light: rgba(255, 255, 255, 0.15);
+    --clr-light-strong: rgba(255, 255, 255, 0.25);
+    --clr-border: rgba(255, 255, 255, 0.2);
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
     --radius-xxl: 16px;
@@ -32,15 +32,20 @@ body {
     background: var(--bg-page);
     color: var(--clr-white);
     font-family: Arial, sans-serif;
-/*    padding: 2rem;*/
+    /*    padding: 2rem;*/
+}
+
+.profile-container,
+.profile-modern-card {
+    max-width: 700px;
+    width: 100%;
 }
 
 .profile-container {
-    max-width: 650px;
     margin: 0 auto 2rem;
     border: 1.5px solid #e0e0e0;
     border-radius: var(--radius-xl);
-    box-shadow: 0 4px 24px rgba(78,84,200,0.08);
+    box-shadow: 0 4px 24px rgba(78, 84, 200, 0.08);
     background: var(--bg-container);
     overflow: hidden;
 }
@@ -58,7 +63,7 @@ body {
     min-width: 400px;
     max-width: 700px;
     margin: 0 auto;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
 }
 
 .profile-avatar-wrapper {
@@ -78,7 +83,7 @@ body {
     object-fit: cover;
     border-radius: 50%;
     border: 4px solid #fff;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
 }
 
 .avatar-upload-btns {
@@ -90,9 +95,9 @@ body {
     visibility: hidden;
 }
 
-    .avatar-upload-btns.is-visible {
-        visibility: visible;
-    }
+.avatar-upload-btns.is-visible {
+    visibility: visible;
+}
 
 .avatar-btn {
     padding: 0.18rem 0.7rem;
@@ -106,11 +111,11 @@ body {
     transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-    .avatar-btn:hover {
-        background: rgba(255,255,255,0.08);
-        color: #fff;
-        border-color: #fff;
-    }
+.avatar-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: #fff;
+}
 
 /*---------------------------------------
   4. Info & Form Elements
@@ -120,33 +125,69 @@ body {
     /* font-size: 1.25rem; */
 }
 
-    .profile-info .rank-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: var(--clr-light);
-        padding: 0.35rem 0.75rem;
-        border: 1px solid var(--clr-border);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(5px);
-        font-size: 0.95rem;
-        margin: 0.3rem 0;
-    }
+.profile-info .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--clr-light);
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(5px);
+    font-size: 0.95rem;
+    margin: 0.3rem 0;
+}
 
-    .profile-info .current-points {
-        font-size: 1.1rem;
-        margin-bottom: 1rem;
-    }
+.profile-info .current-points {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
 
-.form-control, .form-select {
+.form-control,
+.form-select {
     background: #2a2a3c;
     border: none;
     color: var(--clr-white);
 }
 
-    .form-control:focus, .form-select:focus {
-        box-shadow: 0 0 0 0.2rem rgba(180,162,255,0.5);
-    }
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(180, 162, 255, 0.5);
+}
+
+.gender-radio .form-check-label {
+    color: #111 !important;
+    font-weight: 500;
+    margin-right: 1.2rem;
+}
+
+.gender-radio .form-check-input {
+    margin-right: 0.4rem;
+}
+
+.form-group .gender-radio {
+    display: flex;
+    align-items: center;
+    margin-right: 1.5rem;
+}
+
+.form-group .gender-radio:last-child {
+    margin-right: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.form-group label {
+    min-width: 120px;
+    margin-bottom: 0;
+    color: #222;
+    font-weight: 600;
+}
 
 /*---------------------------------------
   5. Progress & Buttons
@@ -221,11 +262,11 @@ body {
     transition: all 0.2s;
 }
 
-    .view-details-btn:hover {
-        background: var(--clr-light-strong);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+.view-details-btn:hover {
+    background: var(--clr-light-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
 /*---------------------------------------
   6. Modal & Carousel
@@ -234,7 +275,7 @@ body {
     background: var(--bg-modal);
     border-radius: var(--radius-xxl) !important;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 #rankDetailsModal .modal-header {
@@ -272,34 +313,36 @@ body {
 
 /* Carousel indicator dots */
 #rankCarousel {
-    position: relative; /* ensure indicators position relative to this container */
+    position: relative;
+    /* ensure indicators position relative to this container */
 }
 
-    #rankCarousel .carousel-indicators {
-        position: absolute;
-        bottom: 0.5rem; /* lift them up a bit from the very bottom */
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 0.5rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        z-index: 10;
-    }
+#rankCarousel .carousel-indicators {
+    position: absolute;
+    bottom: 0.5rem;
+    /* lift them up a bit from the very bottom */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    z-index: 10;
+}
 
-        #rankCarousel .carousel-indicators li {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+#rankCarousel .carousel-indicators li {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
-        #rankCarousel .carousel-indicators .active {
-            background-color: #fff;
-        }
+#rankCarousel .carousel-indicators .active {
+    background-color: #fff;
+}
 
 .carousel-control-prev,
 .carousel-control-next {
@@ -307,17 +350,17 @@ body {
     opacity: 0.7;
 }
 
-    .carousel-control-prev:hover,
-    .carousel-control-next:hover {
-        opacity: 1;
-    }
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    opacity: 1;
+}
 
 /* Rank card & benefits */
 .rank-card {
     background: var(--bg-modal);
     border-radius: var(--radius-xxl);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     margin-bottom: 1.5rem;
 }
@@ -330,7 +373,8 @@ body {
     background: var(--rank-gradient);
 }
 
-.rank-title, .rank-status {
+.rank-title,
+.rank-status {
     color: var(--clr-white);
 }
 
@@ -354,8 +398,8 @@ body {
 }
 
 .benefits-section {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     padding: 1.5rem;
     margin: 1.5rem 0;
@@ -372,7 +416,7 @@ body {
 
 .benefits-divider {
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
     margin: 1rem 0;
 }
 
@@ -382,15 +426,15 @@ body {
     gap: 1rem;
     padding: 0.75rem;
     border-radius: 8px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-    .benefit-item:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
+.benefit-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
 
 .benefit-text {
     flex: 1;
@@ -413,17 +457,17 @@ body {
     gap: 0.5rem;
     padding: 0.75rem;
     font-size: 0.9rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 8px;
 }
 
-    .auto-upgrade i {
-        color: #4CAF50;
-        background: rgba(76,175,80,0.1);
-        padding: 0.5rem;
-        border-radius: 50%;
-    }
+.auto-upgrade i {
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 0.5rem;
+    border-radius: 50%;
+}
 
 /*---------------------------------------
   7. Responsive
@@ -466,13 +510,255 @@ body {
     font-size: 1rem;
 }
 
-    .max-rank-message .fa-crown {
-        color: #388e3c;
-        font-size: 1.2rem;
+.max-rank-message .fa-crown {
+    color: #388e3c;
+    font-size: 1.2rem;
+}
+
+.max-rank-message:hover {
+    background-color: #d0ebdc;
+    border-color: #81c784;
+    cursor: default;
+}
+
+/* Booking Card Styles - Clean Start */
+.booking-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.booking-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    padding: 1.1rem 1.3rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.booking-card-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.booking-card-row-top>.booking-card-title {
+    flex: 2 1 0%;
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: #222;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card-row-top>.booking-card-date {
+    flex: 1 1 0%;
+    text-align: center;
+    font-size: 1.02rem;
+    color: #444;
+    min-width: 60px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card-row-top>.booking-card-time {
+    flex: 1 1 0%;
+    text-align: center;
+    font-size: 1.02rem;
+    color: #444;
+    min-width: 60px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card-row-top>.booking-card-actions {
+    flex: 0 0 40px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.booking-card-row-seats {
+    font-size: 1.01rem;
+    color: #555;
+    margin-left: 0.2rem;
+    padding: 0.1rem 0 0.1rem 0.2rem;
+}
+
+.booking-card-seats i {
+    color: #4e54c8;
+    margin-right: 0.4rem;
+}
+
+.booking-card-row-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.2rem;
+}
+
+.booking-card-amount {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #1769fa;
+}
+
+.booking-card-status {
+    font-size: 1.01rem;
+    margin-left: 1rem;
+}
+
+@media (max-width: 700px) {
+    .booking-card-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
     }
 
-    .max-rank-message:hover {
-        background-color: #d0ebdc;
-        border-color: #81c784;
-        cursor: default;
+    .booking-card-row-top {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.2rem;
     }
+
+    .booking-card-row-top>* {
+        min-width: 40%;
+        margin-bottom: 0.1rem;
+    }
+
+    .booking-card-row-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+}
+
+/* Two-column layout for profile page */
+.profile-2col-container {
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.profile-main-container {
+    width: 70%;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.profile-2col-left {
+    flex: 0 0 420px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.profile-2col-right {
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.profile-modern-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-bottom: 2rem;
+}
+
+.profile-banner-modern {
+    background: var(--current-rank-gradient, linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%));
+    border-radius: 18px 18px 0 0;
+    padding: 2rem 2rem 1.5rem 2rem;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 2rem;
+}
+
+/* .profile-banner-modern background is set inline for dynamic rank color from the user's rank. */
+.profile-avatar-modern {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+    transition: box-shadow 0.2s;
+}
+
+.profile-avatar-modern:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.profile-rank-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.7rem;
+    font-size: 1.08rem;
+    color: #333;
+}
+
+.profile-progress-modern {
+    margin: 1.2rem 0 0.7rem 0;
+}
+
+.profile-form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.7rem;
+}
+
+.profile-label {
+    flex: 0 0 120px;
+    font-weight: 600;
+    color: #222;
+    margin-right: 1rem;
+    text-align: left;
+}
+
+.profile-data {
+    flex: 1 1 0%;
+}
+
+@media (max-width: 700px) {
+    .profile-form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-label {
+        text-align: left;
+        margin-bottom: 0.3rem;
+    }
+}
+
+.form-group .gender-radio {
+    margin-right: 0rem;
+    min-width: unset;
+}
+
+.gender-radio .form-check-label {
+    padding-right: 0rem;
+    min-width: 60px;
+    color: #111 !important;
+    font-weight: 500;
+}
+
+.form-group.profile-form-row {
+    flex-wrap: wrap;
+}

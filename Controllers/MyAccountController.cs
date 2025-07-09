@@ -80,7 +80,8 @@ namespace MovieTheater.Controllers
                     var userVouchers = allVouchers.Where(v => v.AccountId == user.AccountId).ToList();
                     return PartialView("~/Views/Account/Tabs/Voucher.cshtml", userVouchers);
                 case "History":
-                    return PartialView("~/Views/Account/Tabs/History.cshtml", new List<MovieTheater.Models.Invoice>());
+                    // History tab is now merged in Profile tab, return a message or redirect
+                    return Content("Booking history is now available in the Profile tab.");
                 default:
                     return Content("Tab not found.");
             }

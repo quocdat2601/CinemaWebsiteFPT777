@@ -3,162 +3,120 @@
     ViewData["Title"] = "My Profile";
     var profile = Model.Profile;
     var rank = Model.RankInfo;
-    // Find the highest rank (by required points)
     var highestRank = Model.AllRanks?.OrderByDescending(r => r.RequiredPointsForCurrentRank).FirstOrDefault();
     bool isMaxRank = (highestRank != null && rank.CurrentRankId == highestRank.CurrentRankId);
-    // Get the current rank's color gradient from AllRanks (for consistency with modal)
     var currentRankDisplay = Model.AllRanks?.FirstOrDefault(r => r.CurrentRankId == rank.CurrentRankId);
     var bannerGradient = currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
+    var defaultPoster = Url.Content("~/image/default-movie-poster.jpg");
 }
-@if (rank == null)
-{
-    <div class="alert alert-warning">No rank information available.</div>
-    return;
-}
-
 <link rel="stylesheet" href="~/css/profile-page.css" asp-append-version="true" />
-
-<div class="container">
-    <div class="signup-title">Profile</div>
-    <div class="profile-container">
-        <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm">
-            <div class="profile-banner" style="background: @bannerGradient">
-                <div class="profile-avatar-wrapper" style="margin-bottom: 0.5rem;">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<div class="profile-main-container">
+    <div class="profile-2col-container">
+        <div class="profile-2col-left">
+            <div class="profile-modern-card">
+                <div class="profile-banner-modern" style="background: @(currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)");">
                     <label for="profileImageInput" style="cursor: pointer;">
-                        <img id="profileImagePreview" class="profile-avatar"
-                             src="@(Model.Profile.Image ?? "/image/profile.jpg")"
-                             alt="Profile Image" />
+                        <img id="profileImagePreview" class="profile-avatar-modern" src="@(Model.Profile.Image ?? "/image/profile.jpg")" alt="Profile Image" />
                     </label>
                     <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
-                    <div id="avatarBtns" class="avatar-upload-btns">
-                        <button type="submit" name="action" value="updateImage" class="avatar-btn avatar-btn-update">Update</button>
-                        <button type="button" class="avatar-btn avatar-btn-cancel" id="cancelAvatarBtn">Cancel</button>
-                    </div>
-                </div>
-                <div class="profile-info">
-                    <div style="font-size:1.5rem;font-weight:600;">@profile.FullName</div>
-                    <div style="margin-top:0.3rem;">
-                        <span class="rank-badge" style="font-size:0.95rem;padding:0.18rem 0.9rem;margin:0;background:rgba(255,255,255,0.15);color:#fff;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.2);">
+                    <div style="font-size:1.4rem;font-weight:600;">
+                        @Model.Profile.FullName
+                        <span class="rank-badge" style="font-size:0.95rem;padding:0.18rem 0.9rem;margin:0">
                             <i class="@(currentRankDisplay?.IconClass ?? rank.IconClass ?? "fa-crown")" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0; margin-right: 0.5rem;"></i> @rank.CurrentRankName
                         </span>
+                        </div>
+                  
+                    <div class="profile-rank-info" style="color:white">
+                        <span>Current Points  <b>@Model.RankInfo.CurrentScore</b></span>
+                        <span>Total Points  <b>@Model.RankInfo.TotalPoints</b></span>
                     </div>
-                    <div style="font-size:1.1rem; margin-top:0.3rem; display: flex; gap: 2rem; align-items: center;">
-                        <span>
-                            Current Points: <b>@rank.CurrentScore</b>
-                        </span>
-                        <span style="opacity: 0.8;">|</span>
-                        <span>
-                            Total Points: <b>@rank.TotalPoints</b>
-                        </span>
-                    </div>
-                    @if (isMaxRank)
-                    {
-                        <!-- AC-04: Max Rank Achieved Message -->
-                        <span class="max-rank-message" role="status" aria-live="polite">
-                            <i class="fas fa-crown"></i>
-                            Max Rank Achieved!
-                        </span>
-                        <div class="next-rank-row" style="justify-content: flex-start; width: 100%; margin-top: 0.5rem;">
-                            <button type="button" class="btn view-details-btn" data-bs-toggle="modal" data-bs-target="#rankDetailsModal">
-                                <i class="fas fa-info-circle"></i> View Details
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        // Progress bar and next rank info as in modal, but without min/max points
-                        var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
-                        var profileNextRankPoints = rank.RequiredPointsForNextRank;
-                        var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
-                        var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
-                        var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
-                        <div class="rank-progress-wrapper" style="margin-bottom: 0.3rem;">
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%; --progress-width: @(profileProgressPercentage.ToString("0.##"))%;"></div>
-                            </div>
-                        </div>
-                        <div class="next-rank-row mt-0" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
-                            <span class="next-rank-info" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
-                                Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed
-                            </span>
-
-                            <button type="button" class="btn view-details-btn"
-                                    style="white-space: nowrap; flex-shrink: 0;"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#rankDetailsModal">
-                                <i class="fas fa-info-circle"></i> View Details
-                            </button>
-
-                        </div>
-                    }
-                </div>
-            </div>
-            <div class="container">
-                <div class="row">
-                <div class="col-md-12">
-                    @if (profile.IsGoogleAccount)
+                    <div class="profile-progress-modern">
+                        @if (!isMaxRank)
                         {
-                            <div class="alert alert-warning mb-4" role="alert">
-                                For Google accounts, please complete the missing information to book a ticket.
+                            var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
+                            var profileNextRankPoints = rank.RequiredPointsForNextRank;
+                            var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
+                            var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
+                            var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%;">
+                                    @profileProgressPercentage.ToString("0")%
+                                </div>
+                            </div>
+                            <div style="margin-top:0.3rem;font-size:1.05rem;">
+                                Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed
                             </div>
                         }
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Full Name</strong></label>
-                            <div class="form-input-col">
-                            <input asp-for="Profile.FullName" class="form-control" placeholder="Enter your full name" />
+                        else
+                        {
+                            <div class="progress">
+                                <div class="progress-bar text-center" role="progressbar" style="width: 100%; align-content:center">Max</div>
+                            </div>
+                            <div style="margin-top:0.3rem;font-size:1.05rem;">
+                                <i class="fas fa-crown"></i> Max Rank Achieved!
+                            </div>
+                        }
+                    </div>
+                </div>
+                <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm" class="profile-form-modern mt-3">
+                    <div class="form-group profile-form-row">
+                        <label for="Profile_FullName" class="profile-label">Full Name</label>
+                        <div class="profile-data">
+                            <input asp-for="Profile.FullName" class="form-control" placeholder="Enter Full Name" />
                             <span asp-validation-for="Profile.FullName" class="text-danger"></span>
                         </div>
                     </div>
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Date of Birth</strong></label>
-                            <div class="form-input-col">
+                    <div class="form-group profile-form-row">
+                        <label for="Profile_DateOfBirth" class="profile-label">Date of Birth</label>
+                        <div class="profile-data">
                             <input asp-for="Profile.DateOfBirth" type="date" class="form-control" />
                             <span asp-validation-for="Profile.DateOfBirth" class="text-danger"></span>
                         </div>
                     </div>
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Gender</strong></label>
-                            <div class="form-input-col">
-                                <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="male" />
-                                    <label class="form-check-label">Male</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="female" />
-                                    <label class="form-check-label">Female</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="unknown" />
-                                    <label class="form-check-label">Unknown</label>
+                    <div class="form-group profile-form-row">
+                        <label class="profile-label">Gender</label>
+                        <div class="profile-data d-flex align-items-center">
+                            <div class="form-check form-check-inline gender-radio">
+                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="male" id="gender-male" />
+                                <label class="form-check-label" for="gender-male">Male</label>
                             </div>
-                            <span asp-validation-for="Profile.Gender" class="text-danger"></span>
+                            <div class="form-check form-check-inline gender-radio">
+                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="female" id="gender-female" />
+                                <label class="form-check-label" for="gender-female">Female</label>
+                            </div>
+                            <div class="form-check form-check-inline gender-radio">
+                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="unknown" id="gender-unknown" />
+                                <label class="form-check-label" for="gender-unknown">Other</label>
+                            </div>
+                            <span asp-validation-for="Profile.Gender" class="text-danger ms-2"></span>
                         </div>
                     </div>
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Identity Number</strong></label>
-                            <div class="form-input-col">
-                            <input asp-for="Profile.IdentityCard" class="form-control" placeholder="Enter your identity number" />
+                    <div class="form-group profile-form-row">
+                        <label for="Profile_IdentityCard" class="profile-label">Identity Number</label>
+                        <div class="profile-data">
+                            <input asp-for="Profile.IdentityCard" class="form-control" placeholder="Enter Indentity Number" />
                             <span asp-validation-for="Profile.IdentityCard" class="text-danger"></span>
                         </div>
                     </div>
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Email</strong></label>
-                            <div class="form-input-col">
-                            <input asp-for="Profile.Email" class="form-control" readonly placeholder="Your email address" />
+                    <div class="form-group profile-form-row">
+                        <label for="Profile_Email" class="profile-label">Email</label>
+                        <div class="profile-data">
+                            <input asp-for="Profile.Email" class="form-control" readonly placeholder="Your Email" />
                             <span asp-validation-for="Profile.Email" class="text-danger"></span>
                         </div>
                     </div>
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Address</strong></label>
-                            <div class="form-input-col">
-                            <input asp-for="Profile.Address" class="form-control" placeholder="Enter your address" />
+                    <div class="form-group profile-form-row">
+                        <label for="Profile_Address" class="profile-label">Address</label>
+                        <div class="profile-data">
+                            <input asp-for="Profile.Address" class="form-control" placeholder="Enter address" />
                             <span asp-validation-for="Profile.Address" class="text-danger"></span>
                         </div>
                     </div>
-                        <div class="form-group row align-items-center">
-                            <label class="form-label-col"><strong>Phone Number</strong></label>
-                            <div class="form-input-col">
-                            <input asp-for="Profile.PhoneNumber" class="form-control" placeholder="Enter your phone number" />
+                    <div class="form-group profile-form-row">
+                        <label for="Profile_PhoneNumber" class="profile-label">Phone Number</label>
+                        <div class="profile-data">
+                            <input asp-for="Profile.PhoneNumber" class="form-control" placeholder="Enter Phone Number" />
                             <span asp-validation-for="Profile.PhoneNumber" class="text-danger"></span>
                         </div>
                     </div>
@@ -167,144 +125,28 @@
                         {
                             <a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary px-4 py-2 rounded">Change Password</a>
                         }
-                        <button type="submit" name="action" value="editProfile" class="btn btn-primary px-4 py-2 rounded">Edit Profile</button>
+                        <button type="submit" name="action" value="editProfile" class="btn btn-primary px-4 py-2 rounded">Update</button>
+                    </div>
+                </form>
+            </div>
+            <partial name="_ToastMessages" />
+        </div>
+        <div class="profile-2col-right">
+            <div class="mt-0 mb-4">
+                <h3 class="mb-4" style="font-weight:700;color:#1769fa;"><i class="fas fa-history me-2"></i>Booking History</h3>
+                <div id="profileHistoryCards">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading booking history...</p>
                     </div>
                 </div>
-            </div>
-        </div>
-    </form>
-    </div>
-</div>
-<partial name="_ToastMessages" />
-
-<!-- Rank Details Modal -->
-<div class="modal fade" id="rankDetailsModal" tabindex="-1" aria-labelledby="rankDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="rankDetailsModalLabel">Rank Tiers & Benefits</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0">
-                @if (Model.AllRanks != null && Model.AllRanks.Any())
-                {
-                    var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
-                    var currentUserScore = Model.RankInfo.TotalPoints;
-                    var currentUserRankId = Model.RankInfo.CurrentRankId;
-
-                    <div id="rankCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <ol class="carousel-indicators">
-                            @for (int i = 0; i < sortedRanks.Count; i++)
-                            {
-                                var rankDetail = sortedRanks[i];
-                                // The indicator should be active if its corresponding carousel item is active, matching the slide.
-                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
-                                <li data-bs-target="#rankCarousel" data-bs-slide-to="@i" class="@activeClass"></li>
-                            }
-                        </ol>
-
-                        <div class="carousel-inner">
-                            @for (int i = 0; i < sortedRanks.Count; i++)
-                            {
-                                var rankDetail = sortedRanks[i];
-                                var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
-                                var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
-                                var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
-                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
-
-                                var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
-                                var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
-                                var pointsForThisTier = targetRankPoints - prevRankPoints;
-
-                                double progressPercentage;
-                                if (currentUserScore >= targetRankPoints)
-                                {
-                                    progressPercentage = 100; // Already surpassed this rank
-                                }
-                                else if (currentUserScore < prevRankPoints)
-                                {
-                                    progressPercentage = 0; // Not yet in this tier
-                                }
-                                else
-                                {
-                                    // Actively in this tier — show partial progress
-                                    var progressRaw = currentUserScore - prevRankPoints;
-                                    progressPercentage = (pointsForThisTier > 0)
-                                    ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
-                                    : 100;
-                                }
-
-                                <div class="carousel-item @activeClass">
-                                    <div class="rank-card" style="--rank-gradient: @rankGradient;">
-                                        <div class="rank-card-header">
-                                            <i class="@rankIcon" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0;"></i>
-                                            <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
-                                            <span class="rank-status">@rankStatus</span>
-                                        </div>
-                                        <div class="rank-card-body">
-                                            <div class="rank-progress-wrapper">
-                                                <div class="progress">
-                                                    <div class="progress-bar" role="progressbar"
-                                                         style="width: @progressPercentage.ToString("0.##")%; --progress-width: @progressPercentage.ToString("0.##")%;">
-                                                    </div>
-                                                </div>
-                                                <div class="rank-points">
-                                                    <span>@prevRankPoints.ToString("N0") pts</span>
-                                                    <span>@targetRankPoints.ToString("N0") pts</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="benefits-section">
-                                                <div class="benefits-header">
-                                                    <i class="fas fa-gift"></i>
-                                                    <span>Benefits:</span>
-                                                </div>
-                                                <div class="benefits-divider"></div>
-                                                <div class="benefits-content">
-                                                    <div class="benefit-item">
-                                                        <i class="fas fa-ticket-alt"></i>
-                                                        <div class="benefit-text">
-                                                            <span class="benefit-label">Discount on Tickets</span>
-                                                            <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="benefit-item">
-                                                        <i class="fas fa-coins"></i>
-                                                        <div class="benefit-text">
-                                                            <span class="benefit-label">Point Earning Rate</span>
-                                                            <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                            </div>
-
-                                            <div class="auto-upgrade">
-                                                <i class="fas fa-sync-alt"></i>
-                                                Auto-upgrade at @targetRankPoints.ToString("N0") pts
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#rankCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#rankCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center">No rank information available.</div>
-                }
+                <nav id="profileHistoryPagination" class="mt-3"></nav>
             </div>
         </div>
     </div>
-</div>
+    </div>
 <script>
     function initProfileAvatarUpload() {
         const imageInput = document.getElementById('profileImageInput');
@@ -312,26 +154,123 @@
         const avatarBtns = document.getElementById('avatarBtns');
         const cancelBtn = document.getElementById('cancelAvatarBtn');
         const originalSrc = imagePreview ? imagePreview.src : '';
-
-        if (!imageInput || !imagePreview || !avatarBtns || !cancelBtn) return;
-
+        if (!imageInput || !imagePreview) return;
         imageInput.addEventListener('change', function(event) {
             if (event.target.files && event.target.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     imagePreview.src = e.target.result;
-                    avatarBtns.classList.add('is-visible');
+                    if (avatarBtns) avatarBtns.classList.add('is-visible');
                 }
                 reader.readAsDataURL(event.target.files[0]);
             }
         });
-
-        cancelBtn.addEventListener('click', function() {
-            imagePreview.src = originalSrc;
-            imageInput.value = '';
-            avatarBtns.classList.remove('is-visible');
-        });
+        if (cancelBtn && avatarBtns) {
+            cancelBtn.addEventListener('click', function() {
+                imagePreview.src = originalSrc;
+                imageInput.value = '';
+                avatarBtns.classList.remove('is-visible');
+            });
+        }
     }
-    @* document.addEventListener('DOMContentLoaded', initProfileAvatarUpload); *@
-      initProfileAvatarUpload();
+    initProfileAvatarUpload();
+    // Booking History Cards AJAX
+    $(function() {
+        let historyDataCache = [];
+        let currentPage = 1;
+        const pageSize = 6;
+        function renderHistoryCards(historyData) {
+            historyDataCache = historyData || [];
+            renderHistoryPage(currentPage);
+            renderHistoryPagination();
+        }
+        function renderHistoryPage(page) {
+            let html = '';
+            const start = (page - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = historyDataCache.slice(start, end);
+            if (pageData.length > 0) {
+                html += '<div class="booking-card-list">';
+                pageData.forEach(function(booking) {
+                    var movieName = booking.movieShow && booking.movieShow.movie ? booking.movieShow.movie.movieNameEnglish : 'N/A';
+                    var showDate = booking.movieShow && booking.movieShow.showDate ? new Date(booking.movieShow.showDate).toLocaleDateString('en-GB') : 'N/A';
+                    var showTime = booking.movieShow && booking.movieShow.schedule && booking.movieShow.schedule.scheduleTime ? booking.movieShow.schedule.scheduleTime.substring(0, 5) : 'N/A';
+                    var seats = booking.seat || '';
+                    var seatCount = seats ? seats.split(',').length : 0;
+                    var totalMoney = booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A';
+                    var statusBadge = booking.status === 1 ? '<span class="badge bg-success">Booked</span>' : '<span class="badge bg-danger">Canceled</span>';
+                    html += `<div class="booking-card">
+                        <div class="booking-card-row booking-card-row-top">
+                            <div class="booking-card-title">${movieName}</div>
+                            <div class="booking-card-date" style="flex:1.5 1 0%;min-width:90px;max-width:160px;"><i class=\"fas fa-calendar-alt\"></i> ${showDate}</div>
+                            <div class="booking-card-time"><i class=\"fas fa-clock\"></i> ${showTime}</div>
+                            <div class="booking-card-actions dropdown">
+                                <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="/Ticket/Details/${booking.invoiceId}"><i class="fas fa-info-circle me-2"></i>Chi tiết</a></li>
+                                    ${booking.status === 1 ? `<li><form action=\"/Ticket/Cancel\" method=\"post\" class=\"d-inline\" onsubmit=\"return confirm('Bạn có chắc muốn hủy vé này?');\"><input type=\"hidden\" name=\"id\" value=\"${booking.invoiceId}\" /><button type=\"submit\" class=\"dropdown-item\"><i class=\"fas fa-times me-2\"></i>Hủy vé</button></form></li>` : ''}
+                                    <li><a class="dropdown-item" href="#" onclick="window.print();return false;"><i class="fas fa-print me-2"></i>In vé</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="booking-card-row booking-card-row-seats">
+                            <div class="booking-card-seats"><i class=\"fas fa-chair\"></i> ${seatCount} seat(s): ${seats}</div>
+                        </div>
+                        <div class="booking-card-row booking-card-row-bottom">
+                            <div class="booking-card-amount"><i class=\"fas fa-money-bill-wave\"></i> ${totalMoney}</div>
+                            <div class="booking-card-status">${statusBadge}</div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="alert alert-info text-center"><i class="fas fa-info-circle me-2"></i>Không có vé nào.</div>';
+            }
+            $('#profileHistoryCards').html(html);
+        }
+        function renderHistoryPagination() {
+            const totalPages = Math.ceil(historyDataCache.length / pageSize);
+            if (totalPages <= 1) {
+                $('#profileHistoryPagination').html('');
+                return;
+            }
+            let html = '<ul class="pagination justify-content-center">';
+            html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            }
+            html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+            html += '</ul>';
+            $('#profileHistoryPagination').html(html);
+            $('#profileHistoryPagination .page-link').off('click').on('click', function (e) {
+                e.preventDefault();
+                const page = parseInt($(this).data('page'));
+                if (!isNaN(page) && page >= 1 && page <= totalPages && page !== currentPage) {
+                    currentPage = page;
+                    renderHistoryPage(currentPage);
+                    renderHistoryPagination();
+                }
+            });
+        }
+        function loadHistory() {
+            $('#profileHistoryCards').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-3">Loading booking history...</p></div>');
+            $.ajax({
+                url: '/Ticket/HistoryPartial',
+                type: 'GET',
+                data: {},
+                success: function (response) {
+                    if (response.success) {
+                        currentPage = 1;
+                        renderHistoryCards(response.data);
+                    } else {
+                        $('#profileHistoryCards').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ' + response.message + '</div>');
+                    }
+                },
+                error: function () {
+                    $('#profileHistoryCards').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error loading data.</div>');
+                }
+            });
+        }
+        loadHistory();
+    });
 </script>
