@@ -15,6 +15,8 @@ namespace MovieTheater.Hubs
     {
         // movieShowId -> (seatId -> HoldInfo)
         private static readonly ConcurrentDictionary<int, ConcurrentDictionary<int, HoldInfo>> _heldSeats = new();
+        // movieShowId + accountId -> connectionId
+        private static readonly ConcurrentDictionary<(int movieShowId, string accountId), string> _accountConnections = new();
         private const int HoldMinutes = 5;
         private readonly MovieTheaterContext _context;
 
@@ -27,29 +29,43 @@ namespace MovieTheater.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, movieShowId.ToString());
 
+            var accountId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(accountId))
+            {
+                // Kiểm tra nếu accountId này đã có kết nối khác ở showtime này
+                var key = (movieShowId, accountId);
+                if (_accountConnections.TryGetValue(key, out var existingConnId) && existingConnId != Context.ConnectionId)
+                {
+                    // Gửi sự kiện AccountInUse cho client mới
+                    await Clients.Caller.SendAsync("AccountInUse");
+                    return;
+                }
+                // Lưu lại connectionId cho accountId này ở showtime này
+                _accountConnections[key] = Context.ConnectionId;
+            }
+
+            var heldByMe = new List<int>();
+            var heldByOthers = new List<int>();
+
             if (_heldSeats.TryGetValue(movieShowId, out var seatsForShow))
             {
                 var now = DateTime.UtcNow;
-                var heldSeatIds = new List<int>();
                 foreach (var kv in seatsForShow)
                 {
-                    var seat = _context.Seats.FirstOrDefault(s => s.SeatId == kv.Key);
-                    if (seat != null && (now - kv.Value.HoldTime).TotalMinutes <= HoldMinutes)
+                    if ((now - kv.Value.HoldTime).TotalMinutes <= HoldMinutes)
                     {
-                        heldSeatIds.Add(kv.Key);
+                        if (kv.Value.AccountId == accountId)
+                            heldByMe.Add(kv.Key);
+                        else
+                            heldByOthers.Add(kv.Key);
                     }
                     else
                     {
-                        // Nếu hết thời gian hold, xóa khỏi hold
                         seatsForShow.TryRemove(kv.Key, out _);
                     }
                 }
-                await Clients.Caller.SendAsync("HeldSeats", heldSeatIds);
             }
-            else
-            {
-                await Clients.Caller.SendAsync("HeldSeats", new List<int>());
-            }
+            await Clients.Caller.SendAsync("HeldSeats", heldByMe, heldByOthers);
         }
 
         public async Task SelectSeat(int movieShowId, int seatId)
@@ -85,7 +101,18 @@ namespace MovieTheater.Hubs
         // KHÔNG release ghế trong OnDisconnectedAsync nữa, chỉ giữ logic thông báo SeatsReleased nếu cần
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            // Không release ghế ở đây nữa
+            // Xóa mapping accountId khỏi _accountConnections
+            var accountId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(accountId))
+            {
+                foreach (var key in _accountConnections.Keys)
+                {
+                    if (key.accountId == accountId && _accountConnections[key] == Context.ConnectionId)
+                    {
+                        _accountConnections.TryRemove(key, out _);
+                    }
+                }
+            }
             await base.OnDisconnectedAsync(exception);
         }
 
