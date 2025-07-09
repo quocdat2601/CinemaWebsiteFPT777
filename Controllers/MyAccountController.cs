@@ -192,16 +192,33 @@ namespace MovieTheater.Controllers
             return RedirectToAction("MainPage", new { tab = "Profile" });
         }
 
+        public class SendOtpRequest
+        {
+            public string CurrentPassword { get; set; }
+        }
+
+        public class OtpResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; }
+            public string Error { get; set; }
+        }
+
         /// <summary>
         /// Gửi mã OTP đến email người dùng để xác thực thay đổi mật khẩu.
         /// </summary>
         /// <remarks>url: /MyAccount/SendOtp (POST)</remarks>
         [HttpPost]
-        public IActionResult SendOtp()
+        public IActionResult SendOtp([FromBody] SendOtpRequest req)
         {
             var user = _service.GetCurrentUser();
             if (user == null || string.IsNullOrEmpty(user.Email))
-                return Json(new { success = false, error = "User email not found." });
+                return Json(new OtpResponse { Success = false, Error = "User email not found." });
+
+            if (string.IsNullOrEmpty(req.CurrentPassword) || !_service.VerifyCurrentPassword(user.Username, req.CurrentPassword))
+            {
+                return Json(new OtpResponse { Success = false, Error = "Current password is incorrect." });
+            }
 
             _logger.LogInformation($"[SendOtp] accountId={user.AccountId}");
 
@@ -210,13 +227,13 @@ namespace MovieTheater.Controllers
 
             var otpStored = _service.StoreOtp(user.AccountId, otp, expiry);
             if (!otpStored)
-                return Json(new { success = false, error = "Failed to store OTP. Please try again later." });
+                return Json(new OtpResponse { Success = false, Error = "Failed to store OTP. Please try again later." });
 
             var emailSent = _service.SendOtpEmail(user.Email, otp);
             if (!emailSent)
-                return Json(new { success = false, error = "Failed to send OTP email. Please try again later." });
+                return Json(new OtpResponse { Success = false, Error = "Failed to send OTP email. Please try again later." });
 
-            return Json(new { success = true, message = "OTP sent to your email." });
+            return Json(new OtpResponse { Success = true, Message = "OTP sent to your email." });
         }
 
         /// <summary>
@@ -245,51 +262,37 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /MyAccount/ChangePasswordAsync (POST)</remarks>
         [HttpPost]
-        public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword)
+        public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword, string otp)
         {
             var user = _service.GetCurrentUser();
             if (user == null)
-            {
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "User session expired. Please log in again." });
 
-            if (string.IsNullOrEmpty(currentPassword))
-            {
-                TempData["ErrorMessage"] = "Current password cannot be null";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+            if (string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+                return Json(new { success = false, error = "All fields are required." });
 
             if (!_service.VerifyCurrentPassword(user.Username, currentPassword))
-            {
-                TempData["ErrorMessage"] = "Invalid current password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "Current password is incorrect." });
 
-            if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
-            {
-                TempData["ErrorMessage"] = "Invalid new password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+            if (newPassword != confirmPassword)
+                return Json(new { success = false, error = "Passwords do not match." });
 
             if (currentPassword == newPassword)
-            {
-                TempData["ErrorMessage"] = "New password cannot be the same as current password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "New password must be different from current password." });
+
+            // Check OTP
+            if (!_service.VerifyOtp(user.AccountId, otp))
+                return Json(new { success = false, error = "Invalid or expired OTP." });
 
             var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
             _service.ClearOtp(user.AccountId);
 
             if (!result)
-            {
-                TempData["ErrorMessage"] = "Failed to update password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "Failed to update password." });
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             Response.Cookies.Delete("JwtToken");
-            TempData["ToastMessage"] = "Password updated successfully! Please log back in.";
-            return RedirectToAction("Login", "Account");
+            return Json(new { success = true });
         }
 
         /// <summary>
