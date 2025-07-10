@@ -13,7 +13,7 @@
                     <div class="text-center mb-4" id="currentScoreDisplay">
                         <div class="alert alert-info d-inline-block p-3 rounded-pill">
                             <i class="fas fa-star text-warning"></i>
-                            <strong class="fs-4">Current Score: <span id="currentScoreValue">@Model.CurrentScore.ToString("N0")</span> pts</strong>
+                            <strong class="fs-4">Current Score: <span id="currentScoreValue">@(Model?.CurrentScore.ToString("N0") ?? "0")</span> pts</strong>
                         </div>
                     </div>
 

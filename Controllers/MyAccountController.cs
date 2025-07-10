@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -72,7 +73,12 @@ namespace MovieTheater.Controllers
                     };
                     return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
                 case "Score":
-                    return PartialView("~/Views/Account/Tabs/Score.cshtml", new List<MovieTheater.ViewModels.ScoreHistoryViewModel>());
+                    var scoreService = HttpContext.RequestServices.GetService<IScoreService>();
+                    var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    var currentScore = scoreService?.GetCurrentScore(accountId) ?? 0;
+                    var scoreHistory = scoreService?.GetScoreHistory(accountId) ?? new List<ScoreHistoryViewModel>();
+                    var scoreViewModel = new ScoreHistoryViewModel { CurrentScore = currentScore };
+                    return PartialView("~/Views/Account/Tabs/Score.cshtml", scoreViewModel);
                 case "Voucher":
                     if (user == null)
                         return NotFound();
