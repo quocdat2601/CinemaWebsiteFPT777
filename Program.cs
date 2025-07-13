@@ -62,7 +62,10 @@ namespace MovieTheater
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+
+                //code dưới sẽ khiến middleware challenge bằng Google OAuth thay vì chuyển hướng về trang login nội bộ
+                //options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+
             })
             .AddCookie(options =>
             {
