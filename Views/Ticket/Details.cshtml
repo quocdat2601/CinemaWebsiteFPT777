@@ -16,19 +16,37 @@
     var useScore = invoice.UseScore ?? 0;
     var bookingDate = invoice.BookingDate?.ToString("dd/MM/yyyy HH:mm");
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel>;
+    var selectedFoods = ViewBag.SelectedFoods as List<MovieTheater.ViewModels.FoodViewModel> ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    decimal totalFoodPrice = ViewBag.TotalFoodPrice as decimal? ?? 0;
+    
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.PriceAfterPromotion ?? s.Price) ?? 0;
     int promotionDiscount = invoice.PromotionDiscount ?? 0;
     decimal usedScoreValue = useScore * 1000;
     decimal addedScoreValue = addScore * 1000;
-    decimal totalPriceValue = invoice.TotalMoney ?? 0;
-
+    
+    // Tính toán seat price chính xác
     decimal rankDiscountPercent = invoice.RankDiscountPercentage ?? 0;
     decimal rankDiscount = 0;
     if (rankDiscountPercent > 0)
     {
         rankDiscount = subtotal * (rankDiscountPercent / 100m);
     }
+    
+    // Tính voucher amount nếu có
+    decimal voucherAmount = 0;
+    if (ViewBag.VoucherAmount != null)
+    {
+        voucherAmount = (decimal)ViewBag.VoucherAmount;
+    }
+    
+    // Tính seat price sau tất cả giảm giá
+    decimal seatPriceAfterDiscount = subtotal - rankDiscount - voucherAmount - usedScoreValue;
+    if (seatPriceAfterDiscount < 0) seatPriceAfterDiscount = 0;
+    
+    // Sử dụng giá trị từ database để đảm bảo tính nhất quán
+    decimal seatPriceFromDB = invoice.TotalMoney ?? 0;
+    decimal totalPriceValue = seatPriceFromDB + totalFoodPrice;
     // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
@@ -236,13 +254,46 @@
                             }
                         </tbody>
                     </table>
+                    
+                    @if (selectedFoods.Any())
+                    {
+                        <div class="ticket-section-title">Food & Drinks</div>
+                        <table class="table table-bordered mb-2">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var food in selectedFoods)
+                                {
+                                    <tr>
+                                        <td>@food.Name</td>
+                                        <td>@food.Quantity</td>
+                                        <td>@food.Price.ToString("N0") VND</td>
+                                        <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                                    <td><strong>@totalFoodPrice.ToString("N0") VND</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    }
+                    
                     @if (subtotal > 0)
                     {
                         <div class="ticket-section-title">Price Breakdown</div>
                         <table class="table table-borderless mb-2">
                             <tbody>
                                 <tr>
-                                    <td style="white-space: nowrap;">Subtotal</td>
+                                    <td style="white-space: nowrap;">Seat Subtotal</td>
                                     <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
                                 </tr>
                                 @if (rankDiscount > 0)
@@ -267,7 +318,18 @@
                                     </tr>
                                 }
                                 <tr>
-                                    <td class="ticket-total-label">Total Price</td>
+                                    <td class="ticket-total-label">Seat Price</td>
+                                    <td class="ticket-total-value text-end">@seatPriceFromDB.ToString("N0") VND</td>
+                                </tr>
+                                @if (totalFoodPrice > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">Food & Drinks</td>
+                                        <td class="text-end" style="white-space: nowrap;">@totalFoodPrice.ToString("N0") VND</td>
+                                    </tr>
+                                }
+                                <tr style="border-top: 1px solid #dee2e6;">
+                                    <td class="ticket-total-label">Total Amount</td>
                                     <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
                                 </tr>
                                 @if (addScore > 0)

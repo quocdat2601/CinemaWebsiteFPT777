@@ -21,14 +21,16 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IAccountService _accountService;
+        private readonly IFoodInvoiceService _foodInvoiceService;
 
 
-        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService)
+        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService, IFoodInvoiceService foodInvoiceService)
         {
             _invoiceRepository = invoiceRepository;
             _context = context;
             _accountService = accountService;
             _voucherService = voucherService;
+            _foodInvoiceService = foodInvoiceService;
         }
         /// <summary>
         /// Chuyển hướng lịch sử vé sang trang Index
@@ -206,6 +208,11 @@ namespace MovieTheater.Controllers
                 ViewBag.VoucherAmount = booking.Voucher.Value;
                 ViewBag.VoucherCode = booking.Voucher.Code;
             }
+
+            // Lấy thông tin food từ FoodInvoice
+            var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(id)).ToList();
+            ViewBag.SelectedFoods = selectedFoods;
+            ViewBag.TotalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
 
             return View(booking);
         }
