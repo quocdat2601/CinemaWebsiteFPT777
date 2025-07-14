@@ -2,9 +2,9 @@ name: .NET Build & Publish
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ quality-gate ]
   pull_request:
-    branches: [ dev ]
+    branches: [ quality-gate ]
 
 jobs:
   build:
