@@ -7,6 +7,8 @@ using MovieTheater.ViewModels;
 using Newtonsoft.Json;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -31,15 +33,14 @@ namespace MovieTheater.Controllers
         private readonly ISeatTypeService _seatTypeService;
         private readonly IMemberRepository _memberRepository;
         private readonly IInvoiceService _invoiceService;
-        private readonly ICinemaService _cinemaService;
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly ILogger<BookingController> _logger;
         private readonly VNPayService _vnPayService;
         private readonly IPointService _pointService;
-        private readonly IRankService _rankService;
         private readonly IPromotionService _promotionService;
         private readonly IVoucherService _voucherService;
         private readonly MovieTheaterContext _context;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
         public BookingController(IBookingService bookingService,
                          IMovieService movieService,
@@ -49,14 +50,13 @@ namespace MovieTheater.Controllers
                          IMemberRepository memberRepository,
                          ILogger<BookingController> logger,
                          IInvoiceService invoiceService,
-                         ICinemaService cinemaService,
                          IScheduleSeatRepository scheduleSeatRepository,
                          VNPayService vnPayService,
                          IPointService pointService,
-                         IRankService rankService,
                          IPromotionService promotionService,
 
                          IVoucherService voucherService,
+                         IHubContext<DashboardHub> dashboardHubContext,
 
                          MovieTheater.Models.MovieTheaterContext context)
         {
@@ -68,14 +68,13 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _logger = logger;
             _invoiceService = invoiceService;
-            _cinemaService = cinemaService;
             _scheduleSeatRepository = scheduleSeatRepository;
             _vnPayService = vnPayService;
             _pointService = pointService;
-            _rankService = rankService;
             _voucherService = voucherService;
             _promotionService = promotionService;
             _context = context;
+            _dashboardHubContext = dashboardHubContext;
         }
 
         /// <summary>
@@ -365,7 +364,7 @@ namespace MovieTheater.Controllers
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = userId,
                     BookingDate = DateTime.Now,
-                    Status = InvoiceStatus.Completed,
+                    Status = InvoiceStatus.Incomplete, // Chỉ set Incomplete khi vừa confirm
                     TotalMoney = finalPrice,
                     UseScore = model.UseScore,
                     Seat = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName)),
@@ -412,6 +411,8 @@ namespace MovieTheater.Controllers
                         await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
                     }
 
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
+
                     TempData["MovieName"] = model.MovieName;
                     TempData["ShowDate"] = model.ShowDate.ToString();
                     TempData["ShowTime"] = model.ShowTime;
@@ -453,6 +454,7 @@ namespace MovieTheater.Controllers
                     }
                 }
 
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
             catch (Exception ex)
@@ -734,6 +736,8 @@ namespace MovieTheater.Controllers
                     _context.Invoices.Update(invoice);
                     _context.SaveChanges();
                 }
+                // Gửi realtime dashboard khi failed
+                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 // Giữ lại các trường cần thiết trong TempData để View sử dụng
                 TempData.Keep("PromotionDiscount");
                 TempData.Keep("VoucherAmount");
@@ -1029,6 +1033,7 @@ namespace MovieTheater.Controllers
                 // Store seat information in session for the confirmation view
                 HttpContext.Session.SetString("ConfirmedSeats_" + invoice.InvoiceId, JsonConvert.SerializeObject(model.BookingDetails.SelectedSeats));
 
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
             }
             catch (Exception ex)

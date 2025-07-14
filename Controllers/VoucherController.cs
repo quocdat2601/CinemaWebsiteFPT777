@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -10,11 +12,13 @@ namespace MovieTheater.Controllers
     {
         private readonly IVoucherService _voucherService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment)
+        public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _voucherService = voucherService;
             _webHostEnvironment = webHostEnvironment;
+            _dashboardHubContext = dashboardHubContext;
         }
 
         /// <summary>
@@ -223,7 +227,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Voucher/AdminDelete (POST)</remarks>
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult AdminDelete(string id, string returnUrl)
+        public async Task<IActionResult> AdminDelete(string id, string returnUrl)
         {
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
@@ -232,6 +236,7 @@ namespace MovieTheater.Controllers
                 return Redirect("/Admin/MainPage?tab=VoucherMg");
             }
             _voucherService.Delete(id);
+            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
             TempData["ToastMessage"] = "Voucher deleted successfully.";
             return Redirect("/Admin/MainPage?tab=VoucherMg");
         }
@@ -344,6 +349,7 @@ namespace MovieTheater.Controllers
                 }
 
                 _voucherService.Update(voucher);
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 TempData["ToastMessage"] = "Voucher updated successfully.";
                 return Redirect("/Admin/MainPage?tab=VoucherMg");
             }
@@ -418,6 +424,7 @@ namespace MovieTheater.Controllers
                     }
 
                     _voucherService.Add(voucher);
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Voucher created successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
                 }

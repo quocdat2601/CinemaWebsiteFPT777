@@ -6,6 +6,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using MovieTheater.Repository;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {//movie
@@ -14,14 +16,14 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly ICinemaService _cinemaService;
         private readonly ILogger<MovieController> _logger;
-        private readonly IScheduleRepository _scheduleRepository;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IScheduleRepository scheduleRepository)
+        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext)
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
             _logger = logger;
-            _scheduleRepository = scheduleRepository;
+            _dashboardHubContext = dashboardHubContext;
         }
 
         /// <summary>
@@ -166,6 +168,7 @@ namespace MovieTheater.Controllers
             if (_movieService.AddMovie(movie))
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
+                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
@@ -358,6 +361,7 @@ namespace MovieTheater.Controllers
             if (_movieService.UpdateMovie(movie))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
+                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
@@ -417,6 +421,7 @@ namespace MovieTheater.Controllers
                 }
 
                 TempData["ToastMessage"] = "Movie deleted successfully!";
+                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 else

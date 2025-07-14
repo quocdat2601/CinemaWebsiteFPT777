@@ -6,14 +6,12 @@ namespace MovieTheater.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private readonly IMovieService _movieService;
         private readonly IPromotionService _promotionService;
         private readonly IAccountService _accountService;
 
-        public HomeController(ILogger<HomeController> logger, IPromotionService promotionService, IMovieService movieService, IAccountService accountService)
+        public HomeController(IPromotionService promotionService, IMovieService movieService, IAccountService accountService)
         {
-            _logger = logger;
             _promotionService = promotionService;
             _movieService = movieService;
             _accountService = accountService;

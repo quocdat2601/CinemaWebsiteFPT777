@@ -19,9 +19,7 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
         private readonly IScheduleRepository _scheduleRepository;
-        private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
-        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
@@ -34,11 +32,9 @@ namespace MovieTheater.Controllers
             ISeatTypeService seatTypeService,
             IMemberRepository memberRepository,
             IAccountService accountService,
-            IBookingService bookingService,
             ISeatService seatService,
             IInvoiceService invoiceService,
             IScheduleRepository scheduleRepository,
-            IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
             IVoucherService voucherService,
             IRankService rankService)
@@ -52,9 +48,7 @@ namespace MovieTheater.Controllers
             _accountService = accountService;
             _invoiceService = invoiceService;
             _scheduleRepository = scheduleRepository;
-            _bookingService = bookingService;
             _seatService = seatService;
-            _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
@@ -262,7 +256,7 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = "Member updated successfully!"; // Optional success message
                 return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log the exception (optional)
                 // _logger.LogError(ex, "Error updating member with id {MemberId}", id);
@@ -275,14 +269,9 @@ namespace MovieTheater.Controllers
         private AdminDashboardViewModel GetDashboardViewModel()
         {
             var today = DateTime.Today;
-            var allInvoices = _invoiceService.GetAll().ToList();
+            var allInvoices = _invoiceService.GetAll().Where(i => i.Status == InvoiceStatus.Completed).ToList();
 
-            // Only "completed" and "cancelled"
-            var completed = allInvoices.Where(i => i.Status == InvoiceStatus.Completed).ToList();
-            var cancelled = allInvoices.Where(i => i.Status == InvoiceStatus.Incomplete).ToList();
-
-            var todayInv = completed.Where(i => i.BookingDate?.Date == today).ToList();
-            var todayCancelled = cancelled.Where(i => i.BookingDate?.Date == today).ToList();
+            var todayInv = allInvoices.Where(i => i.BookingDate?.Date == today).ToList();
 
             // 1) Today's summary
             var revenueToday = todayInv.Sum(i => i.TotalMoney ?? 0m);
@@ -303,23 +292,23 @@ namespace MovieTheater.Controllers
                            .ToList();
             var revTrend = last7
                 .Select(d => allInvoices
-                    .Where(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed)
+                    .Where(inv => inv.BookingDate?.Date == d)
                     .Sum(inv => inv.TotalMoney ?? 0m))
                 .ToList();
             var bookTrend = last7
                 .Select(d => allInvoices
-                    .Count(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed))
+                    .Count(inv => inv.BookingDate?.Date == d))
                 .ToList();
 
             // 4) Top 5 movies & members
-            var topMovies = completed
+            var topMovies = allInvoices
                 .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
                 .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
                 .ToList();
 
-            var topMembers = completed
+            var topMembers = allInvoices
                 .Where(i => i.Account != null && i.Account.RoleId == 3)
                 .GroupBy(i => i.Account.FullName)
                 .OrderByDescending(g => g.Count())
@@ -328,7 +317,7 @@ namespace MovieTheater.Controllers
                 .ToList();
 
             // 5) Recent bookings 
-            var recentBookings = completed
+            var recentBookings = allInvoices
                 .OrderByDescending(i => i.BookingDate)
                 .Take(10)
                 .Select(i => new RecentBookingInfo
@@ -412,8 +401,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetMovieShowSummary(int year, int month)
         {
-            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as MovieRepository;
-            if (repo == null)
+            if (HttpContext.RequestServices.GetService(typeof(IMovieRepository)) is not MovieRepository repo)
             {
                 return Json(new Dictionary<string, List<string>>());
             }

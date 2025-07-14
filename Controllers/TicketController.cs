@@ -12,6 +12,7 @@ using MovieTheater.Repository;
 using System.Threading.Tasks;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -21,14 +22,16 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IAccountService _accountService;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
 
-        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService)
+        public TicketController(MovieTheaterContext context, IInvoiceRepository invoiceRepository, IAccountService accountService, IVoucherService voucherService, IHubContext<DashboardHub> dashboardHubContext)
         {
             _invoiceRepository = invoiceRepository;
             _context = context;
             _accountService = accountService;
             _voucherService = voucherService;
+            _dashboardHubContext = dashboardHubContext;
         }
         /// <summary>
         /// Chuyển hướng lịch sử vé sang trang Index
@@ -234,14 +237,14 @@ namespace MovieTheater.Controllers
             if (booking.Status != InvoiceStatus.Completed)
             {
                 TempData["ErrorMessage"] = "Only paid bookings can be cancelled.";
-                if (!string.IsNullOrEmpty(returnUrl))
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
                 return RedirectToAction(nameof(Index));
             }
             if (booking.Status == InvoiceStatus.Incomplete)
             {
                 TempData["ErrorMessage"] = "This ticket has already been cancelled.";
-                if (!string.IsNullOrEmpty(returnUrl))
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
                 return RedirectToAction(nameof(Index));
             }
@@ -288,6 +291,7 @@ namespace MovieTheater.Controllers
 
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(accountId);
+            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
 
             // Create refund voucher only if TotalMoney > 0
             Voucher refundVoucher = null;
@@ -326,7 +330,7 @@ namespace MovieTheater.Controllers
             }
             TempData["ToastMessage"] = string.Join("<br/>", messages);
 
-            if (!string.IsNullOrEmpty(returnUrl))
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             return RedirectToAction(nameof(Index));
         }
@@ -448,6 +452,7 @@ namespace MovieTheater.Controllers
 
             _context.SaveChanges();
             _accountService.CheckAndUpgradeRank(booking.AccountId);
+            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
 
             // Create refund voucher only if TotalMoney > 0
             Voucher refundVoucher = null;
