@@ -62,3 +62,6 @@ coverage-report/
 # Temporary files
 *.tmp
 *.temp
+
+# Ignore coverage reports
+coverage-report/
