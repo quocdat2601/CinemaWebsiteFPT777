@@ -70,7 +70,7 @@ jobs:
           dotnet sonarscanner begin `
             /k:"DreamFog20_HCM25_CPL_NET_05" `
             /o:"dreamfog20" `
-            /d:sonar.login="${{ 3726359882ebb4265271c76df54625a17c09a918}}" `
+            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml `
             /d:sonar.sourceEncoding=UTF-8
@@ -94,4 +94,4 @@ jobs:
       - name: End SonarCloud Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}" 
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
