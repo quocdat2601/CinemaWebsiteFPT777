@@ -1,25 +1,25 @@
 Summary
-  Generated on: 7/14/2025 - 8:57:22 AM
-  Coverage date: 7/14/2025 - 8:38:12 AM - 7/14/2025 - 8:57:21 AM
-  Parser: MultiReport (2x Cobertura)
+  Generated on: 7/14/2025 - 10:28:33 AM
+  Coverage date: 7/14/2025 - 8:38:12 AM - 7/14/2025 - 10:28:31 AM
+  Parser: MultiReport (5x Cobertura)
   Assemblies: 1
   Classes: 197
   Files: 184
-  Line coverage: 0.2%
-  Covered lines: 28
-  Uncovered lines: 10164
-  Coverable lines: 10192
-  Total lines: 25452
-  Branch coverage: 0% (4 of 5718)
-  Covered branches: 4
+  Line coverage: 9.1%
+  Covered lines: 935
+  Uncovered lines: 9281
+  Coverable lines: 10216
+  Total lines: 25448
+  Branch coverage: 0.9% (53 of 5718)
+  Covered branches: 53
   Total branches: 5718
-  Method coverage: 0.7% (10 of 1304)
-  Full method coverage: 0.6% (9 of 1304)
-  Covered methods: 10
-  Fully covered methods: 9
-  Total methods: 1304
+  Method coverage: 7.4% (97 of 1305)
+  Full method coverage: 6.8% (90 of 1305)
+  Covered methods: 97
+  Fully covered methods: 90
+  Total methods: 1305
 
-MovieTheater                                                          0.2%
+MovieTheater                                                          9.1%
   AspNetCoreGeneratedDocument.Views__ViewStart                          0%
   AspNetCoreGeneratedDocument.Views_Account_Login                       0%
   AspNetCoreGeneratedDocument.Views_Account_MainPage                    0%
@@ -114,7 +114,7 @@ MovieTheater                                                          0.2%
   MovieTheater.Hubs.HoldInfo                                            0%
   MovieTheater.Hubs.SeatHub                                             0%
   MovieTheater.Middleware.PaymentSecurityMiddleware                     0%
-  MovieTheater.Models.Account                                        36.3%
+  MovieTheater.Models.Account                                        95.4%
   MovieTheater.Models.CinemaRoom                                        0%
   MovieTheater.Models.ConditionType                                     0%
   MovieTheater.Models.CoupleSeat                                        0%
@@ -123,13 +123,13 @@ MovieTheater                                                          0.2%
   MovieTheater.Models.Food                                              0%
   MovieTheater.Models.Invoice                                           0%
   MovieTheater.Models.JwtSettings                                       0%
-  MovieTheater.Models.Member                                            0%
+  MovieTheater.Models.Member                                          100%
   MovieTheater.Models.Movie                                             0%
   MovieTheater.Models.MovieShow                                         0%
-  MovieTheater.Models.MovieTheaterContext                               0%
+  MovieTheater.Models.MovieTheaterContext                            96.4%
   MovieTheater.Models.Promotion                                         0%
   MovieTheater.Models.PromotionCondition                                0%
-  MovieTheater.Models.Rank                                              0%
+  MovieTheater.Models.Rank                                           62.5%
   MovieTheater.Models.Role                                              0%
   MovieTheater.Models.Schedule                                          0%
   MovieTheater.Models.ScheduleSeat                                      0%
@@ -151,17 +151,17 @@ MovieTheater                                                          0.2%
   MovieTheater.Repository.MemberRepository                              0%
   MovieTheater.Repository.MovieRepository                               0%
   MovieTheater.Repository.PromotionRepository                           0%
-  MovieTheater.Repository.RankRepository                                0%
+  MovieTheater.Repository.RankRepository                              100%
   MovieTheater.Repository.ScheduleRepository                            0%
   MovieTheater.Repository.ScheduleSeatRepository                        0%
   MovieTheater.Repository.SeatRepository                                0%
   MovieTheater.Repository.SeatTypeRepository                            0%
   MovieTheater.Repository.VoucherRepository                             0%
-  MovieTheater.Service.AccountService                                 6.4%
+  MovieTheater.Service.AccountService                                55.4%
   MovieTheater.Service.BookingService                                   0%
   MovieTheater.Service.CinemaService                                    0%
   MovieTheater.Service.CoupleSeatService                                0%
-  MovieTheater.Service.EmailService                                     0%
+  MovieTheater.Service.EmailService                                  59.3%
   MovieTheater.Service.EmployeeService                                  0%
   MovieTheater.Service.FoodService                                      0%
   MovieTheater.Service.InvoiceService                                   0%
@@ -196,14 +196,14 @@ MovieTheater                                                          0.2%
   MovieTheater.ViewModels.PaymentRequest                                0%
   MovieTheater.ViewModels.PaymentViewModel                              0%
   MovieTheater.ViewModels.ProfilePageViewModel                          0%
-  MovieTheater.ViewModels.ProfileUpdateViewModel                        0%
+  MovieTheater.ViewModels.ProfileUpdateViewModel                     92.8%
   MovieTheater.ViewModels.PromotionViewModel                            0%
   MovieTheater.ViewModels.RankCreateViewModel                           0%
   MovieTheater.ViewModels.RankDisplayInfo                               0%
   MovieTheater.ViewModels.RankInfoViewModel                             0%
   MovieTheater.ViewModels.RecentBookingInfo                             0%
   MovieTheater.ViewModels.RecentMemberInfo                              0%
-  MovieTheater.ViewModels.RegisterViewModel                             0%
+  MovieTheater.ViewModels.RegisterViewModel                          86.6%
   MovieTheater.ViewModels.ScoreHistoryViewModel                         0%
   MovieTheater.ViewModels.SeatDetailViewModel                           0%
   MovieTheater.ViewModels.SeatSelectionViewModel                        0%
