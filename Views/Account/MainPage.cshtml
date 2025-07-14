@@ -6,35 +6,47 @@
     var activeTab = ViewData["ActiveTab"]?.ToString() ?? "Profile";
 }
 
+<!-- Hamburger và sidebar nằm ngoài container-fluid, luôn hiển thị ở mọi tab -->
+<button id="sidebarToggle" class="hamburger-btn d-block" style="position: fixed; top: 90px; left: 20px; z-index: 3000;">
+    &#9776;
+</button>
+<div class="sidebar" id="account-sidebar" style="position: fixed; top: 90px; left: 0; height: 100vh; width: 220px; background: #fff; z-index: 2000; border-right: 1px solid #eee;">
+    <ul class="nav flex-column nav-pills" id="accountTabs" style="margin-top: 50px;">
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "Profile" ? "active" : "")" data-tab="Profile" href="#">Profile</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "Score" ? "active" : "")" data-tab="Score" href="#">Score</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "Voucher" ? "active" : "")" data-tab="Voucher" href="#">Voucher</a>
+        </li>
+    </ul>
+</div>
 
-<div class="container-fluid">
+<!-- Chỉ phần này load động -->
+<div class="container-fluid" style="margin-left: 220px;">
     <div class="row">
-        <!-- Sidebar Tabs -->
-        <div class="col-2 border-end vh-50 pt-3" id="account-sidebar">
-            <ul class="nav flex-column nav-pills" id="accountTabs">
-                <li class="nav-item">
-                    <a class="nav-link @(activeTab == "Profile" ? "active" : "")" data-tab="Profile" href="#">Profile</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(activeTab == "Score" ? "active" : "")" data-tab="Score" href="#">Score</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(activeTab == "Voucher" ? "active" : "")" data-tab="Voucher" href="#">Voucher</a>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="col-10 p-4" id="tabContent">
+        <div class="col p-4 main-content" id="tabContent">
             <h3>Loading...</h3>
         </div>
     </div>
 </div>
 
-
 @section Scripts {
     <script>
         $(document).ready(function () {
+            // Gắn sự kiện hamburger chỉ một lần
+            var sidebar = document.getElementById('account-sidebar');
+            var toggleBtn = document.getElementById('sidebarToggle');
+            var mainContent = document.querySelector('.main-content');
+            if (toggleBtn) {
+                toggleBtn.onclick = function () {
+                    sidebar.classList.toggle('hidden');
+                    if(mainContent) mainContent.classList.toggle('full-width');
+                };
+            }
+
             // Function to load tab content
             function loadTab(tabName) {
                 // Show loading
@@ -47,6 +59,8 @@
                 // Load tab content
                 $.get(`/MyAccount/LoadTab?tab=${tabName}`, function (data) {
                     $('#tabContent').html(data);
+                    // Nếu tab là Score và có initScoreTab thì gọi lại
+                    if (tabName === 'Score' && typeof initScoreTab === 'function') initScoreTab();
                 }).fail(function() {
                     $('#tabContent').html('<div class="alert alert-danger">Failed to load tab content. Please try again.</div>');
                 });
@@ -82,6 +96,10 @@
             }
         });
     </script>
+    <style>
+        .sidebar.hidden { display: none !important; }
+        .main-content.full-width { width: 100% !important; max-width: 100% !important; }
+    </style>
 }
 
 

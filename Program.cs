@@ -122,6 +122,8 @@ namespace MovieTheater
             builder.Services.AddSignalR(); //ADD SignalR
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
+            builder.Services.AddScoped<IFoodInvoiceRepository, FoodInvoiceRepository>();
+            builder.Services.AddScoped<IFoodInvoiceService, FoodInvoiceService>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")

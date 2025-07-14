@@ -378,8 +378,26 @@
             }
             let html = '<ul class="pagination justify-content-center">';
             html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
-            for (let i = 1; i <= totalPages; i++) {
-                html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+
+            if (totalPages <= 5) {
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+            } else {
+                html += `<li class="page-item${currentPage === 1 ? ' active' : ''}"><a class="page-link" href="#" data-page="1">1</a></li>`;
+                if (currentPage > 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                let start = Math.max(2, currentPage - 1);
+                let end = Math.min(totalPages - 1, currentPage + 1);
+                for (let i = start; i <= end; i++) {
+                    if (i === 1 || i === totalPages) continue;
+                    html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+                if (currentPage < totalPages - 2) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                html += `<li class="page-item${currentPage === totalPages ? ' active' : ''}"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
             }
             html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
             html += '</ul>';
