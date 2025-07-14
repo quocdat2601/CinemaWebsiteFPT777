@@ -280,13 +280,13 @@ var assemblies = [
       { "name": "AspNetCoreGeneratedDocument.Views_Voucher_AdminEdit", "rp": "MovieTheater_Views_Voucher_AdminEdit.html", "cl": 0, "ucl": 8, "cal": 8, "tl": 211, "cb": 0, "tb": 50, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.AccountController", "rp": "MovieTheater_AccountController.html", "cl": 0, "ucl": 230, "cal": 230, "tl": 357, "cb": 0, "tb": 84, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.AdminController", "rp": "MovieTheater_AdminController.html", "cl": 0, "ucl": 450, "cal": 450, "tl": 523, "cb": 0, "tb": 342, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Controllers.BookingController", "rp": "MovieTheater_BookingController.html", "cl": 0, "ucl": 1367, "cal": 1367, "tl": 1536, "cb": 0, "tb": 1124, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Controllers.BookingController", "rp": "MovieTheater_BookingController.html", "cl": 0, "ucl": 1442, "cal": 1442, "tl": 1559, "cb": 0, "tb": 1516, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.CinemaController", "rp": "MovieTheater_CinemaController.html", "cl": 0, "ucl": 74, "cal": 74, "tl": 130, "cb": 0, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.EmployeeController", "rp": "MovieTheater_EmployeeController.html", "cl": 0, "ucl": 269, "cal": 269, "tl": 314, "cb": 0, "tb": 140, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.FoodController", "rp": "MovieTheater_FoodController.html", "cl": 0, "ucl": 73, "cal": 73, "tl": 124, "cb": 0, "tb": 16, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.HomeController", "rp": "MovieTheater_HomeController.html", "cl": 0, "ucl": 48, "cal": 48, "tl": 75, "cb": 0, "tb": 22, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.JwtTestController", "rp": "MovieTheater_JwtTestController.html", "cl": 0, "ucl": 31, "cal": 31, "tl": 65, "cb": 0, "tb": 10, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Controllers.MemberCheckRequest", "rp": "MovieTheater_MemberCheckRequest.html", "cl": 0, "ucl": 1, "cal": 1, "tl": 1536, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Controllers.MemberCheckRequest", "rp": "MovieTheater_MemberCheckRequest.html", "cl": 0, "ucl": 1, "cal": 1, "tl": 1559, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.MovieController", "rp": "MovieTheater_MovieController.html", "cl": 0, "ucl": 528, "cal": 528, "tl": 635, "cb": 0, "tb": 300, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.MyAccountController", "rp": "MovieTheater_MyAccountController.html", "cl": 0, "ucl": 260, "cal": 260, "tl": 335, "cb": 0, "tb": 146, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.PaymentController", "rp": "MovieTheater_PaymentController.html", "cl": 0, "ucl": 170, "cal": 170, "tl": 261, "cb": 0, "tb": 178, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -294,7 +294,7 @@ var assemblies = [
       { "name": "MovieTheater.Controllers.PromotionController", "rp": "MovieTheater_PromotionController.html", "cl": 0, "ucl": 171, "cal": 171, "tl": 282, "cb": 0, "tb": 46, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.QRCodeController", "rp": "MovieTheater_QRCodeController.html", "cl": 0, "ucl": 196, "cal": 196, "tl": 325, "cb": 0, "tb": 94, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.ScoreController", "rp": "MovieTheater_ScoreController.html", "cl": 0, "ucl": 45, "cal": 45, "tl": 88, "cb": 0, "tb": 26, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Controllers.ScoreConversionRequest", "rp": "MovieTheater_ScoreConversionRequest.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 1536, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Controllers.ScoreConversionRequest", "rp": "MovieTheater_ScoreConversionRequest.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 1559, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.SeatController", "rp": "MovieTheater_SeatController.html", "cl": 0, "ucl": 189, "cal": 189, "tl": 339, "cb": 0, "tb": 68, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.SeatTypeController", "rp": "MovieTheater_SeatTypeController.html", "cl": 0, "ucl": 51, "cal": 51, "tl": 129, "cb": 0, "tb": 10, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Controllers.ShowtimeController", "rp": "MovieTheater_ShowtimeController.html", "cl": 0, "ucl": 113, "cal": 113, "tl": 209, "cb": 0, "tb": 18, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -307,7 +307,7 @@ var assemblies = [
       { "name": "MovieTheater.Hubs.HoldInfo", "rp": "MovieTheater_HoldInfo.html", "cl": 0, "ucl": 2, "cal": 2, "tl": 139, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Hubs.SeatHub", "rp": "MovieTheater_SeatHub.html", "cl": 0, "ucl": 88, "cal": 88, "tl": 139, "cb": 0, "tb": 56, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Middleware.PaymentSecurityMiddleware", "rp": "MovieTheater_PaymentSecurityMiddleware.html", "cl": 0, "ucl": 131, "cal": 131, "tl": 165, "cb": 0, "tb": 78, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Models.Account", "rp": "MovieTheater_Account.html", "cl": 8, "ucl": 14, "cal": 22, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Models.Account", "rp": "MovieTheater_Account.html", "cl": 21, "ucl": 1, "cal": 22, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.CinemaRoom", "rp": "MovieTheater_CinemaRoom.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 25, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.ConditionType", "rp": "MovieTheater_ConditionType.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.CoupleSeat", "rp": "MovieTheater_CoupleSeat.html", "cl": 0, "ucl": 5, "cal": 5, "tl": 17, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -316,13 +316,13 @@ var assemblies = [
       { "name": "MovieTheater.Models.Food", "rp": "MovieTheater_Food.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 25, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.Invoice", "rp": "MovieTheater_Invoice.html", "cl": 0, "ucl": 17, "cal": 17, "tl": 45, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.JwtSettings", "rp": "MovieTheater_JwtSettings.html", "cl": 0, "ucl": 4, "cal": 4, "tl": 10, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Models.Member", "rp": "MovieTheater_Member.html", "cl": 0, "ucl": 5, "cal": 5, "tl": 17, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Models.Member", "rp": "MovieTheater_Member.html", "cl": 5, "ucl": 0, "cal": 5, "tl": 17, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.Movie", "rp": "MovieTheater_Movie.html", "cl": 0, "ucl": 18, "cal": 18, "tl": 43, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.MovieShow", "rp": "MovieTheater_MovieShow.html", "cl": 0, "ucl": 12, "cal": 12, "tl": 31, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Models.MovieTheaterContext", "rp": "MovieTheater_MovieTheaterContext.html", "cl": 0, "ucl": 671, "cal": 671, "tl": 734, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Models.MovieTheaterContext", "rp": "MovieTheater_MovieTheaterContext.html", "cl": 670, "ucl": 25, "cal": 695, "tl": 730, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.Promotion", "rp": "MovieTheater_Promotion.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 25, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.PromotionCondition", "rp": "MovieTheater_PromotionCondition.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 25, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Models.Rank", "rp": "MovieTheater_Rank.html", "cl": 0, "ucl": 8, "cal": 8, "tl": 23, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Models.Rank", "rp": "MovieTheater_Rank.html", "cl": 5, "ucl": 3, "cal": 8, "tl": 23, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.Role", "rp": "MovieTheater_Role.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.Schedule", "rp": "MovieTheater_Schedule.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.ScheduleSeat", "rp": "MovieTheater_ScheduleSeat.html", "cl": 0, "ucl": 11, "cal": 11, "tl": 29, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -333,7 +333,7 @@ var assemblies = [
       { "name": "MovieTheater.Models.Type", "rp": "MovieTheater_Type.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.Version", "rp": "MovieTheater_Version.html", "cl": 0, "ucl": 6, "cal": 6, "tl": 19, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Models.VNPayConfig", "rp": "MovieTheater_VNPayConfig.html", "cl": 0, "ucl": 10, "cal": 10, "tl": 16, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Models.Voucher", "rp": "MovieTheater_Voucher.html", "cl": 0, "ucl": 10, "cal": 10, "tl": 27, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Models.Voucher", "rp": "MovieTheater_Voucher.html", "cl": 9, "ucl": 1, "cal": 10, "tl": 27, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Program", "rp": "MovieTheater_Program.html", "cl": 0, "ucl": 160, "cal": 160, "tl": 191, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.AccountRepository", "rp": "MovieTheater_AccountRepository.html", "cl": 0, "ucl": 82, "cal": 82, "tl": 122, "cb": 0, "tb": 18, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.CinemaRepository", "rp": "MovieTheater_CinemaRepository.html", "cl": 0, "ucl": 87, "cal": 87, "tl": 127, "cb": 0, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -344,17 +344,17 @@ var assemblies = [
       { "name": "MovieTheater.Repository.MemberRepository", "rp": "MovieTheater_MemberRepository.html", "cl": 0, "ucl": 64, "cal": 64, "tl": 102, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.MovieRepository", "rp": "MovieTheater_MovieRepository.html", "cl": 0, "ucl": 314, "cal": 314, "tl": 453, "cb": 0, "tb": 46, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.PromotionRepository", "rp": "MovieTheater_PromotionRepository.html", "cl": 0, "ucl": 37, "cal": 37, "tl": 64, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Repository.RankRepository", "rp": "MovieTheater_RankRepository.html", "cl": 0, "ucl": 17, "cal": 17, "tl": 44, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Repository.RankRepository", "rp": "MovieTheater_RankRepository.html", "cl": 17, "ucl": 0, "cal": 17, "tl": 44, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.ScheduleRepository", "rp": "MovieTheater_ScheduleRepository.html", "cl": 0, "ucl": 47, "cal": 47, "tl": 69, "cb": 0, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.ScheduleSeatRepository", "rp": "MovieTheater_ScheduleSeatRepository.html", "cl": 0, "ucl": 71, "cal": 71, "tl": 119, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.SeatRepository", "rp": "MovieTheater_SeatRepository.html", "cl": 0, "ucl": 38, "cal": 38, "tl": 69, "cb": 0, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.SeatTypeRepository", "rp": "MovieTheater_SeatTypeRepository.html", "cl": 0, "ucl": 20, "cal": 20, "tl": 37, "cb": 0, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Repository.VoucherRepository", "rp": "MovieTheater_VoucherRepository.html", "cl": 0, "ucl": 46, "cal": 46, "tl": 64, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Service.AccountService", "rp": "MovieTheater_AccountService.html", "cl": 20, "ucl": 290, "cal": 310, "tl": 444, "cb": 4, "tb": 116, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Service.AccountService", "rp": "MovieTheater_AccountService.html", "cl": 172, "ucl": 138, "cal": 310, "tl": 444, "cb": 53, "tb": 116, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.BookingService", "rp": "MovieTheater_BookingService.html", "cl": 0, "ucl": 46, "cal": 46, "tl": 82, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.CinemaService", "rp": "MovieTheater_CinemaService.html", "cl": 0, "ucl": 32, "cal": 32, "tl": 59, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.CoupleSeatService", "rp": "MovieTheater_CoupleSeatService.html", "cl": 0, "ucl": 44, "cal": 44, "tl": 80, "cb": 0, "tb": 10, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Service.EmailService", "rp": "MovieTheater_EmailService.html", "cl": 0, "ucl": 32, "cal": 32, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Service.EmailService", "rp": "MovieTheater_EmailService.html", "cl": 19, "ucl": 13, "cal": 32, "tl": 51, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.EmployeeService", "rp": "MovieTheater_EmployeeService.html", "cl": 0, "ucl": 44, "cal": 44, "tl": 57, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.FoodService", "rp": "MovieTheater_FoodService.html", "cl": 0, "ucl": 148, "cal": 148, "tl": 208, "cb": 0, "tb": 28, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.InvoiceService", "rp": "MovieTheater_InvoiceService.html", "cl": 0, "ucl": 16, "cal": 16, "tl": 36, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -371,7 +371,8 @@ var assemblies = [
       { "name": "MovieTheater.Service.SeatTypeService", "rp": "MovieTheater_SeatTypeService.html", "cl": 0, "ucl": 16, "cal": 16, "tl": 35, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.VNPayCompare", "rp": "MovieTheater_VNPayCompare.html", "cl": 0, "ucl": 10, "cal": 10, "tl": 121, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.Service.VNPayService", "rp": "MovieTheater_VNPayService.html", "cl": 0, "ucl": 69, "cal": 69, "tl": 121, "cb": 0, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.Service.VoucherService", "rp": "MovieTheater_VoucherService.html", "cl": 0, "ucl": 29, "cal": 29, "tl": 49, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Service.VoucherService", "rp": "MovieTheater_VoucherService.html", "cl": 67, "ucl": 10, "cal": 77, "tl": 115, "cb": 8, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.Service.VoucherValidationResult", "rp": "MovieTheater_VoucherValidationResult.html", "cl": 4, "ucl": 0, "cal": 4, "tl": 115, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.AdminDashboardViewModel", "rp": "MovieTheater_AdminDashboardViewModel.html", "cl": 0, "ucl": 12, "cal": 12, "tl": 48, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.AvailableSchedulesViewModel", "rp": "MovieTheater_AvailableSchedulesViewModel.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.BookingFilterViewModel", "rp": "MovieTheater_BookingFilterViewModel.html", "cl": 0, "ucl": 4, "cal": 4, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -389,14 +390,14 @@ var assemblies = [
       { "name": "MovieTheater.ViewModels.PaymentRequest", "rp": "MovieTheater_PaymentRequest.2.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 9, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.PaymentViewModel", "rp": "MovieTheater_PaymentViewModel.html", "cl": 0, "ucl": 7, "cal": 7, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.ProfilePageViewModel", "rp": "MovieTheater_ProfilePageViewModel.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.ViewModels.ProfileUpdateViewModel", "rp": "MovieTheater_ProfileUpdateViewModel.html", "cl": 0, "ucl": 14, "cal": 14, "tl": 47, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.ViewModels.ProfileUpdateViewModel", "rp": "MovieTheater_ProfileUpdateViewModel.html", "cl": 13, "ucl": 1, "cal": 14, "tl": 47, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.PromotionViewModel", "rp": "MovieTheater_PromotionViewModel.html", "cl": 0, "ucl": 8, "cal": 8, "tl": 34, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.RankCreateViewModel", "rp": "MovieTheater_RankCreateViewModel.html", "cl": 0, "ucl": 6, "cal": 6, "tl": 30, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.RankDisplayInfo", "rp": "MovieTheater_RankDisplayInfo.html", "cl": 0, "ucl": 9, "cal": 9, "tl": 42, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.RankInfoViewModel", "rp": "MovieTheater_RankInfoViewModel.html", "cl": 0, "ucl": 17, "cal": 17, "tl": 42, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.RecentBookingInfo", "rp": "MovieTheater_RecentBookingInfo.html", "cl": 0, "ucl": 5, "cal": 5, "tl": 48, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.RecentMemberInfo", "rp": "MovieTheater_RecentMemberInfo.html", "cl": 0, "ucl": 5, "cal": 5, "tl": 48, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "MovieTheater.ViewModels.RegisterViewModel", "rp": "MovieTheater_RegisterViewModel.html", "cl": 0, "ucl": 15, "cal": 15, "tl": 58, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "MovieTheater.ViewModels.RegisterViewModel", "rp": "MovieTheater_RegisterViewModel.html", "cl": 13, "ucl": 2, "cal": 15, "tl": 58, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.ScoreHistoryViewModel", "rp": "MovieTheater_ScoreHistoryViewModel.html", "cl": 0, "ucl": 5, "cal": 5, "tl": 11, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.SeatDetailViewModel", "rp": "MovieTheater_SeatDetailViewModel.html", "cl": 0, "ucl": 8, "cal": 8, "tl": 15, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "MovieTheater.ViewModels.SeatSelectionViewModel", "rp": "MovieTheater_SeatSelectionViewModel.html", "cl": 0, "ucl": 13, "cal": 13, "tl": 21, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -460,6 +461,12 @@ var riskHotspots = [
       { "value": 94, "exceeded": true },
     ]},
   {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "Success()", "methodShortName": "Success()", "fileIndex": 0, "line": 495,
+    "metrics": [
+      { "value": 8930, "exceeded": true },
+      { "value": 94, "exceeded": true },
+    ]},
+  {
     "assembly": "MovieTheater", "class": "AspNetCoreGeneratedDocument.Views_Booking_TicketBookingConfirmed", "reportPath": "MovieTheater_Views_Booking_TicketBookingConfirmed.html", "methodName": "ExecuteAsync()", "methodShortName": "ExecuteAsync()", "fileIndex": 0, "line": 5,
     "metrics": [
       { "value": 8556, "exceeded": true },
@@ -473,6 +480,12 @@ var riskHotspots = [
     ]},
   {
     "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "TicketBookingConfirmed(System.String)", "methodShortName": "TicketBookingConfirmed(...)", "fileIndex": 0, "line": 1052,
+    "metrics": [
+      { "value": 8190, "exceeded": true },
+      { "value": 90, "exceeded": true },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "TicketBookingConfirmed(System.String)", "methodShortName": "TicketBookingConfirmed(...)", "fileIndex": 0, "line": 1075,
     "metrics": [
       { "value": 8190, "exceeded": true },
       { "value": 90, "exceeded": true },
@@ -568,13 +581,13 @@ var riskHotspots = [
       { "value": 60, "exceeded": true },
     ]},
   {
-    "assembly": "MovieTheater", "class": "AspNetCoreGeneratedDocument.Views_Admin_FoodMg", "reportPath": "MovieTheater_Views_Admin_FoodMg.html", "methodName": "ExecuteAsync()", "methodShortName": "ExecuteAsync()", "fileIndex": 0, "line": 3,
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "ConfirmTicketForAdmin()", "methodShortName": "ConfirmTicketForAdmin()", "fileIndex": 0, "line": 915,
     "metrics": [
-      { "value": 3422, "exceeded": true },
-      { "value": 58, "exceeded": true },
+      { "value": 3660, "exceeded": true },
+      { "value": 60, "exceeded": true },
     ]},
   {
-    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "Confirm()", "methodShortName": "Confirm()", "fileIndex": 0, "line": 312,
+    "assembly": "MovieTheater", "class": "AspNetCoreGeneratedDocument.Views_Admin_FoodMg", "reportPath": "MovieTheater_Views_Admin_FoodMg.html", "methodName": "ExecuteAsync()", "methodShortName": "ExecuteAsync()", "fileIndex": 0, "line": 3,
     "metrics": [
       { "value": 3422, "exceeded": true },
       { "value": 58, "exceeded": true },
@@ -610,6 +623,12 @@ var riskHotspots = [
       { "value": 52, "exceeded": true },
     ]},
   {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "TicketInfo(System.String)", "methodShortName": "TicketInfo(...)", "fileIndex": 0, "line": 1249,
+    "metrics": [
+      { "value": 2756, "exceeded": true },
+      { "value": 52, "exceeded": true },
+    ]},
+  {
     "assembly": "MovieTheater", "class": "AspNetCoreGeneratedDocument.Views_Employee_Edit", "reportPath": "MovieTheater_Views_Employee_Edit.html", "methodName": "<ExecuteAsync()", "methodShortName": "<ExecuteAsync()", "fileIndex": 0, "line": 23,
     "metrics": [
       { "value": 2550, "exceeded": true },
@@ -622,7 +641,19 @@ var riskHotspots = [
       { "value": 50, "exceeded": true },
     ]},
   {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "Confirm()", "methodShortName": "Confirm()", "fileIndex": 0, "line": 312,
+    "metrics": [
+      { "value": 2550, "exceeded": true },
+      { "value": 50, "exceeded": true },
+    ]},
+  {
     "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "TicketDetails(System.String)", "methodShortName": "TicketDetails(...)", "fileIndex": 0, "line": 1428,
+    "metrics": [
+      { "value": 2550, "exceeded": true },
+      { "value": 50, "exceeded": true },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "TicketDetails(System.String)", "methodShortName": "TicketDetails(...)", "fileIndex": 0, "line": 1451,
     "metrics": [
       { "value": 2550, "exceeded": true },
       { "value": 50, "exceeded": true },
@@ -748,6 +779,12 @@ var riskHotspots = [
       { "value": 32, "exceeded": true },
     ]},
   {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "ConfirmTicketForAdmin()", "methodShortName": "ConfirmTicketForAdmin()", "fileIndex": 0, "line": 801,
+    "metrics": [
+      { "value": 1056, "exceeded": true },
+      { "value": 32, "exceeded": true },
+    ]},
+  {
     "assembly": "MovieTheater", "class": "AspNetCoreGeneratedDocument.Views_Admin_ShowtimeMg", "reportPath": "MovieTheater_Views_Admin_ShowtimeMg.html", "methodName": "ExecuteAsync()", "methodShortName": "ExecuteAsync()", "fileIndex": 0, "line": 19,
     "metrics": [
       { "value": 930, "exceeded": true },
@@ -778,12 +815,6 @@ var riskHotspots = [
       { "value": 30, "exceeded": true },
     ]},
   {
-    "assembly": "MovieTheater", "class": "MovieTheater.Service.AccountService", "reportPath": "MovieTheater_AccountService.html", "methodName": "GetCurrentUser()", "methodShortName": "GetCurrentUser()", "fileIndex": 0, "line": 194,
-    "metrics": [
-      { "value": 930, "exceeded": true },
-      { "value": 30, "exceeded": true },
-    ]},
-  {
     "assembly": "MovieTheater", "class": "AspNetCoreGeneratedDocument.Views_Admin_EditVoucher", "reportPath": "MovieTheater_Views_Admin_EditVoucher.html", "methodName": "<ExecuteAsync()", "methodShortName": "<ExecuteAsync()", "fileIndex": 0, "line": 47,
     "metrics": [
       { "value": 812, "exceeded": true },
@@ -803,6 +834,12 @@ var riskHotspots = [
     ]},
   {
     "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "ProcessPayment(MovieTheater.ViewModels.PaymentViewModel)", "methodShortName": "ProcessPayment(...)", "fileIndex": 0, "line": 654,
+    "metrics": [
+      { "value": 812, "exceeded": true },
+      { "value": 28, "exceeded": true },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "ProcessPayment(MovieTheater.ViewModels.PaymentViewModel)", "methodShortName": "ProcessPayment(...)", "fileIndex": 0, "line": 669,
     "metrics": [
       { "value": 812, "exceeded": true },
       { "value": 28, "exceeded": true },
@@ -857,6 +894,12 @@ var riskHotspots = [
     ]},
   {
     "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "Failed()", "methodShortName": "Failed()", "fileIndex": 0, "line": 727,
+    "metrics": [
+      { "value": 506, "exceeded": true },
+      { "value": 22, "exceeded": true },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "Failed()", "methodShortName": "Failed()", "fileIndex": 0, "line": 742,
     "metrics": [
       { "value": 506, "exceeded": true },
       { "value": 22, "exceeded": true },
@@ -983,12 +1026,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "MovieTheater", "class": "MovieTheater.Repository.MovieRepository", "reportPath": "MovieTheater_MovieRepository.html", "methodName": "IsScheduleAvailable(System.DateOnly,System.Int32,System.Int32,System.Int32)", "methodShortName": "IsScheduleAvailable(...)", "fileIndex": 0, "line": 298,
-    "metrics": [
-      { "value": 342, "exceeded": true },
-      { "value": 18, "exceeded": true },
-    ]},
-  {
-    "assembly": "MovieTheater", "class": "MovieTheater.Service.AccountService", "reportPath": "MovieTheater_AccountService.html", "methodName": "Update(System.String,MovieTheater.ViewModels.RegisterViewModel)", "methodShortName": "Update(...)", "fileIndex": 0, "line": 95,
     "metrics": [
       { "value": 342, "exceeded": true },
       { "value": 18, "exceeded": true },
@@ -1276,6 +1313,12 @@ var riskHotspots = [
       { "value": 10, "exceeded": false },
     ]},
   {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "GetAllMembers()", "methodShortName": "GetAllMembers()", "fileIndex": 0, "line": 1391,
+    "metrics": [
+      { "value": 110, "exceeded": true },
+      { "value": 10, "exceeded": false },
+    ]},
+  {
     "assembly": "MovieTheater", "class": "MovieTheater.Controllers.MovieController", "reportPath": "MovieTheater_MovieController.html", "methodName": "Create(MovieTheater.ViewModels.MovieDetailViewModel)", "methodShortName": "Create(...)", "fileIndex": 0, "line": 133,
     "metrics": [
       { "value": 110, "exceeded": true },
@@ -1331,12 +1374,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "MovieTheater", "class": "MovieTheater.Repository.MovieRepository", "reportPath": "MovieTheater_MovieRepository.html", "methodName": "Update(MovieTheater.Models.Movie)", "methodShortName": "Update(...)", "fileIndex": 0, "line": 77,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "MovieTheater", "class": "MovieTheater.Service.AccountService", "reportPath": "MovieTheater_AccountService.html", "methodName": "Register(MovieTheater.ViewModels.RegisterViewModel)", "methodShortName": "Register(...)", "fileIndex": 0, "line": 36,
     "metrics": [
       { "value": 110, "exceeded": true },
       { "value": 10, "exceeded": false },
@@ -1451,6 +1488,18 @@ var riskHotspots = [
     ]},
   {
     "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "TicketBooking()", "methodShortName": "TicketBooking()", "fileIndex": 0, "line": 86,
+    "metrics": [
+      { "value": 72, "exceeded": true },
+      { "value": 8, "exceeded": false },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "GetMemberDiscount(System.String)", "methodShortName": "GetMemberDiscount(...)", "fileIndex": 0, "line": 1430,
+    "metrics": [
+      { "value": 72, "exceeded": true },
+      { "value": 8, "exceeded": false },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Controllers.BookingController", "reportPath": "MovieTheater_BookingController.html", "methodName": "CheckMemberDetails()", "methodShortName": "CheckMemberDetails()", "fileIndex": 0, "line": 887,
     "metrics": [
       { "value": 72, "exceeded": true },
       { "value": 8, "exceeded": false },
@@ -1736,6 +1785,18 @@ var riskHotspots = [
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Service.AccountService", "reportPath": "MovieTheater_AccountService.html", "methodName": "GetCurrentUser()", "methodShortName": "GetCurrentUser()", "fileIndex": 0, "line": 194,
+    "metrics": [
+      { "value": 30, "exceeded": false },
+      { "value": 30, "exceeded": true },
+    ]},
+  {
+    "assembly": "MovieTheater", "class": "MovieTheater.Service.AccountService", "reportPath": "MovieTheater_AccountService.html", "methodName": "Update(System.String,MovieTheater.ViewModels.RegisterViewModel)", "methodShortName": "Update(...)", "fileIndex": 0, "line": 95,
+    "metrics": [
+      { "value": 18, "exceeded": false },
+      { "value": 18, "exceeded": true },
     ]},
 ];
 
