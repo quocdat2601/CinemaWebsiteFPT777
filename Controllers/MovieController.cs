@@ -16,15 +16,13 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly ICinemaService _cinemaService;
         private readonly ILogger<MovieController> _logger;
-        private readonly IScheduleRepository _scheduleRepository;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IScheduleRepository scheduleRepository, IHubContext<DashboardHub> dashboardHubContext)
+        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext)
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
             _logger = logger;
-            _scheduleRepository = scheduleRepository;
             _dashboardHubContext = dashboardHubContext;
         }
 

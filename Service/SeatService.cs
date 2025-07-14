@@ -6,12 +6,10 @@ namespace MovieTheater.Service
     public class SeatService : ISeatService
     {
         private readonly ISeatRepository _repository;
-        private readonly MovieTheaterContext _context;
 
-        public SeatService(ISeatRepository repository, MovieTheaterContext context)
+        public SeatService(ISeatRepository repository)
         {
             _repository = repository;
-            _context = context;
         }
 
         public Task<List<Seat>> GetAllSeatsAsync()

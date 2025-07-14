@@ -33,12 +33,10 @@ namespace MovieTheater.Controllers
         private readonly ISeatTypeService _seatTypeService;
         private readonly IMemberRepository _memberRepository;
         private readonly IInvoiceService _invoiceService;
-        private readonly ICinemaService _cinemaService;
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly ILogger<BookingController> _logger;
         private readonly VNPayService _vnPayService;
         private readonly IPointService _pointService;
-        private readonly IRankService _rankService;
         private readonly IPromotionService _promotionService;
         private readonly IVoucherService _voucherService;
         private readonly MovieTheaterContext _context;
@@ -52,11 +50,9 @@ namespace MovieTheater.Controllers
                          IMemberRepository memberRepository,
                          ILogger<BookingController> logger,
                          IInvoiceService invoiceService,
-                         ICinemaService cinemaService,
                          IScheduleSeatRepository scheduleSeatRepository,
                          VNPayService vnPayService,
                          IPointService pointService,
-                         IRankService rankService,
                          IPromotionService promotionService,
 
                          IVoucherService voucherService,
@@ -72,11 +68,9 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _logger = logger;
             _invoiceService = invoiceService;
-            _cinemaService = cinemaService;
             _scheduleSeatRepository = scheduleSeatRepository;
             _vnPayService = vnPayService;
             _pointService = pointService;
-            _rankService = rankService;
             _voucherService = voucherService;
             _promotionService = promotionService;
             _context = context;

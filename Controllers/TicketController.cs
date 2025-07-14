@@ -237,14 +237,14 @@ namespace MovieTheater.Controllers
             if (booking.Status != InvoiceStatus.Completed)
             {
                 TempData["ErrorMessage"] = "Only paid bookings can be cancelled.";
-                if (!string.IsNullOrEmpty(returnUrl))
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
                 return RedirectToAction(nameof(Index));
             }
             if (booking.Status == InvoiceStatus.Incomplete)
             {
                 TempData["ErrorMessage"] = "This ticket has already been cancelled.";
-                if (!string.IsNullOrEmpty(returnUrl))
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
                 return RedirectToAction(nameof(Index));
             }
@@ -330,7 +330,7 @@ namespace MovieTheater.Controllers
             }
             TempData["ToastMessage"] = string.Join("<br/>", messages);
 
-            if (!string.IsNullOrEmpty(returnUrl))
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             return RedirectToAction(nameof(Index));
         }

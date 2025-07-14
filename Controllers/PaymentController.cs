@@ -12,15 +12,13 @@ namespace MovieTheater.Controllers
     public class PaymentController : Controller
     {
         private readonly VNPayService _vnPayService;
-        private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
         private readonly MovieTheater.Models.MovieTheaterContext _context;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context, IHubContext<DashboardHub> dashboardHubContext)
+        public PaymentController(VNPayService vnPayService, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context, IHubContext<DashboardHub> dashboardHubContext)
         {
             _vnPayService = vnPayService;
-            _logger = logger;
             _accountService = accountService;
             _context = context;
             _dashboardHubContext = dashboardHubContext;
