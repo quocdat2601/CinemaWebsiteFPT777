@@ -1,25 +1,25 @@
 Summary
-  Generated on: 7/14/2025 - 10:28:33 AM
-  Coverage date: 7/14/2025 - 8:38:12 AM - 7/14/2025 - 10:28:31 AM
-  Parser: MultiReport (5x Cobertura)
+  Generated on: 7/14/2025 - 10:32:49 AM
+  Coverage date: 7/14/2025 - 8:38:12 AM - 7/14/2025 - 10:32:47 AM
+  Parser: MultiReport (6x Cobertura)
   Assemblies: 1
-  Classes: 197
+  Classes: 198
   Files: 184
-  Line coverage: 9.1%
-  Covered lines: 935
-  Uncovered lines: 9281
-  Coverable lines: 10216
-  Total lines: 25448
-  Branch coverage: 0.9% (53 of 5718)
-  Covered branches: 53
-  Total branches: 5718
-  Method coverage: 7.4% (97 of 1305)
-  Full method coverage: 6.8% (90 of 1305)
-  Covered methods: 97
-  Fully covered methods: 90
-  Total methods: 1305
+  Line coverage: 9.8%
+  Covered lines: 1015
+  Uncovered lines: 9328
+  Coverable lines: 10343
+  Total lines: 25537
+  Branch coverage: 0.9% (61 of 6118)
+  Covered branches: 61
+  Total branches: 6118
+  Method coverage: 9.6% (128 of 1333)
+  Full method coverage: 8.7% (116 of 1333)
+  Covered methods: 128
+  Fully covered methods: 116
+  Total methods: 1333
 
-MovieTheater                                                          9.1%
+MovieTheater                                                          9.8%
   AspNetCoreGeneratedDocument.Views__ViewStart                          0%
   AspNetCoreGeneratedDocument.Views_Account_Login                       0%
   AspNetCoreGeneratedDocument.Views_Account_MainPage                    0%
@@ -140,7 +140,7 @@ MovieTheater                                                          9.1%
   MovieTheater.Models.Type                                              0%
   MovieTheater.Models.Version                                           0%
   MovieTheater.Models.VNPayConfig                                       0%
-  MovieTheater.Models.Voucher                                           0%
+  MovieTheater.Models.Voucher                                          90%
   MovieTheater.Program                                                  0%
   MovieTheater.Repository.AccountRepository                             0%
   MovieTheater.Repository.CinemaRepository                              0%
@@ -178,7 +178,8 @@ MovieTheater                                                          9.1%
   MovieTheater.Service.SeatTypeService                                  0%
   MovieTheater.Service.VNPayCompare                                     0%
   MovieTheater.Service.VNPayService                                     0%
-  MovieTheater.Service.VoucherService                                   0%
+  MovieTheater.Service.VoucherService                                  87%
+  MovieTheater.Service.VoucherValidationResult                        100%
   MovieTheater.ViewModels.AdminDashboardViewModel                       0%
   MovieTheater.ViewModels.AvailableSchedulesViewModel                   0%
   MovieTheater.ViewModels.BookingFilterViewModel                        0%
