@@ -210,5 +210,35 @@
             }
         });
     </script>
+    <!-- Thông báo hết thời gian ở giữa màn hình, luôn hiển thị nổi bật, nằm ngoài cùng -->
+    <div id="timeoutMessage" style="
+      display:none;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      width:100vw;
+      position:fixed;
+      top:0; left:0;
+      background:rgba(30,41,59,0.92);
+      z-index:99999;
+      flex-direction:column;
+      text-align:center;
+      border: 5px solid yellow;
+    ">
+      <h2 style='color:yellow'>⏰ Hết thời gian giữ ghế!</h2>
+      <p style="color: #fff; font-size: 1.3rem;">Vui lòng chọn lại ghế hoặc quay về trang trước.</p>
+      <button id="retryBtn" class="btn btn-primary mt-3">Chọn lại ghế</button>
+    </div>
+    <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = '/Booking/TicketBooking';
+      });
+    }
+  });
+</script>
 </body>
 </html>
