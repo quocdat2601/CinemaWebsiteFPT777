@@ -1,0 +1,97 @@
+# Tên của workflow
+name: .NET Build, Test and Analyze
+
+# Cấu hình khi nào workflow sẽ chạy
+on:
+  push:
+    branches:
+      - main
+      - quality-gate
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main # Chỉ chạy trên Pull Request vào nhánh main
+
+jobs:
+  build-and-analyze:
+    name: Build, Test and Analyze
+    runs-on: windows-latest
+
+    steps:
+      # Bước 1: Lấy mã nguồn từ repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Cần thiết cho SonarCloud để phân tích chính xác
+
+      # Bước 2: Cài đặt Java (SonarScanner cần Java để chạy)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'microsoft'
+
+      # Bước 3: Cache các gói của SonarCloud để chạy nhanh hơn
+      - name: Cache SonarQube packages
+        uses: actions/cache@v3
+        with:
+          path: ~\.sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # Bước 4: Cache các gói NuGet
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      # Bước 5: Cài đặt SonarScanner cho .NET
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      # Bước 6: Cài đặt .NET SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+          
+      # Bước 7: Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Bước 8: Bắt đầu phân tích SonarCloud
+      - name: Begin SonarCloud Analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Cung cấp sẵn bởi GitHub Actions
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    # Secret bạn cần tạo
+        run: |
+          dotnet sonarscanner begin `
+            /k:"DreamFog20_HCM25_CPL_NET_05" `
+            /o:"dreamfog20" `
+            /d:sonar.login="${{ 3726359882ebb4265271c76df54625a17c09a918}}" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml `
+            /d:sonar.sourceEncoding=UTF-8
+
+      # Bước 9: Build dự án
+      - name: Build project
+        run: dotnet build --no-restore --configuration Release
+        
+      # Bước 10: Chạy Unit Test và tạo báo cáo Coverage
+      - name: Run tests and collect coverage
+        run: |
+          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory "TestResults" --configuration Release
+          
+      # Bước 11: Tạo coverage report
+      - name: Generate coverage report
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator -reports:TestResults/**/coverage.opencover.xml -targetdir:coverage-report -reporttypes:Html
+        
+      # Bước 12: Kết thúc phân tích và gửi kết quả lên SonarCloud
+      - name: End SonarCloud Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}" 
