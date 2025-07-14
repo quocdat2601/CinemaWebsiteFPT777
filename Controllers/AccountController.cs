@@ -310,7 +310,7 @@ namespace MovieTheater.Controllers
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
-            
+
             Response.Cookies.Append("JwtToken", token, new CookieOptions
             {
                 HttpOnly = true,
@@ -343,45 +343,15 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult History()
         {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(accountId))
-            {
-                return RedirectToAction("Login");
-            }
-
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
-            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+            // This action is obsolete since history is now in the profile tab
+            return RedirectToAction("MainPage", "MyAccount");
         }
 
         [HttpPost]
         public IActionResult History(DateTime fromDate, DateTime toDate, int? status)
         {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(accountId))
-            {
-                return RedirectToAction("Login");
-            }
-
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-
-            if (status.HasValue)
-            {
-                var statusEnum = (MovieTheater.Models.InvoiceStatus?)status;
-                query = query.Where(i => i.Status == statusEnum);
-            }
-
-            var bookings = query
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
-            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+            // This action is obsolete since history is now in the profile tab
+            return RedirectToAction("MainPage", "MyAccount");
         }
     }
 }

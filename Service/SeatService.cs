@@ -6,12 +6,10 @@ namespace MovieTheater.Service
     public class SeatService : ISeatService
     {
         private readonly ISeatRepository _repository;
-        private readonly MovieTheaterContext _context;
 
-        public SeatService(ISeatRepository repository, MovieTheaterContext context)
+        public SeatService(ISeatRepository repository)
         {
             _repository = repository;
-            _context = context;
         }
 
         public Task<List<Seat>> GetAllSeatsAsync()
@@ -22,11 +20,6 @@ namespace MovieTheater.Service
         public Task<List<Seat>> GetSeatsByRoomIdAsync(int cinemaRoomId)
         {
             return _repository.GetByCinemaRoomIdAsync(cinemaRoomId);
-        }
-
-        public async Task<Seat?> GetSeatByIdAsync(int id)
-        {
-            return await Task.FromResult(_repository.GetById(id));
         }
 
         public async Task<List<SeatType>> GetSeatTypesAsync()
@@ -62,7 +55,7 @@ namespace MovieTheater.Service
             return _repository.GetSeatByName(seatName);
         }
 
-        public Seat GetSeatById(int id)
+        public Seat GetSeatById(int? id)
         {
             return _repository.GetById(id);
         }

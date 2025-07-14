@@ -1,4 +1,3 @@
-using MovieTheater.ViewModels;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace MovieTheater.ViewModels
@@ -11,4 +10,4 @@ namespace MovieTheater.ViewModels
         [ValidateNever]
         public List<RankInfoViewModel> AllRanks { get; set; }
     }
-} 
+}

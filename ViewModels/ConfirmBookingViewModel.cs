@@ -8,7 +8,8 @@ namespace MovieTheater.ViewModels
         public string MovieId { get; set; }
         public string MovieName { get; set; }
         public string CinemaRoomName { get; set; }
-        public DateTime ShowDate { get; set; }
+        public string VersionName { get; set; }
+        public DateOnly ShowDate { get; set; }
         public string ShowTime { get; set; }
         public InvoiceStatus? Status { get; set; }
 

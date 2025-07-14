@@ -15,12 +15,6 @@ public partial class Invoice
 
     public DateTime? BookingDate { get; set; }
 
-    public string? MovieName { get; set; }
-
-    public DateTime? ScheduleShow { get; set; }
-
-    public string? ScheduleShowTime { get; set; }
-
     public InvoiceStatus? Status { get; set; }
 
     public decimal? TotalMoney { get; set; }
@@ -31,13 +25,19 @@ public partial class Invoice
 
     public string? AccountId { get; set; }
 
-    public string? VoucherId { get; set; }
+    public int? MovieShowId { get; set; }
 
     public int? PromotionDiscount { get; set; }
 
+    public string? VoucherId { get; set; }
+
     public decimal? RankDiscountPercentage { get; set; }
 
+    public string? Seat_IDs { get; set; } // Comma-separated seat IDs for this invoice
+
     public virtual Account? Account { get; set; }
+
+    public virtual MovieShow? MovieShow { get; set; }
 
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();
 

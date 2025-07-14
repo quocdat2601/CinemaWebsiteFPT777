@@ -1,4 +1,5 @@
 @model List<MovieTheater.Models.Invoice>
+@using MovieTheater.Models
 @{
     ViewData["Title"] = "My Tickets";
 }
@@ -59,15 +60,22 @@
                 <tbody>
                     @foreach (var booking in Model)
                     {
+                        var movieName = booking.MovieShow?.Movie?.MovieNameEnglish ?? "N/A";
+                        var showDate = booking.MovieShow?.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";
+                        var showTime = booking.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A";
+                        var bookingDate = booking.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
+                        var seat = booking.Seat ?? "N/A";
+                        var totalMoney = booking.TotalMoney?.ToString("N0") ?? "0";
+
                         <tr>
-                            <td>@booking.BookingDate?.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>@booking.MovieName</td>
-                            <td>@booking.ScheduleShow?.ToString("dd/MM/yyyy")</td>
-                            <td>@booking.ScheduleShowTime</td>
-                            <td>@booking.Seat</td>
-                            <td class="text-end">@booking.TotalMoney?.ToString("N0") VND</td>
+                            <td>@bookingDate</td>
+                            <td>@movieName</td>
+                            <td>@showDate</td>
+                            <td>@showTime</td>
+                            <td>@seat</td>
+                            <td class="text-end">@totalMoney VND</td>
                             <td>
-                                @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed)
+                                @if (booking.Status == InvoiceStatus.Completed)
                                 {
                                     <span class="badge bg-success">Booked</span>
                                 }
@@ -78,15 +86,21 @@
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId" 
+                                    <a asp-controller="Ticket" asp-action="Details" asp-route-id="@booking.InvoiceId"
                                        class="btn btn-sm btn-info">
                                         <i class="fas fa-info-circle"></i> Details
                                     </a>
-                                    @if (booking.Status == MovieTheater.Models.InvoiceStatus.Completed && booking.ScheduleShow.HasValue && 
-                                         booking.ScheduleShow.Value.AddHours(-24) > DateTime.Now)
+
+                                    @{
+                                        var scheduleTime = booking.MovieShow?.Schedule?.ScheduleTime ?? TimeOnly.MinValue;
+                                        var showDateTime = booking.MovieShow?.ShowDate.ToDateTime(scheduleTime) ?? DateTime.MinValue;
+                                    }
+
+                                    @if (booking.Status == InvoiceStatus.Completed &&
+                                   showDateTime > DateTime.Now.AddHours(24))
                                     {
-                                        <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId" 
-                                              method="post" class="d-inline" 
+                                        <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@booking.InvoiceId"
+                                              method="post" class="d-inline"
                                               onsubmit="return confirm('Are you sure you want to cancel this ticket?');">
                                             <button type="submit" class="btn btn-sm btn-danger">
                                                 <i class="fas fa-times"></i> Cancel
@@ -116,12 +130,14 @@
         .table th {
             white-space: nowrap;
         }
+
         .badge {
             font-size: 0.9em;
             padding: 0.5em 0.8em;
         }
+
         .btn-group {
             gap: 0.5rem;
         }
     </style>
-} 
+}

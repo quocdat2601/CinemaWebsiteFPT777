@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace MovieTheater.ViewModels
 {
     public class AdminDashboardViewModel
@@ -46,6 +43,6 @@ namespace MovieTheater.ViewModels
         public string FullName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
-        public DateOnly? JoinDate { get; set; }   
+        public DateOnly? JoinDate { get; set; }
     }
 }

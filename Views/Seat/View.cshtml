@@ -1,5 +1,105 @@
 ﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
+<style>
+    .login-modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(30, 41, 59, 0.45);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(1.5px);
+    }
+    .login-modal-modern {
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(30,41,59,0.16), 0 1.5px 8px rgba(56,189,248,0.08);
+        border: none;
+        background: #fff;
+        padding: 0;
+        max-width: 320px;
+        width: 100%;
+    }
+    .login-modal-modern .modal-header {
+        border-bottom: none;
+        background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+        color: #fff;
+        border-radius: 18px 18px 0 0;
+        padding: 1.2rem 1.2rem 0.7rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .login-modal-modern .modal-header .login-icon-bg {
+        background: #fff;
+        border-radius: 50%;
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 1px 6px rgba(56,189,248,0.10);
+    }
+    .login-modal-modern .modal-header .login-icon {
+        font-size: 2.1rem;
+        color: #2563eb;
+    }
+    .login-modal-modern .modal-header .user-icon {
+        font-size: 1.3rem;
+        color: #60a5fa;
+        margin-left: 0.2rem;
+    }
+    .login-modal-modern .modal-title {
+        font-size: 1.08rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        margin-bottom: 0.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .login-modal-modern .modal-body {
+        padding: 1.1rem 1.2rem 0.7rem 1.2rem;
+        text-align: center;
+    }
+    .login-modal-modern .modal-body p {
+        font-size: 0.99rem;
+        color: #334155;
+        margin-bottom: 0;
+        line-height: 1.5;
+    }
+    .login-modal-modern .modal-footer {
+        border-top: none;
+        padding: 0.7rem 1.2rem 1.2rem 1.2rem;
+        display: flex;
+        justify-content: center;
+    }
+    .login-modal-modern .btn-login-modern {
+        background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.01rem;
+        border: none;
+        border-radius: 999px;
+        padding: 0.65rem 2.1rem;
+        box-shadow: 0 2px 8px rgba(56,189,248,0.10);
+        transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .login-modal-modern .btn-login-modern:hover {
+        background: linear-gradient(90deg, #1e40af 0%, #0ea5e9 100%);
+        color: #fff;
+        transform: translateY(-1px) scale(1.03);
+        box-shadow: 0 4px 16px rgba(56,189,248,0.13);
+    }
+</style>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 @{
 	var movieId = Model.MovieId;
 	var date = Model.ShowDate;
@@ -14,14 +114,14 @@
 	string returnLink = isAdminSell
 		? Url.Action("Select", "Showtime", new { area = "Admin" })
 		: Url.Action("TicketBooking", "Booking");
+
+    var isAuthenticated = User.Identity.IsAuthenticated;
 }
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
-@await Html.PartialAsync("~/Views/Shared/_ToastMessages.cshtml")
-
-<div class="container mt-4" id="mainContent">
+<div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
 	</div>
@@ -31,6 +131,7 @@
 	<div class="seat-section">
 		<div class="flex-grow-1 seat-layout-bordered-area" id="seatLayoutArea">
 			<div class="screen-label text-center mb-4">Screen</div>
+
 			<div class="seat-layout-bordered-area border p-3 mb-4">
 				<div class="seat-container">
 					<table class="table table-bordered text-center">
@@ -46,11 +147,10 @@
 											var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
 											bool isDisabledType = seatType?.TypeName == "Disabled";
 											bool isBooked = bookedSeats.Contains(seat.SeatId);
-
-											var seatStyle = isDisabledType ? "border: none;" : isBooked ? "background-color: #19692c;" : $"background-color: {seatType?.ColorHex ?? "#FFFFFF"};";
+											var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
 											var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-											<td style="@seatStyle"
+											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
 												data-seat-id="@seat.SeatId"
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
@@ -60,9 +160,10 @@
 												@(isDisabledType || isBooked ? "disabled" : "")
 												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
 												<span class="material-icons">
-													@(isDisabledType ? "" : "chair")
+													@(isDisabledType ? "" : seat.SeatName)
 												</span>
 											</td>
+
 										}
 									}
 								</tr>
@@ -71,11 +172,12 @@
 					</table>
 				</div>
 			</div>
+
 			<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
 				@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
 				{
 					<div class="d-flex align-items-center me-3">
-						<span style="display: inline-block; width: 20px; height: 20px; background-color: @type.ColorHex; margin-right: 5px; border-radius: 3px;"></span>
+						<span style="display: inline-block; width: 20px; height: 20px; background-color: @(type.ColorHex ?? "#FFFFFF"); margin-right: 5px; border-radius: 3px;"></span>
 						<span>@type.TypeName</span>
 					</div>
 				}
@@ -89,6 +191,7 @@
 				</div>
 			</div>
 		</div>
+
 		<div id="selectionSummary">
 			<div class="summary-block">
 				<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
@@ -109,6 +212,8 @@
 				</div>
 			</div>
 		</div>
+
+
 		<!-- Timeout message in seat-section -->
 		<div id="timeoutMessage" style="display:none; flex:1; justify-content:center; align-items:center; flex-direction:column;">
 			<h2 style="font-weight:bold; margin-bottom:18px; color:#374151;">Đã hết thời gian chọn ghế.</h2>
@@ -125,7 +230,113 @@
 	}
 </div>
 
-@section Scripts{
+@if (!isAuthenticated)
+{
+    <div class="login-modal-overlay">
+        <div class="modal-content login-modal-modern">
+            <div class="modal-header">
+                <div class="login-icon-bg">
+                    <span class="login-icon material-icons">login</span>
+                </div>
+                <span class="modal-title">
+                    Login Required
+                    <span class="user-icon material-icons">person</span>
+                </span>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Please <b>log in</b> to select seats and book tickets.<br>
+                    <span style="color:#2563eb;font-weight:500;">Sign in to continue.</span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <a href="@Url.Action("Login", "Account")" class="btn btn-login-modern">
+                    <span class="material-icons">login</span> Go to Login
+                </a>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.body.classList.add('modal-open');
+    </script>
+}
+
+<!-- Modal cảnh báo account đang được sử dụng (English) -->
+<div id="accountInUseModal" class="modal" tabindex="-1"
+     style="display:none; background:rgba(30,41,59,0.45); position:fixed; top:0; left:0; right:0; bottom:0; z-index:2000; align-items:center; justify-content:center;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 370px;">
+        <div class="modal-content" style="border-radius: 18px; box-shadow: 0 8px 32px rgba(30,41,59,0.16), 0 1.5px 8px rgba(56,189,248,0.08);">
+            <div class="modal-header"
+                 style="background: linear-gradient(90deg, #f87171 0%, #fbbf24 100%); color: #fff; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; align-items: center;">
+                <span class="material-icons"
+                      style="font-size: 2.5rem; background: #fff; color: #f87171; border-radius: 50%; padding: 10px; margin-bottom: 0.5rem; box-shadow: 0 1px 6px rgba(251,191,36,0.10);">warning</span>
+                <h5 class="modal-title" style="font-weight:700;">Account In Use</h5>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <p style="font-size:1.08rem; color:#374151;">
+                    This account is <b>currently being used to book tickets</b> for this showtime on another device or browser.<br>
+                    Please complete the transaction there or try again later.
+                </p>
+            </div>
+            <div class="modal-btn-group">
+                <a asp-controller="Home" asp-action="Index"
+                   class="btn btn-primary fw-bold"
+                   style="">
+                    <i class="fas fa-home me-1"></i> Home
+                </a>
+                <a asp-controller="Booking" asp-action="TicketBooking"
+                   class="btn btn-outline-primary fw-bold"
+                   style="">
+                    <i class="fas fa-plus me-1"></i> Book Again
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#accountInUseModal .modal-btn-group {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin: 1.2rem 0 1.1rem 0;
+}
+#accountInUseModal .modal-btn-group a {
+    min-width: 130px;
+    max-width: 170px;
+    height: 42px;
+    font-size: 1rem;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: box-shadow 0.15s, transform 0.13s;
+    box-shadow: 0 1px 6px rgba(56,189,248,0.07);
+    padding: 0 14px;
+    white-space: nowrap;
+    word-break: keep-all;
+    line-height: 1.13;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+#accountInUseModal .modal-btn-group a.btn-primary:hover {
+    background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+    color: #fff;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 16px rgba(56,189,248,0.13);
+}
+#accountInUseModal .modal-btn-group a.btn-outline-primary:hover {
+    background: #e3f0ff;
+    color: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 16px rgba(56,189,248,0.10);
+}
+</style>
+
+@section Scripts {
 	<script>
 		let selectedSeats = new Set();
 		let countdownTimer = null;
@@ -190,7 +401,8 @@
 				movieId: '@movieId',
 				showDate: '@date.ToString("yyyy-MM-dd")',
 				showTime: '@time',
-				selectedSeatIds: selectedSeatIds
+				selectedSeatIds: selectedSeatIds,
+				movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
 			};
 			const params = new URLSearchParams();
 			for (const key in data) {
@@ -262,20 +474,45 @@
 			}
 		});
 
-		connection.on("HeldSeats", (seatIds) => {
-			// Xóa trạng thái being-held khỏi tất cả các ghế
+		// Nhận 2 danh sách: ghế của mình (heldByMe), ghế của người khác (heldByOthers)
+		connection.on("HeldSeats", (heldByMe, heldByOthers) => {
+			// Reset trạng thái
+			document.querySelectorAll('.selected-seat').forEach(td => {
+				td.classList.remove("selected-seat");
+			});
 			document.querySelectorAll('.being-held').forEach(td => {
 				td.classList.remove("being-held");
 				td.removeAttribute("title");
 			});
-			// Đánh dấu lại các ghế đang được hold
-			seatIds.forEach(seatId => {
+			selectedSeats.clear();
+			// Đánh dấu ghế của chính mình
+			heldByMe.forEach(seatId => {
+				const td = document.querySelector(`[data-seat-id='${seatId}']`);
+				if (td) {
+					td.classList.add("selected-seat");
+					selectedSeats.add(String(seatId));
+				}
+			});
+			// Đánh dấu ghế của người khác
+			heldByOthers.forEach(seatId => {
 				const td = document.querySelector(`[data-seat-id='${seatId}']`);
 				if (td && !td.classList.contains("selected-seat")) {
 					td.classList.add("being-held");
 					td.setAttribute("title", "Ghế đang được người khác giữ");
 				}
 			});
+			updateSelectionSummary();
+			updateBookButtonState();
+		});
+
+		connection.on("AccountInUse", () => {
+			// Hiển thị modal, disable UI chọn ghế
+			document.getElementById('accountInUseModal').style.display = 'flex';
+			document.getElementById('seatLayoutArea').style.pointerEvents = 'none';
+			document.getElementById('seatLayoutArea').style.opacity = '0.4';
+			document.getElementById('selectionSummary').style.opacity = '0.4';
+			var bookBtn = document.getElementById('bookButton');
+			if (bookBtn) bookBtn.disabled = true;
 		});
 
 		connection.start().then(() => {
@@ -283,7 +520,7 @@
 		});
 
 		function selectSeat(clickedTd) {
-			const seatId = clickedTd.getAttribute('data-seat-id');
+			const seatId = String(clickedTd.getAttribute('data-seat-id'));
 			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
 
 			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
@@ -297,7 +534,6 @@
 					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
 					return;
 				}
-				
 				clickedTd.classList.add('selected-seat');
 				selectedSeats.add(seatId);
 				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));

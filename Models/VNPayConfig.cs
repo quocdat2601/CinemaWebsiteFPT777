@@ -1,5 +1,3 @@
-using System;
-
 namespace MovieTheater.Models
 {
     public class VNPayConfig
@@ -15,4 +13,4 @@ namespace MovieTheater.Models
         public string IpnUrl { get; set; }
         public int ExpiredTime { get; set; } // Thời gian hết hạn thanh toán (tính bằng phút)
     }
-} 
+}

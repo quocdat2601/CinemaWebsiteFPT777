@@ -2,6 +2,8 @@
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -9,14 +11,19 @@ namespace MovieTheater.Controllers
     {
         private readonly IPromotionService _promotionService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public PromotionController(IPromotionService promotionService, IWebHostEnvironment webHostEnvironment)
+        public PromotionController(IPromotionService promotionService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _promotionService = promotionService;
             _webHostEnvironment = webHostEnvironment;
+            _dashboardHubContext = dashboardHubContext;
         }
 
-        // GET: PromotionController/List
+        /// <summary>
+        /// Danh sách khuyến mãi đang hoạt động
+        /// </summary>
+        /// <remarks>url: /Promotion/List (GET)</remarks>
         public ActionResult List()
         {
             var promotions = _promotionService.GetAll()
@@ -26,7 +33,10 @@ namespace MovieTheater.Controllers
             return View("Index", promotions);
         }
 
-        // GET: PromotionController/Details/5
+        /// <summary>
+        /// Xem chi tiết khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Details (GET)</remarks>
         public ActionResult Details(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -37,13 +47,19 @@ namespace MovieTheater.Controllers
             return View(promotion);
         }
 
-        // GET: PromotionController/Index
+        /// <summary>
+        /// Trang quản lý khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Index (GET)</remarks>
         public ActionResult Index()
         {
             return View();
         }
 
-        // GET: PromotionController/Create
+        /// <summary>
+        /// Trang tạo khuyến mãi mới
+        /// </summary>
+        /// <remarks>url: /Promotion/Create (GET)</remarks>
         public ActionResult Create()
         {
             return View(new PromotionViewModel
@@ -54,7 +70,10 @@ namespace MovieTheater.Controllers
             });
         }
 
-        // POST: PromotionController/Create
+        /// <summary>
+        /// Tạo khuyến mãi mới
+        /// </summary>
+        /// <remarks>url: /Promotion/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(PromotionViewModel viewModel, IFormFile? imageFile)
@@ -99,7 +118,7 @@ namespace MovieTheater.Controllers
 
                     _promotionService.Add(promotion);
                     _promotionService.Save();
-
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Promotion created successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
                 }
@@ -112,7 +131,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // GET: PromotionController/Edit/5
+        /// <summary>
+        /// Trang sửa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Edit (GET)</remarks>
         public ActionResult Edit(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -136,7 +158,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // POST: PromotionController/Edit/5
+        /// <summary>
+        /// Sửa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(int id, PromotionViewModel viewModel, IFormFile? imageFile)
@@ -194,7 +219,7 @@ namespace MovieTheater.Controllers
 
                     _promotionService.Update(promotion);
                     _promotionService.Save();
-
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Promotion updated successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
                 }
@@ -207,7 +232,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // GET: PromotionController/Delete/5
+        /// <summary>
+        /// Trang xóa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Delete (GET)</remarks>
         public ActionResult Delete(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -218,10 +246,13 @@ namespace MovieTheater.Controllers
             return View(promotion);
         }
 
-        // POST: PromotionController/Delete/5
+        /// <summary>
+        /// Xóa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Delete (POST)</remarks>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
+        public async Task<ActionResult> DeleteConfirmed(int id)
         {
             try
             {
@@ -237,7 +268,7 @@ namespace MovieTheater.Controllers
 
                 _promotionService.Delete(id);
                 _promotionService.Save();
-
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 TempData["ToastMessage"] = "Promotion deleted successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
             }

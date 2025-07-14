@@ -9,7 +9,7 @@ public partial class SeatType
 
     public string? TypeName { get; set; }
 
-    public decimal? PricePercent { get; set; }
+    public decimal PricePercent { get; set; }
 
     public string ColorHex { get; set; } = null!;
 

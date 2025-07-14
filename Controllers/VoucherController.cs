@@ -1,16 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Threading.Tasks;
-using System.Linq;
-using Serilog;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -18,19 +12,29 @@ namespace MovieTheater.Controllers
     {
         private readonly IVoucherService _voucherService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment)
+        public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _voucherService = voucherService;
             _webHostEnvironment = webHostEnvironment;
+            _dashboardHubContext = dashboardHubContext;
         }
 
+        /// <summary>
+        /// Trang danh sách voucher
+        /// </summary>
+        /// <remarks>url: /Voucher/Index (GET)</remarks>
         public IActionResult Index()
         {
             var vouchers = _voucherService.GetAll();
             return View(vouchers);
         }
 
+        /// <summary>
+        /// Trang quản lý voucher cho admin
+        /// </summary>
+        /// <remarks>url: /Voucher/AdminIndex (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult AdminIndex(string keyword = "", string statusFilter = "", string expiryFilter = "")
@@ -43,7 +47,7 @@ namespace MovieTheater.Controllers
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                filteredVouchers = filteredVouchers.Where(v => 
+                filteredVouchers = filteredVouchers.Where(v =>
                     v.Code.ToLower().Contains(keyword.ToLower()) ||
                     v.AccountId.ToLower().Contains(keyword.ToLower()));
             }
@@ -89,6 +93,10 @@ namespace MovieTheater.Controllers
             return View("VoucherMg", filteredVouchers.ToList());
         }
 
+        /// <summary>
+        /// Xem chi tiết voucher
+        /// </summary>
+        /// <remarks>url: /Voucher/Details (GET)</remarks>
         public IActionResult Details(string id)
         {
             var voucher = _voucherService.GetById(id);
@@ -96,6 +104,10 @@ namespace MovieTheater.Controllers
             return View(voucher);
         }
 
+        /// <summary>
+        /// Lấy chi tiết voucher (admin, ajax)
+        /// </summary>
+        /// <remarks>url: /Voucher/GetVoucherDetails (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult GetVoucherDetails(string id)
@@ -133,12 +145,20 @@ namespace MovieTheater.Controllers
             return Json(details);
         }
 
+        /// <summary>
+        /// Trang tạo voucher mới
+        /// </summary>
+        /// <remarks>url: /Voucher/Create (GET)</remarks>
         [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
+        /// <summary>
+        /// Tạo voucher mới
+        /// </summary>
+        /// <remarks>url: /Voucher/Create (POST)</remarks>
         [HttpPost]
         public IActionResult Create(Voucher voucher)
         {
@@ -154,6 +174,10 @@ namespace MovieTheater.Controllers
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// Trang sửa voucher
+        /// </summary>
+        /// <remarks>url: /Voucher/Edit (GET)</remarks>
         [HttpGet]
         public IActionResult Edit(string id)
         {
@@ -162,6 +186,10 @@ namespace MovieTheater.Controllers
             return View(voucher);
         }
 
+        /// <summary>
+        /// Sửa voucher
+        /// </summary>
+        /// <remarks>url: /Voucher/Edit (POST)</remarks>
         [HttpPost]
         public IActionResult Edit(Voucher voucher)
         {
@@ -170,6 +198,10 @@ namespace MovieTheater.Controllers
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// Trang xóa voucher
+        /// </summary>
+        /// <remarks>url: /Voucher/Delete (GET)</remarks>
         [HttpGet]
         public IActionResult Delete(string id)
         {
@@ -178,6 +210,10 @@ namespace MovieTheater.Controllers
             return View(voucher);
         }
 
+        /// <summary>
+        /// Xóa voucher
+        /// </summary>
+        /// <remarks>url: /Voucher/Delete (POST)</remarks>
         [HttpPost, ActionName("Delete")]
         public IActionResult DeleteConfirmed(string id)
         {
@@ -185,9 +221,13 @@ namespace MovieTheater.Controllers
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// Xóa voucher (admin)
+        /// </summary>
+        /// <remarks>url: /Voucher/AdminDelete (POST)</remarks>
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult AdminDelete(string id, string returnUrl)
+        public async Task<IActionResult> AdminDelete(string id, string returnUrl)
         {
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
@@ -196,10 +236,15 @@ namespace MovieTheater.Controllers
                 return Redirect("/Admin/MainPage?tab=VoucherMg");
             }
             _voucherService.Delete(id);
+            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
             TempData["ToastMessage"] = "Voucher deleted successfully.";
             return Redirect("/Admin/MainPage?tab=VoucherMg");
         }
 
+        /// <summary>
+        /// Trang sửa voucher (admin)
+        /// </summary>
+        /// <remarks>url: /Voucher/AdminEdit (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult AdminEdit(string id)
@@ -237,6 +282,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
+        /// <summary>
+        /// Sửa voucher (admin)
+        /// </summary>
+        /// <remarks>url: /Voucher/AdminEdit (POST)</remarks>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminEdit(VoucherViewModel viewModel, IFormFile? imageFile)
@@ -300,6 +349,7 @@ namespace MovieTheater.Controllers
                 }
 
                 _voucherService.Update(voucher);
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 TempData["ToastMessage"] = "Voucher updated successfully.";
                 return Redirect("/Admin/MainPage?tab=VoucherMg");
             }
@@ -310,6 +360,10 @@ namespace MovieTheater.Controllers
             }
         }
 
+        /// <summary>
+        /// Trang tạo voucher (admin)
+        /// </summary>
+        /// <remarks>url: /Voucher/AdminCreate (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult AdminCreate()
@@ -322,6 +376,10 @@ namespace MovieTheater.Controllers
             });
         }
 
+        /// <summary>
+        /// Tạo voucher (admin)
+        /// </summary>
+        /// <remarks>url: /Voucher/AdminCreate (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -366,6 +424,7 @@ namespace MovieTheater.Controllers
                     }
 
                     _voucherService.Add(voucher);
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Voucher created successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
                 }
@@ -378,12 +437,17 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
+        /// <summary>
+        /// Lấy danh sách member (admin, ajax)
+        /// </summary>
+        /// <remarks>url: /Voucher/GetAllMembers (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult GetAllMembers()
         {
             var members = _voucherService.GetAllMembers()
-                .Select(m => new {
+                .Select(m => new
+                {
                     memberId = m.MemberId,
                     score = m.Score,
                     account = new
@@ -398,6 +462,10 @@ namespace MovieTheater.Controllers
             return Json(members);
         }
 
+        /// <summary>
+        /// Lấy voucher khả dụng cho user
+        /// </summary>
+        /// <remarks>url: /Voucher/GetAvailableVouchers (GET)</remarks>
         [HttpGet]
         [Authorize]
         public IActionResult GetAvailableVouchers(string? accountId = null)
@@ -410,7 +478,8 @@ namespace MovieTheater.Controllers
                 return Json(new List<object>());
 
             var vouchers = _voucherService.GetAvailableVouchers(accountId)
-                .Select(v => new {
+                .Select(v => new
+                {
                     id = v.VoucherId,
                     code = v.Code,
                     value = v.Value,
@@ -421,4 +490,4 @@ namespace MovieTheater.Controllers
             return Json(vouchers);
         }
     }
-} 
+}

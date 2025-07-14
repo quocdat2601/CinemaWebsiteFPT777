@@ -26,4 +26,4 @@ namespace MovieTheater.ViewModels
 
         public string? Image { get; set; }
     }
-} 
+}

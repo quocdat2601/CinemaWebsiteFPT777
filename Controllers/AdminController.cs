@@ -4,13 +4,10 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System.Security.Claims;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace MovieTheater.Controllers
 {
+    //ADmin
     public class AdminController : Controller
     {
         private readonly IMovieService _movieService;
@@ -22,9 +19,7 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
         private readonly IScheduleRepository _scheduleRepository;
-        private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
-        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
@@ -37,11 +32,9 @@ namespace MovieTheater.Controllers
             ISeatTypeService seatTypeService,
             IMemberRepository memberRepository,
             IAccountService accountService,
-            IBookingService bookingService,
             ISeatService seatService,
             IInvoiceService invoiceService,
             IScheduleRepository scheduleRepository,
-            IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
             IVoucherService voucherService,
             IRankService rankService)
@@ -55,9 +48,7 @@ namespace MovieTheater.Controllers
             _accountService = accountService;
             _invoiceService = invoiceService;
             _scheduleRepository = scheduleRepository;
-            _bookingService = bookingService;
             _seatService = seatService;
-            _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
@@ -106,12 +97,10 @@ namespace MovieTheater.Controllers
                 case "ShowroomMg":
                     var cinema = _cinemaService.GetAll();
                     var seatTypes = _seatTypeService.GetAll();
-
+                    var versions = _movieService.GetAllVersions();
+                    ViewBag.Versions = versions;
                     ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
-                case "ScheduleMg":
-                    var scheduleMovies = _movieService.GetAll();
-                    return PartialView("ScheduleMg", scheduleMovies);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
@@ -134,15 +123,6 @@ namespace MovieTheater.Controllers
                     }
 
                     return PartialView("BookingMg", invoices);
-                case "ShowtimeMg":
-                    var showtimeModel = new ShowtimeManagementViewModel
-                    {
-                        AvailableDates = _scheduleRepository.GetAllShowDates(),
-                        SelectedDate = DateTime.Today,
-                        AvailableSchedules = _movieService.GetAllSchedules(),
-                        MovieShows = _movieService.GetMovieShow()
-                    };
-                    return PartialView("ShowtimeMg", showtimeModel);
                 case "FoodMg":
                     // Sử dụng parameter keyword thay vì Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
@@ -276,7 +256,7 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = "Member updated successfully!"; // Optional success message
                 return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log the exception (optional)
                 // _logger.LogError(ex, "Error updating member with id {MemberId}", id);
@@ -289,14 +269,9 @@ namespace MovieTheater.Controllers
         private AdminDashboardViewModel GetDashboardViewModel()
         {
             var today = DateTime.Today;
-            var allInvoices = _invoiceService.GetAll().ToList();
+            var allInvoices = _invoiceService.GetAll().Where(i => i.Status == InvoiceStatus.Completed).ToList();
 
-            // Only "completed" and "cancelled"
-            var completed = allInvoices.Where(i => i.Status == InvoiceStatus.Completed).ToList();
-            var cancelled = allInvoices.Where(i => i.Status == InvoiceStatus.Incomplete).ToList();
-
-            var todayInv = completed.Where(i => i.BookingDate?.Date == today).ToList();
-            var todayCancelled = cancelled.Where(i => i.BookingDate?.Date == today).ToList();
+            var todayInv = allInvoices.Where(i => i.BookingDate?.Date == today).ToList();
 
             // 1) Today's summary
             var revenueToday = todayInv.Sum(i => i.TotalMoney ?? 0m);
@@ -310,30 +285,30 @@ namespace MovieTheater.Controllers
                 ? Math.Round((decimal)ticketsSoldToday / totalSeats * 100, 1)
                 : 0m;
 
-            // 3) 7‑day trends
+            // 3) 7-day trends
             var last7 = Enumerable.Range(0, 7)
                            .Select(i => today.AddDays(-i))
                            .Reverse()
                            .ToList();
             var revTrend = last7
                 .Select(d => allInvoices
-                    .Where(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed)
+                    .Where(inv => inv.BookingDate?.Date == d)
                     .Sum(inv => inv.TotalMoney ?? 0m))
                 .ToList();
             var bookTrend = last7
                 .Select(d => allInvoices
-                    .Count(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed))
+                    .Count(inv => inv.BookingDate?.Date == d))
                 .ToList();
 
             // 4) Top 5 movies & members
-            var topMovies = completed
-                .GroupBy(i => i.MovieName)
+            var topMovies = allInvoices
+                .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
                 .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
                 .ToList();
 
-            var topMembers = completed
+            var topMembers = allInvoices
                 .Where(i => i.Account != null && i.Account.RoleId == 3)
                 .GroupBy(i => i.Account.FullName)
                 .OrderByDescending(g => g.Count())
@@ -342,14 +317,14 @@ namespace MovieTheater.Controllers
                 .ToList();
 
             // 5) Recent bookings 
-            var recentBookings = completed
+            var recentBookings = allInvoices
                 .OrderByDescending(i => i.BookingDate)
                 .Take(10)
                 .Select(i => new RecentBookingInfo
                 {
                     InvoiceId = i.InvoiceId,
                     MemberName = i.Account?.FullName ?? "N/A",
-                    MovieName = i.MovieName,
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish,
                     BookingDate = i.BookingDate ?? DateTime.MinValue,
                     Status = "Completed"
                 })
@@ -385,6 +360,60 @@ namespace MovieTheater.Controllers
                 RecentBookings = recentBookings,
                 RecentMembers = recentMembers
             };
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult ShowtimeMg(string date)
+        {
+            DateOnly selectedDate;
+            if (!string.IsNullOrEmpty(date) && DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out selectedDate))
+            {
+                // parsed successfully
+            }
+            else
+            {
+                selectedDate = DateOnly.FromDateTime(DateTime.Today);
+            }
+
+            var allMovieShows = _movieService.GetMovieShow();
+            var filteredMovieShows = allMovieShows.Where(ms => ms.ShowDate == selectedDate).ToList();
+
+            // Get summary for the month
+            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as IMovieRepository;
+            var summary = new Dictionary<DateOnly, List<string>>();
+            if (repo is MovieRepository concreteRepo)
+            {
+                summary = concreteRepo.GetMovieShowSummaryByMonth(selectedDate.Year, selectedDate.Month);
+            }
+            ViewBag.MovieShowSummaryByDate = summary;
+
+            var showtimeModel = new ShowtimeManagementViewModel
+            {
+                SelectedDate = selectedDate,
+                AvailableSchedules = _movieService.GetAllSchedules(),
+                MovieShows = filteredMovieShows
+            };
+            return View(showtimeModel);
+        }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult GetMovieShowSummary(int year, int month)
+        {
+            if (HttpContext.RequestServices.GetService(typeof(IMovieRepository)) is not MovieRepository repo)
+            {
+                return Json(new Dictionary<string, List<string>>());
+            }
+
+            var summary = repo.GetMovieShowSummaryByMonth(year, month);
+
+            var jsonFriendlySummary = summary.ToDictionary(
+                kvp => kvp.Key.ToString("yyyy-MM-dd"),
+                kvp => kvp.Value
+            );
+
+            return Json(jsonFriendlySummary);
         }
 
         [Authorize(Roles = "Admin")]

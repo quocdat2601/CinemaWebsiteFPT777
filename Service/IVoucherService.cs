@@ -1,5 +1,4 @@
 using MovieTheater.Models;
-using System.Collections.Generic;
 
 namespace MovieTheater.Service
 {
@@ -14,4 +13,4 @@ namespace MovieTheater.Service
         IEnumerable<Member> GetAllMembers();
         IEnumerable<Voucher> GetAvailableVouchers(string accountId);
     }
-} 
+}

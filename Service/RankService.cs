@@ -1,10 +1,6 @@
 ﻿using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
-using System.Collections.Generic;
-using System.Linq;
-using System;
-using System.Threading.Tasks;
 
 namespace MovieTheater.Service
 {
@@ -78,7 +74,7 @@ namespace MovieTheater.Service
             var requiredForNext = nextRank?.RequiredPoints;
 
             var pointsToNextRank = requiredForNext.HasValue ? requiredForNext.Value - totalPoints : 0;
-            
+
             double progressToNextRank = 0.0;
             if (requiredForNext.HasValue)
             {

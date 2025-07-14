@@ -1,12 +1,9 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Service;
-using System.Linq;
-using System.Collections.Generic;
-using MovieTheater.ViewModels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using MovieTheater.Service;
+using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -15,21 +12,22 @@ namespace MovieTheater.Controllers
     public class PaymentController : Controller
     {
         private readonly VNPayService _vnPayService;
-        private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
         private readonly MovieTheater.Models.MovieTheaterContext _context;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context)
+        public PaymentController(VNPayService vnPayService, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context, IHubContext<DashboardHub> dashboardHubContext)
         {
             _vnPayService = vnPayService;
-            _logger = logger;
             _accountService = accountService;
             _context = context;
+            _dashboardHubContext = dashboardHubContext;
         }
 
         /// <summary>
         /// Tạo URL thanh toán VNPay
         /// </summary>
+        /// <remarks>url: /api/Payment/create-payment (POST)</remarks>
         /// <param name="request">Thông tin thanh toán</param>
         /// <returns>URL thanh toán VNPay</returns>
         /// <response code="200">Trả về URL thanh toán</response>
@@ -58,6 +56,7 @@ namespace MovieTheater.Controllers
         /// <summary>
         /// Xử lý kết quả thanh toán từ VNPay
         /// </summary>
+        /// <remarks>url: /api/Payment/vnpay-return (GET)</remarks>
         /// <returns>Kết quả thanh toán</returns>
         /// <response code="200">Thanh toán thành công</response>
         /// <response code="400">Thanh toán thất bại hoặc chữ ký không hợp lệ</response>
@@ -67,11 +66,19 @@ namespace MovieTheater.Controllers
         public IActionResult VNPayReturn([FromQuery] VnPayReturnModel model)
         {
             int? movieShowId = null; // Khai báo duy nhất ở đây
+            //var invoice = _context.Invoices
+            //    .Include(i => i.ScheduleSeats)
+            //    .ThenInclude(ss => ss.MovieShow)
+            //    .ThenInclude(ms => ms.CinemaRoom)
+            //    .FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
             var invoice = _context.Invoices
-                .Include(i => i.ScheduleSeats)
-                .ThenInclude(ss => ss.MovieShow)
-                .ThenInclude(ms => ms.CinemaRoom)
-                .FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
+                  .Include(i => i.MovieShow)
+                    .ThenInclude(ms => ms.Movie)
+                  .Include(i => i.MovieShow)
+                    .ThenInclude(ms => ms.CinemaRoom)
+                  .Include(i => i.MovieShow)
+                    .ThenInclude(ms => ms.Schedule)
+                  .FirstOrDefault(i => i.InvoiceId == model.vnp_TxnRef);
             if (model.vnp_ResponseCode == "00")
             {
                 // Thanh toán thành công
@@ -87,18 +94,30 @@ namespace MovieTheater.Controllers
                             earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
                         int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(invoice.TotalMoney ?? 0, earningRate);
                         invoice.AddScore = addScore;
-                        if (member != null)
-                        {
-                            member.Score += addScore;
-                            if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
-                            {
-                                member.Score -= invoice.UseScore.Value;
-                            }
-                        }
+                        // Use the service to add and deduct score
+                        //if (addScore > 0)
+                        //{
+                        //    _accountService.AddScoreAsync(invoice.AccountId, addScore);
+                        //}
+                        //if (invoice.UseScore.HasValue && invoice.UseScore.Value > 0)
+                        //{
+                        //    _accountService.DeductScoreAsync(invoice.AccountId, invoice.UseScore.Value);
+                        //}
                     }
+                    // --- NEW: Mark voucher as used if present ---
+                    //if (!string.IsNullOrEmpty(invoice.VoucherId))
+                    //{
+                    //    var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                    //    if (voucher != null)
+                    //    {
+                    //        voucher.IsUsed = true;
+                    //        _context.Vouchers.Update(voucher);
+                    //    }
+                    //}
                     _context.Invoices.Update(invoice);
                     _context.SaveChanges();
                     _accountService.CheckAndUpgradeRank(invoice.AccountId);
+                    _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 }
                 // --- BẮT ĐẦU: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 if (invoice != null && !string.IsNullOrEmpty(invoice.Seat))
@@ -129,11 +148,12 @@ namespace MovieTheater.Controllers
                     }
                     _context.SaveChanges();
                 }
+
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 TempData["InvoiceId"] = model.vnp_TxnRef;
-                TempData["MovieName"] = invoice?.MovieName ?? "";
-                TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
-                TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
+                TempData["MovieName"] = invoice?.MovieShow.Movie.MovieNameEnglish ?? "";
+                TempData["ShowDate"] = invoice?.MovieShow.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";
+                TempData["ShowTime"] = invoice?.MovieShow.Schedule.ScheduleTime.ToString() ?? "N/A";
                 TempData["Seats"] = invoice?.Seat ?? "N/A";
                 // Lấy CinemaRoomName trực tiếp từ MovieShowId (TempData)
                 if (movieShowId.HasValue)
@@ -148,7 +168,28 @@ namespace MovieTheater.Controllers
                     TempData["CinemaRoomName"] = "N/A";
                 }
                 TempData["BookingTime"] = invoice?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
-                TempData["OriginalPrice"] = (int.Parse(model.vnp_Amount) / 100).ToString();
+                // Calculate subtotal as sum of seat prices after promotion (not original price)
+                decimal subtotalAfterPromotion = 0;
+                if (invoice != null && !string.IsNullOrEmpty(invoice.Seat))
+                {
+                    var seatNames = invoice.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var seatName in seatNames)
+                    {
+                        var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName.Trim());
+                        if (seat?.SeatType != null)
+                        {
+                            decimal price = seat.SeatType.PricePercent;
+                            decimal discount = 0;
+                            if (invoice.PromotionDiscount.HasValue && invoice.PromotionDiscount.Value > 0)
+                            {
+                                discount = Math.Round(price * (invoice.PromotionDiscount.Value / 100m));
+                            }
+                            decimal priceAfterPromotion = price - discount;
+                            subtotalAfterPromotion += priceAfterPromotion;
+                        }
+                    }
+                }
+                TempData["OriginalPrice"] = subtotalAfterPromotion.ToString();
                 TempData["UsedScore"] = invoice?.UseScore ?? 0;
                 TempData["FinalPrice"] = (invoice?.TotalMoney ?? 0).ToString();
                 return RedirectToAction("Success", "Booking");
@@ -162,9 +203,9 @@ namespace MovieTheater.Controllers
                     _context.SaveChanges();
                 }
                 TempData["InvoiceId"] = model.vnp_TxnRef;
-                TempData["MovieName"] = invoice?.MovieName ?? "";
-                TempData["ShowDate"] = invoice?.ScheduleShow?.ToString("dd/MM/yyyy") ?? "N/A";
-                TempData["ShowTime"] = invoice?.ScheduleShowTime ?? "N/A";
+                TempData["MovieName"] = invoice?.MovieShow.Movie.MovieNameEnglish ?? "";
+                TempData["ShowDate"] = invoice?.MovieShow.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";
+                TempData["ShowTime"] = invoice?.MovieShow.Schedule.ScheduleTime.ToString() ?? "N/A";
                 TempData["Seats"] = invoice?.Seat ?? "N/A";
                 TempData["BookingTime"] = invoice?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
                 return RedirectToAction("Failed", "Booking");
@@ -174,6 +215,7 @@ namespace MovieTheater.Controllers
         /// <summary>
         /// Nhận callback IPN (server-to-server) từ VNPay
         /// </summary>
+        /// <remarks>url: /api/Payment/vnpay-ipn (GET)</remarks>
         /// <returns>Kết quả xử lý IPN</returns>
         [HttpGet("vnpay-ipn")]
         public IActionResult VNPayIpn()
@@ -216,4 +258,4 @@ namespace MovieTheater.Controllers
         /// </summary>
         public string OrderId { get; set; }
     }
-} 
+}
