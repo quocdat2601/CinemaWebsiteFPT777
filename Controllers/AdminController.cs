@@ -7,6 +7,7 @@ using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
+    //ADmin
     public class AdminController : Controller
     {
         private readonly IMovieService _movieService;
@@ -274,14 +275,9 @@ namespace MovieTheater.Controllers
         private AdminDashboardViewModel GetDashboardViewModel()
         {
             var today = DateTime.Today;
-            var allInvoices = _invoiceService.GetAll().ToList();
+            var allInvoices = _invoiceService.GetAll().Where(i => i.Status == InvoiceStatus.Completed).ToList();
 
-            // Only "completed" and "cancelled"
-            var completed = allInvoices.Where(i => i.Status == InvoiceStatus.Completed).ToList();
-            var cancelled = allInvoices.Where(i => i.Status == InvoiceStatus.Incomplete).ToList();
-
-            var todayInv = completed.Where(i => i.BookingDate?.Date == today).ToList();
-            var todayCancelled = cancelled.Where(i => i.BookingDate?.Date == today).ToList();
+            var todayInv = allInvoices.Where(i => i.BookingDate?.Date == today).ToList();
 
             // 1) Today's summary
             var revenueToday = todayInv.Sum(i => i.TotalMoney ?? 0m);
@@ -302,23 +298,23 @@ namespace MovieTheater.Controllers
                            .ToList();
             var revTrend = last7
                 .Select(d => allInvoices
-                    .Where(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed)
+                    .Where(inv => inv.BookingDate?.Date == d)
                     .Sum(inv => inv.TotalMoney ?? 0m))
                 .ToList();
             var bookTrend = last7
                 .Select(d => allInvoices
-                    .Count(inv => inv.BookingDate?.Date == d && inv.Status == InvoiceStatus.Completed))
+                    .Count(inv => inv.BookingDate?.Date == d))
                 .ToList();
 
             // 4) Top 5 movies & members
-            var topMovies = completed
+            var topMovies = allInvoices
                 .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
                 .Select(g => (MovieName: g.Key, TicketsSold: g.Sum(inv => inv.Seat?.Split(',').Length ?? 0)))
                 .ToList();
 
-            var topMembers = completed
+            var topMembers = allInvoices
                 .Where(i => i.Account != null && i.Account.RoleId == 3)
                 .GroupBy(i => i.Account.FullName)
                 .OrderByDescending(g => g.Count())
@@ -327,7 +323,7 @@ namespace MovieTheater.Controllers
                 .ToList();
 
             // 5) Recent bookings 
-            var recentBookings = completed
+            var recentBookings = allInvoices
                 .OrderByDescending(i => i.BookingDate)
                 .Take(10)
                 .Select(i => new RecentBookingInfo

@@ -62,7 +62,10 @@ namespace MovieTheater
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+
+                //code dưới sẽ khiến middleware challenge bằng Google OAuth thay vì chuyển hướng về trang login nội bộ
+                //options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+
             })
             .AddCookie(options =>
             {
@@ -115,6 +118,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IVoucherService, VoucherService>();
             builder.Services.AddScoped<IPointService, PointService>();
             builder.Services.AddScoped<IScoreService, ScoreService>();
+            builder.Services.AddScoped<IPaymentSecurityService, PaymentSecurityService>();
             builder.Services.AddSignalR(); //ADD SignalR
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
@@ -151,6 +155,9 @@ namespace MovieTheater
             app.UseRouting();
             app.UseSession(); // Enable session before authentication/authorization
 
+            // Thêm middleware kiểm tra bảo mật thanh toán
+            app.UseMiddleware<MovieTheater.Middleware.PaymentSecurityMiddleware>();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -178,6 +185,7 @@ namespace MovieTheater
 
             app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
             app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
+            app.MapHub<DashboardHub>("/dashboardhub"); //Tuyen duong cho hub
 
             app.Run();
         }

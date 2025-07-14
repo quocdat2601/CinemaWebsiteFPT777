@@ -7,6 +7,8 @@ using MovieTheater.ViewModels;
 using Newtonsoft.Json;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
@@ -41,6 +43,7 @@ namespace MovieTheater.Controllers
         private readonly IPromotionService _promotionService;
         private readonly IVoucherService _voucherService;
         private readonly MovieTheaterContext _context;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
         private readonly IFoodService _foodService;
         private readonly IFoodInvoiceService _foodInvoiceService;
 
@@ -60,6 +63,7 @@ namespace MovieTheater.Controllers
                          IPromotionService promotionService,
 
                          IVoucherService voucherService,
+                         IHubContext<DashboardHub> dashboardHubContext,
 
                          MovieTheater.Models.MovieTheaterContext context,
                          IFoodService foodService,
@@ -81,6 +85,7 @@ namespace MovieTheater.Controllers
             _voucherService = voucherService;
             _promotionService = promotionService;
             _context = context;
+            _dashboardHubContext = dashboardHubContext;
             _foodService = foodService;
             _foodInvoiceService = foodInvoiceService;
         }
@@ -453,6 +458,8 @@ namespace MovieTheater.Controllers
                         await _scheduleSeatRepository.CreateMultipleScheduleSeatsAsync(scheduleSeats);
                     }
 
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
+
                     TempData["MovieName"] = model.MovieName;
                     TempData["ShowDate"] = model.ShowDate.ToString();
                     TempData["ShowTime"] = model.ShowTime;
@@ -500,6 +507,7 @@ namespace MovieTheater.Controllers
                     await _foodInvoiceService.SaveFoodOrderAsync(invoice.InvoiceId, model.SelectedFoods);
                 }
 
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 return RedirectToAction("Payment", new { invoiceId = invoice.InvoiceId });
             }
             catch (Exception ex)
@@ -839,6 +847,8 @@ namespace MovieTheater.Controllers
                     _context.Invoices.Update(invoice);
                     _context.SaveChanges();
                 }
+                // Gửi realtime dashboard khi failed
+                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 // Giữ lại các trường cần thiết trong TempData để View sử dụng
                 TempData.Keep("PromotionDiscount");
                 TempData.Keep("VoucherAmount");
@@ -1175,6 +1185,7 @@ namespace MovieTheater.Controllers
                 // Store seat information in session for the confirmation view
                 HttpContext.Session.SetString("ConfirmedSeats_" + invoice.InvoiceId, JsonConvert.SerializeObject(model.BookingDetails.SelectedSeats));
 
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = invoice.InvoiceId }) });
             }
             catch (Exception ex)

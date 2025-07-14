@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 using Newtonsoft.Json;
 
 namespace MovieTheater.Controllers
@@ -14,14 +16,16 @@ namespace MovieTheater.Controllers
         private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
         private readonly MovieTheater.Models.MovieTheaterContext _context;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
         private readonly IFoodInvoiceService _foodInvoiceService;
 
-        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context, IFoodInvoiceService foodInvoiceService)
+        public PaymentController(VNPayService vnPayService, ILogger<PaymentController> logger, IAccountService accountService, MovieTheater.Models.MovieTheaterContext context, IFoodInvoiceService foodInvoiceService, IHubContext<DashboardHub> dashboardHubContext)
         {
             _vnPayService = vnPayService;
             _logger = logger;
             _accountService = accountService;
             _context = context;
+            _dashboardHubContext = dashboardHubContext;
             _foodInvoiceService = foodInvoiceService;
         }
 
@@ -127,6 +131,7 @@ namespace MovieTheater.Controllers
                     _context.Invoices.Update(invoice);
                     _context.SaveChanges();
                     _accountService.CheckAndUpgradeRank(invoice.AccountId);
+                    _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 }
                 // --- BẮT ĐẦU: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
                 if (invoice != null && !string.IsNullOrEmpty(invoice.Seat))

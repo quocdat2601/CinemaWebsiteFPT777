@@ -18,6 +18,7 @@ build-job:
   - dotnet publish -c Release -o ./publish --no-restore
   only:
     - main
+    - dev
 
 deploy-job:
   stage: deploy
@@ -31,3 +32,4 @@ deploy-job:
     - echo "Deployment successful!"
   only:
     - main
+    - dev

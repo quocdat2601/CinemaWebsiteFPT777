@@ -51,6 +51,22 @@
                         $(document).trigger('bookingTabLoaded');
                         break;
                     case 'Dashboard':
+                        // Khởi tạo SignalR cho dashboard
+                        if (window.dashboardConnection) {
+                            window.dashboardConnection.stop();
+                        }
+                        window.dashboardConnection = new signalR.HubConnectionBuilder()
+                            .withUrl("/dashboardhub")
+                            .build();
+
+                        window.dashboardConnection.on("DashboardUpdated", function () {
+                            loadTab('Dashboard'); // reload lại tab dashboard
+                        });
+
+                        window.dashboardConnection.start().catch(function (err) {
+                            return console.error(err.toString());
+                        });
+
                         const el = document.getElementById('dashboard-data');
                         if (el) {
                             const model = JSON.parse(el.textContent);
