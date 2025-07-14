@@ -35,6 +35,8 @@ public partial class Invoice
 
     public virtual Account? Account { get; set; }
 
+    public virtual ICollection<FoodInvoice> FoodInvoices { get; set; } = new List<FoodInvoice>();
+
     public virtual MovieShow? MovieShow { get; set; }
 
     public virtual ICollection<ScheduleSeat> ScheduleSeats { get; set; } = new List<ScheduleSeat>();

@@ -244,9 +244,6 @@ namespace MovieTheater.Controllers
             var bookedScheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(movieShow.MovieShowId);
             var bookedSeats = bookedScheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
 
-            // Log để debug
-            _logger.LogInformation($"MovieShowId: {movieShow.MovieShowId}, Total ScheduleSeats: {bookedScheduleSeats.Count()}, Booked Seats: {string.Join(", ", bookedSeats)}");
-
             ViewBag.BookedSeats = bookedSeats;
             ViewBag.MovieShow = movieShow;
             // Fetch couple seats for this cinema room

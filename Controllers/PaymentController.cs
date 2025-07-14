@@ -181,6 +181,11 @@ namespace MovieTheater.Controllers
                         if (seat?.SeatType != null)
                         {
                             decimal price = seat.SeatType.PricePercent;
+                            // Only apply version multiplier if BookedPrice is null or 0
+                            if ((price == 0 || price == null) && seat.SeatType != null && invoice?.MovieShow?.Version != null)
+                            {
+                                price = (decimal)(seat.SeatType.PricePercent * invoice.MovieShow.Version.Multi);
+                            }
                             decimal discount = 0;
                             if (invoice.PromotionDiscount.HasValue && invoice.PromotionDiscount.Value > 0)
                             {
