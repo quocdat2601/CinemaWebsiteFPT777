@@ -99,14 +99,44 @@ namespace MovieTheater.Controllers
 
                     if (imageFile != null && imageFile.Length > 0)
                     {
+                        // 1. Kiểm tra kích thước file (ví dụ: 2MB)
+                        const long maxFileSize = 2 * 1024 * 1024; // 2MB
+                        if (imageFile.Length > maxFileSize)
+                        {
+                            ModelState.AddModelError("", "File size must be less than 2MB.");
+                            return View(viewModel);
+                        }
+
+                        // 2. Kiểm tra loại file (chỉ cho phép jpg, png, gif)
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                        var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                        // Làm sạch extension: chỉ lấy extension nếu đúng định dạng cho phép
+                        if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                        {
+                            ModelState.AddModelError("", "Only image files (jpg, jpeg, png, gif) are allowed.");
+                            return View(viewModel);
+                        }
+
+                        // 3. (Tùy chọn) Kiểm tra magic number của file để xác thực là file ảnh thật sự
+                        // Có thể bổ sung thêm nếu cần thiết
+
                         string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "promotions");
                         if (!Directory.Exists(uploadsFolder))
                         {
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
+                        // Đặt tên file mới hoàn toàn không liên quan tên gốc
+                        string uniqueFileName = Guid.NewGuid().ToString("N") + extension;
                         string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        // Đảm bảo filePath nằm trong uploadsFolder (tránh path traversal)
+                        if (!filePath.StartsWith(uploadsFolder, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ModelState.AddModelError("", "Invalid file path.");
+                            return View(viewModel);
+                        }
 
                         using (var fileStream = new FileStream(filePath, FileMode.Create))
                         {
@@ -190,13 +220,44 @@ namespace MovieTheater.Controllers
 
                     if (imageFile != null && imageFile.Length > 0)
                     {
+                        // 1. Kiểm tra kích thước file (ví dụ: 2MB)
+                        const long maxFileSize = 2 * 1024 * 1024; // 2MB
+                        if (imageFile.Length > maxFileSize)
+                        {
+                            ModelState.AddModelError("", "File size must be less than 2MB.");
+                            return View(viewModel);
+                        }
+
+                        // 2. Kiểm tra loại file (chỉ cho phép jpg, png, gif)
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                        var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                        // Làm sạch extension: chỉ lấy extension nếu đúng định dạng cho phép
+                        if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                        {
+                            ModelState.AddModelError("", "Only image files (jpg, jpeg, png, gif) are allowed.");
+                            return View(viewModel);
+                        }
+
+                        // Đặt tên file mới hoàn toàn không liên quan tên gốc
+                        string uniqueFileName = Guid.NewGuid().ToString("N") + extension;
+
                         string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "promotions");
                         if (!Directory.Exists(uploadsFolder))
                         {
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        // Delete old image if exists
+                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        // Đảm bảo filePath nằm trong uploadsFolder (tránh path traversal)
+                        if (!filePath.StartsWith(uploadsFolder, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ModelState.AddModelError("", "Invalid file path.");
+                            return View(viewModel);
+                        }
+
+                        // Xóa ảnh cũ nếu có
                         if (!string.IsNullOrEmpty(promotion.Image))
                         {
                             string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, promotion.Image.TrimStart('/'));
@@ -206,9 +267,8 @@ namespace MovieTheater.Controllers
                             }
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
+                        // uniqueFileName is generated using Guid and validated extension only.
+                        // filePath is checked to be inside uploadsFolder, so this is safe from path traversal.
                         using (var fileStream = new FileStream(filePath, FileMode.Create))
                         {
                             await imageFile.CopyToAsync(fileStream);
