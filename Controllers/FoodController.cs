@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -29,10 +30,28 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(FoodViewModel model)
         {
             if (ModelState.IsValid)
             {
+                // Làm sạch dữ liệu đầu vào
+                model.Name = model.Name?.Trim();
+                model.Description = model.Description?.Trim();
+                model.Category = model.Category?.Trim();
+
+                // Kiểm tra file upload (nếu có)
+                if (model.ImageFile != null)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
+                    {
+                        ModelState.AddModelError("ImageFile", "Chỉ cho phép file ảnh nhỏ hơn 2MB và đúng định dạng.");
+                        return View(model);
+                    }
+                }
+
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.CreateAsync(model, webRootPath);
 

@@ -79,25 +79,42 @@ namespace MovieTheater.Service
         {
             try
             {
+                // Làm sạch dữ liệu đầu vào
+                var safeCategory = model.Category?.Trim();
+                var safeName = model.Name?.Trim();
+                var safeDescription = model.Description?.Trim();
+
+                // Nếu muốn chống XSS mạnh hơn, có thể dùng AntiXSS hoặc HtmlEncoder
+                // safeDescription = Microsoft.Security.Application.Sanitizer.GetSafeHtmlFragment(safeDescription);
+                // hoặc dùng System.Text.Encodings.Web.HtmlEncoder.Default.Encode(safeDescription)
+
                 var food = new Food
                 {
-                    Category = model.Category,
-                    Name = model.Name,
+                    Category = safeCategory,
+                    Name = safeName,
                     Price = model.Price,
-                    Description = model.Description,
+                    Description = safeDescription,
                     Status = model.Status
                 };
 
                 // Handle image upload
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
+                    {
+                        // Không lưu nếu file không hợp lệ
+                        return false;
+                    }
+
                     var uploadsFolder = Path.Combine(webRootPath, "images", "foods");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.ImageFile.FileName);
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -133,13 +150,22 @@ namespace MovieTheater.Service
                 // Handle image upload
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
+                    {
+                        // Không lưu nếu file không hợp lệ
+                        return false;
+                    }
+
                     var uploadsFolder = Path.Combine(webRootPath, "images", "foods");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    // Tạo tên file ngẫu nhiên, chỉ giữ lại phần mở rộng
+                    var uniqueFileName = Guid.NewGuid().ToString() + extension;
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
