@@ -35,6 +35,7 @@ namespace MovieTheater.Tests.Controller
                 mockInvoiceRepo.Object,
                 mockAccountService.Object,
                 mockVoucherService.Object,
+                null, // IFoodInvoiceService chưa mock, thêm nếu cần
                 mockHub.Object
             );
 

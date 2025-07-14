@@ -18,7 +18,6 @@
 
 body {
     background: var(--bg-page);
-    color: var(--clr-white);
     font-family: Arial, sans-serif;
 }
 
@@ -600,4 +599,45 @@ body {
 .gender-radio .form-check-label {
     color: #222 !important;
     font-weight: 500;
+}
+body.dark-mode .score-card,
+body.dark-mode .history-card {
+    background: #23243a !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.10);
+}
+body.dark-mode .score-table,
+body.dark-mode .history-table {
+    background: #23243a !important;
+    color: #e2e8f0 !important;
+}
+body.dark-mode .score-badge,
+body.dark-mode .history-badge {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: #fff !important;
+}
+body.dark-mode .btn-primary,
+body.dark-mode .btn-success,
+body.dark-mode .btn-info {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: #fff !important;
+    border: none !important;
+}
+body.dark-mode .btn-primary:hover,
+body.dark-mode .btn-success:hover,
+body.dark-mode .btn-info:hover {
+    background: #6366f1 !important;
+    color: #fff !important;
+}
+body.dark-mode .alert {
+    background: #23243a !important;
+    color: #fff !important;
+    border: 1px solid #6366f1 !important;
+}
+body.dark-mode .table-dark {
+    background: #23243a !important;
+    color: #e2e8f0 !important;
+}
+body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #23243a !important;
 }

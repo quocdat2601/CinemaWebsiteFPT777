@@ -19,6 +19,10 @@
     string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
     var status = booking?.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled";
+    
+    // Lấy thông tin food từ TempData hoặc Model
+    var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
 }
 <style>
     .ticket-success-header {
@@ -160,8 +164,6 @@
                     <input type="text" id="ticketId" class="ticket-info-value" value="@ticketId" readonly />
                 </div>
             </div>
-            <div class="d-flex flex-row justify-content-between align-items-start" style="gap: 2rem;">
-                <div style="flex: 1.5;">
             <div class="ticket-section-title">Seat(s)</div>
             <table class="table table-bordered mb-2">
                 <thead>
@@ -201,55 +203,89 @@
                     }
                 </tbody>
             </table>
-                </div>
-
-                @if (Model.Subtotal > 0)
-                {
-                    <div style="flex: 1;">
-                        <div class="ticket-section-title">Price Breakdown</div>
-                        <table class="table table-borderless mb-2">
-                            <tbody>
-                                <tr>
-                                    <td style="white-space: nowrap;">Subtotal</td>
-                                    <td class="text-end" style="white-space: nowrap;">@Model.Subtotal.ToString("N0") VND</td>
-                                </tr>
-                                @if (Model.RankDiscount > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Rank Discount (@Model.RankDiscountPercent.ToString("0.##")%)</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
-                                    </tr>
-                                }
-                                @if (Model.VoucherAmount > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Voucher</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@Model.VoucherAmount.ToString("N0") VND</td>
-                                    </tr>
-                                }
-                                @if (Model.UsedScore > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Points Used</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@Model.UsedScore (@Model.UsedScoreValue.ToString("N0") VND)</td>
-                                    </tr>
-                                }
-                                <tr>
-                                    <th style="white-space: nowrap;">Total Price</th>
-                                    <th class="text-end" style="white-space: nowrap;">@Model.TotalPrice.ToString("N0") VND</th>
-                                </tr>
-                                @if (Model.AddedScore > 0)
-                                {
-                                    <tr style="border-top: 1px solid #dee2e6;">
-                                        <td style="white-space: nowrap; padding-top: 0.8rem;">+ Points Earned</td>
-                                        <td class="text-end text-success" style="white-space: nowrap; padding-top: 0.8rem; font-weight: 500;">+@Model.AddedScore (@Model.AddedScoreValue.ToString("N0") VND)</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                </div>
+            @if (selectedFoods.Any())
+            {
+                <div class="ticket-section-title">Food & Drinks</div>
+                <table class="table table-bordered mb-2">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var food in selectedFoods)
+                        {
+                            <tr>
+                                <td>@food.Name</td>
+                                <td>@food.Quantity</td>
+                                <td>@food.Price.ToString("N0") VND</td>
+                                <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                            <td><strong>@totalFoodPrice.ToString("N0") VND</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
             }
-            </div>
+            <div class="ticket-section-title">Price Breakdown</div>
+            <table class="table table-borderless mb-2">
+                <tbody>
+                    <tr>
+                        <td style="white-space: nowrap;">Seat Subtotal</td>
+                        <td class="text-end" style="white-space: nowrap;">@Model.Subtotal.ToString("N0") VND</td>
+                    </tr>
+                    @if (Model.RankDiscount > 0)
+                    {
+                        <tr>
+                            <td style="white-space: nowrap;">- Rank Discount (@Model.RankDiscountPercent.ToString("0.##")%)</td>
+                            <td class="text-end" style="white-space: nowrap;">-@Model.RankDiscount.ToString("N0") VND</td>
+                        </tr>
+                    }
+                    @if (Model.VoucherAmount > 0)
+                    {
+                        <tr>
+                            <td style="white-space: nowrap;">- Voucher</td>
+                            <td class="text-end" style="white-space: nowrap;">-@Model.VoucherAmount.ToString("N0") VND</td>
+                        </tr>
+                    }
+                    @if (Model.UsedScore > 0)
+                    {
+                        <tr>
+                            <td style="white-space: nowrap;">- Points Used</td>
+                            <td class="text-end" style="white-space: nowrap;">-@Model.UsedScore (@Model.UsedScoreValue.ToString("N0") VND)</td>
+                        </tr>
+                    }
+                    <tr>
+                        <th style="white-space: nowrap;">Seat Price</th>
+                        <th class="text-end" style="white-space: nowrap;">@Model.TotalPrice.ToString("N0") VND</th>
+                    </tr>
+                    @if (totalFoodPrice > 0)
+                    {
+                        <tr>
+                            <td style="white-space: nowrap;">Food & Drinks</td>
+                            <td class="text-end" style="white-space: nowrap;">@totalFoodPrice.ToString("N0") VND</td>
+                        </tr>
+                    }
+                    <tr style="border-top: 1px solid #dee2e6;">
+                        <th style="white-space: nowrap;">Total Amount</th>
+                        <th class="text-end" style="white-space: nowrap;">@((Model.TotalPrice + totalFoodPrice).ToString("N0")) VND</th>
+                    </tr>
+                    @if (Model.AddedScore > 0)
+                    {
+                        <tr style="border-top: 1px solid #dee2e6;">
+                            <td style="white-space: nowrap; padding-top: 0.8rem;">+ Points Earned</td>
+                            <td class="text-end text-success" style="white-space: nowrap; padding-top: 0.8rem; font-weight: 500;">+@Model.AddedScore (@Model.AddedScoreValue.ToString("N0") VND)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
             <hr />
             <div class="ticket-section-title">Member Information</div>
             <div class="ticket-row">

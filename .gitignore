@@ -50,5 +50,18 @@ Thumbs.db
 TestResults/
 MovieTheater.Tests/TestResults/
 
+# SonarCloud analysis files
+.sonar/
+coverage-report/
+
+# Coverage files
+*.coverage
+*.coveragexml
+*.opencover.xml
+
+# Temporary files
+*.tmp
+*.temp
+
 # Ignore coverage reports
 coverage-report/

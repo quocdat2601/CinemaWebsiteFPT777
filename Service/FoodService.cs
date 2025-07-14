@@ -79,25 +79,47 @@ namespace MovieTheater.Service
         {
             try
             {
+                // Làm sạch dữ liệu đầu vào
+                var safeCategory = model.Category?.Trim();
+                var safeName = model.Name?.Trim();
+                var safeDescription = model.Description?.Trim();
+
+                // Nếu muốn chống XSS mạnh hơn, có thể dùng AntiXSS hoặc HtmlEncoder
+                // safeDescription = Microsoft.Security.Application.Sanitizer.GetSafeHtmlFragment(safeDescription);
+                // hoặc dùng System.Text.Encodings.Web.HtmlEncoder.Default.Encode(safeDescription)
+
                 var food = new Food
                 {
-                    Category = model.Category,
-                    Name = model.Name,
+                    Category = safeCategory,
+                    Name = safeName,
                     Price = model.Price,
-                    Description = model.Description,
+                    Description = safeDescription,
                     Status = model.Status
                 };
 
                 // Handle image upload
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
                     var uploadsFolder = Path.Combine(webRootPath, "images", "foods");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    var originalFileName = Path.GetFileName(model.ImageFile.FileName);
+                    if (originalFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        throw new ArgumentException("Tên file không hợp lệ.");
+                    }
+
+                    var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(fileExtension) || model.ImageFile.Length > 2 * 1024 * 1024)
+                    {
+                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF nhỏ hơn 2MB.");
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + originalFileName;
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -133,13 +155,26 @@ namespace MovieTheater.Service
                 // Handle image upload
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
                     var uploadsFolder = Path.Combine(webRootPath, "images", "foods");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    var originalFileName = Path.GetFileName(model.ImageFile.FileName);
+                    if (originalFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        throw new ArgumentException("Tên file không hợp lệ.");
+                    }
+
+                    var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(fileExtension) || model.ImageFile.Length > 2 * 1024 * 1024)
+                    {
+                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF nhỏ hơn 2MB.");
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + originalFileName;
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
