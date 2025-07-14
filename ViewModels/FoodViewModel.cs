@@ -32,6 +32,8 @@ namespace MovieTheater.ViewModels
         [Display(Name = "Status")]
         public bool Status { get; set; } = true;
 
+        public int Quantity { get; set; } // Số lượng món ăn đã chọn
+
         public DateTime CreatedDate { get; set; }
 
         public DateTime? UpdatedDate { get; set; }

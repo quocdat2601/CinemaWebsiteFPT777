@@ -119,6 +119,8 @@ namespace MovieTheater
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
             builder.Services.AddScoped<IVersionRepository, VersionRepository>();
+            builder.Services.AddScoped<IFoodInvoiceRepository, FoodInvoiceRepository>();
+            builder.Services.AddScoped<IFoodInvoiceService, FoodInvoiceService>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")

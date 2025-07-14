@@ -47,5 +47,9 @@ namespace MovieTheater.ViewModels
         public decimal OriginalTotal { get; set; }
         public int VersionId { get; set; }
 
+
+        // --- Food đã chọn ---
+        public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();
+        public decimal TotalFoodPrice { get; set; }
     }
 }
