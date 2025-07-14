@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MovieTheater.Models;
@@ -18,8 +19,16 @@ namespace MovieTheater.Tests
         public PaymentSecurityServiceTests()
         {
             _mockLogger = new Mock<ILogger<PaymentSecurityService>>();
-            _mockVnPayService = new Mock<VNPayService>(null);
-            
+
+            // Mock IConfiguration cho VNPayService
+            var configMock = new Mock<IConfiguration>();
+            var sectionMock = new Mock<IConfigurationSection>();
+            configMock.Setup(c => c.GetSection("VNPayConfig")).Returns(sectionMock.Object);
+            // Mock các key cần thiết nếu có
+            sectionMock.Setup(s => s["SomeKey"]).Returns("SomeValue");
+
+            _mockVnPayService = new Mock<VNPayService>(configMock.Object);
+
             // Use in-memory database for testing
             _options = new DbContextOptionsBuilder<MovieTheaterContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
