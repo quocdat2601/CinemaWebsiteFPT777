@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -29,20 +30,24 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(FoodViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Kiểm tra file upload (nếu có)
-                if (model.ImageFile != null && model.ImageFile.Length > 0)
-                {
-                    // Chỉ lấy tên file, loại bỏ mọi path
-                    var fileName = Path.GetFileName(model.ImageFile.FileName);
+                // Làm sạch dữ liệu đầu vào
+                model.Name = model.Name?.Trim();
+                model.Description = model.Description?.Trim();
+                model.Category = model.Category?.Trim();
 
-                    // Kiểm tra ký tự không hợp lệ
-                    if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                // Kiểm tra file upload (nếu có)
+                if (model.ImageFile != null)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
                     {
-                        ModelState.AddModelError("ImageFile", "Tên file không hợp lệ.");
+                        ModelState.AddModelError("ImageFile", "Chỉ cho phép file ảnh nhỏ hơn 2MB và đúng định dạng.");
                         return View(model);
                     }
                 }
