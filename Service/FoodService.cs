@@ -101,34 +101,22 @@ namespace MovieTheater.Service
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                    var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
-                    if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
-                    {
-                        // Không lưu nếu file không hợp lệ
-                        return false;
-                    }
-
                     var uploadsFolder = Path.Combine(webRootPath, "images", "foods");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    // Sử dụng Path.GetFileName để loại bỏ mọi path từ tên file do người dùng upload
                     var originalFileName = Path.GetFileName(model.ImageFile.FileName);
-
-                    // Kiểm tra ký tự không hợp lệ
                     if (originalFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                     {
                         throw new ArgumentException("Tên file không hợp lệ.");
                     }
 
-                    // Kiểm tra phần mở rộng file
-                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
                     var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
-                    if (!allowedExtensions.Contains(fileExtension))
+                    if (!allowedExtensions.Contains(fileExtension) || model.ImageFile.Length > 2 * 1024 * 1024)
                     {
-                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF.");
+                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF nhỏ hơn 2MB.");
                     }
 
                     var uniqueFileName = Guid.NewGuid().ToString() + "_" + originalFileName;
@@ -168,34 +156,22 @@ namespace MovieTheater.Service
                 if (model.ImageFile != null && model.ImageFile.Length > 0)
                 {
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                    var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
-                    if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
-                    {
-                        // Không lưu nếu file không hợp lệ
-                        return false;
-                    }
-
                     var uploadsFolder = Path.Combine(webRootPath, "images", "foods");
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    // Sử dụng Path.GetFileName để loại bỏ mọi path từ tên file do người dùng upload
                     var originalFileName = Path.GetFileName(model.ImageFile.FileName);
-
-                    // Kiểm tra ký tự không hợp lệ
                     if (originalFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                     {
                         throw new ArgumentException("Tên file không hợp lệ.");
                     }
 
-                    // Kiểm tra phần mở rộng file
-                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
                     var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
-                    if (!allowedExtensions.Contains(fileExtension))
+                    if (!allowedExtensions.Contains(fileExtension) || model.ImageFile.Length > 2 * 1024 * 1024)
                     {
-                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF.");
+                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF nhỏ hơn 2MB.");
                     }
 
                     var uniqueFileName = Guid.NewGuid().ToString() + "_" + originalFileName;
