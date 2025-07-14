@@ -8,7 +8,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using Xunit;
 
-namespace MovieTheater.Tests
+namespace MovieTheater.Tests.Repository
 {
     public class RankRepositoryTests
     {

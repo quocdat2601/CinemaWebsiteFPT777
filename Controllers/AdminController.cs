@@ -18,7 +18,6 @@ namespace MovieTheater.Controllers
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
-        private readonly IScheduleRepository _scheduleRepository;
         private readonly ISeatService _seatService;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
@@ -34,7 +33,6 @@ namespace MovieTheater.Controllers
             IAccountService accountService,
             ISeatService seatService,
             IInvoiceService invoiceService,
-            IScheduleRepository scheduleRepository,
             IFoodService foodService,
             IVoucherService voucherService,
             IRankService rankService)
@@ -47,7 +45,6 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _accountService = accountService;
             _invoiceService = invoiceService;
-            _scheduleRepository = scheduleRepository;
             _seatService = seatService;
             _voucherService = voucherService;
             _foodService = foodService;

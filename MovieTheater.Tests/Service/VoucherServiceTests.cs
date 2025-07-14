@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
 
-namespace MovieTheater.Tests
+namespace MovieTheater.Tests.Service
 {
     public class VoucherServiceTests
     {

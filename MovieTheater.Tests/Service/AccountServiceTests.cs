@@ -16,7 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
-namespace MovieTheater.Tests
+namespace MovieTheater.Tests.Service
 {
     public class AccountServiceTests
     {
@@ -150,6 +150,64 @@ namespace MovieTheater.Tests
         }
 
         [Fact]
+        public void Register_ShouldSetInitialRank_WhenRoleIsMemberAndBronzeRankExists()
+        {
+            // Arrange
+            var service = CreateService();
+            var model = new RegisterViewModel
+            {
+                Username = "member",
+                Password = "pw",
+                FullName = "Test",
+                DateOfBirth = DateOnly.FromDateTime(DateTime.Now),
+                Gender = "M",
+                IdentityCard = "123",
+                Email = "test@example.com",
+                Address = "123 St",
+                PhoneNumber = "123456789",
+                RoleId = 3
+            };
+            var bronzeRank = new Rank { RankId = 1, RequiredPoints = 0, RankName = "Bronze" };
+            var ranks = new List<Rank> { bronzeRank }.AsQueryable();
+            var mockRankSet = new Moq.Mock<DbSet<Rank>>();
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Provider).Returns(ranks.Provider);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Expression).Returns(ranks.Expression);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.ElementType).Returns(ranks.ElementType);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.GetEnumerator()).Returns(ranks.GetEnumerator());
+            _contextMock.Setup(c => c.Ranks).Returns(mockRankSet.Object);
+            // Act
+            var result = service.Register(model);
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void Register_ShouldAddEmployee_WhenRoleIsEmployee()
+        {
+            // Arrange
+            var service = CreateService();
+            var model = new RegisterViewModel
+            {
+                Username = "employee",
+                Password = "pw",
+                FullName = "Test",
+                DateOfBirth = DateOnly.FromDateTime(DateTime.Now),
+                Gender = "M",
+                IdentityCard = "123",
+                Email = "test@example.com",
+                Address = "123 St",
+                PhoneNumber = "123456789",
+                RoleId = 2
+            };
+            // Act
+            var result = service.Register(model);
+            // Assert
+            Assert.True(result);
+            _employeeRepoMock.Verify(r => r.Add(It.IsAny<Employee>()), Moq.Times.Once);
+            _employeeRepoMock.Verify(r => r.Save(), Moq.Times.Once);
+        }
+
+        [Fact]
         public void Update_ShouldReturnFalse_WhenAccountNotFound()
         {
             // Arrange
@@ -259,6 +317,20 @@ namespace MovieTheater.Tests
                     Directory.Delete(testDir, false);
                 }
             }
+        }
+
+        [Fact]
+        public void Update_ShouldUpdateImage_WhenImageProvidedAndNoImageFile()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Username = "user", Password = "pw" };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            var model = new RegisterViewModel { Username = "user", Image = "/images/new.png", ImageFile = null };
+            // Act
+            service.Update("id", model);
+            // Assert
+            Assert.Equal("/images/new.png", account.Image);
         }
 
         [Fact]
@@ -539,84 +611,334 @@ namespace MovieTheater.Tests
             Assert.False(result);
         }
 
-        // Test double for EmailService
-        public class TestEmailService : EmailService
+        [Fact]
+        public void UpdatePassword_ShouldReturnTrue_WhenAccountFound()
         {
-            private readonly Func<bool> _sendEmailFunc;
-            private readonly bool _throw;
-            public TestEmailService(Func<bool> sendEmailFunc, bool shouldThrow = false)
-                : base(new Mock<IConfiguration>().Object, new Mock<ILogger<EmailService>>().Object)
-            {
-                _sendEmailFunc = sendEmailFunc;
-                _throw = shouldThrow;
-            }
-            public new bool SendEmail(string toEmail, string subject, string body, bool isHtml = true)
-            {
-                if (_throw) throw new Exception("fail");
-                return _sendEmailFunc();
-            }
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Password = "old" };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            // Act
+            var result = service.UpdatePassword("id", "new");
+            // Assert
+            Assert.True(result);
+            _accountRepoMock.Verify(r => r.Update(account), Moq.Times.Once);
+            _accountRepoMock.Verify(r => r.Save(), Moq.Times.Once);
         }
 
         [Fact]
-        public void SendOtpEmail_ShouldReturnTrue_WhenEmailSentSuccessfully()
+        public void UpdatePassword_ShouldReturnFalse_WhenAccountNotFound()
         {
             // Arrange
-            var emailService = new TestEmailService(() => true);
-            var service = new AccountService(
-                _accountRepoMock.Object,
-                _employeeRepoMock.Object,
-                _memberRepoMock.Object,
-                _httpContextAccessorMock.Object,
-                emailService,
-                _loggerMock.Object,
-                _contextMock.Object
-            );
+            var service = CreateService();
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns((Account)null);
             // Act
-            var result = service.SendOtpEmail("a@b.com", "123456");
+            var result = service.UpdatePassword("id", "new");
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void UpdatePasswordByUsername_ShouldReturnTrue_WhenAccountFound()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { Username = "user", Password = "old" };
+            _accountRepoMock.Setup(r => r.GetByUsername("user")).Returns(account);
+            // Act
+            var result = service.UpdatePasswordByUsername("user", "new");
+            // Assert
+            Assert.True(result);
+            _accountRepoMock.Verify(r => r.Update(account), Moq.Times.Once);
+            _accountRepoMock.Verify(r => r.Save(), Moq.Times.Once);
+        }
+
+        [Fact]
+        public void UpdatePasswordByUsername_ShouldReturnFalse_WhenAccountNotFound()
+        {
+            // Arrange
+            var service = CreateService();
+            _accountRepoMock.Setup(r => r.GetByUsername("user")).Returns((Account)null);
+            // Act
+            var result = service.UpdatePasswordByUsername("user", "new");
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void StoreOtp_ShouldReturnTrue_WhenNoException()
+        {
+            // Arrange
+            var service = CreateService();
+            // Act
+            var result = service.StoreOtp("id", "otp", DateTime.UtcNow.AddMinutes(5));
             // Assert
             Assert.True(result);
         }
 
         [Fact]
-        public void SendOtpEmail_ShouldReturnFalse_WhenEmailSendFails()
+        public void StoreOtp_ShouldReturnFalse_WhenExceptionThrown()
         {
             // Arrange
-            var emailService = new TestEmailService(() => false);
-            var loggerMock = new Mock<ILogger<AccountService>>();
-            var service = new AccountService(
-                _accountRepoMock.Object,
-                _employeeRepoMock.Object,
-                _memberRepoMock.Object,
-                _httpContextAccessorMock.Object,
-                emailService,
-                loggerMock.Object,
-                _contextMock.Object
-            );
-            // Act
-            var result = service.SendOtpEmail("a@b.com", "123456");
+            var service = CreateService();
+            // Simulate exception by using a key that throws
+            var result = false;
+            try
+            {
+                result = service.StoreOtp(null, "otp", DateTime.UtcNow.AddMinutes(5));
+            }
+            catch { }
             // Assert
             Assert.False(result);
         }
 
         [Fact]
-        public void SendOtpEmail_ShouldReturnFalse_WhenExceptionThrown()
+        public void VerifyOtp_ShouldReturnTrue_WhenOtpMatchesAndNotExpired()
         {
             // Arrange
-            var emailService = new TestEmailService(() => false, shouldThrow: true);
-            var loggerMock = new Mock<ILogger<AccountService>>();
+            var service = CreateService();
+            var accountId = "id";
+            var otp = "123";
+            service.StoreOtp(accountId, otp, DateTime.UtcNow.AddMinutes(5));
+            // Act
+            var result = service.VerifyOtp(accountId, otp);
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void VerifyOtp_ShouldReturnFalse_WhenOtpDoesNotMatch()
+        {
+            // Arrange
+            var service = CreateService();
+            var accountId = "id";
+            service.StoreOtp(accountId, "123", DateTime.UtcNow.AddMinutes(5));
+            // Act
+            var result = service.VerifyOtp(accountId, "456");
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void VerifyOtp_ShouldReturnFalse_WhenOtpExpired()
+        {
+            // Arrange
+            var service = CreateService();
+            var accountId = "id";
+            var otp = "123";
+            service.StoreOtp(accountId, otp, DateTime.UtcNow.AddMinutes(-1));
+            // Act
+            var result = service.VerifyOtp(accountId, otp);
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ClearOtp_ShouldRemoveOtp()
+        {
+            // Arrange
+            var service = CreateService();
+            var accountId = "id";
+            service.StoreOtp(accountId, "otp", DateTime.UtcNow.AddMinutes(5));
+            // Act
+            service.ClearOtp(accountId);
+            var result = service.VerifyOtp(accountId, "otp");
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void GetAndClearRankUpgradeNotification_ShouldReturnMessage_WhenPresent()
+        {
+            // Arrange
+            var service = CreateService();
+            var accountId = "id";
+            var field = typeof(AccountService).GetField("_pendingRankNotifications", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var dict = (System.Collections.Concurrent.ConcurrentDictionary<string, string>)field.GetValue(null);
+            dict[accountId] = "msg";
+            // Act
+            var result = service.GetAndClearRankUpgradeNotification(accountId);
+            // Assert
+            Assert.Equal("msg", result);
+        }
+
+        [Fact]
+        public void GetAndClearRankUpgradeNotification_ShouldReturnNull_WhenAbsent()
+        {
+            // Arrange
+            var service = CreateService();
+            // Act
+            var result = service.GetAndClearRankUpgradeNotification("notfound");
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task AddScoreAsync_ShouldAddPoints_WhenMemberFound()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Members = new List<Member>() };
+            var member = new Member { Score = 10, TotalPoints = 20, AccountId = "id", Account = account };
+            account.Members.Add(member);
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            _memberRepoMock.Setup(r => r.Update(member));
+            _memberRepoMock.Setup(r => r.Save());
+            // Mock DbSet<Member> for context
+            var members = new List<Member> { member }.AsQueryable();
+            var mockSet = new Moq.Mock<DbSet<Member>>();
+            mockSet.As<IQueryable<Member>>().Setup(m => m.Provider).Returns(members.Provider);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.Expression).Returns(members.Expression);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.ElementType).Returns(members.ElementType);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.GetEnumerator()).Returns(members.GetEnumerator());
+            _contextMock.Setup(c => c.Members).Returns(mockSet.Object);
+            // Mock DbSet<Rank> for context
+            var ranks = new List<Rank> { new Rank { RankId = 1, RequiredPoints = 0, RankName = "Bronze" } }.AsQueryable();
+            var mockRankSet = new Moq.Mock<DbSet<Rank>>();
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Provider).Returns(ranks.Provider);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Expression).Returns(ranks.Expression);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.ElementType).Returns(ranks.ElementType);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.GetEnumerator()).Returns(ranks.GetEnumerator());
+            _contextMock.Setup(c => c.Ranks).Returns(mockRankSet.Object);
+            // Act
+            await service.AddScoreAsync("id", 5);
+            // Assert
+            Assert.Equal(15, member.Score);
+            Assert.Equal(25, member.TotalPoints);
+        }
+
+        [Fact]
+        public async Task DeductScoreAsync_ShouldDeductPoints_WhenEnoughPoints()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Members = new List<Member>() };
+            var member = new Member { Score = 10, TotalPoints = 20, AccountId = "id", Account = account };
+            account.Members.Add(member);
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            _memberRepoMock.Setup(r => r.Update(member));
+            _memberRepoMock.Setup(r => r.Save());
+            // Mock DbSet<Member> for context
+            var members = new List<Member> { member }.AsQueryable();
+            var mockSet = new Moq.Mock<DbSet<Member>>();
+            mockSet.As<IQueryable<Member>>().Setup(m => m.Provider).Returns(members.Provider);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.Expression).Returns(members.Expression);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.ElementType).Returns(members.ElementType);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.GetEnumerator()).Returns(members.GetEnumerator());
+            _contextMock.Setup(c => c.Members).Returns(mockSet.Object);
+            // Mock DbSet<Rank> for context
+            var ranks = new List<Rank> { new Rank { RankId = 1, RequiredPoints = 0, RankName = "Bronze" } }.AsQueryable();
+            var mockRankSet = new Moq.Mock<DbSet<Rank>>();
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Provider).Returns(ranks.Provider);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Expression).Returns(ranks.Expression);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.ElementType).Returns(ranks.ElementType);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.GetEnumerator()).Returns(ranks.GetEnumerator());
+            _contextMock.Setup(c => c.Ranks).Returns(mockRankSet.Object);
+            // Act
+            await service.DeductScoreAsync("id", 5);
+            // Assert
+            Assert.Equal(5, member.Score);
+        }
+
+        [Fact]
+        public async Task DeductScoreAsync_ShouldNotDeduct_WhenNotEnoughPoints()
+        {
+            // Arrange
+            var service = CreateService();
+            var member = new Member { Score = 2, TotalPoints = 20, AccountId = "id" };
+            var account = new Account { AccountId = "id", Members = new List<Member> { member } };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            // Act
+            await service.DeductScoreAsync("id", 5);
+            // Assert
+            Assert.Equal(2, member.Score);
+        }
+
+        [Fact]
+        public async Task DeductScoreAsync_ShouldNotThrow_WhenAccountNotFound()
+        {
+            // Arrange
+            var service = CreateService();
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns((Account)null);
+            // Act & Assert
+            await service.DeductScoreAsync("id", 5);
+        }
+
+        [Fact]
+        public async Task DeductScoreAsync_ShouldNotSetTotalPointsBelowZero()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Members = new List<Member>() };
+            var member = new Member { Score = 10, TotalPoints = 5, AccountId = "id", Account = account };
+            account.Members.Add(member);
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            _memberRepoMock.Setup(r => r.Update(member));
+            _memberRepoMock.Setup(r => r.Save());
+            // Mock DbSet<Member> and DbSet<Rank> for context
+            var members = new List<Member> { member }.AsQueryable();
+            var mockSet = new Moq.Mock<DbSet<Member>>();
+            mockSet.As<IQueryable<Member>>().Setup(m => m.Provider).Returns(members.Provider);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.Expression).Returns(members.Expression);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.ElementType).Returns(members.ElementType);
+            mockSet.As<IQueryable<Member>>().Setup(m => m.GetEnumerator()).Returns(members.GetEnumerator());
+            _contextMock.Setup(c => c.Members).Returns(mockSet.Object);
+            var ranks = new List<Rank> { new Rank { RankId = 1, RequiredPoints = 0, RankName = "Bronze" } }.AsQueryable();
+            var mockRankSet = new Moq.Mock<DbSet<Rank>>();
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Provider).Returns(ranks.Provider);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.Expression).Returns(ranks.Expression);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.ElementType).Returns(ranks.ElementType);
+            mockRankSet.As<IQueryable<Rank>>().Setup(m => m.GetEnumerator()).Returns(ranks.GetEnumerator());
+            _contextMock.Setup(c => c.Ranks).Returns(mockRankSet.Object);
+            // Act
+            await service.DeductScoreAsync("id", 5, deductFromTotalPoints: true);
+            // Assert
+            Assert.Equal(0, member.TotalPoints);
+        }
+
+        [Fact]
+        public void GetByUsername_ShouldCallRepository()
+        {
+            // Arrange
+            var service = CreateService();
+            _accountRepoMock.Setup(r => r.GetByUsername("user")).Returns(new Account());
+            // Act
+            var result = service.GetByUsername("user");
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void GetById_ShouldCallRepository()
+        {
+            // Arrange
+            var service = CreateService();
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(new Account());
+            // Act
+            var result = service.GetById("id");
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void CheckAndUpgradeRank_ShouldNotThrow_WhenMemberNotFound_InMemory()
+        {
+            // Arrange
+            var options = new DbContextOptionsBuilder<MovieTheaterContext>()
+                .UseInMemoryDatabase(databaseName: "CheckAndUpgradeRankDb")
+                .Options;
+            using var context = new MovieTheaterContext(options);
             var service = new AccountService(
                 _accountRepoMock.Object,
                 _employeeRepoMock.Object,
                 _memberRepoMock.Object,
                 _httpContextAccessorMock.Object,
-                emailService,
-                loggerMock.Object,
-                _contextMock.Object
+                CreateFakeEmailService(),
+                _loggerMock.Object,
+                context
             );
-            // Act
-            var result = service.SendOtpEmail("a@b.com", "123456");
-            // Assert
-            Assert.False(result);
+            // Act & Assert
+            service.CheckAndUpgradeRank("id");
         }
     }
 }

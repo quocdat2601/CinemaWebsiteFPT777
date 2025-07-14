@@ -49,3 +49,6 @@ Thumbs.db
 # Test results
 TestResults/
 MovieTheater.Tests/TestResults/
+
+# Ignore coverage reports
+coverage-report/
