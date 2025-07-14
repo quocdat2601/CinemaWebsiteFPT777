@@ -33,6 +33,20 @@ namespace MovieTheater.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Kiểm tra file upload (nếu có)
+                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                {
+                    // Chỉ lấy tên file, loại bỏ mọi path
+                    var fileName = Path.GetFileName(model.ImageFile.FileName);
+
+                    // Kiểm tra ký tự không hợp lệ
+                    if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        ModelState.AddModelError("ImageFile", "Tên file không hợp lệ.");
+                        return View(model);
+                    }
+                }
+
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.CreateAsync(model, webRootPath);
 

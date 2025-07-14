@@ -97,7 +97,24 @@ namespace MovieTheater.Service
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    // Sử dụng Path.GetFileName để loại bỏ mọi path từ tên file do người dùng upload
+                    var originalFileName = Path.GetFileName(model.ImageFile.FileName);
+
+                    // Kiểm tra ký tự không hợp lệ
+                    if (originalFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        throw new ArgumentException("Tên file không hợp lệ.");
+                    }
+
+                    // Kiểm tra phần mở rộng file
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF.");
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + originalFileName;
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -139,7 +156,24 @@ namespace MovieTheater.Service
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
+                    // Sử dụng Path.GetFileName để loại bỏ mọi path từ tên file do người dùng upload
+                    var originalFileName = Path.GetFileName(model.ImageFile.FileName);
+
+                    // Kiểm tra ký tự không hợp lệ
+                    if (originalFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        throw new ArgumentException("Tên file không hợp lệ.");
+                    }
+
+                    // Kiểm tra phần mở rộng file
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        throw new ArgumentException("Chỉ cho phép file ảnh JPG, PNG, GIF.");
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + originalFileName;
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
