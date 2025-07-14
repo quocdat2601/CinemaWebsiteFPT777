@@ -14,52 +14,74 @@
 <div class="profile-main-container">
     <div class="profile-2col-container">
         <div class="profile-2col-left">
+            <div class="mt-0 mb-4" style="text-align:center;">
+                <h3 class="mb-4" style="font-weight:700;color:#1769fa;"><i class="fas fa-user me-2"></i>Profile Information</h3>
+            </div>
             <div class="profile-modern-card">
-                <div class="profile-banner-modern" style="background: @(currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)");">
-                    <label for="profileImageInput" style="cursor: pointer;">
-                        <img id="profileImagePreview" class="profile-avatar-modern" src="@(Model.Profile.Image ?? "/image/profile.jpg")" alt="Profile Image" />
-                    </label>
-                    <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
-                    <div style="font-size:1.4rem;font-weight:600;">
-                        @Model.Profile.FullName
-                        <span class="rank-badge" style="font-size:0.95rem;padding:0.18rem 0.9rem;margin:0">
-                            <i class="@(currentRankDisplay?.IconClass ?? rank.IconClass ?? "fa-crown")" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0; margin-right: 0.5rem;"></i> @rank.CurrentRankName
-                        </span>
-                        </div>
-                  
-                    <div class="profile-rank-info" style="color:white">
-                        <span>Current Points  <b>@Model.RankInfo.CurrentScore</b></span>
-                        <span>Total Points  <b>@Model.RankInfo.TotalPoints</b></span>
-                    </div>
-                    <div class="profile-progress-modern">
-                        @if (!isMaxRank)
-                        {
-                            var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
-                            var profileNextRankPoints = rank.RequiredPointsForNextRank;
-                            var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
-                            var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
-                            var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%;">
-                                    @profileProgressPercentage.ToString("0")%
+                <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm" class="profile-form-modern mt-3">
+                    <div class="profile-banner-modern" id="profileBanner" style="background: @(currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)"); display: flex; flex-direction: column; align-items: stretch; padding: 2rem 1.5rem 2.5rem 1.5rem;">
+                        <div class="profile-top-row d-flex flex-row align-items-start w-100" style="gap: 0.5rem;">
+                            <div class="profile-banner-avatar-col d-flex flex-column align-items-center position-relative" style="flex:0 0 110px;">
+                                <label for="profileImageInput" style="cursor: pointer; position: relative; display: block;">
+                                    <img id="profileImagePreview" class="profile-avatar-modern profile-avatar-glow" src="@(Model.Profile.Image ?? "/image/profile.jpg")?t=@DateTime.Now.Ticks" alt="Profile Image" />
+                                    <span class="avatar-camera-overlay"><i class="fas fa-camera"></i></span>
+                                </label>
+                                <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
+                                <div id="avatarBtns" class="avatar-upload-btns mt-2 d-flex justify-content-center" style="gap:0.3rem;">
+                                    <button type="button" id="cancelAvatarBtn" class="avatar-btn avatar-btn-outline avatar-btn-xsmall">Cancel</button>
+                                    <button type="submit" name="action" value="updateImage" class="avatar-btn avatar-btn-primary avatar-btn-xsmall">Update</button>
                                 </div>
                             </div>
-                            <div style="margin-top:0.3rem;font-size:1.05rem;">
-                                Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed
+                            <div class="profile-info-name-badge d-flex flex-column align-items-center justify-content-start flex-grow-1" style="min-width: 120px; max-width: 220px; gap:0.15rem;">
+                                <div class="profile-info-name mb-0" style="font-size:1.5rem; font-weight:700;">@Model.Profile.FullName</div>
+                                <span class="rank-badge d-inline-flex align-items-center mb-0">
+                                    <i class="@(currentRankDisplay?.IconClass ?? rank.IconClass ?? "fa-crown")" style="color: #fff; font-size: 1rem; margin-right: 0.5rem;"></i>
+                                    <span>@rank.CurrentRankName</span>
+                                </span>
                             </div>
-                        }
-                        else
-                        {
-                            <div class="progress">
-                                <div class="progress-bar text-center" role="progressbar" style="width: 100%; align-content:center">Max</div>
+                            <div class="profile-points-row d-flex flex-row gap-1 align-items-start ms-2" style="min-width: 100px;">
+                                <div class="profile-point-card">
+                                    <div class="profile-point-icon"><i class="fas fa-star"></i></div>
+                                    <div class="profile-point-value">@Model.RankInfo.CurrentScore</div>
+                                    <div class="profile-point-label">Current</div>
+                                </div>
+                                <div class="profile-point-card">
+                                    <div class="profile-point-icon"><i class="fas fa-trophy"></i></div>
+                                    <div class="profile-point-value">@Model.RankInfo.TotalPoints</div>
+                                    <div class="profile-point-label">Total</div>
+                                </div>
                             </div>
-                            <div style="margin-top:0.3rem;font-size:1.05rem;">
-                                <i class="fas fa-crown"></i> Max Rank Achieved!
-                            </div>
-                        }
+                        </div>
+                        <div class="profile-progress-modern w-100" style="max-width: 100%; margin-top: 0.8rem;">
+                            @if (!isMaxRank)
+                            {
+                                var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
+                                var profileNextRankPoints = rank.RequiredPointsForNextRank;
+                                var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
+                                var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
+                                var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
+                                <div class="progress" style="height: 20px; border-radius: 999px;">
+                                    <div class="progress-bar d-flex justify-content-end align-items-center" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%;">
+                                        <span class="progress-bar-percent no-banner-color" style="font-size:0.98rem; font-weight:600; margin-right:0.5rem;">@profileProgressPercentage.ToString("0")%</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3 w-100" style="max-width: 100%;">
+                                    <span class="profile-next-rank-info" style="font-size:1.01rem; color:#f3f3f3; opacity:0.85;">Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed</span>
+                                    <a href="#" class="profile-view-details-link ms-2" data-bs-toggle="modal" data-bs-target="#rankDetailsModal" style="background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color:#fff; font-weight:600; border-radius:999px; padding:0.3rem 1.2rem 0.3rem 1.1rem; box-shadow:0 1px 4px rgba(0,0,0,0.08);"><span>View Details</span> <i class="fas fa-chevron-right"></i></a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="progress" style="height: 20px; border-radius: 999px;">
+                                    <div class="progress-bar text-center" role="progressbar" style="width: 100%; align-content:center">Max</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3 w-100" style="max-width: 100%;">
+                                    <span class="profile-next-rank-info" style="font-size:1.01rem; color:#f3f3f3; opacity:0.85;"><i class="fas fa-crown"></i> Max Rank Achieved!</span>
+                                    <a href="#" class="profile-view-details-link ms-2" data-bs-toggle="modal" data-bs-target="#rankDetailsModal" style="background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color:#fff; font-weight:600; border-radius:999px; padding:0.3rem 1.2rem 0.3rem 1.1rem; box-shadow:0 1px 4px rgba(0,0,0,0.08);"><span>View Details</span> <i class="fas fa-chevron-right"></i></a>
+                                </div>
+                            }
+                        </div>
                     </div>
-                </div>
-                <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm" class="profile-form-modern mt-3">
                     <div class="form-group profile-form-row">
                         <label for="Profile_FullName" class="profile-label">Full Name</label>
                         <div class="profile-data">
@@ -132,7 +154,7 @@
             <partial name="_ToastMessages" />
         </div>
         <div class="profile-2col-right">
-            <div class="mt-0 mb-4">
+            <div class="mt-0 mb-4" style="text-align:center;">
                 <h3 class="mb-4" style="font-weight:700;color:#1769fa;"><i class="fas fa-history me-2"></i>Booking History</h3>
                 <div id="profileHistoryCards">
                     <div class="text-center py-5">
@@ -147,6 +169,126 @@
         </div>
     </div>
     </div>
+<!-- Rank Details Modal -->
+<div class="modal fade" id="rankDetailsModal" tabindex="-1" aria-labelledby="rankDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rankDetailsModalLabel">Rank Tiers & Benefits</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                @if (Model.AllRanks != null && Model.AllRanks.Any())
+                {
+                    var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
+                    var currentUserScore = Model.RankInfo.TotalPoints;
+                    var currentUserRankId = Model.RankInfo.CurrentRankId;
+
+                    <div id="rankCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <ol class="carousel-indicators">
+                            @for (int i = 0; i < sortedRanks.Count; i++)
+                            {
+                                var rankDetail = sortedRanks[i];
+                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                                <li data-bs-target="#rankCarousel" data-bs-slide-to="@i" class="@activeClass"></li>
+                            }
+                        </ol>
+                        <div class="carousel-inner">
+                            @for (int i = 0; i < sortedRanks.Count; i++)
+                            {
+                                var rankDetail = sortedRanks[i];
+                                var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
+                                var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
+                                var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
+                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                                var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
+                                var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
+                                var pointsForThisTier = targetRankPoints - prevRankPoints;
+                                double progressPercentage;
+                                if (currentUserScore >= targetRankPoints)
+                                {
+                                    progressPercentage = 100;
+                                }
+                                else if (currentUserScore < prevRankPoints)
+                                {
+                                    progressPercentage = 0;
+                                }
+                                else
+                                {
+                                    var progressRaw = currentUserScore - prevRankPoints;
+                                    progressPercentage = (pointsForThisTier > 0)
+                                    ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
+                                    : 100;
+                                }
+                                <div class="carousel-item @activeClass">
+                                    <div class="rank-card" style="--rank-gradient: @rankGradient;">
+                                        <div class="rank-card-header">
+                                            <i class="@rankIcon" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0;"></i>
+                                            <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
+                                            <span class="rank-status">@rankStatus</span>
+                                        </div>
+                                        <div class="rank-card-body">
+                                            <div class="rank-progress-wrapper">
+                                                <div class="progress">
+                                                    <div class="progress-bar" role="progressbar"
+                                                         style="width: @progressPercentage.ToString("0.##")%; --progress-width: @progressPercentage.ToString("0.##")%;">
+                                                    </div>
+                                                </div>
+                                                <div class="rank-points">
+                                                    <span>@prevRankPoints.ToString("N0") pts</span>
+                                                    <span>@targetRankPoints.ToString("N0") pts</span>
+                                                </div>
+                                            </div>
+                                            <div class="benefits-section">
+                                                <div class="benefits-header">
+                                                    <i class="fas fa-gift"></i>
+                                                    <span>Benefits:</span>
+                                                </div>
+                                                <div class="benefits-divider"></div>
+                                                <div class="benefits-content">
+                                                    <div class="benefit-item">
+                                                        <i class="fas fa-ticket-alt"></i>
+                                                        <div class="benefit-text">
+                                                            <span class="benefit-label">Discount on Tickets</span>
+                                                            <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="benefit-item">
+                                                        <i class="fas fa-coins"></i>
+                                                        <div class="benefit-text">
+                                                            <span class="benefit-label">Point Earning Rate</span>
+                                                            <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="auto-upgrade">
+                                                <i class="fas fa-sync-alt"></i>
+                                                Auto-upgrade at @targetRankPoints.ToString("N0") pts
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#rankCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#rankCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center">No rank information available.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     function initProfileAvatarUpload() {
         const imageInput = document.getElementById('profileImageInput');
@@ -273,4 +415,42 @@
         }
         loadHistory();
     });
+</script>
+<script>
+function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(x => x + x).join('');
+    }
+    var bigint = parseInt(hex, 16);
+    var r = (bigint >> 16) & 255;
+    var g = (bigint >> 8) & 255;
+    var b = bigint & 255;
+    return [r, g, b];
+}
+function getFirstColorFromGradient(gradient) {
+    // Match hex colors in the gradient string
+    var match = gradient.match(/#([0-9a-fA-F]{3,6})/g);
+    if (match && match.length > 0) {
+        return match[0];
+    }
+    return null;
+}
+function setProfileBannerTextColor() {
+    const banner = document.getElementById('profileBanner');
+    if (banner) {
+        // Get the inline style attribute directly
+        const styleAttr = banner.getAttribute('style') || '';
+        const colorHex = getFirstColorFromGradient(styleAttr);
+        if (colorHex) {
+            const [r, g, b] = hexToRgb(colorHex);
+            const yiq = ((r*299)+(g*587)+(b*114))/1000;
+            const textColor = yiq >= 128 ? 'black' : 'white';
+            banner.style.setProperty('color', textColor, 'important');
+            banner.querySelectorAll('*:not(.no-banner-color)').forEach(el => el.style.setProperty('color', textColor, 'important'));
+        }
+    }
+}
+// Call the function directly, since this is a partial view
+setProfileBannerTextColor();
 </script>

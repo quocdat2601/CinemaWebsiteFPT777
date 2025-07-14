@@ -1,0 +1,35 @@
+stages:
+  - build
+  - deploy
+
+build-job:
+  stage: build
+  tags:
+    - datthai
+  script:
+  - echo "Navigating to project directory..."
+  - cd $CI_PROJECT_DIR
+  - 'echo "Current directory is: $CI_PROJECT_DIR"' # <-- DÒNG ĐÃ SỬA
+  - echo "Pulling latest code..."
+  - git pull origin main
+  - echo "Restoring packages..."
+  - dotnet restore
+  - echo "Building and publishing project..."
+  - dotnet publish -c Release -o ./publish --no-restore
+  only:
+    - main
+    - dev
+
+deploy-job:
+  stage: deploy
+  tags:
+    - datthai
+  needs:
+    - build-job
+  script:
+    - echo "Restarting the application service..."
+    - Restart-Service -Name "MovieTheaterService"
+    - echo "Deployment successful!"
+  only:
+    - main
+    - dev
