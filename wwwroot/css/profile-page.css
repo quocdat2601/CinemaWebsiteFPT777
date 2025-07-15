@@ -8,76 +8,116 @@
     --bg-modal: #0f1215;
     --bg-modal-body: #232b4a;
     --clr-white: #fff;
-    --clr-light: rgba(255,255,255,0.15);
-    --clr-light-strong: rgba(255,255,255,0.25);
-    --clr-border: rgba(255,255,255,0.2);
+    --clr-light: rgba(255, 255, 255, 0.15);
+    --clr-light-strong: rgba(255, 255, 255, 0.25);
+    --clr-border: rgba(255, 255, 255, 0.2);
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
     --radius-xxl: 16px;
 }
 
-/*---------------------------------------
-  2. Base & Container
----------------------------------------*/
-.signup-title {
-    font-size: 2.2rem;
-    font-weight: 700;
-
-    margin-bottom: 1.5rem;
-    text-align: center;
-    letter-spacing: 0.5px;
-}
-
 body {
     background: var(--bg-page);
     font-family: Arial, sans-serif;
-/*    padding: 2rem;*/
 }
 
-.profile-container {
-    max-width: 650px;
-    margin: 0 auto 2rem;
-    border: 1.5px solid #e0e0e0;
-    border-radius: var(--radius-xl);
-    box-shadow: 0 4px 24px rgba(78,84,200,0.08);
-    background: var(--bg-container);
-    overflow: hidden;
-}
-
-/*---------------------------------------
-  3. Banner & Avatar
----------------------------------------*/
-.profile-banner {
-    display: flex;
+.profile-main-container {
+    width: 70%;
     align-items: center;
     justify-content: center;
-    padding: 1.5rem 2rem;
-    background: var(--bg-banner-gradient);
-    color: var(--clr-white);
-    min-width: 400px;
-    max-width: 700px;
     margin: 0 auto;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
 }
 
-.profile-avatar-wrapper {
+.profile-2col-container {
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.profile-2col-left {
+    flex: 0 0 60%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.profile-2col-right {
+    flex: 1 1 40%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.profile-modern-card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 140px;
-    min-width: 140px;
-    flex: none;
-    margin-right: 1.2rem;
 }
 
-.profile-avatar {
+.profile-banner-modern {
+    border-radius: 24px;
+    padding: 2rem 1.5rem 2.5rem 1.5rem;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 540px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.profile-top-row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.7rem;
+}
+
+.profile-banner-avatar-col {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+}
+
+.profile-avatar-modern {
     width: 120px;
     height: 120px;
-    object-fit: cover;
     border-radius: 50%;
     border: 4px solid #fff;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    object-fit: cover;
+    margin-bottom: 0.75rem;
+    transition: transform 0.2s;
+}
+
+.profile-avatar-modern:hover {
+    transform: scale(1.06);
+}
+
+.avatar-camera-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border-radius: 50%;
+    padding: 0.3rem 0.4rem;
+    font-size: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    z-index: 2;
 }
 
 .avatar-upload-btns {
@@ -87,17 +127,22 @@ body {
     justify-content: center;
     height: 40px;
     visibility: hidden;
+    position: static;
+    transform: none;
+    left: unset;
+    top: unset;
+    margin-top: 0.7rem;
 }
 
-    .avatar-upload-btns.is-visible {
-        visibility: visible;
-    }
+.avatar-upload-btns.is-visible {
+    visibility: visible;
+}
 
 .avatar-btn {
     padding: 0.18rem 0.7rem;
     border: 1.2px solid #fff;
     border-radius: 1.2rem;
-    background: transparent;
+    background: #333;
     color: #fff;
     font-size: 0.92rem;
     min-width: auto;
@@ -105,145 +150,323 @@ body {
     transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-    .avatar-btn:hover {
-        background: rgba(255,255,255,0.08);
-        color: #fff;
-        border-color: #fff;
-    }
-
-/*---------------------------------------
-  4. Info & Form Elements
----------------------------------------*/
-.profile-info {
-    flex: 1;
-    /* font-size: 1.25rem; */
+.avatar-btn:hover {
+    background: #444;
+    color: #fff;
+    border-color: #fff;
 }
 
-    .profile-info .rank-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: var(--clr-light);
-        padding: 0.35rem 0.75rem;
-        border: 1px solid var(--clr-border);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(5px);
-        font-size: 0.95rem;
-        margin: 0.3rem 0;
-    }
-
-    .profile-info .current-points {
-        font-size: 1.1rem;
-        margin-bottom: 1rem;
-    }
-
-.form-control, .form-select {
-    background: #2a2a3c;
-    border: none;
-    color: var(--clr-white);
+.avatar-btn-small {
+    font-size: 0.92rem;
+    padding: 0.18rem 0.8rem;
+    border-radius: 1.2rem;
+    min-width: unset;
+    margin-right: 0.2rem;
 }
 
-    .form-control:focus, .form-select:focus {
-        box-shadow: 0 0 0 0.2rem rgba(180,162,255,0.5);
-    }
-
-/*---------------------------------------
-  5. Progress & Buttons
----------------------------------------*/
-.rank-progress {
-    margin-top: 0.5rem;
+.avatar-btn-xsmall {
+    font-size: 0.85rem;
+    padding: 0.12rem 0.6rem;
+    border-radius: 1.1rem;
+    min-width: unset;
+    margin-right: 0.1rem;
 }
 
-.progress {
-    background-color: #ddd;
+.profile-info-main {
+    align-items: flex-start;
+    gap: 0.7rem;
+}
+
+.profile-info-name-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-width: 100px;
+    max-width: 180px;
+    gap: 0.2rem;
+}
+
+.profile-info-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    text-align: left;
+    margin-bottom: 0.1rem;
+}
+
+.rank-badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    padding: 0.4rem 1.1rem !important;
+    border-radius: 999px !important;
+    font-weight: 600 !important;
+    margin-left: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    font-size: 1.05rem;
+}
+
+.profile-points-row {
+    align-items: flex-start;
+    margin-left: 0.5rem;
+    margin-top: 0.2rem;
+    min-width: 120px;
+}
+
+.profile-point-card {
+    background: rgba(255, 255, 255, 0.13);
+    border-radius: 1.2rem;
+    padding: 0.7rem 1.2rem 0.5rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.profile-point-icon {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 0.2rem;
+}
+
+.profile-point-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.profile-point-label {
+    font-size: 0.95rem;
+    color: #f3f3f3;
+    opacity: 0.85;
+    margin-top: 0.1rem;
+}
+
+.profile-progress-modern .progress {
+    background-color: #e0e0e0;
     border-radius: 999px;
-    height: 14px;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    height: 20px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
     overflow: hidden;
 }
 
-.progress-bar {
-    background: linear-gradient(to right, #4caf50, #8bc34a);
-    box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
-    border-radius: 8px;
-    transition: width 0.4s ease-in-out;
-    position: relative;
+.profile-progress-modern .progress-bar {
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    border-radius: 999px;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.10);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding-right: 8px;
+    padding-right: 12px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Progress percent inside bar */
+.progress-bar-percent {
+    font-size: 0.95rem;
     color: #fff;
-    font-size: 0.75rem;
+    opacity: 0.95;
+    margin-right: 2px;
+}
+
+.profile-next-rank-info {
+    font-size: 1.01rem;
+    color: #f3f3f3;
+    opacity: 0.85;
+}
+
+.profile-view-details-link {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #4e54c8 !important;
+    border: 2px solid #e0e0e0;
     font-weight: 600;
+    border-radius: 999px;
+    padding: 0.3rem 1.2rem 0.3rem 1.2rem;
+    transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 2px 8px rgba(78, 84, 200, 0.08);
+    backdrop-filter: blur(2px);
+    text-decoration: none;
+    display: inline-block;
 }
 
-.progress-label {
-    mix-blend-mode: difference;
+.profile-view-details-link:hover,
+.profile-view-details-link:focus {
+    background: #4e54c8 !important;
+    color: #fff !important;
+    border-color: #4e54c8;
+    box-shadow: 0 4px 16px rgba(78, 84, 200, 0.15);
+    text-decoration: none;
 }
 
-@keyframes fillProgress {
-    0% {
-        width: 0;
+@media (max-width: 700px) {
+    .profile-top-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.2rem;
     }
 
-    100% {
-        width: var(--progress-width);
+    .profile-info-main {
+        flex-direction: column;
+        align-items: center;
+        margin-left: 0;
+    }
+
+    .profile-points-row {
+        margin-left: 0;
+        margin-top: 1.2rem;
+        justify-content: center;
+    }
+
+    .profile-info-name-badge {
+        align-items: center;
+        text-align: center;
     }
 }
 
-.progress-bar {
-    animation: fillProgress 1s ease forwards;
+/* Booking Card Styles - Clean Start */
+.booking-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
 }
 
-.next-rank-row {
+.booking-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    padding: 1.1rem 1.3rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.booking-card-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0;
-    padding: 0;
     width: 100%;
-}
-
-.view-details-btn {
-    display: inline-flex;
-    align-items: center;
     gap: 0.5rem;
-    padding: 0.3rem 0.9rem;
-    background: var(--clr-light);
-    border: 1.5px solid var(--clr-border);
-    border-radius: 1.5rem;
-    font-size: 0.95rem;
-    color: var(--clr-white);
-    backdrop-filter: blur(5px);
-    transition: all 0.2s;
 }
 
-    .view-details-btn:hover {
-        background: var(--clr-light-strong);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.booking-card-row-top>.booking-card-title {
+    flex: 2 1 0%;
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: #222;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card-row-top>.booking-card-date {
+    flex: 1 1 0%;
+    text-align: center;
+    font-size: 1.02rem;
+    color: #444;
+    min-width: 60px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card-row-top>.booking-card-time {
+    flex: 1 1 0%;
+    text-align: center;
+    font-size: 1.02rem;
+    color: #444;
+    min-width: 60px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card-row-top>.booking-card-actions {
+    flex: 0 0 40px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.booking-card-row-seats {
+    font-size: 1.01rem;
+    color: #555;
+    margin-left: 0.2rem;
+    padding: 0.1rem 0 0.1rem 0.2rem;
+}
+
+.booking-card-row-seats i {
+    color: #4e54c8;
+    margin-right: 0.4rem;
+}
+
+.booking-card-row-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.2rem;
+}
+
+.booking-card-amount {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #1769fa;
+}
+
+.booking-card-status {
+    font-size: 1.01rem;
+    margin-left: 1rem;
+}
+
+@media (max-width: 700px) {
+    .booking-card-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
     }
 
-/*---------------------------------------
-  6. Modal & Carousel
----------------------------------------*/
+    .booking-card-row-top {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+    }
+
+    .booking-card-row-top>* {
+        min-width: 40%;
+        margin-bottom: 0.1rem;
+    }
+
+    .booking-card-row-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+}
+
+/* --- Restored Modal, Carousel, and Rank Card Styles for Profile Page --- */
 #rankDetailsModal .modal-content {
-    background: var(--bg-modal);
-    border-radius: var(--radius-xxl) !important;
+    background: var(--bg-modal, #0f1215);
+    border-radius: var(--radius-xxl, 16px) !important;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 #rankDetailsModal .modal-header {
     padding: 1.5rem 2.5rem 1rem;
     border-bottom: none;
-    background: var(--bg-banner-gradient);
+    background: var(--bg-banner-gradient, linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%));
 }
 
 #rankDetailsModal .modal-title {
-    color: var(--clr-white);
+    color: var(--clr-white, #fff);
     font-weight: 600;
     flex: 1;
 }
@@ -253,12 +476,11 @@ body {
 }
 
 #rankDetailsModal .modal-body {
-    background: var(--bg-modal-body);
+    background: var(--bg-modal-body, #232b4a);
     padding: 2rem;
     margin: 0;
 }
 
-/* Carousel inner & indicators */
 #rankCarousel .carousel-inner {
     border-radius: 12px;
     overflow: hidden;
@@ -269,36 +491,31 @@ body {
     width: 100%;
 }
 
-/* Carousel indicator dots */
-#rankCarousel {
-    position: relative; /* ensure indicators position relative to this container */
+#rankCarousel .carousel-indicators {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    z-index: 10;
 }
 
-    #rankCarousel .carousel-indicators {
-        position: absolute;
-        bottom: 0.5rem; /* lift them up a bit from the very bottom */
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 0.5rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        z-index: 10;
-    }
+#rankCarousel .carousel-indicators li {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
-        #rankCarousel .carousel-indicators li {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        #rankCarousel .carousel-indicators .active {
-            background-color: #fff;
-        }
+#rankCarousel .carousel-indicators .active {
+    background-color: #fff;
+}
 
 .carousel-control-prev,
 .carousel-control-next {
@@ -306,17 +523,16 @@ body {
     opacity: 0.7;
 }
 
-    .carousel-control-prev:hover,
-    .carousel-control-next:hover {
-        opacity: 1;
-    }
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    opacity: 1;
+}
 
-/* Rank card & benefits */
 .rank-card {
-    background: var(--bg-modal);
-    border-radius: var(--radius-xxl);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    background: var(--bg-modal, #0f1215);
+    border-radius: var(--radius-xxl, 16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     margin-bottom: 1.5rem;
 }
@@ -326,19 +542,20 @@ body {
     align-items: center;
     gap: 0.75rem;
     padding: 1.5rem;
-    background: var(--rank-gradient);
+    background: var(--rank-gradient, linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%));
 }
 
-.rank-title, .rank-status {
-    color: var(--clr-white);
+.rank-title,
+.rank-status {
+    color: var(--clr-white, #fff);
 }
 
 .rank-status {
     margin-left: auto;
-    background: var(--clr-light);
+    background: var(--clr-light, rgba(255, 255, 255, 0.15));
     padding: 0.35rem 0.75rem;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-lg, 1rem);
+    border: 1px solid var(--clr-border, rgba(255, 255, 255, 0.2));
 }
 
 .rank-card-body {
@@ -353,8 +570,8 @@ body {
 }
 
 .benefits-section {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     padding: 1.5rem;
     margin: 1.5rem 0;
@@ -371,7 +588,7 @@ body {
 
 .benefits-divider {
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
     margin: 1rem 0;
 }
 
@@ -381,15 +598,15 @@ body {
     gap: 1rem;
     padding: 0.75rem;
     border-radius: 8px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-    .benefit-item:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
+.benefit-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
 
 .benefit-text {
     flex: 1;
@@ -412,66 +629,75 @@ body {
     gap: 0.5rem;
     padding: 0.75rem;
     font-size: 0.9rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 8px;
 }
 
-    .auto-upgrade i {
-        color: #4CAF50;
-        background: rgba(76,175,80,0.1);
-        padding: 0.5rem;
-        border-radius: 50%;
-    }
-
-/*---------------------------------------
-  7. Responsive
----------------------------------------*/
-@media (max-width: 700px) {
-    .profile-banner {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .profile-avatar {
-        width: 180px;
-        height: 180px;
-    }
-
-    .next-rank-row {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    #rankCarousel .carousel-inner,
-    #rankCarousel .carousel-item {
-        padding: 1rem;
-    }
+.auto-upgrade i {
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 0.5rem;
+    border-radius: 50%;
 }
 
-/* Max‐Rank Banner */
-.max-rank-message {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0;
-    background-color: #e6f4ea;
-    color: #2e7d32;
-    border: 1px solid #a5d6a7;
-    border-radius: 1rem;
+.profile-label {
+    color: #222;
     font-weight: 600;
-    font-size: 1rem;
+    margin-bottom: 0.3rem;
+    display: block;
 }
 
-    .max-rank-message .fa-crown {
-        color: #388e3c;
-        font-size: 1.2rem;
-    }
+.gender-radio .form-check-label {
+    color: #222 !important;
+    font-weight: 500;
+}
 
-    .max-rank-message:hover {
-        background-color: #d0ebdc;
-        border-color: #81c784;
-        cursor: default;
-    }
+body.dark-mode .score-card,
+body.dark-mode .history-card {
+    background: #23243a !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.10);
+}
+
+body.dark-mode .score-table,
+body.dark-mode .history-table {
+    background: #23243a !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .score-badge,
+body.dark-mode .history-badge {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: #fff !important;
+}
+
+body.dark-mode .btn-primary,
+body.dark-mode .btn-success,
+body.dark-mode .btn-info {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+body.dark-mode .btn-primary:hover,
+body.dark-mode .btn-success:hover,
+body.dark-mode .btn-info:hover {
+    background: #6366f1 !important;
+    color: #fff !important;
+}
+
+body.dark-mode .alert {
+    background: #23243a !important;
+    color: #fff !important;
+    border: 1px solid #6366f1 !important;
+}
+
+body.dark-mode .table-dark {
+    background: #23243a !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .table-striped>tbody>tr:nth-of-type(odd) {
+    background-color: #23243a !important;
+}

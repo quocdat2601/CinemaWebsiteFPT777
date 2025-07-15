@@ -18,10 +18,7 @@ namespace MovieTheater.Controllers
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
-        private readonly IScheduleRepository _scheduleRepository;
-        private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
-        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
@@ -35,11 +32,8 @@ namespace MovieTheater.Controllers
             ISeatTypeService seatTypeService,
             IMemberRepository memberRepository,
             IAccountService accountService,
-            IBookingService bookingService,
             ISeatService seatService,
             IInvoiceService invoiceService,
-            IScheduleRepository scheduleRepository,
-            IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
             IVoucherService voucherService,
             IRankService rankService, IVersionRepository versionRepository)
@@ -52,10 +46,7 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _accountService = accountService;
             _invoiceService = invoiceService;
-            _scheduleRepository = scheduleRepository;
-            _bookingService = bookingService;
             _seatService = seatService;
-            _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
@@ -269,7 +260,7 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = "Member updated successfully!"; // Optional success message
                 return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log the exception (optional)
                 // _logger.LogError(ex, "Error updating member with id {MemberId}", id);
@@ -414,8 +405,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetMovieShowSummary(int year, int month)
         {
-            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as MovieRepository;
-            if (repo == null)
+            if (HttpContext.RequestServices.GetService(typeof(IMovieRepository)) is not MovieRepository repo)
             {
                 return Json(new Dictionary<string, List<string>>());
             }

@@ -382,14 +382,23 @@ namespace MovieTheater.Controllers
                 var afterRank = originalTotal - rankDiscount;
                 if (afterRank < 0) afterRank = 0;
 
-                // 2. Apply voucher (after rank)
+                // 2. Apply voucher (after rank discount)
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
-                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                    if (voucher != null && voucher.AccountId == userId && (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
+                    // Sử dụng VoucherService để validate voucher thay vì tự kiểm tra
+                    var voucherResult = _voucherService.ValidateVoucherUsage(model.SelectedVoucherId, userId, afterRank);
+                    
+                    if (voucherResult.IsValid)
                     {
-                        voucherAmount = Math.Min(voucher.Value, afterRank);
+                        // Voucher hợp lệ - sử dụng giá trị đã được validate
+                        voucherAmount = voucherResult.VoucherValue;
+                    }
+                    else
+                    {
+                        // Voucher không hợp lệ - hiển thị lỗi và quay lại form
+                        ModelState.AddModelError("Voucher", voucherResult.ErrorMessage);
+                        return View("ConfirmBooking", model);
                     }
                 }
                 var afterVoucher = afterRank - voucherAmount;
@@ -426,7 +435,7 @@ namespace MovieTheater.Controllers
                     InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
                     AccountId = userId,
                     BookingDate = DateTime.Now,
-                    Status = InvoiceStatus.Incomplete, // Chỉ set Incomplete khi vừa confirm
+                    Status = InvoiceStatus.Completed,
                     TotalMoney = finalPrice,
                     UseScore = model.UseScore,
                     Seat = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName)),
@@ -1099,14 +1108,22 @@ namespace MovieTheater.Controllers
                 decimal afterRank = subtotal - rankDiscount;
                 if (afterRank < 0) afterRank = 0;
 
-                // 2. Apply voucher (after rank)
+                // 2. Apply voucher (after rank discount)
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(model.SelectedVoucherId))
                 {
-                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                    if (voucher != null && voucher.AccountId == member.Account.AccountId && (voucher.IsUsed == null || voucher.IsUsed == false) && voucher.ExpiryDate > DateTime.Now)
+                    // Sử dụng VoucherService để validate voucher cho admin booking
+                    var voucherResult = _voucherService.ValidateVoucherUsage(model.SelectedVoucherId, member.Account.AccountId, afterRank);
+                    
+                    if (voucherResult.IsValid)
                     {
-                        voucherAmount = Math.Min(voucher.Value, afterRank);
+                        // Voucher hợp lệ - sử dụng giá trị đã được validate
+                        voucherAmount = voucherResult.VoucherValue;
+                    }
+                    else
+                    {
+                        // Voucher không hợp lệ - trả về lỗi cho AJAX call
+                        return Json(new { success = false, message = voucherResult.ErrorMessage });
                     }
                 }
                 decimal afterVoucher = afterRank - voucherAmount;

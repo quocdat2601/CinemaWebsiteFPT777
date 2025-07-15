@@ -8,15 +8,13 @@ namespace MovieTheater.Controllers
     public class EmployeeController : Controller
     {
         private readonly IEmployeeService _service;
-        private readonly ILogger<AccountController> _logger;
         private readonly IMovieService _movieService;
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
-        public EmployeeController(IEmployeeService service, ILogger<AccountController> logger, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService)
+        public EmployeeController(IEmployeeService service, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService)
         {
             _service = service;
-            _logger = logger;
             _movieService = movieService;
             _memberRepository = memberRepository;
             _accountService = accountService;

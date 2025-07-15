@@ -188,8 +188,7 @@
                 <label class="ticket-info-label">Time</label>
                 <input type="text" class="ticket-info-value" value="@showTime" readonly />
             </div>
-            <div style="gap: 2rem;">
-                <div style="flex: 1.5;">
+         
                     <div class="ticket-section-title">Seat(s)</div>
                     <table class="table table-bordered mb-2">
                         <thead>
@@ -233,7 +232,6 @@
 
                 @if (selectedFoods.Any())
                 {
-                    <div style="flex: 1;">
                         <div class="ticket-section-title">Food & Drinks</div>
                         <table class="table table-bordered mb-2">
                             <thead>
@@ -267,7 +265,6 @@
 
                 @if (Model.Subtotal > 0)
                 {
-                    <div style="flex: 1;">
                         <div class="ticket-section-title">Price Breakdown</div>
                         <table class="table table-borderless mb-2">
                             <tbody>

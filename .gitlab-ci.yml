@@ -1,7 +1,3 @@
-before_script:
-  - git config --global credential.helper store
-  - git clone https://25_CPL_NET_05_SE170183:glpat-fjsW9SCPPsmEgDeexoy_@git.fa.edu.vn/hcm25_cpl_net_05/team03.git
-
 stages:
   - build
   - deploy
@@ -11,15 +7,15 @@ build-job:
   tags:
     - datthai
   script:
-    - echo "Navigating to project directory..."
-    - cd $CI_PROJECT_DIR
-    - echo "Attempting to pull code with embedded credentials..."
-    # Lệnh git pull được sửa đổi để xác thực trực tiếp, thay thế URL và tên nhánh của bạn nếu cần
-    - git pull https://$GITLAB_USER:$GITLAB_PAT@git.fa.edu.vn/hcm25_cpl_net_05/team03.git main
-    - echo "Restoring packages..."
-    - dotnet restore
-    - echo "Building and publishing project..."
-    - dotnet publish -c Release -o ./publish --no-restore
+  - echo "Navigating to project directory..."
+  - cd $CI_PROJECT_DIR
+  - 'echo "Current directory is: $CI_PROJECT_DIR"' # <-- DÒNG ĐÃ SỬA
+  - echo "Pulling latest code..."
+  - git pull origin main
+  - echo "Restoring packages..."
+  - dotnet restore
+  - echo "Building and publishing project..."
+  - dotnet publish -c Release -o ./publish --no-restore
   only:
     - main
     - dev

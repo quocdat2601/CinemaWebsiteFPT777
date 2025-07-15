@@ -8,11 +8,22 @@
 <div class="container mt-5 d-flex justify-content-center">
     <div class="card shadow p-4 w-50 w-md-50">
         <h2 class="text-center mb-4" style="font-size: x-large">🎬 Book Your Ticket</h2>
-
-        <form id="bookingForm" novalidate>
+        <div class="booking-bg-custom"></div>
+<div class="booking-bg-overlay"></div>
+<div class="booking-content-wrapper">
+    <div class="container mt-5 d-flex justify-content-center align-items-center" style="min-height:70vh;">
+        <div class="booking-card-modern glass-card p-4 w-100" style="max-width: 480px;">
+            <div class="stepper mb-4">
+                <div class="step active"><span class="step-icon">🎬</span><span>Movie</span></div>
+                <div class="step"><span class="step-icon">🗓️</span><span>Date</span></div>
+                <div class="step"><span class="step-icon">🎞️</span><span>Version</span></div>
+                <div class="step"><span class="step-icon">⏰</span><span>Time</span></div>
+            </div>
+            <h2 class="text-center mb-4 booking-title"><i class="fas fa-ticket-alt me-2"></i>Book Your Ticket</h2>
+            <form id="bookingForm" novalidate>
             <div class="mb-4">
-                <label for="movieSelect" class="form-label"><strong>Movie</strong></label>
-                <select id="movieSelect" class="form-select" onchange="window.location.href='/Booking/TicketBooking?movieId=' + this.value">
+                    <label for="movieSelect" class="form-label booking-label"><span class="label-icon">🎬</span> <strong>Movie</strong></label>
+                <select id="movieSelect" class="form-select booking-select" onchange="window.location.href='/Booking/TicketBooking?movieId=' + this.value">
                     <option value="">— Select Movie —</option>
                     @foreach (var m in movieList)
                     {
@@ -31,8 +42,8 @@
             @if (!string.IsNullOrEmpty(selectedMovieId) && showsByDate != null)
             {
                 <div class="mb-4">
-                    <label for="dateSelect" class="form-label"><strong>Date</strong></label>
-                    <select id="dateSelect" class="form-select" onchange="updateVersions()">
+                        <label for="dateSelect" class="form-label booking-label"><span class="label-icon">🗓️</span> <strong>Date</strong></label>
+                    <select id="dateSelect" class="form-select booking-select" onchange="updateVersions()">
                         <option value="">— Select Date —</option>
                         @{
                             var today = DateTime.Today;
@@ -63,11 +74,12 @@
                     </select>
                 </div>
 
-                <button type="button" id="bookBtn" class="btn btn-success w-100" onclick="continueToSeats()">
-                    Continue to Seat Selection
-                </button>
+                 <button type="button" id="bookBtn" class="btn booking-btn-gradient w-100 mt-2" onclick="continueToSeats()">
+     <span>Continue to Seat Selection</span> <i class="fas fa-arrow-right ms-2"></i>
+ </button>
             }
         </form>
+            </div>
     </div>
 </div>
 
