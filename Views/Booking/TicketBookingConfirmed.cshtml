@@ -93,7 +93,7 @@
     }
 
     .ticket-card {
-        max-width: 700px;
+        max-width: 900px;
         margin: 0 auto;
         border-radius: 12px;
         overflow: hidden;
@@ -138,6 +138,23 @@
         font-size: 1.1rem;
     }
 
+    .ticket-breakdown-flex {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+        .ticket-breakdown-flex > .ticket-breakdown-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            padding: 1.2rem 1.2rem 0.8rem 1.2rem;
+            flex: 1 1 260px;
+            min-width: 260px;
+            margin-bottom: 1.2rem;
+        }
+
     .ticket-total-row {
         display: flex;
         justify-content: flex-end;
@@ -170,7 +187,6 @@
             <div class="ticket-row">
                 <label class="ticket-info-label">Movie Name</label>
                 <input type="text" class="ticket-info-value" value="@movieName" readonly />
-
             </div>
             <div class="ticket-row">
                 <label class="ticket-info-label">Date</label>
@@ -188,7 +204,7 @@
                 <label class="ticket-info-label">Time</label>
                 <input type="text" class="ticket-info-value" value="@showTime" readonly />
             </div>
-         
+                <div class="ticket-breakdown-card">
                     <div class="ticket-section-title">Seat(s)</div>
                     <table class="table table-bordered mb-2">
                         <thead>
@@ -229,9 +245,9 @@
                         </tbody>
                     </table>
                 </div>
-
                 @if (selectedFoods.Any())
                 {
+                    <div class="ticket-breakdown-card">
                         <div class="ticket-section-title">Food & Drinks</div>
                         <table class="table table-bordered mb-2">
                             <thead>
@@ -262,9 +278,9 @@
                         </table>
                     </div>
                 }
-
                 @if (Model.Subtotal > 0)
                 {
+                    <div class="ticket-breakdown-card">
                         <div class="ticket-section-title">Price Breakdown</div>
                         <table class="table table-borderless mb-2">
                             <tbody>
@@ -315,7 +331,6 @@
                         </table>
                     </div>
                 }
-            </div>
             <hr />
             <div class="ticket-section-title">Member Information</div>
             <div class="ticket-row">

@@ -50,57 +50,57 @@ body.dark-mode {
 
 /* Table/Seat cell colors */
 table.table td {
-    background: var(--seat-bg) !important;
-    border-color: var(--seat-border) !important;
-    color: var(--seat-text) !important;
+    background: var(--seat-bg);
+    border-color: var(--seat-border);
+    color: var(--seat-text);
     transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 table.table td.selected-seat {
-    background: var(--seat-selected-bg) !important;
-    border-color: var(--seat-selected-border) !important;
-    color: var(--seat-text) !important;
+    background: var(--seat-selected-bg);
+    border-color: var(--seat-selected-border);
+    color: var(--seat-text);
     box-shadow: 0 0 0 2px var(--seat-label-bg) inset;
 }
 table.table td.booked-seat {
-    background: var(--seat-booked-bg) !important;
-    color: #fff !important;
+    background: var(--seat-booked-bg);
+    color: #fff;
     pointer-events: none;
     cursor: not-allowed;
 }
 table.table td.disabled-seat,
 table.table td[data-seat-type="Disabled"] {
-    background: var(--seat-disabled-bg) !important;
-    border-color: var(--seat-disabled-border) !important;
-    color: #b0b0b0 !important;
+    background: var(--seat-disabled-bg);
+    border-color: var(--seat-disabled-border);
+    color: #b0b0b0;
     pointer-events: none;
     opacity: 0.6;
 }
 table.table td[data-couple-seat="true"] {
-    background: var(--seat-couple-bg) !important;
-    border-color: var(--seat-couple-border) !important;
-    color: var(--seat-text) !important;
+    background: var(--seat-couple-bg);
+    border-color: var(--seat-couple-border);
+    color: var(--seat-text);
 }
 table.table td:hover:not(.booked-seat):not(.disabled-seat):not(.selected-seat) {
-    background: var(--seat-hover-bg) !important;
-    border-color: var(--seat-hover-border) !important;
-    color: var(--seat-text) !important;
+    background: var(--seat-hover-bg);
+    border-color: var(--seat-hover-border);
+    color: var(--seat-text);
 }
 
 /* Seat label (screen) */
 .screen-label {
-    color: var(--seat-label) !important;
-    background: var(--seat-label-bg) !important;
-    border-top: 3px solid var(--seat-label) !important;
+    color: var(--seat-label);
+    background: var(--seat-label-bg);
+    border-top: 3px solid var(--seat-label);
 }
 body.dark-mode .screen-label {
-    color: var(--seat-label) !important;
-    background: var(--seat-label-bg) !important;
-    border-top: 3px solid var(--seat-label) !important;
+    color: var(--seat-label);
+    background: var(--seat-label-bg);
+    border-top: 3px solid var(--seat-label);
 }
 
 /* Material icons (seat text) */
 table.table td .material-icons {
-    color: var(--seat-text) !important;
+    color: var(--seat-text);
     font-family: 'Outfit', sans-serif;
     font-weight: 500;
 }
