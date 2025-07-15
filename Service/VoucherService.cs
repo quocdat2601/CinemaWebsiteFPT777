@@ -111,5 +111,53 @@ namespace MovieTheater.Service
         {
             return _voucherRepository.GetAvailableVouchers(accountId);
         }
+
+        public IEnumerable<Voucher> GetFilteredVouchers(VoucherFilterModel filter)
+        {
+            var vouchers = _voucherRepository.GetAll().AsQueryable();
+            var now = DateTime.Now;
+            if (filter != null)
+            {
+                if (!string.IsNullOrEmpty(filter.Keyword))
+                {
+                    vouchers = vouchers.Where(v =>
+                        (v.VoucherId != null && v.VoucherId.ToLower().Contains(filter.Keyword.ToLower())) ||
+                        (v.Code != null && v.Code.ToLower().Contains(filter.Keyword.ToLower())) ||
+                        (v.AccountId != null && v.AccountId.ToLower().Contains(filter.Keyword.ToLower())));
+                }
+                if (!string.IsNullOrEmpty(filter.StatusFilter))
+                {
+                    switch (filter.StatusFilter.ToLower())
+                    {
+                        case "active":
+                            vouchers = vouchers.Where(v => (!v.IsUsed.HasValue || !v.IsUsed.Value) && v.ExpiryDate > now);
+                            break;
+                        case "used":
+                            vouchers = vouchers.Where(v => v.IsUsed.HasValue && v.IsUsed.Value);
+                            break;
+                        case "expired":
+                            vouchers = vouchers.Where(v => v.ExpiryDate <= now);
+                            break;
+                    }
+                }
+                if (!string.IsNullOrEmpty(filter.ExpiryFilter))
+                {
+                    switch (filter.ExpiryFilter.ToLower())
+                    {
+                        case "expiring-soon":
+                            var sevenDaysFromNow = now.AddDays(7);
+                            vouchers = vouchers.Where(v => v.ExpiryDate > now && v.ExpiryDate <= sevenDaysFromNow);
+                            break;
+                        case "expired":
+                            vouchers = vouchers.Where(v => v.ExpiryDate <= now);
+                            break;
+                        case "valid":
+                            vouchers = vouchers.Where(v => v.ExpiryDate > now);
+                            break;
+                    }
+                }
+            }
+            return vouchers.ToList();
+        }
     }
 }
