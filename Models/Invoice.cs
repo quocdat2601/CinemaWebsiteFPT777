@@ -5,8 +5,9 @@ namespace MovieTheater.Models;
 public enum InvoiceStatus
 {
     Incomplete = 0,
-    Completed = 1
-}
+    Completed = 1,
+}   
+
 public partial class Invoice
 {
     public string InvoiceId { get; set; } = null!;
@@ -22,6 +23,8 @@ public partial class Invoice
     public int? UseScore { get; set; }
 
     public string? Seat { get; set; }
+
+    public string? SeatIds { get; set; }
 
     public string? AccountId { get; set; }
 

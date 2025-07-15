@@ -124,52 +124,13 @@ namespace MovieTheater.Controllers
             decimal promotionDiscount = booking.PromotionDiscount ?? 0;
 
             // Always try to load ScheduleSeat records for this invoice
-            var scheduleSeats = _context.ScheduleSeats
-                .Include(ss => ss.Seat)
-                .Include(ss => ss.BookedSeatType)
-                .Where(ss => ss.InvoiceId == booking.InvoiceId)
-                .ToList();
-
-            if (scheduleSeats.Any())
+            if (!string.IsNullOrEmpty(booking.SeatIds))
             {
-                seatDetails = scheduleSeats
-                    .Where(ss => ss.Seat != null)
-                    .Select(ss =>
-                    {
-                        var seatType = ss.BookedSeatType ?? ss.Seat.SeatType;
-                        decimal price = ss.BookedPrice ?? 0;
-                        // Only recalculate if BookedPrice is null or 0
-                        if ((price == 0 || price == null) && seatType != null && booking?.MovieShow?.Version != null)
-                        {
-                            price = (decimal)(seatType.PricePercent * booking.MovieShow.Version.Multi);
-                        }
-                        decimal priceAfterPromotion = price;
-                        if (promotionDiscount > 0)
-                        {
-                            priceAfterPromotion = price * (1 - promotionDiscount / 100m);
-                        }
-                        return new SeatDetailViewModel
-                        {
-                            SeatId = ss.Seat.SeatId,
-                            SeatName = ss.Seat.SeatName,
-                            SeatType = seatType?.TypeName ?? "N/A",
-                            Price = priceAfterPromotion,
-                            OriginalPrice = price,
-                            PromotionDiscount = promotionDiscount,
-                            PriceAfterPromotion = priceAfterPromotion
-                        };
-                    }).ToList();
-            }
-            else if (!string.IsNullOrEmpty(booking.Seat))
-            {
-                var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToArray();
-                foreach (var seatName in seatNamesArr)
-                {
-                    var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
-                    if (seat == null) continue;
+                var seatIds = booking.SeatIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(id => int.Parse(id.Trim()))
+                    .ToList();
+                var allSeats = _context.Seats.Include(s => s.SeatType).Where(s => seatIds.Contains(s.SeatId)).ToList();
+                seatDetails = allSeats.Select(seat => {
                     var seatType = seat.SeatType;
                     decimal price = seatType?.PricePercent ?? 0;
                     if (seatType != null && booking?.MovieShow?.Version != null)
@@ -181,7 +142,7 @@ namespace MovieTheater.Controllers
                     {
                         priceAfterPromotion = price * (1 - promotionDiscount / 100m);
                     }
-                    seatDetails.Add(new SeatDetailViewModel
+                    return new SeatDetailViewModel
                     {
                         SeatId = seat.SeatId,
                         SeatName = seat.SeatName,
@@ -190,7 +151,81 @@ namespace MovieTheater.Controllers
                         OriginalPrice = price,
                         PromotionDiscount = promotionDiscount,
                         PriceAfterPromotion = priceAfterPromotion
-                    });
+                    };
+                }).ToList();
+            }
+            else {
+                // fallback to old logic if SeatIds is missing
+                var scheduleSeats = _context.ScheduleSeats
+                    .Include(ss => ss.Seat)
+                    .Include(ss => ss.BookedSeatType)
+                    .Where(ss => ss.InvoiceId == booking.InvoiceId)
+                    .ToList();
+
+                if (scheduleSeats.Any())
+                {
+                    seatDetails = scheduleSeats
+                        .Where(ss => ss.Seat != null)
+                        .Select(ss =>
+                        {
+                            var seatType = ss.BookedSeatType ?? ss.Seat.SeatType;
+                            decimal price = ss.BookedPrice ?? 0;
+                            decimal priceAfterPromotion = price;
+
+                            // Only recalculate if BookedPrice is null or 0 (for legacy data)
+                            if ((price == 0 || price == null) && seatType != null && booking?.MovieShow?.Version != null)
+                            {
+                                price = (decimal)(seatType.PricePercent * booking.MovieShow.Version.Multi);
+                                priceAfterPromotion = price;
+                                if (promotionDiscount > 0)
+                                {
+                                    priceAfterPromotion = price * (1 - promotionDiscount / 100m);
+                                }
+                            }
+                            return new SeatDetailViewModel
+                            {
+                                SeatId = ss.Seat.SeatId,
+                                SeatName = ss.Seat.SeatName,
+                                SeatType = seatType?.TypeName ?? "N/A",
+                                Price = priceAfterPromotion,
+                                OriginalPrice = price,
+                                PromotionDiscount = promotionDiscount,
+                                PriceAfterPromotion = priceAfterPromotion
+                            };
+                        }).ToList();
+                }
+                else if (!string.IsNullOrEmpty(booking.Seat))
+                {
+                    var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(s => !string.IsNullOrEmpty(s))
+                        .ToArray();
+                    foreach (var seatName in seatNamesArr)
+                    {
+                        var seat = _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
+                        if (seat == null) continue;
+                        var seatType = seat.SeatType;
+                        decimal price = seatType?.PricePercent ?? 0;
+                        if (seatType != null && booking?.MovieShow?.Version != null)
+                        {
+                            price = (decimal)(seatType.PricePercent * booking.MovieShow.Version.Multi);
+                        }
+                        decimal priceAfterPromotion = price;
+                        if (promotionDiscount > 0)
+                        {
+                            priceAfterPromotion = price * (1 - promotionDiscount / 100m);
+                        }
+                        seatDetails.Add(new SeatDetailViewModel
+                        {
+                            SeatId = seat.SeatId,
+                            SeatName = seat.SeatName,
+                            SeatType = seatType?.TypeName ?? "N/A",
+                            Price = priceAfterPromotion,
+                            OriginalPrice = price,
+                            PromotionDiscount = promotionDiscount,
+                            PriceAfterPromotion = priceAfterPromotion
+                        });
+                    }
                 }
             }
             ViewBag.SeatDetails = seatDetails;

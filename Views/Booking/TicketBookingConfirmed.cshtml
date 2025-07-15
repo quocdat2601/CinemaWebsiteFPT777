@@ -19,10 +19,16 @@
     string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
     var status = booking?.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled";
-    
+
     // Lấy thông tin food từ TempData hoặc Model
     var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
     decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
+
+    // Calculate the correct seat price (sum of booked/discounted prices)
+
+    decimal seatPrice = booking != null && booking.SelectedSeats != null
+        ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
+    decimal totalAmount = seatPrice + totalFoodPrice;
 }
 <style>
     .ticket-success-header {
@@ -37,11 +43,13 @@
         padding-left: 2rem;
         padding-right: 2rem;
     }
-    .ticket-success-header h2 {
-        font-weight: bold;
-        margin-bottom: 0;
-        text-align: left;
-    }
+
+        .ticket-success-header h2 {
+            font-weight: bold;
+            margin-bottom: 0;
+            text-align: left;
+        }
+
     .status-badge {
         display: inline-block;
         padding: 0.35em 1.2em;
@@ -51,12 +59,15 @@
         color: #fff;
         margin-left: 1rem;
     }
+
     .status-completed {
         background-color: #28a745;
     }
+
     .status-cancelled {
         background-color: #dc3545;
     }
+
     .ticket-info-label {
         font-weight: 500;
         color: #333;
@@ -64,6 +75,7 @@
         font-size: 0.98rem;
         margin-right: 0.5rem;
     }
+
     .ticket-info-value {
         background: #f8f9fa;
         border: none;
@@ -79,12 +91,14 @@
         margin-right: 1.5rem;
         margin-bottom: 0.2rem;
     }
+
     .ticket-card {
         max-width: 700px;
         margin: 0 auto;
         border-radius: 12px;
         overflow: hidden;
     }
+
     .btn-ticket-back {
         background: #007bff;
         color: #fff;
@@ -94,30 +108,36 @@
         font-size: 1.1rem;
         margin-top: 1.5rem;
     }
-    .btn-ticket-back:hover {
-        background: #0056b3;
-        color: #fff;
-    }
+
+        .btn-ticket-back:hover {
+            background: #0056b3;
+            color: #fff;
+        }
+
     .ticket-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         margin-bottom: 0.3rem;
     }
-    .ticket-row .ticket-info-label {
-        min-width: 90px;
-    }
-    .ticket-row .ticket-info-value {
-        flex: 1 1 120px;
-        min-width: 80px;
-        margin-right: 2rem;
-    }
+
+        .ticket-row .ticket-info-label {
+            min-width: 90px;
+        }
+
+        .ticket-row .ticket-info-value {
+            flex: 1 1 120px;
+            min-width: 80px;
+            margin-right: 2rem;
+        }
+
     .ticket-section-title {
         margin-top: 1.2rem;
         margin-bottom: 0.5rem;
         font-weight: 600;
         font-size: 1.1rem;
     }
+
     .ticket-total-row {
         display: flex;
         justify-content: flex-end;
@@ -125,10 +145,12 @@
         margin-top: 0.5rem;
         margin-bottom: 0.5rem;
     }
+
     .ticket-total-label {
         font-weight: 600;
         margin-right: 0.5rem;
     }
+
     .ticket-total-value {
         font-weight: 600;
         font-size: 1.1rem;
@@ -166,47 +188,47 @@
                 <label class="ticket-info-label">Time</label>
                 <input type="text" class="ticket-info-value" value="@showTime" readonly />
             </div>
-            <div class="d-flex flex-row justify-content-between align-items-start" style="gap: 2rem;">
+            <div style="gap: 2rem;">
                 <div style="flex: 1.5;">
-            <div class="ticket-section-title">Seat(s)</div>
-            <table class="table table-bordered mb-2">
-                <thead>
-                    <tr>
-                        <th>Seat</th>
-                        <th>Type</th>
-                        <th>Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (booking != null && booking.SelectedSeats != null && booking.SelectedSeats.Any())
-                    {
-                        foreach (var seat in booking.SelectedSeats)
-                        {
+                    <div class="ticket-section-title">Seat(s)</div>
+                    <table class="table table-bordered mb-2">
+                        <thead>
                             <tr>
-                                <td>@seat.SeatName</td>
-                                <td>@seat.SeatType</td>
-                                <td>
-                                    @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
-                                    {
-                                        <span style="white-space: nowrap;">
-                                            <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                            <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
-                                    }
-                                </td>
+                                <th>Seat</th>
+                                <th>Type</th>
+                                <th>Price</th>
                             </tr>
-                        }
-                    }
-                    else if (TempData["SeatTableRows"] != null)
-                    {
-                        @Html.Raw(TempData["SeatTableRows"])
-                    }
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody>
+                            @if (booking != null && booking.SelectedSeats != null && booking.SelectedSeats.Any())
+                            {
+                                foreach (var seat in booking.SelectedSeats)
+                                {
+                                    <tr>
+                                        <td>@seat.SeatName</td>
+                                        <td>@seat.SeatType</td>
+                                        <td>
+                                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                            {
+                                                <span style="white-space: nowrap;">
+                                                    <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                    <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else if (TempData["SeatTableRows"] != null)
+                            {
+                                @Html.Raw(TempData["SeatTableRows"])
+                            }
+                        </tbody>
+                    </table>
                 </div>
 
                 @if (selectedFoods.Any())
@@ -249,10 +271,6 @@
                         <div class="ticket-section-title">Price Breakdown</div>
                         <table class="table table-borderless mb-2">
                             <tbody>
-                                <tr>
-                                    <td style="white-space: nowrap;">Seat Subtotal</td>
-                                    <td class="text-end" style="white-space: nowrap;">@Model.Subtotal.ToString("N0") VND</td>
-                                </tr>
                                 @if (Model.RankDiscount > 0)
                                 {
                                     <tr>
@@ -276,7 +294,7 @@
                                 }
                                 <tr>
                                     <th style="white-space: nowrap;">Seat Price</th>
-                                    <th class="text-end" style="white-space: nowrap;">@Model.TotalPrice.ToString("N0") VND</th>
+                                    <th class="text-end" style="white-space: nowrap;">@seatPrice.ToString("N0") VND</th>
                                 </tr>
                                 @if (totalFoodPrice > 0)
                                 {
@@ -287,7 +305,7 @@
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">
                                     <th style="white-space: nowrap;">Total Amount</th>
-                                    <th class="text-end" style="white-space: nowrap;">@((Model.TotalPrice + totalFoodPrice).ToString("N0")) VND</th>
+                                    <th class="text-end" style="white-space: nowrap;">@totalAmount.ToString("N0") VND</th>
                                 </tr>
                                 @if (Model.AddedScore > 0)
                                 {
@@ -298,8 +316,8 @@
                                 }
                             </tbody>
                         </table>
-                </div>
-            }
+                    </div>
+                }
             </div>
             <hr />
             <div class="ticket-section-title">Member Information</div>
@@ -320,7 +338,7 @@
                     <i class="fas fa-arrow-left me-1"></i> Back to Booking Management
                 </a>
                 @if (Model.BookingDetails != null && Model.BookingDetails.Status == MovieTheater.Models.InvoiceStatus.Completed)
-                    @* && Model.BookingDetails.ShowDate > DateTime.Now) *@
+                @* && Model.BookingDetails.ShowDate > DateTime.Now) *@
                 {
                     <form asp-controller="Ticket" asp-action="CancelByAdmin" asp-route-id="@Model.BookingDetails.InvoiceId"
                           method="post" class="d-inline"
@@ -333,6 +351,6 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
 
 <partial name="_ToastMessages" />

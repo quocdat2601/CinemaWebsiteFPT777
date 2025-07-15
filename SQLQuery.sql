@@ -153,24 +153,6 @@ CREATE TABLE Voucher (
     CONSTRAINT FK_Voucher_Account FOREIGN KEY (Account_ID) REFERENCES [dbo].[Account](Account_ID)
 );
 
-CREATE TABLE Invoice (
-    Invoice_ID VARCHAR(10) PRIMARY KEY,
-    Add_Score INT,
-    BookingDate DATETIME,
-    Status INT,
-    Total_Money DECIMAL,
-    Use_Score INT,
-    Seat VARCHAR(30),
-    Account_ID VARCHAR(10),
-    Movie_Show_Id INT, 
-	Promotion_Discount INT DEFAULT 0,
-	Voucher_ID VARCHAR(10) NULL,
-	RankDiscountPercentage DECIMAL(5,2) NULL,
-    CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
-	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
-	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)
-);
-
 CREATE TABLE Seat_Type (
     Seat_Type_ID INT PRIMARY KEY IDENTITY(1,1),
     Type_Name VARCHAR(50),
@@ -195,6 +177,27 @@ CREATE TABLE Seat (
     FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID),
 	FOREIGN KEY (Seat_Type_ID) REFERENCES Seat_Type(Seat_Type_ID)
 );
+
+CREATE TABLE Invoice (
+    Invoice_ID VARCHAR(10) PRIMARY KEY,
+    Add_Score INT,
+    BookingDate DATETIME,
+    Status INT,
+    Total_Money DECIMAL,
+    Use_Score INT,
+    Seat VARCHAR(30),
+    Seat_IDs VARCHAR(100),
+    Account_ID VARCHAR(10),
+    Movie_Show_Id INT, 
+	Promotion_Discount INT DEFAULT 0,
+	Voucher_ID VARCHAR(10) NULL,
+	RankDiscountPercentage DECIMAL(5,2) NULL,
+    CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
+	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
+	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)
+);
+
+
 
 CREATE TABLE Schedule_Seat (
 	Schedule_Seat_ID INT PRIMARY KEY IDENTITY(1,1),

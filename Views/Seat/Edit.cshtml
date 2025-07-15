@@ -57,7 +57,7 @@
 						var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
 						bool isDisabledType = seatType?.TypeName == "Disabled";
 
-						<td style="border-color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
+						<td style="border-color: @(seat.SeatType?.ColorHex ?? "#ffffff"); border-width: 5px"
 							data-seat-id="@seat.SeatId"
 							data-seat-row="@row"
 							data-seat-col="@col"

@@ -21,6 +21,11 @@
     int promotionDiscount = TempData["PromotionDiscount"] != null ? Convert.ToInt32(TempData["PromotionDiscount"]) : 0;
 }
 
+@if ((seatDetails == null || !seatDetails.Any()) && TempData["SeatDetails"] != null)
+{
+    seatDetails = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MovieTheater.ViewModels.SeatDetailViewModel>>(TempData["SeatDetails"].ToString());
+}
+
 <style>
     .ticket-success-header {
         background: #e3fcec;

@@ -346,7 +346,7 @@ namespace MovieTheater.Controllers
                 EarningRate = earningRate,
                 RankDiscountPercent = rankDiscountPercent,
                 MovieShowId = movieShowId,
-                OriginalTotal = originalTotal
+                OriginalTotal = originalTotal,
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice
             };
@@ -430,6 +430,7 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalPrice,
                     UseScore = model.UseScore,
                     Seat = string.Join(", ", model.SelectedSeats.Select(s => s.SeatName)),
+                    SeatIds = string.Join(",", model.SelectedSeats.Select(s => s.SeatId)), // Store seat IDs
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
                     PromotionDiscount = (int?)promotionDiscountLevel,
                     RankDiscountPercentage = userAccount?.Rank?.DiscountPercentage ?? 0,
@@ -469,7 +470,7 @@ namespace MovieTheater.Controllers
                             SeatId = (int)seat.SeatId,
                             SeatStatusId = 2,
                             BookedSeatTypeId = seat.SeatTypeId,
-                            BookedPrice = seat.OriginalPrice
+                            BookedPrice = seat.Price
                         }).ToList();
 
                         // Log the values for debugging
@@ -508,7 +509,7 @@ namespace MovieTheater.Controllers
                         SeatId = (int)seat.SeatId,
                         SeatStatusId = 2,
                         BookedSeatTypeId = seat.SeatTypeId,
-                        BookedPrice = seat.OriginalPrice * invoice.MovieShow.Version.Multi
+                        BookedPrice = seat.Price
                     }).ToList();
 
                     // Log the values for debugging
@@ -636,17 +637,16 @@ namespace MovieTheater.Controllers
                             SeatId = seat?.SeatId ?? 0,
                             SeatName = seat?.SeatName ?? "",
                             SeatType = seatType?.TypeName ?? "N/A",
-                            Price = priceAfterPromotion,
+                            Price = originalPrice,
                             OriginalPrice = originalPrice,
-                            PromotionDiscount = seatPromotionDiscount,
-                            PriceAfterPromotion = priceAfterPromotion
+                            PromotionDiscount = 0, // Already applied
+                            PriceAfterPromotion = originalPrice
                         });
                     }
                 }
                 ViewBag.SeatDetails = seats;
 
-                // Calculate subtotal from prices after promotion
-                decimal subtotal = seats.Sum(s => s.OriginalPrice ?? 0);
+                decimal subtotal = seats.Sum(s => s.Price);
 
                 // Calculate rank discount
                 decimal rankDiscount = 0;
@@ -751,7 +751,9 @@ namespace MovieTheater.Controllers
             // Lấy food từ DB
             var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            decimal totalSeatPrice = invoice.TotalMoney ?? 0;
+            // Fix: Seat price should not include food price
+            decimal totalSeatPrice = (invoice.TotalMoney ?? 0) - totalFoodPrice;
+            if (totalSeatPrice < 0) totalSeatPrice = 0;
             decimal totalAmount = totalSeatPrice + totalFoodPrice;
 
             var sanitizedMovieName = Regex.Replace(invoice.MovieShow.Movie.MovieNameEnglish, @"[^a-zA-Z0-9\s]", "");
@@ -1146,6 +1148,7 @@ namespace MovieTheater.Controllers
                     TotalMoney = finalSeatPrice, // Chỉ lưu seat price, không bao gồm food
                     UseScore = usedScore,
                     Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
+                    SeatIds = string.Join(",", model.BookingDetails.SelectedSeats.Select(s => s.SeatId)), // Store seat IDs
                     VoucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : null,
                     PromotionDiscount = (int?)promotionDiscountLevel,
                     RankDiscountPercentage = member?.Account?.Rank?.DiscountPercentage ?? 0,
@@ -1186,7 +1189,7 @@ namespace MovieTheater.Controllers
                         SeatId = (int)seat.SeatId,
                         SeatStatusId = 2,
                         BookedSeatTypeId = seat.SeatTypeId,
-                        BookedPrice = seat.OriginalPrice
+                        BookedPrice = seat.Price
                     }).ToList();
 
                     // Log the values for debugging
@@ -1284,17 +1287,11 @@ namespace MovieTheater.Controllers
                 {
                     var seat = ss.Seat;
                     var seatType = ss.BookedSeatType;
-                    decimal originalPrice = ss.BookedPrice ?? 0;
-                    // Ensure originalPrice is version-multiplied if BookedPrice is missing or zero
-                    if ((originalPrice == 0 || originalPrice == seatType?.PricePercent) && seatType != null && invoice?.MovieShow?.Version != null)
+                    decimal bookedPrice = ss.BookedPrice ?? 0;
+                    // If BookedPrice is missing, fallback to recalculation (should not happen)
+                    if (bookedPrice == 0 && seatType != null && invoice?.MovieShow?.Version != null)
                     {
-                        originalPrice = (decimal)(seatType.PricePercent * invoice.MovieShow.Version.Multi);
-                    }
-                    decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
-                    decimal priceAfterPromotion = originalPrice;
-                    if (seatPromotionDiscount > 0)
-                    {
-                        priceAfterPromotion = originalPrice * (1 - seatPromotionDiscount / 100m);
+                        bookedPrice = (decimal)(seatType.PricePercent * invoice.MovieShow.Version.Multi);
                     }
                     seats.Add(new SeatDetailViewModel
                     {
@@ -1302,10 +1299,10 @@ namespace MovieTheater.Controllers
                         SeatName = seat?.SeatName ?? "",
                         SeatType = seatType?.TypeName ?? "N/A",
                         SeatTypeId = seatType?.SeatTypeId,
-                        Price = priceAfterPromotion,
-                        OriginalPrice = originalPrice,
-                        PromotionDiscount = seatPromotionDiscount,
-                        PriceAfterPromotion = priceAfterPromotion
+                        Price = bookedPrice,
+                        OriginalPrice = bookedPrice,
+                        PromotionDiscount = 0, // Already applied
+                        PriceAfterPromotion = bookedPrice
                     });
                 }
             }
@@ -1433,17 +1430,10 @@ namespace MovieTheater.Controllers
             var seats = scheduleSeats.Select(ss => {
                 var seat = ss.Seat;
                 var seatType = ss.BookedSeatType ?? (ss.BookedSeatTypeId != null ? _seatTypeService.GetById(ss.BookedSeatTypeId.Value) : null);
-                decimal originalPrice = ss.BookedPrice ?? 0;
-                // Only apply version multiplier if BookedPrice is null or 0
-                if ((originalPrice == 0 || originalPrice == null) && seatType != null && invoice?.MovieShow?.Version != null)
+                decimal bookedPrice = ss.BookedPrice ?? 0;
+                if ((bookedPrice == 0 || bookedPrice == null) && seatType != null && invoice?.MovieShow?.Version != null)
                 {
-                    originalPrice = (decimal)(seatType.PricePercent * invoice.MovieShow.Version.Multi);
-                }
-                decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
-                decimal priceAfterPromotion = originalPrice;
-                if (seatPromotionDiscount > 0)
-                {
-                    priceAfterPromotion = originalPrice * (1 - seatPromotionDiscount / 100m);
+                    bookedPrice = (decimal)(seatType.PricePercent * invoice.MovieShow.Version.Multi);
                 }
                 return new SeatDetailViewModel
                 {
@@ -1451,10 +1441,10 @@ namespace MovieTheater.Controllers
                     SeatName = seat?.SeatName ?? "",
                     SeatType = seatType?.TypeName ?? "N/A",
                     SeatTypeId = seatType?.SeatTypeId,
-                    Price = priceAfterPromotion,
-                    OriginalPrice = originalPrice,
-                    PromotionDiscount = seatPromotionDiscount,
-                    PriceAfterPromotion = priceAfterPromotion
+                    Price = bookedPrice,
+                    OriginalPrice = bookedPrice,
+                    PromotionDiscount = 0, // Already applied
+                    PriceAfterPromotion = bookedPrice
                 };
             }).ToList();
 
@@ -1616,16 +1606,6 @@ namespace MovieTheater.Controllers
 
             // Use robust navigation: get schedule seats and their related MovieShow and CinemaRoom
             var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(invoiceId).ToList();
-
-            string roomName = "N/A";
-            if (scheduleSeats.Any())
-            {
-                var movieShow = scheduleSeats.First().MovieShow;
-                if (movieShow != null && movieShow.CinemaRoom != null)
-                {
-                    roomName = movieShow.CinemaRoom.CinemaRoomName;
-                }
-            }
 
             var member = _memberRepository.GetByAccountId(invoice.AccountId);
             // Prepare seat details using BookedPrice and BookedSeatType for historical accuracy

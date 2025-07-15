@@ -65,7 +65,7 @@
 											var basePrice = seatType?.PricePercent ?? 0;
 											var calculatedPrice = basePrice * versionMulti;
 
-											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
+											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff"); border-width: 5px; border-radius: 20px"
 												data-seat-id="@seat.SeatId"
 												data-seat-name="@seat.SeatName"
 												data-seat-type="@seatType?.TypeName"
@@ -150,7 +150,7 @@
 						<div class="summary-movie">@Model.MovieName</div>
 					</div>
 					<div class="summary-seat" id="summarySeatBlock">
-						<div id="noSeatAlert" class="summary-alert" style="display:none;">You have not selected any seats. Please select a seat >.0</div>
+						<div id="noSeatAlert" class="summary-alert" style="display:none;">You have not selected any seats. Please select a seat 😉</div>
 						<div id="seatInfo" style="display:none;">
 							<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
 							<p><span class="summary-label">Total Seats:</span> <span id="totalPrice"></span> VND</p>
