@@ -6,18 +6,12 @@
     .scanner-container {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
-        padding: 2rem 0;
+        padding: 0.5rem 0;
     }
-
     .scanner-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-        max-width: 500px;
-        margin: 0 auto;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
     }
-
     .scanner-header {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
@@ -133,39 +127,77 @@
     .ticket-info strong {
         color: #495057;
     }
+    .loading-spinner {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+    .loading-spinner .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        color: #28a745;
+    }
+    @@media (max-width: 600px) {
+        .scanner-card, .result-content {
+            padding: 0.5rem !important;
+        }
+        .scanner-header, .result-header {
+            padding: 0.5rem !important;
+        }
+        #video-container {
+            height: 140px;
+        }
+        .scanner-card {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    }
 </style>
 
 <div class="scanner-container">
     <div class="scanner-card">
         <div class="scanner-header">
-            <h2>🎫 QR Code Scanner</h2>
-            <p class="mb-0">Scan customer's ticket QR code to verify entry</p>
+            <h2>🎫 QR Ticket Scanner</h2>
+            <p class="mb-0">Scan the QR code on the ticket to check-in customer</p>
         </div>
         
         <div class="scanner-body">
             <div id="video-container">
                 <video id="video" autoplay></video>
                 <div class="scanner-overlay"></div>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
             </div>
             
             <div class="text-center">
                 <button id="startScan" class="btn btn-success btn-lg me-2">
-                    <i class="fas fa-camera me-2"></i>Start Scanner
+                    <i class="fas fa-camera me-2"></i>Start Scanning
                 </button>
                 <button id="stopScan" class="btn btn-secondary btn-lg" style="display: none;">
-                    <i class="fas fa-stop me-2"></i>Stop Scanner
+                    <i class="fas fa-stop me-2"></i>Stop
                 </button>
             </div>
 
             <div class="manual-input">
                 <h6 class="text-center mb-3">📝 Manual Entry</h6>
                 <div class="input-group">
-                    <input type="text" id="manualInvoiceId" class="form-control" placeholder="Enter Invoice ID manually">
+                    <input type="text" id="manualInvoiceId" class="form-control" placeholder="Enter Invoice ID">
                     <button id="verifyManual" class="btn btn-primary">
                         <i class="fas fa-check me-1"></i>Verify
                     </button>
                 </div>
             </div>
+        </div>
+        <div class="text-center mt-3 mb-2">
+            <a href="/Admin/MainPage?tab=BookingMg" class="btn btn-outline-dark">
+                <i class="fas fa-arrow-left me-2"></i>Back to Admin
+            </a>
         </div>
     </div>
 </div>
@@ -197,8 +229,14 @@
         const manualBtn = document.getElementById('verifyManual');
         const manualInput = document.getElementById('manualInvoiceId');
 
+        function showLoading(show) {
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.style.display = show ? 'block' : 'none';
+        }
+
         // Start scanner
         startBtn.addEventListener('click', async function() {
+            showLoading(true);
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment' } 
@@ -208,9 +246,11 @@
                 scanning = true;
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'inline-block';
+                showLoading(false);
                 scanQRCode();
             } catch (error) {
-                showResult('error', 'Camera Error', 'Unable to access camera. Please check permissions.');
+                showLoading(false);
+                showResult('error', 'Camera Error', 'Unable to access camera. Please check device permissions.');
             }
         });
 
@@ -341,8 +381,8 @@
                 <p><strong>Phone:</strong> ${ticketInfo.customerPhone}</p>
                 <p><strong>Seats:</strong> ${ticketInfo.seats.map(s => s.seatName).join(', ')}</p>
                 <p><strong>Amount:</strong> ${ticketInfo.totalAmount}</p>
-                <p><strong>Status:</strong> ${ticketInfo.status}</p>
-                <p><strong>Used:</strong> ${ticketInfo.isUsed ? 'Yes' : 'No'}</p>
+                <p><strong>Status:</strong> ${ticketInfo.status === 'Completed' ? 'Paid' : 'Unpaid'}</p>
+                <p><strong>Checked-in:</strong> ${ticketInfo.isUsed ? 'Checked-in' : 'Not yet'}</p>
             `;
             // Nếu vé chưa check-in, hiển thị nút xác nhận
             if(ticketInfo.status === 'Completed' && !ticketInfo.isUsed) {
