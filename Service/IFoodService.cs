@@ -1,4 +1,5 @@
 using MovieTheater.ViewModels;
+using MovieTheater.Models;
 
 namespace MovieTheater.Service
 {
@@ -11,5 +12,6 @@ namespace MovieTheater.Service
         Task<bool> DeleteAsync(int id);
         Task<bool> ToggleStatusAsync(int id);
         Task<List<string>> GetCategoriesAsync();
+        Task<Food?> GetDomainByIdAsync(int id);
     }
 }
