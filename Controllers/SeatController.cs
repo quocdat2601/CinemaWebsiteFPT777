@@ -377,6 +377,24 @@ namespace MovieTheater.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Tạo ghế đôi theo lô
+        /// </summary>
+        /// <remarks>url: /Seat/CreateCoupleSeatsBatch (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeat> coupleSeats)
+        {
+            if (coupleSeats == null || coupleSeats.Count == 0)
+                return BadRequest("No couple seat pairs provided.");
+
+            foreach (var pair in coupleSeats)
+            {
+                await _coupleSeatService.CreateCoupleSeatAsync(pair.FirstSeatId, pair.SecondSeatId);
+            }
+            return Ok();
+        }
+
         public class SeatIdsRequest
         {
             public List<int> SeatIds { get; set; }
