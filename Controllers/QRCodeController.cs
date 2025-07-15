@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
@@ -14,6 +15,7 @@ namespace MovieTheater.Controllers
         private readonly ISeatService _seatService;
         private readonly ISeatTypeService _seatTypeService;
         private readonly ILogger<QRCodeController> _logger;
+        private readonly ITicketVerificationService _ticketVerificationService;
 
         public QRCodeController(
             IInvoiceService invoiceService,
@@ -21,7 +23,8 @@ namespace MovieTheater.Controllers
             IMemberRepository memberRepository,
             ISeatService seatService,
             ISeatTypeService seatTypeService,
-            ILogger<QRCodeController> logger)
+            ILogger<QRCodeController> logger,
+            ITicketVerificationService ticketVerificationService)
         {
             _invoiceService = invoiceService;
             _scheduleSeatRepository = scheduleSeatRepository;
@@ -29,6 +32,7 @@ namespace MovieTheater.Controllers
             _seatService = seatService;
             _seatTypeService = seatTypeService;
             _logger = logger;
+            _ticketVerificationService = ticketVerificationService;
         }
 
         /// <summary>
@@ -46,85 +50,16 @@ namespace MovieTheater.Controllers
         /// </summary>
         [Authorize(Roles = "Admin,Employee")]
         [HttpPost]
-        public async Task<IActionResult> VerifyTicket([FromBody] VerifyTicketRequest request)
+        public IActionResult VerifyTicket([FromBody] VerifyTicketRequest request)
         {
-            try
+            var result = _ticketVerificationService.VerifyTicket(request.InvoiceId);
+            if (result.IsSuccess)
             {
-                if (string.IsNullOrEmpty(request.InvoiceId))
-                {
-                    return Json(new { success = false, message = "Invalid QR code" });
-                }
-
-                var invoice = _invoiceService.GetById(request.InvoiceId);
-                if (invoice == null)
-                {
-                    return Json(new { success = false, message = "Ticket not found" });
-                }
-
-                // Kiểm tra trạng thái vé
-                if (invoice.Status != InvoiceStatus.Completed)
-                {
-                    return Json(new { success = false, message = "Ticket is not paid" });
-                }
-
-                // Kiểm tra xem vé đã được sử dụng chưa
-                var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(request.InvoiceId).ToList();
-                if (scheduleSeats.Any(ss => ss.SeatStatusId == 2)) // 2 = Booked (đã check-in)
-                {
-                    return Json(new { success = false, message = "Ticket has already been used" });
-                }
-
-                // Đánh dấu vé đã sử dụng
-                foreach (var seat in scheduleSeats)
-                {
-                    seat.SeatStatusId = 2; // Booked (dùng luôn cho check-in)
-                    _scheduleSeatRepository.Update(seat);
-                }
-                _scheduleSeatRepository.Save();
-
-                // Lấy thông tin chi tiết để trả về
-                var member = _memberRepository.GetByAccountId(invoice.AccountId);
-                var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToArray();
-
-                var seatDetails = new List<object>();
-                foreach (var seatName in seatNames)
-                {
-                    var seat = _seatService.GetSeatByName(seatName);
-                    if (seat != null)
-                    {
-                        var seatType = seat.SeatTypeId.HasValue ? _seatTypeService.GetById(seat.SeatTypeId.Value) : null;
-                        seatDetails.Add(new
-                        {
-                            seatName = seat.SeatName,
-                            seatType = seatType?.TypeName ?? "Standard"
-                        });
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    message = "Ticket verified successfully!",
-                    ticketInfo = new
-                    {
-                        invoiceId = invoice.InvoiceId,
-                        movieName = invoice.MovieShow.Movie.MovieNameEnglish,
-                        showDate = invoice.MovieShow.ShowDate,
-                        showTime = invoice.MovieShow.Schedule.ScheduleTime,
-                        customerName = member?.Account?.FullName ?? "N/A",
-                        customerPhone = member?.Account?.PhoneNumber ?? "N/A",
-                        seats = seatDetails,
-                        totalAmount = invoice.TotalMoney?.ToString("N0") + " VND"
-                    }
-                });
+                return Json(new { success = true, message = result.Message, ticketInfo = result });
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error verifying ticket");
-                return Json(new { success = false, message = "An error occurred while verifying the ticket" });
+                return Json(new { success = false, message = result.Message });
             }
         }
 
@@ -171,57 +106,14 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetTicketInfo(string invoiceId)
         {
-            try
+            var result = _ticketVerificationService.GetTicketInfo(invoiceId);
+            if (result.IsSuccess)
             {
-                var invoice = _invoiceService.GetById(invoiceId);
-                if (invoice == null)
-                {
-                    return Json(new { success = false, message = "Ticket not found" });
-                }
-
-                var member = _memberRepository.GetByAccountId(invoice.AccountId);
-                var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToArray();
-
-                var seatDetails = new List<object>();
-                foreach (var seatName in seatNames)
-                {
-                    var seat = _seatService.GetSeatByName(seatName);
-                    if (seat != null)
-                    {
-                        var seatType = seat.SeatTypeId.HasValue ? _seatTypeService.GetById(seat.SeatTypeId.Value) : null;
-                        seatDetails.Add(new
-                        {
-                            seatName = seat.SeatName,
-                            seatType = seatType?.TypeName ?? "Standard"
-                        });
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    ticketInfo = new
-                    {
-                        invoiceId = invoice.InvoiceId,
-                        movieName = invoice.MovieShow.Movie.MovieNameEnglish,
-                        showDate = invoice.MovieShow.ShowDate.ToString(),
-                        showTime = invoice.MovieShow.Schedule.ScheduleTime.ToString(),
-                        customerName = member?.Account?.FullName ?? "N/A",
-                        customerPhone = member?.Account?.PhoneNumber ?? "N/A",
-                        seats = seatDetails,
-                        totalAmount = invoice.TotalMoney?.ToString("N0") + " VND",
-                        status = invoice.Status.ToString(),
-                        isUsed = _scheduleSeatRepository.GetByInvoiceId(invoiceId).Any(ss => ss.SeatStatusId == 2)
-                    }
-                });
+                return Json(new { success = true, ticketInfo = result });
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error getting ticket info");
-                return Json(new { success = false, message = "An error occurred while getting ticket info" });
+                return Json(new { success = false, message = result.Message });
             }
         }
 
@@ -233,58 +125,15 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult ConfirmCheckIn([FromBody] ConfirmCheckInRequest request)
         {
-            try
+            var staffId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
+            var result = _ticketVerificationService.ConfirmCheckIn(request.InvoiceId, staffId);
+            if (result.IsSuccess)
             {
-                if (string.IsNullOrEmpty(request.InvoiceId))
-                {
-                    return Json(new { success = false, message = "Invalid QR code" });
-                }
-
-                var invoice = _invoiceService.GetById(request.InvoiceId);
-                if (invoice == null)
-                {
-                    return Json(new { success = false, message = "Ticket not found" });
-                }
-
-                // Kiểm tra trạng thái vé
-                if (invoice.Status != InvoiceStatus.Completed)
-                {
-                    return Json(new { success = false, message = "Ticket is not paid" });
-                }
-
-                // Kiểm tra xem vé đã được sử dụng chưa
-                var scheduleSeats = _scheduleSeatRepository.GetByInvoiceId(request.InvoiceId).ToList();
-                if (scheduleSeats.Any(ss => ss.SeatStatusId == 2)) // 2 = Booked (đã check-in)
-                {
-                    return Json(new { success = false, message = "Ticket has already been checked in" });
-                }
-
-                // Đánh dấu vé đã sử dụng
-                foreach (var seat in scheduleSeats)
-                {
-                    seat.SeatStatusId = 2; // Booked (dùng luôn cho check-in)
-                    _scheduleSeatRepository.Update(seat);
-                }
-                _scheduleSeatRepository.Save();
-
-                // Ghi log check-in
-                var staffId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
-                var log = new CheckInLog
-                {
-                    InvoiceId = invoice.InvoiceId,
-                    StaffId = staffId,
-                    CheckInTime = DateTime.Now,
-                    Status = "CheckedIn",
-                    Note = "Check-in by staff via QR"
-                };
-                // TODO: Lưu log vào database (bạn cần tạo repository cho CheckInLog)
-
-                return Json(new { success = true, message = "Check-in successful!" });
+                return Json(new { success = true, message = result.Message });
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error confirming check-in");
-                return Json(new { success = false, message = "An error occurred while confirming check-in" });
+                return Json(new { success = false, message = result.Message });
             }
         }
 
@@ -304,22 +153,5 @@ namespace MovieTheater.Controllers
         }
     }
 
-    public class VerifyTicketRequest
-    {
-        public string InvoiceId { get; set; }
-    }
-
-    public class TicketVerificationResultViewModel
-    {
-        public string InvoiceId { get; set; }
-        public string MovieName { get; set; }
-        public string ShowDate { get; set; }
-        public string ShowTime { get; set; }
-        public string CustomerName { get; set; }
-        public string CustomerPhone { get; set; }
-        public string Seats { get; set; }
-        public string TotalAmount { get; set; }
-        public bool IsSuccess { get; set; }
-        public string VerificationTime { get; set; }
-    }
+    public class VerifyTicketRequest { public string InvoiceId { get; set; } }
 }

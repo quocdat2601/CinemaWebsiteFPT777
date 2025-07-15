@@ -119,6 +119,7 @@ namespace MovieTheater
             builder.Services.AddScoped<IPointService, PointService>();
             builder.Services.AddScoped<IScoreService, ScoreService>();
             builder.Services.AddScoped<IPaymentSecurityService, PaymentSecurityService>();
+            builder.Services.AddScoped<ITicketVerificationService, TicketVerificationService>();
             builder.Services.AddSignalR(); //ADD SignalR
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
