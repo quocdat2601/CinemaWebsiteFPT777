@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+
 namespace MovieTheater.Tests.Service
 {
     public class VoucherServiceTests
@@ -285,6 +287,119 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.Equal(vouchers, result);
+        }
+
+        private List<Voucher> GetSampleVouchers() => new List<Voucher>
+        {
+            new Voucher { VoucherId = "V1", Code = "CODE1", AccountId = "A1", Value = 100, CreatedDate = DateTime.Now.AddDays(-10), ExpiryDate = DateTime.Now.AddDays(5), IsUsed = false },
+            new Voucher { VoucherId = "V2", Code = "CODE2", AccountId = "A2", Value = 200, CreatedDate = DateTime.Now.AddDays(-20), ExpiryDate = DateTime.Now.AddDays(-1), IsUsed = false },
+            new Voucher { VoucherId = "V3", Code = "CODE3", AccountId = "A1", Value = 300, CreatedDate = DateTime.Now.AddDays(-30), ExpiryDate = DateTime.Now.AddDays(10), IsUsed = true },
+        };
+
+        private VoucherService CreateServiceWithData(List<Voucher> vouchers)
+        {
+            var voucherRepo = new Mock<IVoucherRepository>();
+            voucherRepo.Setup(r => r.GetAll()).Returns(vouchers);
+            var memberRepo = new Mock<IMemberRepository>();
+            return new VoucherService(voucherRepo.Object, memberRepo.Object);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_NoFilter_ReturnsAll()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel());
+            Assert.Equal(3, result.Count());
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByVoucherId()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "V1" });
+            Assert.Single(result);
+            Assert.Equal("V1", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByCode()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "CODE2" });
+            Assert.Single(result);
+            Assert.Equal("V2", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByAccountId()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "A1" });
+            Assert.Equal(2, result.Count());
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByStatus_Active()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { StatusFilter = "active" });
+            Assert.Single(result);
+            Assert.Equal("V1", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByStatus_Used()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { StatusFilter = "used" });
+            Assert.Single(result);
+            Assert.Equal("V3", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByStatus_Expired()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { StatusFilter = "expired" });
+            Assert.Single(result);
+            Assert.Equal("V2", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByExpiry_ExpiringSoon()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "expiring-soon" });
+            Assert.Single(result);
+            Assert.Equal("V1", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByExpiry_Expired()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "expired" });
+            Assert.Single(result);
+            Assert.Equal("V2", result.First().VoucherId);
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_FilterByExpiry_Valid()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "valid" });
+            Assert.Equal(2, result.Count());
+            Assert.Contains(result, v => v.VoucherId == "V1");
+            Assert.Contains(result, v => v.VoucherId == "V3");
+        }
+
+        [Fact]
+        public void GetFilteredVouchers_CombinedFilters()
+        {
+            var service = CreateServiceWithData(GetSampleVouchers());
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "A1", StatusFilter = "active", ExpiryFilter = "expiring-soon" });
+            Assert.Single(result);
+            Assert.Equal("V1", result.First().VoucherId);
         }
     }
 }

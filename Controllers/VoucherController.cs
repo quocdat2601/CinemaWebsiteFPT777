@@ -39,58 +39,17 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult AdminIndex(string keyword = "", string statusFilter = "", string expiryFilter = "")
         {
-            var allVouchers = _voucherService.GetAll();
-            var now = DateTime.Now;
-
-            // Apply filters
-            var filteredVouchers = allVouchers.AsQueryable();
-
-            if (!string.IsNullOrEmpty(keyword))
+            var filter = new MovieTheater.Service.VoucherFilterModel
             {
-                filteredVouchers = filteredVouchers.Where(v =>
-                    v.Code.ToLower().Contains(keyword.ToLower()) ||
-                    v.AccountId.ToLower().Contains(keyword.ToLower()));
-            }
-
-            if (!string.IsNullOrEmpty(statusFilter))
-            {
-                switch (statusFilter.ToLower())
-                {
-                    case "active":
-                        filteredVouchers = filteredVouchers.Where(v => (!v.IsUsed.HasValue || !v.IsUsed.Value) && v.ExpiryDate > now);
-                        break;
-                    case "used":
-                        filteredVouchers = filteredVouchers.Where(v => v.IsUsed.HasValue && v.IsUsed.Value);
-                        break;
-                    case "expired":
-                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate <= now);
-                        break;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(expiryFilter))
-            {
-                switch (expiryFilter.ToLower())
-                {
-                    case "expiring-soon":
-                        var sevenDaysFromNow = now.AddDays(7);
-                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate > now && v.ExpiryDate <= sevenDaysFromNow);
-                        break;
-                    case "expired":
-                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate <= now);
-                        break;
-                    case "valid":
-                        filteredVouchers = filteredVouchers.Where(v => v.ExpiryDate > now);
-                        break;
-                }
-            }
-
-            // Pass filter values to ViewBag for maintaining state
+                Keyword = keyword,
+                StatusFilter = statusFilter,
+                ExpiryFilter = expiryFilter
+            };
+            var vouchers = _voucherService.GetFilteredVouchers(filter);
             ViewBag.Keyword = keyword;
             ViewBag.StatusFilter = statusFilter;
             ViewBag.ExpiryFilter = expiryFilter;
-
-            return View("VoucherMg", filteredVouchers.ToList());
+            return View("VoucherMg", vouchers);
         }
 
         /// <summary>
