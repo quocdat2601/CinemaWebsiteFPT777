@@ -65,5 +65,10 @@ namespace MovieTheater.Repository
             return _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
         }
 
+        public Seat? GetByName(string seatName)
+        {
+            return _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
+        }
+
     }
 }

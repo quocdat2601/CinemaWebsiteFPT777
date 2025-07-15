@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
-
 namespace MovieTheater.Tests.Service
 {
     public class VoucherServiceTests
@@ -288,4 +287,4 @@ namespace MovieTheater.Tests.Service
             Assert.Equal(vouchers, result);
         }
     }
-} 
+}

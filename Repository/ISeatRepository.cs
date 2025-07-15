@@ -13,5 +13,6 @@ namespace MovieTheater.Repository
         public void Save();
         Task<List<SeatType>> GetSeatTypesAsync();
         Seat GetSeatByName(string seatName);
+        Seat? GetByName(string seatName);
     }
 }

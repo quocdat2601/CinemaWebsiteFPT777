@@ -27,37 +27,37 @@ namespace MovieTheater.Service
             var voucher = _voucherRepository.GetById(voucherId);
             if (voucher == null)
             {
-                return new VoucherValidationResult 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "Voucher not found." 
+                return new VoucherValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "Voucher not found."
                 };
             }
 
             if (voucher.AccountId != accountId)
             {
-                return new VoucherValidationResult 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "Voucher does not belong to this account." 
+                return new VoucherValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "Voucher does not belong to this account."
                 };
             }
 
             if (voucher.IsUsed == true)
             {
-                return new VoucherValidationResult 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "Voucher already used." 
+                return new VoucherValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "Voucher already used."
                 };
             }
 
             if (voucher.ExpiryDate <= DateTime.Now)
             {
-                return new VoucherValidationResult 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "Voucher expired." 
+                return new VoucherValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "Voucher expired."
                 };
             }
 
