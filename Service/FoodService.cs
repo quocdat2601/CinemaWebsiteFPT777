@@ -75,6 +75,11 @@ namespace MovieTheater.Service
             };
         }
 
+        public async Task<Food?> GetDomainByIdAsync(int id)
+        {
+            return await _foodRepository.GetByIdAsync(id);
+        }
+
         public async Task<bool> CreateAsync(FoodViewModel model, string webRootPath)
         {
             try
