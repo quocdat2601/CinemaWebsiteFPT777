@@ -12,7 +12,7 @@ namespace MovieTheater.Service
         string GenerateVoucherId();
         IEnumerable<Member> GetAllMembers();
         IEnumerable<Voucher> GetAvailableVouchers(string accountId);
-        
+
         // Validate voucher và trả về kết quả với giá trị thực tế có thể sử dụng
         VoucherValidationResult ValidateVoucherUsage(string voucherId, string accountId, decimal orderTotal);
     }
