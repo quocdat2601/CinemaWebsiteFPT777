@@ -6,7 +6,7 @@ using System.Web;
 
 namespace MovieTheater.Service
 {
-    public class VNPayService
+    public class VNPayService : IVNPayService
     {
         private readonly VNPayConfig _config;
 

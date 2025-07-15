@@ -55,11 +55,12 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void Index_ReturnsViewWithAllVouchers()
         {
+            // Arrange
             var vouchers = new List<Voucher> { new Voucher { VoucherId = "V1" } };
             _voucherServiceMock.Setup(s => s.GetAll()).Returns(vouchers);
-
+            // Act
             var result = _controller.Index();
-
+            // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Equal(vouchers, viewResult.Model);
         }
@@ -67,11 +68,12 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void AdminIndex_ReturnsViewWithFilteredVouchers()
         {
+            // Arrange
             var vouchers = new List<Voucher> { new Voucher { VoucherId = "V1" } };
             _voucherServiceMock.Setup(s => s.GetFilteredVouchers(It.IsAny<VoucherFilterModel>())).Returns(vouchers);
-
+            // Act
             var result = _controller.AdminIndex("key", "active", "soon");
-
+            // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Equal("VoucherMg", viewResult.ViewName);
             Assert.Equal(vouchers, viewResult.Model);
@@ -80,12 +82,13 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void Details_ReturnsViewResult_WithVoucher()
         {
+            // Arrange
             var voucherId = "testId";
             var voucher = new Voucher { VoucherId = voucherId };
             _voucherServiceMock.Setup(s => s.GetById(voucherId)).Returns(voucher);
-
+            // Act
             var result = _controller.Details(voucherId);
-
+            // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Equal(voucher, viewResult.Model);
         }
@@ -93,14 +96,18 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void Details_ReturnsNotFound_WhenVoucherNull()
         {
+            // Arrange
             _voucherServiceMock.Setup(s => s.GetById("notfound")).Returns((Voucher)null);
+            // Act
             var result = _controller.Details("notfound");
+            // Assert
             Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
         public void GetVoucherDetails_ReturnsJson_WhenVoucherFound()
         {
+            // Arrange
             var voucherId = "V1";
             var voucher = new Voucher
             {
@@ -114,10 +121,10 @@ namespace MovieTheater.Tests.Controller
                 Image = "img.jpg"
             };
             _voucherServiceMock.Setup(s => s.GetById(voucherId)).Returns(voucher);
-
+            // Act
             var result = _controller.GetVoucherDetails(voucherId);
             var json = Assert.IsType<JsonResult>(result);
-
+            // Assert
             var jObj = JObject.FromObject(json.Value);
             Assert.True(jObj["success"].Value<bool>());
             Assert.Equal(voucherId, jObj["voucher"]["id"].ToString());
@@ -126,10 +133,12 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void GetVoucherDetails_ReturnsJsonError_WhenVoucherNull()
         {
+            // Arrange
             _voucherServiceMock.Setup(s => s.GetById("notfound")).Returns((Voucher)null);
+            // Act
             var result = _controller.GetVoucherDetails("notfound");
             var json = Assert.IsType<JsonResult>(result);
-
+            // Assert
             var jObj = JObject.FromObject(json.Value);
             Assert.False(jObj["success"].Value<bool>());
         }
@@ -137,18 +146,21 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void Create_Get_ReturnsView()
         {
+            // Act
             var result = _controller.Create();
+            // Assert
             Assert.IsType<ViewResult>(result);
         }
 
         [Fact]
         public void Create_Post_ValidModel_RedirectsToIndex()
         {
+            // Arrange
             var voucher = new Voucher { Value = 100 };
             _voucherServiceMock.Setup(s => s.GenerateVoucherId()).Returns("V1");
-
+            // Act
             var result = _controller.Create(voucher);
-
+            // Assert
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirectResult.ActionName);
         }
@@ -156,9 +168,12 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void Create_Post_InvalidModel_ReturnsView()
         {
+            // Arrange
             _controller.ModelState.AddModelError("err", "err");
             var voucher = new Voucher();
+            // Act
             var result = _controller.Create(voucher);
+            // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Equal(voucher, viewResult.Model);
         }

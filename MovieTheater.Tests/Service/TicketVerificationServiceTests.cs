@@ -43,8 +43,11 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void VerifyTicket_InvoiceNotFound_ReturnsFail()
         {
+            // Arrange
             _mockInvoiceService.Setup(s => s.GetById("INV404")).Returns((Invoice)null);
+            // Act
             var result = _service.VerifyTicket("INV404");
+            // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("Không tìm thấy vé", result.Message);
         }
@@ -52,8 +55,11 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void VerifyTicket_NotPaid_ReturnsFail()
         {
+            // Arrange
             _mockInvoiceService.Setup(s => s.GetById("INV1")).Returns(new Invoice { InvoiceId = "INV1", Status = InvoiceStatus.Incomplete });
+            // Act
             var result = _service.VerifyTicket("INV1");
+            // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("Vé chưa thanh toán", result.Message);
         }
@@ -61,10 +67,13 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void VerifyTicket_AlreadyUsed_ReturnsFail()
         {
+            // Arrange
             var invoice = new Invoice { InvoiceId = "INV2", Status = InvoiceStatus.Completed };
             _mockInvoiceService.Setup(s => s.GetById("INV2")).Returns(invoice);
             _mockScheduleSeatRepo.Setup(r => r.GetByInvoiceId("INV2")).Returns(new List<ScheduleSeat> { new ScheduleSeat { SeatStatusId = 2 } });
+            // Act
             var result = _service.VerifyTicket("INV2");
+            // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("Vé đã được sử dụng", result.Message);
         }
@@ -72,11 +81,14 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void VerifyTicket_Valid_ReturnsSuccess()
         {
+            // Arrange
             var invoice = new Invoice { InvoiceId = "INV3", Status = InvoiceStatus.Completed, Seat = "A1", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Test Movie" }, ShowDate = DateOnly.FromDateTime(DateTime.Today), Schedule = new Schedule { ScheduleTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(10)) } }, TotalMoney = 100000, AccountId = "acc1" };
             _mockInvoiceService.Setup(s => s.GetById("INV3")).Returns(invoice);
             _mockScheduleSeatRepo.Setup(r => r.GetByInvoiceId("INV3")).Returns(new List<ScheduleSeat> { new ScheduleSeat { SeatStatusId = 1 } });
             _mockMemberRepo.Setup(r => r.GetByAccountId("acc1")).Returns(new Member { Account = new Account { FullName = "Test User", PhoneNumber = "0123456789" } });
+            // Act
             var result = _service.VerifyTicket("INV3");
+            // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal("Xác thực vé thành công!", result.Message);
             Assert.Equal("INV3", result.InvoiceId);
@@ -86,8 +98,11 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void GetTicketInfo_InvoiceNotFound_ReturnsFail()
         {
+            // Arrange
             _mockInvoiceService.Setup(s => s.GetById("INV404")).Returns((Invoice)null);
+            // Act
             var result = _service.GetTicketInfo("INV404");
+            // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("Không tìm thấy vé", result.Message);
         }
@@ -95,10 +110,13 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void GetTicketInfo_Valid_ReturnsSuccess()
         {
+            // Arrange
             var invoice = new Invoice { InvoiceId = "INV5", Status = InvoiceStatus.Completed, Seat = "A2", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Test Movie 2" }, ShowDate = DateOnly.FromDateTime(DateTime.Today), Schedule = new Schedule { ScheduleTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)) } }, TotalMoney = 200000, AccountId = "acc2" };
             _mockInvoiceService.Setup(s => s.GetById("INV5")).Returns(invoice);
             _mockMemberRepo.Setup(r => r.GetByAccountId("acc2")).Returns(new Member { Account = new Account { FullName = "User 2", PhoneNumber = "0987654321" } });
+            // Act
             var result = _service.GetTicketInfo("INV5");
+            // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal("Lấy thông tin vé thành công", result.Message);
             Assert.Equal("INV5", result.InvoiceId);
@@ -108,10 +126,13 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void ConfirmCheckIn_AlreadyCheckedIn_ReturnsFail()
         {
+            // Arrange
             var invoice = new Invoice { InvoiceId = "INV6", Status = InvoiceStatus.Completed };
             _mockInvoiceService.Setup(s => s.GetById("INV6")).Returns(invoice);
             _mockScheduleSeatRepo.Setup(r => r.GetByInvoiceId("INV6")).Returns(new List<ScheduleSeat> { new ScheduleSeat { SeatStatusId = 2 } });
+            // Act
             var result = _service.ConfirmCheckIn("INV6", "staff1");
+            // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("Vé đã được check-in", result.Message);
         }
@@ -119,11 +140,14 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void ConfirmCheckIn_Valid_ReturnsSuccess()
         {
+            // Arrange
             var invoice = new Invoice { InvoiceId = "INV7", Status = InvoiceStatus.Completed, Seat = "A3", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Test Movie 3" }, ShowDate = DateOnly.FromDateTime(DateTime.Today), Schedule = new Schedule { ScheduleTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(14)) } }, TotalMoney = 300000, AccountId = "acc3" };
             _mockInvoiceService.Setup(s => s.GetById("INV7")).Returns(invoice);
             _mockScheduleSeatRepo.Setup(r => r.GetByInvoiceId("INV7")).Returns(new List<ScheduleSeat> { new ScheduleSeat { SeatStatusId = 1 } });
             _mockMemberRepo.Setup(r => r.GetByAccountId("acc3")).Returns(new Member { Account = new Account { FullName = "User 3", PhoneNumber = "0111222333" } });
+            // Act
             var result = _service.ConfirmCheckIn("INV7", "staff2");
+            // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal("Check-in thành công!", result.Message);
             Assert.Equal("INV7", result.InvoiceId);
