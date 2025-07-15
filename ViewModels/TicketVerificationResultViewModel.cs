@@ -12,5 +12,6 @@ namespace MovieTheater.ViewModels
         public string TotalAmount { get; set; }
         public bool IsSuccess { get; set; }
         public string VerificationTime { get; set; }
+        public string Message { get; set; }
     }
 }
