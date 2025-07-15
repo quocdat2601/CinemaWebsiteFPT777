@@ -122,6 +122,7 @@
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
+<div id="mainBookingArea">
 	<div class="text-start p-3">
 		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
 	</div>
@@ -198,7 +199,7 @@
 			</div>
 
 			<!-- FOOD & DRINK SECTION -->
-			<div class="food-selection-section">
+			<div class="food-selection-section" id="foodSelectionArea">
 				<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">POP CORN AND COKE</h2>
 				<div class="row justify-content-center">
 					@if (ViewBag.Foods != null)
@@ -254,7 +255,7 @@
 			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
 		</div>
 	}
-</div>
+</div> <!-- Đóng mainBookingArea -->
 
 @if (!isAuthenticated)
 {
@@ -380,17 +381,46 @@
 			}
 		}
 
+		function resetSeatSelectionUI() {
+            // Xóa ghế đã chọn trên UI
+            document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+            selectedSeats.clear();
+            // Xóa đồ ăn đã chọn
+            selectedFoods = {};
+            document.querySelectorAll('.food-qty').forEach(input => input.value = 0);
+            // Đảm bảo tổng tiền về 0
+            document.getElementById('totalFoodPrice').textContent = '0';
+            document.getElementById('grandTotal').textContent = '0';
+            // Đảm bảo cập nhật lại UI
+            updateSelectionSummary();
+            updateBookButtonState();
+            updateFoodTotal();
+            // Debug log
+            console.log('resetSeatSelectionUI called: cleared seats and foods');
+        }
+
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
 			if (countdownTimer) clearInterval(countdownTimer);
+			secondsLeft = 10; // reset lại thời gian mỗi lần bắt đầu
 			countdownTimer = setInterval(() => {
 				if (secondsLeft <= 0) {
 					clearInterval(countdownTimer);
-					document.getElementById('seatLayoutArea').style.display = 'none';
-					document.getElementById('selectionSummary').style.display = 'none';
-					document.getElementById('timeoutMessage').style.display = 'flex';
+					// Ẩn toàn bộ UI chọn ghế, food, sidebar
+					document.getElementById('mainBookingArea').style.display = 'none';
+					// Ẩn nút Continue nếu còn sót
 					var bookBtn = document.getElementById('bookButton');
 					if (bookBtn) bookBtn.style.display = 'none';
+					// Hiện thông báo hết thời gian ở giữa trang
+					document.getElementById('timeoutMessage').style.display = 'flex';
+					// Clear data ghế và đồ ăn
+					resetSeatSelectionUI();
+					// Gọi SignalR trả ghế nếu có ghế đang giữ
+					if (selectedSeats.size > 0) {
+						connection.invoke("ReleaseSeats", parseInt('@movieShowId'), Array.from(selectedSeats).map(Number));
+					}
+					// Debug log
+					console.log('Countdown ended: UI cleared, timeout message shown');
 				} else {
 					const min = Math.floor(secondsLeft / 60);
 					const sec = secondsLeft % 60;
