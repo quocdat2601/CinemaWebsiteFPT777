@@ -688,7 +688,7 @@ namespace MovieTheater.Service
             {
                 var seat = _seatService.GetSeatById(seatId);
                 if (seat == null) continue;
-                var seatType = seat.SeatTypeId.HasValue ? _seatTypeService.GetById(seat.SeatTypeId.Value) : null;
+                var seatType = seat.SeatType;
                 decimal originalPrice = seatType?.PricePercent ?? 0;
                 decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
                 decimal priceAfterPromotion = originalPrice;

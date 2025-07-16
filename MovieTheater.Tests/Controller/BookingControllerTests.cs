@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using MovieTheater.Controllers;
 using MovieTheater.Hubs;
@@ -12,9 +9,13 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
-namespace MovieTheater.Tests.Controllers
+namespace MovieTheater.Tests.Controller
 {
     public class BookingControllerTests
     {
@@ -31,30 +32,34 @@ namespace MovieTheater.Tests.Controllers
         private readonly Mock<IFoodService> _foodService = new();
         private readonly Mock<IFoodInvoiceService> _foodInvService = new();
         private readonly Mock<IBookingDomainService> _domainService = new();
+        private readonly Mock<IScheduleSeatRepository> _scheduleSeatRepo = new();
+        private readonly Mock<IPointService> _pointService = new();
+        private readonly Mock<IPromotionService> _promotionService = new();
+        private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
 
         private BookingController BuildController()
-            => new  BookingController(
-                _bookingService.Object,
-                _movieService.Object,
-                _seatService.Object,
-                _accountService.Object,
-                _seatTypeService.Object,
-                _memberRepo.Object,
-                Mock.Of<Microsoft.Extensions.Logging.ILogger<BookingController>>(),
-                _invoiceService.Object,
-                Mock.Of<IScheduleSeatRepository>(),
-                _vnPayService.Object,
-                Mock.Of<IPointService>(),
-                Mock.Of<IPromotionService>(),
-                _voucherService.Object,
-                _hubContext.Object,
-                _context,
-                _foodService.Object,
-                _foodInvService.Object,
-                _domainService.Object,
-                Mock.Of<IBookingPriceCalculationService>()
-            );
+            => new BookingController(
+        _bookingService.Object,
+        _movieService.Object,
+        _seatService.Object,
+        _accountService.Object,
+        _seatTypeService.Object,
+        _memberRepo.Object,
+        Mock.Of<ILogger<BookingController>>(),
+        _invoiceService.Object,
+        _scheduleSeatRepo.Object,
+        _vnPayService.Object,
+        _pointService.Object,
+        _promotionService.Object,
+        _voucherService.Object,
+        _hubContext.Object,
+        _context,
+        _foodService.Object,
+        _foodInvService.Object,
+        _domainService.Object,
+        _priceCalc.Object
+    );
 
         [Fact]
         public async Task TicketBooking_Get_ReturnsView_WithMoviesInViewBag()
@@ -155,18 +160,47 @@ namespace MovieTheater.Tests.Controllers
             var model = new ConfirmBookingViewModel();
             _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
             _domainService
-              .Setup(d => d.ConfirmBookingAsync(model, "u1", "ok"))
+              .Setup(d => d.ConfirmBookingAsync(model, "u1", "true"))
               .ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV123" });
 
             var ctrl = BuildController();
 
             // Act
-            var result = await ctrl.Confirm(model, "ok") as RedirectToActionResult;
+            var result = await ctrl.Confirm(model, "true") as RedirectToActionResult;
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Success", result.ActionName);
             Assert.Equal("INV123", result.RouteValues["invoiceId"]);
+        }
+
+        [Fact]
+        public async Task Confirm_ReturnsViewWithError_WhenResultNotSuccess()
+        {
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            var model = new ConfirmBookingViewModel();
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1", "ok")).ReturnsAsync(new BookingResult { Success = false, ErrorMessage = "fail!" });
+            var ctrl = BuildController();
+            var result = await ctrl.Confirm(model, "ok");
+            var view = Assert.IsType<ViewResult>(result);
+            Assert.Equal("ConfirmBooking", view.ViewName);
+            Assert.Equal(model, view.Model);
+            Assert.True(ctrl.ModelState.ErrorCount > 0);
+        }
+
+        [Fact]
+        public async Task Confirm_RedirectsToPayment_WhenIsTestSuccessIsNotTrue()
+        {
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            var model = new ConfirmBookingViewModel();
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1", "false")).ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV999" });
+            var ctrl = BuildController();
+            var result = await ctrl.Confirm(model, "false");
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Payment", redirect.ActionName);
+            Assert.Equal("INV999", redirect.RouteValues["invoiceId"]);
         }
 
         [Fact]
@@ -242,6 +276,28 @@ namespace MovieTheater.Tests.Controllers
             // Assert
             Assert.NotNull(result);
             Assert.IsType<BookingSuccessViewModel>(result.Model);
+        }
+
+        [Fact]
+        public async Task Success_RedirectsToLogin_WhenUserIdIsNull()
+        {
+            _accountService.Setup(a => a.GetCurrentUser()).Returns((ProfileUpdateViewModel)null);
+            var ctrl = BuildController();
+            var result = await ctrl.Success("INV1");
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Login", redirect.ActionName);
+            Assert.Equal("Account", redirect.ControllerName);
+        }
+
+        [Fact]
+        public async Task Success_ReturnsNotFound_WhenViewModelIsNull()
+        {
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.BuildSuccessViewModelAsync("INV1", "u1")).ReturnsAsync((BookingSuccessViewModel)null);
+            var ctrl = BuildController();
+            var result = await ctrl.Success("INV1");
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
@@ -474,6 +530,156 @@ namespace MovieTheater.Tests.Controllers
             Assert.NotNull(result);
             Assert.NotNull(result.Value);
             Assert.Equal(foodList.Foods, result.Value);
+        }
+
+        [Fact]
+        public void GetVersions_ReturnsJson_WhenValid()
+        {
+            // Arrange
+            var shows = new List<MovieShow> {
+                new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), Version = new Models.Version { VersionId = 1, VersionName = "2D" } },
+                new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), Version = new Models.Version { VersionId = 2, VersionName = "3D" } }
+            };
+            _movieService.Setup(m => m.GetMovieShows("M1")).Returns(shows);
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetVersions("M1", DateTime.Today.ToString("yyyy-MM-dd")) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var list = Assert.IsAssignableFrom<IEnumerable<object>>(result.Value);
+            Assert.NotEmpty(list);
+        }
+
+        [Fact]
+        public void GetVersions_ReturnsEmptyJson_WhenDateInvalid()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetVersions("M1", "bad-date") as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty((IEnumerable<object>)result.Value);
+        }
+
+        [Fact]
+        public void GetTimes_ReturnsJson_WhenValid()
+        {
+            // Arrange
+            var shows = new List<MovieShow> {
+                new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), VersionId = 1, Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) } },
+                new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), VersionId = 1, Schedule = new Schedule { ScheduleTime = new TimeOnly(12, 0) } }
+            };
+            _movieService.Setup(m => m.GetMovieShows("M1")).Returns(shows);
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetTimes("M1", DateTime.Today.ToString("yyyy-MM-dd"), 1) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var list = Assert.IsAssignableFrom<IEnumerable<object>>(result.Value);
+            Assert.NotEmpty(list);
+        }
+
+        [Fact]
+        public void GetTimes_ReturnsEmptyJson_WhenDateInvalid()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetTimes("M1", "bad-date", 1) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty((IEnumerable<object>)result.Value);
+        }
+
+        [Fact]
+        public void Failed_ReturnsView_WhenInvoiceIdMissing()
+        {
+            var ctrl = BuildController();
+            ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
+            var result = ctrl.Failed();
+            Assert.IsType<ViewResult>(result);
+        }
+
+        [Fact]
+        public async Task TicketBookingConfirmed_ReturnsView_WhenInvoiceIdMissing()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.TicketBookingConfirmed(null);
+            // Assert
+            Assert.IsType<ViewResult>(result);
+        }
+
+        [Fact]
+        public async Task TicketBookingConfirmed_ReturnsNotFound_WhenViewModelNull()
+        {
+            // Arrange
+            _domainService.Setup(d => d.BuildTicketBookingConfirmedViewModelAsync("inv1")).ReturnsAsync((ConfirmTicketAdminViewModel)null);
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.TicketBookingConfirmed("inv1");
+            // Assert
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public void CheckScoreForConversion_ReturnsJson_NotEnoughTickets()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 3, MemberScore = 300 };
+            // Act
+            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var msg = result.Value.GetType().GetProperty("message").GetValue(result.Value);
+            Assert.Equal("Not enough tickets selected.", msg);
+        }
+
+        [Fact]
+        public void CheckScoreForConversion_ReturnsJson_NotEnoughScore()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 2, MemberScore = 50 };
+            // Act
+            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var msg = result.Value.GetType().GetProperty("message").GetValue(result.Value);
+            Assert.Equal("Member score is not enough to convert into ticket", msg);
+        }
+
+        [Fact]
+        public void GetMemberDiscount_ReturnsJson_WhenMemberIdEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetMemberDiscount(null) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var val = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
+            Assert.Equal(0, val);
+        }
+
+        [Fact]
+        public void GetMemberDiscount_ReturnsJson_WhenRankNull()
+        {
+            // Arrange
+            var member = new Member { MemberId = "m1", Account = new Account { Rank = null } };
+            _memberRepo.Setup(m => m.GetByMemberId("m1")).Returns(member);
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetMemberDiscount("m1") as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var val = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
+            Assert.Equal(0m, val); // Ensure decimal 0 for strict equality
         }
     }
 
