@@ -240,7 +240,8 @@ namespace MovieTheater.Controllers
             ViewBag.RankDiscountPercent = rankDiscountPercent;
 
             // Get best promotion for this show date
-            var bestPromotion = _promotionService.GetBestPromotionForShowDate(showDate);
+            var eligiblePromotions = _promotionService.GetEligiblePromotionsForMember(currentUser.AccountId, selectedSeatIds.Count, showDate.ToDateTime(TimeOnly.MinValue), movieId, movie.MovieNameEnglish);
+            var bestPromotion = eligiblePromotions.OrderByDescending(p => p.DiscountLevel).FirstOrDefault();
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
 
             var seats = new List<SeatDetailViewModel>();
@@ -808,7 +809,8 @@ namespace MovieTheater.Controllers
            var seats = new List<SeatDetailViewModel>();
 
             // Get best promotion for this show date
-            var bestPromotion = _promotionService.GetBestPromotionForShowDate(movieShow.ShowDate);
+            var eligiblePromotions = _promotionService.GetEligiblePromotionsForMember(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, selectedSeatIds.Count, movieShow.ShowDate.ToDateTime(TimeOnly.MinValue), movie.MovieId, movie.MovieNameEnglish);
+            var bestPromotion = eligiblePromotions.OrderByDescending(p => p.DiscountLevel).FirstOrDefault();
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
 
             foreach (var id in selectedSeatIds)
@@ -1221,6 +1223,27 @@ namespace MovieTheater.Controllers
                return Json(new { success = false, message = "Member score is not enough to convert into ticket", scoreNeeded = totalNeeded });
            }
        }
+
+        /// <summary>
+        /// Lấy danh sách promotion hợp lệ cho booking hiện tại
+        /// </summary>
+        /// <remarks>url: /Booking/GetEligiblePromotions (GET)</remarks>
+        [HttpGet]
+        public IActionResult GetEligiblePromotions(string memberId, int seatCount, DateTime showDate, string movieId, string movieName)
+        {
+            var promotions = _promotionService.GetEligiblePromotionsForMember(memberId, seatCount, showDate, movieId, movieName);
+            // Chỉ trả về các trường cần thiết cho frontend
+            var result = promotions.Select(p => new {
+                p.PromotionId,
+                p.Title,
+                p.Detail,
+                p.DiscountLevel,
+                p.StartTime,
+                p.EndTime,
+                p.Image
+            }).ToList();
+            return Json(result);
+        }
 
         /// <summary>
         /// Xem thông tin vé (admin/employee)

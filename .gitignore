@@ -52,8 +52,7 @@ coverage-report/
 # Windows system files
 Thumbs.db
 
-# Old code folder - exclude from tracking
-Old_code/
+
 # Test results
 TestResults/
 MovieTheater.Tests/TestResults/
