@@ -15,7 +15,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace MovieTheater.Tests.Controllers
+namespace MovieTheater.Tests.Controller
 {
     public class BookingControllerTests
     {
@@ -160,13 +160,13 @@ namespace MovieTheater.Tests.Controllers
             var model = new ConfirmBookingViewModel();
             _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
             _domainService
-              .Setup(d => d.ConfirmBookingAsync(model, "u1", "ok"))
+              .Setup(d => d.ConfirmBookingAsync(model, "u1", "true"))
               .ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV123" });
 
             var ctrl = BuildController();
 
             // Act
-            var result = await ctrl.Confirm(model, "ok") as RedirectToActionResult;
+            var result = await ctrl.Confirm(model, "true") as RedirectToActionResult;
 
             // Assert
             Assert.NotNull(result);
