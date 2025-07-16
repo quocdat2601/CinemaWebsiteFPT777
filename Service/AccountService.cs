@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
@@ -438,6 +439,75 @@ namespace MovieTheater.Service
                     httpContext.Session.SetString("RankUpToastMessage", adminMessage);
                 }
             }
+        }
+
+        // --- Google Account Helper ---
+        public Account GetOrCreateGoogleAccount(string email, string? name, string? givenName, string? surname, string? picture)
+        {
+            var user = _repository.GetAccountByEmail(email);
+            if (user == null)
+            {
+                // Set initial rank (Bronze)
+                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
+                user = new Account
+                {
+                    Email = email,
+                    FullName = name ?? $"{givenName} {surname}".Trim() ?? "Google User",
+                    Username = email,
+                    RoleId = 3,
+                    Status = 1,
+                    RegisterDate = DateOnly.FromDateTime(DateTime.Now),
+                    Image = !string.IsNullOrEmpty(picture) ? picture : "/image/profile.jpg",
+                    Password = null, // Set Password to null for Google login
+                    RankId = bronzeRank?.RankId // Always set the lowest rank if available
+                };
+                _repository.Add(user);
+                _repository.Save();
+                _memberRepository.Add(new Member
+                {
+                    Score = 0,
+                    TotalPoints = 0,
+                    AccountId = user.AccountId
+                });
+                _memberRepository.Save();
+            }
+            return _repository.GetAccountByEmail(email); // always return latest
+        }
+
+        public bool HasMissingProfileInfo(Account user)
+        {
+            return !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
+                   string.IsNullOrWhiteSpace(user.Gender) ||
+                   string.IsNullOrWhiteSpace(user.IdentityCard) ||
+                   string.IsNullOrWhiteSpace(user.Address) ||
+                   string.IsNullOrWhiteSpace(user.PhoneNumber);
+        }
+
+        public async Task SignInUserAsync(HttpContext httpContext, Account user)
+        {
+            string roleName = user.RoleId switch
+            {
+                1 => "Admin",
+                2 => "Employee",
+                3 => "Member",
+                _ => "Guest"
+            };
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
+                new Claim(ClaimTypes.Name, user.FullName ?? user.Username ?? string.Empty),
+                new Claim(ClaimTypes.Role, roleName),
+                new Claim("Status", user.Status.ToString()),
+                new Claim("Email", user.Email ?? string.Empty)
+            };
+            var identity = new ClaimsIdentity(claims, Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await httpContext.SignInAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        }
+
+        public async Task SignOutUserAsync(HttpContext httpContext)
+        {
+            await httpContext.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
         }
     }
 }
