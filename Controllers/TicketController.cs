@@ -1,16 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {
     public class TicketController : Controller
     {
         private readonly ITicketService _ticketService;
+        private readonly IAccountService _accountService;
 
-        public TicketController(ITicketService ticketService)
+        public TicketController(ITicketService ticketService, IAccountService accountService)
         {
             _ticketService = ticketService;
+            _accountService = accountService;
         }
 
         [HttpGet]
@@ -76,6 +79,13 @@ namespace MovieTheater.Controllers
 
             var (success, messages) = await _ticketService.CancelTicketAsync(id, accountId);
             TempData[success ? "ToastMessage" : "ErrorMessage"] = string.Join("<br/>", messages);
+
+            // Add rank change notification if any
+            var rankUpMsg = _accountService.GetAndClearRankUpgradeNotification(accountId);
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                TempData["ToastMessage"] += "<br/>" + rankUpMsg;
+            }
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
