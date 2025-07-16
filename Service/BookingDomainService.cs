@@ -216,7 +216,6 @@ namespace MovieTheater.Service
 
             var movieShow = _context.MovieShows.Include(ms => ms.Version).FirstOrDefault(ms => ms.MovieShowId == model.MovieShowId);
 
-            // Use the view model's seat list (with correct prices after promotion)
             var seatViewModels = model.SelectedSeats;
             var priceResult = _priceCalculationService.CalculatePrice(
                 seatViewModels,
@@ -227,7 +226,6 @@ namespace MovieTheater.Service
                 foods
             );
 
-            // Prefer posted values if present and valid
             decimal subtotal = model.Subtotal > 0 ? model.Subtotal : priceResult.Subtotal;
             decimal rankDiscount = model.RankDiscount > 0 ? model.RankDiscount : priceResult.RankDiscount;
             decimal rankDiscountPercent = model.RankDiscountPercent > 0 ? model.RankDiscountPercent : priceResult.RankDiscountPercent;
@@ -238,7 +236,6 @@ namespace MovieTheater.Service
             decimal earningRate = model.EarningRate > 0 ? model.EarningRate : priceResult.RankDiscountPercent;
             decimal totalPrice = priceResult.TotalPrice;
 
-            // Normalize voucher ID (member flow)
             string selectedVoucherId = string.IsNullOrWhiteSpace(model.SelectedVoucherId) || model.SelectedVoucherId == "null"
                 ? null
                 : model.SelectedVoucherId;
@@ -254,6 +251,7 @@ namespace MovieTheater.Service
             var invoiceId = await _bookingService.GenerateInvoiceIdAsync();
             var seatNames = string.Join(", ", seats.Select(s => s.SeatName));
             var seatIdsStr = string.Join(",", seats.Select(s => s.SeatId));
+
             var invoice = new Invoice
             {
                 InvoiceId = invoiceId,
@@ -261,36 +259,37 @@ namespace MovieTheater.Service
                 BookingDate = DateTime.Now,
                 TotalMoney = priceResult.TotalPrice,
                 MovieShowId = model.MovieShowId,
-                Status = InvoiceStatus.Completed,
+                Status = (isTestSuccess == "true") ? InvoiceStatus.Completed : InvoiceStatus.Incomplete,
                 Seat = seatNames,
                 SeatIds = seatIdsStr,
                 RankDiscountPercentage = rankDiscountPercent,
                 AddScore = addScore,
                 UseScore = priceResult.UseScore,
                 PromotionDiscount = (int?)promotionDiscountPercent,
-                VoucherId = memberVoucher?.VoucherId
+                VoucherId = selectedVoucherId // Use selectedVoucherId directly
             };
             _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
 
-            // Update member's score
-            if (priceResult.AddScore > 0)
+            // Only update scores and voucher if test success (real payment: do this after payment success)
+            if (isTestSuccess == "true")
             {
-                await _accountService.AddScoreAsync(userId, priceResult.AddScore);
-            }
-            if (priceResult.UseScore > 0)
-            {
-                await _accountService.DeductScoreAsync(userId, priceResult.UseScore);
-            }
-
-            // Mark voucher as used if applicable (member flow)
-            if (priceResult.VoucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
-            {
-                var voucher = _voucherService.GetById(model.SelectedVoucherId);
-                if (voucher != null && (voucher.IsUsed == false))
+                if (priceResult.AddScore > 0)
                 {
-                    voucher.IsUsed = true;
-                    _voucherService.Update(voucher);
+                    await _accountService.AddScoreAsync(userId, priceResult.AddScore, true); // Pass isTestSuccess true
+                }
+                if (priceResult.UseScore > 0)
+                {
+                    await _accountService.DeductScoreAsync(userId, priceResult.UseScore, true); // Pass isTestSuccess true
+                }
+                if (priceResult.VoucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
+                {
+                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
+                    if (voucher != null && (voucher.IsUsed == false))
+                    {
+                        voucher.IsUsed = true;
+                        _voucherService.Update(voucher);
+                    }
                 }
             }
 
@@ -704,7 +703,7 @@ namespace MovieTheater.Service
             {
                 var seat = _seatService.GetSeatById(seatId);
                 if (seat == null) continue;
-                var seatType = seat.SeatTypeId.HasValue ? _seatTypeService.GetById(seat.SeatTypeId.Value) : null;
+                var seatType = seat.SeatType;
                 decimal originalPrice = seatType?.PricePercent ?? 0;
                 decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
                 decimal priceAfterPromotion = originalPrice;

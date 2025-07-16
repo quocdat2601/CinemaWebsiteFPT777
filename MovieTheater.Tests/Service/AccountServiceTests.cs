@@ -860,8 +860,13 @@ namespace MovieTheater.Tests.Service
             // Arrange
             var service = CreateService();
             _accountRepoMock.Setup(r => r.GetById("id")).Returns((Account)null);
-            // Act & Assert
-            await service.DeductScoreAsync("id", 5);
+            // Act
+            var exception = await Record.ExceptionAsync(() => service.DeductScoreAsync("id", 5));
+            // Assert
+            Assert.Null(exception); // Should not throw
+            _accountRepoMock.Verify(r => r.GetById("id"), Times.Once);
+            _memberRepoMock.Verify(r => r.Update(It.IsAny<Member>()), Times.Never);
+            _memberRepoMock.Verify(r => r.Save(), Times.Never);
         }
 
         [Fact]

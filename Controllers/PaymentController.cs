@@ -12,7 +12,7 @@ namespace MovieTheater.Controllers
     [ApiController]
     public class PaymentController : Controller
     {
-        private readonly VNPayService _vnPayService;
+        private readonly IVNPayService _vnPayService;
         private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
         private readonly MovieTheater.Models.MovieTheaterContext _context;
@@ -80,6 +80,13 @@ namespace MovieTheater.Controllers
         [ProducesResponseType(typeof(object), 400)]
         public async Task<IActionResult> VNPayReturn([FromQuery] VnPayReturnModel model)
         {
+            // Kiểm tra null cho model
+            if (model == null)
+            {
+                _logger.LogError("VnPayReturnModel is null");
+                return RedirectToAction("Failed", "Booking");
+            }
+
             int? movieShowId = null; // Khai báo duy nhất ở đây
             var invoice = _invoiceService.GetById(model.vnp_TxnRef);
             if (model.vnp_ResponseCode == "00")
@@ -251,7 +258,7 @@ namespace MovieTheater.Controllers
                 TempData["OriginalPrice"] = invoice?.ScheduleSeats?.Sum(ss => ss.BookedPrice ?? 0).ToString() ?? "0";
                 TempData["UsedScore"] = invoice?.UseScore ?? 0;
                 TempData["FinalPrice"] = (invoice?.TotalMoney ?? 0).ToString();
-                return RedirectToAction("Success", "Booking");
+                return RedirectToAction("Success", "Booking", new { invoiceId = model.vnp_TxnRef });
             }
             else
             {

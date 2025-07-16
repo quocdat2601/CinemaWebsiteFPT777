@@ -90,7 +90,7 @@ namespace MovieTheater.Repository
                 .Include(i => i.ScheduleSeats)
                     .ThenInclude(ss => ss.Seat)
                         .ThenInclude(s => s.SeatType)
-                .Include(i => i.Voucher) // Thêm dòng này để include voucher
+                .Include(i => i.Voucher)
                 .FirstOrDefaultAsync();
         }
 

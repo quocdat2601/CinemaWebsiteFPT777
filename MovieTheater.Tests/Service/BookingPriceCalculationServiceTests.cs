@@ -202,5 +202,55 @@ namespace MovieTheater.Tests.Service
             // earningRate=1%, so addScore = floor(500*1% /1000) = floor(5/1000) = 0
             Assert.Equal(0, r.AddScore);
         }
+
+        [Fact]
+        public void CalculatePrice_WithEmptyFoodsList_ProducesEmptyFoodDetails()
+        {
+            // Arrange
+            var seats = new List<SeatDetailViewModel> { MakeSeat(100m) };
+            var user = MakeUser();
+            var foods = new List<Food>();
+            // Act
+            var result = _svc.CalculatePrice(seats, null, user, null, null, foods);
+            // Assert
+            Assert.NotNull(result.FoodDetails);
+            Assert.Empty(result.FoodDetails);
+            Assert.Equal(100m, result.Subtotal);
+            Assert.Equal(100m, result.TotalPrice);
+        }
+
+        [Fact]
+        public void CalculatePrice_WithMultipleFoods_SumsAllPrices()
+        {
+            // Arrange
+            var seats = new List<SeatDetailViewModel> { MakeSeat(50m) };
+            var user = MakeUser();
+            var foods = new List<Food> {
+                new() { FoodId = 1, Price = 10m, Name = "A" },
+                new() { FoodId = 2, Price = 20m, Name = "B" },
+                new() { FoodId = 3, Price = 30m, Name = "C" }
+            };
+            // Act
+            var result = _svc.CalculatePrice(seats, null, user, null, null, foods);
+            // Assert
+            Assert.Equal(60m, result.TotalFoodPrice);
+            Assert.Equal(110m, result.TotalPrice);
+            Assert.Equal(3, result.FoodDetails.Count);
+        }
+
+        [Fact]
+        public void CalculatePrice_WithNoSeats_ReturnsZeroes()
+        {
+            // Arrange
+            var seats = new List<SeatDetailViewModel>();
+            var user = MakeUser();
+            // Act
+            var result = _svc.CalculatePrice(seats, null, user, null, null, null);
+            // Assert
+            Assert.Equal(0m, result.Subtotal);
+            Assert.Equal(0m, result.TotalPrice);
+            Assert.Equal(0m, result.SeatTotalAfterDiscounts);
+            Assert.Equal(0, result.AddScore);
+        }
     }
 }

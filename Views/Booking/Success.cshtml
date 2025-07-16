@@ -346,3 +346,10 @@
 </script>
 
 <partial name="_ToastMessages" />
+@if (ViewBag.RankUpgradeMessage != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert" style="font-size:1.1rem; font-weight:500;">
+        <i class="fa fa-trophy me-2"></i> @ViewBag.RankUpgradeMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
