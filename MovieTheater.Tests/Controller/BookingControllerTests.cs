@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using MovieTheater.Controllers;
 using MovieTheater.Hubs;
@@ -12,6 +9,10 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace MovieTheater.Tests.Controller
@@ -31,30 +32,34 @@ namespace MovieTheater.Tests.Controller
         private readonly Mock<IFoodService> _foodService = new();
         private readonly Mock<IFoodInvoiceService> _foodInvService = new();
         private readonly Mock<IBookingDomainService> _domainService = new();
+        private readonly Mock<IScheduleSeatRepository> _scheduleSeatRepo = new();
+        private readonly Mock<IPointService> _pointService = new();
+        private readonly Mock<IPromotionService> _promotionService = new();
+        private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
 
         private BookingController BuildController()
-            => new  BookingController(
-                _bookingService.Object,
-                _movieService.Object,
-                _seatService.Object,
-                _accountService.Object,
-                _seatTypeService.Object,
-                _memberRepo.Object,
-                Mock.Of<Microsoft.Extensions.Logging.ILogger<BookingController>>(),
-                _invoiceService.Object,
-                Mock.Of<IScheduleSeatRepository>(),
-                _vnPayService.Object,
-                Mock.Of<IPointService>(),
-                Mock.Of<IPromotionService>(),
-                _voucherService.Object,
-                _hubContext.Object,
-                _context,
-                _foodService.Object,
-                _foodInvService.Object,
-                _domainService.Object,
-                Mock.Of<IBookingPriceCalculationService>()
-            );
+            => new BookingController(
+        _bookingService.Object,
+        _movieService.Object,
+        _seatService.Object,
+        _accountService.Object,
+        _seatTypeService.Object,
+        _memberRepo.Object,
+        Mock.Of<ILogger<BookingController>>(),
+        _invoiceService.Object,
+        _scheduleSeatRepo.Object,
+        _vnPayService.Object,
+        _pointService.Object,
+        _promotionService.Object,
+        _voucherService.Object,
+        _hubContext.Object,
+        _context,
+        _foodService.Object,
+        _foodInvService.Object,
+        _domainService.Object,
+        _priceCalc.Object
+    );
 
         [Fact]
         public async Task TicketBooking_Get_ReturnsView_WithMoviesInViewBag()
@@ -170,6 +175,35 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
+        public async Task Confirm_ReturnsViewWithError_WhenResultNotSuccess()
+        {
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            var model = new ConfirmBookingViewModel();
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1", "ok")).ReturnsAsync(new BookingResult { Success = false, ErrorMessage = "fail!" });
+            var ctrl = BuildController();
+            var result = await ctrl.Confirm(model, "ok");
+            var view = Assert.IsType<ViewResult>(result);
+            Assert.Equal("ConfirmBooking", view.ViewName);
+            Assert.Equal(model, view.Model);
+            Assert.True(ctrl.ModelState.ErrorCount > 0);
+        }
+
+        [Fact]
+        public async Task Confirm_RedirectsToPayment_WhenIsTestSuccessIsNotTrue()
+        {
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            var model = new ConfirmBookingViewModel();
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1", "false")).ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV999" });
+            var ctrl = BuildController();
+            var result = await ctrl.Confirm(model, "false");
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Payment", redirect.ActionName);
+            Assert.Equal("INV999", redirect.RouteValues["invoiceId"]);
+        }
+
+        [Fact]
         public async Task Information_RedirectsToTicketBooking_WhenNoSeatsSelected()
         {
             // Arrange
@@ -242,6 +276,28 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.IsType<BookingSuccessViewModel>(result.Model);
+        }
+
+        [Fact]
+        public async Task Success_RedirectsToLogin_WhenUserIdIsNull()
+        {
+            _accountService.Setup(a => a.GetCurrentUser()).Returns((ProfileUpdateViewModel)null);
+            var ctrl = BuildController();
+            var result = await ctrl.Success("INV1");
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Login", redirect.ActionName);
+            Assert.Equal("Account", redirect.ControllerName);
+        }
+
+        [Fact]
+        public async Task Success_ReturnsNotFound_WhenViewModelIsNull()
+        {
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.BuildSuccessViewModelAsync("INV1", "u1")).ReturnsAsync((BookingSuccessViewModel)null);
+            var ctrl = BuildController();
+            var result = await ctrl.Success("INV1");
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
@@ -539,15 +595,12 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public void Failed_ReturnsView_WhenInvoiceIdMissing()
         {
-            // Arrange
             var ctrl = BuildController();
             ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
                 new Microsoft.AspNetCore.Http.DefaultHttpContext(),
                 Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
-            // Act
-            var result = ctrl.Failed() as ViewResult;
-            // Assert
-            Assert.NotNull(result);
+            var result = ctrl.Failed();
+            Assert.IsType<ViewResult>(result);
         }
 
         [Fact]
