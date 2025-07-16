@@ -16,8 +16,8 @@
     var useScore = invoice.UseScore ?? 0;
     var bookingDate = invoice.BookingDate?.ToString("dd/MM/yyyy HH:mm");
     var seatDetails = Model.SeatDetails ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
-    var selectedFoods = ViewBag.SelectedFoods as List<MovieTheater.ViewModels.FoodViewModel> ?? new List<MovieTheater.ViewModels.FoodViewModel>();
-    decimal totalFoodPrice = ViewBag.TotalFoodPrice as decimal? ?? 0;
+    var selectedFoods = Model.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    decimal totalFoodPrice = Model.FoodTotal;
     
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.PriceAfterPromotion ?? s.Price) ?? 0;

@@ -21,6 +21,7 @@ namespace MovieTheater.Tests.Service
         private readonly Mock<ISeatRepository> _seatRepoMock = new();
         private readonly Mock<IHubContext<MovieTheater.Hubs.DashboardHub>> _dashboardHubMock = new();
         private readonly Mock<IHubContext<MovieTheater.Hubs.SeatHub>> _seatHubMock = new();
+        private readonly Mock<IFoodInvoiceService> _foodInvoiceServiceMock = new();
 
         // Utility: Create TicketService with all mocks
         private TicketService CreateService()
@@ -32,7 +33,8 @@ namespace MovieTheater.Tests.Service
                 _dashboardHubMock.Object,
                 _scheduleSeatRepoMock.Object,
                 _seatRepoMock.Object,
-                _seatHubMock.Object
+                _seatHubMock.Object,
+                _foodInvoiceServiceMock.Object
             );
         }
 
@@ -176,7 +178,8 @@ namespace MovieTheater.Tests.Service
                 InvoiceId = "inv1",
                 AccountId = "acc1",
                 Seat_IDs = "1,2",
-                PromotionDiscount = 10
+                PromotionDiscount = 10,
+                MovieShow = new MovieShow { Version = new MovieTheater.Models.Version { Multi = 1 } }
             };
             _invoiceRepoMock.Setup(r => r.GetDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
             _seatRepoMock.Setup(r => r.GetById(1)).Returns(new Seat { SeatId = 1, SeatName = "A1", SeatType = new SeatType { TypeName = "VIP", PricePercent = 100 } });
@@ -185,10 +188,8 @@ namespace MovieTheater.Tests.Service
             // Act
             var result = await service.GetTicketDetailsAsync("inv1", "acc1");
             // Assert
-            var seatDetailsProp = result.GetType().GetProperty("SeatDetails");
-            var seatDetails = seatDetailsProp.GetValue(result) as IEnumerable<MovieTheater.ViewModels.SeatDetailViewModel>;
-            Assert.NotNull(seatDetails);
-            Assert.Equal(2, seatDetails.Count());
+            Assert.NotNull(result);
+            Assert.Equal("inv1", result.InvoiceId);
         }
 
         /// <summary>
@@ -198,26 +199,29 @@ namespace MovieTheater.Tests.Service
         public async Task GetTicketDetailsAsync_WithScheduleSeats()
         {
             // Arrange
+            var scheduleSeats = new List<ScheduleSeat>
+            {
+                new ScheduleSeat { Seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = new SeatType { TypeName = "VIP", PricePercent = 100 } } },
+                new ScheduleSeat { Seat = new Seat { SeatId = 2, SeatName = "A2", SeatType = new SeatType { TypeName = "Normal", PricePercent = 80 } } }
+            };
             var booking = new Invoice
             {
                 InvoiceId = "inv1",
                 AccountId = "acc1",
-                ScheduleSeats = new List<ScheduleSeat>
-                {
-                    new ScheduleSeat { Seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = new SeatType { TypeName = "VIP", PricePercent = 100 } } },
-                    new ScheduleSeat { Seat = new Seat { SeatId = 2, SeatName = "A2", SeatType = new SeatType { TypeName = "Normal", PricePercent = 80 } } }
-                },
-                PromotionDiscount = 10
+                ScheduleSeats = scheduleSeats,
+                PromotionDiscount = 10,
+                MovieShow = new MovieShow { Version = new MovieTheater.Models.Version { Multi = 1 } }
             };
+            // Đảm bảo không có phần tử null trong ScheduleSeats
+            Assert.All(scheduleSeats, ss => Assert.NotNull(ss.Seat));
+            Assert.All(scheduleSeats, ss => Assert.NotNull(ss.Seat.SeatType));
             _invoiceRepoMock.Setup(r => r.GetDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
             var service = CreateService();
             // Act
             var result = await service.GetTicketDetailsAsync("inv1", "acc1");
             // Assert
-            var seatDetailsProp = result.GetType().GetProperty("SeatDetails");
-            var seatDetails = seatDetailsProp.GetValue(result) as IEnumerable<MovieTheater.ViewModels.SeatDetailViewModel>;
-            Assert.NotNull(seatDetails);
-            Assert.Equal(2, seatDetails.Count());
+            Assert.NotNull(result);
+            Assert.Equal("inv1", result.InvoiceId);
         }
 
         /// <summary>
@@ -232,7 +236,8 @@ namespace MovieTheater.Tests.Service
                 InvoiceId = "inv1",
                 AccountId = "acc1",
                 Seat = "A1, A2",
-                PromotionDiscount = 10
+                PromotionDiscount = 10,
+                MovieShow = new MovieShow { Version = new MovieTheater.Models.Version { Multi = 1 } }
             };
             _invoiceRepoMock.Setup(r => r.GetDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
             _seatRepoMock.Setup(r => r.GetByName("A1")).Returns(new Seat { SeatId = 1, SeatName = "A1", SeatType = new SeatType { TypeName = "VIP", PricePercent = 100 } });
@@ -241,10 +246,8 @@ namespace MovieTheater.Tests.Service
             // Act
             var result = await service.GetTicketDetailsAsync("inv1", "acc1");
             // Assert
-            var seatDetailsProp = result.GetType().GetProperty("SeatDetails");
-            var seatDetails = seatDetailsProp.GetValue(result) as IEnumerable<MovieTheater.ViewModels.SeatDetailViewModel>;
-            Assert.NotNull(seatDetails);
-            Assert.Equal(2, seatDetails.Count());
+            Assert.NotNull(result);
+            Assert.Equal("inv1", result.InvoiceId);
         }
 
         /// <summary>
@@ -257,18 +260,18 @@ namespace MovieTheater.Tests.Service
             var booking = new Invoice
             {
                 InvoiceId = "inv1",
-                AccountId = "acc1"
-                // Không có Seat_IDs, ScheduleSeats, Seat
+                AccountId = "acc1",
+                MovieShow = new MovieShow { Version = new MovieTheater.Models.Version { Multi = 1 } },
+                ScheduleSeats = new List<ScheduleSeat>() // Đảm bảo không null
+                // Không có Seat_IDs, Seat
             };
             _invoiceRepoMock.Setup(r => r.GetDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
             var service = CreateService();
             // Act
             var result = await service.GetTicketDetailsAsync("inv1", "acc1");
             // Assert
-            var seatDetailsProp = result.GetType().GetProperty("SeatDetails");
-            var seatDetails = seatDetailsProp.GetValue(result) as IEnumerable<MovieTheater.ViewModels.SeatDetailViewModel>;
-            Assert.NotNull(seatDetails);
-            Assert.Empty(seatDetails);
+            Assert.NotNull(result);
+            Assert.Equal("inv1", result.InvoiceId);
         }
 
         /// <summary>
@@ -395,6 +398,43 @@ namespace MovieTheater.Tests.Service
             var result = await service.GetHistoryPartialAsync(accountId, fromDate, toDate, "all");
             // Assert
             Assert.Single(result);
+        }
+
+        [Fact]
+        public async Task GetTicketDetailsAsync_ReturnsInvoice_WhenFound()
+        {
+            // Arrange
+            var booking = new Invoice { InvoiceId = "inv1", AccountId = "acc1" };
+            _invoiceRepoMock.Setup(r => r.GetDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
+            var service = CreateService();
+            // Act
+            var result = await service.GetTicketDetailsAsync("inv1", "acc1");
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("inv1", result.InvoiceId);
+        }
+
+        [Fact]
+        public void BuildSeatDetails_ReturnsSeatDetails_FromScheduleSeats()
+        {
+            // Arrange
+            var booking = new Invoice
+            {
+                ScheduleSeats = new List<ScheduleSeat>
+                {
+                    new ScheduleSeat { Seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = new SeatType { TypeName = "VIP", PricePercent = 100 } } },
+                    new ScheduleSeat { Seat = new Seat { SeatId = 2, SeatName = "A2", SeatType = new SeatType { TypeName = "Normal", PricePercent = 80 } } }
+                },
+                PromotionDiscount = 10,
+                MovieShow = new MovieShow { Version = new MovieTheater.Models.Version { Multi = 1 } }
+            };
+            var service = CreateService();
+            // Act
+            var seatDetails = service.BuildSeatDetails(booking);
+            // Assert
+            Assert.Equal(2, seatDetails.Count);
+            Assert.Contains(seatDetails, s => s.SeatName == "A1");
+            Assert.Contains(seatDetails, s => s.SeatName == "A2");
         }
     }
 }

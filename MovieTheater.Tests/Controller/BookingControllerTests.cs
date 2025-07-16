@@ -15,7 +15,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace MovieTheater.Tests.Controller
+namespace MovieTheater.Tests.Controllers
 {
     public class BookingControllerTests
     {
@@ -170,7 +170,7 @@ namespace MovieTheater.Tests.Controller
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("Payment", result.ActionName); // Updated to match controller
+            Assert.Equal("Success", result.ActionName);
             Assert.Equal("INV123", result.RouteValues["invoiceId"]);
         }
 

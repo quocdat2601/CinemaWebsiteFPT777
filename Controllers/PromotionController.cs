@@ -317,7 +317,12 @@ namespace MovieTheater.Controllers
             try
             {
                 var promotion = _promotionService.GetById(id);
-                if (promotion != null && !string.IsNullOrEmpty(promotion.Image))
+                if (promotion == null)
+                {
+                    TempData["ToastMessage"] = "Failed to delete promotion.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
+                }
+                if (!string.IsNullOrEmpty(promotion.Image))
                 {
                     string imagePath = Path.Combine(_webHostEnvironment.WebRootPath, promotion.Image.TrimStart('/'));
                     if (System.IO.File.Exists(imagePath))

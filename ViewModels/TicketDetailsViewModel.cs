@@ -13,6 +13,7 @@ namespace MovieTheater.ViewModels
         public decimal RankDiscount { get; set; }
         public decimal UsedScoreValue { get; set; }
         public decimal FoodTotal { get; set; }
+        public List<FoodViewModel> SelectedFoods { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal PromotionDiscountPercent { get; set; }
 
