@@ -22,5 +22,10 @@ namespace MovieTheater.Service
         Task AddScoreAsync(string userId, int points, bool addToTotalPoints = true);
         void CheckAndUpgradeRank(string accountId);
         string GetAndClearRankUpgradeNotification(string accountId);
+        // Thêm các method phục vụ controller
+        Account GetOrCreateGoogleAccount(string email, string? name, string? givenName, string? surname, string? picture);
+        bool HasMissingProfileInfo(Account user);
+        Task SignInUserAsync(HttpContext httpContext, Account user);
+        Task SignOutUserAsync(HttpContext httpContext);
     }
 }
