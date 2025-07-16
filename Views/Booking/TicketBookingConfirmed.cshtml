@@ -23,6 +23,10 @@
     // Lấy thông tin food từ TempData hoặc Model
     var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
     decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
+    // --- TÍNH SEAT PRICE VÀ TOTAL AMOUNT KHÔNG ÂM ---
+    var seatPrice = Model.TotalPrice;
+    if (seatPrice < 0) seatPrice = 0;
+    var totalAmount = seatPrice + totalFoodPrice;
 }
 <style>
     .ticket-success-header {
@@ -264,7 +268,7 @@
                     }
                     <tr>
                         <th style="white-space: nowrap;">Seat Price</th>
-                        <th class="text-end" style="white-space: nowrap;">@Model.TotalPrice.ToString("N0") VND</th>
+                        <th class="text-end" style="white-space: nowrap;">@seatPrice.ToString("N0") VND</th>
                     </tr>
                     @if (totalFoodPrice > 0)
                     {
@@ -275,7 +279,7 @@
                     }
                     <tr style="border-top: 1px solid #dee2e6;">
                         <th style="white-space: nowrap;">Total Amount</th>
-                        <th class="text-end" style="white-space: nowrap;">@((Model.TotalPrice + totalFoodPrice).ToString("N0")) VND</th>
+                        <th class="text-end" style="white-space: nowrap;">@totalAmount.ToString("N0") VND</th>
                     </tr>
                     @if (Model.AddedScore > 0)
                     {

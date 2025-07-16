@@ -303,13 +303,10 @@
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
-                                @if (ViewBag.VoucherAmount != null && (decimal)ViewBag.VoucherAmount > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Voucher</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@(((decimal)ViewBag.VoucherAmount).ToString("N0")) VND</td>
-                                    </tr>
-                                }
+                                <tr>
+                                    <td style="white-space: nowrap;">- Voucher</td>
+                                    <td class="text-end" style="white-space: nowrap;">-@(((decimal)(ViewBag.VoucherAmount ?? 0)).ToString("N0")) VND</td>
+                                </tr>
                                 @if (useScore > 0)
                                 {
                                     <tr>

@@ -87,6 +87,7 @@ namespace MovieTheater.Repository
                     .ThenInclude(ms => ms.Schedule)
                  .Include(i => i.MovieShow)
                     .ThenInclude(ms => ms.Version)
+                .Include(i => i.Voucher) // Thêm dòng này để include voucher
                 .FirstOrDefaultAsync();
         }
 

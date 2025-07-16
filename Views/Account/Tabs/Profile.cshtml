@@ -344,8 +344,29 @@
                     var showTime = booking.movieShow && booking.movieShow.schedule && booking.movieShow.schedule.scheduleTime ? booking.movieShow.schedule.scheduleTime.substring(0, 5) : 'N/A';
                     var seats = booking.seat || '';
                     var seatCount = seats ? seats.split(',').length : 0;
-                    var totalMoney = booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A';
                     var statusBadge = booking.status === 1 ? '<span class="badge bg-success">Booked</span>' : '<span class="badge bg-danger">Canceled</span>';
+                    var totalMoney = booking.totalMoney === 0 ? '0 VND' : (booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A');
+                    var totalAmountHtml = `<span id="booking-total-${booking.invoiceId}" class="booking-total-amount">${totalMoney}</span>`;
+                    if (booking.status === 1 && booking.invoiceId) {
+                        $.ajax({
+                            url: '/api/foodinvoice/gettotalfoodprice',
+                            type: 'GET',
+                            data: { invoiceId: booking.invoiceId },
+                            success: function(foodRes) {
+                                var foodPrice = (typeof foodRes === 'number') ? foodRes : (foodRes.totalFoodPrice || 0);
+                                var seatPrice = booking.totalMoney || 0;
+                                var total = seatPrice + (foodPrice || 0);
+                                var totalText = new Intl.NumberFormat('en-US').format(total) + ' VND';
+                                if (total === 0) totalText = '0 VND';
+                                $("#booking-total-" + booking.invoiceId)
+                                    .text(totalText)
+                                    .addClass('booking-total-amount-highlight');
+                            },
+                            error: function() {
+                                $("#booking-total-" + booking.invoiceId).text(totalMoney);
+                            }
+                        });
+                    }
                     html += `<div class="booking-card">
                         <div class="booking-card-row booking-card-row-top">
                             <div class="booking-card-title">${movieName}</div>
@@ -363,7 +384,7 @@
                             <div class="booking-card-seats"><i class=\"fas fa-chair\"></i> ${seatCount} seat(s): ${seats}</div>
                         </div>
                         <div class="booking-card-row booking-card-row-bottom">
-                            <div class="booking-card-amount"><i class=\"fas fa-money-bill-wave\"></i> ${totalMoney}</div>
+                            <div class="booking-card-amount"><i class=\"fas fa-money-bill-wave\"></i> ${totalAmountHtml}</div>
                             <div class="booking-card-status">${statusBadge}</div>
                         </div>
                     </div>`;
@@ -484,3 +505,10 @@ function setProfileBannerTextColor() {
 // Call the function directly, since this is a partial view
 setProfileBannerTextColor();
 </script>
+<style>
+.booking-total-amount-highlight {
+    color: #1769fa !important;
+    font-weight: bold;
+    font-size: 1.15em;
+}
+</style>
