@@ -33,7 +33,7 @@
                             {
                                 <tr>
                                     <td>@rank.CurrentRankName</td>
-                                    <td>@rank.RequiredPointsForCurrentRank</td>
+                                    <td>@string.Format("{0:N0}", rank.RequiredPointsForCurrentRank)</td>
                                     <td>@rank.CurrentDiscountPercentage</td>
                                     <td>@rank.CurrentPointEarningPercentage</td>
                                     <td><span style="background: @rank.ColorGradient; padding: 0.3rem 1.2rem; border-radius: 8px; color: #fff;">Color</span></td>

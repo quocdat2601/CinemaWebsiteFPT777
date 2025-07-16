@@ -11,6 +11,9 @@
     <Content Remove="image\**" />
     <EmbeddedResource Remove="image\**" />
     <None Remove="image\**" />
+
+	  <Compile Remove="MovieTheater.Tests\**" />
+	  <None Remove="MovieTheater.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
