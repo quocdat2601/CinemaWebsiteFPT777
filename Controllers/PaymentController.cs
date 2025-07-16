@@ -310,7 +310,7 @@ namespace MovieTheater.Controllers
                 TempData["OriginalPrice"] = subtotalAfterPromotion.ToString();
                 TempData["UsedScore"] = invoice?.UseScore ?? 0;
                 TempData["FinalPrice"] = (invoice?.TotalMoney ?? 0).ToString();
-                return RedirectToAction("Success", "Booking", new { invoiceId = model.vnp_TxnRef });
+                return RedirectToAction("Success", "Booking");
             }
             else
             {
