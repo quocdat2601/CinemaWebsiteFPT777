@@ -53,6 +53,7 @@ public class TicketService : ITicketService
 
         List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
         decimal promotionDiscount = booking.PromotionDiscount ?? 0;
+        var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
         if (!string.IsNullOrEmpty(booking.SeatIds))
         {
             var seatIdArr = booking.SeatIds
@@ -64,7 +65,7 @@ public class TicketService : ITicketService
                 var seat = _seatRepository.GetById(seatId);
                 if (seat == null) continue;
                 var seatType = seat.SeatType;
-                decimal originalPrice = seatType?.PricePercent ?? 0;
+                decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;
                 decimal priceAfterPromotion = originalPrice;
                 if (promotionDiscount > 0)
                 {
@@ -90,7 +91,7 @@ public class TicketService : ITicketService
                 {
                     var seat = ss.Seat;
                     var seatType = seat.SeatType;
-                    decimal originalPrice = seatType?.PricePercent ?? 0;
+                    decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;
                     decimal bookedPrice = ss.BookedPrice ?? originalPrice;
                     decimal priceAfterPromotion = bookedPrice;
                     // If you want to show promotion discount, you can compare originalPrice and bookedPrice
@@ -117,7 +118,7 @@ public class TicketService : ITicketService
                 var seat = _seatRepository.GetById(seatId);
                 if (seat == null) continue;
                 var seatType = seat.SeatType;
-                decimal originalPrice = seatType?.PricePercent ?? 0;
+                decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;
                 decimal priceAfterPromotion = originalPrice;
                 if (promotionDiscount > 0)
                 {

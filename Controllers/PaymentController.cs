@@ -96,21 +96,19 @@ namespace MovieTheater.Controllers
                 {
                     invoice.Status = MovieTheater.Models.InvoiceStatus.Completed;
                     // If no ScheduleSeat records exist, create them (like admin flow)
-                    if (invoice.ScheduleSeats == null || !invoice.ScheduleSeats.Any())
-                    {
-                        var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => s.Trim())
-                            .ToList();
-                        var allSeats = _context.Seats.Where(s => seatNames.Contains(s.SeatName)).ToList();
-                        var scheduleSeats = allSeats.Select(seat =>
+                    var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .ToList();
+                    var allSeats = _context.Seats.Where(s => seatNames.Contains(s.SeatName)).ToList();
+                    var existingScheduleSeats = _context.ScheduleSeats
+                        .Where(ss => ss.InvoiceId == invoice.InvoiceId)
+                        .Select(ss => ss.SeatId)
+                        .ToHashSet();
+
+                    var newScheduleSeats = allSeats
+                        .Where(seat => !existingScheduleSeats.Contains(seat.SeatId))
+                        .Select(seat =>
                         {
-                            var seatType = _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-                            decimal basePrice = seatType?.PricePercent ?? 0;
-                            if (invoice.MovieShow?.Version != null)
-                                basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                            decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
-                            decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
-                            decimal priceAfterPromotion = basePrice - discount;
                             return new MovieTheater.Models.ScheduleSeat
                             {
                                 MovieShowId = invoice.MovieShowId,
@@ -119,7 +117,10 @@ namespace MovieTheater.Controllers
                                 SeatStatusId = 2
                             };
                         }).ToList();
-                        _context.ScheduleSeats.AddRange(scheduleSeats);
+
+                    if (newScheduleSeats.Any())
+                    {
+                        _context.ScheduleSeats.AddRange(newScheduleSeats);
                         _context.SaveChanges();
                         // Reload invoice.ScheduleSeats for further processing
                         _context.Entry(invoice).Collection(i => i.ScheduleSeats).Load();

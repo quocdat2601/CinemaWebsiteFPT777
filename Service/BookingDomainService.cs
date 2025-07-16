@@ -75,10 +75,7 @@ namespace MovieTheater.Service
             var movie = _bookingService.GetById(movieId);
             if (movie == null) return null;
 
-            var movieShows = _movieService.GetMovieShows(movieId);
-            var movieShow = movieShows.FirstOrDefault(ms =>
-                ms.ShowDate == showDate &&
-                ms.Schedule?.ScheduleTime?.ToString("HH:mm") == showTime);
+            var movieShow = _movieService.GetMovieShowById(movieShowId);
             if (movieShow == null) return null;
 
             var cinemaRoom = movieShow.CinemaRoom;
@@ -108,6 +105,9 @@ namespace MovieTheater.Service
                 if (seat == null) continue;
                 var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
                 var price = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (movieShow.Version != null)
+                    price *= (decimal)movieShow.Version.Multi;
                 decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = price - discount;
                 string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
@@ -346,24 +346,34 @@ namespace MovieTheater.Service
             if (user == null)
                 return null;
 
-            var scheduleSeats = _context.ScheduleSeats.Where(s => s.InvoiceId == invoiceId).ToList();
-            var seatIds = scheduleSeats.Select(s => s.SeatId).Where(id => id.HasValue).Select(id => id.Value).ToList();
-            var seats = await GetSeatsByIdsAsync(seatIds);
-            var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
-            var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
-            var foods = await GetFoodsByIdsAsync(foodIds);
+            // Parse the seat IDs from the invoice
+            var seatIdList = (invoice.SeatIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(id => int.Parse(id.Trim()))
+                .ToList();
 
-            var movieShow = invoice.MovieShow;
+            // Only include ScheduleSeat records for seats in the invoice's SeatIds
+            var scheduleSeats = _context.ScheduleSeats
+                .Include(ss => ss.Seat)
+                .ThenInclude(s => s.SeatType)
+                .Where(s => s.InvoiceId == invoiceId && seatIdList.Contains((int)s.SeatId))
+                .ToList();
+
             var promotionDiscountPercent = invoice.PromotionDiscount ?? 0;
-            var seatDetails = seats.Select(s => {
-                decimal originalPrice = s.SeatType?.PricePercent ?? 0;
+            var seatDetails = scheduleSeats.Select(ss => {
+                var seat = ss.Seat;
+                var seatType = seat?.SeatType;
+                decimal originalPrice = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (invoice.MovieShow.Version != null)
+                    originalPrice *= (decimal)invoice.MovieShow.Version.Multi;
                 decimal discount = Math.Round(originalPrice * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = originalPrice - discount;
                 return new SeatDetailViewModel
                 {
-                    SeatId = s.SeatId,
-                    SeatName = s.SeatName,
-                    SeatType = s.SeatType?.TypeName,
+                    SeatId = seat?.SeatId,
+                    SeatName = seat?.SeatName,
+                    SeatType = seatType?.TypeName,
                     Price = priceAfterPromotion,
                     OriginalPrice = originalPrice,
                     PromotionDiscount = discount,
@@ -371,6 +381,10 @@ namespace MovieTheater.Service
                     PromotionName = (promotionDiscountPercent > 0) ? $"{promotionDiscountPercent}% Promo" : null
                 };
             }).ToList();
+
+            var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
+            var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
+            var foods = await GetFoodsByIdsAsync(foodIds);
             var foodViewModels = foodInvoices.Select(f => new FoodViewModel
             {
                 FoodId = f.FoodId,
@@ -379,7 +393,7 @@ namespace MovieTheater.Service
                 Price = f.Price
             }).ToList();
 
-            // Calculate all discounts and points for display
+            var movieShow = invoice.MovieShow;
             decimal subtotal = seatDetails.Sum(s => s.Price);
             decimal rankDiscountPercent = invoice.RankDiscountPercentage ?? 0;
             decimal rankDiscount = subtotal * (rankDiscountPercent / 100m);
@@ -462,6 +476,9 @@ namespace MovieTheater.Service
                 if (seat == null) continue;
                 var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
                 var price = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (movieShow.Version != null)
+                    price *= (decimal)movieShow.Version.Multi;
                 decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = price - discount;
                 string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
@@ -737,6 +754,9 @@ namespace MovieTheater.Service
                 if (seat == null) continue;
                 var seatType = seat.SeatType;
                 decimal originalPrice = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (movieShow.Version != null)
+                    originalPrice *= (decimal)movieShow.Version.Multi;
                 decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
                 decimal priceAfterPromotion = originalPrice;
                 if (seatPromotionDiscount > 0)
