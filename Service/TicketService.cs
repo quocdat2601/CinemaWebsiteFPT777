@@ -13,6 +13,7 @@ public class TicketService : ITicketService
     private readonly IScheduleSeatRepository _scheduleSeatRepository;
     private readonly ISeatRepository _seatRepository;
     private readonly IHubContext<MovieTheater.Hubs.SeatHub> _seatHubContext;
+    private readonly IFoodInvoiceService _foodInvoiceService;
 
     public TicketService(
         IInvoiceRepository invoiceRepository,
@@ -21,7 +22,8 @@ public class TicketService : ITicketService
         IHubContext<MovieTheater.Hubs.DashboardHub> dashboardHubContext,
         IScheduleSeatRepository scheduleSeatRepository,
         ISeatRepository seatRepository,
-        IHubContext<MovieTheater.Hubs.SeatHub> seatHubContext)
+        IHubContext<MovieTheater.Hubs.SeatHub> seatHubContext,
+        IFoodInvoiceService foodInvoiceService)
     {
         _invoiceRepository = invoiceRepository;
         _accountService = accountService;
@@ -30,6 +32,7 @@ public class TicketService : ITicketService
         _scheduleSeatRepository = scheduleSeatRepository;
         _seatRepository = seatRepository;
         _seatHubContext = seatHubContext;
+        _foodInvoiceService = foodInvoiceService;
     }
 
     public async Task<IEnumerable<object>> GetUserTicketsAsync(string accountId, int? status = null)
@@ -43,104 +46,9 @@ public class TicketService : ITicketService
         return bookings;
     }
 
-    public async Task<object> GetTicketDetailsAsync(string ticketId, string accountId)
+    public async Task<Invoice> GetTicketDetailsAsync(string ticketId, string accountId)
     {
-        var booking = await _invoiceRepository.GetDetailsAsync(ticketId, accountId);
-        if (booking == null) return null;
-
-        List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
-        decimal promotionDiscount = booking.PromotionDiscount ?? 0;
-        if (!string.IsNullOrEmpty(booking.Seat_IDs))
-        {
-            var seatIdArr = booking.Seat_IDs
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(id => int.Parse(id.Trim()))
-                .ToList();
-            foreach (var seatId in seatIdArr)
-            {
-                var seat = _seatRepository.GetById(seatId);
-                if (seat == null) continue;
-                var seatType = seat.SeatType;
-                decimal originalPrice = seatType?.PricePercent ?? 0;
-                decimal priceAfterPromotion = originalPrice;
-                if (promotionDiscount > 0)
-                {
-                    priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
-                }
-                seatDetails.Add(new SeatDetailViewModel
-                {
-                    SeatId = seat.SeatId,
-                    SeatName = seat.SeatName,
-                    SeatType = seatType?.TypeName ?? "N/A",
-                    Price = priceAfterPromotion,
-                    OriginalPrice = originalPrice,
-                    PromotionDiscount = promotionDiscount,
-                    PriceAfterPromotion = priceAfterPromotion
-                });
-            }
-        }
-        else if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
-        {
-            seatDetails = booking.ScheduleSeats
-                .Where(ss => ss.Seat != null)
-                .Select(ss =>
-                {
-                    var originalPrice = (decimal)(ss.Seat.SeatType?.PricePercent ?? 0);
-                    decimal priceAfterPromotion = originalPrice;
-                    if (promotionDiscount > 0)
-                    {
-                        priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
-                    }
-                    return new SeatDetailViewModel
-                    {
-                        SeatId = ss.Seat.SeatId,
-                        SeatName = ss.Seat.SeatName,
-                        SeatType = ss.Seat.SeatType?.TypeName,
-                        Price = priceAfterPromotion,
-                        OriginalPrice = originalPrice,
-                        PromotionDiscount = promotionDiscount,
-                        PriceAfterPromotion = priceAfterPromotion
-                    };
-                }).ToList();
-        }
-        else if (!string.IsNullOrEmpty(booking.Seat))
-        {
-            var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => s.Trim())
-                .Where(s => !string.IsNullOrEmpty(s))
-                .ToArray();
-            foreach (var seatName in seatNamesArr)
-            {
-                var seat = _seatRepository.GetByName(seatName);
-                if (seat == null) continue;
-                var seatType = seat.SeatType;
-                decimal originalPrice = seatType?.PricePercent ?? 0;
-                decimal priceAfterPromotion = originalPrice;
-                if (promotionDiscount > 0)
-                {
-                    priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
-                }
-                seatDetails.Add(new SeatDetailViewModel
-                {
-                    SeatId = seat.SeatId,
-                    SeatName = seat.SeatName,
-                    SeatType = seatType?.TypeName ?? "N/A",
-                    Price = priceAfterPromotion,
-                    OriginalPrice = originalPrice,
-                    PromotionDiscount = promotionDiscount,
-                    PriceAfterPromotion = priceAfterPromotion
-                });
-            }
-        }
-
-        var result = new
-        {
-            Booking = booking,
-            SeatDetails = seatDetails,
-            VoucherAmount = booking.Voucher?.Value,
-            VoucherCode = booking.Voucher?.Code
-        };
-        return result;
+        return await _invoiceRepository.GetDetailsAsync(ticketId, accountId);
     }
 
     public async Task<(bool Success, List<string> Messages)> CancelTicketAsync(string ticketId, string accountId)
@@ -348,5 +256,94 @@ public class TicketService : ITicketService
             messages.Add(rankUpMsg);
         }
         return (true, messages);
+    }
+
+    public List<SeatDetailViewModel> BuildSeatDetails(Invoice booking)
+    {
+        var seatDetails = new List<SeatDetailViewModel>();
+        decimal promotionDiscount = booking.PromotionDiscount ?? 0;
+        var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
+        if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
+        {
+            seatDetails = booking.ScheduleSeats
+                .Where(ss => ss.Seat != null)
+                .Select(ss =>
+                {
+                    var seatType = ss.Seat.SeatType;
+                    decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;
+                    decimal priceAfterPromotion = originalPrice;
+                    if (promotionDiscount > 0)
+                    {
+                        priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
+                    }
+                    return new SeatDetailViewModel
+                    {
+                        SeatId = ss.Seat.SeatId,
+                        SeatName = ss.Seat.SeatName,
+                        SeatType = seatType?.TypeName ?? "Unknown",
+                        Price = priceAfterPromotion,
+                        OriginalPrice = originalPrice,
+                        PromotionDiscount = promotionDiscount,
+                        PriceAfterPromotion = priceAfterPromotion
+                    };
+                }).ToList();
+        }
+        else if (!string.IsNullOrEmpty(booking.Seat_IDs))
+        {
+            var seatIdArr = booking.Seat_IDs
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(id => int.Parse(id.Trim()))
+                .ToList();
+            var allSeats = seatIdArr.Select(id => _seatRepository.GetById(id)).Where(s => s != null).ToList();
+            seatDetails = allSeats.Select(seat =>
+            {
+                var seatType = seat.SeatType;
+                decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;
+                decimal priceAfterPromotion = originalPrice;
+                if (promotionDiscount > 0)
+                {
+                    priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
+                }
+                return new SeatDetailViewModel
+                {
+                    SeatId = seat.SeatId,
+                    SeatName = seat.SeatName,
+                    SeatType = seatType?.TypeName ?? "Unknown",
+                    Price = priceAfterPromotion,
+                    OriginalPrice = originalPrice,
+                    PromotionDiscount = promotionDiscount,
+                    PriceAfterPromotion = priceAfterPromotion
+                };
+            }).ToList();
+        }
+        else if (!string.IsNullOrEmpty(booking.Seat))
+        {
+            var seatNamesArr = booking.Seat.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToArray();
+            var allSeats = seatNamesArr.Select(name => _seatRepository.GetByName(name)).Where(s => s != null).ToList();
+            foreach (var seat in allSeats)
+            {
+                var seatType = seat.SeatType;
+                decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;
+                decimal priceAfterPromotion = originalPrice;
+                if (promotionDiscount > 0)
+                {
+                    priceAfterPromotion = originalPrice * (1 - promotionDiscount / 100m);
+                }
+                seatDetails.Add(new SeatDetailViewModel
+                {
+                    SeatId = seat.SeatId,
+                    SeatName = seat.SeatName,
+                    SeatType = seatType?.TypeName ?? "Unknown",
+                    Price = priceAfterPromotion,
+                    OriginalPrice = originalPrice,
+                    PromotionDiscount = promotionDiscount,
+                    PriceAfterPromotion = priceAfterPromotion
+                });
+            }
+        }
+        return seatDetails;
     }
 }
