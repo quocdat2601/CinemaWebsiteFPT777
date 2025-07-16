@@ -107,7 +107,7 @@ namespace MovieTheater
             builder.Services.AddScoped<EmailService>();
             builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
             builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
-            builder.Services.AddScoped<VNPayService>();
+            builder.Services.AddScoped<IVNPayService, VNPayService>();
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
@@ -119,12 +119,16 @@ namespace MovieTheater
             builder.Services.AddScoped<IPointService, PointService>();
             builder.Services.AddScoped<IScoreService, ScoreService>();
             builder.Services.AddScoped<IPaymentSecurityService, PaymentSecurityService>();
+            builder.Services.AddScoped<IBookingDomainService, BookingDomainService>();
+            builder.Services.AddScoped<IBookingPriceCalculationService, BookingPriceCalculationService>();
+            builder.Services.AddScoped<ITicketVerificationService, TicketVerificationService>();
             builder.Services.AddSignalR(); //ADD SignalR
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
             builder.Services.AddScoped<IVersionRepository, VersionRepository>();
             builder.Services.AddScoped<IFoodInvoiceRepository, FoodInvoiceRepository>();
             builder.Services.AddScoped<IFoodInvoiceService, FoodInvoiceService>();
+            builder.Services.AddScoped<ITicketService, TicketService>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")

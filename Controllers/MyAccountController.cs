@@ -14,17 +14,24 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _service;
         private readonly ILogger<MyAccountController> _logger;
         private readonly IVoucherService _voucherService;
-        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
         private readonly IRankService _rankService;
+        private readonly IScoreService _scoreService;
 
         public MyAccountController(IAccountService service, ILogger<MyAccountController> logger,
             IVoucherService voucherService,
-            IRankService rankService)
+            IRankService rankService,
+            IScoreService scoreService)
         {
             _service = service;
             _logger = logger;
             _rankService = rankService;
             _voucherService = voucherService;
+            _scoreService = scoreService;
+        }
+
+        private string GetCurrentAccountId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
         /// <summary>
@@ -71,10 +78,9 @@ namespace MovieTheater.Controllers
                     };
                     return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
                 case "Score":
-                    var scoreService = HttpContext.RequestServices.GetService<IScoreService>();
-                    var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                    var currentScore = scoreService?.GetCurrentScore(accountId) ?? 0;
-                    var scoreHistory = scoreService?.GetScoreHistory(accountId) ?? new List<ScoreHistoryViewModel>();
+                    var accountId = GetCurrentAccountId();
+                    var currentScore = _scoreService?.GetCurrentScore(accountId) ?? 0;
+                    var scoreHistory = _scoreService?.GetScoreHistory(accountId) ?? new List<ScoreHistoryViewModel>();
                     var scoreViewModel = new ScoreHistoryViewModel { CurrentScore = currentScore };
                     return PartialView("~/Views/Account/Tabs/Score.cshtml", scoreViewModel);
                 case "Voucher":
@@ -97,7 +103,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /MyAccount/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(ProfilePageViewModel model, string action)
+        public async Task<IActionResult> UpdateImage(ProfilePageViewModel model)
         {
             var user = _service.GetCurrentUser();
             if (user == null)
@@ -106,93 +112,95 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (action == "updateImage")
+            ModelState.Remove("Profile.FullName");
+            ModelState.Remove("Profile.DateOfBirth");
+            ModelState.Remove("Profile.Gender");
+            ModelState.Remove("Profile.IdentityCard");
+            ModelState.Remove("Profile.Email");
+            ModelState.Remove("Profile.Address");
+            ModelState.Remove("Profile.PhoneNumber");
+
+            if (!ModelState.IsValid)
             {
-                // Minimal validation for image upload
-                ModelState.Remove("Profile.FullName");
-                ModelState.Remove("Profile.DateOfBirth");
-                ModelState.Remove("Profile.Gender");
-                ModelState.Remove("Profile.IdentityCard");
-                ModelState.Remove("Profile.Email");
-                ModelState.Remove("Profile.Address");
-                ModelState.Remove("Profile.PhoneNumber");
-
-                if (!ModelState.IsValid)
-                {
-                    // If validation fails, reload the tab with the errors
-                    TempData["ErrorMessage"] = "An error occurred during image upload.";
-                    return RedirectToAction("MainPage", new { tab = "Profile" });
-                }
-
-                var registerModel = new RegisterViewModel
-                {
-                    AccountId = user.AccountId,
-                    Username = user.Username,
-                    // Pass the uploaded file to the service. The service now handles saving.
-                    ImageFile = model.Profile.ImageFile,
-                    // Pass the rest of the user's data to prevent it from being wiped out
-                    FullName = user.FullName,
-                    DateOfBirth = user.DateOfBirth,
-                    Gender = user.Gender,
-                    IdentityCard = user.IdentityCard,
-                    Email = user.Email,
-                    Address = user.Address,
-                    PhoneNumber = user.PhoneNumber,
-                    Password = user.Password,
-                    Image = user.Image // Pass the current image name for deletion purposes
-                };
-
-                var success = _service.Update(user.AccountId, registerModel);
-                if (success)
-                {
-                    TempData["ToastMessage"] = "Profile image updated successfully!";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Image update failed.";
-                }
-                return RedirectToAction("MainPage", new { tab = "Profile" });
-            }
-            else if (action == "editProfile")
-            {
-                // Standard validation for profile fields
-                if (!ModelState.IsValid)
-                {
-                    var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                    TempData["ErrorMessage"] = $"Update failed: {errors}";
-                    // It's better to redirect here as returning the partial view can cause issues with page state
-                    return RedirectToAction("MainPage", new { tab = "Profile" });
-                }
-
-                var registerModel = new RegisterViewModel
-                {
-                    AccountId = model.Profile.AccountId,
-                    Username = user.Username, // Username is not editable here
-                    Password = user.Password, // Password is not changed here
-                    FullName = model.Profile.FullName,
-                    DateOfBirth = model.Profile.DateOfBirth,
-                    Gender = model.Profile.Gender,
-                    IdentityCard = model.Profile.IdentityCard,
-                    Email = model.Profile.Email, // Email is not editable here
-                    Address = model.Profile.Address,
-                    PhoneNumber = model.Profile.PhoneNumber,
-                    Image = user.Image, // Preserve the existing image
-                    ImageFile = null    // Ensure we do not process a file
-                };
-
-                var success = _service.Update(user.AccountId, registerModel);
-                if (success)
-                {
-                    TempData["ToastMessage"] = "Profile updated successfully!";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Update failed.";
-                }
+                TempData["ErrorMessage"] = "An error occurred during image upload.";
                 return RedirectToAction("MainPage", new { tab = "Profile" });
             }
 
-            // Fallback for any other action
+            var registerModel = new RegisterViewModel
+            {
+                AccountId = user.AccountId,
+                Username = user.Username,
+                ImageFile = model.Profile.ImageFile,
+                FullName = user.FullName,
+                DateOfBirth = user.DateOfBirth,
+                Gender = user.Gender,
+                IdentityCard = user.IdentityCard,
+                Email = user.Email,
+                Address = user.Address,
+                PhoneNumber = user.PhoneNumber,
+                Password = user.Password,
+                Image = user.Image
+            };
+
+            var success = _service.Update(user.AccountId, registerModel);
+            if (success)
+            {
+                TempData["ToastMessage"] = "Profile image updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Image update failed.";
+            }
+            return RedirectToAction("MainPage", new { tab = "Profile" });
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin hồ sơ người dùng.
+        /// </summary>
+        /// <remarks>url: /MyAccount/Edit (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfile(ProfilePageViewModel model)
+        {
+            var user = _service.GetCurrentUser();
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User session expired. Please log in again.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["ErrorMessage"] = $"Update failed: {errors}";
+                return RedirectToAction("MainPage", new { tab = "Profile" });
+            }
+
+            var registerModel = new RegisterViewModel
+            {
+                AccountId = model.Profile.AccountId,
+                Username = user.Username, // Username is not editable here
+                Password = user.Password, // Password is not changed here
+                FullName = model.Profile.FullName,
+                DateOfBirth = model.Profile.DateOfBirth,
+                Gender = model.Profile.Gender,
+                IdentityCard = model.Profile.IdentityCard,
+                Email = model.Profile.Email, // Email is not editable here
+                Address = model.Profile.Address,
+                PhoneNumber = model.Profile.PhoneNumber,
+                Image = user.Image, // Preserve the existing image
+                ImageFile = null    // Ensure we do not process a file
+            };
+
+            var success = _service.Update(user.AccountId, registerModel);
+            if (success)
+            {
+                TempData["ToastMessage"] = "Profile updated successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Update failed.";
+            }
             return RedirectToAction("MainPage", new { tab = "Profile" });
         }
 

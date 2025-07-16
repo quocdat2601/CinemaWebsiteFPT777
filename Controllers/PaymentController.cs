@@ -109,9 +109,7 @@ namespace MovieTheater.Controllers
                                 MovieShowId = invoice.MovieShowId,
                                 InvoiceId = invoice.InvoiceId,
                                 SeatId = seat.SeatId,
-                                SeatStatusId = 2,
-                                BookedSeatTypeId = seat.SeatTypeId,
-                                BookedPrice = priceAfterPromotion
+                                SeatStatusId = 2
                             };
                         }).ToList();
                         _context.ScheduleSeats.AddRange(scheduleSeats);
@@ -125,9 +123,7 @@ namespace MovieTheater.Controllers
                         decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
                         foreach (var scheduleSeat in invoice.ScheduleSeats)
                         {
-                            var seatType = scheduleSeat.BookedSeatType ?? (scheduleSeat.BookedSeatTypeId != null
-                                ? _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == scheduleSeat.BookedSeatTypeId.Value)
-                                : null);
+                            var seatType = scheduleSeat.Seat.SeatType;
                             if (seatType != null)
                             {
                                 decimal basePrice = seatType.PricePercent;
@@ -147,7 +143,7 @@ namespace MovieTheater.Controllers
                         decimal earningRate = 1;
                         if (member?.Account?.Rank != null)
                             earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
-                        
+
                         // Calculate points based on seat price only (not including food)
                         var selectedFoodsList = new List<FoodViewModel>();
                         var foodsJson = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
@@ -162,7 +158,7 @@ namespace MovieTheater.Controllers
                                 selectedFoodsList = new List<FoodViewModel>();
                             }
                         }
-                        
+
                         decimal totalFoodPrice = selectedFoodsList.Sum(f => f.Price * f.Quantity);
                         decimal seatOnlyPrice = (invoice.TotalMoney ?? 0) - totalFoodPrice;
                         int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(seatOnlyPrice, earningRate);
@@ -188,7 +184,6 @@ namespace MovieTheater.Controllers
                     foreach (var scheduleSeat in invoice.ScheduleSeats)
                     {
                         var seat = scheduleSeat.Seat;
-                        var seatType = scheduleSeat.BookedSeatType ?? (scheduleSeat.BookedSeatTypeId != null ? _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == scheduleSeat.BookedSeatTypeId.Value) : null);
                         decimal? bookedPrice = scheduleSeat.BookedPrice;
                         // Use seat, seatType, and bookedPrice as needed for calculations or TempData
                         // Example: accumulate subtotal, build seat info, etc.
@@ -197,7 +192,7 @@ namespace MovieTheater.Controllers
                 }
 
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
-                
+
                 // --- Lưu food orders nếu có ---
                 var selectedFoods = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
                 if (!string.IsNullOrEmpty(selectedFoods))
@@ -215,7 +210,7 @@ namespace MovieTheater.Controllers
                         _logger.LogError(ex, "Error saving food orders for invoice {InvoiceId}", invoice.InvoiceId);
                     }
                 }
-                
+
                 TempData["InvoiceId"] = model.vnp_TxnRef;
                 TempData["MovieName"] = invoice?.MovieShow?.Movie?.MovieNameEnglish ?? "";
                 TempData["ShowDate"] = invoice?.MovieShow?.ShowDate.ToString("dd/MM/yyyy") ?? "N/A";
@@ -231,7 +226,8 @@ namespace MovieTheater.Controllers
                         .Select(id => int.Parse(id.Trim()))
                         .ToList();
                     var allSeats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
-                    var seatDetails = allSeats.Select(seat => {
+                    var seatDetails = allSeats.Select(seat =>
+                    {
                         var seatType = _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
                         decimal basePrice = seatType?.PricePercent ?? 0;
                         if (invoice.MovieShow?.Version != null)

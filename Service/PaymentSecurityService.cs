@@ -8,12 +8,12 @@ namespace MovieTheater.Service
     {
         private readonly MovieTheaterContext _context;
         private readonly ILogger<PaymentSecurityService> _logger;
-        private readonly VNPayService _vnPayService;
+        private readonly IVNPayService _vnPayService;
 
         public PaymentSecurityService(
             MovieTheaterContext context,
             ILogger<PaymentSecurityService> logger,
-            VNPayService vnPayService)
+            IVNPayService vnPayService)
         {
             _context = context;
             _logger = logger;

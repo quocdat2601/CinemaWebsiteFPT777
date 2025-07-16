@@ -32,15 +32,12 @@ namespace MovieTheater.Hubs
             var accountId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(accountId))
             {
-                // Kiểm tra nếu accountId này đã có kết nối khác ở showtime này
                 var key = (movieShowId, accountId);
                 if (_accountConnections.TryGetValue(key, out var existingConnId) && existingConnId != Context.ConnectionId)
                 {
-                    // Gửi sự kiện AccountInUse cho client mới
                     await Clients.Caller.SendAsync("AccountInUse");
                     return;
                 }
-                // Lưu lại connectionId cho accountId này ở showtime này
                 _accountConnections[key] = Context.ConnectionId;
             }
 
@@ -65,6 +62,17 @@ namespace MovieTheater.Hubs
                     }
                 }
             }
+
+            // --- Remove booked seats from held lists ---
+            var bookedSeatIds = _context.ScheduleSeats
+                .Where(s => s.MovieShowId == movieShowId && s.SeatStatusId == 2 && s.SeatId.HasValue)
+                .Select(s => s.SeatId.Value)
+                .ToList();
+
+            heldByMe = heldByMe.Where(id => !bookedSeatIds.Contains(id)).ToList();
+            heldByOthers = heldByOthers.Where(id => !bookedSeatIds.Contains(id)).ToList();
+            // ----------------------------------------------------------
+
             await Clients.Caller.SendAsync("HeldSeats", heldByMe, heldByOthers);
         }
 
@@ -134,6 +142,13 @@ namespace MovieTheater.Hubs
             {
                 seatsForShow.TryRemove(seatId, out _);
             }
+        }
+
+        // Thêm cho test: reset toàn bộ state static
+        public static void ResetState()
+        {
+            _heldSeats.Clear();
+            _accountConnections.Clear();
         }
     }
 }

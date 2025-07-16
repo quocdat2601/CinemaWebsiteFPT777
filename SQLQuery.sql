@@ -186,7 +186,7 @@ CREATE TABLE Invoice (
     Total_Money DECIMAL,
     Use_Score INT,
     Seat VARCHAR(30),
-    Seat_IDs VARCHAR(100),
+    Seat_IDs NVARCHAR(MAX) NULL,
     Account_ID VARCHAR(10),
     Movie_Show_Id INT, 
 	Promotion_Discount INT DEFAULT 0,
@@ -197,8 +197,6 @@ CREATE TABLE Invoice (
 	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)
 );
 
-
-
 CREATE TABLE Schedule_Seat (
 	Schedule_Seat_ID INT PRIMARY KEY IDENTITY(1,1),
     Movie_Show_ID INT,
@@ -207,13 +205,11 @@ CREATE TABLE Schedule_Seat (
     Seat_Status_ID INT,
 	HoldUntil DATETIME NULL,
     HoldBy NVARCHAR(100) NULL,
-	Booked_Seat_Type_ID INT NULL,
     Booked_Price DECIMAL(18,2) NULL,
     FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID) ON DELETE CASCADE,
     FOREIGN KEY (Seat_ID) REFERENCES Seat(Seat_ID),
 	FOREIGN KEY (Invoice_ID) REFERENCES Invoice(Invoice_ID),
     FOREIGN KEY (Seat_Status_ID) REFERENCES Seat_Status(Seat_Status_ID),
-	FOREIGN KEY (Booked_Seat_Type_ID) REFERENCES Seat_Type(Seat_Type_ID)
 );
 
 CREATE TABLE CoupleSeat (

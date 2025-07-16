@@ -1,9 +1,9 @@
-﻿@model MovieTheater.Models.Invoice
+﻿@model MovieTheater.ViewModels.TicketDetailsViewModel
 @using System.Linq;
 @{
 
     ViewData["Title"] = "Ticket Information";
-    var invoice = Model;
+    var invoice = Model.Booking;
     var movieName = invoice.MovieShow.Movie.MovieNameEnglish;
     var screen = invoice.MovieShow.CinemaRoom.CinemaRoomName;
     var version = invoice.MovieShow.Version.VersionName;
@@ -15,20 +15,19 @@
     var addScore = invoice.AddScore ?? 0;
     var useScore = invoice.UseScore ?? 0;
     var bookingDate = invoice.BookingDate?.ToString("yyyy-MM-dd HH:mm");
-    var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel>;
-    var selectedFoods = ViewBag.SelectedFoods as List<MovieTheater.ViewModels.FoodViewModel> ?? new List<MovieTheater.ViewModels.FoodViewModel>();
-    decimal totalFoodPrice = ViewBag.TotalFoodPrice as decimal? ?? 0;
+    var seatDetails = Model.SeatDetails ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
+    var foodDetails = Model.FoodDetails ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    decimal totalFoodPrice = Model.TotalFoodPrice;
     
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.PriceAfterPromotion ?? s.Price) ?? 0;
     decimal addedScoreValue = addScore * 1000;
     // This subtotal is already after all discounts (promotion, rank, voucher, points)
     decimal seatPriceFromDB = invoice.TotalMoney ?? 0;
-    decimal totalPriceValue = seatPriceFromDB + totalFoodPrice;
     // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
     // Get member ID if available
     var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
-    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={Model.InvoiceId}";
+    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={Model.Booking.InvoiceId}";
 }
 <style>
     .ticket-success-header {
@@ -211,9 +210,10 @@
                                         <td>@seat.SeatName</td>
                                         <td>@seat.SeatType</td>
                                         <td>
-                                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                            @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
                                             {
-                                                <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
                                             }
                                             else if (seat.OriginalPrice.HasValue)
                                             {
@@ -236,7 +236,7 @@
                         </tbody>
                     </table>
                     
-                    @if (selectedFoods.Any())
+                    @if (foodDetails.Any())
                     {
                         <div class="ticket-section-title">Food & Drinks</div>
                         <table class="table table-bordered mb-2">
@@ -249,7 +249,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var food in selectedFoods)
+                                @foreach (var food in foodDetails)
                                 {
                                     <tr>
                                         <td>@food.Name</td>
@@ -286,7 +286,7 @@
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">
                                     <td class="ticket-total-label">Total Amount</td>
-                                    <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
+                                    <td class="ticket-total-value text-end">@totalPrice VND</td>
                                 </tr>
                                 @if (addScore > 0)
                                 {
@@ -302,9 +302,9 @@
                         <a href="/MyAccount/MainPage?tab=Profile" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
                             <i class="fas fa-arrow-left me-1"></i> Back to Profile
                         </a>
-                        @if (Model.Status == MovieTheater.Models.InvoiceStatus.Completed)
+                        @if (Model.Booking.Status == MovieTheater.Models.InvoiceStatus.Completed)
                         {
-                            <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.InvoiceId"
+                            <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.Booking.InvoiceId"
                                   method="post" class="d-inline"
                                   onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
                                 <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />

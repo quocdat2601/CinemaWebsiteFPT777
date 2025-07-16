@@ -1,5 +1,11 @@
 ﻿@model MovieTheater.ViewModels.ConfirmBookingViewModel
 
+@{
+    decimal seatPrice = Model.SelectedSeats != null
+        ? Model.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0)
+        : 0;
+}
+
 <div class="container mt-4">
     <div class="text-start p-3">
         <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime })" class="btn btn-secondary">&larr; Return</a>
@@ -65,7 +71,7 @@
                 }
             </tbody>
         </table>
-
+      
         <hr />
 <!-- Danh sách đồ ăn đã chọn -->
 @if (Model.SelectedFoods != null && Model.SelectedFoods.Count > 0)
@@ -121,8 +127,8 @@
                 <table class="table table-borderless table-sm" style="max-width: 350px; margin-left: auto;">
                     <tbody>
                         <tr>
-                            <td class="text-start">Original Price:</td>
-                            <td><span id="originalTotal">@Model.OriginalTotal.ToString("N0") VND</span></td>
+                            <td class="text-start">Seat Price:</td>
+                            <td><span id="originalTotal">@seatPrice.ToString("N0") VND</span></td>
                         </tr>
                         @if (Model.TotalFoodPrice > 0)
                         {
@@ -170,6 +176,14 @@
             @Html.HiddenFor(m => m.PhoneNumber)
             @Html.HiddenFor(m => m.CurrentScore)
             @Html.HiddenFor(m => m.MovieShowId)
+            @Html.HiddenFor(m => m.Subtotal)
+            @Html.HiddenFor(m => m.RankDiscount)
+            @Html.HiddenFor(m => m.RankDiscountPercent)
+            @Html.HiddenFor(m => m.PromotionDiscountPercent)
+            @Html.HiddenFor(m => m.VoucherAmount)
+            @Html.HiddenFor(m => m.AddScore)
+            @Html.HiddenFor(m => m.TotalFoodPrice)
+            @Html.HiddenFor(m => m.EarningRate)
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
             <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
             <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
@@ -279,8 +293,8 @@
 
 <script>
     $(document).ready(function () {
-        // Values from server
-        var originalTotal = @Model.OriginalTotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        // Use the correct seat price from Razor
+        var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -380,7 +394,7 @@
         }
 
         function updatePriceFlow() {
-            var originalTotal = @Model.OriginalTotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
 

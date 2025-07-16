@@ -33,15 +33,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function loadTab(tabName, keyword = '', category = '', status = '') {
+    function loadTab(tabName, keyword = '', status = '', expiry = '') {
         $('.admin-tab').removeClass('active');
         $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
         const params = new URLSearchParams({ tab: tabName });
         if (keyword && keyword.trim()) params.append('keyword', keyword);
-        if (category) params.append('categoryFilter', category);
-        if (status) params.append('statusFilter', status);
-
+        // Chỉ truyền statusFilter và expiryFilter cho VoucherMg
+        if (tabName === 'VoucherMg') {
+            if (status) params.append('statusFilter', status);
+            if (expiry) params.append('expiryFilter', expiry);
+        } else {
+            if (status) params.append('statusFilter', status);
+            if (expiry) params.append('categoryFilter', expiry); // giữ nguyên cho FoodMg nếu có
+        }
         $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function(response, status) {
             if (status === 'error') {
                 $('#tabContent').html('<div class="alert alert-danger">Failed to load content</div>');

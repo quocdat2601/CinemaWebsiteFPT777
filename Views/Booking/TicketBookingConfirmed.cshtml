@@ -16,7 +16,9 @@
     string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
     string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
     string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
-    string returnUrl = Model?.ReturnUrl ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+    // Set the correct fallback URL for Booking Management
+    string bookingManagementUrl = Url.Action("BookingMg", "Admin");
+    string returnUrl = Model?.ReturnUrl ?? bookingManagementUrl;
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
     var status = booking?.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled";
 
@@ -346,11 +348,10 @@
                 <input type="text" id="memberPhone" class="ticket-info-value" value="@memberPhone" readonly />
             </div>
             <div class="text-center mt-4">
-                <a href="@returnUrl" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 220px;">
+                <a href="@Model.ReturnUrl" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 220px;">
                     <i class="fas fa-arrow-left me-1"></i> Back to Booking Management
                 </a>
                 @if (Model.BookingDetails != null && Model.BookingDetails.Status == MovieTheater.Models.InvoiceStatus.Completed)
-                @* && Model.BookingDetails.ShowDate > DateTime.Now) *@
                 {
                     <form asp-controller="Ticket" asp-action="CancelByAdmin" asp-route-id="@Model.BookingDetails.InvoiceId"
                           method="post" class="d-inline"

@@ -18,7 +18,7 @@
                 <h3 class="mb-4" style="font-weight:700;color:#1769fa;"><i class="fas fa-user me-2"></i>Profile Information</h3>
             </div>
             <div class="profile-modern-card">
-                <form asp-controller="MyAccount" asp-action="Edit" method="post" enctype="multipart/form-data" id="profileForm" class="profile-form-modern mt-3">
+                <form asp-controller="MyAccount" asp-action="EditProfile" method="post" enctype="multipart/form-data" id="profileForm" class="profile-form-modern mt-3">
                     <div class="profile-banner-modern" id="profileBanner" style="background: @(currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)"); display: flex; flex-direction: column; align-items: stretch; padding: 2rem 1.5rem 2.5rem 1.5rem;">
                         <div class="profile-top-row d-flex flex-row align-items-start w-100" style="gap: 0.5rem;">
                             <div class="profile-banner-avatar-col d-flex flex-column align-items-center position-relative" style="flex:0 0 110px;">
@@ -29,7 +29,7 @@
                                 <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
                                 <div id="avatarBtns" class="avatar-upload-btns mt-2 d-flex justify-content-center" style="gap:0.3rem;">
                                     <button type="button" id="cancelAvatarBtn" class="avatar-btn avatar-btn-outline avatar-btn-xsmall">Cancel</button>
-                                    <button type="submit" name="action" value="updateImage" class="avatar-btn avatar-btn-primary avatar-btn-xsmall">Update</button>
+                                    <button type="submit" id="updateImageBtn" name="action" value="updateImage" class="avatar-btn avatar-btn-primary avatar-btn-xsmall">Update</button>
                                 </div>
                             </div>
                             <div class="profile-info-name-badge d-flex flex-column align-items-center justify-content-start flex-grow-1" style="min-width: 120px; max-width: 220px; gap:0.15rem;">
@@ -300,6 +300,8 @@
         const imagePreview = document.getElementById('profileImagePreview');
         const avatarBtns = document.getElementById('avatarBtns');
         const cancelBtn = document.getElementById('cancelAvatarBtn');
+        const updateImageBtn = document.getElementById('updateImageBtn');
+        const profileForm = document.getElementById('profileForm');
         const originalSrc = imagePreview ? imagePreview.src : '';
         if (!imageInput || !imagePreview) return;
         imageInput.addEventListener('change', function(event) {
@@ -317,6 +319,12 @@
                 imagePreview.src = originalSrc;
                 imageInput.value = '';
                 avatarBtns.classList.remove('is-visible');
+            });
+        }
+        // Đổi action form khi bấm nút Update ảnh
+        if (updateImageBtn && profileForm) {
+            updateImageBtn.addEventListener('click', function(e) {
+                profileForm.action = '/MyAccount/UpdateImage';
             });
         }
     }

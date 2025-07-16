@@ -85,8 +85,11 @@ namespace MovieTheater.Repository
                     .ThenInclude(ms => ms.CinemaRoom)
                 .Include(i => i.MovieShow)
                     .ThenInclude(ms => ms.Schedule)
-                 .Include(i => i.MovieShow)
+                .Include(i => i.MovieShow)
                     .ThenInclude(ms => ms.Version)
+                .Include(i => i.ScheduleSeats)
+                    .ThenInclude(ss => ss.Seat)
+                        .ThenInclude(s => s.SeatType)
                 .FirstOrDefaultAsync();
         }
 

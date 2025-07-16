@@ -25,7 +25,6 @@ namespace MovieTheater.Repository
                     var seat = await _context.Seats.FindAsync(scheduleSeat.SeatId.Value);
                     if (seat != null && seat.SeatTypeId.HasValue)
                     {
-                        scheduleSeat.BookedSeatTypeId = seat.SeatTypeId;
                         var seatType = await _context.SeatTypes.FindAsync(seat.SeatTypeId.Value);
                         if (seatType != null)
                         {
@@ -54,12 +53,11 @@ namespace MovieTheater.Repository
                 foreach (var scheduleSeat in scheduleSeats)
                 {
                     // Set BookedSeatTypeId and BookedPrice if not already set
-                    if (scheduleSeat.SeatId.HasValue && (scheduleSeat.BookedSeatTypeId == null || scheduleSeat.BookedPrice == null))
+                    if (scheduleSeat.SeatId.HasValue && scheduleSeat.BookedPrice == null)
                     {
                         var seat = await _context.Seats.FindAsync(scheduleSeat.SeatId.Value);
                         if (seat != null && seat.SeatTypeId.HasValue)
                         {
-                            scheduleSeat.BookedSeatTypeId = seat.SeatTypeId;
                             var seatType = await _context.SeatTypes.FindAsync(seat.SeatTypeId.Value);
                             if (seatType != null)
                             {
@@ -131,7 +129,6 @@ namespace MovieTheater.Repository
             return _context.ScheduleSeats
                 .Include(s => s.MovieShow)
                     .ThenInclude(ms => ms.CinemaRoom)
-                .Include(s => s.BookedSeatType)
                 .Include(s => s.Seat)
                 .Where(s => s.InvoiceId == invoiceId)
                 .ToList();

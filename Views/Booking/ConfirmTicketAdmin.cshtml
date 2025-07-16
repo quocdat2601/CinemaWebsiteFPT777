@@ -1,5 +1,10 @@
 ﻿@using Newtonsoft.Json
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
+
+<script>
+    window.serverPromotionDiscountPercent = @Model.BookingDetails.PromotionDiscountPercent;
+</script>
+
 @{
     ViewBag.Title = "Confirm Ticket Information (Admin)";
     Layout = "_Layout";
@@ -231,6 +236,7 @@
                     <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
                     <input type="hidden" id="accountId" value="@Model.MemberAccountId" />
                     <input type="hidden" id="rankDiscountPercent" value="@Model.BookingDetails.RankDiscountPercent" />
+                    <input type="hidden" asp-for="BookingDetails.PromotionDiscountPercent" />
                 </div>
                 <div class="form-group mt-3">
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
@@ -248,6 +254,8 @@
         <div class="text-center mt-4">
             <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg" disabled>Confirm Ticket Booking</button>
         </div>
+        <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
+        <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
     </div>
 </div>
 
@@ -395,6 +403,7 @@
                 $('#accountId').val(member.account.accountId || '');
                 selectedAccountId = member.account.accountId;
                 $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
+                $('#promotionDiscountPercent').val(member.account.promotionDiscountPercent || 0);
                 $('#memberDetails').show();
                 $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
@@ -420,7 +429,8 @@
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
                         TotalPrice: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        MovieShowId: @Model.MovieShowId
+                        MovieShowId: @Model.MovieShowId,
+                        PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
                     },
                     MemberIdInput: $('#memberInput').val(),
                     MemberId: $('#memberId').val(),
@@ -444,7 +454,8 @@
                     data: JSON.stringify(model),
                     success: function (response) {
                         if (response.success) {
-                            window.location.href = response.redirectUrl; // Redirect to success page
+                            // Redirect to the backend-confirmed invoice page
+                            window.location.href = response.redirectUrl;
                         } else {
                             $('#memberMessage').text(response.message).show();
                         }
@@ -588,6 +599,8 @@
                 else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
                 $('#pointValidation').text(validationMsg);
                 $('#confirmTicketAdminBtn').prop('disabled', !valid);
+                // At the end of updatePriceAll, set the hidden input value:
+                $('#promotionDiscountPercent').val(discountPercent);
             }
 
             function onMemberSelected(memberId) {

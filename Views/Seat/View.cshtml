@@ -524,6 +524,7 @@
 		}
 
 		document.addEventListener('DOMContentLoaded', function () {
+			resetSeatSelectionUI(); // <-- Add this line
 			// Food plus
 			document.querySelectorAll('.btn-food-plus').forEach(btn => {
 				btn.addEventListener('click', function() {

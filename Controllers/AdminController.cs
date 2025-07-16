@@ -144,8 +144,17 @@ namespace MovieTheater.Controllers
 
                     return PartialView("FoodMg", foods);
                 case "VoucherMg":
-                    var vouchers = _voucherService.GetAll();
-                    return PartialView("VoucherMg", vouchers);
+                    var filter = new Service.VoucherFilterModel
+                    {
+                        Keyword = Request.Query["keyword"].ToString(),
+                        StatusFilter = Request.Query["statusFilter"].ToString(),
+                        ExpiryFilter = Request.Query["expiryFilter"].ToString()
+                    };
+                    var filteredVouchers = _voucherService.GetFilteredVouchers(filter);
+                    ViewBag.Keyword = filter.Keyword;
+                    ViewBag.StatusFilter = filter.StatusFilter;
+                    ViewBag.ExpiryFilter = filter.ExpiryFilter;
+                    return PartialView("VoucherMg", filteredVouchers);
                 case "RankMg":
                     var ranks = _rankService.GetAllRanks();
                     return PartialView("RankMg", ranks);
