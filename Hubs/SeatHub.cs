@@ -135,5 +135,12 @@ namespace MovieTheater.Hubs
                 seatsForShow.TryRemove(seatId, out _);
             }
         }
+
+        // Thêm cho test: reset toàn bộ state static
+        public static void ResetState()
+        {
+            _heldSeats.Clear();
+            _accountConnections.Clear();
+        }
     }
 }

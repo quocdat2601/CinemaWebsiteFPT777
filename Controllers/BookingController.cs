@@ -36,7 +36,7 @@ namespace MovieTheater.Controllers
         private readonly IInvoiceService _invoiceService;
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly ILogger<BookingController> _logger;
-        private readonly VNPayService _vnPayService;
+        private readonly IVNPayService _vnPayService;
         private readonly IPointService _pointService;
         private readonly IPromotionService _promotionService;
         private readonly IVoucherService _voucherService;
@@ -57,7 +57,7 @@ namespace MovieTheater.Controllers
             ILogger<BookingController> logger,
             IInvoiceService invoiceService,
             IScheduleSeatRepository scheduleSeatRepository,
-            VNPayService vnPayService,
+            IVNPayService vnPayService,
             IPointService pointService,
             IPromotionService promotionService,
             IVoucherService voucherService,

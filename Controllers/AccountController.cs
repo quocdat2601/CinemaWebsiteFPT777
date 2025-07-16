@@ -165,6 +165,13 @@ namespace MovieTheater.Controllers
 
             TempData["ToastMessage"] = "Log in successful!";
 
+            // After successful login and before redirecting, add:
+            var rankUpMsg = _service.GetAndClearRankUpgradeNotification(user.AccountId);
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                TempData["ToastMessage"] += "<br/>" + rankUpMsg;
+            }
+
             // Direct redirect like normal login
             if (user.RoleId == 1)
             {

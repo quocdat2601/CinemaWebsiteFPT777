@@ -393,6 +393,25 @@
                 });
             }
 
+            let memberSelected = false;
+            function updateConfirmButtonState() {
+                // Check if a member is selected
+                memberSelected = !!$('#memberId').val();
+                // Validate score
+                var used = parseInt($('#useScore').val()) || 0;
+                var maxPoints = updateMaxUsablePoints();
+                var validScore = true;
+                if (used === 0) {
+                    validScore = true;
+                } else if (used < 20) {
+                    validScore = false;
+                } else if (used > maxPoints) {
+                    validScore = false;
+                }
+                // Enable only if both member is selected and score is valid
+                $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
+            }
+
             function fillMemberInfo(member) {
                 $('#memberId').val(member.memberId);
                 $('#memberFullName').val(member.account.fullName);
@@ -404,7 +423,6 @@
                 $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
                 $('#promotionDiscountPercent').val(member.account.promotionDiscountPercent || 0);
                 $('#memberDetails').show();
-                $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
                 $('#openVoucherModalBtn').prop('disabled', false);
@@ -414,6 +432,7 @@
                 $('#selectedVoucherId').val('');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
+                updateConfirmButtonState(); // <-- update button state
             }
 
             // Confirm Ticket Admin Button Click
@@ -477,27 +496,8 @@
                 return maxPoints;
             }
             $('#useScore').on('input', function () {
-                var used = parseInt($(this).val()) || 0;
-                var maxPoints = updateMaxUsablePoints();
-                var valid = true;
-                var msg = '';
-                if (used == 0) {
-                    msg = '';
-                    valid = true;   
-                } else if (used < 20) {
-                    msg = 'Minimum 20 points required.';
-                    valid = false;
-                } else if (used > maxPoints) {
-                    msg = 'You can use up to ' + maxPoints + ' points (90% of order, or your balance).';
-                    valid = false;
-                }
-                if (!valid) {
-                    $('#scoreStatus').html('<span class="text-danger">' + msg + '</span>');
-                    $('#confirmTicketAdminBtn').prop('disabled', true);
-                } else {
-                    $('#scoreStatus').html('');
-                    $('#confirmTicketAdminBtn').prop('disabled', false);
-                }
+                updatePriceAll();
+                updateConfirmButtonState(); // <-- update button state
             });
             // Set initial value
             $('#useScore').val(0);
@@ -596,7 +596,6 @@
                 } else if (useScore < 20) { validationMsg = 'Minimum 20 points required.'; valid = false; }
                 else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
                 $('#pointValidation').text(validationMsg);
-                $('#confirmTicketAdminBtn').prop('disabled', !valid);
                 // At the end of updatePriceAll, set the hidden input value:
                 $('#promotionDiscountPercent').val(discountPercent);
             }
@@ -610,6 +609,7 @@
             }
             // On page load, show initial state
             updatePriceAll();
+            updateConfirmButtonState(); // <-- update button state
 
             // VOUCHER PICKER LOGIC
             let voucherModalInstance = null;
@@ -676,9 +676,7 @@
             }
 
             // Update price and point info when points are entered or member is selected
-            $('#useScore').on('input', function () {
-                updatePriceAll();
-            });
+            // This function is now called by updateConfirmButtonState
 
             function renderSelectedVoucherInfo() {
                 if (selectedVoucher) {
