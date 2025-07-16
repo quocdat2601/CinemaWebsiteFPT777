@@ -234,7 +234,14 @@ namespace MovieTheater.Controllers
                 return View("ConfirmBooking", model);
             }
 
-            return RedirectToAction("Success", new { invoiceId = result.InvoiceId });
+            if (IsTestSuccess == "true")
+            {
+                return RedirectToAction("Success", new { invoiceId = result.InvoiceId });
+            }
+            else
+            {
+                return RedirectToAction("Payment", new { invoiceId = result.InvoiceId });
+            }
         }
 
         /// <summary>
