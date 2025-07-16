@@ -34,7 +34,7 @@ namespace MovieTheater.Tests.Controller
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
 
         private BookingController BuildController()
-            => new BookingController(
+            => new  BookingController(
                 _bookingService.Object,
                 _movieService.Object,
                 _seatService.Object,
@@ -43,13 +43,17 @@ namespace MovieTheater.Tests.Controller
                 _memberRepo.Object,
                 Mock.Of<Microsoft.Extensions.Logging.ILogger<BookingController>>(),
                 _invoiceService.Object,
+                Mock.Of<IScheduleSeatRepository>(),
                 _vnPayService.Object,
+                Mock.Of<IPointService>(),
+                Mock.Of<IPromotionService>(),
                 _voucherService.Object,
                 _hubContext.Object,
                 _context,
                 _foodService.Object,
                 _foodInvService.Object,
-                _domainService.Object
+                _domainService.Object,
+                Mock.Of<IBookingPriceCalculationService>()
             );
 
         [Fact]

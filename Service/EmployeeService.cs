@@ -44,6 +44,8 @@ namespace MovieTheater.Service
 
         public bool Delete(string employeeId)
         {
+            var employee = _repository.GetById(employeeId);
+            if (employee == null) return false;
             _repository.Delete(employeeId);
             _repository.Save();
             return true;
