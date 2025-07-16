@@ -34,14 +34,18 @@ namespace MovieTheater.Controllers
         private readonly ISeatTypeService _seatTypeService;
         private readonly IMemberRepository _memberRepository;
         private readonly IInvoiceService _invoiceService;
+        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly ILogger<BookingController> _logger;
         private readonly IVNPayService _vnPayService;
+        private readonly IPointService _pointService;
+        private readonly IPromotionService _promotionService;
         private readonly IVoucherService _voucherService;
         private readonly MovieTheaterContext _context;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
         private readonly IFoodService _foodService;
         private readonly IFoodInvoiceService _foodInvoiceService;
         private readonly IBookingDomainService _bookingDomainService;
+        private readonly IBookingPriceCalculationService _priceCalculationService;
 
         public BookingController(
             IBookingService bookingService,
@@ -52,14 +56,17 @@ namespace MovieTheater.Controllers
             IMemberRepository memberRepository,
             ILogger<BookingController> logger,
             IInvoiceService invoiceService,
+            IScheduleSeatRepository scheduleSeatRepository,
             IVNPayService vnPayService,
+            IPointService pointService,
+            IPromotionService promotionService,
             IVoucherService voucherService,
             IHubContext<DashboardHub> dashboardHubContext,
             MovieTheaterContext context,
             IFoodService foodService,
             IFoodInvoiceService foodInvoiceService,
-            IBookingDomainService bookingDomainService
-        )
+            IBookingDomainService bookingDomainService,
+            IBookingPriceCalculationService priceCalculationService)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -69,13 +76,17 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _logger = logger;
             _invoiceService = invoiceService;
+            _scheduleSeatRepository = scheduleSeatRepository;
             _vnPayService = vnPayService;
+            _pointService = pointService;
+            _promotionService = promotionService;
             _voucherService = voucherService;
             _dashboardHubContext = dashboardHubContext;
             _context = context;
             _foodService = foodService;
             _foodInvoiceService = foodInvoiceService;
             _bookingDomainService = bookingDomainService;
+            _priceCalculationService = priceCalculationService;
         }
 
         /// <summary>
