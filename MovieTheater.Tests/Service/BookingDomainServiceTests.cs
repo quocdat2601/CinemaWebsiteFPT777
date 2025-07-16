@@ -22,7 +22,6 @@ namespace MovieTheater.Tests.Service
         private readonly Mock<IAccountService> _accountService = new();
         private readonly Mock<IPromotionService> _promoService = new();
         private readonly Mock<IFoodService> _foodService = new();
-        private readonly Mock<IInvoiceRepository> _invoiceRepo = new();
         private readonly Mock<IVoucherService> _voucherService = new();
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
         private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
@@ -41,7 +40,6 @@ namespace MovieTheater.Tests.Service
                 _seatTypeSvc.Object,
                 _promoService.Object,
                 _foodService.Object,
-                _invoiceRepo.Object,
                 _context,
                 _priceCalc.Object,
                 _voucherService.Object

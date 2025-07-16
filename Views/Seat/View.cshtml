@@ -382,22 +382,25 @@
 		}
 
 		function resetSeatSelectionUI() {
-            // Xóa ghế đã chọn trên UI
-            document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
-            selectedSeats.clear();
-            // Xóa đồ ăn đã chọn
-            selectedFoods = {};
-            document.querySelectorAll('.food-qty').forEach(input => input.value = 0);
-            // Đảm bảo tổng tiền về 0
-            document.getElementById('totalFoodPrice').textContent = '0';
-            document.getElementById('grandTotal').textContent = '0';
-            // Đảm bảo cập nhật lại UI
-            updateSelectionSummary();
-            updateBookButtonState();
-            updateFoodTotal();
-            // Debug log
-            console.log('resetSeatSelectionUI called: cleared seats and foods');
-        }
+			// Remove selected seats from UI
+			document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+			selectedSeats.clear();
+			sessionStorage.removeItem('selectedSeats');
+			localStorage.removeItem('selectedSeats');
+			// Defensive: Remove .selected-seat from all booked seats
+			document.querySelectorAll('.booked-seat').forEach(td => td.classList.remove('selected-seat'));
+			// Remove selected foods
+			selectedFoods = {};
+			document.querySelectorAll('.food-qty').forEach(input => input.value = 0);
+			// Ensure total food price is 0
+			document.getElementById('totalFoodPrice').textContent = '0';
+			document.getElementById('grandTotal').textContent = '0';
+			// Ensure UI is updated
+			updateSelectionSummary();
+			updateBookButtonState();
+			updateFoodTotal();
+			console.log('resetSeatSelectionUI called');
+		}
 
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
@@ -507,6 +510,8 @@
 		}
 
 		document.addEventListener('DOMContentLoaded', function () {
+			console.log('DOMContentLoaded fired');
+			resetSeatSelectionUI(); // <-- Clear selected seats on every page load
 			// Food plus
 			document.querySelectorAll('.btn-food-plus').forEach(btn => {
 				btn.addEventListener('click', function() {
@@ -571,6 +576,11 @@
 			// Cập nhật progress bar khi thay đổi đồ ăn
 			updateProgressBar();
 		}
+
+		window.addEventListener('pageshow', function () {
+			console.log('pageshow fired');
+			resetSeatSelectionUI();
+		});
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 	<script>

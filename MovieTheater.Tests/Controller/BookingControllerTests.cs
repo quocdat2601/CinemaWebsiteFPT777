@@ -32,10 +32,6 @@ namespace MovieTheater.Tests.Controller
         private readonly Mock<IFoodService> _foodService = new();
         private readonly Mock<IFoodInvoiceService> _foodInvService = new();
         private readonly Mock<IBookingDomainService> _domainService = new();
-        private readonly Mock<IScheduleSeatRepository> _scheduleSeatRepo = new();
-        private readonly Mock<IPointService> _pointService = new();
-        private readonly Mock<IPromotionService> _promotionService = new();
-        private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
 
         private BookingController BuildController()
@@ -48,17 +44,13 @@ namespace MovieTheater.Tests.Controller
         _memberRepo.Object,
         Mock.Of<ILogger<BookingController>>(),
         _invoiceService.Object,
-        _scheduleSeatRepo.Object,
         _vnPayService.Object,
-        _pointService.Object,
-        _promotionService.Object,
         _voucherService.Object,
         _hubContext.Object,
         _context,
         _foodService.Object,
         _foodInvService.Object,
-        _domainService.Object,
-        _priceCalc.Object
+        _domainService.Object
     );
 
         [Fact]
@@ -160,7 +152,7 @@ namespace MovieTheater.Tests.Controller
             var model = new ConfirmBookingViewModel();
             _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
             _domainService
-              .Setup(d => d.ConfirmBookingAsync(model, "u1", "true"))
+              .Setup(d => d.ConfirmBookingAsync(It.IsAny<ConfirmBookingViewModel>(), "u1", "true"))
               .ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV123" });
 
             var ctrl = BuildController();
