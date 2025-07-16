@@ -620,6 +620,21 @@ namespace MovieTheater.Service
                 RankDiscountPercentage = priceResult.RankDiscountPercent
             };
             await _bookingService.SaveInvoiceAsync(invoice);
+
+            // Add ScheduleSeat records for each seat (admin flow fix)
+            foreach (var seat in seats)
+            {
+                var scheduleSeat = new ScheduleSeat
+                {
+                    InvoiceId = invoice.InvoiceId,
+                    SeatId = seat.SeatId,
+                    MovieShowId = model.MovieShowId,
+                    SeatStatusId = 2 // Booked
+                };
+                _context.ScheduleSeats.Add(scheduleSeat);
+            }
+            await _context.SaveChangesAsync();
+
             if (priceResult.AddScore > 0)
             {
                 await _accountService.AddScoreAsync(member.Account.AccountId, priceResult.AddScore);
