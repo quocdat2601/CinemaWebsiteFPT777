@@ -11,14 +11,13 @@ namespace MovieTheater.Tests.Service
 {
     public class BookingPriceCalculationServiceTests
     {
-        private readonly Mock<IPromotionService> _promoMock = new();
         private readonly BookingPriceCalculationService _svc;
 
         public BookingPriceCalculationServiceTests()
         {
             // your implementation doesn't actually call into _promotionService,
             // but we still inject a mock so the constructor signature is satisfied.
-            _svc = new BookingPriceCalculationService(_promoMock.Object);
+            _svc = new  BookingPriceCalculationService();
         }
 
         private static SeatDetailViewModel MakeSeat(decimal price) =>
