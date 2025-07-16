@@ -283,18 +283,25 @@ namespace MovieTheater.Tests.Controller
             log.Id = 2;
             log.InvoiceId = "INV2";
             log.StaffId = "S2";
-            log.CheckInTime = System.DateTime.Now;
+            log.CheckInTime = DateTime.Now;
             log.Status = "DONE";
             log.Note = "abc";
             // Truy cập từng property
-            var _ = log.Id;
-            var __ = log.InvoiceId;
-            var ___ = log.StaffId;
-            var ____ = log.CheckInTime;
-            var _____ = log.Status;
-            var ______ = log.Note;
-        }
+            var id = log.Id;
+            var invoiceId = log.InvoiceId;
+            var staffId = log.StaffId;
+            var checkInTime = log.CheckInTime;
+            var status = log.Status;
+            var note = log.Note;
 
+            // Thêm assert kiểm tra giá trị cuối cùng
+            Assert.Equal(2, id);
+            Assert.Equal("INV2", invoiceId);
+            Assert.Equal("S2", staffId);
+            Assert.Equal("DONE", status);
+            Assert.Equal("abc", note);
+            Assert.True(checkInTime <= DateTime.Now && checkInTime > DateTime.Now.AddMinutes(-1));
+        }
         [Fact]
         public void ConfirmCheckInRequest_AllProperties_Coverage()
         {
