@@ -152,20 +152,13 @@ namespace MovieTheater.Tests.Service
 
             // prices
             _priceCalc.Setup(x => x.CalculatePrice(
-                    It.IsAny<List<SeatDetailViewModel>>(),
-                    It.IsAny<MovieShow>(),
-                    user,
-                    It.IsAny<decimal?>(),
-                    It.IsAny<int?>(),
-                    It.IsAny<List<Food>>()
-                ))
-                .Returns(new BookingPriceResult
-                {
-                    SeatTotalAfterDiscounts = 120m,
-                    Subtotal = 120m,
-                    UseScore = 0,
-                    AddScore = 0
-                });
+                It.IsAny<List<SeatDetailViewModel>>(),
+                It.IsAny<MovieShow>(),
+                It.IsAny<Account>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<int?>(),
+                It.IsAny<List<Food>>()
+            )).Returns(new BookingPriceResult { SeatTotalAfterDiscounts = 120m, Subtotal = 120m, UseScore = 10, AddScore = 5 });
 
             _bookingService.Setup(x => x.GenerateInvoiceIdAsync()).ReturnsAsync("INV1");
 
@@ -236,6 +229,308 @@ namespace MovieTheater.Tests.Service
             Assert.Equal(expectedDate, vm.BookingDetails.ShowDate); // Assert against expected date
             Assert.Contains("A7", vm.BookingDetails.SelectedSeats.Select(s => s.SeatName)); // Assert seat name
             Assert.Equal(200m, vm.Subtotal + vm.TotalFoodPrice);
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_ReturnsNull_WhenMovieShowNotFound()
+        {
+            // Arrange
+            var movie = new Movie { MovieId = "M1", MovieNameEnglish = "Test" };
+            _bookingService.Setup(x => x.GetById("M1")).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShows("M1")).Returns(new List<MovieShow>()); // No shows
+
+            // Act
+            var vm = await _svc.BuildConfirmBookingViewModelAsync("M1", DateOnly.FromDateTime(DateTime.Today), "14:00", new List<int>(), 1, null, null, "u1");
+
+            // Assert
+            Assert.Null(vm);
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_ReturnsNull_WhenCinemaRoomIsNull()
+        {
+            // Arrange
+            var show = new MovieShow { MovieShowId = 1, ShowDate = DateOnly.FromDateTime(DateTime.Today), Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }, Version = new ModelVersion(), Movie = new Movie { MovieId = "M1" } };
+            var movie = new Movie { MovieId = "M1", MovieNameEnglish = "Test" };
+            _bookingService.Setup(x => x.GetById("M1")).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShows("M1")).Returns(new List<MovieShow> { show });
+
+            // Act
+            var vm = await _svc.BuildConfirmBookingViewModelAsync("M1", DateOnly.FromDateTime(DateTime.Today), "14:00", new List<int>(), 1, null, null, "u1");
+
+            // Assert
+            Assert.Null(vm);
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_ReturnsNull_WhenUserAccountIsNull()
+        {
+            // Arrange
+            var show = MakeShow(1, DateOnly.FromDateTime(DateTime.Today), new TimeOnly(14, 0));
+            var movie = new Movie { MovieId = "M1", MovieNameEnglish = "Test" };
+            _bookingService.Setup(x => x.GetById("M1")).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShows("M1")).Returns(new List<MovieShow> { show });
+            _accountService.Setup(x => x.GetById("u1")).Returns((Account)null);
+
+            // Act
+            var vm = await _svc.BuildConfirmBookingViewModelAsync("M1", DateOnly.FromDateTime(DateTime.Today), "14:00", new List<int>(), 1, null, null, "u1");
+
+            // Assert
+            Assert.Null(vm);
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_FoodLogic_WorksWithValidFoodIdsAndQtys()
+        {
+            // Arrange
+            var user = new Account { AccountId = "u1", FullName = "Jane" };
+            var show = MakeShow(1, DateOnly.FromDateTime(DateTime.Today), new TimeOnly(14, 0));
+            var seatEntity = new Seat { SeatId = 5, SeatName = "A1", SeatTypeId = 2, SeatType = new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200 } };
+            var food = new FoodViewModel { FoodId = 10, Name = "Popcorn", Price = 50 };
+            _bookingService.Setup(x => x.GetById("M1")).Returns(new Movie { MovieId = "M1", MovieNameEnglish = "Test" });
+            _movieService.Setup(x => x.GetMovieShows("M1")).Returns(new List<MovieShow> { show });
+            _seatService.Setup(x => x.GetSeatById(5)).Returns(seatEntity);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
+            _accountService.Setup(x => x.GetById("u1")).Returns(user);
+            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
+            _foodService.Setup(x => x.GetByIdAsync(It.Is<int>(id => id == 10))).ReturnsAsync(food);
+
+            // Act
+            var vm = await _svc.BuildConfirmBookingViewModelAsync(
+                movieId: "M1",
+                showDate: DateOnly.FromDateTime(DateTime.Today),
+                showTime: "14:00",
+                selectedSeatIds: new List<int> { 5 },
+                movieShowId: 1,
+                foodIds: new List<int> { 10 },
+                foodQtys: new List<int> { 2 },
+                userId: "u1"
+            );
+
+            // Assert
+            Assert.NotNull(vm);
+            Assert.Single(vm.SelectedFoods);
+            Assert.Equal(100, vm.TotalFoodPrice);
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_FoodLogic_IgnoresMismatchedFoodIdsAndQtys()
+        {
+            // Arrange
+            var user = new Account { AccountId = "u1", FullName = "Jane" };
+            var show = MakeShow(1, DateOnly.FromDateTime(DateTime.Today), new TimeOnly(14, 0));
+            var seatEntity = new Seat { SeatId = 5, SeatName = "A1", SeatTypeId = 2, SeatType = new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200 } };
+            _bookingService.Setup(x => x.GetById("M1")).Returns(new Movie { MovieId = "M1", MovieNameEnglish = "Test" });
+            _movieService.Setup(x => x.GetMovieShows("M1")).Returns(new List<MovieShow> { show });
+            _seatService.Setup(x => x.GetSeatById(5)).Returns(seatEntity);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
+            _accountService.Setup(x => x.GetById("u1")).Returns(user);
+            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
+
+            // Act
+            var vm = await _svc.BuildConfirmBookingViewModelAsync(
+                movieId: "M1",
+                showDate: DateOnly.FromDateTime(DateTime.Today),
+                showTime: "14:00",
+                selectedSeatIds: new List<int> { 5 },
+                movieShowId: 1,
+                foodIds: new List<int> { 10 },
+                foodQtys: new List<int> { 2, 3 }, // Mismatched
+                userId: "u1"
+            );
+
+            // Assert
+            Assert.NotNull(vm);
+            Assert.Empty(vm.SelectedFoods);
+            Assert.Equal(0, vm.TotalFoodPrice);
+        }
+
+        [Fact]
+        public async Task ConfirmBookingAsync_ReturnsFalse_WhenUserNotFound()
+        {
+            // Arrange
+            var vm = new ConfirmBookingViewModel { SelectedSeats = new List<SeatDetailViewModel> { new() { SeatId = 1 } } };
+            _accountService.Setup(x => x.GetById("u1")).Returns((Account)null);
+
+            // Act
+            var result = await _svc.ConfirmBookingAsync(vm, "u1", "true");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("User not found.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ConfirmBookingAsync_ReturnsFalse_WhenVoucherIsInvalid()
+        {
+            // Arrange
+            var vm = new ConfirmBookingViewModel { SelectedSeats = new List<SeatDetailViewModel> { new() { SeatId = 1, Price = 100m } }, SelectedVoucherId = "V1" };
+            var user = new Account { AccountId = "u1" };
+            _accountService.Setup(x => x.GetById("u1")).Returns(user);
+            // Stub CalculatePrice so priceResult isn't null
+            _priceCalc.Setup(x => x.CalculatePrice(
+                It.IsAny<List<SeatDetailViewModel>>(),
+                It.IsAny<MovieShow>(),
+                It.IsAny<Account>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<int?>(),
+                It.IsAny<List<Food>>()
+            )).Returns(new BookingPriceResult
+            {
+                Subtotal = 100m,
+                SeatTotalAfterDiscounts = 100m,
+                UseScore = 0,
+                AddScore = 0,
+                VoucherAmount = 0,
+                TotalFoodPrice = 0,
+                TotalPrice = 100m
+            });
+            _voucherService.Setup(x => x.GetById("V1")).Returns((Voucher)null);
+            // Act
+            var result = await _svc.ConfirmBookingAsync(vm, "u1", "true");
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Selected voucher does not exist.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ConfirmBookingAsync_AddsScoreAndDeductsScore_WhenApplicable()
+        {
+            // Arrange
+            var vm = new ConfirmBookingViewModel { MovieShowId = 99, SelectedSeats = new List<SeatDetailViewModel> { new() { SeatId = 7, Price = 120m } } };
+            var user = new Account { AccountId = "u1", Rank = null };
+            var show = new MovieShow { MovieShowId = 99, MovieId = "M1", Version = new ModelVersion(), Schedule = new Schedule() };
+            _accountService.Setup(x => x.GetById("u1")).Returns(user);
+            _context.MovieShows.Add(show);
+            await _context.SaveChangesAsync();
+            _priceCalc.Setup(x => x.CalculatePrice(
+                It.IsAny<List<SeatDetailViewModel>>(),
+                It.IsAny<MovieShow>(),
+                It.IsAny<Account>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<int?>(),
+                It.IsAny<List<Food>>()
+            )).Returns(new BookingPriceResult { SeatTotalAfterDiscounts = 120m, Subtotal = 120m, UseScore = 10, AddScore = 5 });
+            _bookingService.Setup(x => x.GenerateInvoiceIdAsync()).ReturnsAsync("INV2");
+            _accountService.Setup(x => x.AddScoreAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(Task.CompletedTask).Verifiable();
+            _accountService.Setup(x => x.DeductScoreAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(Task.CompletedTask).Verifiable();
+
+            // Act
+            var result = await _svc.ConfirmBookingAsync(vm, "u1", "true");
+
+            // Assert
+            Assert.True(result.Success);
+            _accountService.Verify(x => x.AddScoreAsync("u1", 5, true), Times.Once); // isTestSuccess true
+            _accountService.Verify(x => x.DeductScoreAsync("u1", 10, true), Times.Once); // isTestSuccess true
+        }
+
+        [Fact]
+        public async Task BuildConfirmTicketAdminViewModelAsync_ReturnsNull_WhenMovieShowNotFound()
+        {
+            // Arrange
+            _movieService.Setup(x => x.GetMovieShowById(123)).Returns((MovieShow)null);
+
+            // Act
+            var vm = await _svc.BuildConfirmTicketAdminViewModelAsync(123, new List<int>(), new List<int>(), new List<int>());
+
+            // Assert
+            Assert.Null(vm);
+        }
+
+        [Fact]
+        public async Task BuildConfirmTicketAdminViewModelAsync_FoodLogic_WorksWithValidFoodIdsAndQtys()
+        {
+            // Arrange
+            var show = MakeShow(1, DateOnly.FromDateTime(DateTime.Today), new TimeOnly(14, 0));
+            var seatEntity = new Seat { SeatId = 5, SeatName = "A1", SeatTypeId = 2, SeatType = new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200 } };
+            var food = new FoodViewModel { FoodId = 10, Name = "Popcorn", Price = 50 };
+            show.CinemaRoom = new CinemaRoom { CinemaRoomName = "R1" };
+            show.Movie = new Movie { MovieId = "M1", MovieNameEnglish = "Test" };
+            show.Version = new ModelVersion { VersionName = "STD", Multi = 1 };
+            show.Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) };
+            _movieService.Setup(x => x.GetMovieShowById(1)).Returns(show);
+            _seatService.Setup(x => x.GetSeatById(5)).Returns(seatEntity);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
+            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
+            _foodService.Setup(x => x.GetByIdAsync(It.Is<int>(id => id == 10))).ReturnsAsync(food);
+
+            // Act
+            var vm = await _svc.BuildConfirmTicketAdminViewModelAsync(1, new List<int> { 5 }, new List<int> { 10 }, new List<int> { 2 });
+
+            // Assert
+            Assert.NotNull(vm);
+            Assert.Single(vm.SelectedFoods);
+            Assert.Equal(100, vm.TotalFoodPrice);
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdminAsync_ReturnsFalse_WhenBookingDetailsOrSeatsMissing()
+        {
+            // Arrange
+            var model = new ConfirmTicketAdminViewModel { BookingDetails = null };
+
+            // Act
+            var result = await _svc.ConfirmTicketForAdminAsync(model);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Booking details or selected seats are missing.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdminAsync_ReturnsFalse_WhenMemberIdMissing()
+        {
+            // Arrange
+            var model = new ConfirmTicketAdminViewModel { BookingDetails = new ConfirmBookingViewModel { SelectedSeats = new List<SeatDetailViewModel> { new() { SeatId = 1 } } }, MemberId = null };
+
+            // Act
+            var result = await _svc.ConfirmTicketForAdminAsync(model);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Member check is required before confirming.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdminAsync_ReturnsFalse_WhenMemberNotFound()
+        {
+            // Arrange
+            var model = new ConfirmTicketAdminViewModel { BookingDetails = new ConfirmBookingViewModel { SelectedSeats = new List<SeatDetailViewModel> { new() { SeatId = 1 } } }, MemberId = "M123" };
+            // No member in context
+
+            // Act
+            var result = await _svc.ConfirmTicketForAdminAsync(model);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Member not found. Please check member details again.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdminAsync_ReturnsFalse_WhenMemberAccountNotFound()
+        {
+            // Arrange
+            var member = new Member { MemberId = "M123", Account = null };
+            _context.Members.Add(member);
+            await _context.SaveChangesAsync();
+            var model = new ConfirmTicketAdminViewModel { BookingDetails = new ConfirmBookingViewModel { SelectedSeats = new List<SeatDetailViewModel> { new() { SeatId = 1 } } }, MemberId = "M123" };
+
+            // Act
+            var result = await _svc.ConfirmTicketForAdminAsync(model);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Member account not found. Please check member details again.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task BuildTicketBookingConfirmedViewModelAsync_ReturnsNull_WhenInvoiceNotFound()
+        {
+            // Act
+            var vm = await _svc.BuildTicketBookingConfirmedViewModelAsync("bad");
+
+            // Assert
+            Assert.Null(vm);
         }
     }
 

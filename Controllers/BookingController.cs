@@ -234,7 +234,14 @@ namespace MovieTheater.Controllers
                 return View("ConfirmBooking", model);
             }
 
-            return RedirectToAction("Success", new { invoiceId = result.InvoiceId });
+            if (IsTestSuccess == "true")
+            {
+                return RedirectToAction("Success", new { invoiceId = result.InvoiceId });
+            }
+            else
+            {
+                return RedirectToAction("Payment", new { invoiceId = result.InvoiceId });
+            }
         }
 
         /// <summary>
@@ -252,6 +259,13 @@ namespace MovieTheater.Controllers
 
             if (viewModel == null)
                 return NotFound();
+
+            // Get rank upgrade notification if any
+            var rankUpMsg = _accountService.GetAndClearRankUpgradeNotification(userId);
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                ViewBag.RankUpgradeMessage = rankUpMsg;
+            }
 
             return View("Success", viewModel);
         }

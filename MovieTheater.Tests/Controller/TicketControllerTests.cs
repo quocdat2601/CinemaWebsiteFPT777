@@ -19,10 +19,11 @@ namespace MovieTheater.Tests.Controller
     public class TicketControllerTests
     {
         private readonly Mock<ITicketService> _ticketServiceMock = new();
+        private readonly Mock<IAccountService> _accountServiceMock = new();
 
         private TicketController CreateController(ClaimsPrincipal user = null)
         {
-            var controller = new TicketController(_ticketServiceMock.Object);
+            var controller = new TicketController(_ticketServiceMock.Object, _accountServiceMock.Object);
             if (user != null)
             {
                 controller.ControllerContext = new ControllerContext

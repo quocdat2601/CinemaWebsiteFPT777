@@ -99,6 +99,13 @@ namespace MovieTheater.Controllers
             var (success, messages) = await _ticketService.CancelTicketAsync(id, accountId);
             TempData[success ? "ToastMessage" : "ErrorMessage"] = string.Join("<br/>", messages);
 
+            // Add rank change notification if any
+            var rankUpMsg = _accountService.GetAndClearRankUpgradeNotification(accountId);
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                TempData["ToastMessage"] += "<br/>" + rankUpMsg;
+            }
+
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             return RedirectToAction(nameof(Index));
