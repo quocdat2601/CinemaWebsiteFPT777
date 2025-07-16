@@ -9,6 +9,7 @@ using MovieTheater.ViewModels;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using System;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -282,24 +283,31 @@ namespace MovieTheater.Tests.Controller
             log.Id = 2;
             log.InvoiceId = "INV2";
             log.StaffId = "S2";
-            log.CheckInTime = System.DateTime.Now;
+            log.CheckInTime = DateTime.Now;
             log.Status = "DONE";
             log.Note = "abc";
             // Truy cập từng property
-            var _ = log.Id;
-            var __ = log.InvoiceId;
-            var ___ = log.StaffId;
-            var ____ = log.CheckInTime;
-            var _____ = log.Status;
-            var ______ = log.Note;
-        }
+            var id = log.Id;
+            var invoiceId = log.InvoiceId;
+            var staffId = log.StaffId;
+            var checkInTime = log.CheckInTime;
+            var status = log.Status;
+            var note = log.Note;
 
+            // Thêm assert kiểm tra giá trị cuối cùng
+            Assert.Equal(2, id);
+            Assert.Equal("INV2", invoiceId);
+            Assert.Equal("S2", staffId);
+            Assert.Equal("DONE", status);
+            Assert.Equal("abc", note);
+            Assert.True(checkInTime <= DateTime.Now && checkInTime > DateTime.Now.AddMinutes(-1));
+        }
         [Fact]
         public void ConfirmCheckInRequest_AllProperties_Coverage()
         {
             var req = new QRCodeController.ConfirmCheckInRequest();
             req.InvoiceId = "INV3";
-            var _ = req.InvoiceId;
+            Assert.Equal("INV3", req.InvoiceId);
         }
 
         [Fact]
@@ -307,7 +315,7 @@ namespace MovieTheater.Tests.Controller
         {
             var req = new VerifyTicketRequest();
             req.InvoiceId = "INV4";
-            var _ = req.InvoiceId;
+            Assert.Equal("INV4", req.InvoiceId);
         }
 
         [Fact]
@@ -320,12 +328,12 @@ namespace MovieTheater.Tests.Controller
             log.CheckInTime = System.DateTime.Now;
             log.Status = "DONE";
             log.Note = "abc";
-            var _ = log.Id;
-            var __ = log.InvoiceId;
-            var ___ = log.StaffId;
-            var ____ = log.CheckInTime;
-            var _____ = log.Status;
-            var ______ = log.Note;
+            Assert.Equal(10, log.Id);
+            Assert.Equal("INV10", log.InvoiceId);
+            Assert.Equal("S10", log.StaffId);
+            Assert.Equal("DONE", log.Status);
+            Assert.Equal("abc", log.Note);
+            Assert.True(log.CheckInTime <= DateTime.Now && log.CheckInTime > DateTime.Now.AddMinutes(-1));
         }
 
         [Fact]
@@ -333,7 +341,7 @@ namespace MovieTheater.Tests.Controller
         {
             var req = new MovieTheater.Controllers.QRCodeController.ConfirmCheckInRequest();
             req.InvoiceId = "INV20";
-            var _ = req.InvoiceId;
+            Assert.Equal("INV20", req.InvoiceId);
         }
 
         [Fact]
@@ -341,7 +349,7 @@ namespace MovieTheater.Tests.Controller
         {
             var req = new MovieTheater.Controllers.VerifyTicketRequest();
             req.InvoiceId = "INV30";
-            var _ = req.InvoiceId;
+            Assert.Equal("INV30", req.InvoiceId);
         }
 
         [Fact]
@@ -374,7 +382,12 @@ namespace MovieTheater.Tests.Controller
             log.CheckInTime = System.DateTime.Now;
             log.Status = "OK"; log.Status = "NO";
             log.Note = "abc"; log.Note = "def";
-            _ = log.Id; _ = log.InvoiceId; _ = log.StaffId; _ = log.CheckInTime; _ = log.Status; _ = log.Note;
+            Assert.Equal(2, log.Id);
+            Assert.Equal("B", log.InvoiceId);
+            Assert.Equal("Y", log.StaffId);
+            Assert.Equal("NO", log.Status);
+            Assert.Equal("def", log.Note);
+            Assert.True(log.CheckInTime <= DateTime.Now && log.CheckInTime > DateTime.Now.AddMinutes(-1));
         }
 
         [Fact]
@@ -382,7 +395,7 @@ namespace MovieTheater.Tests.Controller
         {
             var req = new MovieTheater.Controllers.QRCodeController.ConfirmCheckInRequest();
             req.InvoiceId = "A"; req.InvoiceId = "B";
-            _ = req.InvoiceId;
+            Assert.Equal("B", req.InvoiceId);
         }
 
         [Fact]
@@ -390,7 +403,7 @@ namespace MovieTheater.Tests.Controller
         {
             var req = new MovieTheater.Controllers.VerifyTicketRequest();
             req.InvoiceId = "A"; req.InvoiceId = "B";
-            _ = req.InvoiceId;
+            Assert.Equal("B", req.InvoiceId);
         }
     }
 }

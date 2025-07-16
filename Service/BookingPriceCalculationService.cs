@@ -8,12 +8,6 @@ namespace MovieTheater.Service
 {
     public class BookingPriceCalculationService : IBookingPriceCalculationService
     {
-        private readonly IPromotionService _promotionService;
-        public BookingPriceCalculationService(IPromotionService promotionService)
-        {
-            _promotionService = promotionService;
-        }
-
         public BookingPriceResult CalculatePrice(
             List<SeatDetailViewModel> seats,
             MovieShow movieShow,

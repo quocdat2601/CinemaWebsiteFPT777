@@ -11,42 +11,40 @@
 //using Xunit;
 //using ModelVersion = MovieTheater.Models.Version;
 
-//namespace MovieTheater.Tests.Service
-//{
-//    public class BookingDomainServiceTests
-//    {
-//        // SUT + its dependencies as mocks
-//        private readonly Mock<IBookingService> _bookingService = new();
-//        private readonly Mock<IMovieService> _movieService = new();
-//        private readonly Mock<ISeatService> _seatService = new();
-//        private readonly Mock<IAccountService> _accountService = new();
-//        private readonly Mock<IPromotionService> _promoService = new();
-//        private readonly Mock<IFoodService> _foodService = new();
-//        private readonly Mock<IInvoiceRepository> _invoiceRepo = new();
-//        private readonly Mock<IVoucherService> _voucherService = new();
-//        private readonly MovieTheaterContext _context = InMemoryDb.Create();
-//        private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
-//        private readonly Mock<ISeatTypeService> _seatTypeSvc = new();
+namespace MovieTheater.Tests.Service
+{
+    public class BookingDomainServiceTests
+    {
+        // SUT + its dependencies as mocks
+        private readonly Mock<IBookingService> _bookingService = new();
+        private readonly Mock<IMovieService> _movieService = new();
+        private readonly Mock<ISeatService> _seatService = new();
+        private readonly Mock<IAccountService> _accountService = new();
+        private readonly Mock<IPromotionService> _promoService = new();
+        private readonly Mock<IFoodService> _foodService = new();
+        private readonly Mock<IVoucherService> _voucherService = new();
+        private readonly MovieTheaterContext _context = InMemoryDb.Create();
+        private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
+        private readonly Mock<ISeatTypeService> _seatTypeSvc = new();
 
 //        private readonly BookingDomainService _svc;
 
-//        public BookingDomainServiceTests()
-//        {
-//            // Use an in-memory EF Core context for anything that uses _context
-//            _svc = new BookingDomainService(
-//                _bookingService.Object,
-//                _movieService.Object,
-//                _seatService.Object,
-//                _accountService.Object,
-//                _seatTypeSvc.Object,
-//                _promoService.Object,
-//                _foodService.Object,
-//                _invoiceRepo.Object,
-//                _context,
-//                _priceCalc.Object,
-//                _voucherService.Object
-//            );
-//        }
+        public BookingDomainServiceTests()
+        {
+            // Use an in-memory EF Core context for anything that uses _context
+            _svc = new BookingDomainService(
+                _bookingService.Object,
+                _movieService.Object,
+                _seatService.Object,
+                _accountService.Object,
+                _seatTypeSvc.Object,
+                _promoService.Object,
+                _foodService.Object,
+                _context,
+                _priceCalc.Object,
+                _voucherService.Object
+            );
+        }
 
 //        private static MovieShow MakeShow(int id, DateOnly date, TimeOnly time)
 //            => new MovieShow

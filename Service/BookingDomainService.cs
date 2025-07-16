@@ -18,7 +18,6 @@ namespace MovieTheater.Service
         private readonly ISeatTypeService _seatTypeService;
         private readonly IPromotionService _promotionService;
         private readonly IFoodService _foodService;
-        private readonly IInvoiceRepository _invoiceRepository;
         private readonly MovieTheaterContext _context;
         private readonly IBookingPriceCalculationService _priceCalculationService;
         private readonly IVoucherService _voucherService;
@@ -31,7 +30,6 @@ namespace MovieTheater.Service
             ISeatTypeService seatTypeService,
             IPromotionService promotionService,
             IFoodService foodService,
-            IInvoiceRepository invoiceRepository,
             MovieTheaterContext context,
             IBookingPriceCalculationService priceCalculationService,
             IVoucherService voucherService
@@ -44,7 +42,6 @@ namespace MovieTheater.Service
             _seatTypeService = seatTypeService;
             _promotionService = promotionService;
             _foodService = foodService;
-            _invoiceRepository = invoiceRepository;
             _context = context;
             _priceCalculationService = priceCalculationService;
             _voucherService = voucherService;
@@ -319,6 +316,12 @@ namespace MovieTheater.Service
                 }
             }
             await _context.SaveChangesAsync();
+
+            // Release held seats after booking (SignalR)
+            foreach (var seat in seats)
+            {
+                MovieTheater.Hubs.SeatHub.ReleaseHold(model.MovieShowId, seat.SeatId);
+            }
 
             return new BookingResult { Success = true, ErrorMessage = null, InvoiceId = invoice.InvoiceId };
         }
@@ -667,6 +670,35 @@ namespace MovieTheater.Service
                     _context.FoodInvoices.Add(foodInvoice);
                 }
                 await _context.SaveChangesAsync();
+            }
+            // Update or add ScheduleSeat records for each seat
+            foreach (var seatVm in seatViewModels)
+            {
+                var existing = _context.ScheduleSeats
+                    .FirstOrDefault(ss => ss.SeatId == seatVm.SeatId && ss.MovieShowId == model.BookingDetails.MovieShowId);
+                if (existing != null)
+                {
+                    existing.SeatStatusId = 2; // Booked
+                    existing.InvoiceId = invoice.InvoiceId;
+                    _context.ScheduleSeats.Update(existing);
+                }
+                else
+                {
+                    var scheduleSeat = new ScheduleSeat
+                    {
+                        InvoiceId = invoice.InvoiceId,
+                        SeatId = seatVm.SeatId,
+                        MovieShowId = model.BookingDetails.MovieShowId,
+                        SeatStatusId = 2 // Booked
+                    };
+                    _context.ScheduleSeats.Add(scheduleSeat);
+                }
+            }
+            await _context.SaveChangesAsync();
+            // Release held seats after admin booking (SignalR)
+            foreach (var seatVm in seatViewModels)
+            {
+                MovieTheater.Hubs.SeatHub.ReleaseHold(model.BookingDetails.MovieShowId, seatVm.SeatId ?? 0);
             }
             return new BookingResult { Success = true, InvoiceId = invoice.InvoiceId };
         }
