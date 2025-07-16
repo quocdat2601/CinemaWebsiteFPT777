@@ -21,7 +21,7 @@ namespace MovieTheater.Controllers
         private readonly IInvoiceService _invoiceService;
 
         public PaymentController(
-            VNPayService vnPayService,
+            IVNPayService vnPayService,
             ILogger<PaymentController> logger,
             IAccountService accountService,
             MovieTheater.Models.MovieTheaterContext context,

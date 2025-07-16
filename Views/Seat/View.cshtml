@@ -686,13 +686,20 @@
 				td.classList.remove("selected-seat", "being-held");
 				td.setAttribute("disabled", "disabled");
 				td.style.backgroundColor = "#19692c";
+				selectedSeats.delete(String(seatId));
 			} else {
 				td.classList.remove("booked-seat");
 				td.removeAttribute("disabled");
 				// Set lại màu gốc loại ghế
 				const color = td.getAttribute("data-seat-color") || "#cccbc8";
 				td.style.backgroundColor = color;
+				// Remove from selectedSeats and UI
+				selectedSeats.delete(String(seatId));
+				td.classList.remove("selected-seat");
 			}
+			updateSelectionSummary();
+			updateBookButtonState();
+			updateFoodSectionVisibility();
 		});
 
 		// Nhận 2 danh sách: ghế của mình (heldByMe), ghế của người khác (heldByOthers)

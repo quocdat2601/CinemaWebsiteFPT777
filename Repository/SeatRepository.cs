@@ -26,7 +26,7 @@ namespace MovieTheater.Repository
 
         public Seat? GetById(int? id)
         {
-            return _context.Seats.FirstOrDefault(s => s.SeatId == id);
+            return _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatId == id);
         }
 
         public void Add(Seat seat)
