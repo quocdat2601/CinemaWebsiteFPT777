@@ -97,6 +97,14 @@
         transform: translateY(-1px) scale(1.03);
         box-shadow: 0 4px 16px rgba(56,189,248,0.13);
     }
+    .fixed-sidebar {
+        max-height: 420px;
+        overflow-y: auto;
+        margin: 0 auto;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(30,41,59,0.07);
+        background: #fff;
+    }
 </style>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
@@ -216,7 +224,7 @@
 			</div>
 
 			<!-- FOOD & DRINK SECTION -->
-			<div class="food-selection-section" id="foodSelectionArea">
+			<div class="food-selection-section" id="foodSelectionArea" style="display:none;">
 				<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">POP CORN AND COKE</h2>
 				<div class="row justify-content-center">
 					@if (ViewBag.Foods != null)
@@ -260,18 +268,26 @@
 							<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
 							<p><span class="summary-label">Total Seats:</span> <span id="totalPrice"></span> VND</p>
 							<p><span class="summary-label">Total Foods:</span> <span id="totalFoodPrice">0</span> VND</p>
+							<div>
+								<span class="summary-label">Food Selected:</span>
+								<ul id="selectedFoodList" style="margin-bottom:0; padding-left:18px;">
+									<span style="color:#aaa;">(None)</span>
+								</ul>
+							</div>
 							<p><span class="summary-label">Total:</span> <span id="grandTotal">0</span> VND</p>
 							<p id="countdownTimer" class="text-danger fw-bold"></p>
+							@if (!string.IsNullOrEmpty(time))
+							{
+								<div class="text-center mt-3">
+									<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+								</div>
+							}
 						</div>
 					</div>
 				</div>
-
-	@if (!string.IsNullOrEmpty(time))
-	{
-		<div class="text-center mb-4 mt-4">
-			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+			</div>
 		</div>
-	}
+	</div>
 </div> <!-- Đóng mainBookingArea -->
 
 @if (!isAuthenticated)
@@ -578,16 +594,59 @@
 
 		function updateFoodTotal() {
 			let totalFood = 0;
+			let foodListHtml = '';
+			let hasFood = false;
 			for (let foodId in selectedFoods) {
-				totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
+				if (selectedFoods[foodId] > 0) {
+					totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
+					// Lấy tên món từ DOM (nếu có)
+					let foodNameEl = document.querySelector(`.btn-food-plus[data-food-id='${foodId}']`);
+					let foodName = foodNameEl ? foodNameEl.closest('.col-md-3').querySelector('.fw-bold.mt-2').textContent : 'Food';
+					foodListHtml += `<li>${foodName} x${selectedFoods[foodId]}</li>`;
+					hasFood = true;
+				}
 			}
 			document.getElementById('totalFoodPrice').textContent = totalFood.toLocaleString();
+			// Cập nhật danh sách food đã chọn
+			document.getElementById('selectedFoodList').innerHTML = hasFood ? foodListHtml : '<span style="color:#aaa;">(None)</span>';
 			// Cộng với tổng tiền ghế
 			let seatTotal = parseInt(document.getElementById('totalPrice').textContent.replace(/,/g, '')) || 0;
 			document.getElementById('grandTotal').textContent = (seatTotal + totalFood).toLocaleString();
-			
 			// Cập nhật progress bar khi thay đổi đồ ăn
 			updateProgressBar();
+		}
+
+		function updateFoodSectionVisibility() {
+    if (selectedSeats.size > 0) {
+        document.getElementById('foodSelectionArea').style.display = '';
+    } else {
+        document.getElementById('foodSelectionArea').style.display = 'none';
+    }
+}
+
+		function selectSeat(clickedTd) {
+			const seatId = String(clickedTd.getAttribute('data-seat-id'));
+			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+
+			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
+			if (selectedSeats.has(seatId)) {
+				clickedTd.classList.remove('selected-seat');
+				selectedSeats.delete(seatId);
+				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+			} else {
+				// Kiểm tra giới hạn số ghế trước khi chọn thêm
+				if (selectedSeats.size >= MAX_SEATS) {
+					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+					return;
+				}
+				clickedTd.classList.add('selected-seat');
+				selectedSeats.add(seatId);
+				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+				if (selectedSeats.size === 1) startCountdown();
+			}
+			updateSelectionSummary();
+			updateBookButtonState();
+			updateFoodSectionVisibility();
 		}
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
@@ -665,6 +724,7 @@
 			});
 			updateSelectionSummary();
 			updateBookButtonState();
+			updateFoodSectionVisibility();
 		});
 
 		connection.on("AccountInUse", () => {
@@ -719,6 +779,9 @@
 					if (otherTd) connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(otherSeatId));
 					if (selectedSeats.size === 2) startCountdown();
 				}
+				updateSelectionSummary();
+				updateBookButtonState();
+				updateFoodSectionVisibility(); // <-- Ensure food section updates for couple seats
 			} else {
 				// Normal seat logic
 				if (selectedSeats.has(seatId)) {
@@ -735,9 +798,10 @@
 					connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
 					if (selectedSeats.size === 1) startCountdown();
 				}
+				updateSelectionSummary();
+				updateBookButtonState();
+				updateFoodSectionVisibility(); // <-- Ensure food section updates for normal seats
 			}
-			updateSelectionSummary();
-			updateBookButtonState();
 		}
 	</script>
 }
