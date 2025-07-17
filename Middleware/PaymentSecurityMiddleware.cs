@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MovieTheater.Service;
+using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 using MovieTheater.ViewModels;
@@ -21,7 +22,7 @@ namespace MovieTheater.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (IsPaymentRequest(context) && context.Request.Method == "POST")
+            if (IsPaymentRequest(context))
             {
                 var requestInfo = new
                 {
@@ -34,67 +35,102 @@ namespace MovieTheater.Middleware
 
                 _logger.LogInformation("Payment request detected: {@RequestInfo}", requestInfo);
 
-                // Đọc body request (giả định là JSON PaymentRequest)
-                context.Request.EnableBuffering();
-                string body = string.Empty;
-                using (var reader = new StreamReader(context.Request.Body, leaveOpen: true))
+                // Chỉ parse JSON body cho POST requests đến API endpoints
+                if (context.Request.Method == "POST" && context.Request.Path.Value?.ToLower().Contains("/api/payment") == true)
                 {
-                    body = await reader.ReadToEndAsync();
-                    context.Request.Body.Position = 0;
-                }
-
-                // Resolve service kiểm tra bảo mật
-                var paymentSecurityService = context.RequestServices.GetService(typeof(IPaymentSecurityService)) as IPaymentSecurityService;
-                if (paymentSecurityService == null)
-                {
-                    _logger.LogWarning("Không resolve được IPaymentSecurityService. Bỏ qua kiểm tra bảo mật payment!");
-                    await _next(context);
-                    return;
-                }
-
-                // Deserialize body thành PaymentRequest (giả định có class này)
-                PaymentRequest? paymentRequest = null;
-                try
-                {
-                    paymentRequest = JsonSerializer.Deserialize<PaymentRequest>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Không parse được PaymentRequest từ body");
-                }
-
-                if (paymentRequest != null)
-                {
-                    // Lấy userId từ ClaimsPrincipal
-                    var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                    if (string.IsNullOrEmpty(userId))
+                    // Đọc body request (giả định là JSON PaymentRequest)
+                    context.Request.EnableBuffering();
+                    string body = string.Empty;
+                    using (var reader = new StreamReader(context.Request.Body, leaveOpen: true))
                     {
-                        _logger.LogWarning("User not authenticated for payment request");
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                        await context.Response.WriteAsync("User not authenticated");
+                        body = await reader.ReadToEndAsync();
+                        context.Request.Body.Position = 0;
+                    }
+
+                    // Log body để debug (chỉ log 100 ký tự đầu)
+                    var bodyPreview = body.Length > 100 ? body.Substring(0, 100) + "..." : body;
+                    _logger.LogDebug("Request body preview: {BodyPreview}", bodyPreview);
+
+                    // Kiểm tra nếu body rỗng hoặc không phải JSON
+                    if (string.IsNullOrWhiteSpace(body))
+                    {
+                        _logger.LogInformation("Empty body for POST request to payment API endpoint");
+                        await _next(context);
                         return;
                     }
 
-                    // Map PaymentRequest sang PaymentViewModel
-                    var paymentViewModel = new PaymentViewModel
+                    // Kiểm tra nếu body bắt đầu bằng ký tự không phải JSON
+                    body = body.Trim();
+                    if (!body.StartsWith("{") && !body.StartsWith("["))
                     {
-                        TotalAmount = paymentRequest.Amount,
-                        OrderInfo = paymentRequest.OrderInfo,
-                        InvoiceId = paymentRequest.OrderId
-                    };
-
-                    var result = paymentSecurityService.ValidatePaymentData(paymentViewModel, userId);
-                    if (!result.IsValid)
-                    {
-                        _logger.LogWarning("Payment validation failed: {Reason}", result.ErrorMessage);
-                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsync($"Payment validation failed: {result.ErrorMessage}");
+                        _logger.LogInformation("Non-JSON body detected for payment API request: {BodyStart}", bodyPreview);
+                        await _next(context);
                         return;
                     }
+
+                    // Resolve service kiểm tra bảo mật
+                    var paymentSecurityService = context.RequestServices.GetService(typeof(IPaymentSecurityService)) as IPaymentSecurityService;
+                    if (paymentSecurityService == null)
+                    {
+                        _logger.LogWarning("Không resolve được IPaymentSecurityService. Bỏ qua kiểm tra bảo mật payment!");
+                        await _next(context);
+                        return;
+                    }
+
+                    // Deserialize body thành PaymentRequest (giả định có class này)
+                    PaymentRequest? paymentRequest = null;
+                    try
+                    {
+                        paymentRequest = JsonSerializer.Deserialize<PaymentRequest>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogInformation(ex, "Không parse được PaymentRequest từ body. Body preview: {BodyPreview}", bodyPreview);
+                    }
+
+                    if (paymentRequest != null)
+                    {
+                        // Lấy userId từ ClaimsPrincipal
+                        var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        if (string.IsNullOrEmpty(userId))
+                        {
+                            _logger.LogWarning("User not authenticated for payment request");
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            await context.Response.WriteAsync("User not authenticated");
+                            return;
+                        }
+
+                        // Map PaymentRequest sang PaymentViewModel
+                        var paymentViewModel = new PaymentViewModel
+                        {
+                            TotalAmount = paymentRequest.Amount,
+                            OrderInfo = paymentRequest.OrderInfo,
+                            InvoiceId = paymentRequest.OrderId
+                        };
+
+                        var result = paymentSecurityService.ValidatePaymentData(paymentViewModel, userId);
+                        if (!result.IsValid)
+                        {
+                            _logger.LogWarning("Payment validation failed: {Reason}", result.ErrorMessage);
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            await context.Response.WriteAsync($"Payment validation failed: {result.ErrorMessage}");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Không thể kiểm tra payment vì không parse được PaymentRequest - có thể không phải payment request hợp lệ");
+                    }
+                }
+                else if (context.Request.Method == "GET")
+                {
+                    // Đối với GET requests (như vnpay-return, vnpay-ipn), chỉ log thông tin request
+                    _logger.LogInformation("Payment GET request detected: {Path} - {Method}", context.Request.Path, context.Request.Method);
                 }
                 else
                 {
-                    _logger.LogWarning("Không thể kiểm tra payment vì không parse được PaymentRequest");
+                    // Đối với POST requests không phải API (như form POST), chỉ log thông tin
+                    _logger.LogInformation("Payment form POST request detected: {Path} - {Method}", context.Request.Path, context.Request.Method);
                 }
             }
 
@@ -105,8 +141,6 @@ namespace MovieTheater.Middleware
         {
             var path = context.Request.Path.Value?.ToLower();
             return path != null && (
-                path.Contains("/payment") ||
-                path.Contains("/booking/processpayment") ||
                 path.Contains("/api/payment") ||
                 path.Contains("/vnpay-return") ||
                 path.Contains("/vnpay-ipn")

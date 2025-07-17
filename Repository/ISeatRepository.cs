@@ -13,5 +13,7 @@ namespace MovieTheater.Repository
         public void Save();
         Task<List<SeatType>> GetSeatTypesAsync();
         Seat GetSeatByName(string seatName);
+        Seat? GetByName(string seatName);
+        Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2);
     }
 }

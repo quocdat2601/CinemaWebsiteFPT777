@@ -43,5 +43,15 @@ namespace MovieTheater.ViewModels
         public decimal VoucherAmount { get; set; }
         public string SelectedPromotionId { get; set; }
         public decimal PromotionDiscountPercent { get; set; }
+
+        public decimal OriginalTotal { get; set; }
+        public int VersionId { get; set; }
+
+
+        // --- Food đã chọn ---
+        public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();
+        public decimal TotalFoodPrice { get; set; }
+
+        public DateTime? BookingDate { get; set; }
     }
 }

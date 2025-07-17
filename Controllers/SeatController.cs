@@ -15,6 +15,7 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly ILogger<SeatController> _logger;
         private readonly IScheduleSeatRepository _scheduleSeatRepository;
+        private readonly IFoodService _foodService;
 
         public SeatController(
             ICinemaService cinemaService,
@@ -23,7 +24,8 @@ namespace MovieTheater.Controllers
             ICoupleSeatService coupleSeatService,
             IMovieService movieService,
             ILogger<SeatController> logger,
-            IScheduleSeatRepository scheduleSeatRepository)
+            IScheduleSeatRepository scheduleSeatRepository,
+            IFoodService foodService)
         {
             _cinemaService = cinemaService;
             _seatService = seatService;
@@ -32,6 +34,7 @@ namespace MovieTheater.Controllers
             _movieService = movieService;
             _logger = logger;
             _scheduleSeatRepository = scheduleSeatRepository;
+            _foodService = foodService;
         }
         /// <summary>
         /// Trang danh sách ghế
@@ -130,6 +133,10 @@ namespace MovieTheater.Controllers
             }
             ViewBag.BookedSeats = bookedSeats;
 
+            // Lấy danh sách food/drink/combo đang active
+            var foods = await _foodService.GetAllAsync(null, null, true);
+            ViewBag.Foods = foods.Foods;
+
             var viewModel = new SeatSelectionViewModel
             {
                 CinemaRoomId = cinemaId,
@@ -177,6 +184,10 @@ namespace MovieTheater.Controllers
                 bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
             }
             ViewBag.BookedSeats = bookedSeats;
+
+            // Lấy danh sách food/drink/combo đang active
+            var foods = await _foodService.GetAllAsync(null, null, true);
+            ViewBag.Foods = foods.Foods;
 
             var viewModel = new SeatSelectionViewModel
             {
@@ -249,6 +260,10 @@ namespace MovieTheater.Controllers
 
             ViewBag.BookedSeats = bookedSeats;
             ViewBag.MovieShow = movieShow;
+
+            // Lấy danh sách food/drink/combo đang active
+            var foods = await _foodService.GetAllAsync(null, null, true);
+            ViewBag.Foods = foods.Foods;
 
             var viewModel = new SeatSelectionViewModel
             {

@@ -26,4 +26,5 @@ public partial class ScheduleSeat
     public virtual Seat? Seat { get; set; }
 
     public virtual SeatStatus? SeatStatus { get; set; }
+    public decimal? BookedPrice { get; set; }
 }

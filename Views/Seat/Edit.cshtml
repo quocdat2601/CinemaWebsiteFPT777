@@ -18,6 +18,15 @@
 
 @{
 	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
+	var coupleSeatPairs = new Dictionary<int, int>();
+	if (ViewBag.CoupleSeats != null)
+	{
+		foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
+		{
+			coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
+			coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
+		}
+	}
 }
 
 <div class="table-responsive seat-edit-page">
@@ -48,13 +57,13 @@
 						var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
 						bool isDisabledType = seatType?.TypeName == "Disabled";
 
-						<td style="border-color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
+						<td style="border-color: @(seat.SeatType?.ColorHex ?? "#ffffff"); border-width: 5px"
 							data-seat-id="@seat.SeatId"
 							data-seat-row="@row"
 							data-seat-col="@col"
 							data-seat-name="@seat.SeatName"
 							data-seat-type="@seatType?.TypeName"
-							@(seat.SeatType.Equals("Couple") ? "data-couple-seat=true" : "")
+							@(seatType?.TypeName == "Couple" ? "data-couple-seat=true" : "")
 							@(isDisabledType ? "class=disabled-seat" : "")>
 							<span class="material-icons" onclick="selectSeat(this)">
 								@seat.SeatName
@@ -83,6 +92,7 @@
 
 <div class="text-center mb-4">
 	<button id="saveChangesBtn" class="btn btn-primary" style="font-weight:bold; font-size:large" onclick="submitUpdatedSeats()" disabled>Save Changes</button>
+	<button id="deleteCoupleSeatBtn" class="btn btn-danger ms-3" style="font-weight:bold; font-size:large; display:none;" onclick="deleteSelectedCoupleSeat(event)" disabled>Delete Couple Seat</button>
 </div>
 
 <div class="d-flex justify-content-center text-center">
@@ -93,6 +103,11 @@
 
 <script>
 	const selectedSeats = new Set();
+
+	// Map: seatId -> paired seatId
+	const coupleSeatMap = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
+
+	let batchCouplePairs = []; // Store pairs for batch creation
 
 	function toggleSelectAll(checkbox) {
 		const isChecked = checkbox.checked;
@@ -150,12 +165,34 @@
 
 	function updateSelectionUI() {
 		const modeDesc = document.getElementById('modeDescription');
+		const deleteBtn = document.getElementById('deleteCoupleSeatBtn');
+		let coupleSeatSelected = false;
+		let coupleSeatIds = [];
+
+		selectedSeats.forEach(td => {
+			if (td.hasAttribute('data-couple-seat')) {
+				coupleSeatSelected = true;
+				coupleSeatIds.push(td.getAttribute('data-seat-id'));
+			}
+		});
+
 		if (selectedSeats.size > 0) {
 			modeDesc.textContent = `${selectedSeats.size} seats selected. Choose a type to apply.`;
 		} else {
 			modeDesc.textContent = 'Select seats and choose a type';
 		}
 		document.getElementById("saveChangesBtn").disabled = selectedSeats.size === 0;
+
+		// Show delete couple seat button only if exactly 2 couple seats are selected
+		if (coupleSeatSelected && coupleSeatIds.length === 2) {
+			deleteBtn.style.display = '';
+			deleteBtn.disabled = false;
+			deleteBtn.dataset.coupleSeatIds = JSON.stringify(coupleSeatIds);
+		} else {
+			deleteBtn.style.display = 'none';
+			deleteBtn.disabled = true;
+			deleteBtn.dataset.coupleSeatIds = '';
+		}
 	}
 
 	function selectSeat(clickedSpan) {
@@ -165,25 +202,25 @@
 		const row = td.getAttribute('data-seat-row');
 		const col = td.getAttribute('data-seat-col');
 
-		// If this is a couple seat, we need to select/deselect both seats
-		if (isCoupleSeat) {
-			const allSeats = document.querySelectorAll('td[data-seat-id]');
-			const coupleSeats = Array.from(allSeats).filter(seat =>
-				seat.hasAttribute('data-couple-seat') &&
-				seat.getAttribute('data-seat-id') !== seatId
-			);
+		if (isCoupleSeat && coupleSeatMap[seatId]) {
+			// Select/deselect both seats in the couple
+			const otherSeatId = coupleSeatMap[seatId].toString();
+			const otherTd = document.querySelector(`td[data-seat-id='${otherSeatId}']`);
+			const isSelected = td.classList.contains('selected-seat');
 
-			if (coupleSeats.length > 0) {
-				const otherSeat = coupleSeats[0];
-				td.classList.toggle('selected-seat');
-				otherSeat.classList.toggle('selected-seat');
-
-				if (selectedSeats.has(td)) {
+			if (isSelected) {
+				td.classList.remove('selected-seat');
 					selectedSeats.delete(td);
-					selectedSeats.delete(otherSeat);
+				if (otherTd) {
+					otherTd.classList.remove('selected-seat');
+					selectedSeats.delete(otherTd);
+				}
 				} else {
+				td.classList.add('selected-seat');
 					selectedSeats.add(td);
-					selectedSeats.add(otherSeat);
+				if (otherTd) {
+					otherTd.classList.add('selected-seat');
+					selectedSeats.add(otherTd);
 				}
 			}
 		} else {
@@ -223,11 +260,72 @@
 		document.getElementById('selectAll').checked = selectedSeats > 0 && selectedSeats === totalSeats;
 	}
 
+	function isContiguousSelection(seatElements) {
+		// Get numeric seat IDs from the selected elements
+		const seatIds = seatElements.map(td => parseInt(td.getAttribute('data-seat-id')));
+		if (seatIds.length < 2) return false;
+
+		// Check if strictly ascending
+		let ascending = true;
+		for (let i = 1; i < seatIds.length; i++) {
+			if (seatIds[i] !== seatIds[i - 1] + 1) {
+				ascending = false;
+				break;
+			}
+		}
+
+		// Check if strictly descending
+		let descending = true;
+		for (let i = 1; i < seatIds.length; i++) {
+			if (seatIds[i] !== seatIds[i - 1] - 1) {
+				descending = false;
+				break;
+			}
+		}
+
+		return ascending || descending;
+	}
+
 	function applySeatType(clickedTypeDiv) {
 		const color = clickedTypeDiv.getAttribute('data-color');
 		const typeName = clickedTypeDiv.getAttribute('data-type-name');
 		const typeId = clickedTypeDiv.getAttribute('data-type');
 		let hasUpdates = false;
+
+		if (typeName === 'Couple') {
+			const seatArray = Array.from(selectedSeats);
+			if (seatArray.length % 2 !== 0) {
+				alert('Please select an even number of seats to create couple seats.');
+				return;
+			}
+			if (!isContiguousSelection(seatArray)) {
+				alert('Please select seats in a contiguous order (e.g., 1 2 3 4 or 4 3 2 1).');
+				return;
+			}
+			// Pair up seats
+			batchCouplePairs = [];
+			for (let i = 0; i < seatArray.length; i += 2) {
+				const firstId = parseInt(seatArray[i].getAttribute('data-seat-id'));
+				const secondId = parseInt(seatArray[i+1].getAttribute('data-seat-id'));
+				batchCouplePairs.push({ FirstSeatId: firstId, SecondSeatId: secondId });
+			}
+			// Set type visually
+			selectedSeats.forEach(td => {
+				td.style.backgroundColor = color;
+				td.setAttribute('data-selected-type', typeId);
+				td.classList.remove('selected-seat');
+				hasUpdates = true;
+			});
+
+			selectedSeats.clear();
+			document.querySelectorAll('td.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+			document.querySelectorAll('.row-checkbox, .column-checkbox, #selectAll').forEach(cb => cb.checked = false);
+			if (hasUpdates) {
+				document.getElementById("saveChangesBtn").disabled = false;
+			}
+			document.getElementById('modeDescription').textContent = 'Select seats and choose a type';
+			return;
+		}
 
 		selectedSeats.forEach(td => {
 			td.style.backgroundColor = color;
@@ -237,6 +335,9 @@
 		});
 
 		selectedSeats.clear();
+		document.querySelectorAll('td.selected-seat').forEach(td => td.classList.remove('selected-seat'));
+		// Uncheck all row, column, and select-all checkboxes
+		document.querySelectorAll('.row-checkbox, .column-checkbox, #selectAll').forEach(cb => cb.checked = false);
 		if (hasUpdates) {
 			document.getElementById("saveChangesBtn").disabled = false;
 		}
@@ -269,6 +370,42 @@
 				NewSeatTypeId: td.getAttribute('data-selected-type')
 			});
 		});
+
+		// Batch couple seat creation logic
+		if (batchCouplePairs.length > 0) {
+			fetch('/Seat/CreateCoupleSeatsBatch', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+				},
+				body: JSON.stringify(batchCouplePairs)
+			})
+			.then(response => {
+				if (!response.ok) throw new Error('Failed to create couple seats');
+				// After couple seats are created, update seat types
+				return fetch('/Seat/UpdateSeatTypes', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+					},
+					body: JSON.stringify(updatedSeats)
+				});
+			})
+			.then(response => {
+				if (response.ok) {
+					alert('Couple seats created and seats updated successfully.');
+					location.reload();
+				} else {
+					throw new Error('Failed to update seat types');
+				}
+			})
+			.catch(error => {
+				alert('Error: ' + error.message);
+			});
+			return;
+		}
 
 		// If seats were part of a couple seat but are being changed to a different type
 		if (wasCoupleSeat && !isCoupleSeat) {
@@ -368,5 +505,53 @@
 				}
 			});
 		}
+	}
+
+	function deleteSelectedCoupleSeat(event) {
+		event.preventDefault();
+		const deleteBtn = document.getElementById('deleteCoupleSeatBtn');
+		const coupleSeatIds = JSON.parse(deleteBtn.dataset.coupleSeatIds || '[]');
+		if (coupleSeatIds.length !== 2) {
+			alert('Please select exactly two couple seats to delete.');
+			return;
+		}
+
+		// Step 1: Delete the couple seat relationship
+		fetch('/Seat/DeleteCoupleSeat', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+			},
+			body: JSON.stringify({ seatIds: coupleSeatIds })
+		})
+		.then(response => {
+			if (!response.ok) throw new Error('Failed to delete couple seat');
+			// Step 2: Set both seats to type "Normal"
+			// Find the typeId for "Normal"
+			const normalTypeDiv = document.querySelector('.seat-type-option[data-type-name="Normal"]');
+			if (!normalTypeDiv) throw new Error('Normal seat type not found');
+			const normalTypeId = normalTypeDiv.getAttribute('data-type');
+			const updates = coupleSeatIds.map(seatId => ({
+				SeatId: seatId,
+				NewSeatTypeId: normalTypeId
+			}));
+			return fetch('/Seat/UpdateSeatTypes', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+				},
+				body: JSON.stringify(updates)
+			});
+		})
+		.then(response => {
+			if (!response.ok) throw new Error('Failed to update seat types');
+			alert('Couple seat deleted and seats reverted to Normal.');
+			location.reload();
+		})
+		.catch(error => {
+			alert('Error: ' + error.message);
+		});
 	}
 </script>

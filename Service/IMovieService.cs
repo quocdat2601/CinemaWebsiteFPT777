@@ -22,6 +22,7 @@ namespace MovieTheater.Service
         public List<Models.Type> GetAllTypes();
         public List<Schedule> GetAllSchedules();
         public bool DeleteAllMovieShows(string movieId);
+        public bool DeleteMovieShows(int movieShowId);
         public Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);
         public List<DateOnly> GetShowDates(string movieId);
         public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);

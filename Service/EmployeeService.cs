@@ -8,13 +8,11 @@ namespace MovieTheater.Service
     {
         private readonly IEmployeeRepository _repository;
         private readonly IAccountService _accountService;
-        private readonly IAccountRepository _accountRepo;
 
-        public EmployeeService(IEmployeeRepository repository, IAccountService accountService, IAccountRepository accountRepo)
+        public EmployeeService(IEmployeeRepository repository, IAccountService accountService)
         {
             _repository = repository;
             _accountService = accountService;
-            _accountRepo = accountRepo;
         }
 
         public IEnumerable<Employee> GetAll()
@@ -46,6 +44,8 @@ namespace MovieTheater.Service
 
         public bool Delete(string employeeId)
         {
+            var employee = _repository.GetById(employeeId);
+            if (employee == null) return false;
             _repository.Delete(employeeId);
             _repository.Save();
             return true;

@@ -6,12 +6,10 @@ namespace MovieTheater.Service
     public class SeatService : ISeatService
     {
         private readonly ISeatRepository _repository;
-        private readonly MovieTheaterContext _context;
 
-        public SeatService(ISeatRepository repository, MovieTheaterContext context)
+        public SeatService(ISeatRepository repository)
         {
             _repository = repository;
-            _context = context;
         }
 
         public Task<List<Seat>> GetAllSeatsAsync()
@@ -60,6 +58,11 @@ namespace MovieTheater.Service
         public Seat GetSeatById(int? id)
         {
             return _repository.GetById(id);
+        }
+        
+        public async Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2)
+        {
+            await _repository.DeleteCoupleSeatBySeatIdsAsync(seatId1, seatId2);
         }
     }
 }

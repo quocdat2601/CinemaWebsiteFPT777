@@ -18,13 +18,11 @@ namespace MovieTheater.Controllers
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
-        private readonly IScheduleRepository _scheduleRepository;
-        private readonly IBookingService _bookingService;
         private readonly ISeatService _seatService;
-        private readonly IScheduleSeatRepository _scheduleSeatRepository;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
+        private readonly IVersionRepository _versionRepository;
 
         public AdminController(
             IMovieService movieService,
@@ -34,14 +32,11 @@ namespace MovieTheater.Controllers
             ISeatTypeService seatTypeService,
             IMemberRepository memberRepository,
             IAccountService accountService,
-            IBookingService bookingService,
             ISeatService seatService,
             IInvoiceService invoiceService,
-            IScheduleRepository scheduleRepository,
-            IScheduleSeatRepository scheduleSeatRepository,
             IFoodService foodService,
             IVoucherService voucherService,
-            IRankService rankService)
+            IRankService rankService, IVersionRepository versionRepository)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -51,13 +46,11 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _accountService = accountService;
             _invoiceService = invoiceService;
-            _scheduleRepository = scheduleRepository;
-            _bookingService = bookingService;
             _seatService = seatService;
-            _scheduleSeatRepository = scheduleSeatRepository;
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
+            _versionRepository = versionRepository;
         }
 
         // GET: AdminController
@@ -102,11 +95,16 @@ namespace MovieTheater.Controllers
                     return PartialView("MovieMg", movies);
                 case "ShowroomMg":
                     var cinema = _cinemaService.GetAll();
-                    var seatTypes = _seatTypeService.GetAll();
                     var versions = _movieService.GetAllVersions();
                     ViewBag.Versions = versions;
-                    ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
+                case "VersionMg":
+                    var seatTypes = _seatTypeService.GetAll();
+                    ViewBag.SeatTypes = seatTypes;
+                    var versionMg = _versionRepository.GetAll();
+                    var seatTypesForVersion = _seatTypeService.GetAll();
+                    ViewBag.SeatTypes = seatTypesForVersion;
+                    return PartialView("VersionMg", versionMg);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
@@ -146,8 +144,17 @@ namespace MovieTheater.Controllers
 
                     return PartialView("FoodMg", foods);
                 case "VoucherMg":
-                    var vouchers = _voucherService.GetAll();
-                    return PartialView("VoucherMg", vouchers);
+                    var filter = new Service.VoucherFilterModel
+                    {
+                        Keyword = Request.Query["keyword"].ToString(),
+                        StatusFilter = Request.Query["statusFilter"].ToString(),
+                        ExpiryFilter = Request.Query["expiryFilter"].ToString()
+                    };
+                    var filteredVouchers = _voucherService.GetFilteredVouchers(filter);
+                    ViewBag.Keyword = filter.Keyword;
+                    ViewBag.StatusFilter = filter.StatusFilter;
+                    ViewBag.ExpiryFilter = filter.ExpiryFilter;
+                    return PartialView("VoucherMg", filteredVouchers);
                 case "RankMg":
                     var ranks = _rankService.GetAllRanks();
                     return PartialView("RankMg", ranks);
@@ -262,7 +269,7 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = "Member updated successfully!"; // Optional success message
                 return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log the exception (optional)
                 // _logger.LogError(ex, "Error updating member with id {MemberId}", id);
@@ -407,8 +414,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetMovieShowSummary(int year, int month)
         {
-            var repo = HttpContext.RequestServices.GetService(typeof(IMovieRepository)) as MovieRepository;
-            if (repo == null)
+            if (HttpContext.RequestServices.GetService(typeof(IMovieRepository)) is not MovieRepository repo)
             {
                 return Json(new Dictionary<string, List<string>>());
             }

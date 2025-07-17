@@ -119,89 +119,77 @@
             <h2>
                 @if (Model.IsSuccess)
                 {
-                    <span><i class="fas fa-check-circle me-2"></i>Ticket Verified Successfully!</span>
+                    <span><i class="fas fa-check-circle me-2"></i>Xác nhận vé thành công!</span>
                 }
                 else
                 {
-                    <span><i class="fas fa-times-circle me-2"></i>Verification Failed</span>
+                    <span><i class="fas fa-times-circle me-2"></i>Xác nhận thất bại</span>
                 }
             </h2>
             <p class="mb-0">
                 @if (Model.IsSuccess)
                 {
-                    <span>Customer can enter the cinema</span>
+                    <span>Khách hàng có thể vào rạp</span>
                 }
                 else
                 {
-                    <span>Please check the ticket details</span>
+                    <span>Vui lòng kiểm tra lại thông tin vé</span>
                 }
             </p>
         </div>
-        
         <div class="result-body">
             <div class="ticket-details">
-                <h5><i class="fas fa-ticket-alt me-2"></i>Ticket Information</h5>
-                
+                <h5><i class="fas fa-ticket-alt me-2"></i>Thông tin vé</h5>
                 <div class="detail-row">
-                    <span class="detail-label">Invoice ID:</span>
+                    <span class="detail-label">Mã hóa đơn:</span>
                     <span class="detail-value">@Model.InvoiceId</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Movie:</span>
+                    <span class="detail-label">Phim:</span>
                     <span class="detail-value">@Model.MovieName</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Date:</span>
+                    <span class="detail-label">Ngày chiếu:</span>
                     <span class="detail-value">@Model.ShowDate</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Time:</span>
+                    <span class="detail-label">Giờ chiếu:</span>
                     <span class="detail-value">@Model.ShowTime</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Customer:</span>
+                    <span class="detail-label">Khách hàng:</span>
                     <span class="detail-value">@Model.CustomerName</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Phone:</span>
+                    <span class="detail-label">SĐT:</span>
                     <span class="detail-value">@Model.CustomerPhone</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Seats:</span>
+                    <span class="detail-label">Ghế:</span>
                     <span class="detail-value">@Model.Seats</span>
                 </div>
-                
                 <div class="detail-row">
-                    <span class="detail-label">Amount:</span>
+                    <span class="detail-label">Thành tiền:</span>
                     <span class="detail-value">@Model.TotalAmount</span>
                 </div>
             </div>
-
             <div class="verification-time">
-                <p><i class="fas fa-clock me-2"></i>Verified at: @Model.VerificationTime</p>
+                <p><i class="fas fa-clock me-2"></i>Xác nhận lúc: @Model.VerificationTime</p>
             </div>
-
             <div class="action-buttons">
                 <a href="@Url.Action("Scanner", "QRCode")" class="btn btn-primary btn-custom">
-                    <i class="fas fa-qrcode me-2"></i>Scan Another Ticket
+                    <i class="fas fa-qrcode me-2"></i>Quét vé khác
                 </a>
-                
                 @if (User.IsInRole("Admin"))
                 {
                     <a href="@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })" class="btn btn-secondary btn-custom">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Admin
+                        <i class="fas fa-arrow-left me-2"></i>Về trang Admin
                     </a>
                 }
                 else
                 {
                     <a href="@Url.Action("MainPage", "Employee")" class="btn btn-secondary btn-custom">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Employee
+                        <i class="fas fa-arrow-left me-2"></i>Về trang Nhân viên
                     </a>
                 }
             </div>

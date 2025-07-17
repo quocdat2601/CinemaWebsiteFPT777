@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Repository
 {
@@ -61,7 +62,7 @@ namespace MovieTheater.Repository
                 {
                     movie.MovieId = GenerateMovieId();
                 }
-                
+
                 _context.Movies.Add(movie);
                 _context.SaveChanges();
                 return true;
@@ -157,7 +158,7 @@ namespace MovieTheater.Repository
                 {
                     _context.Versions.RemoveRange(movie.Versions);
                 }
-                
+
                 _context.Movies.Remove(movie);
 
                 try
@@ -230,10 +231,10 @@ namespace MovieTheater.Repository
         public async Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
-            
+
             var showTimes = await _context.MovieShows
                 .Include(ms => ms.Schedule)
-                .Where(ms => ms.MovieId == movieId && 
+                .Where(ms => ms.MovieId == movieId &&
                        ms.ShowDate == dateOnly &&
                        ms.Schedule != null &&
                        ms.Schedule.ScheduleTime.HasValue)
@@ -301,7 +302,7 @@ namespace MovieTheater.Repository
             var scheduleToAdd = _context.Schedules.Find(scheduleId);
             if (scheduleToAdd == null || !scheduleToAdd.ScheduleTime.HasValue)
             {
-                return false; 
+                return false;
             }
             var scheduleTimeToAdd = scheduleToAdd.ScheduleTime.Value;
 
@@ -375,7 +376,7 @@ namespace MovieTheater.Repository
 
             return _context.MovieShows
                 .Include(ms => ms.Schedule)
-                .Where(ms => ms.MovieId == movieId && 
+                .Where(ms => ms.MovieId == movieId &&
                        ms.ShowDate == dateOnly &&
                        ms.Schedule != null &&
                         ms.Schedule.ScheduleTime.HasValue)
@@ -448,6 +449,52 @@ namespace MovieTheater.Repository
         public Models.Version? GetVersionById(int versionId)
         {
             return _context.Versions.FirstOrDefault(v => v.VersionId == versionId);
+        }
+
+        public IEnumerable<MovieShow> GetSelectMovieShow(DateOnly today)
+        {
+            return (IEnumerable<MovieShow>)_context.MovieShows
+            .Where(ms => ms.ShowDate >= today)
+            .Include(ms => ms.Movie)
+            .Include(ms => ms.Schedule)
+            .Include(ms => ms.Version)
+            .ToList()
+            .GroupBy(ms => ms.Movie)
+            .Where(g => g.Key != null)
+            .Select(g => new MovieShowtimeInfo
+            {
+                MovieId = g.Key.MovieId,
+                MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
+                PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
+                VersionShowtimes = g.Where(ms => ms.Schedule != null && ms.Version != null)
+                                .GroupBy(ms => new { ms.VersionId, ms.Version.VersionName })
+                                .Select(versionGroup => new VersionShowtimeInfo
+                                {
+                                    VersionId = versionGroup.Key.VersionId,
+                                    VersionName = versionGroup.Key.VersionName,
+                                    Showtimes = versionGroup
+                                        .Where(ms => ms.ShowDate >= today)
+                                        .Select(ms => ms.Schedule.ScheduleTime.HasValue ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null)
+                                        .Where(t => !string.IsNullOrEmpty(t))
+                                        .OrderBy(t => t)
+                                        .ToList()
+                                })
+                                .Where(v => v.Showtimes.Any())
+                                .OrderBy(v => v.VersionName)
+                                .ToList()
+            })
+        .Where(m => m.VersionShowtimes.Any())
+        .ToList();
+        }
+
+        public IEnumerable<MovieShow> GetSelectDates(DateOnly today, string movieId)
+        {
+            return (IEnumerable<MovieShow>)_context.MovieShows
+            .Where(ms => ms.ShowDate >= today)
+            .Select(ms => ms.ShowDate)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
         }
     }
 }

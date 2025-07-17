@@ -1,5 +1,10 @@
 ﻿@using Newtonsoft.Json
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
+
+<script>
+    window.serverPromotionDiscountPercent = @Model.BookingDetails.PromotionDiscountPercent;
+</script>
+
 @{
     ViewBag.Title = "Confirm Ticket Information (Admin)";
     Layout = "_Layout";
@@ -104,7 +109,7 @@
 
 <div class="container mt-4">
     <div class="text-start p-3">
-        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
+        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, versionId = Model.BookingDetails.VersionId, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
     <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
     <div class="card shadow p-4">
@@ -161,15 +166,49 @@
                 }
             </tbody>
         </table>
+
         <div class="text-end mb-2">
             <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
-                @Model.BookingDetails.SelectedSeats.Sum(s => s.Price).ToString("N0") VND
+                Total Price: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) VND
             </span>
             <span id="discountedTotal" style="display:none;"></span>
             <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
             <div id="pointEarningPreview" class="text-muted" style="font-size: 0.95em;"></div>
             <div id="pointSavings" class="text-success" style="font-size: 0.95em;"></div>
         </div>
+        
+        @if (Model.SelectedFoods.Any())
+        {
+            <hr />
+            <div class="section-title">Food & Drinks</div>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var food in Model.SelectedFoods)
+                    {
+                        <tr>
+                            <td>@food.Name</td>
+                            <td>@food.Quantity</td>
+                            <td>@food.Price.ToString("N0") VND</td>
+                            <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                        <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        }
         <hr />
         <!-- Member selection UI -->
         <div class="mb-3">
@@ -197,6 +236,7 @@
                     <input type="text" id="memberScore" class="soft-readonly" value="@Model.MemberScore" readonly />
                     <input type="hidden" id="accountId" value="@Model.MemberAccountId" />
                     <input type="hidden" id="rankDiscountPercent" value="@Model.BookingDetails.RankDiscountPercent" />
+                    <input type="hidden" asp-for="BookingDetails.PromotionDiscountPercent" />
                 </div>
                 <div class="form-group mt-3">
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
@@ -214,6 +254,8 @@
         <div class="text-center mt-4">
             <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg" disabled>Confirm Ticket Booking</button>
         </div>
+        <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
+        <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
     </div>
 </div>
 
@@ -330,6 +372,25 @@
                 });
             }
 
+            let memberSelected = false;
+            function updateConfirmButtonState() {
+                // Check if a member is selected
+                memberSelected = !!$('#memberId').val();
+                // Validate score
+                var used = parseInt($('#useScore').val()) || 0;
+                var maxPoints = updateMaxUsablePoints();
+                var validScore = true;
+                if (used === 0) {
+                    validScore = true;
+                } else if (used < 20) {
+                    validScore = false;
+                } else if (used > maxPoints) {
+                    validScore = false;
+                }
+                // Enable only if both member is selected and score is valid
+                $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
+            }
+
             function fillMemberInfo(member) {
                 $('#memberId').val(member.memberId);
                 $('#memberFullName').val(member.account.fullName);
@@ -339,8 +400,8 @@
                 $('#accountId').val(member.account.accountId || '');
                 selectedAccountId = member.account.accountId;
                 $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
+                $('#promotionDiscountPercent').val(member.account.promotionDiscountPercent || 0);
                 $('#memberDetails').show();
-                $('#confirmTicketAdminBtn').prop('disabled', false);
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
                 $('#openVoucherModalBtn').prop('disabled', false);
@@ -351,6 +412,7 @@
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
                 fetchEligiblePromotions(); // Call this function when member is selected
+                updateConfirmButtonState(); // <-- update button state
             }
 
             // Confirm Ticket Admin Button Click
@@ -363,9 +425,10 @@
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
-                        TotalPrice: @Model.BookingDetails.TotalPrice,
-                        PricePerTicket: @Model.BookingDetails.PricePerTicket,
-                        MovieShowId: @Model.MovieShowId
+                        TotalPrice: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        MovieShowId: @Model.MovieShowId,
+                        PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
                     },
                     MemberIdInput: $('#memberInput').val(),
                     MemberId: $('#memberId').val(),
@@ -377,7 +440,9 @@
                     SelectedVoucherId: $('#selectedVoucherId').val(),
                     AccountId: $('#accountId').val(),
                     RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0,
-                    MovieShowId: @Model.MovieShowId
+                    MovieShowId: @Model.MovieShowId,
+                    SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
+                    TotalFoodPrice: @Model.TotalFoodPrice
                 };
 
                 $.ajax({
@@ -387,7 +452,8 @@
                     data: JSON.stringify(model),
                     success: function (response) {
                         if (response.success) {
-                            window.location.href = response.redirectUrl; // Redirect to success page
+                            // Redirect to the backend-confirmed invoice page
+                            window.location.href = response.redirectUrl;
                         } else {
                             $('#memberMessage').text(response.message).show();
                         }
@@ -402,7 +468,7 @@
             // Remove ticketsToConvert logic, add useScore logic
             function updateMaxUsablePoints() {
                 // This should be calculated from backend, but for now, estimate:
-                var totalPrice = @Model.BookingDetails.TotalPrice;
+                var totalPrice = @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 var memberScore = parseInt($('#memberScore').val()) || 0;
                 var maxPoints = Math.floor((totalPrice * 0.9) / 1000);
                 maxPoints = Math.min(maxPoints, memberScore);
@@ -410,27 +476,8 @@
                 return maxPoints;
             }
             $('#useScore').on('input', function () {
-                var used = parseInt($(this).val()) || 0;
-                var maxPoints = updateMaxUsablePoints();
-                var valid = true;
-                var msg = '';
-                if (used == 0) {
-                    msg = '';
-                    valid = true;   
-                } else if (used < 20) {
-                    msg = 'Minimum 20 points required.';
-                    valid = false;
-                } else if (used > maxPoints) {
-                    msg = 'You can use up to ' + maxPoints + ' points (90% of order, or your balance).';
-                    valid = false;
-                }
-                if (!valid) {
-                    $('#scoreStatus').html('<span class="text-danger">' + msg + '</span>');
-                    $('#confirmTicketAdminBtn').prop('disabled', true);
-                } else {
-                    $('#scoreStatus').html('');
-                    $('#confirmTicketAdminBtn').prop('disabled', false);
-                }
+                updatePriceAll();
+                updateConfirmButtonState(); // <-- update button state
             });
             // Set initial value
             $('#useScore').val(0);
@@ -440,8 +487,11 @@
             var currentDiscountPercent = 0;
             let selectedVoucher = null;
             function updatePriceAll() {
-                var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
                 // Áp dụng rank benefit trước
+                var totalFoodPrice = @Model.TotalFoodPrice;
+                
+                // Áp dụng rank benefit trước (chỉ cho seat, không cho food)
                 var discountPercent = currentDiscountPercent || 0;
                 var discountAmount = 0;
                 if (originalTotal > 0) {
@@ -450,25 +500,44 @@
                 var afterRank = originalTotal - discountAmount;
                 if (afterRank < 0) afterRank = 0;
 
-                // Sau đó mới áp dụng voucher
+                // Sau đó mới áp dụng voucher (chỉ cho seat, không cho food)
                 var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
                 var afterVoucher = afterRank - voucherAmount;
                 if (afterVoucher < 0) afterVoucher = 0;
 
-                // Điểm
+                // Điểm (chỉ cho seat, không cho food)
                 var useScore = parseInt($('#useScore').val()) || 0;
                 var pointValue = 1000;
                 var savings = useScore * pointValue;
-                var finalTotal = afterVoucher - savings;
-                if (finalTotal < 0) finalTotal = 0;
+                var finalSeatPrice = afterVoucher - savings;
+                if (finalSeatPrice < 0) finalSeatPrice = 0;
+                
+                // Tổng cuối cùng = seat price + food price
+                var finalTotal = finalSeatPrice + totalFoodPrice;
 
                 // Update hiển thị giá
+                var seatOnlyTotal = originalTotal;
                 if (voucherAmount > 0 || discountAmount > 0 || useScore > 0) {
                     $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
-                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalTotal.toLocaleString() + ' VND');
+                    $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalSeatPrice.toLocaleString() + ' VND');
+                    seatOnlyTotal = finalSeatPrice;
                 } else {
                     $('#originalTotal').css({'text-decoration':'none','color':'#1a7f37','font-size':'1.3em'}).text(originalTotal.toLocaleString() + ' VND');
                     $('#discountedTotal').hide();
+                }
+                
+                // Hiển thị tổng cuối cùng bao gồm food
+                if (totalFoodPrice > 0) {
+                    var totalDisplay = $('#discountedTotal').is(':visible') ? 
+                        $('#discountedTotal').text() + ' + ' + totalFoodPrice.toLocaleString() + ' VND (Food) = ' + finalTotal.toLocaleString() + ' VND' :
+                        originalTotal.toLocaleString() + ' VND + ' + totalFoodPrice.toLocaleString() + ' VND (Food) = ' + finalTotal.toLocaleString() + ' VND';
+                    
+                    if (!$('#totalWithFood').length) {
+                        $('#discountedTotal').after('<div id="totalWithFood" style="font-size: 1.1em; font-weight: bold; color: #007bff; margin-top: 0.5rem;"></div>');
+                    }
+                    $('#totalWithFood').text('Total: ' + finalTotal.toLocaleString() + ' VND');
+                } else {
+                    $('#totalWithFood').remove();
                 }
 
                 // Hiển thị voucher
@@ -490,12 +559,12 @@
                     $('#pointSavings').text('');
                 }
 
-                // Tính điểm thưởng
+                // Tính điểm thưởng (chỉ dựa trên seat price, không bao gồm food)
                 var earningRate = currentEarningRate || 0;
-                var pointsToEarn = Math.round((finalTotal) * earningRate / 100 / pointValue);
+                var pointsToEarn = Math.round((finalSeatPrice) * earningRate / 100 / pointValue);
                 $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`).addClass('text-success');
 
-                // Validate điểm
+                // Validate điểm (chỉ dựa trên seat price, không bao gồm food)
                 var memberScore = parseInt($('#memberScore').val()) || 0;
                 var maxUsablePoints = Math.floor((afterVoucher * 0.9) / pointValue);
                 maxUsablePoints = Math.min(maxUsablePoints, memberScore);
@@ -508,7 +577,8 @@
                 } else if (useScore < 20) { validationMsg = 'Minimum 20 points required.'; valid = false; }
                 else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
                 $('#pointValidation').text(validationMsg);
-                $('#confirmTicketAdminBtn').prop('disabled', !valid);
+                // At the end of updatePriceAll, set the hidden input value:
+                $('#promotionDiscountPercent').val(discountPercent);
             }
 
             function onMemberSelected(memberId) {
@@ -520,6 +590,7 @@
             }
             // On page load, show initial state
             updatePriceAll();
+            updateConfirmButtonState(); // <-- update button state
 
             // VOUCHER PICKER LOGIC
             let voucherModalInstance = null;
@@ -586,9 +657,7 @@
             }
 
             // Update price and point info when points are entered or member is selected
-            $('#useScore').on('input', function () {
-                updatePriceAll();
-            });
+            // This function is now called by updateConfirmButtonState
 
             function renderSelectedVoucherInfo() {
                 if (selectedVoucher) {

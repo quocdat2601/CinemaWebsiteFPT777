@@ -1,5 +1,11 @@
 ﻿@model MovieTheater.ViewModels.ConfirmBookingViewModel
 
+@{
+    decimal seatPrice = Model.SelectedSeats != null
+        ? Model.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0)
+        : 0;
+}
+
 <div class="container mt-4">
     <div class="text-start p-3">
         <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime })" class="btn btn-secondary">&larr; Return</a>
@@ -65,6 +71,42 @@
                 }
             </tbody>
         </table>
+      
+        <hr />
+<!-- Danh sách đồ ăn đã chọn -->
+@if (Model.SelectedFoods != null && Model.SelectedFoods.Count > 0)
+{
+    <h5 class="mb-3">Food & Drink</h5>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var food in Model.SelectedFoods)
+            {
+                <tr>
+                    <td><img src="@food.Image" alt="@food.Name" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" /></td>
+                    <td>@food.Name</td>
+                    <td>@food.Quantity</td>
+                    <td>@food.Price.ToString("N0") VND</td>
+                    <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" class="text-end"><strong>Total Food Price:</strong></td>
+                <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+}
 
         @* === Nhập Use Score & tổng tiền === *@
         <div class="row mt-4 align-items-center">
@@ -85,9 +127,16 @@
                 <table class="table table-borderless table-sm" style="max-width: 350px; margin-left: auto;">
                     <tbody>
                         <tr>
-                            <td class="text-start">Original Price:</td>
-                            <td><span id="originalTotal">@Model.Subtotal.ToString("N0") VND</span></td>
+                            <td class="text-start">Seat Price:</td>
+                            <td><span id="originalTotal">@seatPrice.ToString("N0") VND</span></td>
                         </tr>
+                        @if (Model.TotalFoodPrice > 0)
+                        {
+                            <tr>
+                                <td class="text-start">Food & Drink:</td>
+                                <td><span id="foodTotal">@Model.TotalFoodPrice.ToString("N0") VND</span></td>
+                            </tr>
+                        }
                         <tr id="rankDiscountRow" style="display:none;">
                             <td class="text-start">Rank discount:</td>
                             <td id="rankDiscountDisplay"></td>
@@ -127,6 +176,14 @@
             @Html.HiddenFor(m => m.PhoneNumber)
             @Html.HiddenFor(m => m.CurrentScore)
             @Html.HiddenFor(m => m.MovieShowId)
+            @Html.HiddenFor(m => m.Subtotal)
+            @Html.HiddenFor(m => m.RankDiscount)
+            @Html.HiddenFor(m => m.RankDiscountPercent)
+            @Html.HiddenFor(m => m.PromotionDiscountPercent)
+            @Html.HiddenFor(m => m.VoucherAmount)
+            @Html.HiddenFor(m => m.AddScore)
+            @Html.HiddenFor(m => m.TotalFoodPrice)
+            @Html.HiddenFor(m => m.EarningRate)
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
             <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
             <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
@@ -137,6 +194,20 @@
                 <input type="hidden" name="SelectedSeats[@i].SeatType" value="@Model.SelectedSeats[i].SeatType" />
                 <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
                 <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
+            }
+            @* Thêm input hidden cho từng món food *@
+            @for (int i = 0; i < Model.SelectedFoods.Count; i++)
+            {
+                <input type="hidden" name="SelectedFoods[@i].FoodId" value="@Model.SelectedFoods[i].FoodId" />
+                <input type="hidden" name="SelectedFoods[@i].Name" value="@Model.SelectedFoods[i].Name" />
+                <input type="hidden" name="SelectedFoods[@i].Price" value="@Model.SelectedFoods[i].Price" />
+                <input type="hidden" name="SelectedFoods[@i].Quantity" value="@Model.SelectedFoods[i].Quantity" />
+                <input type="hidden" name="SelectedFoods[@i].Image" value="@Model.SelectedFoods[i].Image" />
+                <input type="hidden" name="SelectedFoods[@i].Description" value="@Model.SelectedFoods[i].Description" />
+                <input type="hidden" name="SelectedFoods[@i].Category" value="@Model.SelectedFoods[i].Category" />
+                <input type="hidden" name="SelectedFoods[@i].Status" value="@Model.SelectedFoods[i].Status" />
+                <input type="hidden" name="SelectedFoods[@i].CreatedDate" value="@Model.SelectedFoods[i].CreatedDate" />
+                <input type="hidden" name="SelectedFoods[@i].UpdatedDate" value="@Model.SelectedFoods[i].UpdatedDate" />
             }
             <div class="text-center mt-4">
                 <button id="confirmBtn" type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
@@ -222,8 +293,9 @@
 
 <script>
     $(document).ready(function () {
-        // Values from server
-        var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        // Use the correct seat price from Razor
+        var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -322,30 +394,29 @@
         }
 
         function updatePriceFlow() {
-            var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-            // apply rank benefit first
+            // Rank discount is applied to subtotal (after promotion)
             var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
-            var afterRank = originalTotal - rankDiscountAmount;
+            var rankDiscountAmount = Math.round(subtotal * (rankDiscountPercent / 100));
+            var afterRank = subtotal - rankDiscountAmount;
             if (afterRank < 0) afterRank = 0;
 
-            // apply promotion next (placeholder for future implementation)
             var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
             var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
             var afterPromo = afterRank - promoDiscountAmount;
 
-            // apply voucher after rank
             var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
             var afterVoucher = afterPromo - voucherAmount;
             if (afterVoucher < 0) afterVoucher = 0;
 
-            // apply points
             var useScore = parseInt($('#useScore').val()) || 0;
             var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
             var valid = true;
             var validationMsg = '';
-            
+
             if (useScore === 0) {
                 validationMsg = '';
                 valid = true;
@@ -357,14 +428,19 @@
                 valid = false;
             }
 
-            var finalTotal = afterVoucher;
+            var finalSeatTotal = afterVoucher;
             if (valid && useScore > 0) {
                 var pointsValue = useScore * pointValue;
-                finalTotal = afterVoucher - pointsValue;
-                if (finalTotal < 0) finalTotal = 0;
+                finalSeatTotal = afterVoucher - pointsValue;
+                if (finalSeatTotal < 0) finalSeatTotal = 0;
             }
 
+            // Tổng cuối cùng = giá ghế sau giảm + giá food
+            var finalTotal = finalSeatTotal + parseInt(foodPrices);
+
             // Update UI
+            $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
+            $('#subtotal').text(Number(subtotal).toLocaleString() + ' VND');
             $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
 
             // Rank discount row
@@ -404,7 +480,7 @@
             // Point earning preview
             var pointsToEarn = 0;
             if (valid) {
-                pointsToEarn = Math.round(finalTotal * earningRate / 100 / pointValue);
+                pointsToEarn = Math.round(finalSeatTotal * earningRate / 100 / pointValue);
             }
             $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
 

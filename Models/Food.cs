@@ -22,4 +22,6 @@ public partial class Food
     public DateTime CreatedDate { get; set; }
 
     public DateTime? UpdatedDate { get; set; }
+
+    public virtual ICollection<FoodInvoice> FoodInvoices { get; set; } = new List<FoodInvoice>();
 }

@@ -91,7 +91,7 @@ namespace MovieTheater.Controllers
                     }
                 }
                 _seatTypeService.Save();
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
             }
             catch (Exception ex)
             {

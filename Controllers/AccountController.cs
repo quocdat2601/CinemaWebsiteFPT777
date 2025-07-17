@@ -13,23 +13,23 @@ namespace MovieTheater.Controllers
     public class AccountController : Controller
     {
         private readonly IAccountRepository _accountRepository;
-        private readonly MovieTheaterContext _context;
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
         private readonly IJwtService _jwtService;
         private readonly IMemberRepository _memberRepository;
 
         public AccountController(
-       MovieTheaterContext context,
-       IAccountService service,
-       ILogger<AccountController> logger, IAccountRepository accountRepository, IMemberRepository memberRepository, IJwtService jwtService)
+            IAccountService service,
+            ILogger<AccountController> logger,
+            IAccountRepository accountRepository,
+            IMemberRepository memberRepository,
+            IJwtService jwtService)
         {
             _service = service;
             _logger = logger;
             _accountRepository = accountRepository;
             _memberRepository = memberRepository;
             _jwtService = jwtService;
-            _context = context;
         }
 
         [HttpGet]
@@ -60,49 +60,14 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            var user = _accountRepository.GetAccountByEmail(email);
-
-            if (user == null)
-            {
-                // Set initial rank (Bronze)
-                var bronzeRank = _context.Ranks.OrderBy(r => r.RequiredPoints).FirstOrDefault();
-                user = new Account
-                {
-                    Email = email,
-                    FullName = name ?? $"{givenName} {surname}".Trim() ?? "Google User",
-                    Username = email,
-                    RoleId = 3,
-                    Status = 1,
-                    RegisterDate = DateOnly.FromDateTime(DateTime.Now),
-                    Image = !string.IsNullOrEmpty(picture) ? picture : "/image/profile.jpg",
-                    Password = null, // Set Password to null for Google login
-                    RankId = bronzeRank?.RankId // Always set the lowest rank if available
-                };
-
-                _accountRepository.Add(user);
-                _accountRepository.Save();
-                _memberRepository.Add(new Member
-                {
-                    Score = 0,
-                    TotalPoints = 0,
-                    AccountId = user.AccountId
-                });
-                _memberRepository.Save();
-            }
-
-            // After adding new user (if any)
-            user = _accountRepository.GetAccountByEmail(email); // get the latest user
+            // Refactor: Đẩy logic tạo user/member mới vào service
+            var user = _service.GetOrCreateGoogleAccount(email, name, givenName, surname, picture);
 
             // Log fields for debugging
             _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
-            // Check for missing information
-            bool missingInfo =
-                !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
-                string.IsNullOrWhiteSpace(user.Gender) ||
-                string.IsNullOrWhiteSpace(user.IdentityCard) ||
-                string.IsNullOrWhiteSpace(user.Address) ||
-                string.IsNullOrWhiteSpace(user.PhoneNumber);
 
+            // Refactor: Đẩy logic kiểm tra thông tin thiếu vào service
+            bool missingInfo = _service.HasMissingProfileInfo(user);
             if (missingInfo)
             {
                 TempData["FirstTimeLogin"] = true;
@@ -114,28 +79,8 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            string roleName = user.RoleId switch
-            {
-                1 => "Admin",
-                2 => "Employee",
-                3 => "Member",
-                _ => "Guest"
-            };
-
-            var appClaims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", user.Status.ToString()),
-                new Claim("Email", user.Email),
-            };
-
-            var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            // Sign in with cookie authentication - match normal login flow
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            // Refactor: Đẩy logic tạo claims, sign-in vào service
+            await _service.SignInUserAsync(HttpContext, user);
 
             // Check and update rank
             if (user.RoleId == 3) // Member
@@ -149,7 +94,6 @@ namespace MovieTheater.Controllers
                 TempData.Remove("FirstTimeLogin");
                 return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
             }
-
 
             // Generate JWT token for Google login
             var token = _jwtService.GenerateToken(user);
@@ -165,6 +109,13 @@ namespace MovieTheater.Controllers
 
             TempData["ToastMessage"] = "Log in successful!";
 
+            // After successful login and before redirecting, add:
+            var rankUpMsg = _service.GetAndClearRankUpgradeNotification(user.AccountId);
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                TempData["ToastMessage"] += "<br/>" + rankUpMsg;
+            }
+
             // Direct redirect like normal login
             if (user.RoleId == 1)
             {
@@ -177,7 +128,6 @@ namespace MovieTheater.Controllers
             else
             {
                 return RedirectToAction("Index", "Home");
-                //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
             }
         }
 
@@ -193,7 +143,7 @@ namespace MovieTheater.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await _service.SignOutUserAsync(HttpContext);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
             TempData["ToastMessage"] = "Log out successful!";
@@ -207,11 +157,6 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
             Response.Cookies.Delete("JwtToken");
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            var status = User.FindFirst("Status")?.Value;
-
             return View();
         }
 
@@ -265,7 +210,6 @@ namespace MovieTheater.Controllers
             }
         }
 
-
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
@@ -287,26 +231,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            string roleName = user.RoleId switch
-            {
-                1 => "Admin",
-                2 => "Employee",
-                3 => "Member",
-                _ => "Guest"
-            };
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", user.Status.ToString())
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            await _service.SignInUserAsync(HttpContext, user);
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
