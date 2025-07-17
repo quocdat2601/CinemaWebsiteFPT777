@@ -282,7 +282,7 @@
                         <table class="table table-borderless mb-2">
                             <tbody>
                                 <tr>
-                                    <td style="white-space: nowrap;">Seat Subtotal</td>
+                                    <td style="white-space: nowrap;">Seat Price</td>
                                     <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
                                 </tr>
                                 @if (rankDiscount > 0)
@@ -303,10 +303,6 @@
                                         <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
                                     </tr>
                                 }
-                                <tr>
-                                    <td class="ticket-total-label">Seat Price</td>
-                                    <td class="ticket-total-value text-end">@seatPriceFromDB.ToString("N0") VND</td>
-                                </tr>
                                 @if (totalFoodPrice > 0)
                                 {
                                     <tr>

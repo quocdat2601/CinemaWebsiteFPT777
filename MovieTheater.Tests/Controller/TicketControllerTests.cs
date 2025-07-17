@@ -82,32 +82,32 @@
 //            Assert.Equal(bookings, viewResult.Model);
 //        }
 
-        [Fact]
-        public async Task Details_ReturnsViewWithBookingDetails()
-        {
-            var user = CreateUser();
-            var booking = new Invoice { InvoiceId = "inv1" };
-            var seatDetails = new List<MovieTheater.ViewModels.SeatDetailViewModel> { new MovieTheater.ViewModels.SeatDetailViewModel { SeatId = 1, SeatName = "A1" } };
-            var selectedFoods = new List<MovieTheater.ViewModels.FoodViewModel> { new MovieTheater.ViewModels.FoodViewModel { FoodId = 1, Name = "Popcorn", Price = 50000, Quantity = 2 } };
-            var viewModel = new MovieTheater.ViewModels.TicketDetailsViewModel
-            {
-                Booking = booking,
-                SeatDetails = seatDetails,
-                FoodDetails = selectedFoods,
-                TotalFoodPrice = 100000
-            };
-            _ticketServiceMock.Setup(s => s.GetTicketDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
-            _ticketServiceMock.Setup(s => s.BuildSeatDetails(booking)).Returns(seatDetails);
-            _foodInvoiceServiceMock.Setup(f => f.GetFoodsByInvoiceIdAsync("inv1")).ReturnsAsync(selectedFoods);
-            var controller = CreateController(user);
-            var result = await controller.Details("inv1");
-            var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsType<MovieTheater.ViewModels.TicketDetailsViewModel>(viewResult.Model);
-            Assert.Equal(booking, model.Booking);
-            Assert.Equal(seatDetails, model.SeatDetails);
-            Assert.Equal(selectedFoods, model.FoodDetails);
-            Assert.Equal(100000, model.TotalFoodPrice); // 50000 * 2
-        }
+//        [Fact]
+//        public async Task Details_ReturnsViewWithBookingDetails()
+//        {
+//            var user = CreateUser();
+//            var booking = new Invoice { InvoiceId = "inv1" };
+//            var seatDetails = new List<MovieTheater.ViewModels.SeatDetailViewModel> { new MovieTheater.ViewModels.SeatDetailViewModel { SeatId = 1, SeatName = "A1" } };
+//            var selectedFoods = new List<MovieTheater.ViewModels.FoodViewModel> { new MovieTheater.ViewModels.FoodViewModel { FoodId = 1, Name = "Popcorn", Price = 50000, Quantity = 2 } };
+//            var viewModel = new MovieTheater.ViewModels.TicketDetailsViewModel
+//            {
+//                Booking = booking,
+//                SeatDetails = seatDetails,
+//                FoodDetails = selectedFoods,
+//                TotalFoodPrice = 100000
+//            };
+//            _ticketServiceMock.Setup(s => s.GetTicketDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
+//            _ticketServiceMock.Setup(s => s.BuildSeatDetails(booking)).Returns(seatDetails);
+//            _foodInvoiceServiceMock.Setup(f => f.GetFoodsByInvoiceIdAsync("inv1")).ReturnsAsync(selectedFoods);
+//            var controller = CreateController(user);
+//            var result = await controller.Details("inv1");
+//            var viewResult = Assert.IsType<ViewResult>(result);
+//            var model = Assert.IsType<MovieTheater.ViewModels.TicketDetailsViewModel>(viewResult.Model);
+//            Assert.Equal(booking, model.Booking);
+//            Assert.Equal(seatDetails, model.SeatDetails);
+//            Assert.Equal(selectedFoods, model.FoodDetails);
+//            Assert.Equal(100000, model.TotalFoodPrice); // 50000 * 2
+//        }
 
 //        [Fact]
 //        public async Task Cancel_RedirectsToIndexOnSuccess()

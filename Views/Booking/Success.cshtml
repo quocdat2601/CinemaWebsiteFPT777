@@ -250,26 +250,24 @@
                     <div class="ticket-section-title">Price Breakdown</div>
                     <table class="table table-borderless mb-2">
                         <tbody>
+                            @{
+                                decimal runningTotal = subtotal;
+                            }
                             <tr>
                                 <td style="white-space: nowrap;">Subtotal</td>
-                                <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td> 
+                                <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
                             </tr>
                             @if (rankDiscount > 0)
                             {
+                                runningTotal -= rankDiscount;
                                 <tr>
                                     <td style="white-space: nowrap;">- Rank Discount</td>
                                     <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                 </tr>
                             }
-                            @if (voucherAmount > 0)
-                            {
-                                <tr>
-                                    <td style="white-space: nowrap;">- Voucher</td>
-                                    <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
-                                </tr>
-                            }
                             @if (usedScore > 0)
                             {
+                                runningTotal -= usedScoreValue;
                                 <tr>
                                     <td style="white-space: nowrap;">- Points Used</td>
                                     <td class="text-end" style="white-space: nowrap;">-@usedScore (@usedScoreValue.ToString("N0") VND)</td>
@@ -277,14 +275,24 @@
                             }
                             @if (totalFoodPrice > 0)
                             {
+                                runningTotal += totalFoodPrice;
                                 <tr>
                                     <td style="white-space: nowrap;">+ Food & Drinks</td>
                                     <td class="text-end" style="white-space: nowrap;">+@totalFoodPrice.ToString("N0") VND</td>
                                 </tr>
                             }
+                            @if (voucherAmount > 0)
+                            {
+                                runningTotal -= voucherAmount;
+                                <tr>
+                                    <td style="white-space: nowrap;">- Voucher</td>
+                                    <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
+                                </tr>
+                            }
+                            @if (runningTotal < 0) { runningTotal = 0; }
                             <tr>
                                 <td class="ticket-total-label">Total Price</td>
-                                <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
+                                <td class="ticket-total-value text-end">@runningTotal.ToString("N0") VND</td>
                             </tr>
                             @if (addScore > 0)
                             {

@@ -409,34 +409,30 @@
             var afterPromo = afterRank - promoDiscountAmount;
 
             var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-            var afterVoucher = afterPromo - voucherAmount;
+
+            // Calculate seat after rank discount
+            var seatAfterRank = subtotal - rankDiscountAmount;
+            if (seatAfterRank < 0) seatAfterRank = 0;
+
+            // Add food
+            var seatAndFood = seatAfterRank + parseInt(foodPrices);
+
+            // Apply voucher to (seat + food)
+            var afterVoucher = seatAndFood - voucherAmount;
             if (afterVoucher < 0) afterVoucher = 0;
 
+            // Apply points
             var useScore = parseInt($('#useScore').val()) || 0;
             var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
             var valid = true;
             var validationMsg = '';
 
-            if (useScore === 0) {
-                validationMsg = '';
-                valid = true;
-            } else if (useScore < 20) {
-                validationMsg = 'Minimum 20 points required.';
-                valid = false;
-            } else if (useScore > maxUsablePoints) {
-                validationMsg = `You can use up to ${maxUsablePoints} points for this order.`;
-                valid = false;
-            }
-
-            var finalSeatTotal = afterVoucher;
+            var finalTotal = afterVoucher;
             if (valid && useScore > 0) {
                 var pointsValue = useScore * pointValue;
-                finalSeatTotal = afterVoucher - pointsValue;
-                if (finalSeatTotal < 0) finalSeatTotal = 0;
+                finalTotal = afterVoucher - pointsValue;
+                if (finalTotal < 0) finalTotal = 0;
             }
-
-            // Tổng cuối cùng = giá ghế sau giảm + giá food
-            var finalTotal = finalSeatTotal + parseInt(foodPrices);
 
             // Update UI
             $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
@@ -480,7 +476,7 @@
             // Point earning preview
             var pointsToEarn = 0;
             if (valid) {
-                pointsToEarn = Math.round(finalSeatTotal * earningRate / 100 / pointValue);
+                pointsToEarn = Math.round(finalTotal * earningRate / 100 / pointValue);
             }
             $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
 

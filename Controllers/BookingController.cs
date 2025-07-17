@@ -301,12 +301,16 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
-            // Lấy food từ DB
+            // Redirect to Success if total is 0 (for 0 VND bookings)   
+            if ((invoice.TotalMoney ?? 0) == 0)
+            {
+                return RedirectToAction("Success", new { invoiceId = invoice.InvoiceId });
+            }
+
             var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            // Fix: Seat price should not include food price
             decimal totalSeatPrice = (invoice.TotalMoney ?? 0) - totalFoodPrice;
-            if (totalSeatPrice < 0) totalSeatPrice = 0;
+            if (totalSeatPrice < 0) totalSeatPrice = 0; 
             decimal totalAmount = totalSeatPrice + totalFoodPrice;
 
             var sanitizedMovieName = Regex.Replace(invoice.MovieShow.Movie.MovieNameEnglish, @"[^a-zA-Z0-9\s]", "");
