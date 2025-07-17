@@ -1,5 +1,11 @@
 ﻿@model MovieTheater.ViewModels.ConfirmBookingViewModel
 
+@{
+    decimal seatPrice = Model.SelectedSeats != null
+        ? Model.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0)
+        : 0;
+}
+
 <div class="container mt-4">
     <div class="text-start p-3">
         <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime })" class="btn btn-secondary">&larr; Return</a>
@@ -65,7 +71,7 @@
                 }
             </tbody>
         </table>
-
+      
         <hr />
 <!-- Danh sách đồ ăn đã chọn -->
 @if (Model.SelectedFoods != null && Model.SelectedFoods.Count > 0)
@@ -121,8 +127,8 @@
                 <table class="table table-borderless table-sm" style="max-width: 350px; margin-left: auto;">
                     <tbody>
                         <tr>
-                            <td class="text-start">Original Price (Seats):</td>
-                            <td><span id="originalTotal">@Model.Subtotal.ToString("N0") VND</span></td>
+                            <td class="text-start">Seat Price:</td>
+                            <td><span id="originalTotal">@seatPrice.ToString("N0") VND</span></td>
                         </tr>
                         @if (Model.TotalFoodPrice > 0)
                         {
@@ -174,13 +180,13 @@
             @Html.HiddenFor(m => m.RankDiscount)
             @Html.HiddenFor(m => m.RankDiscountPercent)
             @Html.HiddenFor(m => m.PromotionDiscountPercent)
-            @Html.HiddenFor(m => m.VoucherAmount)
             @Html.HiddenFor(m => m.AddScore)
             @Html.HiddenFor(m => m.TotalFoodPrice)
             @Html.HiddenFor(m => m.EarningRate)
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
             <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
             <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
+            <input type="hidden" name="VoucherAmount" id="hiddenVoucherAmount" value="@Model.VoucherAmount" />
             <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
             @for (int i = 0; i < Model.SelectedSeats.Count; i++)
             {
@@ -287,8 +293,8 @@
 
 <script>
     $(document).ready(function () {
-        // Values from server
-        var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        // Use the correct seat price from Razor
+        var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -388,13 +394,14 @@
         }
 
         function updatePriceFlow() {
-            var originalTotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture); // chỉ giá ghế
+            var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-            // Áp dụng giảm giá, voucher, promotion, điểm lên giá ghế
+            // Rank discount is applied to subtotal (after promotion)
             var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var rankDiscountAmount = Math.round(originalTotal * (rankDiscountPercent / 100));
-            var afterRank = originalTotal - rankDiscountAmount;
+            var rankDiscountAmount = Math.round(subtotal * (rankDiscountPercent / 100));
+            var afterRank = subtotal - rankDiscountAmount;
             if (afterRank < 0) afterRank = 0;
 
             var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
@@ -402,36 +409,34 @@
             var afterPromo = afterRank - promoDiscountAmount;
 
             var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-            var afterVoucher = afterPromo - voucherAmount;
+
+            // Calculate seat after rank discount
+            var seatAfterRank = subtotal - rankDiscountAmount;
+            if (seatAfterRank < 0) seatAfterRank = 0;
+
+            // Add food
+            var seatAndFood = seatAfterRank + parseInt(foodPrices);
+
+            // Apply voucher to (seat + food)
+            var afterVoucher = seatAndFood - voucherAmount;
             if (afterVoucher < 0) afterVoucher = 0;
 
+            // Apply points
             var useScore = parseInt($('#useScore').val()) || 0;
             var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
             var valid = true;
             var validationMsg = '';
 
-            if (useScore === 0) {
-                validationMsg = '';
-                valid = true;
-            } else if (useScore < 20) {
-                validationMsg = 'Minimum 20 points required.';
-                valid = false;
-            } else if (useScore > maxUsablePoints) {
-                validationMsg = `You can use up to ${maxUsablePoints} points for this order.`;
-                valid = false;
-            }
-
-            var finalSeatTotal = afterVoucher;
+            var finalTotal = afterVoucher;
             if (valid && useScore > 0) {
                 var pointsValue = useScore * pointValue;
-                finalSeatTotal = afterVoucher - pointsValue;
-                if (finalSeatTotal < 0) finalSeatTotal = 0;
+                finalTotal = afterVoucher - pointsValue;
+                if (finalTotal < 0) finalTotal = 0;
             }
 
-            // Tổng cuối cùng = giá ghế sau giảm + giá food
-            var finalTotal = finalSeatTotal + parseInt(foodPrices);
-
             // Update UI
+            $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
+            $('#subtotal').text(Number(subtotal).toLocaleString() + ' VND');
             $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
 
             // Rank discount row
@@ -471,7 +476,7 @@
             // Point earning preview
             var pointsToEarn = 0;
             if (valid) {
-                pointsToEarn = Math.round(finalSeatTotal * earningRate / 100 / pointValue);
+                pointsToEarn = Math.round(finalTotal * earningRate / 100 / pointValue);
             }
             $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
 
@@ -488,6 +493,7 @@
             $('#confirmBtn').prop('disabled', !valid);
             $('#hiddenUseScore').val(valid ? useScore : 0);
             $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
+            $('#hiddenVoucherAmount').val(selectedVoucher ? selectedVoucher.value : 0);
             $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
         }
 
@@ -497,6 +503,13 @@
 
         // Initial state
         updatePriceFlow();
+
+        // Add this to log voucher amount before form submission
+        $('#confirmBtn').on('click', function(e) {
+            // Ensure price flow is updated before submit
+            updatePriceFlow();
+            console.log('VoucherAmount before submit:', $('#hiddenVoucherAmount').val());
+        });
     });
 
     function testSuccess() {

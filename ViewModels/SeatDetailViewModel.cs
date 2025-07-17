@@ -10,6 +10,7 @@
         public decimal? PromotionDiscount { get; set; }
         public decimal? PriceAfterPromotion { get; set; }
         public string PromotionName { get; set; }
+        public int? SeatTypeId { get; set; }
     }
 
 }

@@ -43,13 +43,17 @@ namespace MovieTheater.Repository
                 .FirstOrDefault(i => i.InvoiceId == invoiceId);
         }
 
-        public async Task<IEnumerable<Invoice>> GetByAccountIdAsync(string accountId, InvoiceStatus? status = null)
+        public async Task<IEnumerable<Invoice>> GetByAccountIdAsync(string accountId, InvoiceStatus? status = null, bool? isCanceled = null)
         {
             var query = _context.Invoices.Where(i => i.AccountId == accountId);
 
             if (status.HasValue)
             {
                 query = query.Where(i => i.Status == status.Value);
+            }
+            if (isCanceled.HasValue)
+            {
+                query = query.Where(i => i.Cancel == isCanceled.Value);
             }
 
             return await query

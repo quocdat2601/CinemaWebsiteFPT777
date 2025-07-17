@@ -1,21 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using MovieTheater.Models; // Added for Invoice and SeatDetailViewModel
-using System.Linq;
-using MovieTheater.Service; // Added for Sum
 
 namespace MovieTheater.Controllers
 {
     public class TicketController : Controller
     {
         private readonly ITicketService _ticketService;
-        private readonly IFoodInvoiceService _foodInvoiceService; // Added for food invoice service
 
-        public TicketController(ITicketService ticketService, IFoodInvoiceService foodInvoiceService)
+        public TicketController(ITicketService ticketService)
         {
             _ticketService = ticketService;
-            _foodInvoiceService = foodInvoiceService; // Initialize food invoice service
         }
 
         [HttpGet]
@@ -65,29 +60,12 @@ namespace MovieTheater.Controllers
             if (string.IsNullOrEmpty(accountId))
                 return RedirectToAction("Login", "Account");
 
-            var booking = await _ticketService.GetTicketDetailsAsync(id, accountId);
-            if (booking == null)
+            var bookingDetails = await _ticketService.GetTicketDetailsAsync(id, accountId);
+            if (bookingDetails == null)
                 return NotFound();
 
-            var seatDetails = _ticketService.BuildSeatDetails(booking);
-            var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(id)).ToList();
-            var totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-
-            var viewModel = new MovieTheater.ViewModels.TicketDetailsViewModel
-            {
-                Booking = booking,
-                SeatDetails = seatDetails,
-                VoucherAmount = booking.Voucher?.Value,
-                VoucherCode = booking.Voucher?.Code,
-                FoodTotal = totalFoodPrice,
-                SelectedFoods = selectedFoods
-                // Nếu cần thêm trường khác, bổ sung ở đây
-            };
-
-            return View(viewModel);
+            return View(bookingDetails);
         }
-
-        // Xóa hoàn toàn method BuildSeatDetails khỏi controller
 
         [HttpPost]
         public async Task<IActionResult> Cancel(string id, string returnUrl)

@@ -23,6 +23,8 @@ public partial class Invoice
 
     public string? Seat { get; set; }
 
+    public string? SeatIds { get; set; }
+
     public string? AccountId { get; set; }
 
     public int? MovieShowId { get; set; }
@@ -33,9 +35,15 @@ public partial class Invoice
 
     public decimal? RankDiscountPercentage { get; set; }
 
-    public string? Seat_IDs { get; set; } // Comma-separated seat IDs for this invoice
+    public bool Cancel { get; set; }
+
+    public DateTime? CancelDate { get; set; }
+
+    public string? CancelBy { get; set; }
 
     public virtual Account? Account { get; set; }
+
+    public virtual ICollection<FoodInvoice> FoodInvoices { get; set; } = new List<FoodInvoice>();
 
     public virtual MovieShow? MovieShow { get; set; }
 

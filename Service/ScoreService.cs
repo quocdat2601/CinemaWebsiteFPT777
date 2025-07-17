@@ -33,6 +33,7 @@ namespace MovieTheater.Service
 
             foreach (var i in invoices)
             {
+                if (i.Cancel) continue;
                 if (historyType == "add" || string.IsNullOrEmpty(historyType) || historyType == "all")
                 {
                     if (i.AddScore.HasValue && i.AddScore.Value > 0)

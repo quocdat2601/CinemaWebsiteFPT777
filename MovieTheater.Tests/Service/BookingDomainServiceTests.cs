@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 using Xunit;
 using ModelVersion = MovieTheater.Models.Version;
 
+using Moq;
+using MovieTheater.Models;
+using MovieTheater.Service;
+using MovieTheater.Tests.Controller;
+
 namespace MovieTheater.Tests.Service
 {
     public class BookingDomainServiceTests
@@ -26,8 +31,9 @@ namespace MovieTheater.Tests.Service
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
         private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
         private readonly Mock<ISeatTypeService> _seatTypeSvc = new();
+        private BookingDomainService _svc;
 
-        private readonly BookingDomainService _svc;
+        //        private readonly BookingDomainService _svc;
 
         public BookingDomainServiceTests()
         {
@@ -806,7 +812,7 @@ namespace MovieTheater.Tests.Service
             };
             _context.MovieShows.Add(show);
             await _context.SaveChangesAsync();
-            var inv = new Invoice { InvoiceId = "INVX", Seat_IDs = "1,2", MovieShowId = 1, TotalMoney = 100 };
+            var inv = new Invoice { InvoiceId = "INVX", SeatIds = "1,2", MovieShowId = 1, TotalMoney = 100 };
             _context.Invoices.Add(inv);
             var st = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#FFFFFF" };
             _context.SeatTypes.Add(st);
@@ -848,7 +854,7 @@ namespace MovieTheater.Tests.Service
             {
                 InvoiceId = "INVY",
                 MovieShowId = 1,
-                Seat_IDs = "3",
+                SeatIds = "3",
                 TotalMoney = 100m,
                 BookingDate = DateTime.Today,
                 Status = InvoiceStatus.Completed
@@ -923,7 +929,7 @@ namespace MovieTheater.Tests.Service
             {
                 InvoiceId = "INVN",
                 MovieShowId = 1,
-                Seat_IDs = "1",
+                SeatIds = "1",
                 RankDiscountPercentage = 10,
                 VoucherId = "V1",
                 UseScore = 1,
@@ -1001,7 +1007,7 @@ namespace MovieTheater.Tests.Service
             };
             _context.MovieShows.Add(show);
             await _context.SaveChangesAsync();
-            var inv = new Invoice { InvoiceId = "INVN", Seat_IDs = "1", MovieShowId = 1, TotalMoney = 10, RankDiscountPercentage = 50, VoucherId = "V1", UseScore = 1 };
+            var inv = new Invoice { InvoiceId = "INVN", SeatIds = "1", MovieShowId = 1, TotalMoney = 10, RankDiscountPercentage = 50, VoucherId = "V1", UseScore = 1 };
             _context.Invoices.Add(inv);
             var st = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 10, ColorHex = "#FFFFFF" };
             _context.SeatTypes.Add(st);

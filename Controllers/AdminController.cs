@@ -22,6 +22,7 @@ namespace MovieTheater.Controllers
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
+        private readonly IVersionRepository _versionRepository;
 
         public AdminController(
             IMovieService movieService,
@@ -35,7 +36,7 @@ namespace MovieTheater.Controllers
             IInvoiceService invoiceService,
             IFoodService foodService,
             IVoucherService voucherService,
-            IRankService rankService)
+            IRankService rankService, IVersionRepository versionRepository)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -49,6 +50,7 @@ namespace MovieTheater.Controllers
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
+            _versionRepository = versionRepository;
         }
 
         // GET: AdminController
@@ -93,11 +95,16 @@ namespace MovieTheater.Controllers
                     return PartialView("MovieMg", movies);
                 case "ShowroomMg":
                     var cinema = _cinemaService.GetAll();
-                    var seatTypes = _seatTypeService.GetAll();
                     var versions = _movieService.GetAllVersions();
                     ViewBag.Versions = versions;
-                    ViewBag.SeatTypes = seatTypes;
                     return PartialView("ShowroomMg", cinema);
+                case "VersionMg":
+                    var seatTypes = _seatTypeService.GetAll();
+                    ViewBag.SeatTypes = seatTypes;
+                    var versionMg = _versionRepository.GetAll();
+                    var seatTypesForVersion = _seatTypeService.GetAll();
+                    ViewBag.SeatTypes = seatTypesForVersion;
+                    return PartialView("VersionMg", versionMg);
                 case "PromotionMg":
                     var promotions = _promotionService.GetAll();
                     return PartialView("PromotionMg", promotions);
@@ -276,6 +283,10 @@ namespace MovieTheater.Controllers
         {
             var today = DateTime.Today;
             var allInvoices = _invoiceService.GetAll().Where(i => i.Status == InvoiceStatus.Completed).ToList();
+            var allRefunds = allInvoices.Where(i => i.Cancel).ToList();
+            var grossRevenue = allInvoices.Sum(i => i.TotalMoney ?? 0m);
+            var totalRefund = allRefunds.Sum(i => i.TotalMoney ?? 0m);
+            var netRevenue = grossRevenue - totalRefund;
 
             var todayInv = allInvoices.Where(i => i.BookingDate?.Date == today).ToList();
 
@@ -364,7 +375,10 @@ namespace MovieTheater.Controllers
                 TopMovies = topMovies,
                 TopMembers = topMembers,
                 RecentBookings = recentBookings,
-                RecentMembers = recentMembers
+                RecentMembers = recentMembers,
+                GrossRevenue = grossRevenue,
+                TotalRefund = totalRefund,
+                NetRevenue = netRevenue
             };
         }
 

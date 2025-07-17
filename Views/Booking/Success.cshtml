@@ -15,11 +15,17 @@
     var totalPriceValue = Model.TotalPrice;
     var movieName = booking.MovieName;
     var screen = booking.CinemaRoomName;
+    var version = booking.VersionName;
     var showDate = booking.ShowDate.ToString("yyyy-MM-dd");
     var showTime = booking.ShowTime;
     var ticketId = booking.InvoiceId;
     var bookingDate = booking.BookingDate?.ToString("yyyy-MM-dd HH:mm") ?? "";
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
+}
+
+@if ((seatDetails == null || !seatDetails.Any()) && TempData["SeatDetails"] != null)
+{
+    seatDetails = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MovieTheater.ViewModels.SeatDetailViewModel>>(TempData["SeatDetails"].ToString());
 }
 
 <style>
@@ -139,7 +145,7 @@
 </style>
 
 <div class="container mt-4 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
+    <div class="ticket-card card shadow p-0 w-100" style="max-width: 1000px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Booking Successful</h2>
             <span class="status-badge status-completed">Success</span>
@@ -151,22 +157,25 @@
                     <div class="ticket-row">
                         <label class="ticket-info-label">Movie Name</label>
                         <input type="text" class="ticket-info-value" value="@movieName" readonly />
-                        <label class="ticket-info-label">Screen</label>
-                        <input type="text" class="ticket-info-value" value="@screen" readonly />
+                        
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Date</label>
                         <input type="text" class="ticket-info-value" value="@showDate" readonly />
-                        <label class="ticket-info-label">Time</label>
-                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
+                        <label class="ticket-info-label">Screen</label>
+                        <input type="text" class="ticket-info-value" value="@screen" readonly />
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Ticket ID</label>
                         <input type="text" class="ticket-info-value" value="@ticketId" readonly />
+                        <label class="ticket-info-label">Version</label>
+                        <input type="text" class="ticket-info-value" value="@version" readonly />
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Booking Time</label>
-                        <input type="text" class="ticket-info-value" value="@bookingDate" readonly />
+                        <input type="text" class="ticket-info-value" value="@(DateTime.Parse(bookingDate).ToString("dd/MM/yyyy HH:mm"))" readonly />
+                        <label class="ticket-info-label">Time</label>
+                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
                     </div>
                     <div class="ticket-section-title">Seat(s)</div>
                     <table class="table table-bordered mb-2">
@@ -241,26 +250,24 @@
                     <div class="ticket-section-title">Price Breakdown</div>
                     <table class="table table-borderless mb-2">
                         <tbody>
+                            @{
+                                decimal runningTotal = subtotal;
+                            }
                             <tr>
                                 <td style="white-space: nowrap;">Subtotal</td>
-                                <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td> 
+                                <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
                             </tr>
                             @if (rankDiscount > 0)
                             {
+                                runningTotal -= rankDiscount;
                                 <tr>
                                     <td style="white-space: nowrap;">- Rank Discount</td>
                                     <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                 </tr>
                             }
-                            @if (voucherAmount > 0)
-                            {
-                                <tr>
-                                    <td style="white-space: nowrap;">- Voucher</td>
-                                    <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
-                                </tr>
-                            }
                             @if (usedScore > 0)
                             {
+                                runningTotal -= usedScoreValue;
                                 <tr>
                                     <td style="white-space: nowrap;">- Points Used</td>
                                     <td class="text-end" style="white-space: nowrap;">-@usedScore (@usedScoreValue.ToString("N0") VND)</td>
@@ -268,14 +275,24 @@
                             }
                             @if (totalFoodPrice > 0)
                             {
+                                runningTotal += totalFoodPrice;
                                 <tr>
                                     <td style="white-space: nowrap;">+ Food & Drinks</td>
                                     <td class="text-end" style="white-space: nowrap;">+@totalFoodPrice.ToString("N0") VND</td>
                                 </tr>
                             }
+                            @if (voucherAmount > 0)
+                            {
+                                runningTotal -= voucherAmount;
+                                <tr>
+                                    <td style="white-space: nowrap;">- Voucher</td>
+                                    <td class="text-end" style="white-space: nowrap;">-@voucherAmount.ToString("N0") VND</td>
+                                </tr>
+                            }
+                            @if (runningTotal < 0) { runningTotal = 0; }
                             <tr>
                                 <td class="ticket-total-label">Total Price</td>
-                                <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
+                                <td class="ticket-total-value text-end">@runningTotal.ToString("N0") VND</td>
                             </tr>
                             @if (addScore > 0)
                             {
