@@ -95,22 +95,30 @@ namespace MovieTheater.Controllers
                 if (invoice != null)
                 {
                     invoice.Status = MovieTheater.Models.InvoiceStatus.Completed;
-                    // If no ScheduleSeat records exist, create them (like admin flow)
-                    if (invoice.ScheduleSeats == null || !invoice.ScheduleSeats.Any())
+                    // Mark voucher as used if present and not already used
+                    if (!string.IsNullOrEmpty(invoice.VoucherId))
                     {
-                        var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => s.Trim())
-                            .ToList();
-                        var allSeats = _context.Seats.Where(s => seatNames.Contains(s.SeatName)).ToList();
-                        var scheduleSeats = allSeats.Select(seat =>
+                        var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                        if (voucher != null && (voucher.IsUsed == false))
                         {
-                            var seatType = _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-                            decimal basePrice = seatType?.PricePercent ?? 0;
-                            if (invoice.MovieShow?.Version != null)
-                                basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                            decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
-                            decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
-                            decimal priceAfterPromotion = basePrice - discount;
+                            voucher.IsUsed = true;
+                            _context.Vouchers.Update(voucher);
+                        }
+                    }
+                    // If no ScheduleSeat records exist, create them (like admin flow)
+                    var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .ToList();
+                    var allSeats = _context.Seats.Where(s => seatNames.Contains(s.SeatName)).ToList();
+                    var existingScheduleSeats = _context.ScheduleSeats
+                        .Where(ss => ss.InvoiceId == invoice.InvoiceId)
+                        .Select(ss => ss.SeatId)
+                        .ToHashSet();
+
+                    var newScheduleSeats = allSeats
+                        .Where(seat => !existingScheduleSeats.Contains(seat.SeatId))
+                        .Select(seat =>
+                        {
                             return new MovieTheater.Models.ScheduleSeat
                             {
                                 MovieShowId = invoice.MovieShowId,
@@ -119,7 +127,10 @@ namespace MovieTheater.Controllers
                                 SeatStatusId = 2
                             };
                         }).ToList();
-                        _context.ScheduleSeats.AddRange(scheduleSeats);
+
+                    if (newScheduleSeats.Any())
+                    {
+                        _context.ScheduleSeats.AddRange(newScheduleSeats);
                         _context.SaveChanges();
                         // Reload invoice.ScheduleSeats for further processing
                         _context.Entry(invoice).Collection(i => i.ScheduleSeats).Load();

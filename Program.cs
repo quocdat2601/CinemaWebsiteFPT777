@@ -108,7 +108,6 @@ namespace MovieTheater
             builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
             builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
             builder.Services.AddScoped<IVNPayService, VNPayService>();
-            builder.Services.AddScoped<VNPayService, VNPayService>();
             builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
@@ -126,6 +125,7 @@ namespace MovieTheater
             builder.Services.AddSignalR(); //ADD SignalR
             builder.Services.AddScoped<IFoodRepository, FoodRepository>();
             builder.Services.AddScoped<IFoodService, FoodService>();
+            builder.Services.AddScoped<IVersionRepository, VersionRepository>();
             builder.Services.AddScoped<IFoodInvoiceRepository, FoodInvoiceRepository>();
             builder.Services.AddScoped<IFoodInvoiceService, FoodInvoiceService>();
             builder.Services.AddScoped<ITicketService, TicketService>();

@@ -180,13 +180,13 @@
             @Html.HiddenFor(m => m.RankDiscount)
             @Html.HiddenFor(m => m.RankDiscountPercent)
             @Html.HiddenFor(m => m.PromotionDiscountPercent)
-            @Html.HiddenFor(m => m.VoucherAmount)
             @Html.HiddenFor(m => m.AddScore)
             @Html.HiddenFor(m => m.TotalFoodPrice)
             @Html.HiddenFor(m => m.EarningRate)
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
             <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
             <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
+            <input type="hidden" name="VoucherAmount" id="hiddenVoucherAmount" value="@Model.VoucherAmount" />
             <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
             @for (int i = 0; i < Model.SelectedSeats.Count; i++)
             {
@@ -409,34 +409,30 @@
             var afterPromo = afterRank - promoDiscountAmount;
 
             var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-            var afterVoucher = afterPromo - voucherAmount;
+
+            // Calculate seat after rank discount
+            var seatAfterRank = subtotal - rankDiscountAmount;
+            if (seatAfterRank < 0) seatAfterRank = 0;
+
+            // Add food
+            var seatAndFood = seatAfterRank + parseInt(foodPrices);
+
+            // Apply voucher to (seat + food)
+            var afterVoucher = seatAndFood - voucherAmount;
             if (afterVoucher < 0) afterVoucher = 0;
 
+            // Apply points
             var useScore = parseInt($('#useScore').val()) || 0;
             var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
             var valid = true;
             var validationMsg = '';
 
-            if (useScore === 0) {
-                validationMsg = '';
-                valid = true;
-            } else if (useScore < 20) {
-                validationMsg = 'Minimum 20 points required.';
-                valid = false;
-            } else if (useScore > maxUsablePoints) {
-                validationMsg = `You can use up to ${maxUsablePoints} points for this order.`;
-                valid = false;
-            }
-
-            var finalSeatTotal = afterVoucher;
+            var finalTotal = afterVoucher;
             if (valid && useScore > 0) {
                 var pointsValue = useScore * pointValue;
-                finalSeatTotal = afterVoucher - pointsValue;
-                if (finalSeatTotal < 0) finalSeatTotal = 0;
+                finalTotal = afterVoucher - pointsValue;
+                if (finalTotal < 0) finalTotal = 0;
             }
-
-            // Tổng cuối cùng = giá ghế sau giảm + giá food
-            var finalTotal = finalSeatTotal + parseInt(foodPrices);
 
             // Update UI
             $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
@@ -480,7 +476,7 @@
             // Point earning preview
             var pointsToEarn = 0;
             if (valid) {
-                pointsToEarn = Math.round(finalSeatTotal * earningRate / 100 / pointValue);
+                pointsToEarn = Math.round(finalTotal * earningRate / 100 / pointValue);
             }
             $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
 
@@ -497,6 +493,7 @@
             $('#confirmBtn').prop('disabled', !valid);
             $('#hiddenUseScore').val(valid ? useScore : 0);
             $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
+            $('#hiddenVoucherAmount').val(selectedVoucher ? selectedVoucher.value : 0);
             $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
         }
 
@@ -506,6 +503,13 @@
 
         // Initial state
         updatePriceFlow();
+
+        // Add this to log voucher amount before form submission
+        $('#confirmBtn').on('click', function(e) {
+            // Ensure price flow is updated before submit
+            updatePriceFlow();
+            console.log('VoucherAmount before submit:', $('#hiddenVoucherAmount').val());
+        });
     });
 
     function testSuccess() {

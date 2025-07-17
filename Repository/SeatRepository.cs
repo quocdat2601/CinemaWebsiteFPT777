@@ -65,10 +65,6 @@ namespace MovieTheater.Repository
             return _context.Seats.FirstOrDefault(s => s.SeatName == seatName);
         }
 
-        public Seat? GetByName(string seatName)
-        {
-            return _context.Seats.Include(s => s.SeatType).FirstOrDefault(s => s.SeatName == seatName);
-        }
         public async Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2)
         {
             var coupleSeat = await _context.CoupleSeats
@@ -81,8 +77,7 @@ namespace MovieTheater.Repository
                 _context.CoupleSeats.Remove(coupleSeat);
                 await _context.SaveChangesAsync();
             }
-
-
         }
+        
     }
 }

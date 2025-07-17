@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 using Xunit;
 using ModelVersion = MovieTheater.Models.Version;
 
+using Moq;
+using MovieTheater.Models;
+using MovieTheater.Service;
+using MovieTheater.Tests.Controller;
+
 namespace MovieTheater.Tests.Service
 {
     public class BookingDomainServiceTests
@@ -26,8 +31,9 @@ namespace MovieTheater.Tests.Service
         private readonly MovieTheaterContext _context = InMemoryDb.Create();
         private readonly Mock<IBookingPriceCalculationService> _priceCalc = new();
         private readonly Mock<ISeatTypeService> _seatTypeSvc = new();
+        private BookingDomainService _svc;
 
-        private readonly BookingDomainService _svc;
+        //        private readonly BookingDomainService _svc;
 
         public BookingDomainServiceTests()
         {
