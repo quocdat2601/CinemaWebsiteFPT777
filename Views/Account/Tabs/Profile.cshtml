@@ -352,7 +352,7 @@
                     var showTime = booking.movieShow && booking.movieShow.schedule && booking.movieShow.schedule.scheduleTime ? booking.movieShow.schedule.scheduleTime.substring(0, 5) : 'N/A';
                     var seats = booking.seat || '';
                     var seatCount = seats ? seats.split(',').length : 0;
-                    var statusBadge = booking.status === 1 ? '<span class="badge bg-success">Booked</span>' : '<span class="badge bg-danger">Canceled</span>';
+                    var statusBadge = (booking.status === 1 && booking.cancel === false) ? '<span class="badge bg-success">Booked</span>' : (booking.status === 1 && booking.cancel === true) ? '<span class="badge bg-danger">Canceled</span>' : '<span class="badge bg-secondary">Not Paid</span>';
                     var totalMoney = booking.totalMoney === 0 ? '0 VND' : (booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A');
                     var totalAmountHtml = `<span id="booking-total-${booking.invoiceId}" class="booking-total-amount">${totalMoney}</span>`;
                     if (booking.status === 1 && booking.invoiceId) {
@@ -384,7 +384,7 @@
                                 <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="/Ticket/Details/${booking.invoiceId}"><i class="fas fa-info-circle me-2"></i>Detail</a></li>
-                                    ${booking.status === 1 ? `<li><form action="/Ticket/Cancel" method="post" class="d-inline" onsubmit="return confirm('Do you want to cancel ticket ?');"><input type="hidden" name="id" value="${booking.invoiceId}" /><input type="hidden" name="returnUrl" value="/MyAccount/MainPage?tab=Profile" /><button type="submit" class="dropdown-item"><i class="fas fa-times me-2"></i>Cancel Ticket</button></form></li>` : ''}
+                                    ${booking.status === 1 && booking.cancel === false ? `<li><form action="/Ticket/Cancel" method="post" class="d-inline" onsubmit="return confirm('Do you want to cancel ticket ?');"><input type="hidden" name="id" value="${booking.invoiceId}" /><input type="hidden" name="returnUrl" value="/MyAccount/MainPage?tab=Profile" /><button type="submit" class="dropdown-item"><i class="fas fa-times me-2"></i>Cancel Ticket</button></form></li>` : ''}
                                 </ul>
                             </div>
                         </div>

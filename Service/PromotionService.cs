@@ -33,6 +33,7 @@ namespace MovieTheater.Service
 
         public bool Update(Promotion promotion)
         {
+           
             return true;
         }
 

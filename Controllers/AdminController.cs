@@ -283,6 +283,10 @@ namespace MovieTheater.Controllers
         {
             var today = DateTime.Today;
             var allInvoices = _invoiceService.GetAll().Where(i => i.Status == InvoiceStatus.Completed).ToList();
+            var allRefunds = allInvoices.Where(i => i.Cancel).ToList();
+            var grossRevenue = allInvoices.Sum(i => i.TotalMoney ?? 0m);
+            var totalRefund = allRefunds.Sum(i => i.TotalMoney ?? 0m);
+            var netRevenue = grossRevenue - totalRefund;
 
             var todayInv = allInvoices.Where(i => i.BookingDate?.Date == today).ToList();
 
@@ -371,7 +375,10 @@ namespace MovieTheater.Controllers
                 TopMovies = topMovies,
                 TopMembers = topMembers,
                 RecentBookings = recentBookings,
-                RecentMembers = recentMembers
+                RecentMembers = recentMembers,
+                GrossRevenue = grossRevenue,
+                TotalRefund = totalRefund,
+                NetRevenue = netRevenue
             };
         }
 
