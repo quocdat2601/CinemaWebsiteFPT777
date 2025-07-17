@@ -225,6 +225,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
 
             var result = await _bookingDomainService.ConfirmBookingAsync(model, userId, IsTestSuccess);
+            Console.WriteLine($"[Controller] Model.SelectedVoucherId: {model.SelectedVoucherId}, Model.VoucherAmount: {model.VoucherAmount}");
 
             if (!result.Success)
             {
@@ -233,9 +234,9 @@ namespace MovieTheater.Controllers
             }
 
             // Debug log for IsTestSuccess value
-            Console.WriteLine($"[BookingController.Confirm] IsTestSuccess: '{IsTestSuccess}'");
+            Console.WriteLine($"[BookingController.Confirm] IsTestSuccess: '{IsTestSuccess}', TotalPrice: {result.TotalPrice}");
 
-            if (IsTestSuccess == "true")
+            if (IsTestSuccess == "true" || Math.Abs(result.TotalPrice) < 0.01m)
             {
                 return RedirectToAction("Success", new { invoiceId = result.InvoiceId });
             }
@@ -255,6 +256,29 @@ namespace MovieTheater.Controllers
             var userId = _accountService.GetCurrentUser()?.AccountId;
             if (userId == null)
                 return RedirectToAction("Login", "Account");
+
+            // Mark voucher as used if present and not already used (for 0 VND transactions)
+            var invoice = _invoiceService.GetById(invoiceId);
+            if (invoice != null)
+            {
+                // Ensure status is set to Completed for 0 VND bookings
+                if (invoice.Status != InvoiceStatus.Completed)
+                {
+                    invoice.Status = InvoiceStatus.Completed;
+                    _context.Invoices.Update(invoice);
+                    _context.SaveChanges();
+                }
+                if (!string.IsNullOrEmpty(invoice.VoucherId))
+                {
+                    var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                    if (voucher != null && (voucher.IsUsed == false))
+                    {
+                        voucher.IsUsed = true;
+                        _context.Vouchers.Update(voucher);
+                        _context.SaveChanges();
+                    }
+                }
+            }
 
             var viewModel = await _bookingDomainService.BuildSuccessViewModelAsync(invoiceId, userId);
 

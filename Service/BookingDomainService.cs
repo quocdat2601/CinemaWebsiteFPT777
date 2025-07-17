@@ -191,6 +191,7 @@ namespace MovieTheater.Service
 
         public async Task<BookingResult> ConfirmBookingAsync(ConfirmBookingViewModel model, string userId, string isTestSuccess)
         {
+            Console.WriteLine($"[DomainService] model.SelectedVoucherId: {model.SelectedVoucherId}, model.VoucherAmount: {model.VoucherAmount}");
             if (model == null || string.IsNullOrEmpty(userId) || model.SelectedSeats == null || !model.SelectedSeats.Any())
             {
                 return new BookingResult { Success = false, ErrorMessage = "Invalid booking data.", InvoiceId = null };
@@ -227,7 +228,7 @@ namespace MovieTheater.Service
             decimal rankDiscount = model.RankDiscount > 0 ? model.RankDiscount : priceResult.RankDiscount;
             decimal rankDiscountPercent = model.RankDiscountPercent > 0 ? model.RankDiscountPercent : priceResult.RankDiscountPercent;
             decimal promotionDiscountPercent = model.PromotionDiscountPercent > 0 ? model.PromotionDiscountPercent : priceResult.PromotionDiscountPercent;
-            decimal voucherAmount = model.VoucherAmount > 0 ? model.VoucherAmount : priceResult.VoucherAmount;
+            decimal voucherAmount = model.VoucherAmount;
             int addScore = model.AddScore > 0 ? model.AddScore : priceResult.AddScore;
             decimal totalFoodPrice = model.TotalFoodPrice > 0 ? model.TotalFoodPrice : priceResult.TotalFoodPrice;
             decimal earningRate = model.EarningRate > 0 ? model.EarningRate : priceResult.RankDiscountPercent;
@@ -279,9 +280,11 @@ namespace MovieTheater.Service
                 {
                     await _accountService.DeductScoreAsync(userId, priceResult.UseScore, true); // Pass isTestSuccess true
                 }
-                if (priceResult.VoucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
+                // Always mark voucher as used if applied (SelectedVoucherId or VoucherId)
+                string voucherIdToUse = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : invoice.VoucherId;
+                if (!string.IsNullOrEmpty(voucherIdToUse))
                 {
-                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
+                    var voucher = _voucherService.GetById(voucherIdToUse);
                     if (voucher != null && (voucher.IsUsed == false))
                     {
                         voucher.IsUsed = true;
@@ -323,7 +326,13 @@ namespace MovieTheater.Service
                 MovieTheater.Hubs.SeatHub.ReleaseHold(model.MovieShowId, seat.SeatId);
             }
 
-            return new BookingResult { Success = true, ErrorMessage = null, InvoiceId = invoice.InvoiceId };
+            // Calculate total price after all discounts (seat subtotal - rank discount - voucher - points)
+            totalPrice = subtotal - rankDiscount - voucherAmount - (priceResult.UseScore * 1000);
+            if (totalPrice < 0) totalPrice = 0;
+            totalPrice += totalFoodPrice;
+            Console.WriteLine($"subtotal: {subtotal}, rankDiscount: {rankDiscount}, voucherAmount: {voucherAmount}, usedScoreValue: {priceResult.UseScore * 1000}, totalFoodPrice: {totalFoodPrice}, totalPrice: {totalPrice}");
+
+            return new BookingResult { Success = true, ErrorMessage = null, InvoiceId = invoice.InvoiceId, TotalPrice = totalPrice };
         }
 
         public async Task<BookingSuccessViewModel> BuildSuccessViewModelAsync(string invoiceId, string userId)

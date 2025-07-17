@@ -95,6 +95,16 @@ namespace MovieTheater.Controllers
                 if (invoice != null)
                 {
                     invoice.Status = MovieTheater.Models.InvoiceStatus.Completed;
+                    // Mark voucher as used if present and not already used
+                    if (!string.IsNullOrEmpty(invoice.VoucherId))
+                    {
+                        var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                        if (voucher != null && (voucher.IsUsed == false))
+                        {
+                            voucher.IsUsed = true;
+                            _context.Vouchers.Update(voucher);
+                        }
+                    }
                     // If no ScheduleSeat records exist, create them (like admin flow)
                     var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(s => s.Trim())

@@ -294,7 +294,7 @@
                                 }
                                 <tr>
                                     <td style="white-space: nowrap;">- Voucher</td>
-                                    <td class="text-end" style="white-space: nowrap;">-@(((decimal)(ViewBag.VoucherAmount ?? 0)).ToString("N0")) VND</td>
+                                    <td class="text-end" style="white-space: nowrap;">-@((Model.VoucherAmount ?? 0).ToString("N0")) VND</td>
                                 </tr>
                                 @if (useScore > 0)
                                 {

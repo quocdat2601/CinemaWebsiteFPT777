@@ -180,13 +180,13 @@
             @Html.HiddenFor(m => m.RankDiscount)
             @Html.HiddenFor(m => m.RankDiscountPercent)
             @Html.HiddenFor(m => m.PromotionDiscountPercent)
-            @Html.HiddenFor(m => m.VoucherAmount)
             @Html.HiddenFor(m => m.AddScore)
             @Html.HiddenFor(m => m.TotalFoodPrice)
             @Html.HiddenFor(m => m.EarningRate)
             <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
             <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
             <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
+            <input type="hidden" name="VoucherAmount" id="hiddenVoucherAmount" value="@Model.VoucherAmount" />
             <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
             @for (int i = 0; i < Model.SelectedSeats.Count; i++)
             {
@@ -497,6 +497,7 @@
             $('#confirmBtn').prop('disabled', !valid);
             $('#hiddenUseScore').val(valid ? useScore : 0);
             $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
+            $('#hiddenVoucherAmount').val(selectedVoucher ? selectedVoucher.value : 0);
             $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
         }
 
@@ -506,6 +507,13 @@
 
         // Initial state
         updatePriceFlow();
+
+        // Add this to log voucher amount before form submission
+        $('#confirmBtn').on('click', function(e) {
+            // Ensure price flow is updated before submit
+            updatePriceFlow();
+            console.log('VoucherAmount before submit:', $('#hiddenVoucherAmount').val());
+        });
     });
 
     function testSuccess() {
