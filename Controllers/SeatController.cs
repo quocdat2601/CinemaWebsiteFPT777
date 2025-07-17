@@ -93,15 +93,18 @@ namespace MovieTheater.Controllers
             ViewBag.SeatTypes = _seatTypeService.GetAll();
             ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
 
-            if (cinemaRoom == null)
-                return NotFound();
+            if (!cinemaRoom.SeatLength.HasValue || !cinemaRoom.SeatWidth.HasValue || cinemaRoom.SeatLength.Value == 0 || cinemaRoom.SeatWidth.Value == 0)
+            {
+                TempData["ErrorMessage"] = "Add seat length and seat width before viewing seat";
+                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+            }
 
             var viewModel = new ShowroomEditViewModel
             {
                 CinemaRoomId = cinemaId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
-                SeatWidth = (int)cinemaRoom.SeatWidth,
-                SeatLength = (int)cinemaRoom.SeatLength,
+                SeatWidth = cinemaRoom.SeatWidth ?? 0,
+                SeatLength = cinemaRoom.SeatLength ?? 0,
                 Seats = seats
             };
 
@@ -212,7 +215,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         [Route("Seat/Select")]
         public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId)
-        {            
+        {
             var movie = _movieService.GetById(movieId);
             if (movie == null)
             {
@@ -229,9 +232,9 @@ namespace MovieTheater.Controllers
             var movieShows = _movieService.GetMovieShows(movieId);
 
             // Get the specific movie show for this date, time, and version
-            var movieShow = movieShows.FirstOrDefault(ms => 
-                ms.ShowDate == DateOnly.FromDateTime(parsedDate) && 
-                ms.Schedule?.ScheduleTime.HasValue == true && 
+            var movieShow = movieShows.FirstOrDefault(ms =>
+                ms.ShowDate == DateOnly.FromDateTime(parsedDate) &&
+                ms.Schedule?.ScheduleTime.HasValue == true &&
                 ms.Schedule.ScheduleTime.Value.ToString("HH:mm") == time &&
                 (!versionId.HasValue || ms.VersionId == versionId.Value));
 
