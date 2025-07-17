@@ -53,68 +53,46 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar border-bottom box-shadow mb-0">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/image/logo.png" alt="MovieTheater Logo" style="height:40px; width:auto; display:inline-block; vertical-align:middle;" />
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="movie-logo-icon" style="display:flex;align-items:center;">
+                        <i class='bx bx-movie-play bx-tada main-color' style="font-size:2rem;"></i>
+                        <img src="~/image/logo.png" alt="MovieTheater Logo" style="height:40px; width:auto; display:inline-block; vertical-align:middle; margin-left:8px;">
+                    </span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        <!-- Đã xóa mục Home vì logo đã là link về Home -->
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Movie" asp-action="MovieList">Movie</a>
+                            <a class="nav-link" asp-area="" asp-controller="Movie" asp-action="MovieList">Movies</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Promotion" asp-action="List">Promotion</a>
+                            <a class="nav-link" asp-area="" asp-controller="Promotion" asp-action="List">Promotions</a>
                         </li>
                         @if (userRole == "Member")
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
+                                <a class="nav-link" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
                             </li>
                         }
                     </ul>
-
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
+                    <ul class="navbar-nav align-items-center">
+                        <li class="nav-item me-2">
                             <button id="toggle-dark-mode" class="btn btn-outline-secondary nav-link">🌙 Dark Mode</button>
                         </li>
-                        @if (userRole == "Admin")
+                        @if (isAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
-                            </li>
-                         
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
-                            </li>
-                        }
-                        else if (userRole == "Employee")
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
-                            </li>
-                        }
-                        else if (isAuthenticated)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link">Hello, @Name!</span>
-                            </li>
-                            <li  class="nav-item">
-                                <a class="nav-link" asp-controller="MyAccount" asp-action="MainPage">My Account</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding:0;">
+                                    <img src="@(User.FindFirst("Image")?.Value ?? "/image/profile.jpg")" alt="Avatar" class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid #eee;">
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                    <li><a class="dropdown-item" href="/MyAccount/MainPage">View Profile</a></li>
+                                    <li><a class="dropdown-item" href="/Account/Logout">Logout</a></li>
+                                </ul>
                             </li>
                         }
                         else
@@ -123,14 +101,13 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
                         }
-
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main role="main" class="fade-in">
+    <main role="main" class="fade-in" style="padding-top:0;">
         @RenderBody()
     </main>
 
