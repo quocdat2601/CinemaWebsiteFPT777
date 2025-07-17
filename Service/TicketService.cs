@@ -51,6 +51,7 @@ public class TicketService : ITicketService
         return await _invoiceRepository.GetDetailsAsync(ticketId, accountId);
     }
 
+
     public async Task<(bool Success, List<string> Messages)> CancelTicketAsync(string ticketId, string accountId)
     {
         var booking = await _invoiceRepository.GetForCancelAsync(ticketId, accountId);
@@ -109,7 +110,7 @@ public class TicketService : ITicketService
             {
                 VoucherId = _voucherService.GenerateVoucherId(),
                 AccountId = accountId,
-                Code = "REFUND",
+                Code = $"REFUND-{booking.InvoiceId}", // Unique code per refund
                 Value = booking.TotalMoney ?? 0,
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
@@ -230,7 +231,7 @@ public class TicketService : ITicketService
             {
                 VoucherId = _voucherService.GenerateVoucherId(),
                 AccountId = booking.AccountId,
-                Code = "REFUND",
+                Code = $"REFUND-{booking.InvoiceId}", // Unique code per refund
                 Value = booking.TotalMoney ?? 0,
                 CreatedDate = DateTime.Now,
                 ExpiryDate = DateTime.Now.AddDays(30),
@@ -288,9 +289,9 @@ public class TicketService : ITicketService
                     };
                 }).ToList();
         }
-        else if (!string.IsNullOrEmpty(booking.Seat_IDs))
+        else if (!string.IsNullOrEmpty(booking.SeatIds))
         {
-            var seatIdArr = booking.Seat_IDs
+            var seatIdArr = booking.SeatIds
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(id => int.Parse(id.Trim()))
                 .ToList();

@@ -74,9 +74,16 @@
             <label class="section-title">Show Date</label>
             <select class="form-control" id="showDateSelect">
                 <option value="">-- Select a Show Date --</option>
-                @foreach (var showDate in Model.AvailableShowDates)
-                {
-                    <option value="@showDate.ToString("yyyy-MM-dd")">@showDate.ToString("dd/MM/yyyy")</option>
+                @{
+                    var today = DateOnly.FromDateTime(DateTime.Today);
+                    var toDate = Model.ToDate;
+                    foreach (var showDate in Model.AvailableShowDates.OrderBy(d => d))
+                    {
+                        if (showDate >= today && (toDate == null || showDate <= toDate))
+                        {
+                            <option value="@showDate.ToString("yyyy-MM-dd")">@showDate.ToString("dd/MM/yyyy")</option>
+                        }
+                    }
                 }
             </select>
             <span class="text-danger" id="showDateError"></span>
@@ -153,34 +160,63 @@
                 return;
             }
 
-            try {
-                const response = await fetch(`/Movie/GetAvailableScheduleTimes?cinemaRoomId=${selectedRoom}&showDate=${selectedDate}&movieDurationMinutes=${movieDuration}&cleaningTimeMinutes=${cleaningTime}`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch available schedule times');
-                }
-                const result = await response.json();
-                const availableSchedules = result.schedules;
-                
-                scheduleSelect.innerHTML = '<option value="">-- Select a Schedule --</option>';
-                availableSchedules.forEach(schedule => {
-                    const option = document.createElement('option');
-                    option.value = schedule.scheduleId;
-                    option.textContent = schedule.scheduleTime;
-                    scheduleSelect.appendChild(option);
-                });
+            // 1. Fetch backend schedules and shows
+            const response = await fetch(`/Movie/GetAvailableScheduleTimes?cinemaRoomId=${selectedRoom}&showDate=${selectedDate}&movieDurationMinutes=${movieDuration}&cleaningTimeMinutes=${cleaningTime}`);
+            const result = await response.json();
+            const availableSchedules = result.schedules;
 
-                if (result.lastShowEndTime && result.lastShowEndTime !== "N/A") {
-                    let hintText = `This cinema is available at: ${result.lastShowEndTime} (+ 15 mins cleaning)`;
-                    if (result.nextAvailableTime && result.nextAvailableTime !== "N/A"){
-                        hintText += ` - Next available time: ${result.nextAvailableTime}`;
-                    }
-                    lastShowEndTimeEl.textContent = hintText;
-                } else {
-                    lastShowEndTimeEl.textContent = 'No shows scheduled for this room and date yet.';
+            // 2. Fetch backend shows for this room/date
+            let backendShows = [];
+            try {
+                const resp = await fetch(`/Movie/GetMovieShowsByRoomAndDate?cinemaRoomId=${selectedRoom}&showDate=${selectedDate}`);
+                if (resp.ok) {
+                    backendShows = await resp.json();
                 }
-            } catch (error) {
-                console.error('Error updating available schedules:', error);
-                lastShowEndTimeEl.textContent = 'Error loading schedules.';
+            } catch (e) {
+                console.error('Failed to fetch backend shows', e);
+            }
+
+            // 3. Get UI shows for this room/date
+            const uiShows = movieShowItems.filter(item => item.roomId === selectedRoom && item.dateId === selectedDate);
+
+            // 4. Merge shows
+            const allShows = [...backendShows, ...uiShows];
+
+            // 5. Filter available schedules to hide conflicts
+            const filteredSchedules = availableSchedules.filter(schedule => {
+                return !isScheduleConflicting(schedule.scheduleTime, allShows, movieDuration, cleaningTime);
+            });
+
+            // 6. Update dropdown
+            scheduleSelect.innerHTML = '<option value="">-- Select a Schedule --</option>';
+            filteredSchedules.forEach(schedule => {
+                const option = document.createElement('option');
+                option.value = schedule.scheduleId;
+                option.textContent = schedule.scheduleTime;
+                scheduleSelect.appendChild(option);
+            });
+
+            // 7. Update next available time hint
+            if (allShows.length > 0) {
+                // Find latest end time
+                let latestEnd = null;
+                for (const show of allShows) {
+                    if (!show.scheduleText) continue;
+                    const [startHour, startMin] = show.scheduleText.split(':').map(Number);
+                    const start = new Date(0, 0, 0, startHour, startMin);
+                    const end = new Date(start.getTime() + (movieDuration + cleaningTime) * 60000);
+                    if (!latestEnd || end > latestEnd) latestEnd = end;
+                }
+                if (latestEnd) {
+                    const h = latestEnd.getHours().toString().padStart(2, '0');
+                    const m = latestEnd.getMinutes().toString().padStart(2, '0');
+                    lastShowEndTimeEl.textContent = `This cinema is available at: ${h}:${m} (+ ${cleaningTime} mins cleaning)`;
+                    if (filteredSchedules.length > 0) {
+                        lastShowEndTimeEl.textContent += ` - Next available time: ${filteredSchedules[0].scheduleTime}`;
+                    }
+                }
+            } else {
+                lastShowEndTimeEl.textContent = 'No shows scheduled for this room and date yet.';
             }
         }
 
@@ -295,17 +331,7 @@
             const versionId = selectedVersionRadio ? parseInt(selectedVersionRadio.value) : null;
             const versionName = selectedVersionRadio ? selectedVersionRadio.parentElement.textContent.trim() : "N/A";
 
-            const isDuplicate = movieShowItems.some(item =>
-                item.dateId === selectedDateId &&
-                item.scheduleId === selectedScheduleId &&
-                item.roomId === roomId
-            );
-
-            if (isDuplicate) {
-                alert('This movie show has already been added.');
-                return;
-            }
-
+            // Build the new show object
             const movieShowItem = {
                 dateId: selectedDateId,
                 dateText: selectedDateText,
@@ -317,11 +343,20 @@
                 version: versionName
             };
 
+            // --- Call checkAndSuggest before adding ---
+            const allShowsForRoomDate = await getMergedShowsForRoomDate(roomId, selectedDateId);
+
+            if (isTimeConflict(movieShowItem, allShowsForRoomDate, movieDuration, cleaningTime)) {
+                alert('This schedule conflicts with another show in this room and date.');
+                return;
+            }
+
             movieShowItems.push(movieShowItem);
             renderMovieShows();
-
             scheduleSelect.innerHTML = '<option value="">-- Select a Schedule --</option>';
-            await updateAvailableSchedules(); 
+
+            await updateAvailableSchedules();
+
             updateAddButtonState();
         }
 
@@ -337,20 +372,51 @@
             }
 
             try {
-                const deleteResponse = await fetch(`/Movie/DeleteAllMovieShows?movieId=${movieId}`, {
-                    method: 'POST'
+                // 1. Fetch current shows from backend (get all for this movie)
+                const resp = await fetch(`/Movie/ViewShow/${movieId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
+                const backendShows = await resp.json();
 
-                if (!deleteResponse.ok) {
-                    throw new Error('Failed to clear existing movie shows');
+                // 2. Find shows to delete (in backend but not in UI)
+                const showsToDelete = backendShows.filter(b =>
+                    !movieShowItems.some(u =>
+                        u.dateId === b.showDate.split('/').reverse().join('-') &&
+                        u.roomId == b.cinemaRoomId &&
+                        u.scheduleId == b.scheduleId &&
+                        u.versionId == b.versionId
+                    )
+                );
+
+                // 3. Find shows to add (in UI but not in backend)
+                const showsToAdd = movieShowItems.filter(u =>
+                    !backendShows.some(b =>
+                        u.dateId === b.showDate.split('/').reverse().join('-') &&
+                        u.roomId == b.cinemaRoomId &&
+                        u.scheduleId == b.scheduleId &&
+                        u.versionId == b.versionId
+                    )
+                );
+
+                // 4. Try to delete shows (one by one, safely)
+                let undeletableShows = [];
+                for (const show of showsToDelete) {
+                    const delResp = await fetch('/Movie/DeleteMovieShowIfNotReferenced', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(show.movieShowId)
+                    });
+                    const delResult = await delResp.json();
+                    if (!delResult.success) {
+                        undeletableShows.push(show);
+                    }
                 }
 
-                for (const showItem of movieShowItems) {
+                // 5. Add new shows
+                for (const showItem of showsToAdd) {
                     const response = await fetch('/Movie/AddMovieShow', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             movieId: movieId,
                             showDate: showItem.dateId,
@@ -359,13 +425,16 @@
                             versionId: showItem.versionId
                         })
                     });
-
                     if (!response.ok) {
                         throw new Error(`Failed to add movie show for schedule ${showItem.scheduleText}`);
                     }
                 }
 
-                alert('Movie shows saved successfully!');
+                if (undeletableShows.length > 0) {
+                    alert('Some shows could not be deleted because they are referenced by invoices.');
+                } else {
+                    alert('Movie shows saved successfully!');
+                }
                 window.location.reload();
             } catch (error) {
                 console.error('Error saving movie shows:', error);
@@ -392,5 +461,112 @@
                 }
             });
         });
+
+        async function getMergedShowsForRoomDate(roomId, dateId) {
+            // 1. Fetch backend shows
+            let backendShows = [];
+            try {
+                const resp = await fetch(`/Movie/GetMovieShowsByRoomAndDate?cinemaRoomId=${roomId}&showDate=${dateId}`);
+                if (resp.ok) {
+                    backendShows = await resp.json();
+                }
+            } catch (e) {
+                console.error('Failed to fetch backend shows', e);
+            }
+
+            // 2. Get UI shows
+            const uiShows = movieShowItems.filter(item => item.roomId === roomId && item.dateId === dateId);
+
+            // 3. Merge (avoid duplicates if needed)
+            // If you want to avoid duplicate scheduleText, you can filter here
+            const allShows = [...backendShows, ...uiShows];
+
+            return allShows;
+        }
+
+        function getNextAvailableTime(allShows, movieDuration, cleaningTime) {
+            // allShows: array of shows for the room/date, each with a scheduleText (e.g., "14:00")
+            // Returns a string like "15:30" or null if no shows
+
+            if (!allShows || allShows.length === 0) return null;
+
+            // Sort by scheduleText (time)
+            allShows.sort((a, b) => a.scheduleText.localeCompare(b.scheduleText));
+
+            // Find the latest end time
+            let latestEnd = null;
+            for (const show of allShows) {
+                if (!show.scheduleText) continue;
+                const [startHour, startMin] = show.scheduleText.split(':').map(Number);
+                const start = new Date(0, 0, 0, startHour, startMin);
+                const end = new Date(start.getTime() + (movieDuration + cleaningTime) * 60000);
+                if (!latestEnd || end > latestEnd) latestEnd = end;
+            }
+
+            // Format as HH:mm
+            if (latestEnd) {
+                const h = latestEnd.getHours().toString().padStart(2, '0');
+                const m = latestEnd.getMinutes().toString().padStart(2, '0');
+                return `${h}:${m}`;
+            }
+            return null;
+        }
+
+        async function checkAndSuggest(roomId, dateId, newScheduleText) {
+            const allShows = await getMergedShowsForRoomDate(roomId, dateId);
+
+            // Conflict check
+            if (allShows.some(show => show.scheduleText === newScheduleText)) {
+                alert('This schedule conflicts with another show in this room and date.');
+                return false;
+            }
+
+            // Next available time
+            const nextTime = getNextAvailableTime(allShows, movieDuration, cleaningTime);
+            if (nextTime) {
+                lastShowEndTimeEl.textContent = `Next available time: ${nextTime}`;
+            } else {
+                lastShowEndTimeEl.textContent = 'No shows scheduled for this room and date yet.';
+            }
+            return true;
+        }
+
+        function isTimeConflict(newShow, allShows, movieDuration, cleaningTime) {
+            // Parse new show's start and end time
+            const [newStartHour, newStartMin] = newShow.scheduleText.split(':').map(Number);
+            const newStart = new Date(0, 0, 0, newStartHour, newStartMin);
+            const newEnd = new Date(newStart.getTime() + (movieDuration + cleaningTime) * 60000);
+
+            for (const show of allShows) {
+                if (!show.scheduleText) continue;
+                const [showStartHour, showStartMin] = show.scheduleText.split(':').map(Number);
+                const showStart = new Date(0, 0, 0, showStartHour, showStartMin);
+                const showEnd = new Date(showStart.getTime() + (movieDuration + cleaningTime) * 60000);
+
+                // Check for overlap
+                if (newStart < showEnd && newEnd > showStart) {
+                    return true; // There is a conflict
+                }
+            }
+            return false; // No conflict
+        }
+
+        function isScheduleConflicting(scheduleTime, allShows, movieDuration, cleaningTime) {
+            const [newStartHour, newStartMin] = scheduleTime.split(':').map(Number);
+            const newStart = new Date(0, 0, 0, newStartHour, newStartMin);
+            const newEnd = new Date(newStart.getTime() + (movieDuration + cleaningTime) * 60000);
+
+            for (const show of allShows) {
+                if (!show.scheduleText) continue;
+                const [showStartHour, showStartMin] = show.scheduleText.split(':').map(Number);
+                const showStart = new Date(0, 0, 0, showStartHour, showStartMin);
+                const showEnd = new Date(showStart.getTime() + (movieDuration + cleaningTime) * 60000);
+
+                if (newStart < showEnd && newEnd > showStart) {
+                    return true;
+                }
+            }
+            return false;
+        }
     });
 </script>

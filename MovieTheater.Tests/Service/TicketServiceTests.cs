@@ -177,7 +177,7 @@ namespace MovieTheater.Tests.Service
             {
                 InvoiceId = "inv1",
                 AccountId = "acc1",
-                Seat_IDs = "1,2",
+                SeatIds = "1,2",
                 PromotionDiscount = 10,
                 MovieShow = new MovieShow { Version = new MovieTheater.Models.Version { Multi = 1 } }
             };

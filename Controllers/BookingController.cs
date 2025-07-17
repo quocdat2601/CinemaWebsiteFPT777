@@ -84,32 +84,42 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public async Task<IActionResult> TicketBooking(string movieId = null)
         {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            // Get all movies with their shows
             var movies = await _bookingService.GetAvailableMoviesAsync();
-            ViewBag.MovieList = movies;
+
+            // Filter: Only movies with at least one show today or in the future
+            var filteredMovies = movies
+                .Where(m => _movieService.GetMovieShows(m.MovieId)
+                    .Any(ms => ms.ShowDate >= today))
+                .ToList();
+
+            ViewBag.MovieList = filteredMovies;
             ViewBag.SelectedMovieId = movieId;
 
-           if (!string.IsNullOrEmpty(movieId))
-           {
-               // Get movie shows for the selected movie
-               var movieShows = _movieService.GetMovieShows(movieId);
+            if (!string.IsNullOrEmpty(movieId))
+            {
+                // Get movie shows for the selected movie
+                var movieShows = _movieService.GetMovieShows(movieId);
                 
-               // Group by date and time
-               var showsByDate = movieShows
-                   .Where(ms => ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
-                   .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
-                   .ToDictionary(
-                       g => g.Key,
-                       g => g.Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
-                             .Distinct()
-                             .OrderBy(t => t)
-                             .ToList()
-                   );
+                // Group by date and time
+                var showsByDate = movieShows
+                    .Where(ms => ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
+                    .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
+                              .Distinct()
+                              .OrderBy(t => t)
+                              .ToList()
+                    );
 
-               ViewBag.ShowsByDate = showsByDate;
-           }
+                ViewBag.ShowsByDate = showsByDate;
+            }
 
-           return View();
-       }
+            return View();
+        }
 
         /// <summary>
         /// Lấy danh sách ngày chiếu cho một phim
@@ -270,7 +280,9 @@ namespace MovieTheater.Controllers
             // Lấy food từ DB
             var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            decimal totalSeatPrice = invoice.TotalMoney ?? 0;
+            // Fix: Seat price should not include food price
+            decimal totalSeatPrice = (invoice.TotalMoney ?? 0) - totalFoodPrice;
+            if (totalSeatPrice < 0) totalSeatPrice = 0;
             decimal totalAmount = totalSeatPrice + totalFoodPrice;
 
             var sanitizedMovieName = Regex.Replace(invoice.MovieShow.Movie.MovieNameEnglish, @"[^a-zA-Z0-9\s]", "");
@@ -322,6 +334,7 @@ namespace MovieTheater.Controllers
                     TempData["ShowTime"] = invoice.MovieShow.Schedule.ScheduleTime.ToString();
                     TempData["Seats"] = invoice.Seat;
                     TempData["CinemaRoomName"] = invoice.ScheduleSeats.FirstOrDefault()?.MovieShow?.CinemaRoom?.CinemaRoomName;
+                    TempData["VersionName"] = invoice.ScheduleSeats.FirstOrDefault()?.MovieShow?.Version?.VersionName;
                     TempData["InvoiceId"] = invoice.InvoiceId;
                     TempData["BookingTime"] = invoice.BookingDate?.ToString();
 

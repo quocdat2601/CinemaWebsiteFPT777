@@ -14,43 +14,28 @@
     var seatString = invoice.Seat;
     var addScore = invoice.AddScore ?? 0;
     var useScore = invoice.UseScore ?? 0;
-    var bookingDate = invoice.BookingDate?.ToString("dd/MM/yyyy HH:mm");
+    var bookingDate = invoice.BookingDate?.ToString("yyyy-MM-dd HH:mm");
     var seatDetails = Model.SeatDetails ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
-    var selectedFoods = Model.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
-    decimal totalFoodPrice = Model.FoodTotal;
+    var foodDetails = Model.FoodDetails ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    decimal totalFoodPrice = Model.TotalFoodPrice;
     
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.PriceAfterPromotion ?? s.Price) ?? 0;
-    int promotionDiscount = invoice.PromotionDiscount ?? 0;
-    decimal usedScoreValue = useScore * 1000;
     decimal addedScoreValue = addScore * 1000;
-    
-    // Tính toán seat price chính xác
+    decimal usedScoreValue = useScore * 1000;
+    // This subtotal is already after all discounts (promotion, rank, voucher, points)
+    decimal seatPriceFromDB = invoice.TotalMoney ?? 0;
+    // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
+    // Get member ID if available
+    var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
+    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={Model.Booking.InvoiceId}";
     decimal rankDiscountPercent = invoice.RankDiscountPercentage ?? 0;
     decimal rankDiscount = 0;
     if (rankDiscountPercent > 0)
     {
         rankDiscount = subtotal * (rankDiscountPercent / 100m);
     }
-    
-    // Tính voucher amount nếu có
-    decimal voucherAmount = 0;
-    if (ViewBag.VoucherAmount != null)
-    {
-        voucherAmount = (decimal)ViewBag.VoucherAmount;
-    }
-    
-    // Tính seat price sau tất cả giảm giá
-    decimal seatPriceAfterDiscount = subtotal - rankDiscount - voucherAmount - usedScoreValue;
-    if (seatPriceAfterDiscount < 0) seatPriceAfterDiscount = 0;
-    
-    // Sử dụng giá trị từ database để đảm bảo tính nhất quán
-    decimal seatPriceFromDB = invoice.TotalMoney ?? 0;
-    decimal totalPriceValue = seatPriceFromDB + totalFoodPrice;
-    // decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
-    // Get member ID if available
-    var memberId = invoice.Account?.Members.FirstOrDefault()?.MemberId;
-    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={Model.Booking.InvoiceId}";
+
 }
 <style>
     .ticket-success-header {
@@ -180,7 +165,7 @@
     }
 </style>
 <div class="container mt-4 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="ticket-card card shadow p-0 w-100" style="max-width: 900px;">
+    <div class="ticket-card card shadow p-0 w-100" style="max-width: 1000px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Ticket Information</h2>
             <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "status-completed" : "status-cancelled")">
@@ -194,21 +179,25 @@
                     <div class="ticket-row">
                         <label class="ticket-info-label">Movie Name</label>
                         <input type="text" class="ticket-info-value" value="@movieName" readonly />
-                        <label class="ticket-info-label">Screen</label>
-                        <input type="text" class="ticket-info-value" value="@screen" readonly />
-                       
+
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Date</label>
                         <input type="text" class="ticket-info-value" value="@showDate" readonly />
-                        <label class="ticket-info-label">Time</label>
-                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
+                        <label class="ticket-info-label">Screen</label>
+                        <input type="text" class="ticket-info-value" value="@screen" readonly />
                     </div>
                     <div class="ticket-row">
                         <label class="ticket-info-label">Ticket ID</label>
                         <input type="text" class="ticket-info-value" value="@ticketId" readonly />
-                         <label class="ticket-info-label">Version</label>
+                        <label class="ticket-info-label">Version</label>
                         <input type="text" class="ticket-info-value" value="@version" readonly />
+                    </div>
+                    <div class="ticket-row">
+                        <label class="ticket-info-label">Booking Time</label>
+                        <input type="text" class="ticket-info-value" value="@(DateTime.Parse(bookingDate).ToString("dd/MM/yyyy HH:mm"))" readonly />
+                        <label class="ticket-info-label">Time</label>
+                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
                     </div>
                     
                     <div class="ticket-section-title">Seat(s)</div>
@@ -229,10 +218,10 @@
                                         <td>@seat.SeatName</td>
                                         <td>@seat.SeatType</td>
                                         <td>
-                                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                            @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
                                             {
                                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                                <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
                                             }
                                             else if (seat.OriginalPrice.HasValue)
                                             {
@@ -255,7 +244,7 @@
                         </tbody>
                     </table>
                     
-                    @if (selectedFoods.Any())
+                    @if (foodDetails.Any())
                     {
                         <div class="ticket-section-title">Food & Drinks</div>
                         <table class="table table-bordered mb-2">
@@ -268,7 +257,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var food in selectedFoods)
+                                @foreach (var food in foodDetails)
                                 {
                                     <tr>
                                         <td>@food.Name</td>
@@ -303,13 +292,10 @@
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
-                                @if (ViewBag.VoucherAmount != null && (decimal)ViewBag.VoucherAmount > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Voucher</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@(((decimal)ViewBag.VoucherAmount).ToString("N0")) VND</td>
-                                    </tr>
-                                }
+                                <tr>
+                                    <td style="white-space: nowrap;">- Voucher</td>
+                                    <td class="text-end" style="white-space: nowrap;">-@(((decimal)(ViewBag.VoucherAmount ?? 0)).ToString("N0")) VND</td>
+                                </tr>
                                 @if (useScore > 0)
                                 {
                                     <tr>
@@ -330,7 +316,7 @@
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">
                                     <td class="ticket-total-label">Total Amount</td>
-                                    <td class="ticket-total-value text-end">@totalPriceValue.ToString("N0") VND</td>
+                                    <td class="ticket-total-value text-end">@totalPrice VND</td>
                                 </tr>
                                 @if (addScore > 0)
                                 {

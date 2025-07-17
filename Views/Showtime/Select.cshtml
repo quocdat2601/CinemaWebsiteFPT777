@@ -11,6 +11,8 @@
 @{
     ViewData["Title"] = "Ticket selling management – Select movie and showtime";
     var isAuthenticated = User.Identity.IsAuthenticated;
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var isAtToday = Model.SelectedDate == today;
 }
 
 @{
@@ -48,7 +50,10 @@
     <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center" id="dateNavForm">
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
         <div class="d-inline-flex align-items-center gap-2">
-            <button type="button" id="prevDayBtn" class="btn btn-outline-secondary btn-sm" title="Previous day">&lt;</button>
+            @if (!isAtToday)
+            {
+                <button type="button" id="prevDayBtn" class="btn btn-outline-secondary btn-sm" title="Previous day">&lt;</button>
+            }
             <div style="position: relative; width: 150px;">
                 <input type="text" id="calendarInput" name="date" class="form-control form-control-sm" style="width: 100%; padding-right: 2em;" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" autocomplete="off" />
                 <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;">
@@ -119,6 +124,7 @@
         dateFormat: "d/m/Y",
         defaultDate: "@Model.SelectedDate.ToString("dd/MM/yyyy")",
         allowInput: true,
+        minDate: "today",
         onChange: function(selectedDates, dateStr, instance) {
             document.getElementById('dateNavForm').submit();
         }
@@ -140,11 +146,19 @@
         document.getElementById('dateNavForm').submit();
     }
 
-    document.getElementById('prevDayBtn').addEventListener('click', function() {
-        const date = getSelectedDate();
-        date.setDate(date.getDate() - 1);
-        setSelectedDate(date);
-    });
+    var prevDayBtn = document.getElementById('prevDayBtn');
+    if (prevDayBtn) {
+        prevDayBtn.addEventListener('click', function() {
+            const date = getSelectedDate();
+            date.setDate(date.getDate() - 1);
+            // Prevent going before today
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            if (date >= today) {
+                setSelectedDate(date);
+            }
+        });
+    }
 
     document.getElementById('nextDayBtn').addEventListener('click', function() {
         const date = getSelectedDate();

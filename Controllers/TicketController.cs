@@ -79,8 +79,8 @@ namespace MovieTheater.Controllers
                 SeatDetails = seatDetails,
                 VoucherAmount = booking.Voucher?.Value,
                 VoucherCode = booking.Voucher?.Code,
-                FoodTotal = totalFoodPrice,
-                SelectedFoods = selectedFoods
+                TotalFoodPrice = totalFoodPrice,
+                FoodDetails = selectedFoods
                 // Nếu cần thêm trường khác, bổ sung ở đây
             };
 

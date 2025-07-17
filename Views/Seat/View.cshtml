@@ -97,6 +97,14 @@
         transform: translateY(-1px) scale(1.03);
         box-shadow: 0 4px 16px rgba(56,189,248,0.13);
     }
+    .fixed-sidebar {
+        max-height: 420px;
+        overflow-y: auto;
+        margin: 0 auto;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(30,41,59,0.07);
+        background: #fff;
+    }
 </style>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
@@ -115,11 +123,21 @@
 		? Url.Action("Select", "Showtime", new { area = "Admin" })
 		: Url.Action("TicketBooking", "Booking");
 
+	var coupleSeatPairs = new Dictionary<int, int>();
+	if (ViewBag.CoupleSeats != null)
+	{
+		foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
+		{
+			coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
+			coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
+		}
+	}
+
+
     var isAuthenticated = User.Identity.IsAuthenticated;
 }
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
-<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 <div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
 <div id="mainBookingArea">
@@ -155,19 +173,26 @@
 													var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
 													var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
 
-													<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff")"
-														data-seat-id="@seat.SeatId"
-														data-seat-name="@seat.SeatName"
-														data-seat-type="@seatType?.TypeName"
-														data-seat-price="@seatType?.PricePercent"
-														data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
-														class="@tdClass"
-														@(isDisabledType || isBooked ? "disabled" : "")
-														@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
-														<span class="material-icons">
-															@(isDisabledType ? "" : seat.SeatName)
-														</span>
-													</td>
+
+											var versionMulti = ViewBag.MovieShow?.Version?.Multi ?? 1m;
+											var basePrice = seatType?.PricePercent ?? 0;
+											var calculatedPrice = basePrice * versionMulti;
+
+											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff"); border-width: 5px; border-radius: 20px"
+												data-seat-id="@seat.SeatId"
+												data-seat-name="@seat.SeatName"
+												data-seat-type="@seatType?.TypeName"
+												data-seat-price="@calculatedPrice"
+												data-base-price="@basePrice"
+												data-version-multi="@versionMulti"
+												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
+												class="@tdClass"
+												@(isDisabledType || isBooked ? "disabled" : "")
+												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
+												<span class="material-icons">
+													@(isDisabledType ? "" : seat.SeatName)
+												</span>
+											</td>
 
 												}
 											}
@@ -199,7 +224,7 @@
 			</div>
 
 			<!-- FOOD & DRINK SECTION -->
-			<div class="food-selection-section" id="foodSelectionArea">
+			<div class="food-selection-section" id="foodSelectionArea" style="display:none;">
 				<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">POP CORN AND COKE</h2>
 				<div class="row justify-content-center">
 					@if (ViewBag.Foods != null)
@@ -238,23 +263,31 @@
 						<div class="summary-movie">@Model.MovieName</div>
 					</div>
 					<div class="summary-seat" id="summarySeatBlock">
-						<div id="noSeatAlert" class="summary-alert" style="display:none;">You have not selected any seats. Please select a seat >.0</div>
+						<div id="noSeatAlert" class="summary-alert" style="display:none;">You have not selected any seats. Please select a seat 😉</div>
 						<div id="seatInfo" style="display:none;">
 							<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
 							<p><span class="summary-label">Total Seats:</span> <span id="totalPrice"></span> VND</p>
 							<p><span class="summary-label">Total Foods:</span> <span id="totalFoodPrice">0</span> VND</p>
+							<div>
+								<span class="summary-label">Food Selected:</span>
+								<ul id="selectedFoodList" style="margin-bottom:0; padding-left:18px;">
+									<span style="color:#aaa;">(None)</span>
+								</ul>
+							</div>
 							<p><span class="summary-label">Total:</span> <span id="grandTotal">0</span> VND</p>
 							<p id="countdownTimer" class="text-danger fw-bold"></p>
+							@if (!string.IsNullOrEmpty(time))
+							{
+								<div class="text-center mt-3">
+									<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+								</div>
+							}
 						</div>
 					</div>
 				</div>
-
-	@if (!string.IsNullOrEmpty(time))
-	{
-		<div class="text-center mb-4 mt-4">
-			<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+			</div>
 		</div>
-	}
+	</div>
 </div> <!-- Đóng mainBookingArea -->
 
 @if (!isAuthenticated)
@@ -448,9 +481,9 @@
 				let seatNames = [];
 				document.querySelectorAll('.selected-seat').forEach(td => {
 					const seatName = td.getAttribute('data-seat-name');
-					const pricePercent = parseFloat(td.getAttribute('data-seat-price')) || 100;
+					const calculatedPrice = parseFloat(td.getAttribute('data-seat-price')) || 0;
 					seatNames.push(seatName);
-					total += pricePercent;
+					total += calculatedPrice;
 				});
 				selectedSeatNames.textContent = seatNames.join(', ');
 				totalPrice.textContent = total.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -565,22 +598,60 @@
 
 		function updateFoodTotal() {
 			let totalFood = 0;
+			let foodListHtml = '';
+			let hasFood = false;
 			for (let foodId in selectedFoods) {
-				totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
+				if (selectedFoods[foodId] > 0) {
+					totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
+					// Lấy tên món từ DOM (nếu có)
+					let foodNameEl = document.querySelector(`.btn-food-plus[data-food-id='${foodId}']`);
+					let foodName = foodNameEl ? foodNameEl.closest('.col-md-3').querySelector('.fw-bold.mt-2').textContent : 'Food';
+					foodListHtml += `<li>${foodName} x${selectedFoods[foodId]}</li>`;
+					hasFood = true;
+				}
 			}
 			document.getElementById('totalFoodPrice').textContent = totalFood.toLocaleString();
+			// Cập nhật danh sách food đã chọn
+			document.getElementById('selectedFoodList').innerHTML = hasFood ? foodListHtml : '<span style="color:#aaa;">(None)</span>';
 			// Cộng với tổng tiền ghế
 			let seatTotal = parseInt(document.getElementById('totalPrice').textContent.replace(/,/g, '')) || 0;
 			document.getElementById('grandTotal').textContent = (seatTotal + totalFood).toLocaleString();
-			
 			// Cập nhật progress bar khi thay đổi đồ ăn
 			updateProgressBar();
 		}
 
-		window.addEventListener('pageshow', function () {
-			console.log('pageshow fired');
-			resetSeatSelectionUI();
-		});
+		function updateFoodSectionVisibility() {
+    if (selectedSeats.size > 0) {
+        document.getElementById('foodSelectionArea').style.display = '';
+    } else {
+        document.getElementById('foodSelectionArea').style.display = 'none';
+    }
+}
+
+		function selectSeat(clickedTd) {
+			const seatId = String(clickedTd.getAttribute('data-seat-id'));
+			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+
+			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
+			if (selectedSeats.has(seatId)) {
+				clickedTd.classList.remove('selected-seat');
+				selectedSeats.delete(seatId);
+				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+			} else {
+				// Kiểm tra giới hạn số ghế trước khi chọn thêm
+				if (selectedSeats.size >= MAX_SEATS) {
+					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+					return;
+				}
+				clickedTd.classList.add('selected-seat');
+				selectedSeats.add(seatId);
+				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+				if (selectedSeats.size === 1) startCountdown();
+			}
+			updateSelectionSummary();
+			updateBookButtonState();
+			updateFoodSectionVisibility();
+		}
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 	<script>
@@ -619,13 +690,20 @@
 				td.classList.remove("selected-seat", "being-held");
 				td.setAttribute("disabled", "disabled");
 				td.style.backgroundColor = "#19692c";
+				selectedSeats.delete(String(seatId));
 			} else {
 				td.classList.remove("booked-seat");
 				td.removeAttribute("disabled");
 				// Set lại màu gốc loại ghế
 				const color = td.getAttribute("data-seat-color") || "#cccbc8";
 				td.style.backgroundColor = color;
+				// Remove from selectedSeats and UI
+				selectedSeats.delete(String(seatId));
+				td.classList.remove("selected-seat");
 			}
+			updateSelectionSummary();
+			updateBookButtonState();
+			updateFoodSectionVisibility();
 		});
 
 		// Nhận 2 danh sách: ghế của mình (heldByMe), ghế của người khác (heldByOthers)
@@ -657,6 +735,7 @@
 			});
 			updateSelectionSummary();
 			updateBookButtonState();
+			updateFoodSectionVisibility();
 		});
 
 		connection.on("AccountInUse", () => {
@@ -673,28 +752,67 @@
 			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
 		});
 
+		// Map: seatId -> paired seatId
+		const coupleSeatMap = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
+
 		function selectSeat(clickedTd) {
 			const seatId = String(clickedTd.getAttribute('data-seat-id'));
 			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
 
-			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
-			if (selectedSeats.has(seatId)) {
-				clickedTd.classList.remove('selected-seat');
-				selectedSeats.delete(seatId);
-				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
-			} else {
-				// Kiểm tra giới hạn số ghế trước khi chọn thêm
-				if (selectedSeats.size >= MAX_SEATS) {
-					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
-					return;
+			// Couple seat auto-select logic
+			if (coupleSeatMap && coupleSeatMap[seatId]) {
+				const otherSeatId = coupleSeatMap[seatId].toString();
+				const otherTd = document.querySelector(`td[data-seat-id='${otherSeatId}']`);
+				const isSelected = clickedTd.classList.contains('selected-seat');
+
+				if (isSelected) {
+					clickedTd.classList.remove('selected-seat');
+					selectedSeats.delete(seatId);
+					if (otherTd) {
+						otherTd.classList.remove('selected-seat');
+						selectedSeats.delete(otherSeatId);
+					}
+					connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+					if (otherTd) connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(otherSeatId));
+				} else {
+					// Check seat limit
+					if (selectedSeats.size + 2 > MAX_SEATS) {
+						alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+						return;
+					}
+					clickedTd.classList.add('selected-seat');
+					selectedSeats.add(seatId);
+					if (otherTd) {
+						otherTd.classList.add('selected-seat');
+						selectedSeats.add(otherSeatId);
+					}
+					connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+					if (otherTd) connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(otherSeatId));
+					if (selectedSeats.size === 2) startCountdown();
 				}
-				clickedTd.classList.add('selected-seat');
-				selectedSeats.add(seatId);
-				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
-				if (selectedSeats.size === 1) startCountdown();
+				updateSelectionSummary();
+				updateBookButtonState();
+				updateFoodSectionVisibility(); // <-- Ensure food section updates for couple seats
+			} else {
+				// Normal seat logic
+				if (selectedSeats.has(seatId)) {
+					clickedTd.classList.remove('selected-seat');
+					selectedSeats.delete(seatId);
+					connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
+				} else {
+					if (selectedSeats.size >= MAX_SEATS) {
+						alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+						return;
+					}
+					clickedTd.classList.add('selected-seat');
+					selectedSeats.add(seatId);
+					connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
+					if (selectedSeats.size === 1) startCountdown();
+				}
+				updateSelectionSummary();
+				updateBookButtonState();
+				updateFoodSectionVisibility(); // <-- Ensure food section updates for normal seats
 			}
-			updateSelectionSummary();
-			updateBookButtonState();
 		}
 	</script>
 }

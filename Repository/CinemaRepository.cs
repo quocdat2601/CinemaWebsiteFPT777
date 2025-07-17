@@ -102,6 +102,14 @@ namespace MovieTheater.Repository
             {
                 var seats = await _seatRepository.GetByCinemaRoomIdAsync(id);
 
+                var seatIds = seats.Select(s => s.SeatId).ToList();
+
+                // Delete all CoupleSeat records involving these seats
+                var coupleSeats = _context.CoupleSeats
+                    .Where(cs => seatIds.Contains(cs.FirstSeatId) || seatIds.Contains(cs.SecondSeatId));
+                _context.CoupleSeats.RemoveRange(coupleSeats);
+                await _context.SaveChangesAsync();
+
                 foreach (var seat in seats)
                 {
                     await _seatRepository.DeleteAsync(seat.SeatId);

@@ -93,8 +93,8 @@ namespace MovieTheater.Tests.Controller
             {
                 Booking = booking,
                 SeatDetails = seatDetails,
-                SelectedFoods = selectedFoods,
-                FoodTotal = 100000
+                FoodDetails = selectedFoods,
+                TotalFoodPrice = 100000
             };
             _ticketServiceMock.Setup(s => s.GetTicketDetailsAsync("inv1", "acc1")).ReturnsAsync(booking);
             _ticketServiceMock.Setup(s => s.BuildSeatDetails(booking)).Returns(seatDetails);
@@ -105,8 +105,8 @@ namespace MovieTheater.Tests.Controller
             var model = Assert.IsType<MovieTheater.ViewModels.TicketDetailsViewModel>(viewResult.Model);
             Assert.Equal(booking, model.Booking);
             Assert.Equal(seatDetails, model.SeatDetails);
-            Assert.Equal(selectedFoods, model.SelectedFoods);
-            Assert.Equal(100000, model.FoodTotal); // 50000 * 2
+            Assert.Equal(selectedFoods, model.FoodDetails);
+            Assert.Equal(100000, model.TotalFoodPrice); // 50000 * 2
         }
 
         [Fact]

@@ -250,6 +250,21 @@ namespace MovieTheater.Service
                 return false;
             }
         }
+        public bool DeleteMovieShows(int movieShowId)
+        {
+            try
+            {
+                _movieRepository.DeleteMovieShow(movieShowId);
+                _movieRepository.Save();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting movie shows:", movieShowId);
+                return false;
+            }
+        }
+
 
         public async Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId)
         {

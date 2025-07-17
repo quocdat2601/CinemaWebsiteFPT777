@@ -254,11 +254,11 @@ namespace MovieTheater.Service
                 InvoiceId = invoiceId,
                 AccountId = userId,
                 BookingDate = DateTime.Now,
-                TotalMoney = priceResult.SeatTotalAfterDiscounts,
+                TotalMoney = priceResult.TotalPrice,
                 MovieShowId = model.MovieShowId,
                 Status = (isTestSuccess == "true") ? InvoiceStatus.Completed : InvoiceStatus.Incomplete,
                 Seat = seatNames,
-                Seat_IDs = seatIdsStr,
+                SeatIds = seatIdsStr,
                 RankDiscountPercentage = rankDiscountPercent,
                 AddScore = addScore,
                 UseScore = priceResult.UseScore,
@@ -612,16 +612,31 @@ namespace MovieTheater.Service
                 AddScore = priceResult.AddScore,
                 BookingDate = DateTime.Now,
                 Status = InvoiceStatus.Completed,
-                TotalMoney = priceResult.SeatTotalAfterDiscounts, // Only seat price after discounts
+                TotalMoney = priceResult.TotalPrice, // Save seat + food total
                 UseScore = priceResult.UseScore,
                 Seat = string.Join(", ", seatViewModels.Select(s => s.SeatName)),
-                Seat_IDs = string.Join(",", seatViewModels.Select(s => s.SeatId)),
+                SeatIds = string.Join(",", seatViewModels.Select(s => s.SeatId)),
                 MovieShowId = model.MovieShowId,
                 PromotionDiscount = promotionDiscountPercent, // save the percent used
                 VoucherId = adminVoucher?.VoucherId,
                 RankDiscountPercentage = priceResult.RankDiscountPercent
             };
             await _bookingService.SaveInvoiceAsync(invoice);
+
+            // Add ScheduleSeat records for each seat (admin flow fix)
+            foreach (var seat in seats)
+            {
+                var scheduleSeat = new ScheduleSeat
+                {
+                    InvoiceId = invoice.InvoiceId,
+                    SeatId = seat.SeatId,
+                    MovieShowId = model.MovieShowId,
+                    SeatStatusId = 2 // Booked
+                };
+                _context.ScheduleSeats.Add(scheduleSeat);
+            }
+            await _context.SaveChangesAsync();
+
             if (priceResult.AddScore > 0)
             {
                 await _accountService.AddScoreAsync(member.Account.AccountId, priceResult.AddScore);
@@ -711,7 +726,7 @@ namespace MovieTheater.Service
             var showTime = movieShow.Schedule?.ScheduleTime?.ToString() ?? "N/A";
             var versionName = movieShow.Version?.VersionName ?? "N/A";
             // Prepare seat details
-            var seatIdArr = invoice.Seat_IDs
+            var seatIdArr = invoice.SeatIds
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(id => int.Parse(id.Trim()))
                 .ToList();
