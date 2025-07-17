@@ -37,12 +37,13 @@ public class TicketService : ITicketService
 
     public async Task<IEnumerable<object>> GetUserTicketsAsync(string accountId, int? status = null)
     {
+
         InvoiceStatus? invoiceStatus = null;
         if (status.HasValue)
         {
             invoiceStatus = (InvoiceStatus)status.Value;
         }
-        var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId, invoiceStatus);
+        var bookings = await _invoiceRepository.GetByAccountIdAsync(accountId, invoiceStatus, null);
         return bookings;
     }
 
@@ -60,10 +61,13 @@ public class TicketService : ITicketService
 
         if (booking.Status != InvoiceStatus.Completed)
             return (false, new List<string> { "Only paid bookings can be cancelled." });
-        if (booking.Status == InvoiceStatus.Incomplete)
+        if (booking.Cancel)
             return (false, new List<string> { "This ticket has already been cancelled." });
 
-        booking.Status = InvoiceStatus.Incomplete;
+        // Đánh dấu đã hủy, không đổi status
+        booking.Cancel = true;
+        booking.CancelDate = DateTime.Now;
+        booking.CancelBy = accountId;
 
         // Update schedule seats: mark as available again
         var scheduleSeatsToUpdate = _scheduleSeatRepository.GetByInvoiceId(booking.InvoiceId).ToList();
@@ -140,7 +144,8 @@ public class TicketService : ITicketService
 
     public async Task<IEnumerable<object>> GetHistoryPartialAsync(string accountId, DateTime? fromDate, DateTime? toDate, string status)
     {
-        var invoices = await _invoiceRepository.GetByAccountIdAsync(accountId);
+        // Lấy tất cả invoice của user
+        var invoices = await _invoiceRepository.GetByAccountIdAsync(accountId, null, null);
         if (fromDate.HasValue)
             invoices = invoices.Where(i => i.BookingDate >= fromDate.Value);
         if (toDate.HasValue)
@@ -148,9 +153,9 @@ public class TicketService : ITicketService
         if (!string.IsNullOrEmpty(status) && status != "all")
         {
             if (status == "booked")
-                invoices = invoices.Where(i => i.Status == InvoiceStatus.Completed);
+                invoices = invoices.Where(i => i.Status == InvoiceStatus.Completed && !i.Cancel);
             else if (status == "canceled")
-                invoices = invoices.Where(i => i.Status == InvoiceStatus.Incomplete);
+                invoices = invoices.Where(i => i.Status == InvoiceStatus.Completed && i.Cancel);
         }
         var result = invoices
             .OrderByDescending(i => i.BookingDate)
@@ -161,6 +166,9 @@ public class TicketService : ITicketService
                 seat = i.Seat,
                 totalMoney = i.TotalMoney,
                 status = i.Status,
+                cancel = i.Cancel,
+                cancelDate = i.CancelDate,
+                cancelBy = i.CancelBy,
                 MovieShow = i.MovieShow == null ? null : new
                 {
                     showDate = i.MovieShow.ShowDate,
@@ -182,10 +190,13 @@ public class TicketService : ITicketService
         var booking = _invoiceRepository.GetById(ticketId);
         if (booking == null)
             return (false, new List<string> { "Booking not found." });
-        if (booking.Status == InvoiceStatus.Incomplete)
+        if (booking.Cancel)
             return (false, new List<string> { "This ticket has already been cancelled." });
 
-        booking.Status = InvoiceStatus.Incomplete;
+        // Đánh dấu đã hủy, không đổi status
+        booking.Cancel = true;
+        booking.CancelDate = DateTime.Now;
+        booking.CancelBy = "Admin";
 
         // Update schedule seats: mark as available again
         var scheduleSeatsToUpdate = _scheduleSeatRepository.GetByInvoiceId(booking.InvoiceId).ToList();

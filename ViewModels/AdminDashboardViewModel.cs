@@ -25,6 +25,9 @@ namespace MovieTheater.ViewModels
         public List<RecentMemberInfo> RecentMembers { get; set; }
 
         public decimal OccupancyRateToday { get; set; }    // from 0 to 100
+        public decimal GrossRevenue { get; set; }
+        public decimal TotalRefund { get; set; }
+        public decimal NetRevenue { get; set; }
 
     }
 
