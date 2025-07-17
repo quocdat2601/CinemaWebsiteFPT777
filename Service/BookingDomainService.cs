@@ -454,8 +454,20 @@ namespace MovieTheater.Service
             var cinemaRoom = movieShow.CinemaRoom;
             var seatTypes = await _seatService.GetSeatTypesAsync();
             var seats = new List<SeatDetailViewModel>();
-            var bestPromotion = _promotionService.GetBestPromotionForShowDate(movieShow.ShowDate);
+            // --- PROMOTION LOGIC UPDATE START ---
+            // Prepare context for promotion check
+            var promotionContext = new PromotionCheckContext
+            {
+                MemberId = null, // member not selected yet
+                SeatCount = selectedSeatIds?.Count ?? 0,
+                MovieId = movie?.MovieId,
+                MovieName = movie?.MovieNameEnglish,
+                ShowDate = movieShow.ShowDate.ToDateTime(TimeOnly.MinValue)
+            };
+            // Use new logic: get all active, in-time, eligible promotions, pick highest discount
+            var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(promotionContext);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
+            // --- PROMOTION LOGIC UPDATE END ---
             foreach (var id in selectedSeatIds)
             {
                 var seat = _seatService.GetSeatById(id);

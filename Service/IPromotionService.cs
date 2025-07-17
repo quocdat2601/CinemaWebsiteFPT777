@@ -12,6 +12,6 @@ namespace MovieTheater.Service
         public void Save();
 
         Promotion? GetBestPromotionForShowDate(DateOnly showDate);
-        List<Promotion> GetEligiblePromotionsForMember(string memberId, int seatCount = 0, DateTime? showDate = null, string movieId = null, string movieName = null);
+        Promotion? GetBestEligiblePromotionForBooking(PromotionCheckContext context);
     }
 }

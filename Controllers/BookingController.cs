@@ -42,7 +42,7 @@ namespace MovieTheater.Controllers
         private readonly IFoodService _foodService;
         private readonly IFoodInvoiceService _foodInvoiceService;
         private readonly IBookingDomainService _bookingDomainService;
-
+        private readonly IPromotionService _promotionService;
         public BookingController(
             IBookingService bookingService,
             IMovieService movieService,
@@ -58,7 +58,8 @@ namespace MovieTheater.Controllers
             MovieTheaterContext context,
             IFoodService foodService,
             IFoodInvoiceService foodInvoiceService,
-            IBookingDomainService bookingDomainService)
+            IBookingDomainService bookingDomainService,
+            IPromotionService promotionService)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -75,6 +76,7 @@ namespace MovieTheater.Controllers
             _foodService = foodService;
             _foodInvoiceService = foodInvoiceService;
             _bookingDomainService = bookingDomainService;
+            _promotionService = promotionService;
         }
 
         /// <summary>
@@ -203,10 +205,9 @@ namespace MovieTheater.Controllers
            var userId = _accountService.GetCurrentUser()?.AccountId;
            if (userId == null)
                return RedirectToAction("Login", "Account");
-           }
 
             // Reload account with rank
-            var userAccount = _accountService.GetById(currentUser.AccountId);
+            var userAccount = _accountService.GetById(userId);
 
             decimal earningRate = 1;
             decimal rankDiscountPercent = 0;
@@ -219,10 +220,18 @@ namespace MovieTheater.Controllers
             ViewBag.RankDiscountPercent = rankDiscountPercent;
 
             // Get best promotion for this show date
-            var eligiblePromotions = _promotionService.GetEligiblePromotionsForMember(currentUser.AccountId, selectedSeatIds.Count, showDate.ToDateTime(TimeOnly.MinValue), movieId, movie.MovieNameEnglish);
-            var bestPromotion = eligiblePromotions.OrderByDescending(p => p.DiscountLevel).FirstOrDefault();
+            var movie = _movieService.GetById(movieId);
+            var context = new PromotionCheckContext {
+                MemberId = userId,
+                SeatCount = selectedSeatIds.Count,
+                MovieId = movieId,
+                MovieName = movie.MovieNameEnglish,
+                ShowDate = showDate.ToDateTime(TimeOnly.MinValue)
+            };
+            var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(context);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
 
+            var seatTypes = await _seatService.GetSeatTypesAsync();
             var seats = new List<SeatDetailViewModel>();
             foreach (var id in selectedSeatIds)
             {
@@ -493,86 +502,32 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpGet]
-        public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds)
+        public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds, List<int>? foodIds = null, List<int>? foodQtys = null)
         {
             if (selectedSeatIds == null || selectedSeatIds.Count == 0)
             {
                 TempData["ErrorMessage"] = "No seats were selected.";
                 return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
             }
-
-           var movieShow = _movieService.GetMovieShowById(movieShowId);
-           if (movieShow == null)
-           {
-               return NotFound("Movie show not found.");
-           }
-
-           var movie = movieShow.Movie;
-           var cinemaRoom = movieShow.CinemaRoom;
-           var seatTypes = await _seatService.GetSeatTypesAsync();
-           var seats = new List<SeatDetailViewModel>();
-
-            // Get best promotion for this show date
-            var eligiblePromotions = _promotionService.GetEligiblePromotionsForMember(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, selectedSeatIds.Count, movieShow.ShowDate.ToDateTime(TimeOnly.MinValue), movie.MovieId, movie.MovieNameEnglish);
-            var bestPromotion = eligiblePromotions.OrderByDescending(p => p.DiscountLevel).FirstOrDefault();
-            decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
-
-            foreach (var id in selectedSeatIds)
+            var viewModel = await _bookingDomainService.BuildConfirmTicketAdminViewModelAsync(
+                movieShowId,
+                selectedSeatIds,
+                foodIds ?? new List<int>(),
+                foodQtys ?? new List<int>()
+            );
+            if (viewModel == null)
             {
-                var seat = _seatService.GetSeatById(id);
-                if (seat == null) continue;
-
-                var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
-                var price = seatType?.PricePercent ?? 0;
-                decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
-                decimal priceAfterPromotion = price - discount;
-
-                string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
-
-                seats.Add(new SeatDetailViewModel
-                {
-                    SeatId = seat.SeatId,
-                    SeatName = seat.SeatName,
-                    SeatType = seatType?.TypeName ?? "Standard",
-                    Price = priceAfterPromotion,
-                    OriginalPrice = price,
-                    PromotionDiscount = discount,
-                    PriceAfterPromotion = priceAfterPromotion,
-                    PromotionName = promotionName
-                });
+                TempData["ErrorMessage"] = "Unable to build confirmation view.";
+                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
             }
-            
-            var totalPrice = seats.Sum(s => s.Price);
-
-           var bookingDetails = new ConfirmBookingViewModel
-           {
-               MovieId = movie.MovieId,
-               MovieName = movie.MovieNameEnglish,
-               CinemaRoomName = cinemaRoom.CinemaRoomName,
-               ShowDate = movieShow.ShowDate,
-               ShowTime = movieShow.Schedule?.ScheduleTime?.ToString("HH:mm"),
-               SelectedSeats = seats,
-               TotalPrice = totalPrice,
-               PricePerTicket = seats.Any() ? totalPrice / seats.Count : 0,
-               MovieShowId = movieShowId,
-               VersionName = movieShow.Version.VersionName
-           };
-
-           var adminConfirmUrl = Url.Action("ConfirmTicketForAdmin", "Admin");
-           var viewModel = new ConfirmTicketAdminViewModel
-           {
-               BookingDetails = bookingDetails,
-               MemberCheckMessage = "",
-               ReturnUrl = Url.Action("Select", "Seat", new
-               {
-                   movieId = movie.MovieId,
-                   date = movieShow.ShowDate.ToString("yyyy-MM-dd"),
-                   time = movieShow.Schedule?.ScheduleTime?.ToString("HH:mm")
-               }),
-               MovieShowId = movieShowId
-           };
-           return View("ConfirmTicketAdmin", viewModel);
-       }
+            viewModel.ReturnUrl = Url.Action("Select", "Seat", new
+            {
+                movieId = viewModel.BookingDetails.MovieId,
+                date = viewModel.BookingDetails.ShowDate.ToString("yyyy-MM-dd"),
+                time = viewModel.BookingDetails.ShowTime
+            });
+            return View("ConfirmTicketAdmin", viewModel);
+        }
 
         /// <summary>
         /// Kiểm tra thông tin member khi bán vé cho admin
@@ -600,39 +555,6 @@ namespace MovieTheater.Controllers
                 phoneNumber = member.Account.PhoneNumber,
                 memberScore = member.Score
             });
-        }
-
-        /// <summary>
-        /// Trang xác nhận bán vé cho admin (chọn ghế, nhập member...)
-        /// </summary>
-        /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds, List<int>? foodIds, List<int>? foodQtys)
-        {
-            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
-            {
-                TempData["ErrorMessage"] = "No seats were selected.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
-            }
-            var viewModel = await _bookingDomainService.BuildConfirmTicketAdminViewModelAsync(
-                movieShowId,
-                selectedSeatIds,
-                foodIds ?? new List<int>(),
-                foodQtys ?? new List<int>()
-            );
-            if (viewModel == null)
-            {
-                TempData["ErrorMessage"] = "Unable to build confirmation view.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
-            }
-            viewModel.ReturnUrl = Url.Action("Select", "Seat", new
-            {
-                movieId = viewModel.BookingDetails.MovieId,
-                date = viewModel.BookingDetails.ShowDate.ToString("yyyy-MM-dd"),
-                time = viewModel.BookingDetails.ShowTime
-            });
-            return View("ConfirmTicketAdmin", viewModel);
         }
 
         /// <summary>
@@ -692,27 +614,6 @@ namespace MovieTheater.Controllers
                return Json(new { success = false, message = "Member score is not enough to convert into ticket", scoreNeeded = totalNeeded });
            }
        }
-
-        /// <summary>
-        /// Lấy danh sách promotion hợp lệ cho booking hiện tại
-        /// </summary>
-        /// <remarks>url: /Booking/GetEligiblePromotions (GET)</remarks>
-        [HttpGet]
-        public IActionResult GetEligiblePromotions(string memberId, int seatCount, DateTime showDate, string movieId, string movieName)
-        {
-            var promotions = _promotionService.GetEligiblePromotionsForMember(memberId, seatCount, showDate, movieId, movieName);
-            // Chỉ trả về các trường cần thiết cho frontend
-            var result = promotions.Select(p => new {
-                p.PromotionId,
-                p.Title,
-                p.Detail,
-                p.DiscountLevel,
-                p.StartTime,
-                p.EndTime,
-                p.Image
-            }).ToList();
-            return Json(result);
-        }
 
         /// <summary>
         /// Xem thông tin vé (admin/employee)
