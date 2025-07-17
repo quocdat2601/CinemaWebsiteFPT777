@@ -28,6 +28,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
@@ -83,6 +84,23 @@
                         <li class="nav-item me-2">
                             <button id="toggle-dark-mode" class="btn btn-outline-secondary nav-link">🌙 Dark Mode</button>
                         </li>
+                        @if (userRole == "Admin")
+                        {
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
+                            </li>
+
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
+                            </li>
+                        }
+                        else if (userRole == "Employee")
+                        {
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
+                            </li>
+                        }
+                        
                         @if (isAuthenticated)
                         {
                             <li class="nav-item dropdown">
@@ -90,7 +108,10 @@
                                     <img src="@(User.FindFirst("Image")?.Value ?? "/image/profile.jpg")" alt="Avatar" class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid #eee;">
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                                    <li><a class="dropdown-item" href="/MyAccount/MainPage">View Profile</a></li>
+                                    @if (userRole == "Member")
+                                    {
+                                        <li><a class="dropdown-item" href="/MyAccount/MainPage">View Profile</a></li>
+                                    }
                                     <li><a class="dropdown-item" href="/Account/Logout">Logout</a></li>
                                 </ul>
                             </li>
