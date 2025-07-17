@@ -455,7 +455,6 @@ namespace MovieTheater.Service
             var seatTypes = await _seatService.GetSeatTypesAsync();
             var seats = new List<SeatDetailViewModel>();
             // --- PROMOTION LOGIC UPDATE START ---
-            // Prepare context for promotion check
             var promotionContext = new PromotionCheckContext
             {
                 MemberId = null, // member not selected yet
@@ -464,10 +463,8 @@ namespace MovieTheater.Service
                 MovieName = movie?.MovieNameEnglish,
                 ShowDate = movieShow.ShowDate.ToDateTime(TimeOnly.MinValue)
             };
-            // Use new logic: get all active, in-time, eligible promotions, pick highest discount
             var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(promotionContext);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
-            // --- PROMOTION LOGIC UPDATE END ---
             foreach (var id in selectedSeatIds)
             {
                 var seat = _seatService.GetSeatById(id);
@@ -493,29 +490,42 @@ namespace MovieTheater.Service
             // Handle selected foods
             List<FoodViewModel> selectedFoods = new List<FoodViewModel>();
             decimal totalFoodPrice = 0;
+            List<Promotion> eligibleFoodPromotions = new List<Promotion>();
             if (foodIds != null && foodQtys != null && foodIds.Count == foodQtys.Count)
             {
+                var foodTuples = new List<(int FoodId, int Quantity, decimal Price)>();
                 for (int i = 0; i < foodIds.Count; i++)
                 {
                     var food = await _foodService.GetByIdAsync(foodIds[i]);
                     if (food != null)
                     {
-                        var foodClone = new FoodViewModel
-                        {
-                            FoodId = food.FoodId,
-                            Name = food.Name,
-                            Price = food.Price,
-                            Image = food.Image,
-                            Description = food.Description,
-                            Category = food.Category,
-                            Status = food.Status,
-                            CreatedDate = food.CreatedDate,
-                            UpdatedDate = food.UpdatedDate,
-                            Quantity = foodQtys[i]
-                        };
-                        selectedFoods.Add(foodClone);
-                        totalFoodPrice += food.Price * foodQtys[i];
+                        foodTuples.Add((food.FoodId, foodQtys[i], food.Price));
                     }
+                }
+                eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
+                var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
+                for (int i = 0; i < foodTuples.Count; i++)
+                {
+                    var food = await _foodService.GetByIdAsync(foodTuples[i].FoodId);
+                    var discountInfo = foodDiscounts.FirstOrDefault(f => f.FoodId == foodTuples[i].FoodId);
+                    var foodClone = new FoodViewModel
+                    {
+                        FoodId = food.FoodId,
+                        Name = food.Name,
+                        Price = discountInfo.DiscountedPrice,
+                        Image = food.Image,
+                        Description = food.Description,
+                        Category = food.Category,
+                        Status = food.Status,
+                        CreatedDate = food.CreatedDate,
+                        UpdatedDate = food.UpdatedDate,
+                        Quantity = foodTuples[i].Quantity,
+                        PromotionName = discountInfo.PromotionName,
+                        PromotionDiscount = discountInfo.DiscountLevel,
+                        OriginalPrice = discountInfo.OriginalPrice
+                    };
+                    selectedFoods.Add(foodClone);
+                    totalFoodPrice += discountInfo.DiscountedPrice * foodTuples[i].Quantity;
                 }
             }
             var bookingDetails = new ConfirmBookingViewModel
@@ -541,7 +551,9 @@ namespace MovieTheater.Service
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice,
                 UsedScore = 0,
-                VoucherAmount = 0
+                VoucherAmount = 0,
+                EligibleFoodPromotions = eligibleFoodPromotions,
+                TotalFoodDiscount = 0 // This will be calculated in ApplyFoodPromotionsToFoods
             };
             return viewModel;
         }

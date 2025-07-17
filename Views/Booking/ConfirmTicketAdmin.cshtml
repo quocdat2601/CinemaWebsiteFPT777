@@ -194,16 +194,35 @@
                     @foreach (var food in Model.SelectedFoods)
                     {
                         <tr>
-                            <td>@food.Name</td>
+                            <td>@food.Name
+                                @if (!string.IsNullOrEmpty(food.PromotionName))
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                }
+                            </td>
                             <td>@food.Quantity</td>
-                            <td>@food.Price.ToString("N0") VND</td>
+                            <td>
+                                @if (food.PromotionDiscount > 0)
+                                {
+                                    <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                    <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                }
+                            </td>
                             <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                        <td colspan="3" class="text-end"><strong>Total Food (before discount):</strong></td>
+                        <td><strong>@Model.SelectedFoods.Sum(f => f.OriginalPrice * f.Quantity).ToString("N0") VND</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total Food (after discount):</strong></td>
                         <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
                     </tr>
                 </tfoot>

@@ -158,6 +158,60 @@ namespace MovieTheater.Service
             }
             return true;
         }
+
+        // Lấy danh sách promotion hợp lệ cho food (chỉ xét TargetEntity)
+        public List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price)> selectedFoods)
+        {
+            if (selectedFoods == null || selectedFoods.Count == 0) return new List<Promotion>();
+            var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
+            var foodPromotions = allPromotions.Where(p =>
+                p.PromotionConditions != null &&
+                p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food")
+            ).ToList();
+            var eligiblePromotions = new List<Promotion>();
+            foreach (var promotion in foodPromotions)
+            {
+                bool eligible = true;
+                foreach (var condition in promotion.PromotionConditions)
+                {
+                    if (condition.TargetEntity != null && condition.TargetEntity.ToLower() == "food")
+                    {
+                        // Có thể mở rộng logic điều kiện cho food ở đây nếu cần
+                        // Ví dụ: tổng giá, số lượng, loại món ăn...
+                    }
+                }
+                if (eligible) eligiblePromotions.Add(promotion);
+            }
+            return eligiblePromotions;
+        }
+
+        // Áp dụng promotion cho từng món ăn riêng biệt, trả về danh sách món đã giảm giá và tên promotion
+        public List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)> ApplyFoodPromotionsToFoods(List<(int FoodId, int Quantity, decimal Price)> selectedFoods, List<Promotion> eligiblePromotions)
+        {
+            var result = new List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)>();
+            foreach (var food in selectedFoods)
+            {
+                decimal bestDiscount = 0;
+                string promoName = null;
+                decimal discountLevel = 0;
+                foreach (var promo in eligiblePromotions)
+                {
+                    if (promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > bestDiscount)
+                    {
+                        bestDiscount = promo.DiscountLevel.Value;
+                        promoName = promo.Title;
+                        discountLevel = promo.DiscountLevel.Value;
+                    }
+                }
+                decimal discountedPrice = food.Price;
+                if (bestDiscount > 0)
+                {
+                    discountedPrice = food.Price * (1 - bestDiscount / 100m);
+                }
+                result.Add((food.FoodId, food.Price, discountedPrice, promoName, discountLevel));
+            }
+            return result;
+        }
     }
 
     public class PromotionCheckContext {

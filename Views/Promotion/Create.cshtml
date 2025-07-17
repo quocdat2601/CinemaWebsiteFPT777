@@ -51,6 +51,7 @@
                                                 <option value="Movie">Movie</option>
                                                 <option value="Seat">Seat</option>
                                                 <option value="Type">Type</option>
+                                                <option value="Food">Food</option>
                                             </select>
                                             <span asp-validation-for="TargetField" class="text-danger"></span>
                                         </div>
@@ -141,12 +142,13 @@
 
         // Table columns mapping (update as needed)
         const tableColumns = {
-            Account: ["AccountId", "Address", "DateOfBirth", "Email", "FullName", "Gender", "IdentityCard", "Image", "Password", "PhoneNumber", "RegisterDate", "RoleId", "Status", "Username", "RankId"],
-            Invoice: ["InvoiceId", "AddScore", "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "UseScore", "Seat", "AccountId"],
+            Account: ["AccountId", "DateOfBirth", "RegisterDate", "RoleId", "Status", "Username", "RankId"],
+            Invoice: [ "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "Seat"],
             Member: ["MemberId", "Score", "AccountId"],
-            Movie: ["MovieId", "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish", "MovieNameVn", "LargeImage", "SmallImage", "TrailerUrl"],
-            Seat: ["SeatId", "CinemaRoomId", "SeatColumn", "SeatRow", "SeatStatusId", "SeatTypeId", "SeatName"],
-            Type: ["TypeId", "TypeName"]
+            Movie: ["MovieId", "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish"],
+            Seat: ["CinemaRoomId", "SeatColumn", "SeatRow", "SeatStatusId", "SeatTypeId", "SeatName"],
+            Type: ["TypeId", "TypeName"],
+            Food: ["FoodId", "FoodName", "Price", "Status", "Category"]
         };
 
         // Column type mapping for all tables and columns
@@ -215,6 +217,13 @@
             Type: {
                 TypeId: "number",
                 TypeName: "string"
+            },
+            Food: {
+                FoodId: "number",
+                FoodName: "string",
+                Price: "number",
+                Status: "number",
+                Category: "string"
             }
         };
 
