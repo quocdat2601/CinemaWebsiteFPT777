@@ -1,151 +1,111 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Models;
-using MovieTheater.ViewModels;
 using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
     public class TicketController : Controller
     {
-        private readonly MovieTheaterContext _context;
+        private readonly ITicketService _ticketService;
 
-        public TicketController(MovieTheaterContext context)
+        public TicketController(ITicketService ticketService)
         {
-            _context = context;
+            _ticketService = ticketService;
         }
+
         [HttpGet]
         public IActionResult History()
         {
             // Redirect /Ticket/History to /Ticket/Index
             return RedirectToAction("Index");
         }
-        // AC-01: View all booked tickets
+
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
+            var bookings = await _ticketService.GetUserTicketsAsync(accountId);
             return View(bookings);
         }
 
-
-        // AC-01: View booked tickets with filtering
         [HttpGet]
-        public IActionResult Booked()
+        public async Task<IActionResult> Booked()
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.Status == 1)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
+            var bookings = await _ticketService.GetUserTicketsAsync(accountId, 1); // 1 = Completed
             return View("Index", bookings);
         }
 
-        // AC-01: View canceled tickets
         [HttpGet]
-        public IActionResult Canceled()
+        public async Task<IActionResult> Canceled()
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId && i.Status == 0)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
+            var bookings = await _ticketService.GetUserTicketsAsync(accountId, 0); // 0 = Incomplete
             return View("Index", bookings);
         }
 
-        // AC-01: View ticket details
         [HttpGet]
-        public IActionResult Details(string id)
+        public async Task<IActionResult> Details(string id)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
-            var booking = _context.Invoices
-                .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
-
-            if (booking == null)
-            {
+            var bookingDetails = await _ticketService.GetTicketDetailsAsync(id, accountId);
+            if (bookingDetails == null)
                 return NotFound();
-            }
 
-            return View(booking);
+            return View(bookingDetails);
         }
 
-        // AC-04: Cancel ticket
         [HttpPost]
-        public IActionResult Cancel(string id)
+        public async Task<IActionResult> Cancel(string id, string returnUrl)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
-            var booking = _context.Invoices
-                .FirstOrDefault(i => i.InvoiceId == id && i.AccountId == accountId);
+            var (success, messages) = await _ticketService.CancelTicketAsync(id, accountId);
+            TempData[success ? "ToastMessage" : "ErrorMessage"] = string.Join("<br/>", messages);
 
-            if (booking == null)
-            {
-                return NotFound();
-            }
-
-            // Check if ticket can be canceled (24 hours before showtime)
-            if (booking.ScheduleShow.HasValue && booking.ScheduleShow.Value.AddHours(-24) <= DateTime.Now)
-            {
-                TempData["Error"] = "Cannot cancel ticket within 24 hours of showtime.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            booking.Status = 0; // 0 = Canceled
-            _context.SaveChanges();
-
-            TempData["Success"] = "Ticket canceled successfully.";
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
-        public IActionResult HistoryPartial(DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> HistoryPartial(DateTime? fromDate, DateTime? toDate, string status = "all")
         {
-            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
+                return Json(new { success = false, message = "Not logged in." });
 
-            var query = _context.Invoices.Where(i => i.AccountId == accountId);
-            if (fromDate.HasValue)
-                query = query.Where(i => i.BookingDate >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(i => i.BookingDate <= toDate.Value);
-            var result = query.ToList();
-            return PartialView("~/Views/Account/Tabs/_HistoryPartial.cshtml", result);
+            var result = await _ticketService.GetHistoryPartialAsync(accountId, fromDate, toDate, status);
+            return Json(new { success = true, data = result });
         }
 
         public IActionResult Test()
         {
             return Content("Test OK");
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
+        {
+            var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id);
+            TempData[success ? "ToastMessage" : "ErrorMessage"] = string.Join("<br/>", messages);
+
+            return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
+        }
     }
-} 
+}

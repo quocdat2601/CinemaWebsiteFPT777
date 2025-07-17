@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 using MovieTheater.Repository;
 
 namespace MovieTheater.Service
@@ -7,12 +6,10 @@ namespace MovieTheater.Service
     public class SeatService : ISeatService
     {
         private readonly ISeatRepository _repository;
-        private readonly MovieTheaterContext _context;
 
-        public SeatService(ISeatRepository repository, MovieTheaterContext context)
+        public SeatService(ISeatRepository repository)
         {
             _repository = repository;
-            _context = context;
         }
 
         public Task<List<Seat>> GetAllSeatsAsync()
@@ -25,14 +22,6 @@ namespace MovieTheater.Service
             return _repository.GetByCinemaRoomIdAsync(cinemaRoomId);
         }
 
-        public async Task<Seat?> GetSeatByIdAsync(int id)
-        {
-            return await Task.FromResult(_repository.GetById(id));
-        }
-        public async Task<List<int>> GetBookedSeatsAsync(string movieId, DateTime date, string time)
-        {
-            return await _repository.GetBookedSeatsAsync(movieId, date, time);
-        }
         public async Task<List<SeatType>> GetSeatTypesAsync()
         {
             return await _repository.GetSeatTypesAsync();
@@ -61,17 +50,19 @@ namespace MovieTheater.Service
             _repository.Save();
         }
 
-        public void UpdateSeatStatus(int? seatId)
+        public Seat GetSeatByName(string seatName)
         {
-            if (seatId == null) return;
-
-            _repository.UpdateSeatAndScheduleStatus(seatId.Value, 2);
-            _repository.Save();
+            return _repository.GetSeatByName(seatName);
         }
 
-        public async Task ResetSeatsAfterShowAsync(string movieId, DateTime showDate, string showTime)
+        public Seat GetSeatById(int? id)
         {
-            await _repository.ResetSeatsAfterShowAsync(movieId, showDate, showTime);
+            return _repository.GetById(id);
+        }
+        
+        public async Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2)
+        {
+            await _repository.DeleteCoupleSeatBySeatIdsAsync(seatId1, seatId2);
         }
     }
 }

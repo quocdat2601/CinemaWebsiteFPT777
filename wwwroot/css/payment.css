@@ -1,0 +1,126 @@
+.payment-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.payment-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.payment-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 1.5rem;
+}
+
+.payment-card .card-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.payment-info {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.payment-info h5 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.payment-details {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.payment-details h5 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.price-breakdown {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.final-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #dc3545;
+}
+
+.payment-alert {
+    border-radius: 10px;
+    border: none;
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.payment-btn {
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.payment-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.payment-btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    color: white;
+}
+
+.payment-btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    border: none;
+    color: white;
+}
+
+.seat-badge {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.invoice-badge {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .payment-container {
+        padding: 1rem 0;
+    }
+    
+    .payment-card {
+        margin: 0 1rem;
+    }
+    
+    .payment-btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}

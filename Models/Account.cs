@@ -44,4 +44,8 @@ public partial class Account
     public virtual Rank? Rank { get; set; }
 
     public virtual Role? Role { get; set; }
+
+    public virtual ICollection<Voucher> Vouchers { get; set; } = new List<Voucher>();
+
+    public virtual ICollection<Movie> Movies { get; set; } = new List<Movie>();
 }

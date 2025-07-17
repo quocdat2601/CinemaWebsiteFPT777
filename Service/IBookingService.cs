@@ -4,11 +4,12 @@ namespace MovieTheater.Service
 {
     public interface IBookingService
     {
-        public IEnumerable<Movie> GetAvailableMovies();
+        Task<List<Movie>> GetAvailableMoviesAsync();
         Movie GetById(string movieId);
-        Task<List<DateTime>> GetShowDates(string movieId);
-        Task <List<string>> GetShowTimes(string movieId, DateTime date);
+        Task<List<DateOnly>> GetShowDatesAsync(string movieId);
+        Task<List<string>> GetShowTimesAsync(string movieId, DateTime date);
         Task SaveInvoiceAsync(Invoice invoice);
+        Task UpdateInvoiceAsync(Invoice invoice);
         Task<string> GenerateInvoiceIdAsync();
     }
 }

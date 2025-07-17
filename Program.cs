@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
-using Serilog;
 using System.Text;
 
 namespace MovieTheater
@@ -62,7 +62,10 @@ namespace MovieTheater
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+
+                //code dưới sẽ khiến middleware challenge bằng Google OAuth thay vì chuyển hướng về trang login nội bộ
+                //options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+
             })
             .AddCookie(options =>
             {
@@ -104,9 +107,42 @@ namespace MovieTheater
             builder.Services.AddScoped<EmailService>();
             builder.Services.AddScoped<ICoupleSeatRepository, CoupleSeatRepository>();
             builder.Services.AddScoped<ICoupleSeatService, CoupleSeatService>();
-            builder.Services.AddHostedService<SeatResetService>();
+            builder.Services.AddScoped<IVNPayService, VNPayService>();
+            builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+            builder.Services.AddScoped<IScheduleSeatRepository, ScheduleSeatRepository>();
+            builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            builder.Services.AddScoped<MovieTheater.Repository.IRankRepository, MovieTheater.Repository.RankRepository>();
+            builder.Services.AddScoped<MovieTheater.Service.IRankService, MovieTheater.Service.RankService>();
+            builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
+            builder.Services.AddScoped<IVoucherService, VoucherService>();
+            builder.Services.AddScoped<IPointService, PointService>();
+            builder.Services.AddScoped<IScoreService, ScoreService>();
+            builder.Services.AddScoped<IPaymentSecurityService, PaymentSecurityService>();
+            builder.Services.AddScoped<IBookingDomainService, BookingDomainService>();
+            builder.Services.AddScoped<IBookingPriceCalculationService, BookingPriceCalculationService>();
+            builder.Services.AddScoped<ITicketVerificationService, TicketVerificationService>();
+            builder.Services.AddSignalR(); //ADD SignalR
+            builder.Services.AddScoped<IFoodRepository, FoodRepository>();
+            builder.Services.AddScoped<IFoodService, FoodService>();
+            builder.Services.AddScoped<IVersionRepository, VersionRepository>();
+            builder.Services.AddScoped<IFoodInvoiceRepository, FoodInvoiceRepository>();
+            builder.Services.AddScoped<IFoodInvoiceService, FoodInvoiceService>();
+            builder.Services.AddScoped<ITicketService, TicketService>();
+
+            builder.Services.Configure<VNPayConfig>(
+             builder.Configuration.GetSection("VNPay")
+                );
 
             builder.Services.AddHttpContextAccessor();
+
+            // Add session support for rank-up notifications and TempData
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
 
             builder.Services.AddControllersWithViews();
 
@@ -122,6 +158,10 @@ namespace MovieTheater
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseSession(); // Enable session before authentication/authorization
+
+            // Thêm middleware kiểm tra bảo mật thanh toán
+            app.UseMiddleware<MovieTheater.Middleware.PaymentSecurityMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -141,7 +181,16 @@ namespace MovieTheater
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Movie}/{action=MovieList}/{id?}");
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.MapControllerRoute(
+                name: "seat",
+                pattern: "Seat/{action}/{id?}",
+                defaults: new { controller = "Seat", action = "Select" });
+
+            app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
+            app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
+            app.MapHub<DashboardHub>("/dashboardhub"); //Tuyen duong cho hub
 
             app.Run();
         }

@@ -44,4 +44,4 @@ namespace MovieTheater.ViewModels
         public int Score { get; set; }
 
     }
-} 
+}

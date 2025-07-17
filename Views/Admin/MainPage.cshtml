@@ -1,54 +1,211 @@
 ﻿@{
     ViewData["Title"] = "Admin Main Page";
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 bg-light min-vh-100 border-end">
-            <div class="nav flex-column nav-pills">
-                <a class="nav-link active" href="#" onclick="loadTab('Dashboard')">Dashboard</a>
-                <a class="nav-link" href="#" onclick="loadTab('MemberMg')">Member Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('EmployeeMg')">Employee Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('MovieMg')">Movie Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ShowroomMg')">Showroom Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('ScheduleMg')">Schedule Management</a>
-                <a class="nav-link" href="#" onclick="loadTab('PromotionMg')">Promotion Management</a>
-            </div>
+        <div class="col-md-3 col-lg-2 min-vh-100 border-end" id="account-sidebar">
+            <ul class="nav flex-column nav-pills" id="adminTabs">
+                <a class="nav-link admin-tab active" data-tab="Dashboard" href="javascript:void(0)">Dashboard</a>
+                <a class="nav-link admin-tab" data-tab="MemberMg" href="javascript:void(0)">Member Management</a>
+                <a class="nav-link admin-tab" data-tab="EmployeeMg" href="javascript:void(0)">Employee Management</a>
+                <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
+                <a class="nav-link admin-tab" data-tab="ShowroomMg" href="javascript:void(0)">Showroom Management</a>
+                <a class="nav-link admin-tab" data-tab="VersionMg" href="javascript:void(0)">Version Management</a>
+                <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
+                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
+                <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
+                <a class="nav-link admin-tab" data-tab="VoucherMg" href="javascript:void(0)">Voucher Management</a>
+                <a class="nav-link admin-tab" data-tab="RankMg" href="javascript:void(0)">Rank Management</a>
+                <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;">
+                    <i class="fas fa-qrcode me-2"></i>QR Scanner
+                </a>
+            </ul>
         </div>
-
-        <!-- Tab Content -->
         <div class="col-md-9 col-lg-10 p-4">
-            <div id="tabContent">
-                Loading...
-            </div>
+            <div id="tabContent"></div>
         </div>
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function loadTab(tabName, keyword = '') {
-        $('.nav-link').removeClass('active');
-        $(`a.nav-link:contains(${tabName.replace('Mg', ' Management')})`).addClass('active');
+    function loadTab(tabName, keyword = '', status = '', expiry = '') {
+        $('.admin-tab').removeClass('active');
+        $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
         const params = new URLSearchParams({ tab: tabName });
-        if (keyword.trim()) {
-            params.append('keyword', keyword);
+        if (keyword && keyword.trim()) params.append('keyword', keyword);
+        // Chỉ truyền statusFilter và expiryFilter cho VoucherMg
+        if (tabName === 'VoucherMg') {
+            if (status) params.append('statusFilter', status);
+            if (expiry) params.append('expiryFilter', expiry);
+        } else {
+            if (status) params.append('statusFilter', status);
+            if (expiry) params.append('categoryFilter', expiry); // giữ nguyên cho FoodMg nếu có
         }
+        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function(response, status) {
+            if (status === 'error') {
+                $('#tabContent').html('<div class="alert alert-danger">Failed to load content</div>');
+            } else {
+                // Trigger appropriate event based on the loaded tab
+                switch(tabName) {
+                    case 'BookingMg':
+                        $(document).trigger('bookingTabLoaded');
+                        break;
+                    case 'Dashboard':
+                        // Khởi tạo SignalR cho dashboard
+                        if (window.dashboardConnection) {
+                            window.dashboardConnection.stop();
+                        }
+                        window.dashboardConnection = new signalR.HubConnectionBuilder()
+                            .withUrl("/dashboardhub")
+                            .build();
 
-        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`);
+                        window.dashboardConnection.on("DashboardUpdated", function () {
+                            loadTab('Dashboard'); // reload lại tab dashboard
+                        });
+
+                        window.dashboardConnection.start().catch(function (err) {
+                            return console.error(err.toString());
+                        });
+
+                        const el = document.getElementById('dashboard-data');
+                        if (el) {
+                            const model = JSON.parse(el.textContent);
+                            window.initDashboardCharts(model);
+                        }
+                        break;
+                }
+            }
+        });
     }
+
+    window.initDashboardCharts = function(model) {
+        const revCtx = document.getElementById('revenueChart')?.getContext('2d');
+        if (revCtx && model.revenueDates) {
+            new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: model.revenueDates,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: model.revenueValues,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+        const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
+        if (bookCtx && model.bookingDates) {
+            new Chart(bookCtx, {
+                type: 'line',
+                data: {
+                    labels: model.bookingDates,
+                    datasets: [{
+                        label: 'Bookings',
+                        data: model.bookingValues,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+    };
 
     function searchEmployees() {
         const keyword = document.getElementById('searchKeyword')?.value ?? '';
         loadTab('EmployeeMg', keyword);
     }
 
+    function searchBooking() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('BookingMg', keyword);
+    }
+
+    function searchFood() {
+        const keyword = document.getElementById('searchKeyword').value;
+        const category = document.getElementById('categoryFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        loadTab('FoodMg', keyword, category, status);
+    }
+
+    // Initialize the page
     $(document).ready(function () {
         var tabToLoad = '@ViewData["ActiveTab"]' || 'Dashboard';
         loadTab(tabToLoad);
+
+        // Add click handlers for admin tabs
+        $('.admin-tab').on('click', function(e) {
+            e.preventDefault();
+            const tabName = $(this).data('tab');
+            loadTab(tabName);
+        });
     });
+
+    // Delegated event for edit button
+    $(document).on('click', '.edit-version-btn', function () {
+        var id = $(this).data('id');
+        $.get('/Version/Get/' + id, function (version) {
+            // Set the form fields with the fetched values
+            $('#inlineEditVersionId').val(version.versionId);
+            $('#inlineEditVersionName').val(version.versionName);
+            $('#inlineEditMulti').val(version.multi);
+            // Calculate and update prices immediately
+            updateSeatTypePrices(version.multi);
+            // Show the edit area
+            $('#inlineEditArea').slideDown();
+            // Scroll to the edit area
+            $('html, body').animate({ scrollTop: $('#inlineEditArea').offset().top - 80 }, 400);
+        });
+    });
+
+    // Delegated event for cancel button
+    $(document).on('click', '#cancelInlineEdit', function () {
+        $('#inlineEditArea').slideUp();
+    });
+
+    // Delegated event for form submit
+    $(document).on('submit', '#inlineEditVersionForm', function (e) {
+        e.preventDefault();
+        var data = {
+            VersionId: $('#inlineEditVersionId').val(),
+            VersionName: $('#inlineEditVersionName').val(),
+            Multi: parseFloat($('#inlineEditMulti').val())
+        };
+        $.ajax({
+            url: '/Version/Edit',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.success) {
+                    loadTab('VersionMg');
+                } else {
+                    alert(res.error || 'Failed to update version.');
+                }
+            }
+        });
+    });
+
+    // Delegated event for multiplier input
+    $(document).on('input', '#inlineEditMulti', function () {
+        var multi = parseFloat($(this).val()) || 1;
+        updateSeatTypePrices(multi);
+    });
+
+    function updateSeatTypePrices(multi) {
+        $('#seatTypePriceTable tr').each(function () {
+            var base = parseFloat($(this).attr('data-base-price')) || 0;
+            var price = Math.round(base * multi);
+            $(this).find('.calculated-price').text(price.toLocaleString('en-US'));
+        });
+    }
 </script>
 
 <partial name="_ToastMessages" />
+

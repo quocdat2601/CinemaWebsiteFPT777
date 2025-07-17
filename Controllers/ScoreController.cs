@@ -2,93 +2,86 @@
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {
     public class ScoreController : Controller
     {
-        private readonly MovieTheaterContext _context;
+        private readonly IScoreService _scoreService;
 
-        public ScoreController(
-       MovieTheaterContext context)
+        public ScoreController(IScoreService scoreService)
         {
-            _context = context;
+            _scoreService = scoreService;
         }
 
+        /// <summary>
+        /// Xem lịch sử điểm cộng
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistory (GET)</remarks>
         [HttpGet]
         public IActionResult ScoreHistory()
         {
-            return View("~/Views/Account/Tabs/Score.cshtml");
-        }
-
-        [HttpPost]
-        public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
-        {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (string.IsNullOrEmpty(accountId))
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-
-            if (historyType == "add")
-            {
-                query = query.Where(i => i.AddScore > 0);
-            }
-            else if (historyType == "use")
-            {
-                query = query.Where(i => i.UseScore > 0);
-            }
-
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-            }).ToList();
-
-            if (!result.Any())
-            {
-                ViewBag.Message = "No score history found for the selected period.";
-            }
-            System.Diagnostics.Debug.WriteLine("AccountId: " + accountId);
-            // ... sau khi lấy result
-            System.Diagnostics.Debug.WriteLine("Result count: " + result.Count);
+            ViewBag.CurrentScore = _scoreService.GetCurrentScore(accountId);
+            var result = _scoreService.GetScoreHistory(accountId, null, null, "add");
+            ViewBag.HistoryType = "add";
             return View("~/Views/Account/Tabs/Score.cshtml", result);
         }
 
-        [HttpGet]
-        public IActionResult ScoreHistoryPartial(DateTime fromDate, DateTime toDate, string historyType)
+        /// <summary>
+        /// Xem lịch sử điểm theo khoảng ngày và loại điểm
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistory (POST)</remarks>
+        [HttpPost]
+        public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {
-                return Content("<div class='alert alert-danger'>Not logged in.</div>", "text/html");
+                return RedirectToAction("Login", "Account");
             }
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-            if (historyType == "add")
+
+            ViewBag.CurrentScore = _scoreService.GetCurrentScore(accountId);
+            var result = _scoreService.GetScoreHistory(accountId, fromDate, toDate, historyType);
+            if (!result.Any())
             {
-                query = query.Where(i => i.AddScore > 0);
+                ViewBag.Message = "No score history found for the selected period.";
             }
-            else if (historyType == "use")
+            return View("~/Views/Account/Tabs/Score.cshtml", result);
+        }
+
+        /// <summary>
+        /// Lấy lịch sử điểm (partial, ajax)
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistoryPartial (GET)</remarks>
+        [HttpGet]
+        public IActionResult ScoreHistoryPartial(string fromDate, string toDate, string historyType)
+        {
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
             {
-                query = query.Where(i => i.UseScore > 0);
+                return Json(new { success = false, message = "Not logged in." });
             }
-            var result = query.Select(i => new ScoreHistoryViewModel
-            {
-                DateCreated = i.BookingDate ?? DateTime.MinValue,
-                MovieName = i.MovieName ?? "N/A",
-                Score = historyType == "add" ? (i.AddScore ?? 0) : (i.UseScore ?? 0)
-            }).ToList();
-            return PartialView("~/Views/Account/_ScoreHistoryPartial.cshtml", result);
+
+            int currentScore = _scoreService.GetCurrentScore(accountId);
+            DateTime? from = null, to = null;
+            if (DateTime.TryParse(fromDate, out var f)) from = f;
+            if (DateTime.TryParse(toDate, out var t)) to = t;
+            var data = _scoreService.GetScoreHistory(accountId, from, to, historyType);
+            var result = data.Select(i => new {
+                dateCreated = i.DateCreated,
+                movieName = i.MovieName,
+                score = i.Score,
+                type = i.Type
+            }).OrderByDescending(x => x.dateCreated).ToList();
+            return Json(new { success = true, currentScore = currentScore, data = result });
         }
 
     }

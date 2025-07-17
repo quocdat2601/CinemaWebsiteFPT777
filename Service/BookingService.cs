@@ -15,9 +15,9 @@ namespace MovieTheater.Service
             _context = context;
         }
 
-        public IEnumerable<Movie> GetAvailableMovies()
+        public Task<List<Movie>> GetAvailableMoviesAsync()
         {
-            return _repo.GetAll();
+            return _repo.GetAllMoviesAsync();
         }
 
         public Movie GetById(string movieId)
@@ -30,19 +30,14 @@ namespace MovieTheater.Service
             return _repo.GetSchedulesByIds(ids);
         }
 
-        public List<ShowDate> GetShowDatesByIds(List<int> ids)
+        public Task<List<DateOnly>> GetShowDatesAsync(string movieId)
         {
-            return _repo.GetShowDatesByIds(ids);
+            return _repo.GetShowDatesAsync(movieId);
         }
 
-        public async Task<List<DateTime>> GetShowDates(string movieId)
+        public Task<List<string>> GetShowTimesAsync(string movieId, DateTime date)
         {
-            return await _repo.GetShowDatesAsync(movieId);
-        }
-
-        public async Task<List<string>> GetShowTimes(string movieId, DateTime date)
-        {
-            return await _repo.GetShowTimesAsync(movieId, date);
+            return _repo.GetShowTimesAsync(movieId, date);
         }
 
         public async Task SaveInvoiceAsync(Invoice invoice)
@@ -51,24 +46,37 @@ namespace MovieTheater.Service
             await _context.SaveChangesAsync();
         }
 
+        public async Task UpdateInvoiceAsync(Invoice invoice)
+        {
+            _context.Invoices.Update(invoice);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<string> GenerateInvoiceIdAsync()
         {
-            // Lấy tất cả InvoiceId từ DB bắt đầu bằng "INV"
+            // Get all InvoiceIds from DB starting with "INV"
             var allIds = await _context.Invoices
                 .Where(i => i.InvoiceId.StartsWith("INV"))
                 .Select(i => i.InvoiceId)
                 .ToListAsync();
 
             int maxNumber = 0;
+
             foreach (var id in allIds)
             {
-                if (int.TryParse(id.Substring(3), out int number))
+                var numberPart = id.Substring(3); // Remove "INV"
+                if (int.TryParse(numberPart, out int num))
                 {
-                    maxNumber = Math.Max(maxNumber, number);
+                    if (num > maxNumber)
+                        maxNumber = num;
                 }
             }
 
-            return $"INV{(maxNumber + 1):D3}";
+            int nextNumber = maxNumber + 1;
+
+            // Return "INV" + number with 3-digit padding
+            return "INV" + nextNumber.ToString("D3");
         }
+
     }
 }

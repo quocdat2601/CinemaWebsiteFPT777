@@ -1,41 +1,50 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using MovieTheater.Models;
-using MovieTheater.ViewModels;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
+using MovieTheater.Repository;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Controllers
 {
-    public class ShowtimeController : Controller
-    {
-        private readonly MovieTheaterContext _context;
-        public ShowtimeController(MovieTheaterContext context)
-        {
-            _context = context;
-        }
+   public class ShowtimeController : Controller
+   {
+       private readonly IMovieRepository _movieRepository;
+       public ShowtimeController(IMovieRepository movieRepository)
+       {
+           _movieRepository = movieRepository;
+       }
 
-        // GET: ShowtimeController
+        /// <summary>
+        /// Danh sách suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/List (GET)</remarks>
         public IActionResult List()
         {
             return View();
         }
 
-        // GET: ShowtimeController/Details/5
+        /// <summary>
+        /// Xem chi tiết suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Details (GET)</remarks>
         public ActionResult Details(int id)
         {
             return View();
         }
 
-        // GET: ShowtimeController/Create
+        /// <summary>
+        /// Trang tạo suất chiếu mới
+        /// </summary>
+        /// <remarks>url: /Showtime/Create (GET)</remarks>
         public ActionResult Create()
         {
             return View();
         }
 
-        // POST: ShowtimeController/Create
+        /// <summary>
+        /// Tạo suất chiếu mới
+        /// </summary>
+        /// <remarks>url: /Showtime/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create(IFormCollection collection)
@@ -50,13 +59,19 @@ namespace MovieTheater.Controllers
             }
         }
 
-        // GET: ShowtimeController/Edit/5
+        /// <summary>
+        /// Trang sửa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Edit (GET)</remarks>
         public ActionResult Edit(int id)
         {
             return View();
         }
 
-        // POST: ShowtimeController/Edit/5
+        /// <summary>
+        /// Sửa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, IFormCollection collection)
@@ -71,13 +86,19 @@ namespace MovieTheater.Controllers
             }
         }
 
-        // GET: ShowtimeController/Delete/5
+        /// <summary>
+        /// Trang xóa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Delete (GET)</remarks>
         public ActionResult Delete(int id)
         {
             return View();
         }
 
-        // POST: ShowtimeController/Delete/5
+        /// <summary>
+        /// Xóa suất chiếu
+        /// </summary>
+        /// <remarks>url: /Showtime/Delete (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, IFormCollection collection)
@@ -92,52 +113,57 @@ namespace MovieTheater.Controllers
             }
         }
 
-        public IActionResult Select(DateTime? date, string returnUrl)
+        /// <summary>
+        /// Chọn suất chiếu theo ngày
+        /// </summary>
+        /// <remarks>url: /Showtime/Select (GET)</remarks>
+        public IActionResult Select(string date, string returnUrl)
         {
-            // 1. Get all available screening dates as DateTime
-            var availableDates = _context.ShowDates
-                .OrderBy(d => d.ShowDate1)
-                .Select(d => d.ShowDate1)
-                .ToList() // materialize as List<DateOnly?>
-                .Where(d => d.HasValue)
-                .Select(d => d.Value.ToDateTime(TimeOnly.MinValue))
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            // Only dates today or in the future
+            var availableDates = _movieRepository.GetMovieShow()
+                .Where(ms => ms.ShowDate >= today)
+                .Select(ms => ms.ShowDate)
+                .Distinct()
+                .OrderBy(d => d)
                 .ToList();
+
             if (!availableDates.Any())
             {
                 var emptyModel = new ShowtimeSelectionViewModel
                 {
-                    AvailableDates = new List<DateTime>(),
-                    SelectedDate = date ?? DateTime.Today,
+                    AvailableDates = new List<DateOnly>(),
+                    SelectedDate = today,
                     Movies = new List<MovieShowtimeInfo>()
                 };
                 return View("~/Views/Showtime/Select.cshtml", emptyModel);
             }
-            var selectedDate = date ?? availableDates.First();
-            var selectedDateOnly = DateOnly.FromDateTime(selectedDate);
 
-            // Find the ShowDateId for the selected date
-            var selectedShowDate = _context.ShowDates.FirstOrDefault(sd => sd.ShowDate1 == selectedDateOnly);
-
-            if (selectedShowDate == null)
+            // Parse the date from dd/MM/yyyy format
+            DateOnly selectedDateOnly;
+            if (!string.IsNullOrEmpty(date))
             {
-                // Handle case where no show date found
-                var emptyModel = new ShowtimeSelectionViewModel
+                try
                 {
-                    AvailableDates = availableDates,
-                    SelectedDate = selectedDate,
-                    Movies = new List<MovieShowtimeInfo>()
-                };
-                return View("~/Views/Showtime/Select.cshtml", emptyModel);
+                    selectedDateOnly = DateOnly.ParseExact(date, "dd/MM/yyyy");
+                }
+                catch
+                {
+                    selectedDateOnly = today;
+                }
+            }
+            else
+            {
+                selectedDateOnly = today;
             }
 
-            // 2. Get all MovieShow entries for the selected date
-            var movieShowsForDate = _context.MovieShows
-                .Where(ms => ms.ShowDateId == selectedShowDate.ShowDateId)
-                .Include(ms => ms.Movie)
-                .Include(ms => ms.Schedule)
+            // Only get MovieShows for the selected date (which is always today or future)
+            var movieShowsForDate = _movieRepository.GetMovieShow()
+                .Where(ms => ms.ShowDate == selectedDateOnly)
                 .ToList();
 
-            // 3. Group by movie and build the view model
+            // 3. Group by movie and version, then build the view model
             var movies = movieShowsForDate
                 .GroupBy(ms => ms.Movie) // Group by the related Movie entity
                 .Where(g => g.Key != null) // Ensure the Movie is not null after Include
@@ -146,24 +172,34 @@ namespace MovieTheater.Controllers
                     MovieId = g.Key.MovieId,
                     MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
                     PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
-                    Showtimes = g.Where(ms => ms.Schedule != null) // Filter out entries with null Schedule
-                                     .Select(ms => ms.Schedule.ScheduleTime)
-                                     .Where(t => !string.IsNullOrEmpty(t))
-                                     .OrderBy(t => t) // Optional: Order showtimes
-                                     .ToList() ?? new List<string>()
+                    VersionShowtimes = g.Where(ms => ms.Schedule != null && ms.Version != null)
+                                        .GroupBy(ms => new { ms.VersionId, ms.Version.VersionName })
+                                        .Select(versionGroup => new VersionShowtimeInfo
+                                        {
+                                            VersionId = versionGroup.Key.VersionId,
+                                            VersionName = versionGroup.Key.VersionName,
+                                            Showtimes = versionGroup
+                                                .Select(ms => ms.Schedule.ScheduleTime.HasValue ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null)
+                                                .Where(t => !string.IsNullOrEmpty(t))
+                                                .OrderBy(t => t)
+                                                .ToList()
+                                        })
+                                        .Where(v => v.Showtimes.Any())
+                                        .OrderBy(v => v.VersionName)
+                                        .ToList()
                 })
-                .Where(m => m.Showtimes.Any()) // Only include movies with showtimes
+                .Where(m => m.VersionShowtimes.Any()) // Only include movies with showtimes
                 .ToList();
 
             var model = new ShowtimeSelectionViewModel
             {
                 AvailableDates = availableDates,
-                SelectedDate = selectedDate,
+                SelectedDate = selectedDateOnly,
                 Movies = movies,
                 ReturnUrl = returnUrl
             };
 
             return View("~/Views/Showtime/Select.cshtml", model);
         }
-    }
+   }
 }

@@ -1,0 +1,431 @@
+@{
+    ViewData["Title"] = "QR Code Scanner";
+}
+
+<style>
+    .scanner-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 0.5rem 0;
+    }
+    .scanner-card {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+    .scanner-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .scanner-header h2 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.5rem;
+    }
+
+    .scanner-body {
+        padding: 2rem;
+    }
+
+    #video-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    #video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .scanner-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 200px;
+        height: 200px;
+        border: 3px solid #28a745;
+        border-radius: 15px;
+        background: rgba(40, 167, 69, 0.1);
+    }
+
+    .scanner-overlay::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border: 2px solid #28a745;
+        border-radius: 15px;
+        animation: pulse 2s infinite;
+    }
+
+    .manual-input {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .result-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .result-content {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        animation: slideIn 0.3s ease;
+    }
+
+    .success-icon {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 1rem;
+    }
+
+    .error-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 1rem;
+    }
+
+    .ticket-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+        text-align: left;
+    }
+
+    .ticket-info p {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .ticket-info strong {
+        color: #495057;
+    }
+    .loading-spinner {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+    .loading-spinner .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        color: #28a745;
+    }
+    @@media (max-width: 600px) {
+        .scanner-card, .result-content {
+            padding: 0.5rem !important;
+        }
+        .scanner-header, .result-header {
+            padding: 0.5rem !important;
+        }
+        #video-container {
+            height: 140px;
+        }
+        .scanner-card {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+
+<div class="scanner-container">
+    <div class="scanner-card">
+        <div class="scanner-header">
+            <h2>🎫 QR Ticket Scanner</h2>
+            <p class="mb-0">Scan the QR code on the ticket to check-in customer</p>
+        </div>
+        
+        <div class="scanner-body">
+            <div id="video-container">
+                <video id="video" autoplay></video>
+                <div class="scanner-overlay"></div>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button id="startScan" class="btn btn-success btn-lg me-2">
+                    <i class="fas fa-camera me-2"></i>Start Scanning
+                </button>
+                <button id="stopScan" class="btn btn-secondary btn-lg" style="display: none;">
+                    <i class="fas fa-stop me-2"></i>Stop
+                </button>
+            </div>
+
+            <div class="manual-input">
+                <h6 class="text-center mb-3">📝 Manual Entry</h6>
+                <div class="input-group">
+                    <input type="text" id="manualInvoiceId" class="form-control" placeholder="Enter Invoice ID">
+                    <button id="verifyManual" class="btn btn-primary">
+                        <i class="fas fa-check me-1"></i>Verify
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-3 mb-2">
+            <a href="/Admin/MainPage?tab=BookingMg" class="btn btn-outline-dark">
+                <i class="fas fa-arrow-left me-2"></i>Back to Admin
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Result Modal -->
+<div id="resultModal" class="result-modal">
+    <div class="result-content">
+        <div id="resultIcon"></div>
+        <h4 id="resultTitle"></h4>
+        <p id="resultMessage"></p>
+        <div id="ticketInfo" class="ticket-info" style="display: none;"></div>
+        <button id="confirmCheckIn" class="btn btn-success mt-2" style="display:none;">Xác nhận Check-in</button>
+        <button id="closeModal" class="btn btn-primary mt-3">Close</button>
+    </div>
+</div>
+
+<!-- QR Code Scanner Library -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script>
+    let videoStream = null;
+    let scanning = false;
+    let lastInvoiceId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const startBtn = document.getElementById('startScan');
+        const stopBtn = document.getElementById('stopScan');
+        const video = document.getElementById('video');
+        const manualBtn = document.getElementById('verifyManual');
+        const manualInput = document.getElementById('manualInvoiceId');
+
+        function showLoading(show) {
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.style.display = show ? 'block' : 'none';
+        }
+
+        // Start scanner
+        startBtn.addEventListener('click', async function() {
+            showLoading(true);
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                video.srcObject = stream;
+                videoStream = stream;
+                scanning = true;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                showLoading(false);
+                scanQRCode();
+            } catch (error) {
+                showLoading(false);
+                showResult('error', 'Camera Error', 'Unable to access camera. Please check device permissions.');
+            }
+        });
+
+        // Stop scanner
+        stopBtn.addEventListener('click', function() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            scanning = false;
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+        });
+
+        // Manual verification
+        manualBtn.addEventListener('click', function() {
+            const invoiceId = manualInput.value.trim();
+            if (invoiceId) {
+                redirectToTicketInfo(invoiceId);
+            } else {
+                showResult('error', 'Invalid Input', 'Please enter a valid Invoice ID.');
+            }
+        });
+
+        // Close modal
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('resultModal').style.display = 'none';
+        });
+
+        // Enter key for manual input
+        manualInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                manualBtn.click();
+            }
+        });
+    });
+
+    function scanQRCode() {
+        if (!scanning) return;
+
+        const video = document.getElementById('video');
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        if (video.videoWidth === 0) {
+            setTimeout(scanQRCode, 100);
+            return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+            // Extract invoice ID from URL
+            try {
+                const url = new URL(code.data);
+                const invoiceId = url.searchParams.get('invoiceId');
+                if (invoiceId) {
+                    redirectToTicketInfo(invoiceId);
+                    return;
+                }
+            } catch (e) {
+                // Nếu không phải URL, thử lấy trực tiếp
+                if (code.data) {
+                    redirectToTicketInfo(code.data);
+                    return;
+                }
+            }
+        }
+        setTimeout(scanQRCode, 100);
+    }
+
+    function redirectToTicketInfo(invoiceId) {
+        // Lưu invoice ID để sử dụng cho check-in
+        lastInvoiceId = invoiceId;
+        
+        // Kiểm tra thông tin vé trước khi chuyển trang
+        fetch(`/QRCode/GetTicketInfo?invoiceId=${invoiceId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Hiển thị thông tin vé trong modal
+                    showResult('success', 'Ticket Found', 'Ticket information retrieved successfully.', data.ticketInfo);
+                } else {
+                    // Nếu không tìm thấy vé, chuyển đến trang TicketInfo
+                    window.location.href = `/Booking/TicketInfo?invoiceId=${invoiceId}`;
+                }
+            })
+            .catch(error => {
+                // Nếu có lỗi, chuyển đến trang TicketInfo
+                window.location.href = `/Booking/TicketInfo?invoiceId=${invoiceId}`;
+            });
+    }
+
+    function showResult(type, title, message, ticketInfo = null) {
+        const modal = document.getElementById('resultModal');
+        const icon = document.getElementById('resultIcon');
+        const titleEl = document.getElementById('resultTitle');
+        const messageEl = document.getElementById('resultMessage');
+        const ticketInfoEl = document.getElementById('ticketInfo');
+        const confirmBtn = document.getElementById('confirmCheckIn');
+
+        // Set icon and title
+        if (type === 'success') {
+            icon.innerHTML = '<i class="fas fa-check-circle success-icon"></i>';
+            titleEl.className = 'text-success';
+        } else {
+            icon.innerHTML = '<i class="fas fa-times-circle error-icon"></i>';
+            titleEl.className = 'text-danger';
+        }
+
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+
+        // Show ticket info if available
+        if (ticketInfo) {
+            ticketInfoEl.style.display = 'block';
+            ticketInfoEl.innerHTML = `
+                <p><strong>Invoice ID:</strong> ${ticketInfo.invoiceId}</p>
+                <p><strong>Movie:</strong> ${ticketInfo.movieName}</p>
+                <p><strong>Date:</strong> ${ticketInfo.showDate}</p>
+                <p><strong>Time:</strong> ${ticketInfo.showTime}</p>
+                <p><strong>Customer:</strong> ${ticketInfo.customerName}</p>
+                <p><strong>Phone:</strong> ${ticketInfo.customerPhone}</p>
+                <p><strong>Seats:</strong> ${ticketInfo.seats.map(s => s.seatName).join(', ')}</p>
+                <p><strong>Amount:</strong> ${ticketInfo.totalAmount}</p>
+                <p><strong>Status:</strong> ${ticketInfo.status === 'Completed' ? 'Paid' : 'Unpaid'}</p>
+                <p><strong>Checked-in:</strong> ${ticketInfo.isUsed ? 'Checked-in' : 'Not yet'}</p>
+            `;
+            // Nếu vé chưa check-in, hiển thị nút xác nhận
+            if(ticketInfo.status === 'Completed' && !ticketInfo.isUsed) {
+                confirmBtn.style.display = 'inline-block';
+            } else {
+                confirmBtn.style.display = 'none';
+            }
+        } else {
+            ticketInfoEl.style.display = 'none';
+            confirmBtn.style.display = 'none';
+        }
+
+        modal.style.display = 'flex';
+
+        // Auto-hide after 5 seconds for success
+        if (type === 'success') {
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Sự kiện cho nút xác nhận check-in
+    document.getElementById('confirmCheckIn').onclick = async function() {
+        if (!lastInvoiceId) return;
+        this.disabled = true;
+        this.textContent = 'Đang xác nhận...';
+        try {
+            const response = await fetch('/QRCode/ConfirmCheckIn', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invoiceId: lastInvoiceId })
+            });
+            const result = await response.json();
+            if(result.success) {
+                showResult('success', 'Check-in thành công', result.message);
+            } else {
+                showResult('error', 'Check-in thất bại', result.message);
+            }
+        } catch (e) {
+            showResult('error', 'Lỗi hệ thống', 'Không thể xác nhận check-in.');
+        }
+        this.disabled = false;
+        this.textContent = 'Xác nhận Check-in';
+    };
+</script> 

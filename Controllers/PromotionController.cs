@@ -2,6 +2,8 @@
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 
 namespace MovieTheater.Controllers
 {
@@ -9,24 +11,32 @@ namespace MovieTheater.Controllers
     {
         private readonly IPromotionService _promotionService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IHubContext<DashboardHub> _dashboardHubContext;
 
-        public PromotionController(IPromotionService promotionService, IWebHostEnvironment webHostEnvironment)
+        public PromotionController(IPromotionService promotionService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _promotionService = promotionService;
             _webHostEnvironment = webHostEnvironment;
+            _dashboardHubContext = dashboardHubContext;
         }
 
-        // GET: PromotionController/List
+        /// <summary>
+        /// Danh sách khuyến mãi đang hoạt động
+        /// </summary>
+        /// <remarks>url: /Promotion/List (GET)</remarks>
         public ActionResult List()
         {
             var promotions = _promotionService.GetAll()
                 .Where(p => p.IsActive && p.EndTime >= DateTime.Now)
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
-            return View(promotions);
+            return View("Index", promotions);
         }
 
-        // GET: PromotionController/Details/5
+        /// <summary>
+        /// Xem chi tiết khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Details (GET)</remarks>
         public ActionResult Details(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -37,7 +47,19 @@ namespace MovieTheater.Controllers
             return View(promotion);
         }
 
-        // GET: PromotionController/Create
+        /// <summary>
+        /// Trang quản lý khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Index (GET)</remarks>
+        public ActionResult Index()
+        {
+            return View();
+        }
+
+        /// <summary>
+        /// Trang tạo khuyến mãi mới
+        /// </summary>
+        /// <remarks>url: /Promotion/Create (GET)</remarks>
         public ActionResult Create()
         {
             return View(new PromotionViewModel
@@ -48,7 +70,10 @@ namespace MovieTheater.Controllers
             });
         }
 
-        // POST: PromotionController/Create
+        /// <summary>
+        /// Tạo khuyến mãi mới
+        /// </summary>
+        /// <remarks>url: /Promotion/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(PromotionViewModel viewModel, IFormFile? imageFile)
@@ -74,14 +99,44 @@ namespace MovieTheater.Controllers
 
                     if (imageFile != null && imageFile.Length > 0)
                     {
+                        // 1. Kiểm tra kích thước file (ví dụ: 2MB)
+                        const long maxFileSize = 2 * 1024 * 1024; // 2MB
+                        if (imageFile.Length > maxFileSize)
+                        {
+                            ModelState.AddModelError("", "File size must be less than 2MB.");
+                            return View(viewModel);
+                        }
+
+                        // 2. Kiểm tra loại file (chỉ cho phép jpg, png, gif)
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                        var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                        // Làm sạch extension: chỉ lấy extension nếu đúng định dạng cho phép
+                        if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                        {
+                            ModelState.AddModelError("", "Only image files (jpg, jpeg, png, gif) are allowed.");
+                            return View(viewModel);
+                        }
+
+                        // 3. (Tùy chọn) Kiểm tra magic number của file để xác thực là file ảnh thật sự
+                        // Có thể bổ sung thêm nếu cần thiết
+
                         string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "promotions");
                         if (!Directory.Exists(uploadsFolder))
                         {
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
+                        // Đặt tên file mới hoàn toàn không liên quan tên gốc
+                        string uniqueFileName = Guid.NewGuid().ToString("N") + extension;
                         string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        // Đảm bảo filePath nằm trong uploadsFolder (tránh path traversal)
+                        if (!filePath.StartsWith(uploadsFolder, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ModelState.AddModelError("", "Invalid file path.");
+                            return View(viewModel);
+                        }
 
                         using (var fileStream = new FileStream(filePath, FileMode.Create))
                         {
@@ -93,7 +148,7 @@ namespace MovieTheater.Controllers
 
                     _promotionService.Add(promotion);
                     _promotionService.Save();
-
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Promotion created successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
                 }
@@ -106,7 +161,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // GET: PromotionController/Edit/5
+        /// <summary>
+        /// Trang sửa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Edit (GET)</remarks>
         public ActionResult Edit(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -130,7 +188,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // POST: PromotionController/Edit/5
+        /// <summary>
+        /// Sửa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(int id, PromotionViewModel viewModel, IFormFile? imageFile)
@@ -159,13 +220,44 @@ namespace MovieTheater.Controllers
 
                     if (imageFile != null && imageFile.Length > 0)
                     {
+                        // 1. Kiểm tra kích thước file (ví dụ: 2MB)
+                        const long maxFileSize = 2 * 1024 * 1024; // 2MB
+                        if (imageFile.Length > maxFileSize)
+                        {
+                            ModelState.AddModelError("", "File size must be less than 2MB.");
+                            return View(viewModel);
+                        }
+
+                        // 2. Kiểm tra loại file (chỉ cho phép jpg, png, gif)
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                        var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                        // Làm sạch extension: chỉ lấy extension nếu đúng định dạng cho phép
+                        if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                        {
+                            ModelState.AddModelError("", "Only image files (jpg, jpeg, png, gif) are allowed.");
+                            return View(viewModel);
+                        }
+
+                        // Đặt tên file mới hoàn toàn không liên quan tên gốc
+                        string uniqueFileName = Guid.NewGuid().ToString("N") + extension;
+
                         string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "promotions");
                         if (!Directory.Exists(uploadsFolder))
                         {
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        // Delete old image if exists
+                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        // Đảm bảo filePath nằm trong uploadsFolder (tránh path traversal)
+                        if (!filePath.StartsWith(uploadsFolder, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ModelState.AddModelError("", "Invalid file path.");
+                            return View(viewModel);
+                        }
+
+                        // Xóa ảnh cũ nếu có
                         if (!string.IsNullOrEmpty(promotion.Image))
                         {
                             string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, promotion.Image.TrimStart('/'));
@@ -175,9 +267,8 @@ namespace MovieTheater.Controllers
                             }
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
+                        // uniqueFileName is generated using Guid and validated extension only.
+                        // filePath is checked to be inside uploadsFolder, so this is safe from path traversal.
                         using (var fileStream = new FileStream(filePath, FileMode.Create))
                         {
                             await imageFile.CopyToAsync(fileStream);
@@ -188,7 +279,7 @@ namespace MovieTheater.Controllers
 
                     _promotionService.Update(promotion);
                     _promotionService.Save();
-
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Promotion updated successfully!";
                     return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
                 }
@@ -201,7 +292,10 @@ namespace MovieTheater.Controllers
             return View(viewModel);
         }
 
-        // GET: PromotionController/Delete/5
+        /// <summary>
+        /// Trang xóa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Delete (GET)</remarks>
         public ActionResult Delete(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -212,15 +306,23 @@ namespace MovieTheater.Controllers
             return View(promotion);
         }
 
-        // POST: PromotionController/Delete/5
+        /// <summary>
+        /// Xóa khuyến mãi
+        /// </summary>
+        /// <remarks>url: /Promotion/Delete (POST)</remarks>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
+        public async Task<ActionResult> DeleteConfirmed(int id)
         {
             try
             {
                 var promotion = _promotionService.GetById(id);
-                if (promotion != null && !string.IsNullOrEmpty(promotion.Image))
+                if (promotion == null)
+                {
+                    TempData["ToastMessage"] = "Failed to delete promotion.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
+                }
+                if (!string.IsNullOrEmpty(promotion.Image))
                 {
                     string imagePath = Path.Combine(_webHostEnvironment.WebRootPath, promotion.Image.TrimStart('/'));
                     if (System.IO.File.Exists(imagePath))
@@ -231,7 +333,7 @@ namespace MovieTheater.Controllers
 
                 _promotionService.Delete(id);
                 _promotionService.Save();
-
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 TempData["ToastMessage"] = "Promotion deleted successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "PromotionMg" });
             }

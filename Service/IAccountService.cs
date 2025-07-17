@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Service
@@ -19,7 +18,14 @@ namespace MovieTheater.Service
         public void ClearOtp(string accountId);
         public bool GetByUsername(string username);
         public Account? GetById(string id);
-        Task DeductScoreAsync(string userId, int points);
-
+        Task DeductScoreAsync(string userId, int points, bool deductFromTotalPoints = false);
+        Task AddScoreAsync(string userId, int points, bool addToTotalPoints = true);
+        void CheckAndUpgradeRank(string accountId);
+        string GetAndClearRankUpgradeNotification(string accountId);
+        // Thêm các method phục vụ controller
+        Account GetOrCreateGoogleAccount(string email, string? name, string? givenName, string? surname, string? picture);
+        bool HasMissingProfileInfo(Account user);
+        Task SignInUserAsync(HttpContext httpContext, Account user);
+        Task SignOutUserAsync(HttpContext httpContext);
     }
 }

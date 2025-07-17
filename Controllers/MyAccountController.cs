@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -12,16 +13,31 @@ namespace MovieTheater.Controllers
     {
         private readonly IAccountService _service;
         private readonly ILogger<MyAccountController> _logger;
-        private readonly IJwtService _jwtService;
-        private static readonly Dictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
+        private readonly IVoucherService _voucherService;
+        private readonly IRankService _rankService;
+        private readonly IScoreService _scoreService;
 
-        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger, IJwtService jwtService)
+        public MyAccountController(IAccountService service, ILogger<MyAccountController> logger,
+            IVoucherService voucherService,
+            IRankService rankService,
+            IScoreService scoreService)
         {
             _service = service;
             _logger = logger;
-            _jwtService = jwtService;
+            _rankService = rankService;
+            _voucherService = voucherService;
+            _scoreService = scoreService;
         }
 
+        private string GetCurrentAccountId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        /// <summary>
+        /// Trang chính tài khoản người dùng, hiển thị tab mặc định là 'Profile'.
+        /// </summary>
+        /// <remarks>url: /MyAccount/MainPage (GET)</remarks>
         [HttpGet]
         public IActionResult MainPage(string tab = "Profile")
         {
@@ -33,10 +49,88 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var model = new ProfileUpdateViewModel
+            return View("~/Views/Account/MainPage.cshtml", user);
+        }
+
+        /// <summary>
+        /// Load nội dung tab tương ứng trong tài khoản (Profile, Rank, Score, Voucher, History).
+        /// </summary>
+        /// <remarks>url: /MyAccount/LoadTab (GET)</remarks>
+        [HttpGet]
+        public IActionResult LoadTab(string tab)
+        {
+            var user = _service.GetCurrentUser();
+            if (user == null) return NotFound();
+
+            switch (tab)
+            {
+                case "Profile":
+                    // Check and update rank when loading Profile tab
+                    _service.CheckAndUpgradeRank(user.AccountId);
+
+                    var rankInfo = _rankService.GetRankInfoForUser(user.AccountId);
+                    var allRanks = _rankService.GetAllRanks();
+                    var viewModel = new ProfilePageViewModel
+                    {
+                        Profile = user,
+                        RankInfo = rankInfo,
+                        AllRanks = allRanks
+                    };
+                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", viewModel);
+                case "Score":
+                    var accountId = GetCurrentAccountId();
+                    var currentScore = _scoreService?.GetCurrentScore(accountId) ?? 0;
+                    var scoreHistory = _scoreService?.GetScoreHistory(accountId) ?? new List<ScoreHistoryViewModel>();
+                    var scoreViewModel = new ScoreHistoryViewModel { CurrentScore = currentScore };
+                    return PartialView("~/Views/Account/Tabs/Score.cshtml", scoreViewModel);
+                case "Voucher":
+                    if (user == null)
+                        return NotFound();
+                    var allVouchers = _voucherService.GetAll();
+                    var userVouchers = allVouchers.Where(v => v.AccountId == user.AccountId).ToList();
+                    return PartialView("~/Views/Account/Tabs/Voucher.cshtml", userVouchers);
+                case "History":
+                    // History tab is now merged in Profile tab, return a message or redirect
+                    return Content("Booking history is now available in the Profile tab.");
+                default:
+                    return Content("Tab not found.");
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin hồ sơ người dùng.
+        /// </summary>
+        /// <remarks>url: /MyAccount/Edit (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateImage(ProfilePageViewModel model)
+        {
+            var user = _service.GetCurrentUser();
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User session expired. Please log in again.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            ModelState.Remove("Profile.FullName");
+            ModelState.Remove("Profile.DateOfBirth");
+            ModelState.Remove("Profile.Gender");
+            ModelState.Remove("Profile.IdentityCard");
+            ModelState.Remove("Profile.Email");
+            ModelState.Remove("Profile.Address");
+            ModelState.Remove("Profile.PhoneNumber");
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "An error occurred during image upload.";
+                return RedirectToAction("MainPage", new { tab = "Profile" });
+            }
+
+            var registerModel = new RegisterViewModel
             {
                 AccountId = user.AccountId,
                 Username = user.Username,
+                ImageFile = model.Profile.ImageFile,
                 FullName = user.FullName,
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender,
@@ -44,126 +138,99 @@ namespace MovieTheater.Controllers
                 Email = user.Email,
                 Address = user.Address,
                 PhoneNumber = user.PhoneNumber,
-                Image = user.Image,
-                IsGoogleAccount = user.IsGoogleAccount
+                Password = user.Password,
+                Image = user.Image
             };
 
-            return View("~/Views/Account/MainPage.cshtml", model);
-        }
-
-        [HttpGet]
-        public IActionResult LoadTab(string tab)
-        {
-            var user = _service.GetCurrentUser();
-
-            //TEST HARD-CODE
-            //var user = _service.GetDemoUser();
-            switch (tab)
+            var success = _service.Update(user.AccountId, registerModel);
+            if (success)
             {
-                case "Profile":
-                    if (user == null)
-                        return NotFound();
-                    var profileModel = new ProfileUpdateViewModel
-                    {
-                        AccountId = user.AccountId,
-                        FullName = user.FullName,
-                        DateOfBirth = user.DateOfBirth,
-                        Gender = user.Gender,
-                        IdentityCard = user.IdentityCard,
-                        Email = user.Email,
-                        Address = user.Address,
-                        PhoneNumber = user.PhoneNumber,
-                        Image = user.Image,
-                        IsGoogleAccount = user.IsGoogleAccount
-                    };
-                    return PartialView("~/Views/Account/Tabs/Profile.cshtml", profileModel);
-                case "Rank":
-                    return PartialView("~/Views/Account/Tabs/Rank.cshtml");
-                case "Score":
-                    return PartialView("~/Views/Account/Tabs/Score.cshtml");
-                case "Voucher":
-                    return PartialView("~/Views/Account/Tabs/Voucher.cshtml");
-                case "History":
-                    return PartialView("~/Views/Account/Tabs/History.cshtml");
-                //case "Password":
-                //    return PartialView("~/Views/Account/Tabs/ChangePassword.cshtml");
-                default:
-                    return Content("Tab not found.");
+                TempData["ToastMessage"] = "Profile image updated successfully!";
             }
+            else
+            {
+                TempData["ErrorMessage"] = "Image update failed.";
+            }
+            return RedirectToAction("MainPage", new { tab = "Profile" });
         }
 
+        /// <summary>
+        /// Cập nhật thông tin hồ sơ người dùng.
+        /// </summary>
+        /// <remarks>url: /MyAccount/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(ProfileUpdateViewModel model)
+        public async Task<IActionResult> EditProfile(ProfilePageViewModel model)
         {
             var user = _service.GetCurrentUser();
-            var timestamp = DateTime.UtcNow;
-
             if (user == null)
             {
-                TempData["ErrorMessage"] = "User not found";
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                TempData["ErrorMessage"] = "User session expired. Please log in again.";
+                return RedirectToAction("Login", "Account");
             }
 
             if (!ModelState.IsValid)
             {
-                var errors = string.Join(", ", ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage));
-
-                _logger.LogWarning("Update failed validation at {Time}. Errors: {Errors}",
-                    DateTime.UtcNow, errors);
-
-                TempData["ErrorMessage"] = $"{errors}";
+                var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["ErrorMessage"] = $"Update failed: {errors}";
                 return RedirectToAction("MainPage", new { tab = "Profile" });
             }
 
-            try
+            var registerModel = new RegisterViewModel
             {
-                var registerModel = new RegisterViewModel
-                {
-                    AccountId = model.AccountId,
-                    Username = user.Username, 
-                    Password = user.Password, 
-                    FullName = model.FullName,
-                    DateOfBirth = model.DateOfBirth,
-                    Gender = model.Gender,
-                    IdentityCard = model.IdentityCard,
-                    Email = model.Email,
-                    Address = model.Address,
-                    PhoneNumber = model.PhoneNumber,
-                    Image = model.Image,
-                    ImageFile = model.ImageFile
-                };
+                AccountId = model.Profile.AccountId,
+                Username = user.Username, // Username is not editable here
+                Password = user.Password, // Password is not changed here
+                FullName = model.Profile.FullName,
+                DateOfBirth = model.Profile.DateOfBirth,
+                Gender = model.Profile.Gender,
+                IdentityCard = model.Profile.IdentityCard,
+                Email = model.Profile.Email, // Email is not editable here
+                Address = model.Profile.Address,
+                PhoneNumber = model.Profile.PhoneNumber,
+                Image = user.Image, // Preserve the existing image
+                ImageFile = null    // Ensure we do not process a file
+            };
 
-                var success = _service.Update(user.AccountId, registerModel);
-
-                if (!success)
-                {
-                    _logger.LogWarning("Failed to update profile. AccountId: {AccountId}, Time: {Time}", user.AccountId, timestamp);
-                    TempData["ErrorMessage"] = "Update failed";
-                    return RedirectToAction("MainPage", new { tab = "Profile" });
-                }
-
+            var success = _service.Update(user.AccountId, registerModel);
+            if (success)
+            {
                 TempData["ToastMessage"] = "Profile updated successfully!";
-                return RedirectToAction("MainPage", new { tab = "Profile" });
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Exception during profile update. AccountId: {AccountId}, Time: {Time}", user.AccountId, DateTime.UtcNow);
-                TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("MainPage", new { tab = "Profile" });
+                TempData["ErrorMessage"] = "Update failed.";
             }
+            return RedirectToAction("MainPage", new { tab = "Profile" });
         }
 
-        // --- OTP Password Change Endpoints ---
+        public class SendOtpRequest
+        {
+            public string CurrentPassword { get; set; }
+        }
 
+        public class OtpResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; }
+            public string Error { get; set; }
+        }
+
+        /// <summary>
+        /// Gửi mã OTP đến email người dùng để xác thực thay đổi mật khẩu.
+        /// </summary>
+        /// <remarks>url: /MyAccount/SendOtp (POST)</remarks>
         [HttpPost]
-        public IActionResult SendOtp()
+        public IActionResult SendOtp([FromBody] SendOtpRequest req)
         {
             var user = _service.GetCurrentUser();
             if (user == null || string.IsNullOrEmpty(user.Email))
-                return Json(new { success = false, error = "User email not found." });
+                return Json(new OtpResponse { Success = false, Error = "User email not found." });
+
+            if (string.IsNullOrEmpty(req.CurrentPassword) || !_service.VerifyCurrentPassword(user.Username, req.CurrentPassword))
+            {
+                return Json(new OtpResponse { Success = false, Error = "Current password is incorrect." });
+            }
 
             _logger.LogInformation($"[SendOtp] accountId={user.AccountId}");
 
@@ -172,15 +239,19 @@ namespace MovieTheater.Controllers
 
             var otpStored = _service.StoreOtp(user.AccountId, otp, expiry);
             if (!otpStored)
-                return Json(new { success = false, error = "Failed to store OTP. Please try again later." });
+                return Json(new OtpResponse { Success = false, Error = "Failed to store OTP. Please try again later." });
 
             var emailSent = _service.SendOtpEmail(user.Email, otp);
             if (!emailSent)
-                return Json(new { success = false, error = "Failed to send OTP email. Please try again later." });
+                return Json(new OtpResponse { Success = false, Error = "Failed to send OTP email. Please try again later." });
 
-            return Json(new { success = true, message = "OTP sent to your email." });
+            return Json(new OtpResponse { Success = true, Message = "OTP sent to your email." });
         }
 
+        /// <summary>
+        /// Kiểm tra mã OTP do người dùng nhập.
+        /// </summary>
+        /// <remarks>url: /MyAccount/VerifyOtp (POST)</remarks>
         [HttpPost]
         public IActionResult VerifyOtp([FromBody] VerifyOtpViewModel model)
         {
@@ -198,58 +269,48 @@ namespace MovieTheater.Controllers
             return Json(new { success = true });
         }
 
+        /// <summary>
+        /// Đổi mật khẩu người dùng sau khi xác thực OTP.
+        /// </summary>
+        /// <remarks>url: /MyAccount/ChangePasswordAsync (POST)</remarks>
         [HttpPost]
-        public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword)
+        public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword, string otp)
         {
-            // Get current user from JWT claims
             var user = _service.GetCurrentUser();
             if (user == null)
-            {
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "User session expired. Please log in again." });
 
-            // Verify current password
-            if (string.IsNullOrEmpty(currentPassword))
-            {
-                TempData["ErrorMessage"] = "Current password cannot be null";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+            if (string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+                return Json(new { success = false, error = "All fields are required." });
 
             if (!_service.VerifyCurrentPassword(user.Username, currentPassword))
-            {
-                TempData["ErrorMessage"] = "Invalid current password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "Current password is incorrect." });
 
-            if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
-            {
-                TempData["ErrorMessage"] = "Invalid new password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+            if (newPassword != confirmPassword)
+                return Json(new { success = false, error = "Passwords do not match." });
 
             if (currentPassword == newPassword)
-            {
-                TempData["ErrorMessage"] = "New password cannot be the same as current password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "New password must be different from current password." });
 
-            // Update password in DB via service
+            // Check OTP
+            if (!_service.VerifyOtp(user.AccountId, otp))
+                return Json(new { success = false, error = "Invalid or expired OTP." });
+
             var result = _service.UpdatePasswordByUsername(user.Username, newPassword);
             _service.ClearOtp(user.AccountId);
 
             if (!result)
-            {
-                TempData["ErrorMessage"] = "Failed to update password";
-                return View("~/Views/Account/Tabs/ChangePassword.cshtml");
-            }
+                return Json(new { success = false, error = "Failed to update password." });
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             Response.Cookies.Delete("JwtToken");
-            TempData["ToastMessage"] = "Password updated successfully! Please log back in.";
-            return RedirectToAction("Login", "Account");
-
+            return Json(new { success = true });
         }
 
+        /// <summary>
+        /// Trang đổi mật khẩu (hiển thị form)
+        /// </summary>
+        /// <remarks>url: /MyAccount/ChangePassword (GET)</remarks>
         [HttpGet]
         public IActionResult ChangePassword()
         {
@@ -263,8 +324,20 @@ namespace MovieTheater.Controllers
                 Email = user.Email
             };
 
-            // Return the view from the new location
             return View("~/Views/Account/Tabs/ChangePassword.cshtml", viewModel);
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin profile (AJAX)
+        /// </summary>
+        /// <remarks>url: /MyAccount/UpdateProfile (POST)</remarks>
+        [HttpPost]
+        public async Task<IActionResult> UpdateProfile(ProfileUpdateViewModel model)
+        {
+            // Implementation of the method
+            // This method should be implemented to handle the update of the profile
+            return View("~/Views/Account/MainPage.cshtml", _service.GetCurrentUser());
         }
     }
 }
+

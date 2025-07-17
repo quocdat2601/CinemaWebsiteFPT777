@@ -15,7 +15,10 @@ namespace MovieTheater.Repository
 
         public IEnumerable<Member> GetAll()
         {
-            return _context.Members.Include(m => m.Account).ToList();
+            return _context.Members
+                .Include(m => m.Account)
+                .Where(m => m.Account != null && m.Account.Status == 1)
+                .ToList();
         }
 
 
@@ -71,6 +74,29 @@ namespace MovieTheater.Repository
         public void Save()
         {
             _context.SaveChanges();
+        }
+
+        public Member GetByIdentityCard(string identityCard)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .FirstOrDefault(m => m.Account.IdentityCard == identityCard);
+        }
+
+        public Member? GetByAccountId(string accountId)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .ThenInclude(a => a.Rank)
+                .FirstOrDefault(m => m.AccountId == accountId);
+        }
+
+        public Member GetByMemberId(string memberId)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .ThenInclude(a => a.Rank)
+                .FirstOrDefault(m => m.MemberId == memberId);
         }
     }
 }

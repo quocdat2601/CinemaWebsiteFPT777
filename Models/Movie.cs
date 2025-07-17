@@ -23,8 +23,6 @@ public partial class Movie
 
     public DateOnly? ToDate { get; set; }
 
-    public string? Version { get; set; }
-
     public string? MovieNameEnglish { get; set; }
 
     public string? MovieNameVn { get; set; }
@@ -37,5 +35,9 @@ public partial class Movie
 
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
+    public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
+
     public virtual ICollection<Type> Types { get; set; } = new List<Type>();
+
+    public virtual ICollection<Version> Versions { get; set; } = new List<Version>();
 }

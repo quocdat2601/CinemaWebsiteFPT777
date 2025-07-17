@@ -13,16 +13,17 @@ namespace MovieTheater.Controllers
     public class AccountController : Controller
     {
         private readonly IAccountRepository _accountRepository;
-        private readonly MovieTheaterContext _context;
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
         private readonly IJwtService _jwtService;
         private readonly IMemberRepository _memberRepository;
 
         public AccountController(
-       MovieTheaterContext context,
-       IAccountService service,
-       ILogger<AccountController> logger, IAccountRepository accountRepository, IMemberRepository memberRepository, IJwtService jwtService)
+            IAccountService service,
+            ILogger<AccountController> logger,
+            IAccountRepository accountRepository,
+            IMemberRepository memberRepository,
+            IJwtService jwtService)
         {
             _service = service;
             _logger = logger;
@@ -59,44 +60,14 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            var user = _accountRepository.GetAccountByEmail(email);
+            // Refactor: Đẩy logic tạo user/member mới vào service
+            var user = _service.GetOrCreateGoogleAccount(email, name, givenName, surname, picture);
 
-            if (user == null)
-            {
-                user = new Account
-                {
-                    Email = email,
-                    FullName = name ?? $"{givenName} {surname}".Trim() ?? "Google User",
-                    Username = email,
-                    RoleId = 3,
-                    Status = 1,
-                    RegisterDate = DateOnly.FromDateTime(DateTime.Now),
-                    Image = picture,
-                    Password = null // Đăng nhập Google thì Password để null
-                };
-                _accountRepository.Add(user);
-                _accountRepository.Save();
-                _memberRepository.Add(new Member
-                {
-                    Score = 0,
-                    AccountId = user.AccountId
-                });
-                _memberRepository.Save();
-            }
-
-            // Sau khi thêm user mới (nếu có)
-            user = _accountRepository.GetAccountByEmail(email); // lấy lại user mới nhất
-
-            // Log các trường thông tin để debug
+            // Log fields for debugging
             _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
-            // Kiểm tra thiếu thông tin
-            bool missingInfo = 
-                !user.DateOfBirth.HasValue || user.DateOfBirth.Value == DateOnly.MinValue ||
-                string.IsNullOrWhiteSpace(user.Gender) ||
-                string.IsNullOrWhiteSpace(user.IdentityCard) ||
-                string.IsNullOrWhiteSpace(user.Address) ||
-                string.IsNullOrWhiteSpace(user.PhoneNumber);
 
+            // Refactor: Đẩy logic kiểm tra thông tin thiếu vào service
+            bool missingInfo = _service.HasMissingProfileInfo(user);
             if (missingInfo)
             {
                 TempData["FirstTimeLogin"] = true;
@@ -108,28 +79,14 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-                string roleName = user.RoleId switch
-                {
-                    1 => "Admin",
-                    2 => "Employee",
-                    3 => "Customer",
-                    _ => "Guest"
-                };
+            // Refactor: Đẩy logic tạo claims, sign-in vào service
+            await _service.SignInUserAsync(HttpContext, user);
 
-            var appClaims = new List<Claim>
+            // Check and update rank
+            if (user.RoleId == 3) // Member
             {
-                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", user.Status.ToString()),
-                new Claim("Email", user.Email),
-            };
-
-            var identity = new ClaimsIdentity(appClaims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            // Sign in with cookie authentication - match normal login flow
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+                _service.CheckAndUpgradeRank(user.AccountId);
+            }
 
             // Check if it's the first time login and redirect to profile update
             if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
@@ -137,7 +94,6 @@ namespace MovieTheater.Controllers
                 TempData.Remove("FirstTimeLogin");
                 return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
             }
-
 
             // Generate JWT token for Google login
             var token = _jwtService.GenerateToken(user);
@@ -153,6 +109,13 @@ namespace MovieTheater.Controllers
 
             TempData["ToastMessage"] = "Log in successful!";
 
+            // After successful login and before redirecting, add:
+            var rankUpMsg = _service.GetAndClearRankUpgradeNotification(user.AccountId);
+            if (!string.IsNullOrEmpty(rankUpMsg))
+            {
+                TempData["ToastMessage"] += "<br/>" + rankUpMsg;
+            }
+
             // Direct redirect like normal login
             if (user.RoleId == 1)
             {
@@ -164,8 +127,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
-                //return RedirectToAction("MainPage","MyAccount", new { tab = "Profile" });
+                return RedirectToAction("Index", "Home");
             }
         }
 
@@ -181,7 +143,7 @@ namespace MovieTheater.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await _service.SignOutUserAsync(HttpContext);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
             TempData["ToastMessage"] = "Log out successful!";
@@ -195,11 +157,6 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
             Response.Cookies.Delete("JwtToken");
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            var status = User.FindFirst("Status")?.Value;
-
             return View();
         }
 
@@ -253,7 +210,6 @@ namespace MovieTheater.Controllers
             }
         }
 
-
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
@@ -275,31 +231,11 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login");
             }
 
-            string roleName = user.RoleId switch
-            {
-                1 => "Admin",
-                2 => "Employee",
-                3 => "Customer",
-                _ => "Guest"
-            };
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.AccountId),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", user.Status.ToString()),
-                new Claim("Email", user.Email)
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            await _service.SignInUserAsync(HttpContext, user);
 
             // Generate JWT token
             var token = _jwtService.GenerateToken(user);
 
-            // Store the token in a cookie
             Response.Cookies.Append("JwtToken", token, new CookieOptions
             {
                 HttpOnly = true,
@@ -320,7 +256,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                return RedirectToAction("MovieList", "Movie");
+                return RedirectToAction("Index", "Home");
             }
         }
 
@@ -332,44 +268,15 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult History()
         {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(accountId))
-            {
-                return RedirectToAction("Login");
-            }
-
-            var bookings = _context.Invoices
-                .Where(i => i.AccountId == accountId)
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
-            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+            // This action is obsolete since history is now in the profile tab
+            return RedirectToAction("MainPage", "MyAccount");
         }
 
         [HttpPost]
         public IActionResult History(DateTime fromDate, DateTime toDate, int? status)
         {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(accountId))
-            {
-                return RedirectToAction("Login");
-            }
-
-            var query = _context.Invoices
-                .Where(i => i.AccountId == accountId &&
-                            i.BookingDate >= fromDate &&
-                            i.BookingDate <= toDate);
-
-            if (status.HasValue)
-            {
-                query = query.Where(i => i.Status == status);
-            }
-
-            var bookings = query
-                .OrderByDescending(i => i.BookingDate)
-                .ToList();
-
-            return View("~/Views/Account/Tabs/History.cshtml", bookings);
+            // This action is obsolete since history is now in the profile tab
+            return RedirectToAction("MainPage", "MyAccount");
         }
     }
 }

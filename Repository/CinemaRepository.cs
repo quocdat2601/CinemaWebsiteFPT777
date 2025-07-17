@@ -1,5 +1,5 @@
-﻿using MovieTheater.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 
 namespace MovieTheater.Repository
 {
@@ -16,12 +16,16 @@ namespace MovieTheater.Repository
 
         public IEnumerable<CinemaRoom> GetAll()
         {
-            return _context.CinemaRooms.ToList();
+            return _context.CinemaRooms
+                .Include(c => c.Version)
+                .ToList();
         }
 
         public CinemaRoom? GetById(int? id)
         {
-            return _context.CinemaRooms.FirstOrDefault(a => a.CinemaRoomId == id);
+            return _context.CinemaRooms
+                .Include(c => c.Version)
+                .FirstOrDefault(a => a.CinemaRoomId == id);
         }
 
         private List<Seat> GenerateSeats(CinemaRoom cinemaRoom)
@@ -56,7 +60,6 @@ namespace MovieTheater.Repository
             _context.SaveChanges();
         }
 
-
         public void Update(CinemaRoom cinemaRoom)
         {
             var existingCinema = _context.CinemaRooms
@@ -71,6 +74,7 @@ namespace MovieTheater.Repository
             try
             {
                 existingCinema.CinemaRoomName = cinemaRoom.CinemaRoomName;
+                existingCinema.VersionId = cinemaRoom.VersionId;
 
                 if (existingCinema.SeatLength != cinemaRoom.SeatLength || existingCinema.SeatWidth != cinemaRoom.SeatWidth)
                 {
@@ -97,12 +101,19 @@ namespace MovieTheater.Repository
             if (cinemaRoom != null)
             {
                 var seats = await _seatRepository.GetByCinemaRoomIdAsync(id);
-                
+
+                var seatIds = seats.Select(s => s.SeatId).ToList();
+
+                // Delete all CoupleSeat records involving these seats
+                var coupleSeats = _context.CoupleSeats
+                    .Where(cs => seatIds.Contains(cs.FirstSeatId) || seatIds.Contains(cs.SecondSeatId));
+                _context.CoupleSeats.RemoveRange(coupleSeats);
+                await _context.SaveChangesAsync();
+
                 foreach (var seat in seats)
                 {
                     await _seatRepository.DeleteAsync(seat.SeatId);
                 }
-
                 _context.CinemaRooms.Remove(cinemaRoom);
                 await _context.SaveChangesAsync();
             }
@@ -111,6 +122,14 @@ namespace MovieTheater.Repository
         public async Task Save()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId)
+        {
+            return _context.CinemaRooms
+                .Include(c => c.Version)
+                .Where(c => c.VersionId == versionId)
+                .ToList();
         }
     }
 }

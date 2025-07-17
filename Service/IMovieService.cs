@@ -1,5 +1,4 @@
 ﻿using MovieTheater.Models;
-using MovieTheater.ViewModels;
 
 namespace MovieTheater.Service
 {
@@ -12,19 +11,25 @@ namespace MovieTheater.Service
         public bool DeleteMovie(string id);
         public void Save();
         public List<Schedule> GetSchedules();
-        public List<ShowDate> GetShowDates();
         public List<Models.Type> GetTypes();
         public List<CinemaRoom> GetAllCinemaRooms();
         public IEnumerable<Movie> SearchMovies(string searchTerm);
         public string ConvertToEmbedUrl(string trailerUrl);
         public List<MovieShow> GetMovieShows(string movieId);
-        public bool IsScheduleAvailable(int showDateId, int scheduleId, int cinemaRoomId);
+        public bool IsScheduleAvailable(DateOnly showDate, int scheduleId, int cinemaRoomId, int movieDuration);
         public bool AddMovieShow(MovieShow movieShow);
         public bool AddMovieShows(List<MovieShow> movieShows);
         public List<Models.Type> GetAllTypes();
-        public List<ShowDate> GetAllShowDates();
         public List<Schedule> GetAllSchedules();
         public bool DeleteAllMovieShows(string movieId);
-        public Task<List<Schedule>> GetAvailableSchedulesAsync(int showDateId, int cinemaRoomId);
+        public bool DeleteMovieShows(int movieShowId);
+        public Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);
+        public List<DateOnly> GetShowDates(string movieId);
+        public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);
+        public List<MovieShow> GetMovieShow();
+        public MovieShow? GetMovieShowById(int id);
+        public List<MovieShow> GetMovieShowsByMovieId(string movieId);
+        public List<Models.Version> GetAllVersions();
+        public Models.Version? GetVersionById(int versionId);
     }
 }

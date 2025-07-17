@@ -2,111 +2,154 @@
     ViewData["Title"] = "Choose Show";
     var movieList = ViewBag.MovieList as List<MovieTheater.Models.Movie>;
     var selectedMovieId = ViewBag.SelectedMovieId as string;
+    var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
 }
 
-<div class="container mt-5 d-flex justify-content-center">
-    <div class="card shadow p-4 w-50 w-md-50">
-        <h2 class="text-center mb-4" style="font-size: x-large">🎬 Book Your Ticket</h2>
-
-        <form id="bookingForm" novalidate>
-            <div class="mb-4">
-                <label for="movieSelect" class="form-label"><strong>Movie</strong></label>
-                <select id="movieSelect" class="form-select">
-                    <option value="">— Select Movie —</option>
-                    @foreach (var m in movieList)
-                    {
-                        if (m.MovieId == selectedMovieId)
+<div class="booking-bg-custom"></div>
+<div class="booking-bg-overlay"></div>
+<div class="booking-content-wrapper">
+    <div class="container mt-5 d-flex justify-content-center align-items-center" style="min-height:70vh;">
+        <div class="booking-card-modern glass-card p-4 w-100" style="max-width: 480px;">
+            <div class="stepper mb-4">
+                <div class="step active"><span class="step-icon">🎬</span><span>Movie</span></div>
+                <div class="step"><span class="step-icon">🗓️</span><span>Date</span></div>
+                <div class="step"><span class="step-icon">🎞️</span><span>Version</span></div>
+                <div class="step"><span class="step-icon">⏰</span><span>Time</span></div>
+            </div>
+            <h2 class="text-center mb-4 booking-title"><i class="fas fa-ticket-alt me-2"></i>Book Your Ticket</h2>
+            <form id="bookingForm" novalidate>
+                <div class="mb-4">
+                    <label for="movieSelect" class="form-label booking-label"><span class="label-icon">🎬</span> <strong>Movie</strong></label>
+                    <select id="movieSelect" class="form-select booking-select" onchange="window.location.href='/Booking/TicketBooking?movieId=' + this.value">
+                        <option value="">— Select Movie —</option>
+                        @if (movieList != null)
                         {
-                            <option value="@m.MovieId" selected>@m.MovieNameEnglish</option>
+                            foreach (var m in movieList)
+                            {
+                                if (m.MovieId == selectedMovieId)
+                                {
+                                    <option value="@m.MovieId" selected>@m.MovieNameEnglish</option>
+                                }
+                                else
+                                {
+                                    <option value="@m.MovieId">@m.MovieNameEnglish</option>
+                                }
+                            }
                         }
-                        else
-                        {
-                            <option value="@m.MovieId">@m.MovieNameEnglish</option>
-                        }
-                    }
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label for="dateSelect" class="form-label"><strong>Date</strong></label>
-                <select id="dateSelect" class="form-select" disabled>
-                    <option value="">— Select Date —</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label for="timeSelect" class="form-label"><strong>Time</strong></label>
-                <select id="timeSelect" class="form-select" disabled>
-                    <option value="">— Select Time —</option>
-                </select>
-            </div>
-
-                        <button type="button" id="bookBtn" class="btn btn-success w-100">
-                            Continue to Seat Selection
-                        </button>
-                    </form>
+                    </select>
                 </div>
-            </div>
+                @if (!string.IsNullOrEmpty(selectedMovieId) && showsByDate != null)
+                {
+                    <div class="mb-4">
+                        <label for="dateSelect" class="form-label booking-label"><span class="label-icon">🗓️</span> <strong>Date</strong></label>
+                        <select id="dateSelect" class="form-select booking-select" onchange="updateVersions()">
+                            <option value="">— Select Date —</option>
+                            @{
+                                var today = DateTime.Today;
+                                foreach (var date in showsByDate.Keys.OrderBy(d => DateTime.ParseExact(d, "dd/MM/yyyy", null)))
+                                {
+                                    var parsedDate = DateTime.ParseExact(date, "dd/MM/yyyy", null);
+                                    if (parsedDate >= today)
+                                    {
+                                        var value = parsedDate.ToString("yyyy-MM-dd");
+                                        <option value="@value">@date</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="versionSelect" class="form-label booking-label"><span class="label-icon">🎞️</span> <strong>Version</strong></label>
+                        <select id="versionSelect" class="form-select booking-select" disabled onchange="updateTimes()">
+                            <option value="">— Select Version —</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="timeSelect" class="form-label booking-label"><span class="label-icon">⏰</span> <strong>Time</strong></label>
+                        <select id="timeSelect" class="form-select booking-select" disabled>
+                            <option value="">— Select Time —</option>
+                        </select>
+                    </div>
+                    <button type="button" id="bookBtn" class="btn booking-btn-gradient w-100 mt-2" onclick="continueToSeats()">
+                        <span>Continue to Seat Selection</span> <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                }
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        $(function () {
-            const $movie = $('#movieSelect'),
-                  $date  = $('#dateSelect'),
-                  $time  = $('#timeSelect'),
-                  $error = $('#errorMessage');
+        const showsByDate = @Html.Raw(Json.Serialize(showsByDate));
 
-            $movie.on('change', function () {
-                const movieId = $(this).val();
-                $error.text('');
-                $date.prop('disabled', true).html('<option value="">— Select Date —</option>');
-                $time.prop('disabled', true).html('<option value="">— Select Time —</option>');
+        function updateVersions() {
+            const movieId = document.getElementById('movieSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+            versionSelect.disabled = true;
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
 
-                if (!movieId) return;
-                $.getJSON(`/Booking/GetDates?movieId=${movieId}`, dates => {
-                    if (dates.length) {
-                        dates.forEach(d => $date.append(`<option>${d}</option>`));
-                        $date.prop('disabled', false);
-                    }
-                });
-            });
-
-            $date.on('change', function () {
-                const movieId = $movie.val(),
-                      date    = $(this).val();
-                $error.text('');
-                $time.prop('disabled', true).html('<option value="">— Select Time —</option>');
-
-                if (!date) return;
-                $.getJSON(`/Booking/GetTimes?movieId=${movieId}&date=${date}`, times => {
-                    if (times && times.length) {
-                        $time.empty().append('<option value="">— Select Time —</option>');
-                        times.forEach(t => $time.append(`<option value="${t}">${t}</option>`));
-                        $time.prop('disabled', false);
-                    }
-                });
-            });
-
-            $('#bookBtn').on('click', function () {
-                $error.text('');
-                const movieId = $movie.val(),
-                      date    = $date.val(),
-                      time    = $time.val();
-
-                if (!movieId) return $error.text('Please select a movie.');
-                if (!date)    return $error.text('Please select a date.');
-                if (!time)    return $error.text('Please select a time.');
-
-                window.location.href = `/Seat/Select?movieId=${movieId}&date=${date}&time=${time}`;
-            });
-
-            var preselect = '@selectedMovieId';
-            if (preselect) {
-                $movie.val(preselect).trigger('change');
+            if (movieId && date) {
+                fetch(`/Booking/GetVersions?movieId=${movieId}&date=${date}`)
+                    .then(response => response.json())
+                    .then(versions => {
+                        if (versions.length > 0) {
+                            versions.forEach(v => {
+                                const option = document.createElement('option');
+                                option.value = v.versionId;
+                                option.textContent = v.versionName;
+                                versionSelect.appendChild(option);
+                            });
+                            versionSelect.disabled = false;
+                        }
+                    });
             }
-        });
+        }
+
+        function updateTimes() {
+            const movieId = document.getElementById('movieSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const timeSelect = document.getElementById('timeSelect');
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+
+            if (movieId && date && versionId) {
+                fetch(`/Booking/GetTimes?movieId=${movieId}&date=${date}&versionId=${versionId}`)
+                    .then(response => response.json())
+                    .then(times => {
+                        if (times.length > 0) {
+                            times.forEach(time => {
+                                const option = document.createElement('option');
+                                option.value = time;
+                                option.textContent = time;
+                                timeSelect.appendChild(option);
+                            });
+                            timeSelect.disabled = false;
+                        }
+                    });
+            }
+        }
+
+        function continueToSeats() {
+            const movieId = document.getElementById('movieSelect').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const time = document.getElementById('timeSelect').value;
+
+            if (!movieId || !date || !versionId || !time) {
+                alert('Please select all options');
+                return;
+            }
+
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${versionId}&time=${time}`;
+        }
     </script>
 }
