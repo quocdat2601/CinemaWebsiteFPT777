@@ -385,15 +385,16 @@ namespace MovieTheater.Service
                 }
                 catch { promotionDiscountPercent = 0; }
             }
-            var seatDetails = seats.Select(s => {
-                decimal originalPrice = s.SeatType?.PricePercent ?? 0;
+            var seatDetails = scheduleSeats.Select(ss => {
+                var s = ss.Seat;
+                decimal originalPrice = s?.SeatType?.PricePercent ?? 0;
                 decimal discount = Math.Round(originalPrice * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = originalPrice - discount;
                 return new SeatDetailViewModel
                 {
-                    SeatId = seat?.SeatId,
-                    SeatName = seat?.SeatName,
-                    SeatType = seatType?.TypeName,
+                    SeatId = s?.SeatId,
+                    SeatName = s?.SeatName,
+                    SeatType = s?.SeatType?.TypeName,
                     Price = priceAfterPromotion,
                     OriginalPrice = originalPrice,
                     PromotionDiscount = discount,
@@ -413,7 +414,7 @@ namespace MovieTheater.Service
                 Price = f.Price
             }).ToList();
 
-            var movieShow = invoice.MovieShow;
+           
             decimal subtotal = seatDetails.Sum(s => s.Price);
             decimal rankDiscountPercent = invoice.RankDiscountPercentage ?? 0;
             decimal rankDiscount = subtotal * (rankDiscountPercent / 100m);
@@ -816,7 +817,6 @@ namespace MovieTheater.Service
                 // Apply version multiplier if available
                 if (movieShow.Version != null)
                     originalPrice *= (decimal)movieShow.Version.Multi;
-                decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
                 int promotionDiscountPercent = 0;
                 if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
                 {
