@@ -168,8 +168,8 @@
     <div class="ticket-card card shadow p-0 w-100" style="max-width: 1000px;">
         <div class="ticket-success-header">
             <h2 class="mb-0">Ticket Information</h2>
-            <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "status-completed" : "status-cancelled")">
-                @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled")
+            <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "status-completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "status-cancelled" : "status-secondary")">
+                @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Canceled" : "Not Paid")
             </span>
         </div>
         <div class="p-4">
@@ -282,7 +282,7 @@
                         <table class="table table-borderless mb-2">
                             <tbody>
                                 <tr>
-                                    <td style="white-space: nowrap;">Seat Subtotal</td>
+                                    <td style="white-space: nowrap;">Seat Price</td>
                                     <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
                                 </tr>
                                 @if (rankDiscount > 0)
@@ -294,7 +294,7 @@
                                 }
                                 <tr>
                                     <td style="white-space: nowrap;">- Voucher</td>
-                                    <td class="text-end" style="white-space: nowrap;">-@(((decimal)(ViewBag.VoucherAmount ?? 0)).ToString("N0")) VND</td>
+                                    <td class="text-end" style="white-space: nowrap;">-@((Model.VoucherAmount ?? 0).ToString("N0")) VND</td>
                                 </tr>
                                 @if (useScore > 0)
                                 {
@@ -303,10 +303,6 @@
                                         <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
                                     </tr>
                                 }
-                                <tr>
-                                    <td class="ticket-total-label">Seat Price</td>
-                                    <td class="ticket-total-value text-end">@seatPriceFromDB.ToString("N0") VND</td>
-                                </tr>
                                 @if (totalFoodPrice > 0)
                                 {
                                     <tr>
@@ -332,7 +328,7 @@
                         <a href="/MyAccount/MainPage?tab=Profile" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
                             <i class="fas fa-arrow-left me-1"></i> Back to Profile
                         </a>
-                        @if (Model.Booking.Status == MovieTheater.Models.InvoiceStatus.Completed)
+                        @if (Model.Booking.Status == MovieTheater.Models.InvoiceStatus.Completed && !Model.Booking.Cancel)
                         {
                             <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.Booking.InvoiceId"
                                   method="post" class="d-inline"

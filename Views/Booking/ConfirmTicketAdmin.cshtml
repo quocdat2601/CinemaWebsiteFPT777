@@ -261,6 +261,7 @@
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
                     <div id="selectedVoucherInfo" class="mt-2 text-success position-relative"></div>
                     <input type="hidden" id="selectedVoucherId" />
+                    <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
                 </div>
             </div>
             <div class="mb-3 mt-3">
@@ -428,6 +429,7 @@
                 selectedVoucher = null;
                 $('#selectedVoucherInfo').text('');
                 $('#selectedVoucherId').val('');
+                $('#voucherAmountHidden').val('0');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
                 fetchEligiblePromotions(); // Call this function when member is selected
@@ -457,6 +459,7 @@
                     MemberScore: parseInt($('#memberScore').val()) || 0,
                     UsedScore: parseInt($('#useScore').val()) || 0,
                     SelectedVoucherId: $('#selectedVoucherId').val(),
+                    VoucherAmount: parseInt($('#voucherAmountHidden').val()) || 0,
                     AccountId: $('#accountId').val(),
                     RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0,
                     MovieShowId: @Model.MovieShowId,
@@ -628,6 +631,7 @@
                 selectedVoucher = null;
                 $('#selectedVoucherInfo').text('');
                 $('#selectedVoucherId').val('');
+                $('#voucherAmountHidden').val('0');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
                 if (voucherModalInstance) voucherModalInstance.hide();
@@ -665,6 +669,7 @@
                             };
                             renderSelectedVoucherInfo();
                             $('#selectedVoucherId').val(selectedVoucher.id);
+                            $('#voucherAmountHidden').val(selectedVoucher.value);
                             updatePriceAll();
                             if (voucherModalInstance) voucherModalInstance.hide();
                         });
@@ -692,6 +697,7 @@
                         selectedVoucher = null;
                         $('#selectedVoucherInfo').text('');
                         $('#selectedVoucherId').val('');
+                        $('#voucherAmountHidden').val('0');
                         $('.voucher-card').removeClass('selected');
                         updatePriceAll();
                     });

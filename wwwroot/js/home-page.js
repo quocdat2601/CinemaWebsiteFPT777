@@ -63,20 +63,18 @@ function updateHeroContentByIndex(index) {
     const heroInfo = document.getElementById('hero-info');
     const heroBg = document.getElementById('hero-bg');
 
-    if (slide) {
-        heroBg.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    console.log('updateHeroContentByIndex', {index, slide, heroInfo});
+
+    if (slide && heroInfo) {
+        heroBg.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         heroBg.style.backgroundImage = `url('${slide.dataset.large}')`;
 
-        heroInfo.style.opacity = 0;
-        setTimeout(() => {
-            document.querySelector('.movie-title').textContent = slide.dataset.title;
-            document.querySelector('.movie-duration').textContent = slide.dataset.duration;
-            document.querySelector('.movie-director').textContent = slide.dataset.director;
-            document.querySelector('.movie-actor').textContent = slide.dataset.actor;
-            document.querySelector('.movie-version').textContent = slide.dataset.version;
-            document.querySelector('.movie-desc').textContent = slide.dataset.desc;
-            heroInfo.style.opacity = 1;
-        }, 300);
+        heroInfo.querySelector('.movie-title').textContent = slide.dataset.title;
+        heroInfo.querySelector('.movie-duration').textContent = slide.dataset.duration;
+        heroInfo.querySelector('.movie-director').textContent = slide.dataset.director;
+        heroInfo.querySelector('.movie-actor').textContent = slide.dataset.actor;
+        heroInfo.querySelector('.movie-desc').textContent = slide.dataset.desc;
+        heroInfo.style.opacity = 1;
     }
 
     heroBg.style.filter = 'brightness(0.7) blur(0.5px)';
@@ -87,7 +85,8 @@ function updateHeroContentByIndex(index) {
 movieSwiper.on('slideChangeTransitionStart', function () {
     var heroInfo = document.getElementById('hero-info');
     var heroBg = document.getElementById('hero-bg');
-    heroInfo.style.opacity = 0;
+    // Always keep heroInfo visible
+    heroInfo.style.opacity = 1;
     heroBg.style.filter = 'brightness(0.5) blur(1px)';
 });
 

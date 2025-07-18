@@ -35,6 +35,12 @@ public partial class Invoice
 
     public decimal? RankDiscountPercentage { get; set; }
 
+    public bool Cancel { get; set; }
+
+    public DateTime? CancelDate { get; set; }
+
+    public string? CancelBy { get; set; }
+
     public virtual Account? Account { get; set; }
 
     public virtual ICollection<FoodInvoice> FoodInvoices { get; set; } = new List<FoodInvoice>();

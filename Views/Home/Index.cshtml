@@ -3,6 +3,7 @@
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
 <link rel="stylesheet" href="~/css/home-page.css" asp-append-version="true" />
 
 
@@ -113,5 +114,6 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <script src="~/js/home-page.js"></script>
 }

@@ -76,10 +76,7 @@ namespace MovieTheater.Service
             var movie = _bookingService.GetById(movieId);
             if (movie == null) return null;
 
-            var movieShows = _movieService.GetMovieShows(movieId);
-            var movieShow = movieShows.FirstOrDefault(ms =>
-                ms.ShowDate == showDate &&
-                ms.Schedule?.ScheduleTime?.ToString("HH:mm") == showTime);
+            var movieShow = _movieService.GetMovieShowById(movieShowId);
             if (movieShow == null) return null;
 
             var cinemaRoom = movieShow.CinemaRoom;
@@ -109,6 +106,9 @@ namespace MovieTheater.Service
                 if (seat == null) continue;
                 var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
                 var price = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (movieShow.Version != null)
+                    price *= (decimal)movieShow.Version.Multi;
                 decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = price - discount;
                 string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
@@ -192,6 +192,7 @@ namespace MovieTheater.Service
 
         public async Task<BookingResult> ConfirmBookingAsync(ConfirmBookingViewModel model, string userId, string isTestSuccess)
         {
+            Console.WriteLine($"[DomainService] model.SelectedVoucherId: {model.SelectedVoucherId}, model.VoucherAmount: {model.VoucherAmount}");
             if (model == null || string.IsNullOrEmpty(userId) || model.SelectedSeats == null || !model.SelectedSeats.Any())
             {
                 return new BookingResult { Success = false, ErrorMessage = "Invalid booking data.", InvoiceId = null };
@@ -228,7 +229,7 @@ namespace MovieTheater.Service
             decimal rankDiscount = model.RankDiscount > 0 ? model.RankDiscount : priceResult.RankDiscount;
             decimal rankDiscountPercent = model.RankDiscountPercent > 0 ? model.RankDiscountPercent : priceResult.RankDiscountPercent;
             decimal promotionDiscountPercent = model.PromotionDiscountPercent > 0 ? model.PromotionDiscountPercent : priceResult.PromotionDiscountPercent;
-            decimal voucherAmount = model.VoucherAmount > 0 ? model.VoucherAmount : priceResult.VoucherAmount;
+            decimal voucherAmount = model.VoucherAmount;
             int addScore = model.AddScore > 0 ? model.AddScore : priceResult.AddScore;
             decimal totalFoodPrice = model.TotalFoodPrice > 0 ? model.TotalFoodPrice : priceResult.TotalFoodPrice;
             decimal earningRate = model.EarningRate > 0 ? model.EarningRate : priceResult.RankDiscountPercent;
@@ -285,9 +286,11 @@ namespace MovieTheater.Service
                 {
                     await _accountService.DeductScoreAsync(userId, priceResult.UseScore, true); // Pass isTestSuccess true
                 }
-                if (priceResult.VoucherAmount > 0 && !string.IsNullOrEmpty(model.SelectedVoucherId))
+                // Always mark voucher as used if applied (SelectedVoucherId or VoucherId)
+                string voucherIdToUse = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : invoice.VoucherId;
+                if (!string.IsNullOrEmpty(voucherIdToUse))
                 {
-                    var voucher = _voucherService.GetById(model.SelectedVoucherId);
+                    var voucher = _voucherService.GetById(voucherIdToUse);
                     if (voucher != null && (voucher.IsUsed == false))
                     {
                         voucher.IsUsed = true;
@@ -329,7 +332,13 @@ namespace MovieTheater.Service
                 MovieTheater.Hubs.SeatHub.ReleaseHold(model.MovieShowId, seat.SeatId);
             }
 
-            return new BookingResult { Success = true, ErrorMessage = null, InvoiceId = invoice.InvoiceId };
+            // Calculate total price after all discounts (seat subtotal - rank discount - voucher - points)
+            totalPrice = subtotal - rankDiscount - voucherAmount - (priceResult.UseScore * 1000);
+            if (totalPrice < 0) totalPrice = 0;
+            totalPrice += totalFoodPrice;
+            Console.WriteLine($"subtotal: {subtotal}, rankDiscount: {rankDiscount}, voucherAmount: {voucherAmount}, usedScoreValue: {priceResult.UseScore * 1000}, totalFoodPrice: {totalFoodPrice}, totalPrice: {totalPrice}");
+
+            return new BookingResult { Success = true, ErrorMessage = null, InvoiceId = invoice.InvoiceId, TotalPrice = totalPrice };
         }
 
         public async Task<BookingSuccessViewModel> BuildSuccessViewModelAsync(string invoiceId, string userId)
@@ -352,12 +361,18 @@ namespace MovieTheater.Service
             if (user == null)
                 return null;
 
-            var scheduleSeats = _context.ScheduleSeats.Where(s => s.InvoiceId == invoiceId).ToList();
-            var seatIds = scheduleSeats.Select(s => s.SeatId).Where(id => id.HasValue).Select(id => id.Value).ToList();
-            var seats = await GetSeatsByIdsAsync(seatIds);
-            var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
-            var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
-            var foods = await GetFoodsByIdsAsync(foodIds);
+            // Parse the seat IDs from the invoice
+            var seatIdList = (invoice.SeatIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(id => int.Parse(id.Trim()))
+                .ToList();
+
+            // Only include ScheduleSeat records for seats in the invoice's SeatIds
+            var scheduleSeats = _context.ScheduleSeats
+                .Include(ss => ss.Seat)
+                .ThenInclude(s => s.SeatType)
+                .Where(s => s.InvoiceId == invoiceId && seatIdList.Contains((int)s.SeatId))
+                .ToList();
 
             var movieShow = invoice.MovieShow;
             int promotionDiscountPercent = 0;
@@ -376,9 +391,9 @@ namespace MovieTheater.Service
                 decimal priceAfterPromotion = originalPrice - discount;
                 return new SeatDetailViewModel
                 {
-                    SeatId = s.SeatId,
-                    SeatName = s.SeatName,
-                    SeatType = s.SeatType?.TypeName,
+                    SeatId = seat?.SeatId,
+                    SeatName = seat?.SeatName,
+                    SeatType = seatType?.TypeName,
                     Price = priceAfterPromotion,
                     OriginalPrice = originalPrice,
                     PromotionDiscount = discount,
@@ -386,6 +401,10 @@ namespace MovieTheater.Service
                     PromotionName = (promotionDiscountPercent > 0) ? $"{promotionDiscountPercent}% Promo" : null
                 };
             }).ToList();
+
+            var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
+            var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
+            var foods = await GetFoodsByIdsAsync(foodIds);
             var foodViewModels = foodInvoices.Select(f => new FoodViewModel
             {
                 FoodId = f.FoodId,
@@ -394,7 +413,7 @@ namespace MovieTheater.Service
                 Price = f.Price
             }).ToList();
 
-            // Calculate all discounts and points for display
+            var movieShow = invoice.MovieShow;
             decimal subtotal = seatDetails.Sum(s => s.Price);
             decimal rankDiscountPercent = invoice.RankDiscountPercentage ?? 0;
             decimal rankDiscount = subtotal * (rankDiscountPercent / 100m);
@@ -486,6 +505,9 @@ namespace MovieTheater.Service
                 if (seat == null) continue;
                 var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
                 var price = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (movieShow.Version != null)
+                    price *= (decimal)movieShow.Version.Multi;
                 decimal discount = Math.Round(price * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = price - discount;
                 string promotionName = bestPromotion != null && promotionDiscountPercent > 0 ? bestPromotion.Title : null;
@@ -791,6 +813,10 @@ namespace MovieTheater.Service
                 if (seat == null) continue;
                 var seatType = seat.SeatType;
                 decimal originalPrice = seatType?.PricePercent ?? 0;
+                // Apply version multiplier if available
+                if (movieShow.Version != null)
+                    originalPrice *= (decimal)movieShow.Version.Multi;
+                decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
                 int promotionDiscountPercent = 0;
                 if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
                 {

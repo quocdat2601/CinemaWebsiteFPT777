@@ -438,7 +438,7 @@
 		function startCountdown() {
 			const timerEl = document.getElementById("countdownTimer");
 			if (countdownTimer) clearInterval(countdownTimer);
-			secondsLeft = 10; // reset lại thời gian mỗi lần bắt đầu
+			secondsLeft = 60; // reset lại thời gian mỗi lần bắt đầu
 			countdownTimer = setInterval(() => {
 				if (secondsLeft <= 0) {
 					clearInterval(countdownTimer);

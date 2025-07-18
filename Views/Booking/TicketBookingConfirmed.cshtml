@@ -30,7 +30,8 @@
 
     decimal seatPrice = booking != null && booking.SelectedSeats != null
         ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
-    decimal totalAmount = seatPrice + totalFoodPrice;
+    // Use the backend-calculated, already-discounted total
+    decimal totalAmount = booking?.TotalPrice ?? 0;
 }
 <style>
     .ticket-success-header {
