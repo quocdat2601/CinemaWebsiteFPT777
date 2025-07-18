@@ -15,11 +15,15 @@ public partial class CinemaRoom
 
     public int? VersionId { get; set; }
 
+    public int? StatusId { get; set; }
+
     public int? SeatQuantity { get; set; }
 
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
+
+    public virtual Status? Status { get; set; }
 
     public virtual Version? Version { get; set; }
 }

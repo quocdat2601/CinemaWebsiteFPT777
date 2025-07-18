@@ -194,16 +194,35 @@
                     @foreach (var food in Model.SelectedFoods)
                     {
                         <tr>
-                            <td>@food.Name</td>
+                            <td>@food.Name
+                                @if (!string.IsNullOrEmpty(food.PromotionName))
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                }
+                            </td>
                             <td>@food.Quantity</td>
-                            <td>@food.Price.ToString("N0") VND</td>
+                            <td>
+                                @if (food.PromotionDiscount > 0)
+                                {
+                                    <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                    <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                }
+                            </td>
                             <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                        <td colspan="3" class="text-end"><strong>Total Food (before discount):</strong></td>
+                        <td><strong>@Model.SelectedFoods.Sum(f => f.OriginalPrice * f.Quantity).ToString("N0") VND</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total Food (after discount):</strong></td>
                         <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
                     </tr>
                 </tfoot>
@@ -316,28 +335,6 @@
   </div>
 </div>
 
-<!-- Promotion Picker Modal -->
-<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="promotionModalLabel">All Promotions</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <!-- Promotions will be loaded here by JS as cards -->
-        </div>
-        <div class="row mt-2">
-          <div class="col-12 text-center">
-            <button type="button" class="btn btn-outline-secondary" id="clearPromotionBtn">Clear Promotion</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 @section Scripts {
     <script>
         $(document).ready(function () {
@@ -435,6 +432,7 @@
                 $('#voucherAmountHidden').val('0');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
+                fetchEligiblePromotions(); // Call this function when member is selected
                 updateConfirmButtonState(); // <-- update button state
             }
 
@@ -705,6 +703,94 @@
                     });
                 } else {
                     $('#selectedVoucherInfo').text('');
+                }
+            }
+
+            // Thêm hàm fetchEligiblePromotions và renderPromotionList vào section Scripts
+            // Gọi fetchEligiblePromotions mỗi khi chọn member, ghế, ngày chiếu
+            function fetchEligiblePromotions() {
+                var model = {
+                    MovieId: '@Model.BookingDetails.MovieId',
+                    ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
+                    ShowTime: '@Model.BookingDetails.ShowTime',
+                    MemberId: $('#memberId').val(),
+                    AccountId: $('#accountId').val()
+                };
+
+                $.ajax({
+                    url: '@Url.Action("GetEligiblePromotions", "Booking")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (response) {
+                        if (response.success) {
+                            renderPromotionList(response.eligiblePromotions);
+                        } else {
+                            $('#promotionListContainer').html('<div class="col-12 text-center"><p class="text-muted">No eligible promotions found.</p></div>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error fetching promotions:", error);
+                        $('#promotionListContainer').html('<div class="col-12 text-center"><p class="text-danger">Error fetching promotions.</p></div>');
+                    }
+                });
+            }
+
+            function renderPromotionList(promotions) {
+                let html = '';
+                if (promotions.length === 0) {
+                    html = '<div class="col-12 text-center"><p class="text-muted">No eligible promotions found.</p></div>';
+                } else {
+                    html = '<div class="row" id="promotionListContainer">';
+                    promotions.forEach(p => {
+                        html += `
+                            <div class="col-md-4 mb-3">
+                                <div class="card promotion-card d-flex flex-column align-items-center" data-id="${p.id}" data-type="${p.type}" data-value="${p.value}">
+                                    <div class="card-body text-center p-2">
+                                        <h5 class="card-title mb-1" style="color:#007bff;font-weight:600;">${p.name}</h5>
+                                        <p class="card-text mb-1">Value: <span style="font-weight:600;">${p.value.toLocaleString()} VND</span></p>
+                                        <p class="card-text mb-1">Expires: <span style="font-size:0.95em;">${p.expirationDate}</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+                $('#promotionListContainer').html(html);
+                $('.promotion-card').click(function () {
+                    $('.promotion-card').removeClass('selected');
+                    $(this).addClass('selected');
+                    selectedPromotion = {
+                        id: $(this).data('id'),
+                        type: $(this).data('type'),
+                        value: $(this).data('value')
+                    };
+                    renderSelectedPromotionInfo();
+                    $('#selectedPromotionId').val(selectedPromotion.id);
+                    updatePriceAll();
+                });
+            }
+
+            function renderSelectedPromotionInfo() {
+                if (selectedPromotion) {
+                    $('#selectedPromotionInfo').html(`
+                        <span class='fw-bold'>Selected Promotion:</span> 
+                        <span class='badge bg-info text-light'>${selectedPromotion.id}</span> - 
+                        <span class='fw-bold text-success'>${selectedPromotion.value.toLocaleString()} VND</span>
+                        <button type="button" id="removePromotionBtn" class="remove-voucher-btn" title="Remove promotion">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    `);
+                    $('#removePromotionBtn').off('click').on('click', function () {
+                        selectedPromotion = null;
+                        $('#selectedPromotionInfo').text('');
+                        $('#selectedPromotionId').val('');
+                        $('.promotion-card').removeClass('selected');
+                        updatePriceAll();
+                    });
+                } else {
+                    $('#selectedPromotionInfo').text('');
                 }
             }
         });

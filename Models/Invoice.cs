@@ -29,17 +29,17 @@ public partial class Invoice
 
     public int? MovieShowId { get; set; }
 
-    public int? PromotionDiscount { get; set; }
+    public string? PromotionDiscount { get; set; }
 
     public string? VoucherId { get; set; }
-
-    public decimal? RankDiscountPercentage { get; set; }
 
     public bool Cancel { get; set; }
 
     public DateTime? CancelDate { get; set; }
 
     public string? CancelBy { get; set; }
+
+    public decimal? RankDiscountPercentage { get; set; }
 
     public virtual Account? Account { get; set; }
 

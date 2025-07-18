@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using MovieTheater.Models;
+
 namespace MovieTheater.ViewModels
 {
     public class ConfirmTicketAdminViewModel
@@ -40,5 +43,7 @@ namespace MovieTheater.ViewModels
         // Food information
         public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();
         public decimal TotalFoodPrice { get; set; }
+        public List<Promotion> EligibleFoodPromotions { get; set; } = new List<Promotion>();
+        public decimal TotalFoodDiscount { get; set; }
     }
 }

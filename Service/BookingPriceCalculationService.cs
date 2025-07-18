@@ -40,6 +40,24 @@ namespace MovieTheater.Service
                     totalFoodPrice += food.Price;
                 }
             }
+            // Lấy promotion discount percent từ seat đầu tiên (nếu có)
+            decimal promotionDiscountPercent = 0;
+            if (seats != null && seats.Count > 0 && seats[0].PromotionName != null && seats[0].PromotionDiscount.HasValue)
+            {
+                // Nếu có promotion, lấy phần trăm discount từ giá gốc và discount
+                var original = seats[0].OriginalPrice ?? 0;
+                var discount = seats[0].PromotionDiscount ?? 0;
+                if (original > 0 && discount > 0)
+                {
+                    promotionDiscountPercent = Math.Round((discount / original) * 100);
+                }
+            }
+            // Final seat total after all discounts
+            decimal seatTotalAfterDiscounts = promoSubtotal - rankDiscount - usedScoreValue - voucher;
+            if (seatTotalAfterDiscounts < 0) seatTotalAfterDiscounts = 0;
+            // Add food for display only
+            decimal totalPrice = seatTotalAfterDiscounts + totalFoodPrice;
+            // AddScore is based only on seatTotalAfterDiscounts
             // New logic: apply voucher to (seat + food) after rank discount and used score
             decimal seatAndFoodTotal = promoSubtotal - rankDiscount - usedScoreValue + totalFoodPrice;
             decimal totalAfterVoucher = seatAndFoodTotal - voucher;
@@ -52,8 +70,8 @@ namespace MovieTheater.Service
                 Subtotal = promoSubtotal,
                 RankDiscountPercent = rankDiscountPercent,
                 RankDiscount = rankDiscount,
-                PromotionDiscountPercent = 0, // for display only, not used in math
-                PromotionDiscount = 0,
+                PromotionDiscountPercent = promotionDiscountPercent, // set đúng discount percent
+                PromotionDiscount = promotionDiscountPercent,
                 VoucherAmount = voucher,
                 UseScore = usedScore,
                 UseScoreValue = usedScoreValue,

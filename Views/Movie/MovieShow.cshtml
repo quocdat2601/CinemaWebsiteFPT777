@@ -35,8 +35,9 @@
             <span class="fw-bold">Duration:</span> @Model.Duration minutes
         </p>
         <input type="hidden" id="movieDuration" value="@Model.Duration" />
-         <p class="text-muted mb-1">
-            <strong>Version: </strong>
+        <p class="text-muted mb-1">
+        <strong>Version:</strong>
+        <span class="ms-3">
             @foreach (var version in Model.AvailableVersions)
             {
                 <label class="me-3">
@@ -48,8 +49,10 @@
                     @version.VersionName
                 </label>
             }
-            <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
-        </p>
+        </span>
+        <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
+    </p>
+
     </div>
 
     <div class="schedule-form">

@@ -10,6 +10,4 @@ public partial class Status
     public string? StatusName { get; set; }
 
     public virtual ICollection<CinemaRoom> CinemaRooms { get; set; } = new List<CinemaRoom>();
-
-    public virtual ICollection<CinemaRoom> CinemaRoomsNavigation { get; set; } = new List<CinemaRoom>();
 }

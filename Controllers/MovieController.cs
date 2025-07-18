@@ -482,7 +482,9 @@ namespace MovieTheater.Controllers
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 Duration = movie.Duration,
-                AvailableCinemaRooms = _cinemaService.GetAll().ToList(),
+                AvailableCinemaRooms = _cinemaService.GetAll()
+                    .Where(r => r.StatusId == 1)
+                    .ToList(),
                 AvailableShowDates = showDates,
                 AvailableSchedules = _movieService.GetSchedules().ToList(),
                 CurrentMovieShows = movieShows,
@@ -504,7 +506,9 @@ namespace MovieTheater.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
+                model.AvailableCinemaRooms = _cinemaService.GetAll()
+                    .Where(r => r.StatusId == 1)
+                    .ToList();
                 model.AvailableShowDates = _movieService.GetShowDates(model.MovieId).ToList();
                 model.AvailableSchedules = _movieService.GetSchedules().ToList();
                 return View(model);
@@ -520,7 +524,9 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Error updating movie shows for movie {MovieId}", id);
                 TempData["ErrorMessage"] = "An error occurred while updating movie shows.";
-                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
+                model.AvailableCinemaRooms = _cinemaService.GetAll()
+                    .Where(r => r.StatusId == 1)
+                    .ToList();
                 model.AvailableShowDates = _movieService.GetShowDates(model.MovieId).ToList();
                 model.AvailableSchedules = _movieService.GetSchedules().ToList();
                 return View(model);
