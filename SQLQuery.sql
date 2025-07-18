@@ -116,12 +116,19 @@ CREATE TABLE Movie_Type (
     FOREIGN KEY (Type_ID) REFERENCES Type(Type_ID)
 );
 
+CREATE TABLE Status (
+    Status_ID INT PRIMARY KEY IDENTITY(1,1),
+    Status_Name VARCHAR(10),
+);
+
 CREATE TABLE Cinema_Room (
     Cinema_Room_ID INT PRIMARY KEY IDENTITY(1,1),
     Cinema_Room_Name VARCHAR(255),
     Seat_Width INT,
     Seat_Length INT,
 	Version_ID INT,
+    Status_ID INT DEFAULT 1,
+    FOREIGN KEY (Status_ID) REFERENCES Status(Status_ID),
 	FOREIGN KEY (Version_ID) REFERENCES Version(Version_ID)
 );
 
@@ -189,8 +196,11 @@ CREATE TABLE Invoice (
     Seat_IDs NVARCHAR(MAX) NULL,
     Account_ID VARCHAR(10),
     Movie_Show_Id INT, 
-	Promotion_Discount INT DEFAULT 0,
-	Voucher_ID VARCHAR(10) NULL,
+    Promotion_Discount NVARCHAR(100) DEFAULT '0',
+    Voucher_ID VARCHAR(10) NULL,
+    Cancel BIT NOT NULL DEFAULT 0,         -- true/false, mặc định là false (chưa hủy)
+    CancelDate DATETIME NULL,              -- ngày hủy, cho phép null
+    CancelBy NVARCHAR(50) NULL,            -- người thực hiện hủy, cho phép null
 	RankDiscountPercentage DECIMAL(5,2) NULL,
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
 	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
@@ -251,7 +261,6 @@ INSERT [dbo].[Rank] ([Rank_ID], [Rank_Name], [Discount_Percentage], [Required_Po
 (4, 'Elite', 15.00, 80000, 12.00, 'linear-gradient(135deg, #1a1a1a 0%, #2C3E50 50%, #2c3e50 100%)', 'fa-star');
 SET IDENTITY_INSERT [dbo].[Rank] OFF;
 GO
-
 
 INSERT INTO Account (Account_ID, Address, Date_Of_Birth, Email, Full_Name, Gender, Identity_Card, Image, Password, Phone_Number, Register_Date, Role_ID, STATUS, USERNAME) VALUES
 ('AC001', '123 Main St', '2000-01-15', 'admin@gmail.com', 'Admin', 'Female', '123456789', '/image/profile.jpg', '1', '0123456789', '2023-01-01', 1, 1, 'admin'),
@@ -351,8 +360,17 @@ INSERT INTO Movie_Version (Movie_ID, Version_ID) VALUES
 ('MV009', 1), 
 ('MV009', 2);
 
-INSERT INTO Cinema_Room(Cinema_Room_Name, Version_ID) VALUES
-('Screen 1', 1), ('Screen 2', 1), ('Screen 3', 1), ('Screen 4', 2), ('Screen 5', 2), ('Screen 6', 2), ('Screen 7', 3);
+INSERT INTO Status (Status_Name) VALUES
+('Active'), ('Deleted'), ('Hidden');
+
+INSERT INTO Cinema_Room (Cinema_Room_Name, Seat_Width, Seat_Length, Version_ID) VALUES
+('Screen 1', 10, 20, 1),
+('Screen 2', 10, 20, 1),
+('Screen 3', 10, 20, 1),
+('Screen 4', 12, 22, 2),
+('Screen 5', 12, 22, 2),
+('Screen 6', 12, 22, 2),
+('Screen 7', 14, 24, 3);
 
 CREATE TABLE Promotion (
     Promotion_ID INT PRIMARY KEY,

@@ -170,6 +170,7 @@ namespace MovieTheater.Service
                 ShowDate = showDate,
                 ShowTime = showTime,
                 VersionName = movieShow.Version?.VersionName ?? "N/A",
+                VersionId = movieShow.VersionId, // <-- Set VersionId here
                 SelectedSeats = seats,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
@@ -578,6 +579,7 @@ namespace MovieTheater.Service
                 PricePerTicket = seats.Any() ? totalPrice / seats.Count : 0,
                 MovieShowId = movieShowId,
                 VersionName = movieShow.Version.VersionName,
+                VersionId = movieShow.VersionId, // <-- Set VersionId here
                 PromotionDiscountPercent = promotionDiscountPercent
             };
             var viewModel = new ConfirmTicketAdminViewModel

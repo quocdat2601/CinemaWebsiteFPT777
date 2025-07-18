@@ -51,6 +51,10 @@ namespace MovieTheater.Service
                 return false;
             }
         }
+        public async Task Active(int id)
+        {
+            await _repository.Active(id);
+        }
 
         public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId){
             return _repository.GetRoomsByVersion(versionId);

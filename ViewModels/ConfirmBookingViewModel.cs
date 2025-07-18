@@ -32,6 +32,7 @@ namespace MovieTheater.ViewModels
         public int ScoreUsed { get; set; }
 
         public int MovieShowId { get; set; }
+        public int? VersionId { get; set; }
 
         public int AddScore { get; set; }
 
@@ -45,8 +46,6 @@ namespace MovieTheater.ViewModels
         public decimal PromotionDiscountPercent { get; set; }
 
         public decimal OriginalTotal { get; set; }
-        public int VersionId { get; set; }
-
 
         // --- Food đã chọn ---
         public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();
