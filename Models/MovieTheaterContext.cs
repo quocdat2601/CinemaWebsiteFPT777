@@ -61,6 +61,7 @@ public partial class MovieTheaterContext : DbContext
 
     public virtual DbSet<Voucher> Vouchers { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
@@ -301,7 +302,9 @@ public partial class MovieTheaterContext : DbContext
             entity.Property(e => e.CancelDate).HasColumnType("datetime");
             entity.Property(e => e.MovieShowId).HasColumnName("Movie_Show_Id");
             entity.Property(e => e.PromotionDiscount)
-                .HasDefaultValue(0)
+                .HasMaxLength(100)
+                .IsUnicode()
+                .HasDefaultValue("0")
                 .HasColumnName("Promotion_Discount");
             entity.Property(e => e.RankDiscountPercentage).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.Seat)

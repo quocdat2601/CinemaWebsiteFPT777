@@ -29,7 +29,7 @@ public partial class Invoice
 
     public int? MovieShowId { get; set; }
 
-    public int? PromotionDiscount { get; set; }
+    public string? PromotionDiscount { get; set; }
 
     public string? VoucherId { get; set; }
 

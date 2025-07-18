@@ -12,5 +12,8 @@ namespace MovieTheater.Service
         public void Save();
 
         Promotion? GetBestPromotionForShowDate(DateOnly showDate);
+        Promotion? GetBestEligiblePromotionForBooking(PromotionCheckContext context);
+        List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)> ApplyFoodPromotionsToFoods(List<(int FoodId, int Quantity, decimal Price)> selectedFoods, List<Promotion> eligiblePromotions);
+        List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price)> selectedFoods);
     }
 }

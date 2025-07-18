@@ -30,5 +30,21 @@ namespace MovieTheater.ViewModels
 
         [Display(Name = "Active Status")]
         public bool IsActive { get; set; }
+
+        // Promotion Condition fields
+        [Display(Name = "Target Table")]
+        public string? TargetField { get; set; }
+
+        [Display(Name = "Target Field Column")]
+        public string? TargetFieldColumn { get; set; }
+
+        [Display(Name = "Operator")]
+        public string? Operator { get; set; }
+
+        [Display(Name = "Target Value")]
+        public string? TargetValue { get; set; }
+
+        // For editing multiple conditions
+        public List<PromotionConditionEditViewModel> Conditions { get; set; } = new List<PromotionConditionEditViewModel>();
     }
 }

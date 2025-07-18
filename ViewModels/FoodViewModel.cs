@@ -37,6 +37,10 @@ namespace MovieTheater.ViewModels
         public DateTime CreatedDate { get; set; }
 
         public DateTime? UpdatedDate { get; set; }
+
+        public string PromotionName { get; set; }
+        public decimal PromotionDiscount { get; set; }
+        public decimal OriginalPrice { get; set; }
     }
 
     public class FoodListViewModel
