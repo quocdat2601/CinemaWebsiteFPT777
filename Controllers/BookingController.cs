@@ -423,7 +423,17 @@ namespace MovieTheater.Controllers
                     decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
                     TempData["RankDiscount"] = rankDiscount;
                 }
-                TempData["PromotionDiscount"] = invoice.PromotionDiscount ?? 0;
+                int promotionDiscount = 0;
+                if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                {
+                    try
+                    {
+                        var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                        promotionDiscount = (int)(promoObj.seat ?? 0);
+                    }
+                    catch { promotionDiscount = 0; }
+                }
+                TempData["PromotionDiscount"] = promotionDiscount;
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(invoice.VoucherId))
                 {

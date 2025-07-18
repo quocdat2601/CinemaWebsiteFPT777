@@ -262,7 +262,16 @@ public class TicketService : ITicketService
     public List<SeatDetailViewModel> BuildSeatDetails(Invoice booking)
     {
         var seatDetails = new List<SeatDetailViewModel>();
-        decimal promotionDiscount = booking.PromotionDiscount ?? 0;
+        int promotionDiscount = 0;
+        if (!string.IsNullOrEmpty(booking.PromotionDiscount) && booking.PromotionDiscount != "0")
+        {
+            try
+            {
+                var promoObj = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(booking.PromotionDiscount);
+                promotionDiscount = (int)(promoObj.seat ?? 0);
+            }
+            catch { promotionDiscount = 0; }
+        }
         var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
         if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
         {

@@ -108,7 +108,16 @@ namespace MovieTheater.Controllers
                             decimal basePrice = seatType?.PricePercent ?? 0;
                             if (invoice.MovieShow?.Version != null)
                                 basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                            decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
+                            int promotionDiscount = 0;
+                            if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                            {
+                                try
+                                {
+                                    var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                    promotionDiscount = (int)(promoObj.seat ?? 0);
+                                }
+                                catch { promotionDiscount = 0; }
+                            }
                             decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
                             decimal priceAfterPromotion = basePrice - discount;
                             return new MovieTheater.Models.ScheduleSeat
@@ -127,7 +136,16 @@ namespace MovieTheater.Controllers
                     // Update BookedPrice for all ScheduleSeat records after VNPay payment
                     if (invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
                     {
-                        decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
+                        int promotionDiscount = 0;
+                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                        {
+                            try
+                            {
+                                var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                promotionDiscount = (int)(promoObj.seat ?? 0);
+                            }
+                            catch { promotionDiscount = 0; }
+                        }
                         foreach (var scheduleSeat in invoice.ScheduleSeats)
                         {
                             var seatType = scheduleSeat.Seat.SeatType;
@@ -239,7 +257,16 @@ namespace MovieTheater.Controllers
                         decimal basePrice = seatType?.PricePercent ?? 0;
                         if (invoice.MovieShow?.Version != null)
                             basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                        decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
+                        int promotionDiscount = 0;
+                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                        {
+                            try
+                            {
+                                var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                promotionDiscount = (int)(promoObj.seat ?? 0);
+                            }
+                            catch { promotionDiscount = 0; }
+                        }
                         decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
                         decimal priceAfterPromotion = basePrice - discount;
                         return new MovieTheater.ViewModels.SeatDetailViewModel

@@ -70,7 +70,14 @@ namespace MovieTheater.Service
         public Promotion? GetBestEligiblePromotionForBooking(PromotionCheckContext context)
         {
             var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
-            foreach (var promotion in allPromotions.OrderByDescending(p => p.DiscountLevel ?? 0))
+            // Lọc promotion KHÔNG có bất kỳ PromotionCondition nào với TargetEntity == "food"
+            var seatPromotions = allPromotions
+                .Where(p =>
+                    p.PromotionConditions == null ||
+                    !p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food")
+                )
+                .ToList();
+            foreach (var promotion in seatPromotions.OrderByDescending(p => p.DiscountLevel ?? 0))
             {
                 if (IsPromotionEligibleNew(promotion, context))
                     return promotion;
@@ -186,7 +193,8 @@ namespace MovieTheater.Service
         }
 
         // Áp dụng promotion cho từng món ăn riêng biệt, trả về danh sách món đã giảm giá và tên promotion
-        public List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)> ApplyFoodPromotionsToFoods(List<(int FoodId, int Quantity, decimal Price)> selectedFoods, List<Promotion> eligiblePromotions)
+        public List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)> ApplyFoodPromotionsToFoods(
+            List<(int FoodId, int Quantity, decimal Price)> selectedFoods, List<Promotion> eligiblePromotions)
         {
             var result = new List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)>();
             foreach (var food in selectedFoods)
@@ -196,7 +204,42 @@ namespace MovieTheater.Service
                 decimal discountLevel = 0;
                 foreach (var promo in eligiblePromotions)
                 {
-                    if (promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > bestDiscount)
+                    // Kiểm tra điều kiện cho từng promotion
+                    bool eligible = true;
+                    foreach (var cond in promo.PromotionConditions)
+                    {
+                        if (cond.TargetEntity?.ToLower() == "food" && cond.TargetField?.ToLower() == "price")
+                        {
+                            if (decimal.TryParse(cond.TargetValue, out decimal targetValue))
+                            {
+                                switch (cond.Operator)
+                                {
+                                    case ">=":
+                                        if (!(food.Price >= targetValue)) eligible = false;
+                                        break;
+                                    case ">":
+                                        if (!(food.Price > targetValue)) eligible = false;
+                                        break;
+                                    case "<=":
+                                        if (!(food.Price <= targetValue)) eligible = false;
+                                        break;
+                                    case "<":
+                                        if (!(food.Price < targetValue)) eligible = false;
+                                        break;
+                                    case "==":
+                                    case "=":
+                                        if (!(food.Price == targetValue)) eligible = false;
+                                        break;
+                                    case "!=":
+                                        if (!(food.Price != targetValue)) eligible = false;
+                                        break;
+                                }
+                            }
+                        }
+                        // Có thể bổ sung điều kiện khác nếu cần
+                        if (!eligible) break;
+                    }
+                    if (eligible && promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > bestDiscount)
                     {
                         bestDiscount = promo.DiscountLevel.Value;
                         promoName = promo.Title;
