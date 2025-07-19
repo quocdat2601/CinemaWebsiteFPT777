@@ -134,6 +134,12 @@ namespace MovieTheater
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
                 );
+            
+            builder.Services.Configure<QRPaymentConfig>(
+             builder.Configuration.GetSection("QRPayment")
+                );
+            
+            builder.Services.AddScoped<IQRPaymentService, QRPaymentService>();
 
             builder.Services.AddHttpContextAccessor();
 

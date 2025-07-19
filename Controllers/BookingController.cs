@@ -613,6 +613,8 @@ namespace MovieTheater.Controllers
             return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = result.InvoiceId }) });
         }
 
+
+
         /// <summary>
         /// Trang xác nhận bán vé thành công cho admin
         /// </summary>
@@ -622,10 +624,18 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> TicketBookingConfirmed(string invoiceId)
         {
             if (string.IsNullOrEmpty(invoiceId))
-                return View("TicketBookingConfirmed");
+            {
+                TempData["ErrorMessage"] = "Không có thông tin invoice.";
+                return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            
             var viewModel = await _bookingDomainService.BuildTicketBookingConfirmedViewModelAsync(invoiceId);
             if (viewModel == null)
-                return NotFound();
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy thông tin booking.";
+                return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            
             return View("TicketBookingConfirmed", viewModel);
         }
 

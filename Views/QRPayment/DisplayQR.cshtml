@@ -1,0 +1,319 @@
+@model MovieTheater.ViewModels.QRPaymentViewModel
+
+@{
+    ViewBag.Title = "QR Code Payment";
+    Layout = "_Layout";
+}
+
+<style>
+    .qr-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .qr-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .qr-logo {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .qr-code-container {
+        text-align: center;
+        margin: 2rem 0;
+        padding: 2rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+    
+    .qr-code-image {
+        max-width: 300px;
+        max-height: 300px;
+        border: 8px solid white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .order-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .info-value {
+        color: #212529;
+        text-align: right;
+    }
+    
+    .amount {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .expired-timer {
+        text-align: center;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        color: #856404;
+    }
+    
+    .payment-status {
+        text-align: center;
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+    }
+    
+    .payment-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    
+    .payment-failed {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-check-payment {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        margin: 0 0.5rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-check-payment:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        margin: 0 0.5rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-cancel:hover {
+        background: #545b62;
+        transform: translateY(-2px);
+    }
+    
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .qr-code-image {
+        animation: pulse 2s infinite;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="text-start p-3">
+        <a href="@Url.Action("ConfirmTicketForAdmin", "Booking")" class="btn btn-secondary">&larr; Return</a>
+    </div>
+    
+    <div class="qr-container">
+        <div class="qr-header">
+            <div class="qr-logo">QR</div>
+            <h2 class="mb-2">QR Code Payment</h2>
+            <p class="text-muted">Scan QR code with your banking app to complete payment</p>
+        </div>
+        
+        <div class="order-info">
+            <div class="info-row">
+                <span class="info-label">Order ID:</span>
+                <span class="info-value">@Model.OrderId</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Customer:</span>
+                <span class="info-value">@Model.CustomerName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">@Model.CustomerPhone</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Movie:</span>
+                <span class="info-value">@Model.MovieName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Show Time:</span>
+                <span class="info-value">@Model.ShowTime</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Seats:</span>
+                <span class="info-value">@Model.SeatInfo</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Amount:</span>
+                <span class="info-value amount">@Model.Amount.ToString("N0") VND</span>
+            </div>
+        </div>
+        
+        <div class="qr-code-container">
+            <h5 class="mb-3">Scan QR Code with Banking App</h5>
+            <div class="qr-code-image">
+                <img src="@Model.QRCodeImage" alt="QR Code" style="max-width: 300px; max-height: 300px; border: 8px solid white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+            </div>
+            <p class="text-muted mt-3">Open your banking app and scan this QR code to complete payment</p>
+        </div>
+        
+        <div class="expired-timer">
+            <i class="fas fa-clock"></i>
+            <span id="timer">QR Code expires in: <span id="countdown">15:00</span></span>
+        </div>
+        
+        <div id="paymentStatus" class="payment-status">
+            <i class="fas fa-check-circle"></i>
+            <span id="statusMessage"></span>
+        </div>
+        
+        <div class="action-buttons">
+            <button type="button" id="checkPaymentBtn" class="btn-check-payment">
+                <i class="fas fa-sync-alt"></i> Check Payment Status
+            </button>
+            <button type="button" id="cancelBtn" class="btn-cancel">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let timeLeft = 15 * 60; // 15 minutes in seconds
+            let timerInterval;
+            
+            function updateTimer() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                $('#countdown').text(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    $('#countdown').text('00:00');
+                    $('.expired-timer').html('<i class="fas fa-exclamation-triangle"></i> QR Code has expired');
+                    $('.expired-timer').css({
+                        'background': '#f8d7da',
+                        'border-color': '#f5c6cb',
+                        'color': '#721c24'
+                    });
+                    $('#checkPaymentBtn').prop('disabled', true);
+                }
+                timeLeft--;
+            }
+            
+            // Start timer
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Check payment status
+            $('#checkPaymentBtn').click(function() {
+                const orderId = '@Model.OrderId';
+                
+                $.ajax({
+                    url: '@Url.Action("CheckPaymentStatus", "QRPayment")',
+                    type: 'POST',
+                    data: { orderId: orderId },
+                    success: function(response) {
+                        if (response.success) {
+                            if (response.isPaid) {
+                                $('#paymentStatus').removeClass('payment-failed').addClass('payment-success').show();
+                                $('#statusMessage').html('<i class="fas fa-check-circle"></i> Payment successful! Redirecting...');
+                                $('#checkPaymentBtn').prop('disabled', true);
+                                
+                                // Redirect after 3 seconds
+                                setTimeout(function() {
+                                    window.location.href = '@Url.Action("TicketBookingConfirmed", "Booking")';
+                                }, 3000);
+                            } else {
+                                $('#paymentStatus').removeClass('payment-success').addClass('payment-failed').show();
+                                $('#statusMessage').html('<i class="fas fa-times-circle"></i> Payment not yet received. Please try again.');
+                            }
+                        } else {
+                            $('#paymentStatus').removeClass('payment-success').addClass('payment-failed').show();
+                            $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Error checking payment status.');
+                        }
+                    },
+                    error: function() {
+                        $('#paymentStatus').removeClass('payment-success').addClass('payment-failed').show();
+                        $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Error checking payment status.');
+                    }
+                });
+            });
+            
+            // Cancel button
+            $('#cancelBtn').click(function() {
+                if (confirm('Are you sure you want to cancel this payment?')) {
+                    window.location.href = '@Url.Action("ConfirmTicketForAdmin", "Booking")';
+                }
+            });
+            
+            // Auto check payment status every 10 seconds
+            setInterval(function() {
+                if (timeLeft > 0) {
+                    $('#checkPaymentBtn').click();
+                }
+            }, 10000);
+        });
+    </script>
+} 
