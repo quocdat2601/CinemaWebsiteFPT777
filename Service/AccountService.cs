@@ -498,7 +498,8 @@ namespace MovieTheater.Service
                 new Claim(ClaimTypes.Name, user.FullName ?? user.Username ?? string.Empty),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", user.Status.ToString()),
-                new Claim("Email", user.Email ?? string.Empty)
+                new Claim("Email", user.Email ?? string.Empty),
+                new Claim("Image", user.Image ?? "/image/profile.jpg")
             };
             var identity = new ClaimsIdentity(claims, Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
