@@ -138,27 +138,39 @@ namespace MovieTheater.Service
             decimal totalFoodPrice = 0;
             if (foodIds != null && foodQtys != null && foodIds.Count == foodQtys.Count)
             {
+                var foodTuples = new List<(int FoodId, int Quantity, decimal Price)>();
                 for (int i = 0; i < foodIds.Count; i++)
                 {
                     var food = await _foodService.GetByIdAsync(foodIds[i]);
                     if (food != null)
                     {
-                        var foodClone = new FoodViewModel
-                        {
-                            FoodId = food.FoodId,
-                            Name = food.Name,
-                            Price = food.Price,
-                            Image = food.Image,
-                            Description = food.Description,
-                            Category = food.Category,
-                            Status = food.Status,
-                            CreatedDate = food.CreatedDate,
-                            UpdatedDate = food.UpdatedDate,
-                            Quantity = foodQtys[i]
-                        };
-                        selectedFoods.Add(foodClone);
-                        totalFoodPrice += food.Price * foodQtys[i];
+                        foodTuples.Add((food.FoodId, foodQtys[i], food.Price));
                     }
+                }
+                var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
+                var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
+                for (int i = 0; i < foodTuples.Count; i++)
+                {
+                    var food = await _foodService.GetByIdAsync(foodTuples[i].FoodId);
+                    var discountInfo = foodDiscounts.FirstOrDefault(f => f.FoodId == foodTuples[i].FoodId);
+                    var foodClone = new FoodViewModel
+                    {
+                        FoodId = food.FoodId,
+                        Name = food.Name,
+                        Price = discountInfo.DiscountedPrice,
+                        Image = food.Image,
+                        Description = food.Description,
+                        Category = food.Category,
+                        Status = food.Status,
+                        CreatedDate = food.CreatedDate,
+                        UpdatedDate = food.UpdatedDate,
+                        Quantity = foodTuples[i].Quantity,
+                        PromotionName = discountInfo.PromotionName,
+                        PromotionDiscount = discountInfo.DiscountLevel,
+                        OriginalPrice = discountInfo.OriginalPrice
+                    };
+                    selectedFoods.Add(foodClone);
+                    totalFoodPrice += discountInfo.DiscountedPrice * foodTuples[i].Quantity;
                 }
             }
 
@@ -406,12 +418,21 @@ namespace MovieTheater.Service
             var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
             var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
             var foods = await GetFoodsByIdsAsync(foodIds);
-            var foodViewModels = foodInvoices.Select(f => new FoodViewModel
-            {
-                FoodId = f.FoodId,
-                Name = foods.FirstOrDefault(food => food.FoodId == f.FoodId)?.Name,
-                Quantity = f.Quantity,
-                Price = f.Price
+            var eligibleFoodPromotions2 = _promotionService.GetEligibleFoodPromotions(foodInvoices.Select(f => (f.FoodId, f.Quantity, f.Price)).ToList());
+            var foodDiscounts2 = _promotionService.ApplyFoodPromotionsToFoods(foodInvoices.Select(f => (f.FoodId, f.Quantity, f.Price)).ToList(), eligibleFoodPromotions2);
+            var foodViewModels = foodInvoices.Select(f => {
+                var food = foods.FirstOrDefault(food => food.FoodId == f.FoodId);
+                var discountInfo = foodDiscounts2.FirstOrDefault(d => d.FoodId == f.FoodId);
+                return new FoodViewModel
+                {
+                    FoodId = f.FoodId,
+                    Name = food?.Name ?? "N/A",
+                    Quantity = f.Quantity,
+                    Price = discountInfo.DiscountedPrice,
+                    OriginalPrice = discountInfo.OriginalPrice,
+                    PromotionDiscount = discountInfo.DiscountLevel,
+                    PromotionName = discountInfo.PromotionName
+                };
             }).ToList();
 
            
@@ -859,17 +880,28 @@ namespace MovieTheater.Service
                 AddScore = invoice.AddScore ?? 0
             };
             // Food
-            var selectedFoods = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList()
-                .Select(f => {
-                    var food = _context.Foods.FirstOrDefault(food => food.FoodId == f.FoodId);
-                    return new FoodViewModel
-                    {
-                        FoodId = f.FoodId,
-                        Name = food?.Name ?? "N/A",
-                        Quantity = f.Quantity,
-                        Price = f.Price
-                    };
-                }).ToList();
+            var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
+            var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
+            var foods = await GetFoodsByIdsAsync(foodIds);
+            var foodTuples = foodInvoices.Select(f => (f.FoodId, f.Quantity, f.Price)).ToList();
+            var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
+            var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
+            var selectedFoods = foodInvoices.Select(f => {
+                var food = foods.FirstOrDefault(food => food.FoodId == f.FoodId);
+                var originalPrice = food?.Price ?? f.Price; // Giá gốc từ bảng Food
+                var discountedPrice = f.Price; // Giá sau giảm đã lưu trong FoodInvoice
+                var discountLevel = originalPrice > 0 ? Math.Round((originalPrice - discountedPrice) / originalPrice * 100, 2) : 0;
+                return new FoodViewModel
+                {
+                    FoodId = f.FoodId,
+                    Name = food?.Name ?? "N/A",
+                    Quantity = f.Quantity,
+                    Price = discountedPrice,
+                    OriginalPrice = originalPrice,
+                    PromotionDiscount = discountLevel,
+                    PromotionName = discountLevel > 0 ? "Promotion" : null
+                };
+            }).ToList();
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
             // Calculate discounts and totals
             decimal subtotal = seats.Sum(s => s.Price);
