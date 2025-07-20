@@ -33,13 +33,13 @@ public partial class Invoice
 
     public string? VoucherId { get; set; }
 
-    public decimal? RankDiscountPercentage { get; set; }
-
     public bool Cancel { get; set; }
 
     public DateTime? CancelDate { get; set; }
 
     public string? CancelBy { get; set; }
+
+    public decimal? RankDiscountPercentage { get; set; }
 
     public virtual Account? Account { get; set; }
 

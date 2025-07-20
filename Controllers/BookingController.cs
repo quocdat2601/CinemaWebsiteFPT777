@@ -562,7 +562,8 @@ namespace MovieTheater.Controllers
             {
                 movieId = viewModel.BookingDetails.MovieId,
                 date = viewModel.BookingDetails.ShowDate.ToString("yyyy-MM-dd"),
-                time = viewModel.BookingDetails.ShowTime
+                time = viewModel.BookingDetails.ShowTime,
+                versionId = viewModel.BookingDetails.VersionId
             });
             return View("ConfirmTicketAdmin", viewModel);
         }

@@ -94,10 +94,14 @@ namespace MovieTheater.Controllers
                     var movies = _movieService.GetAll();
                     return PartialView("MovieMg", movies);
                 case "ShowroomMg":
-                    var cinema = _cinemaService.GetAll();
+                    var allCinemaRooms = _cinemaService.GetAll();
                     var versions = _movieService.GetAllVersions();
+
                     ViewBag.Versions = versions;
-                    return PartialView("ShowroomMg", cinema);
+                    ViewBag.ActiveRooms = allCinemaRooms.Where(c => c.StatusId == 1).ToList();
+                    ViewBag.HiddenRooms = allCinemaRooms.Where(c => c.StatusId == 3).ToList();
+
+                    return PartialView("ShowroomMg");
                 case "VersionMg":
                     var seatTypes = _seatTypeService.GetAll();
                     ViewBag.SeatTypes = seatTypes;
