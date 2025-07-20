@@ -264,9 +264,19 @@ namespace MovieTheater.Service
             var seatNames = string.Join(", ", seats.Select(s => s.SeatName));
             var seatIdsStr = string.Join(",", seats.Select(s => s.SeatId));
 
+            // Chuẩn bị dữ liệu promotion discount cho food
+            var foodDiscounts = new List<object>();
+            if (model.SelectedFoods != null)
+            {
+                foreach (var foodVm in model.SelectedFoods)
+                {
+                    // Lưu giống admin: chỉ foodId và discount
+                    foodDiscounts.Add(new { foodId = foodVm.FoodId, discount = foodVm.PromotionDiscount });
+                }
+            }
             var promotionDiscountObj = new {
                 seat = promotionDiscountPercent,
-                food = new List<object>() // hoặc foodDiscounts nếu có
+                food = foodDiscounts
             };
             string promotionDiscountJson = JsonConvert.SerializeObject(promotionDiscountObj);
             var invoice = new Invoice
@@ -419,20 +429,20 @@ namespace MovieTheater.Service
             var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
             var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
             var foods = await GetFoodsByIdsAsync(foodIds);
-            var eligibleFoodPromotions2 = _promotionService.GetEligibleFoodPromotions(foodInvoices.Select(f => (f.FoodId, f.Quantity, f.Price)).ToList());
-            var foodDiscounts2 = _promotionService.ApplyFoodPromotionsToFoods(foodInvoices.Select(f => (f.FoodId, f.Quantity, f.Price)).ToList(), eligibleFoodPromotions2);
-            var foodViewModels = foodInvoices.Select(f => {
+            var selectedFoods = foodInvoices.Select(f => {
                 var food = foods.FirstOrDefault(food => food.FoodId == f.FoodId);
-                var discountInfo = foodDiscounts2.FirstOrDefault(d => d.FoodId == f.FoodId);
+                var originalPrice = food?.Price ?? f.Price;
+                var discountedPrice = f.Price;
+                var discountLevel = originalPrice > 0 ? Math.Round((originalPrice - discountedPrice) / originalPrice * 100, 2) : 0;
                 return new FoodViewModel
                 {
                     FoodId = f.FoodId,
                     Name = food?.Name ?? "N/A",
                     Quantity = f.Quantity,
-                    Price = discountInfo.DiscountedPrice,
-                    OriginalPrice = discountInfo.OriginalPrice,
-                    PromotionDiscount = discountInfo.DiscountLevel,
-                    PromotionName = discountInfo.PromotionName
+                    Price = discountedPrice,
+                    OriginalPrice = originalPrice,
+                    PromotionDiscount = discountLevel,
+                    PromotionName = discountLevel > 0 ? "Promotion" : null
                 };
             }).ToList();
 
@@ -453,7 +463,7 @@ namespace MovieTheater.Service
             decimal usedScoreValue = usedScore * 1000;
             int addScore = invoice.AddScore ?? 0;
             decimal addScoreValue = addScore * 1000;
-            decimal totalFoodPrice = foodViewModels.Sum(f => f.Price * f.Quantity);
+            decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
             decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
             if (totalPrice < 0) totalPrice = 0;
             decimal grandTotal = totalPrice + totalFoodPrice;
@@ -466,7 +476,7 @@ namespace MovieTheater.Service
                 ShowTime = movieShow.Schedule?.ScheduleTime?.ToString(),
                 VersionName = movieShow.Version?.VersionName,
                 SelectedSeats = seatDetails,
-                SelectedFoods = foodViewModels,
+                SelectedFoods = selectedFoods,
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
                 RankDiscountPercent = rankDiscountPercent,
@@ -497,7 +507,7 @@ namespace MovieTheater.Service
                 RankDiscount = rankDiscount,
                 VoucherAmount = voucherAmount,
                 TotalPrice = grandTotal,
-                SelectedFoods = foodViewModels,
+                SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice
             };
         }
