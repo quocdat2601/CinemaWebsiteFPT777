@@ -62,7 +62,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null)
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null)
         {
             switch (tab)
             {
@@ -130,21 +130,91 @@ namespace MovieTheater.Controllers
                         ).ToList();
                     }
 
+                    // Bổ sung filter trạng thái
+                    if (!string.IsNullOrEmpty(statusFilter))
+                    {
+                        if (statusFilter == "completed")
+                            invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && !b.Cancel).ToList();
+                        else if (statusFilter == "cancelled")
+                            invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && b.Cancel).ToList();
+                        else if (statusFilter == "notpaid")
+                            invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
+                    }
+
+                    // Bổ sung sort
+                    var sortBy = Request.Query["sortBy"].ToString();
+                    if (!string.IsNullOrEmpty(sortBy))
+                    {
+                        if (sortBy == "movie_az")
+                            invoices = invoices.OrderBy(i => i.MovieShow.Movie.MovieNameEnglish).ToList();
+                        else if (sortBy == "movie_za")
+                            invoices = invoices.OrderByDescending(i => i.MovieShow.Movie.MovieNameEnglish).ToList();
+                        else if (sortBy == "id_asc")
+                            invoices = invoices.OrderBy(i => i.InvoiceId).ToList();
+                        else if (sortBy == "id_desc")
+                            invoices = invoices.OrderByDescending(i => i.InvoiceId).ToList();
+                        else if (sortBy == "account_az")
+                            invoices = invoices.OrderBy(i => i.AccountId).ToList();
+                        else if (sortBy == "account_za")
+                            invoices = invoices.OrderByDescending(i => i.AccountId).ToList();
+                        else if (sortBy == "identity_az")
+                            invoices = invoices.OrderBy(i => i.Account != null ? i.Account.IdentityCard : "").ToList();
+                        else if (sortBy == "identity_za")
+                            invoices = invoices.OrderByDescending(i => i.Account != null ? i.Account.IdentityCard : "").ToList();
+                        else if (sortBy == "phone_az")
+                            invoices = invoices.OrderBy(i => i.Account != null ? i.Account.PhoneNumber : "").ToList();
+                        else if (sortBy == "phone_za")
+                            invoices = invoices.OrderByDescending(i => i.Account != null ? i.Account.PhoneNumber : "").ToList();
+                        else if (sortBy == "time_asc")
+                            invoices = invoices.OrderBy(i => i.MovieShow.Schedule.ScheduleTime).ToList();
+                        else if (sortBy == "time_desc")
+                            invoices = invoices.OrderByDescending(i => i.MovieShow.Schedule.ScheduleTime).ToList();
+                    }
+
                     return PartialView("BookingMg", invoices);
                 case "FoodMg":
                     // Sử dụng parameter keyword thay vì Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
                     var categoryFilter = Request.Query["categoryFilter"].ToString();
-                    var statusFilterStr = Request.Query["statusFilter"].ToString();
-                    bool? statusFilter = null;
+                    string statusFilterStr = Request.Query["statusFilter"].ToString();
+                    bool? foodStatusFilter = null;
                     if (!string.IsNullOrEmpty(statusFilterStr))
-                        statusFilter = bool.Parse(statusFilterStr);
+                    {
+                        if (bool.TryParse(statusFilterStr, out var parsedBool))
+                            foodStatusFilter = parsedBool;
+                        else if (statusFilterStr == "1")
+                            foodStatusFilter = true;
+                        else if (statusFilterStr == "0")
+                            foodStatusFilter = false;
+                    }
 
-                    var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, statusFilter);
+                    var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, foodStatusFilter);
+
+                    // Bổ sung sort
+                    var sortByFood = Request.Query["sortBy"].ToString();
+                    if (!string.IsNullOrEmpty(sortByFood))
+                    {
+                        if (sortByFood == "name_az")
+                            foods.Foods = foods.Foods.OrderBy(f => f.Name).ToList();
+                        else if (sortByFood == "name_za")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.Name).ToList();
+                        else if (sortByFood == "category_az")
+                            foods.Foods = foods.Foods.OrderBy(f => f.Category).ToList();
+                        else if (sortByFood == "category_za")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.Category).ToList();
+                        else if (sortByFood == "price_asc")
+                            foods.Foods = foods.Foods.OrderBy(f => f.Price).ToList();
+                        else if (sortByFood == "price_desc")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.Price).ToList();
+                        else if (sortByFood == "created_asc")
+                            foods.Foods = foods.Foods.OrderBy(f => f.CreatedDate).ToList();
+                        else if (sortByFood == "created_desc")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.CreatedDate).ToList();
+                    }
 
                     ViewBag.Keyword = searchKeyword;
                     ViewBag.CategoryFilter = categoryFilter;
-                    ViewBag.StatusFilter = statusFilter;
+                    ViewBag.StatusFilter = statusFilterStr;
 
                     return PartialView("FoodMg", foods);
                 case "VoucherMg":
@@ -154,7 +224,34 @@ namespace MovieTheater.Controllers
                         StatusFilter = Request.Query["statusFilter"].ToString(),
                         ExpiryFilter = Request.Query["expiryFilter"].ToString()
                     };
-                    var filteredVouchers = _voucherService.GetFilteredVouchers(filter);
+                    var filteredVouchers = _voucherService.GetFilteredVouchers(filter).ToList();
+
+                    // Bổ sung sort
+                    var sortByVoucher = Request.Query["sortBy"].ToString();
+                    if (!string.IsNullOrEmpty(sortByVoucher))
+                    {
+                        if (sortByVoucher == "voucherid_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.VoucherId).ToList();
+                        else if (sortByVoucher == "voucherid_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.VoucherId).ToList();
+                        else if (sortByVoucher == "account_az")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.AccountId).ToList();
+                        else if (sortByVoucher == "account_za")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.AccountId).ToList();
+                        else if (sortByVoucher == "value_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.Value).ToList();
+                        else if (sortByVoucher == "value_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.Value).ToList();
+                        else if (sortByVoucher == "created_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.CreatedDate).ToList();
+                        else if (sortByVoucher == "created_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.CreatedDate).ToList();
+                        else if (sortByVoucher == "expiry_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.ExpiryDate).ToList();
+                        else if (sortByVoucher == "expiry_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.ExpiryDate).ToList();
+                    }
+
                     ViewBag.Keyword = filter.Keyword;
                     ViewBag.StatusFilter = filter.StatusFilter;
                     ViewBag.ExpiryFilter = filter.ExpiryFilter;
@@ -162,6 +259,8 @@ namespace MovieTheater.Controllers
                 case "RankMg":
                     var ranks = _rankService.GetAllRanks();
                     return PartialView("RankMg", ranks);
+                case "QRCode":
+                    return PartialView("~/Views/QRCode/Scanner.cshtml");
                 default:
                     return Content("Tab not found.");
             }

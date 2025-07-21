@@ -47,7 +47,7 @@ $(document).ready(() => {
     $('.movies-slide').owlCarousel({
         items: 2,
         dots: false,
-        nav:true,
+        nav: true,
         navText: navText,
         margin: 15,
         responsive: {

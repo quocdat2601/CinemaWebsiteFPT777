@@ -4,7 +4,21 @@
 @{
     ViewBag.Title = "Ticket Information (Admin)";
     Layout = "_Layout";
-    var booking = Model?.BookingDetails;
+    
+    // Kiểm tra Model có null không
+    if (Model == null)
+    {
+        <div class="container mt-4">
+            <div class="alert alert-warning">
+                <h4>Không có thông tin booking</h4>
+                <p>Vui lòng quay lại trang booking để tạo vé mới.</p>
+                <a href="@Url.Action("BookingMg", "Admin")" class="btn btn-primary">Quay lại Booking Management</a>
+            </div>
+        </div>
+        return;
+    }
+    
+    var booking = Model.BookingDetails;
     string movieName = booking?.MovieName ?? TempData["MovieName"] as string;
     string screen = booking?.CinemaRoomName ?? TempData["Screen"] as string;
     string showDate = booking != null ? booking.ShowDate.ToString("yyyy-MM-dd") : TempData["ShowDate"] as string;

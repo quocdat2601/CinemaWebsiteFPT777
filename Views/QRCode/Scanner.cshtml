@@ -4,78 +4,85 @@
 
 <style>
     .scanner-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #f8f9fa;
         min-height: 100vh;
         padding: 0.5rem 0;
     }
     .scanner-card {
         margin-top: 2rem;
         margin-bottom: 2rem;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     }
     .scanner-header {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
+        background: #007bff;
+        color: #fff;
         padding: 2rem;
         text-align: center;
+        border-radius: 20px 20px 0 0;
     }
-
     .scanner-header h2 {
         margin: 0;
-        font-weight: 600;
-        font-size: 1.5rem;
+        font-weight: 700;
+        font-size: 1.7rem;
+        letter-spacing: 1px;
     }
-
+    .scanner-header p {
+        color: #e3e3e3;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
     .scanner-body {
         padding: 2rem;
     }
-
     #video-container {
         position: relative;
-        width: 100%;
-        height: 300px;
-        background: #f8f9fa;
+        width: 280px;
+        height: 380px;
+        background: #e9ecef;
         border-radius: 15px;
         overflow: hidden;
-        margin-bottom: 1.5rem;
+        margin: 0 auto 1.5rem auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-
     #video {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        border-radius: 15px;
     }
-
     .scanner-overlay {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 200px;
-        height: 200px;
+        width: 180px;
+        height: 180px;
         border: 3px solid #28a745;
         border-radius: 15px;
-        background: rgba(40, 167, 69, 0.1);
+        pointer-events: none;
+        box-shadow: 0 0 0 2px #fff, 0 0 12px 2px #28a74544;
+        background: transparent;
     }
-
-    .scanner-overlay::before {
-        content: '';
-        position: absolute;
-        top: -3px;
-        left: -3px;
-        right: -3px;
-        bottom: -3px;
-        border: 2px solid #28a745;
-        border-radius: 15px;
-        animation: pulse 2s infinite;
-    }
-
     .manual-input {
-        background: #f8f9fa;
+        background: #fff;
         border-radius: 10px;
-        padding: 1.5rem;
-        margin-top: 1rem;
+        padding: 1.5rem 1rem 1rem 1rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
     }
-
+    .manual-input h6 {
+        color: #007bff;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
     .result-modal {
         display: none;
         position: fixed;
@@ -88,7 +95,6 @@
         justify-content: center;
         align-items: center;
     }
-
     .result-content {
         background: white;
         border-radius: 20px;
@@ -97,20 +103,18 @@
         width: 90%;
         text-align: center;
         animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     }
-
     .success-icon {
         font-size: 4rem;
         color: #28a745;
         margin-bottom: 1rem;
     }
-
     .error-icon {
         font-size: 4rem;
         color: #dc3545;
         margin-bottom: 1rem;
     }
-
     .ticket-info {
         background: #f8f9fa;
         border-radius: 10px;
@@ -118,12 +122,10 @@
         margin: 1rem 0;
         text-align: left;
     }
-
     .ticket-info p {
         margin: 0.5rem 0;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
-
     .ticket-info strong {
         color: #495057;
     }
@@ -163,7 +165,6 @@
             <h2>🎫 QR Ticket Scanner</h2>
             <p class="mb-0">Scan the QR code on the ticket to check-in customer</p>
         </div>
-        
         <div class="scanner-body">
             <div id="video-container">
                 <video id="video" autoplay></video>
@@ -174,7 +175,6 @@
                     </div>
                 </div>
             </div>
-            
             <div class="text-center">
                 <button id="startScan" class="btn btn-success btn-lg me-2">
                     <i class="fas fa-camera me-2"></i>Start Scanning
@@ -183,8 +183,7 @@
                     <i class="fas fa-stop me-2"></i>Stop
                 </button>
             </div>
-
-            <div class="manual-input">
+            <div class="manual-input mt-4">
                 <h6 class="text-center mb-3">📝 Manual Entry</h6>
                 <div class="input-group">
                     <input type="text" id="manualInvoiceId" class="form-control" placeholder="Enter Invoice ID">
@@ -193,11 +192,6 @@
                     </button>
                 </div>
             </div>
-        </div>
-        <div class="text-center mt-3 mb-2">
-            <a href="/Admin/MainPage?tab=BookingMg" class="btn btn-outline-dark">
-                <i class="fas fa-arrow-left me-2"></i>Back to Admin
-            </a>
         </div>
     </div>
 </div>
@@ -214,15 +208,13 @@
     </div>
 </div>
 
-<!-- QR Code Scanner Library -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
 <script>
     let videoStream = null;
     let scanning = false;
     let lastInvoiceId = null;
 
-    document.addEventListener('DOMContentLoaded', function() {
+    function initQrScannerTab() {
         const startBtn = document.getElementById('startScan');
         const stopBtn = document.getElementById('stopScan');
         const video = document.getElementById('video');
@@ -286,29 +278,34 @@
                 manualBtn.click();
             }
         });
+    }
+
+    // Gọi lại hàm khởi tạo mỗi khi tab QRCode được load
+    $(document).on('tabContentLoaded', function(e, tabName) {
+        if (tabName === 'QRCode') {
+            initQrScannerTab();
+        }
     });
+    // Nếu load full page (trường hợp F5), vẫn khởi tạo
+    if (document.getElementById('startScan')) {
+        initQrScannerTab();
+    }
 
     function scanQRCode() {
         if (!scanning) return;
-
         const video = document.getElementById('video');
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-
         if (video.videoWidth === 0) {
             setTimeout(scanQRCode, 100);
             return;
         }
-
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height);
-
         if (code) {
-            // Extract invoice ID from URL
             try {
                 const url = new URL(code.data);
                 const invoiceId = url.searchParams.get('invoiceId');
@@ -317,7 +314,6 @@
                     return;
                 }
             } catch (e) {
-                // Nếu không phải URL, thử lấy trực tiếp
                 if (code.data) {
                     redirectToTicketInfo(code.data);
                     return;
@@ -328,23 +324,17 @@
     }
 
     function redirectToTicketInfo(invoiceId) {
-        // Lưu invoice ID để sử dụng cho check-in
         lastInvoiceId = invoiceId;
-        
-        // Kiểm tra thông tin vé trước khi chuyển trang
         fetch(`/QRCode/GetTicketInfo?invoiceId=${invoiceId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Hiển thị thông tin vé trong modal
                     showResult('success', 'Ticket Found', 'Ticket information retrieved successfully.', data.ticketInfo);
                 } else {
-                    // Nếu không tìm thấy vé, chuyển đến trang TicketInfo
                     window.location.href = `/Booking/TicketInfo?invoiceId=${invoiceId}`;
                 }
             })
             .catch(error => {
-                // Nếu có lỗi, chuyển đến trang TicketInfo
                 window.location.href = `/Booking/TicketInfo?invoiceId=${invoiceId}`;
             });
     }
@@ -356,8 +346,6 @@
         const messageEl = document.getElementById('resultMessage');
         const ticketInfoEl = document.getElementById('ticketInfo');
         const confirmBtn = document.getElementById('confirmCheckIn');
-
-        // Set icon and title
         if (type === 'success') {
             icon.innerHTML = '<i class="fas fa-check-circle success-icon"></i>';
             titleEl.className = 'text-success';
@@ -365,11 +353,8 @@
             icon.innerHTML = '<i class="fas fa-times-circle error-icon"></i>';
             titleEl.className = 'text-danger';
         }
-
         titleEl.textContent = title;
         messageEl.textContent = message;
-
-        // Show ticket info if available
         if (ticketInfo) {
             ticketInfoEl.style.display = 'block';
             ticketInfoEl.innerHTML = `
@@ -384,7 +369,6 @@
                 <p><strong>Status:</strong> ${ticketInfo.status === 'Completed' ? 'Paid' : 'Unpaid'}</p>
                 <p><strong>Checked-in:</strong> ${ticketInfo.isUsed ? 'Checked-in' : 'Not yet'}</p>
             `;
-            // Nếu vé chưa check-in, hiển thị nút xác nhận
             if(ticketInfo.status === 'Completed' && !ticketInfo.isUsed) {
                 confirmBtn.style.display = 'inline-block';
             } else {
@@ -394,18 +378,13 @@
             ticketInfoEl.style.display = 'none';
             confirmBtn.style.display = 'none';
         }
-
         modal.style.display = 'flex';
-
-        // Auto-hide after 5 seconds for success
         if (type === 'success') {
             setTimeout(() => {
                 modal.style.display = 'none';
             }, 5000);
         }
     }
-
-    // Sự kiện cho nút xác nhận check-in
     document.getElementById('confirmCheckIn').onclick = async function() {
         if (!lastInvoiceId) return;
         this.disabled = true;
