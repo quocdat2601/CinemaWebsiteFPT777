@@ -1,3 +1,4 @@
+@model MovieTheater.Models.Movie
 @{
     ViewData["Title"] = "Home";
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
@@ -151,97 +152,98 @@
     }
 </style>
 
-<!-- SLIDE 1: HERO + CAROUSEL NỔI BẬT (giữ nguyên như hiện tại, chỉ wrap lại) -->
-<section class="slide-section hero-slide" id="slide-hero">
-    <div class="hero-section">
-        <!-- HERO SLIDE -->
-        <div class="hero-slide">
-            <div class="owl-carousel carousel-nav-center" id="hero-carousel">
-                @foreach (var movie in movies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
-                {
-                    <div class="hero-slide-item">
-                        <img src="@movie.LargeImage" alt="@movie.MovieNameEnglish">
-                        <div class="overlay"></div>
-                        <div class="hero-slide-item-content">
-                            <div class="item-content-wraper">
-                                <div class="item-content-title top-down">
-                                    @movie.MovieNameEnglish
-                                </div>
-                                <div class="movie-infos top-down delay-2">
-                                    <div class="movie-info">
-                                        <i class="bx bxs-star"></i>
-                                        <span>9.5</span>
-                                    </div>
-                                    <div class="movie-info">
-                                        <i class="bx bxs-time"></i>
-                                        <span>@movie.Duration mins</span>
-                                    </div>
-                                    <div class="movie-info">
-                                        @if (movie.Versions != null && movie.Versions.Any())
-                                        {
-                                            @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
-                                        }
-                                        else
-                                        {
-                                            <span>HD</span>
-                                        }
-                                    </div>
-                                </div>
-                                <div class="item-content-description top-down delay-4">
-                                    @movie.Content
-                                </div>
-                                <div class="item-action top-down delay-6">
-                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="btn btn-hover">
-                                        <i class="bx bxs-right-arrow"></i>
-                                        <span>Book now</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
+<!-- HERO SECTION (Netflix-inspired, background image) -->
+<section class="hero-section-modern" style="position:relative; min-height:calc(100vh - 80px); height:calc(100vh - 80px); display:flex; flex-direction:column; justify-content:center; align-items:center; background:transparent;">
+    <!-- Background image/trailer -->
+    <div class="hero-bg" id="hero-bg" style="position:absolute; inset:0; z-index:1; overflow:hidden; transition:opacity 0.5s !important; opacity:1;">
+        <img src="@Model?.LargeImage" alt="Hero background" style="width:100%; height:100%; object-fit:cover; filter:brightness(0.45) blur(0.5px);">
+        <div style="position:absolute; inset:0; background:linear-gradient(90deg,rgba(24,22,22,0.92) 0%,rgba(24,22,22,0.45) 60%,rgba(24,22,22,0.05) 100%);"></div>
+    </div>
+    <!-- Info + Play button -->
+    <div class="hero-content" id="hero-content" style="position:relative; z-index:2; display:flex; width:100%; max-width:1800px; align-items:center; justify-content:space-between; padding:4.5rem 0 2.5rem 0; opacity:1; transition:opacity 0.5s cubic-bezier(.4,0,.2,1); min-height:520px; flex:1;">
+        <div class="hero-info" style="flex:1.2; display:flex; flex-direction:column; justify-content:center; max-width:700px; transition:opacity 0.4s !important; opacity:1; align-items:flex-start; padding-left:4vw;">
+            <h2 class="hero-title" style="font-size:3.2rem; font-weight:900; margin-bottom:1.1rem; line-height:1.1; color:#fff;">@Model?.MovieNameEnglish</h2>
+            <div class="hero-meta" style="display:flex; gap:1.2rem; align-items:center; font-size:1.2rem; color:#ffe066; margin-bottom:0.7rem;">
+                <span><i class="bx bxs-time"></i> @Model?.Duration' </span>
+                <span>
+                    @if (Model?.Versions != null && Model.Versions.Any())
+                    {
+                        @(string.Join(", ", Model.Versions.Select(v => v.VersionName)))
+                    }
+                    else
+                    {
+                        <span>HD</span>
+                    }
+                </span>
+            </div>
+            <div class="hero-desc" style="font-size:1.25rem; color:#fff; margin-bottom:1.2rem; max-width:95%; line-height:1.5;">
+                @Model?.Content
+            </div>
+            <a href="@Url.Action("Detail", "Movie", new { id = Model?.MovieId })" class="btn btn-warning btn-hover" style="font-size:1.2rem; padding:0.7rem 2.5rem; border-radius:10px; font-weight:700; color:#222; background:#ffe066; border:none; margin-bottom:1.7rem; width:max-content;">
+                <span>Book Now</span>
+            </a>
+            <div class="hero-extra-info" style="margin-top:0.7rem; color:#bbb; font-size:1.13rem;">
+                <div><b>Starring:</b> @Model?.Actor</div>
+                <div><b>This show is:</b> @if (Model?.Types != null && Model.Types.Any())
+                    {
+                        @(string.Join(", ", Model.Types.Select(t => t.TypeName)))
+                    }
+                </div>
+                <div><b>Director:</b> @Model?.Director</div>
             </div>
         </div>
-        <!-- END HERO SLIDE -->
-        <!-- TOP MOVIES SLIDE -->
-        <div class="top-movies-slide">
-            <div class="owl-carousel" id="top-movies-slide">
-                @foreach (var movie in movies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
-                {
-                    <div class="movie-item">
-                        <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish">
-                        <div class="movie-item-content">
-                            <div class="movie-item-title">
-                                @movie.MovieNameEnglish
-                            </div>
-                            <div class="movie-infos">
-                                <div class="movie-info">
-                                    <i class="bx bxs-star"></i>
-                                    <span>9.5</span>
-                                </div>
-                                <div class="movie-info">
-                                    <i class="bx bxs-time"></i>
-                                    <span>@movie.Duration mins</span>
-                                </div>
-                                <div class="movie-info">
-                                    @if (movie.Versions != null && movie.Versions.Any())
-                                    {
-                                        @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
-                                    }
-                                    else
-                                    {
-                                        <span>HD</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
+        <!-- Play button overlay (center right) -->
+        <div class="hero-trailer" style="flex:1; display:flex; align-items:center; justify-content:flex-end; min-width:420px; max-width:700px; padding-right:4vw;">
+            <div class="trailer-preview" id="hero-trailer-preview" style="position:relative; width:100%; aspect-ratio:16/9; border-radius:28px; overflow:hidden; box-shadow:0 4px 32px rgba(0,0,0,0.18); background:#181a20; transition:opacity 0.4s !important; opacity:1;">
+                <img src="@Model?.LargeImage" alt="Trailer preview" style="width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.85);">
+                <button class="trailer-play-btn" id="hero-trailer-play-btn" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.55); border:none; border-radius:50%; width:90px; height:90px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.2s;">
+                    <i class="fa fa-play" style="font-size:3rem; color:#ffe066;"></i>
+                </button>
             </div>
         </div>
-        <!-- END TOP MOVIES SLIDE -->
+    </div>
+    <!-- Nút next/prev nằm giữa hero-content -->
+    <button id="hero-owl-prev" class="hero-owl-nav-btn hero-owl-prev" style="position:absolute; left:2vw; top:50%; transform:translateY(-50%); z-index:20; background:rgba(0,0,0,0.55); border:none; border-radius:50%; width:54px; height:54px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,0.18);"><i class="fa fa-chevron-left" style="font-size:2rem; color:#ffe066;"></i></button>
+    <button id="hero-owl-next" class="hero-owl-nav-btn hero-owl-next" style="position:absolute; right:2vw; top:50%; transform:translateY(-50%); z-index:20; background:rgba(0,0,0,0.55); border:none; border-radius:50%; width:54px; height:54px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,0.18);"><i class="fa fa-chevron-right" style="font-size:2rem; color:#ffe066;"></i></button>
+    <style>
+        /* Xóa style owl-nav */
+        .hero-owl-carousel .owl-nav { display: none !important; }
+        .hero-owl-carousel .hero-carousel-item:hover:not(.active) { filter:brightness(0.85) grayscale(0.1) !important; box-shadow:0 4px 24px rgba(255,224,102,0.13); border:2.5px solid #ffe066; }
+        .hero-owl-nav-btn { transition: background 0.2s, box-shadow 0.2s; }
+        .hero-owl-nav-btn:hover { background:rgba(0,0,0,0.85); box-shadow:0 4px 18px rgba(255,224,102,0.18); }
+    </style>
+    <!-- Carousel phim nhỏ Netflix style -->
+    <div class="hero-carousel-row" style="position:absolute; bottom:0; left:0; width:100vw; z-index:3; background:transparent; box-shadow:0 -2px 24px rgba(0,0,0,0.13); padding:1.2rem 0 1.5rem 0; min-height:220px; display:flex; justify-content:center; align-items:flex-end;">
+        <div class="owl-carousel hero-owl-carousel" id="hero-owl-carousel" style="padding:0.2rem 4vw; width:100%; max-width:1700px;">
+            @{
+                var activeId = Model?.MovieId;
+                var movieList = movies.ToList();
+            }
+            @for (int i = 0; i < movieList.Count; i++)
+            {
+                var movie = movieList[i];
+                var isActive = movie.MovieId == activeId;
+                <div class="item hero-carousel-item @(isActive ? "active" : "")" 
+                    style="position:relative; cursor:pointer; transition:filter 0.2s, box-shadow 0.2s, border 0.2s, transform 0.2s; border-radius:32px; filter:@(isActive ? "none" : "brightness(0.5) grayscale(0.2)"); box-shadow:@(isActive ? "0 0 0 7px #ffe066, 0 4px 24px rgba(255,224,102,0.13)" : "0 2px 16px rgba(0,0,0,0.13)"); border:@(isActive ? "4px solid #ffe066" : "2px solid #444"); background:#181a20; width:360px; height:200px; margin-bottom:0;" 
+                    data-movie-id="@movie.MovieId"
+                    data-movie-name="@movie.MovieNameEnglish"
+                    data-movie-duration="@movie.Duration"
+                    data-movie-versions="@(string.Join(", ", movie.Versions.Select(v => v.VersionName)))"
+                    data-movie-content="@movie.Content"
+                    data-movie-actor="@movie.Actor"
+                    data-movie-types="@(string.Join(", ", movie.Types.Select(t => t.TypeName)))"
+                    data-movie-director="@movie.Director"
+                    data-movie-largeimage="@movie.LargeImage"
+                    data-movie-trailerurl="@movie.TrailerUrl"
+                >
+                    <img src="@movie.LargeImage" alt="@movie.MovieNameEnglish" style="width:100%; height:100%; object-fit:cover; border-radius:28px; display:block;">
+                </div>
+            }
+        </div>
     </div>
 </section>
+<!-- END HERO SECTION -->
+
 <!-- SLIDE 2: NOW SHOWING CAROUSEL (CHUYỂN SANG SWIPER) -->
 <section class="web-movie-slide desktop" style="background:transparent; min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
     <!-- Heading MOVIES hiện đại, nổi bật, căn giữa toàn section -->
@@ -255,7 +257,7 @@
                     <!-- Swiper -->
                     <div class="swiper nowshowing-swiper">
                         <div class="swiper-wrapper">
-                            @foreach (var movie in movies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                            @foreach (var movie in movies)
                             {
                                 <div class="swiper-slide" style="padding:0 10px;">
                                     <div class="web-movie-box" style="background:#181a20; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,0.13); width:100%; max-width:320px; margin:auto; display:flex; flex-direction:column; align-items:center; padding-bottom:18px;">
@@ -413,6 +415,68 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
     <script src="/js/app.js"></script>
     <script>
+        function getYoutubeEmbedUrl(url) {
+            if (!url) return '';
+            if (url.includes('youtube.com/embed/')) return url;
+            const longPattern = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+            const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]+)/;
+            let match = url.match(longPattern);
+            if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+            match = url.match(shortPattern);
+            if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+            return url;
+        }
+        // Hiệu ứng chuyển cảnh khi đổi phim
+        function updateHeroSection(data) {
+            const $hero = $('#hero-content');
+            const $bg = $('#hero-bg');
+            const $info = $('.hero-info');
+            const $trailer = $('#hero-trailer-preview');
+            $hero.css('opacity', 1);
+            $bg.css('transition', 'opacity 0.5s');
+            $info.css('transition', 'opacity 0.4s');
+            $trailer.css('transition', 'opacity 0.4s');
+            $bg.css('opacity', 0);
+            $info.css('opacity', 0);
+            $trailer.css('opacity', 0);
+            setTimeout(function() {
+                $('.hero-bg img').attr('src', data.largeimage);
+                $bg.css('opacity', 1);
+                // Update info
+                $('.hero-title').text(data.name);
+                $('.hero-meta span').eq(0).html('<i class="bx bxs-time"></i> ' + data.duration + "'");
+                $('.hero-meta span').eq(1).text(data.versions || 'HD');
+                $('.hero-desc').text(data.content);
+                $('.hero-extra-info').html(
+                    `<div><b>Starring:</b> ${data.actor}</div>`+
+                    `<div><b>This show is:</b> ${data.types}</div>`+
+                    `<div><b>Director:</b> ${data.director}</div>`
+                );
+                // Update trailer preview
+                $trailer.html(
+                    `<img src="${data.largeimage}" alt="Trailer preview" style="width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.85);">`+
+                    `<button class="trailer-play-btn" id="hero-trailer-play-btn" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.55); border:none; border-radius:50%; width:90px; height:90px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.2s;"><i class="fa fa-play" style="font-size:3rem; color:#ffe066;"></i></button>`
+                );
+                $info.css('opacity', 1);
+                $trailer.css('opacity', 1);
+            }, 350);
+            $hero.animate({opacity:0}, 220, function() {
+                $hero.animate({opacity:1}, 320);
+            });
+        }
+        // XÓA sự kiện click này vì xung đột với sự kiện click bên dưới
+        // Play trailer
+        $(document).on('click', '#hero-trailer-play-btn', function() {
+            const $item = $('.hero-carousel-item.active');
+            const trailerUrl = $item.length ? $item.data('movie-trailerurl') : '@Model?.TrailerUrl';
+            const embedUrl = getYoutubeEmbedUrl(trailerUrl);
+            if (!embedUrl) return;
+            const $preview = $('#hero-trailer-preview');
+            $preview.fadeOut(200, function() {
+                $preview.html(`<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="width:100%; height:100%; border-radius:18px;"></iframe>`);
+                $preview.fadeIn(200);
+            });
+        });
         $(document).ready(function() {
             // Khởi tạo Swiper cho slide 2
             const nowshowingSwiper = new Swiper('.nowshowing-swiper', {
@@ -449,24 +513,124 @@
                 }
             });
 
-            // Giữ nguyên OwlCarousel cho slide 1
-            $('#movies-carousel').owlCarousel({
-                items: 3,
-                margin: 28,
-                nav: true,
-                dots: true,
+            // Khởi tạo OwlCarousel cho hero-owl-carousel (CÓ nav, tự động chuyển slide)
+            var $heroOwl = $('#hero-owl-carousel');
+            $heroOwl.owlCarousel({
+                items: 5,
                 loop: true,
-                slideBy: 3,
-                navText: [
-                    '<span style="font-size:2.1rem; color:#ffe066; background:rgba(0,0,0,0.18); border-radius:50%; padding:0 12px;">&#8249;</span>',
-                    '<span style="font-size:2.1rem; color:#ffe066; background:rgba(0,0,0,0.18); border-radius:50%; padding:0 12px;">&#8250;</span>'
-                ],
-                responsive: {
-                    0: { items: 1, slideBy: 1 },
-                    600: { items: 2, slideBy: 2 },
-                    1000: { items: 3, slideBy: 3 }
-                }
+                margin: 36,
+                nav: false, // Sử dụng nav custom ngoài
+                dots: false,
+                autoplay: false,
+                smartSpeed: 500,
+                center: true
+            });
+
+            // --- Đồng bộ hero và carousel ---
+            function syncHeroWithCarousel(idx) {
+                var $items = $heroOwl.find('.owl-item .hero-carousel-item');
+                if (idx < 0) idx = $items.length - 1;
+                if (idx >= $items.length) idx = 0;
+                var $target = $items.eq(idx);
+                $('.hero-carousel-item').removeClass('active').css({'filter':'brightness(0.5) grayscale(0.2)','box-shadow':'none','border':'2px solid #444'});
+                $target.addClass('active').css({'filter':'none','box-shadow':'0 0 0 7px #ffe066, 0 4px 24px rgba(255,224,102,0.13)','border':'4px solid #ffe066'});
+                const data = {
+                    id: $target.data('movie-id'),
+                    name: $target.data('movie-name'),
+                    duration: $target.data('movie-duration'),
+                    versions: $target.data('movie-versions'),
+                    content: $target.data('movie-content'),
+                    actor: $target.data('movie-actor'),
+                    types: $target.data('movie-types'),
+                    director: $target.data('movie-director'),
+                    largeimage: $target.data('movie-largeimage'),
+                    trailerurl: $target.data('movie-trailerurl')
+                };
+                updateHeroSection(data);
+            }
+
+            // --- Tự động chuyển slide ---
+            var autoSlideTimer = null;
+            var autoSlideInterval = 5000;
+            var userInteracted = false;
+            function startAutoSlide() {
+                if (autoSlideTimer) clearInterval(autoSlideTimer);
+                autoSlideTimer = setInterval(function() {
+                    if (!userInteracted) {
+                        $('#hero-owl-next').trigger('click');
+                    } else {
+                        // Nếu user vừa thao tác, đợi 15s rồi mới tự động lại
+                        userInteracted = false;
+                        clearInterval(autoSlideTimer);
+                        setTimeout(function() {
+                            userInteracted = false;
+                            startAutoSlide();
+                        }, 15000);
+                    }
+                }, autoSlideInterval);
+            }
+            startAutoSlide();
+
+            // --- Nút next/prev ---
+            $('#hero-owl-next').on('click', function() {
+                userInteracted = true;
+                $heroOwl.trigger('next.owl.carousel');
+            });
+            $('#hero-owl-prev').on('click', function() {
+                userInteracted = true;
+                $heroOwl.trigger('prev.owl.carousel');
+            });
+
+            // --- Click chọn movie ---
+            $(document).on('click', '.hero-carousel-item', function() {
+                userInteracted = true;
+                var idx = $heroOwl.find('.owl-item .hero-carousel-item').index($(this));
+                $heroOwl.trigger('to.owl.carousel', [idx, 300, true]);
+                // KHÔNG gọi syncHeroWithCarousel ở đây, để event 'changed.owl.carousel' xử lý đồng bộ hero và active
+            });
+
+            // --- Khi carousel tự chuyển slide hoặc next/prev ---
+            $heroOwl.on('changed.owl.carousel', function(event) {
+                // Lấy index của item ở giữa (item đang được focus)
+                var idx = event.item.index;
+                // Nếu có center mode, idx là index của item ở giữa
+                // Nếu không, idx là index của item đầu tiên trong viewport
+                // Đảm bảo không bị out of range
+                var $items = $heroOwl.find('.owl-item .hero-carousel-item');
+                if (idx < 0) idx = 0;
+                if (idx >= $items.length) idx = $items.length - 1;
+                syncHeroWithCarousel(idx);
             });
         });
+        // (Đã loại bỏ hiệu ứng parallax scroll)
+        // Drag-scroll for hero-carousel
+        (function() {
+            const carousel = document.getElementById('hero-carousel');
+            let isDown = false;
+            let startX, scrollLeft;
+            if (carousel) {
+                carousel.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    carousel.classList.add('dragging');
+                    startX = e.pageX - carousel.offsetLeft;
+                    scrollLeft = carousel.scrollLeft;
+                });
+                carousel.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    carousel.classList.remove('dragging');
+                });
+                carousel.addEventListener('mouseup', () => {
+                    isDown = false;
+                    carousel.classList.remove('dragging');
+                });
+                carousel.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - carousel.offsetLeft;
+                    const walk = (x - startX) * 1.2; // tốc độ kéo
+                    carousel.scrollLeft = scrollLeft - walk;
+                });
+            }
+        })();
     </script>
 }
