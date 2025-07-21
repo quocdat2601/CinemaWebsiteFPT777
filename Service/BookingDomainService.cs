@@ -279,12 +279,16 @@ namespace MovieTheater.Service
                 food = foodDiscounts
             };
             string promotionDiscountJson = JsonConvert.SerializeObject(promotionDiscountObj);
+            // Tính lại tổng food sau giảm
+            decimal totalFoodDiscounted = model.SelectedFoods?.Sum(f => f.Price * f.Quantity) ?? 0;
+            decimal finalTotalPrice = priceResult.SeatTotalAfterDiscounts + totalFoodDiscounted;
+            if (finalTotalPrice < 0) finalTotalPrice = 0;
             var invoice = new Invoice
             {
                 InvoiceId = invoiceId,
                 AccountId = userId,
                 BookingDate = DateTime.Now,
-                TotalMoney = priceResult.TotalPrice,
+                TotalMoney = finalTotalPrice, // <-- luôn là seat sau giảm + food sau giảm - discount
                 MovieShowId = model.MovieShowId,
                 Status = (isTestSuccess == "true") ? InvoiceStatus.Completed : InvoiceStatus.Incomplete,
                 Seat = seatNames,
@@ -408,9 +412,11 @@ namespace MovieTheater.Service
                 }
                 catch { promotionDiscountPercent = 0; }
             }
+            var versionMulti = movieShow?.Version?.Multi ?? 1;
             var seatDetails = scheduleSeats.Select(ss => {
                 var s = ss.Seat;
-                decimal originalPrice = s?.SeatType?.PricePercent ?? 0;
+                decimal basePrice = s?.SeatType?.PricePercent ?? 0;
+                decimal originalPrice = basePrice * versionMulti; // <-- nhân hệ số version
                 decimal discount = Math.Round(originalPrice * (promotionDiscountPercent / 100m));
                 decimal priceAfterPromotion = originalPrice - discount;
                 return new SeatDetailViewModel
@@ -418,7 +424,7 @@ namespace MovieTheater.Service
                     SeatId = s?.SeatId,
                     SeatName = s?.SeatName,
                     SeatType = s?.SeatType?.TypeName,
-                    Price = priceAfterPromotion,
+                    Price = originalPrice,
                     OriginalPrice = originalPrice,
                     PromotionDiscount = discount,
                     PriceAfterPromotion = priceAfterPromotion,
@@ -715,6 +721,11 @@ namespace MovieTheater.Service
                 food = foodDiscounts
             };
             string promotionDiscountJson = JsonConvert.SerializeObject(promotionDiscountObj);
+            // Tính lại tổng food sau giảm
+            decimal totalFoodDiscounted = model.SelectedFoods?.Sum(f => f.Price * f.Quantity) ?? 0;
+            decimal finalTotalPrice = priceResult.SeatTotalAfterDiscounts + totalFoodDiscounted;
+            // Trừ tiếp voucher, điểm nếu cần (đã tính trong priceResult.SeatTotalAfterDiscounts)
+            if (finalTotalPrice < 0) finalTotalPrice = 0;
             var invoice = new Invoice
             {
                 InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
@@ -722,7 +733,7 @@ namespace MovieTheater.Service
                 AddScore = priceResult.AddScore,
                 BookingDate = DateTime.Now,
                 Status = InvoiceStatus.Completed,
-                TotalMoney = priceResult.TotalPrice, // Save seat + food total
+                TotalMoney = finalTotalPrice, // <-- luôn là seat sau giảm + food sau giảm - discount
                 UseScore = priceResult.UseScore,
                 Seat = string.Join(", ", seatViewModels.Select(s => s.SeatName)),
                 SeatIds = string.Join(",", seatViewModels.Select(s => s.SeatId)),
@@ -914,8 +925,6 @@ namespace MovieTheater.Service
                     PromotionName = discountLevel > 0 ? "Promotion" : null
                 };
             }).ToList();
-            decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            // Calculate discounts and totals
             decimal subtotal = seats.Sum(s => s.Price);
             decimal rankDiscount = 0;
             if (invoice.RankDiscountPercentage.HasValue && invoice.RankDiscountPercentage.Value > 0)
@@ -936,8 +945,10 @@ namespace MovieTheater.Service
                     voucherAmount = voucher.Value;
                 }
             }
+            decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
             decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
             if (totalPrice < 0) totalPrice = 0;
+            decimal grandTotal = totalPrice + totalFoodPrice;
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -955,7 +966,7 @@ namespace MovieTheater.Service
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
                 VoucherAmount = voucherAmount,
-                TotalPrice = totalPrice,
+                TotalPrice = grandTotal,
                 RankDiscountPercent = invoice.RankDiscountPercentage ?? 0,
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice
