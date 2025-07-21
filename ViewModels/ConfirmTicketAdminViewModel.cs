@@ -8,7 +8,8 @@ namespace MovieTheater.ViewModels
         // Booking details similar to ConfirmBookingViewModel
         public ConfirmBookingViewModel BookingDetails { get; set; }
 
-        // Member details for admin confirmation
+        // Customer type and details for admin confirmation
+        public string CustomerType { get; set; } = "member"; // "member" or "guest"
         public string MemberAccountId { get; set; }
         public string MemberIdInput { get; set; } // For input by admin
         public string MemberId { get; set; } // Displayed if member found

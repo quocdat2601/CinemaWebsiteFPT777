@@ -20,7 +20,7 @@ namespace MovieTheater.Repository
         public async Task<IEnumerable<Food>> GetByCategoryAsync(string category)
         {
             return await _context.Foods
-                .Where(f => f.Category == category)
+                .Where(f => f.Category.ToLower() == category.ToLower())
                 .OrderByDescending(f => f.CreatedDate)
                 .ToListAsync();
         }

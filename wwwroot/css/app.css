@@ -55,11 +55,32 @@ img {
     flex-direction: column;
     align-items: center;
     padding-bottom: 18px;
-    transition: box-shadow 0.2s, transform 0.2s;
+    transition: box-shadow 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
 }
 .web-movie-box:hover {
-    box-shadow: 0 8px 32px rgba(255,224,102,0.18);
-    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 12px 36px rgba(255,224,102,0.25), 0 2px 12px rgba(192,57,43,0.10);
+    transform: translateY(-10px) scale(1.05);
+}
+.web-movie-box .hover-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(120deg, rgba(255,224,102,0.10) 0%, rgba(192,57,43,0.13) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 2;
+    border-radius: 18px;
+}
+.web-movie-box:hover .hover-overlay {
+    opacity: 1;
+}
+.web-movie-box img {
+    transition: transform 0.3s;
+}
+.web-movie-box:hover img {
+    transform: scale(1.07);
 }
 
 .swiper-slide {
@@ -111,7 +132,7 @@ img {
     padding: 0 20px;
 }
 
-.nav-menu li ~ li {
+.nav-menu li~li {
     margin-left: 30px;
 }
 
@@ -139,6 +160,27 @@ a.movie-item:hover {
     display: inline-flex;
     position: relative;
     align-items: center;
+}
+
+.btn-hover {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+}
+.btn-hover .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple-effect 0.5s linear;
+    background-color: rgba(255,224,102,0.35);
+    pointer-events: none;
+    z-index: 3;
+}
+@keyframes ripple-effect {
+    to {
+        transform: scale(2.5);
+        opacity: 0;
+    }
 }
 
 .btn-hover::before {
@@ -293,7 +335,7 @@ a.movie-item:hover {
     color: var(--main-color);
 }
 
-.movie-info ~ .movie-info {
+.movie-info~.movie-info {
     margin-left: 5px;
 }
 
@@ -527,7 +569,7 @@ footer a.logo:hover {
     color: var(--text-color);
 }
 
-.social-item ~ .social-item {
+.social-item~.social-item {
     margin-left: 20px;
 }
 
@@ -653,21 +695,30 @@ footer .content {
     }
 }
 @media only screen and (max-width: 600px) {
-    .container {
-        width: 100%;
-        padding: 0 1px;
-        margin: 1rem auto;
-    }
-    .web-movie-box {
-        max-width: 98vw;
+    .btn, .btn-hover {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 5px;
+        max-width: 110px;
         min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .swiper-slide {
-        padding: 0 1px;
+    .web-movie-box .btn, .web-movie-box .btn-hover {
+        max-width: 90px;
+        padding: 0.3rem 0.4rem;
     }
-    .modern-movie-heading span {
-        font-size: 1.1rem;
-        padding: 0.1em 0.2em;
+    .btn span, .btn-hover span {
+        display: inline;
+    }
+}
+@media only screen and (max-width: 400px) {
+    .btn span, .btn-hover span {
+        display: none !important;
+    }
+    .btn i, .btn-hover i {
+        margin-right: 0 !important;
     }
 }
 
@@ -701,96 +752,26 @@ footer.section {
     overflow-x: auto;
 }
 
-/* Profile Dropdown Custom Style */
-.profile-dropdown-menu {
-    min-width: 190px;
-    border-radius: 18px !important;
-    box-shadow: 0 8px 32px 0 rgba(30,41,59,0.18), 0 0 0 3px #e3f0ff33;
-    padding: 0.6rem 0;
-    background: linear-gradient(135deg, #f7faff 60%, #e3f0ff 100%);
-    border: none;
-    animation: fadeInDown 0.25s;
-    border: 1.5px solid #e3f0ff;
-}
-.profile-dropdown-item {
-    font-size: 1.08rem;
-    padding: 0.8rem 1.7rem;
-    border-radius: 12px;
-    color: #1a237e;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    font-weight: 600;
+.skeleton-box .skeleton-img,
+.skeleton-box .skeleton-line,
+.skeleton-box .skeleton-btn {
     position: relative;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
+    overflow: hidden;
+    background: #333;
 }
-.profile-dropdown-item i {
-    font-size: 1.25rem;
-    color: #fff;
-    background: linear-gradient(135deg, #1769fa 60%, #4e54c8 100%);
-    border-radius: 50%;
-    padding: 6px;
-    min-width: 30px;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px #1769fa22;
-    transition: background 0.18s, color 0.18s;
+.skeleton-box .skeleton-img::after,
+.skeleton-box .skeleton-line::after,
+.skeleton-box .skeleton-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; height: 100%; width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,224,102,0.13), transparent);
+    animation: skeleton-loading 1.2s infinite;
 }
-.profile-dropdown-item:hover, .profile-dropdown-item:focus {
-    background: linear-gradient(90deg, #e3f0ff 0%, #d0e6ff 100%);
-    color: #1769fa;
-    box-shadow: 0 2px 12px #1769fa22;
-}
-.profile-dropdown-item:hover i, .profile-dropdown-item:focus i {
-    background: linear-gradient(135deg, #fff 60%, #e3f0ff 100%);
-    color: #1769fa;
-}
-.profile-dropdown-menu .dropdown-divider {
-    margin: 0.2rem 0;
-    border-top: 1.5px solid #e5e7eb;
-}
-@keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes skeleton-loading {
+    100% { left: 100%; }
 }
 
-/* Stepper 3 bước đặt vé */
-.booking-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 30px 0 20px 0;
-}
-.booking-stepper .step {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #8fd14f;
-  color: #8fd14f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 18px;
-  transition: background 0.3s, color 0.3s;
-}
-.booking-stepper .step.active {
-  background: linear-gradient(135deg, #8fd14f 60%, #b4ec51 100%);
-  color: #fff;
-  border: 2px solid #8fd14f;
-}
-.booking-stepper .step-line {
-  width: 60px;
-  height: 4px;
-  background: #e0e0e0;
-  margin: 0 8px;
-  border-radius: 2px;
-  transition: background 0.3s;
-}
-.booking-stepper .step-line.active {
-  background: #8fd14f;
+.web-movie-box .content .name {
+    margin-bottom: 0 !important;
 }

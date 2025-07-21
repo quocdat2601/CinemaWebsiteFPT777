@@ -177,16 +177,16 @@
             @if (Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table id="voucher-table" class="table table-hover">
                         <thead class="table-light">
                             <tr>
                                 <th>Image</th>
-                                <th>Voucher ID</th>
+                                <th class="sortable" data-sort="voucherid">Voucher ID <span id="sortIconVoucherId"></span></th>
                                 <th>Code</th>
-                                <th>Account ID</th>
-                                <th>Value</th>
-                                <th>Created Date</th>
-                                <th>Expiry Date</th>
+                                <th class="sortable" data-sort="account">Account ID <span id="sortIconAccount"></span></th>
+                                <th class="sortable" data-sort="value">Value <span id="sortIconValue"></span></th>
+                                <th class="sortable" data-sort="created">Created Date <span id="sortIconCreated"></span></th>
+                                <th class="sortable" data-sort="expiry">Expiry Date <span id="sortIconExpiry"></span></th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -389,33 +389,78 @@
     .badge {
         font-size: 0.75em;
     }
+
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+    }
 </style>
 
 <script>
-    $(document).ready(function() {
-        // Image modal functionality
-        $('#imageModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var image = button.data('image');
-            var code = button.data('code');
-            var modal = $(this);
-            modal.find('#modalImage').attr('src', image);
-            modal.find('#modalImageCode').text('Code: ' + code);
-        });
+(function() {
+    let currentSortVoucher = { by: '', dir: 'asc', param: '' };
 
-        // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+    $(document).on('click', '#voucher-table .sortable', function() {
+        const sortBy = $(this).data('sort');
+        if (currentSortVoucher.by === sortBy) {
+            currentSortVoucher.dir = currentSortVoucher.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortVoucher.by = sortBy;
+            currentSortVoucher.dir = 'asc';
+        }
+        let sortParam = '';
+        if (sortBy === 'voucherid') sortParam = currentSortVoucher.dir === 'asc' ? 'voucherid_asc' : 'voucherid_desc';
+        if (sortBy === 'account') sortParam = currentSortVoucher.dir === 'asc' ? 'account_az' : 'account_za';
+        if (sortBy === 'value') sortParam = currentSortVoucher.dir === 'asc' ? 'value_asc' : 'value_desc';
+        if (sortBy === 'created') sortParam = currentSortVoucher.dir === 'asc' ? 'created_asc' : 'created_desc';
+        if (sortBy === 'expiry') sortParam = currentSortVoucher.dir === 'asc' ? 'expiry_asc' : 'expiry_desc';
+        currentSortVoucher.param = sortParam;
+        searchVouchers();
+        updateSortIconsVoucher();
     });
 
-    function searchVouchers() {
+    window.searchVouchers = function() {
         const keyword = document.getElementById('searchKeyword').value;
         const status = document.getElementById('statusFilter').value;
         const expiry = document.getElementById('expiryFilter').value;
-        loadTab('VoucherMg', keyword, status, expiry);
+        loadTab('VoucherMg', { keyword, statusFilter: status, expiryFilter: expiry, sortBy: currentSortVoucher.param });
     }
+
+    function updateSortIconsVoucher() {
+        $('#sortIconVoucherId, #sortIconAccount, #sortIconValue, #sortIconCreated, #sortIconExpiry').html('');
+        if (currentSortVoucher.by === 'voucherid') {
+            $('#sortIconVoucherId').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortVoucher.by === 'account') {
+            $('#sortIconAccount').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortVoucher.by === 'value') {
+            $('#sortIconValue').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortVoucher.by === 'created') {
+            $('#sortIconCreated').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortVoucher.by === 'expiry') {
+            $('#sortIconExpiry').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
+        }
+    }
+})();
+
+    // Image modal functionality
+    $('#imageModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var image = button.data('image');
+        var code = button.data('code');
+        var modal = $(this);
+        modal.find('#modalImage').attr('src', image);
+        modal.find('#modalImageCode').text('Code: ' + code);
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 
     // Voucher details function
     function viewVoucherDetails(voucherId) {

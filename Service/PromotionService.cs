@@ -133,6 +133,18 @@ namespace MovieTheater.Service
                             default: return false;
                         }
                         break;
+                    case "scheduleshow":
+                    case "scheduleshowdate":
+                        if (!DateTime.TryParse(condition.TargetValue, out DateTime scheduleTarget)) return false;
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": if (context.ShowDate.Date != scheduleTarget.Date) return false; break;
+                            case "!=": if (context.ShowDate.Date == scheduleTarget.Date) return false; break;
+                            case ">=": if (!(context.ShowDate.Date >= scheduleTarget.Date)) return false; break;
+                            case "<=": if (!(context.ShowDate.Date <= scheduleTarget.Date)) return false; break;
+                            default: return false;
+                        }
+                        break;
                     case "accountid":
                         // Nếu chưa chọn member, loại bỏ promotion này
                         if (string.IsNullOrEmpty(context.MemberId)) return false;

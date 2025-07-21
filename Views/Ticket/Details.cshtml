@@ -35,7 +35,11 @@
     {
         rankDiscount = subtotal * (rankDiscountPercent / 100m);
     }
-
+    decimal runningTotal = subtotal + totalFoodPrice;
+    if (rankDiscount > 0) runningTotal -= rankDiscount;
+    if (Model.VoucherAmount > 0) runningTotal -= Model.VoucherAmount ?? 0;
+    if (useScore > 0) runningTotal -= usedScoreValue;
+    if (runningTotal < 0) runningTotal = 0;
 }
 <style>
     .ticket-success-header {
@@ -262,7 +266,17 @@
                                     <tr>
                                         <td>@food.Name</td>
                                         <td>@food.Quantity</td>
-                                        <td>@food.Price.ToString("N0") VND</td>
+                                        <td>
+                                            @if (food.OriginalPrice > food.Price)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
                                         <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
                                     </tr>
                                 }
@@ -312,7 +326,7 @@
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">
                                     <td class="ticket-total-label">Total Amount</td>
-                                    <td class="ticket-total-value text-end">@totalPrice VND</td>
+                                    <td class="ticket-total-value text-end">@runningTotal.ToString("N0") VND</td>
                                 </tr>
                                 @if (addScore > 0)
                                 {

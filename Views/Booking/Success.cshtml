@@ -6,7 +6,7 @@
     var seatDetails = booking.SelectedSeats ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
     var selectedFoods = Model.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
     var totalFoodPrice = Model.TotalFoodPrice;
-    var subtotal = Model.Subtotal;
+    var subtotal = seatDetails.Sum(s => s.PriceAfterPromotion ?? s.Price); // Tổng giá seat sau khi đã giảm
     var rankDiscount = Model.RankDiscount;
     var voucherAmount = Model.VoucherAmount;
     var usedScore = Model.UsedScore;
@@ -200,7 +200,7 @@
                                             @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
                                             {
                                                 <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
                                             }
                                             else if (seat.OriginalPrice.HasValue)
                                             {
@@ -235,7 +235,17 @@
                                     <tr>
                                         <td>@food.Name</td>
                                         <td>@food.Quantity</td>
-                                        <td>@food.Price.ToString("N0") VND</td>
+                                        <td>
+                                            @if (food.OriginalPrice > food.Price)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                                <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
                                         <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
                                     </tr>
                                 }
