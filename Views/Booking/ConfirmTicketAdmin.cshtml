@@ -432,8 +432,11 @@
                 $('#voucherAmountHidden').val('0');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
-                fetchEligiblePromotions(); // Call this function when member is selected
-                updateConfirmButtonState(); // <-- update button state
+                // Reload lại trang với memberId/accountId
+                var url = new URL(window.location.href);
+                url.searchParams.set('memberId', member.memberId);
+                url.searchParams.set('accountId', member.account.accountId);
+                window.location.href = url.toString();
             }
 
             // Confirm Ticket Admin Button Click

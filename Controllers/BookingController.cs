@@ -540,31 +540,22 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
         [Authorize(Roles = "Admin")]
         [HttpGet]
-        public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds, List<int>? foodIds = null, List<int>? foodQtys = null)
+        public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds, List<int>? foodIds = null, List<int>? foodQtys = null, string memberId = null, string accountId = null)
         {
-            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
-            {
-                TempData["ErrorMessage"] = "No seats were selected.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
-            }
+            // Build lại ViewModel với memberId nếu có
             var viewModel = await _bookingDomainService.BuildConfirmTicketAdminViewModelAsync(
-                movieShowId,
-                selectedSeatIds,
-                foodIds ?? new List<int>(),
-                foodQtys ?? new List<int>()
+                movieShowId, selectedSeatIds, foodIds, foodQtys, memberId
             );
-            if (viewModel == null)
+            if (!string.IsNullOrEmpty(memberId))
             {
-                TempData["ErrorMessage"] = "Unable to build confirmation view.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
+                var member = _context.Members.Include(m => m.Account).FirstOrDefault(m => m.MemberId == memberId);
+                viewModel.MemberId = member?.MemberId;
+                viewModel.MemberFullName = member?.Account?.FullName;
+                viewModel.MemberIdentityCard = member?.Account?.IdentityCard;
+                viewModel.MemberPhoneNumber = member?.Account?.PhoneNumber;
+                viewModel.MemberScore = member?.Score ?? 0;
+                viewModel.MemberAccountId = member?.AccountId;
             }
-            viewModel.ReturnUrl = Url.Action("Select", "Seat", new
-            {
-                movieId = viewModel.BookingDetails.MovieId,
-                date = viewModel.BookingDetails.ShowDate.ToString("yyyy-MM-dd"),
-                time = viewModel.BookingDetails.ShowTime,
-                versionId = viewModel.BookingDetails.VersionId
-            });
             return View("ConfirmTicketAdmin", viewModel);
         }
 

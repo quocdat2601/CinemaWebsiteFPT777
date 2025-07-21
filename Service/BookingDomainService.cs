@@ -96,7 +96,16 @@ namespace MovieTheater.Service
                 rankDiscountPercent = userAccount.Rank.DiscountPercentage ?? 0;
             }
 
-            var bestPromotion = _promotionService.GetBestPromotionForShowDate(showDate);
+            // Lấy promotion cho seat (chỉ lấy promotion không phải food)
+            var promotionContext = new PromotionCheckContext
+            {
+                MemberId = member?.MemberId, // <-- Đúng định dạng MBxxx
+                SeatCount = selectedSeatIds?.Count ?? 0,
+                MovieId = movie?.MovieId,
+                MovieName = movie?.MovieNameEnglish,
+                ShowDate = showDate.ToDateTime(TimeOnly.MinValue)
+            };
+            var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(promotionContext);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
 
             var seats = new List<SeatDetailViewModel>();
@@ -519,7 +528,7 @@ namespace MovieTheater.Service
         }
 
         // Build the view model for admin ticket confirmation (GET)
-        public async Task<ConfirmTicketAdminViewModel> BuildConfirmTicketAdminViewModelAsync(int movieShowId, List<int> selectedSeatIds, List<int> foodIds, List<int> foodQtys)
+        public async Task<ConfirmTicketAdminViewModel> BuildConfirmTicketAdminViewModelAsync(int movieShowId, List<int> selectedSeatIds, List<int> foodIds, List<int> foodQtys, string memberId = null)
         {
             var movieShow = _movieService.GetMovieShowById(movieShowId);
             if (movieShow == null) return null;
@@ -530,7 +539,7 @@ namespace MovieTheater.Service
             // --- PROMOTION LOGIC UPDATE START ---
             var promotionContext = new PromotionCheckContext
             {
-                MemberId = null, // member not selected yet
+                MemberId = memberId, // <-- truyền memberId mới
                 SeatCount = selectedSeatIds?.Count ?? 0,
                 MovieId = movie?.MovieId,
                 MovieName = movie?.MovieNameEnglish,
@@ -646,10 +655,18 @@ namespace MovieTheater.Service
             {
                 return new BookingResult { Success = false, ErrorMessage = "Member check is required before confirming." };
             }
-            var member = _context.Members
-                .Include(m => m.Account)
-                .ThenInclude(a => a.Rank)
-                .FirstOrDefault(m => m.MemberId == model.MemberId);
+            var member = _context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.MemberId == model.MemberId);
+            // Khi cần kiểm tra promotion, truyền đúng MemberId (MBxxx) vào context
+            var promotionContext = new PromotionCheckContext
+            {
+                MemberId = member?.MemberId, // hoặc null nếu chưa chọn member
+                SeatCount = model.BookingDetails.SelectedSeats?.Count ?? 0,
+                MovieId = model.BookingDetails.MovieId,
+                MovieName = model.BookingDetails.MovieName,
+                ShowDate = model.BookingDetails.ShowDate.ToDateTime(TimeOnly.MinValue)
+            };
+            var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(promotionContext);
+            decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
             if (member == null)
             {
                 return new BookingResult { Success = false, ErrorMessage = "Member not found. Please check member details again." };
