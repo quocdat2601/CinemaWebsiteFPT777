@@ -702,8 +702,8 @@ body {
 
 main {
     flex: 1 0 auto;
-    padding-bottom: 12rem;
-    padding-top: 5.5rem; /* 5.5rem ~ 88px, đảm bảo không bị che bởi header fixed */
+    padding-bottom: 0;
+    padding-top: 0; /* 5.5rem ~ 88px, đảm bảo không bị che bởi header fixed */
 }
 
 /* Footer Styles */
