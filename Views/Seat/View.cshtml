@@ -135,20 +135,44 @@
 
 
     var isAuthenticated = User.Identity.IsAuthenticated;
+    // Tự động thu nhỏ sơ đồ ghế nếu số lượng ghế lớn
+    bool isCompactSeatMap = Model.SeatWidth > 9 || Model.SeatLength > 9;
 }
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 
 <div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
+    <div class="text-start p-3">
+        <a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+    </div>
+    <h2 class="text-center mb-4">SELECT SEATS</h2>
+    <!-- Movie Info Block -->
+    <div class="row mb-4">
+        <div class="col-md-3 text-center">
+            @if (!string.IsNullOrEmpty(Model.MoviePoster))
+            {
+                <img src="@Model.MoviePoster" alt="@Model.MovieName" class="movie-poster" style="width: 180px; border-radius: 10px; box-shadow: 0 2px 12px #b6c6e322; margin-bottom: 10px;" />
+            }
+        </div>
+        <div class="col-md-9">
+            <h3 style="color: #6bcf3c; font-weight: bold;">@Model.MovieName</h3>
+            <div class="mb-2" style="color: #555;">@Model.MovieContent</div>
+            <div><b>Director:</b> @Model.MovieDirector</div>
+            <div><b>Actors:</b> @Model.MovieActor</div>
+            <div><b>Genre:</b> @Model.MovieGenre</div>
+            <div><b>Movie Start:</b> @(Model.MovieFromDate?.ToString("dd/MM/yyyy") ?? "-")</div>
+            <div><b>Duration:</b> @(Model.MovieDuration ?? 0) Minutes</div>
+        </div>
+    </div>
 <div id="mainBookingArea">
 	<div class="text-start p-3">
-		<a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+		min
 	</div>
 
 	<div class="row">
 		<!-- MAIN CONTENT AREA -->
 		<div class="col-lg-8 col-md-12">
-			<h2 class="text-center mb-4">SELECT SEATS</h2>
+			
 
 			<!-- SEAT SELECTION SECTION -->
 			<div class="seat-selection-section">
@@ -156,7 +180,7 @@
 					<div class="screen-label text-center mb-4">Screen</div>
 
 					<div class="seat-layout-bordered-area border p-3 mb-4">
-						<div class="seat-container">
+						<div class="seat-container @(isCompactSeatMap ? "seat-map-compact" : "")">
 							<table class="table table-bordered text-center">
 								<tbody>
 									@for (int row = 1; row <= Model.SeatLength; row++)

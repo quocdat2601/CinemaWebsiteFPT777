@@ -177,12 +177,21 @@
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding:0;">
                                     <img src="@(User.FindFirst("Image")?.Value ?? "/image/profile.jpg")" alt="Avatar" class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid #eee;">
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                <ul class="dropdown-menu dropdown-menu-end profile-dropdown-menu shadow-lg animate__animated animate__fadeIn" aria-labelledby="profileDropdown">
                                     @if (userRole == "Member")
                                     {
-                                        <li><a class="dropdown-item" href="/MyAccount/MainPage">View Profile</a></li>
+                                        <li>
+                                            <a class="dropdown-item profile-dropdown-item d-flex align-items-center gap-2" href="/MyAccount/MainPage">
+                                                <i class="fas fa-user-circle"></i> View Profile
+                                            </a>
+                                        </li>
                                     }
-                                    <li><a class="dropdown-item" href="/Account/Logout">Logout</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item profile-dropdown-item d-flex align-items-center gap-2" href="/Account/Logout">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         }

@@ -1158,3 +1158,18 @@ html {
 }
 @media (max-width: 768px) { .seat-icon .seat-svg { width: 1.7rem; height: 1.7rem; } }
 @media (max-width: 576px) { .seat-icon .seat-svg { width: 1.2rem; height: 1.2rem; } }
+
+/* Thu nhỏ sơ đồ ghế khi nhiều ghế */
+.seat-map-compact table.table td {
+    width: 32px;
+    height: 32px;
+    font-size: 10px;
+    padding: 2px !important;
+}
+.seat-map-compact .seat-icon {
+    font-size: 1.1rem !important;
+    padding: 1px;
+}
+.seat-map-compact .seat-label {
+    font-size: 0.55rem;
+}
