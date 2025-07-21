@@ -7,12 +7,12 @@
 }
 
 <div class="container mt-4">
-    <div class="text-start p-3">
-        <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })" class="btn btn-secondary">&larr; Return</a>
-    </div>
-    <h2 class="text-center mb-4">Confirm Your Booking</h2>
-
     <div class="card shadow p-4">
+        <h2 class="text-center mb-4">Confirm Your Booking</h2>
+
+        <div class="text-start p-3">
+            <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })" class="btn btn-secondary">&larr; Return</a>
+        </div>
 
         @* === Thông tin người dùng & phim chia 2 cột === *@
         <div class="row">

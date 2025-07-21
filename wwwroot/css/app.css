@@ -756,3 +756,41 @@ footer.section {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Stepper 3 bước đặt vé */
+.booking-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px 0 20px 0;
+}
+.booking-stepper .step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #8fd14f;
+  color: #8fd14f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  transition: background 0.3s, color 0.3s;
+}
+.booking-stepper .step.active {
+  background: linear-gradient(135deg, #8fd14f 60%, #b4ec51 100%);
+  color: #fff;
+  border: 2px solid #8fd14f;
+}
+.booking-stepper .step-line {
+  width: 60px;
+  height: 4px;
+  background: #e0e0e0;
+  margin: 0 8px;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+.booking-stepper .step-line.active {
+  background: #8fd14f;
+}

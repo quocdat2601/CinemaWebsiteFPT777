@@ -206,6 +206,10 @@
             </div>
         </nav>
     </header>
+@if (ViewContext.RouteData.Values["controller"]?.ToString() == "Booking")
+{
+    @Html.Partial("_BookingStepper")
+}
 
     <main role="main" class="fade-in" style="padding-top:0;">
         @RenderBody()
@@ -321,8 +325,8 @@
     <div class="container-fluid px-0">
         <div class="row footer-content py-4 justify-content-between">
             <!-- FOOTER -->
-            <div class="col-lg-4 d-flex flex-column align-items-start mb-3">
-                <h5 class="fw-bold mb-3">ABOUT FPT 777 >.0</h5>
+            <div class="col-lg-4 d-flex flex-column align-items-start mb-4">
+                <h5 class="fw-bold mb-3">ABOUT FPT 777</h5>
                 <div class="footer-underline mb-2"></div>
                 <ul class="list-unstyled">
                     <li><a href="#" class="footer-link">Theater System</a></li>
