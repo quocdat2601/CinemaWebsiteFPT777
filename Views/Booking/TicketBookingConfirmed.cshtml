@@ -32,6 +32,11 @@
         ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
     // Use the backend-calculated, already-discounted total
     decimal totalAmount = booking?.TotalPrice ?? 0;
+    decimal runningTotal = seatPrice + totalFoodPrice;
+    if (Model.RankDiscount > 0) runningTotal -= Model.RankDiscount;
+    if (Model.VoucherAmount > 0) runningTotal -= Model.VoucherAmount;
+    if (Model.UsedScoreValue > 0) runningTotal -= Model.UsedScoreValue;
+    if (runningTotal < 0) runningTotal = 0;
 }
 <style>
     .ticket-success-header {
@@ -339,7 +344,7 @@
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">
                                     <th style="white-space: nowrap;">Total Amount</th>
-                                    <th class="text-end" style="white-space: nowrap;">@Model.TotalPrice.ToString("N0") VND</th>
+                                    <th class="text-end" style="white-space: nowrap;">@runningTotal.ToString("N0") VND</th>
                                 </tr>
                                 @if (Model.AddedScore > 0)
                                 {
