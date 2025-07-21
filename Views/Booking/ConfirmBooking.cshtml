@@ -4,7 +4,9 @@
     decimal seatPrice = Model.SelectedSeats != null
         ? Model.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0)
         : 0;
+    ViewBag.CurrentStep = 4;
 }
+@Html.Partial("_BookingProgress")
 
 <div class="container mt-4">
     <div class="card shadow p-4">

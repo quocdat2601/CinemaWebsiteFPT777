@@ -1,5 +1,6 @@
 @{
     ViewBag.Title = "Payment Failed";
+    ViewBag.CurrentStep = 5;
     var movieName = TempData["MovieName"] as string;
     var screen = TempData["CinemaRoomName"] as string;
     var showDate = TempData["ShowDate"] as string;
@@ -16,6 +17,7 @@
     decimal voucherAmount = TempData["VoucherAmount"] != null ? Convert.ToDecimal(TempData["VoucherAmount"]) : 0;
     var seatDetails = ViewBag.SeatDetails as List<MovieTheater.ViewModels.SeatDetailViewModel> ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
 }
+@Html.Partial("_BookingProgress")
 <style>
     .ticket-success-header {
         background: #ffe3e3;

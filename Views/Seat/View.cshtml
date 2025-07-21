@@ -1,5 +1,10 @@
 ﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
+@{
+    ViewBag.CurrentStep = 3;
+}
+@Html.Partial("_BookingProgress")
+
 <style>
     .login-modal-overlay {
         position: fixed;
@@ -165,9 +170,7 @@
         </div>
     </div>
 <div id="mainBookingArea">
-	<div class="text-start p-3">
-		min
-	</div>
+	
 
 	<div class="row">
 		<!-- MAIN CONTENT AREA -->

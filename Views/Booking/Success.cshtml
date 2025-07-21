@@ -1,6 +1,7 @@
 ﻿@model MovieTheater.ViewModels.BookingSuccessViewModel
 @{
     ViewBag.Title = "Booking Successful";
+    ViewBag.CurrentStep = 5;
     var booking = Model.BookingDetails;
     var seatDetails = booking.SelectedSeats ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
     var selectedFoods = Model.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
@@ -22,6 +23,7 @@
     var bookingDate = booking.BookingDate?.ToString("yyyy-MM-dd HH:mm") ?? "";
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
 }
+@Html.Partial("_BookingProgress")
 
 @if ((seatDetails == null || !seatDetails.Any()) && TempData["SeatDetails"] != null)
 {
