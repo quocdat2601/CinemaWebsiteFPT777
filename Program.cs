@@ -140,6 +140,7 @@ namespace MovieTheater
                 );
             
             builder.Services.AddScoped<IQRPaymentService, QRPaymentService>();
+            builder.Services.AddScoped<IGuestInvoiceService, GuestInvoiceService>();
 
             builder.Services.AddHttpContextAccessor();
 

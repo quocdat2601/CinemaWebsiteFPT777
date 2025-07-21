@@ -545,7 +545,7 @@ namespace MovieTheater.Controllers
             if (selectedSeatIds == null || selectedSeatIds.Count == 0)
             {
                 TempData["ErrorMessage"] = "No seats were selected.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
+                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
             }
             var viewModel = await _bookingDomainService.BuildConfirmTicketAdminViewModelAsync(
                 movieShowId,
@@ -556,7 +556,7 @@ namespace MovieTheater.Controllers
             if (viewModel == null)
             {
                 TempData["ErrorMessage"] = "Unable to build confirmation view.";
-                return RedirectToAction("MainPage", new { tab = "TicketSellingMg" });
+                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
             }
             viewModel.ReturnUrl = Url.Action("Select", "Seat", new
             {
@@ -604,11 +604,15 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> ConfirmTicketForAdmin([FromBody] ConfirmTicketAdminViewModel model)
         {
+            _logger.LogInformation("ConfirmTicketForAdmin called");
             var result = await _bookingDomainService.ConfirmTicketForAdminAsync(model);
             if (!result.Success)
             {
+                _logger.LogWarning($"ConfirmTicketForAdmin failed: {result.ErrorMessage}");
                 return Json(new { success = false, message = result.ErrorMessage });
             }
+            
+            _logger.LogInformation($"ConfirmTicketForAdmin successful, InvoiceId: {result.InvoiceId}");
             await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
             return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = result.InvoiceId }) });
         }
@@ -623,19 +627,25 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public async Task<IActionResult> TicketBookingConfirmed(string invoiceId)
         {
+            _logger.LogInformation($"TicketBookingConfirmed called with invoiceId: {invoiceId}");
+            
             if (string.IsNullOrEmpty(invoiceId))
             {
+                _logger.LogWarning("InvoiceId is null or empty");
                 TempData["ErrorMessage"] = "Không có thông tin invoice.";
                 return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
             }
             
+            _logger.LogInformation($"Building view model for invoiceId: {invoiceId}");
             var viewModel = await _bookingDomainService.BuildTicketBookingConfirmedViewModelAsync(invoiceId);
             if (viewModel == null)
             {
+                _logger.LogWarning($"View model is null for invoiceId: {invoiceId}");
                 TempData["ErrorMessage"] = "Không tìm thấy thông tin booking.";
                 return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
             }
             
+            _logger.LogInformation($"Successfully built view model for invoiceId: {invoiceId}");
             return View("TicketBookingConfirmed", viewModel);
         }
 

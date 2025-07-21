@@ -246,16 +246,6 @@
             <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
         </div>
         
-        <div id="guestInfoSection" style="display: none;">
-            <label class="soft-label"><strong>Guest Information:</strong></label>
-            <div class="ticket-row">
-                <label for="guestName" class="soft-label">Full Name</label>
-                <input type="text" id="guestName" class="form-control" placeholder="Enter guest name" required style="max-width: 220px;" />
-                <label for="guestPhone" class="soft-label">Phone Number</label>
-                <input type="text" id="guestPhone" class="form-control" placeholder="Enter phone number" required style="max-width: 220px;" />
-            </div>
-            <div id="guestValidationMessage" class="text-danger mt-2" style="display: none;"></div>
-        </div>
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
             <div class="section-title">Member Information</div>
@@ -373,6 +363,8 @@
                 if (customerType === 'member') {
                     $('#memberSelectionSection').show();
                     $('#guestInfoSection').hide();
+                    $('#guestName').prop('disabled', true);
+                    $('#guestPhone').prop('disabled', true);
                     $('#memberDetails').hide();
                     // Clear guest info
                     $('#guestName').val('');
@@ -381,6 +373,8 @@
                 } else {
                     $('#memberSelectionSection').hide();
                     $('#guestInfoSection').show();
+                    $('#guestName').val('').prop('disabled', true);
+                    $('#guestPhone').val('').prop('disabled', true);
                     $('#memberDetails').hide();
                     // Clear member info
                     $('#memberId').val('');
@@ -472,20 +466,16 @@
                     $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
                     $('#createQRCodeBtn').prop('disabled', true); // Disable QR for members
                 } else {
-                    // Guest customer - check if both name and phone are filled
-                    var guestName = $('#guestName').val().trim();
-                    var guestPhone = $('#guestPhone').val().trim();
-                    guestSelected = guestName.length > 0 && guestPhone.length > 0;
-                    // For guests, no score validation needed
-                    $('#confirmTicketAdminBtn').prop('disabled', !guestSelected);
-                    $('#createQRCodeBtn').prop('disabled', !guestSelected);
+                    // Guest customer - KHÔNG cần validate tên/sđt
+                    $('#confirmTicketAdminBtn').prop('disabled', false);
+                    $('#createQRCodeBtn').prop('disabled', false);
                     
                     // Debug info
                     console.log('Guest validation:', {
-                        guestName: guestName,
-                        guestPhone: guestPhone,
-                        guestNameLength: guestName.length,
-                        guestPhoneLength: guestPhone.length,
+                        guestName: $('#guestName').val(),
+                        guestPhone: $('#guestPhone').val(),
+                        guestNameLength: $('#guestName').val().length,
+                        guestPhoneLength: $('#guestPhone').val().length,
                         guestSelected: guestSelected
                     });
                 }

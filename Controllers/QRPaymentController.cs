@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using MovieTheater.Models;
 using System.Text.Json;
 
 namespace MovieTheater.Controllers
@@ -10,11 +11,13 @@ namespace MovieTheater.Controllers
     public class QRPaymentController : Controller
     {
         private readonly IQRPaymentService _qrPaymentService;
+        private readonly IGuestInvoiceService _guestInvoiceService;
         private readonly ILogger<QRPaymentController> _logger;
 
-        public QRPaymentController(IQRPaymentService qrPaymentService, ILogger<QRPaymentController> logger)
+        public QRPaymentController(IQRPaymentService qrPaymentService, IGuestInvoiceService guestInvoiceService, ILogger<QRPaymentController> logger)
         {
             _qrPaymentService = qrPaymentService;
+            _guestInvoiceService = guestInvoiceService;
             _logger = logger;
         }
 
@@ -26,41 +29,53 @@ namespace MovieTheater.Controllers
         {
             try
             {
-                // Parse JSON data
                 var model = JsonSerializer.Deserialize<ConfirmTicketAdminViewModel>(modelData);
-                
-                // Tạo order ID
-                var orderId = $"GUEST_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-                
-                // Tạo thông tin đơn hàng
+                var context = (MovieTheaterContext)HttpContext.RequestServices.GetService(typeof(MovieTheaterContext));
+                var bookingService = (IBookingService)HttpContext.RequestServices.GetService(typeof(IBookingService));
+                var orderId = await bookingService.GenerateInvoiceIdAsync();
+                // Tổng tiền = seat + food
+                decimal totalAmount = model.BookingDetails.TotalPrice + model.TotalFoodPrice;
                 var orderInfo = $"Ve xem phim - {model.BookingDetails.MovieName}";
-                
-                // Tạo QR code data
-                var qrData = _qrPaymentService.GenerateQRCodeData(model.BookingDetails.TotalPrice, orderInfo, orderId);
-                
-                // Tạo QR code image
+                var qrData = _qrPaymentService.GenerateQRCodeData(totalAmount, orderInfo, orderId);
                 var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
-                
-                // Tạo view model
+                if (!context.Invoices.Any(i => i.InvoiceId == orderId))
+                {
+                    var invoice = new Invoice
+                    {
+                        InvoiceId = orderId,
+                        AccountId = "GUEST",
+                        AddScore = 0,
+                        BookingDate = DateTime.Now,
+                        Status = InvoiceStatus.Incomplete, // Pending
+                        TotalMoney = totalAmount,
+                        UseScore = 0,
+                        Seat = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName)),
+                        SeatIds = string.Join(",", model.BookingDetails.SelectedSeats.Select(s => s.SeatId)),
+                        MovieShowId = model.BookingDetails.MovieShowId,
+                        PromotionDiscount = "0",
+                        VoucherId = null,
+                        RankDiscountPercentage = 0
+                    };
+                    context.Invoices.Add(invoice);
+                    context.SaveChanges();
+                }
                 var viewModel = new QRPaymentViewModel
                 {
                     OrderId = orderId,
-                    Amount = model.BookingDetails.TotalPrice,
+                    Amount = totalAmount,
                     OrderInfo = orderInfo,
                     QRCodeData = qrData,
                     QRCodeImage = qrImage,
-                    ExpiredTime = DateTime.Now.AddMinutes(15), // 15 phút
+                    ExpiredTime = DateTime.Now.AddMinutes(15),
                     CustomerName = model.MemberFullName,
                     CustomerPhone = model.MemberPhoneNumber,
                     MovieName = model.BookingDetails.MovieName,
                     ShowTime = $"{model.BookingDetails.ShowDate:dd/MM/yyyy} {model.BookingDetails.ShowTime}",
                     SeatInfo = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName))
                 };
-
-                // Redirect to QR display page with full data
-                return RedirectToAction("DisplayQR", "QRPayment", new { 
+                return RedirectToAction("DisplayQR", "QRPayment", new {
                     orderId = orderId,
-                    amount = model.BookingDetails.TotalPrice,
+                    amount = totalAmount,
                     customerName = model.MemberFullName,
                     customerPhone = model.MemberPhoneNumber,
                     movieName = model.BookingDetails.MovieName,
@@ -71,7 +86,47 @@ namespace MovieTheater.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating QR code");
-                return Json(new { success = false, message = "Error creating QR code" });
+                return Json(new { success = false, message = "Error creating QR code: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Test QR code - để kiểm tra QR code có hoạt động không
+        /// </summary>
+        [HttpGet]
+        public IActionResult TestQR()
+        {
+            try
+            {
+                var testOrderId = $"TEST{DateTime.Now:MMddHHmm}";
+                var testAmount = 50000m;
+                var testOrderInfo = "Test QR Code Payment";
+                
+                // Tạo QR code VietQR thực tế
+                var qrData = _qrPaymentService.GenerateQRCodeData(testAmount, testOrderInfo, testOrderId);
+                var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
+                
+                var viewModel = new QRPaymentViewModel
+                {
+                    OrderId = testOrderId,
+                    Amount = testAmount,
+                    OrderInfo = testOrderInfo,
+                    QRCodeData = qrData,
+                    QRCodeImage = qrImage,
+                    ExpiredTime = DateTime.Now.AddMinutes(15),
+                    CustomerName = "Test Customer",
+                    CustomerPhone = "0123456789",
+                    MovieName = "Test Movie",
+                    ShowTime = "01/01/2024 20:00",
+                    SeatInfo = "A1, A2"
+                };
+
+                return View("TestQR", viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in TestQR");
+                return Content($"Error: {ex.Message}");
             }
         }
 
@@ -81,50 +136,193 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult DisplayQR(string orderId, decimal amount, string customerName, string customerPhone, string movieName, string showTime, string seatInfo)
         {
-            // Tạo thông tin đơn hàng
-            var orderInfo = $"Ve xem phim - {movieName}";
-            
-            // Tạo QR code data
-            var qrData = _qrPaymentService.GenerateQRCodeData(amount, orderInfo, orderId);
-            
-            // Tạo view model
-            var viewModel = new QRPaymentViewModel
-            {
-                OrderId = orderId,
-                Amount = amount,
-                OrderInfo = orderInfo,
-                QRCodeData = qrData,
-                QRCodeImage = _qrPaymentService.GetQRCodeImage(qrData),
-                ExpiredTime = DateTime.Now.AddMinutes(15),
-                CustomerName = customerName,
-                CustomerPhone = customerPhone,
-                MovieName = movieName,
-                ShowTime = showTime,
-                SeatInfo = seatInfo
-            };
-
-            return View(viewModel);
-        }
-
-        /// <summary>
-        /// Kiểm tra trạng thái thanh toán
-        /// </summary>
-        [HttpPost]
-        public IActionResult CheckPaymentStatus(string orderId)
-        {
             try
             {
-                // Trong thực tế, bạn sẽ kiểm tra với ngân hàng
-                // Ở đây chỉ là demo
-                var isPaid = _qrPaymentService.ValidatePayment(orderId, "DEMO_TRANSACTION");
+                _logger.LogInformation("DisplayQR called with orderId: {OrderId}, amount: {Amount}", orderId, amount);
                 
-                return Json(new { success = true, isPaid = isPaid });
+                // Tạo thông tin đơn hàng
+                var orderInfo = $"Ve xem phim - {movieName}";
+                
+                // Tạo QR code VietQR thực tế
+                var qrData = _qrPaymentService.GenerateVietQRCode(amount, orderInfo, orderId);
+                var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
+                _logger.LogInformation("VietQR image URL: {QRImage}", qrImage);
+                
+                // Tạo view model
+                var viewModel = new QRPaymentViewModel
+                {
+                    OrderId = orderId,
+                    Amount = amount,
+                    OrderInfo = orderInfo,
+                    QRCodeData = qrData,
+                    QRCodeImage = qrImage,
+                    ExpiredTime = DateTime.Now.AddMinutes(15),
+                    CustomerName = customerName,
+                    CustomerPhone = customerPhone,
+                    MovieName = movieName,
+                    ShowTime = showTime,
+                    SeatInfo = seatInfo
+                };
+
+                _logger.LogInformation("QR Payment view model created successfully");
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking payment status");
-                return Json(new { success = false, message = "Error checking payment status" });
+                _logger.LogError(ex, "Error in DisplayQR: {Message}", ex.Message);
+                
+                // Fallback view model với VietQR demo
+                var fallbackViewModel = new QRPaymentViewModel
+                {
+                    OrderId = orderId ?? "DEMO001",
+                    Amount = amount,
+                    OrderInfo = $"Ve xem phim - {movieName ?? "Demo Movie"}",
+                    QRCodeData = $"https://api.vietqr.io/image/VCB/1234567890/{amount}/Ve xem phim - {movieName ?? "Demo Movie"}",
+                    QRCodeImage = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://api.vietqr.io/image/VCB/1234567890/{amount}/Ve xem phim - {movieName ?? "Demo Movie"}",
+                    ExpiredTime = DateTime.Now.AddMinutes(15),
+                    CustomerName = customerName ?? "Demo Customer",
+                    CustomerPhone = customerPhone ?? "Demo Phone",
+                    MovieName = movieName ?? "Demo Movie",
+                    ShowTime = showTime ?? "Demo Time",
+                    SeatInfo = seatInfo ?? "Demo Seat"
+                };
+                
+                return View(fallbackViewModel);
             }
         }
+
+        /// <summary>
+        /// Kiểm tra trạng thái thanh toán - Demo version
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CheckPaymentStatus(string orderId, string modelData)
+        {
+            try
+            {
+                _logger.LogInformation("Demo CheckPaymentStatus called with orderId: {OrderId}", orderId);
+                
+                // Demo: Luôn trả về thanh toán thành công
+                var isPaid = true; // Demo payment success
+                
+                if (isPaid)
+                {
+                    try
+                    {
+                        // Parse model data từ JSON string
+                        var modelDataObj = JsonSerializer.Deserialize<JsonElement>(modelData);
+                        _logger.LogInformation("Demo JSON parsed successfully");
+                        
+                        // Lấy thông tin từ JSON một cách an toàn
+                        decimal totalPrice = 0;
+                        var seatNames = new List<string>();
+                        
+                        try
+                        {
+                            var bookingDetails = modelDataObj.GetProperty("BookingDetails");
+                            totalPrice = bookingDetails.GetProperty("TotalPrice").GetDecimal();
+                            
+                            var selectedSeats = bookingDetails.GetProperty("SelectedSeats");
+                            foreach (var seat in selectedSeats.EnumerateArray())
+                            {
+                                var seatName = seat.GetProperty("SeatName").GetString();
+                                if (!string.IsNullOrEmpty(seatName))
+                                {
+                                    seatNames.Add(seatName);
+                                }
+                            }
+                        }
+                        catch (Exception parseEx)
+                        {
+                            _logger.LogWarning("Demo JSON parsing warning: {Message}", parseEx.Message);
+                            // Sử dụng giá trị mặc định nếu parse lỗi
+                            totalPrice = 64000; // Default amount
+                            seatNames.Add("A10"); // Default seat
+                        }
+                        
+                        _logger.LogInformation("Demo TotalPrice: {TotalPrice}, Seat names: {SeatNames}", totalPrice, string.Join(", ", seatNames));
+                        
+                        // Kiểm tra xem invoice đã tồn tại chưa
+                        var existingInvoice = await _guestInvoiceService.GetInvoiceByOrderIdAsync(orderId);
+                        if (existingInvoice != null)
+                        {
+                            _logger.LogInformation("Invoice already exists for order: {OrderId}", orderId);
+                            return Json(new { 
+                                success = true, 
+                                isPaid = true, 
+                                message = "Payment already completed",
+                                invoiceId = existingInvoice.InvoiceId,
+                                redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = orderId })
+                            });
+                        }
+                        
+                        // Sử dụng GuestInvoiceService để lưu invoice
+                        var invoiceSuccess = await _guestInvoiceService.CreateGuestInvoiceAsync(
+                            orderId, 
+                            totalPrice, 
+                            "Demo Customer",
+                            "Demo Phone",
+                            "Demo Movie",
+                            "Demo Time",
+                            string.Join(", ", seatNames),
+                            1 // Default movieShowId
+                        );
+                        
+                        if (invoiceSuccess)
+                        {
+                            _logger.LogInformation("Guest invoice created successfully for order: {OrderId}", orderId);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Failed to create guest invoice for order: {OrderId}", orderId);
+                        }
+                        
+                        return Json(new { 
+                            success = true, 
+                            isPaid = true, 
+                            message = "Demo payment successful!",
+                            invoiceId = orderId,
+                            redirectUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" })
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Demo error processing payment data: {Message}", ex.Message);
+                        return Json(new { success = false, message = "Error processing demo payment data" });
+                    }
+                }
+                
+                return Json(new { success = true, isPaid = false, message = "Demo payment pending" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Demo error checking payment status: {Message}", ex.Message);
+                return Json(new { success = false, message = "Error checking demo payment status" });
+            }
+        }
+        
+        /// <summary>
+        /// Xác nhận thanh toán và cập nhật trạng thái Invoice trong database
+        /// </summary>
+        [HttpPost]
+        public IActionResult ConfirmPayment(string invoiceId)
+        {
+            try
+            {
+                var context = (MovieTheaterContext)HttpContext.RequestServices.GetService(typeof(MovieTheaterContext));
+                var invoice = context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
+                if (invoice != null)
+                {
+                    invoice.Status = InvoiceStatus.Completed; // hoặc tên enum tương ứng trạng thái đã thanh toán // Đã thanh toán
+                    context.SaveChanges();
+                    return Json(new { success = true });
+                }
+                return Json(new { success = false, message = "Không tìm thấy hóa đơn" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
     }
 } 
