@@ -46,6 +46,11 @@
         ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
     // Use the backend-calculated, already-discounted total
     decimal totalAmount = booking?.TotalPrice ?? 0;
+    decimal runningTotal = seatPrice + totalFoodPrice;
+    if (Model.RankDiscount > 0) runningTotal -= Model.RankDiscount;
+    if (Model.VoucherAmount > 0) runningTotal -= Model.VoucherAmount;
+    if (Model.UsedScoreValue > 0) runningTotal -= Model.UsedScoreValue;
+    if (runningTotal < 0) runningTotal = 0;
 }
 <style>
     .ticket-success-header {
@@ -190,6 +195,7 @@
         font-size: 1.1rem;
         color: #007bff;
     }
+
 </style>
 <div class="container mt-4">
     <div class="ticket-card card shadow p-0">
@@ -282,16 +288,18 @@
                                         <td>
                                             @food.Name
                                             @if (!string.IsNullOrEmpty(food.PromotionName))
-                                            {
-                                                <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                        {
+                                            <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
                                             }
                                         </td>
                                         <td>@food.Quantity</td>
                                         <td>
-                                            @if (food.PromotionDiscount > 0)
+                                            @if (food.PromotionDiscount > 0 && food.OriginalPrice > food.Price)
                                             {
-                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
-                                                <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                                <span style="white-space: nowrap;">
+                                                    <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                                    <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
+                                                </span>
                                             }
                                             else
                                             {
@@ -351,7 +359,7 @@
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">
                                     <th style="white-space: nowrap;">Total Amount</th>
-                                    <th class="text-end" style="white-space: nowrap;">@totalAmount.ToString("N0") VND</th>
+                                    <th class="text-end" style="white-space: nowrap;">@runningTotal.ToString("N0") VND</th>
                                 </tr>
                                 @if (Model.AddedScore > 0)
                                 {
