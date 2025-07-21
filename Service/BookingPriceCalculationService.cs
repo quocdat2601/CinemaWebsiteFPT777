@@ -28,6 +28,7 @@ namespace MovieTheater.Service
             var foodDetails = new List<FoodViewModel>();
             if (foods != null)
             {
+                // Giả sử không có promotion, truyền OriginalPrice = Price
                 foreach (var food in foods)
                 {
                     foodDetails.Add(new FoodViewModel
@@ -35,6 +36,9 @@ namespace MovieTheater.Service
                         FoodId = food.FoodId,
                         Name = food.Name,
                         Price = food.Price,
+                        OriginalPrice = food.Price,
+                        PromotionDiscount = 0,
+                        PromotionName = null,
                         Quantity = 1 // or set from elsewhere
                     });
                     totalFoodPrice += food.Price;
