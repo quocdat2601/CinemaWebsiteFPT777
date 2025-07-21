@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using MovieTheater.Repository;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
+using Microsoft.AspNetCore.Hosting;
 
 namespace MovieTheater.Controllers
 {//movie
@@ -17,13 +18,15 @@ namespace MovieTheater.Controllers
         private readonly ICinemaService _cinemaService;
         private readonly ILogger<MovieController> _logger;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext)
+        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext, IWebHostEnvironment webHostEnvironment)
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
             _logger = logger;
             _dashboardHubContext = dashboardHubContext;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         /// <summary>
@@ -127,7 +130,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Create")]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(MovieDetailViewModel model)
+        public async Task<IActionResult> Create(MovieDetailViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -142,6 +145,43 @@ namespace MovieTheater.Controllers
                 model.AvailableTypes = _movieService.GetAllTypes();
                 model.AvailableVersions = _movieService.GetAllVersions();
                 return View(model);
+            }
+
+            // Handle image uploads (LargeImageFile, SmallImageFile)
+            string largeImagePath = null;
+            string smallImagePath = null;
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "movies");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
+            {
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.LargeImageFile.CopyToAsync(fileStream);
+                }
+                largeImagePath = "/images/movies/" + uniqueFileName;
+            }
+            else
+            {
+                largeImagePath = "/images/movies/default-movie.jpg";
+            }
+
+            if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
+            {
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.SmallImageFile.CopyToAsync(fileStream);
+                }
+                smallImagePath = "/images/movies/" + uniqueFileName;
+            }
+            else
+            {
+                smallImagePath = "/images/movies/default-movie.jpg";
             }
 
             var selectedVersions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
@@ -159,8 +199,8 @@ namespace MovieTheater.Controllers
                 MovieProductionCompany = model.MovieProductionCompany,
                 Content = model.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
-                LargeImage = model.LargeImage,
-                SmallImage = model.SmallImage,
+                LargeImage = largeImagePath,
+                SmallImage = smallImagePath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
             };
@@ -168,7 +208,7 @@ namespace MovieTheater.Controllers
             if (_movieService.AddMovie(movie))
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
-                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
@@ -227,7 +267,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(string id, MovieDetailViewModel model)
+        public async Task<IActionResult> Edit(string id, MovieDetailViewModel model)
         {
             if (id != model.MovieId)
             {
@@ -254,47 +294,47 @@ namespace MovieTheater.Controllers
             }
 
             // Handle image uploads
-            string largeImagePath = existingMovie.LargeImage ?? "";
-            string smallImagePath = existingMovie.SmallImage ?? "";
+            string largeImagePath = existingMovie.LargeImage ?? "/images/movies/default-movie.jpg";
+            string smallImagePath = existingMovie.SmallImage ?? "/images/movies/default-movie.jpg";
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "movies");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
 
             // Process large image upload
             if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
             {
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                if (!Directory.Exists(uploadsFolder))
+                // Delete old image if exists and not default
+                if (!string.IsNullOrEmpty(existingMovie.LargeImage) && !existingMovie.LargeImage.Contains("default-movie.jpg"))
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingMovie.LargeImage.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
                 }
-
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    model.LargeImageFile.CopyTo(fileStream);
+                    await model.LargeImageFile.CopyToAsync(fileStream);
                 }
-
-                largeImagePath = "/image/" + uniqueFileName;
+                largeImagePath = "/images/movies/" + uniqueFileName;
             }
 
             // Process small image upload
             if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
             {
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                if (!Directory.Exists(uploadsFolder))
+                if (!string.IsNullOrEmpty(existingMovie.SmallImage) && !existingMovie.SmallImage.Contains("default-movie.jpg"))
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingMovie.SmallImage.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
                 }
-
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    model.SmallImageFile.CopyTo(fileStream);
+                    await model.SmallImageFile.CopyToAsync(fileStream);
                 }
-
-                smallImagePath = "/image/" + uniqueFileName;
+                smallImagePath = "/images/movies/" + uniqueFileName;
             }
 
             existingMovie.Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList();
@@ -361,7 +401,7 @@ namespace MovieTheater.Controllers
             if (_movieService.UpdateMovie(movie))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
-                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
@@ -612,14 +652,21 @@ namespace MovieTheater.Controllers
         }
         
         [HttpPost]
-        public async Task<IActionResult> DeleteAllMovieShows(string movieId)
+        public async Task<IActionResult> DeleteAllMovieShows([FromBody] MovieShowRequestDeleteAll request)
         {
-            var success = _movieService.DeleteAllMovieShows(movieId);
+            if (request == null || string.IsNullOrEmpty(request.MovieId))
+                return BadRequest("Missing movieId");
+            var success = _movieService.DeleteAllMovieShows(request.MovieId);
             if (success)
             {
                 return Ok();
             }
             return BadRequest("Could not delete all movie shows.");
+        }
+
+        public class MovieShowRequestDeleteAll
+        {
+            public string MovieId { get; set; }
         }
 
         [HttpGet]

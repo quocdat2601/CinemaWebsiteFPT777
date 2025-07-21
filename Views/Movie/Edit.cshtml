@@ -41,7 +41,7 @@
                         }
                         else
                         {
-                            <img id="smallImagePreview" src="#" alt="No image" width="200" height="250" style="display:none; margin-bottom:10px;" />
+                            <img id="smallImagePreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
                         }
                         <input type="file" class="form-control" asp-for="SmallImageFile" onchange="previewImage(this, 'smallImagePreview')" />
                         <span asp-validation-for="SmallImageFile" class="text-danger"></span>
@@ -55,7 +55,7 @@
                         }
                         else
                         {
-                            <img id="largeImagePreview" src="#" alt="No image" width="200" height="250" style="display:none; margin-bottom:10px;" />
+                            <img id="largeImagePreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
                         }
                         <input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
                         <span asp-validation-for="LargeImageFile" class="text-danger"></span>

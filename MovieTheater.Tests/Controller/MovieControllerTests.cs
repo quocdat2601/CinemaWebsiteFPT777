@@ -15,6 +15,7 @@ using ModelType = MovieTheater.Models.Type;
 using ModelVersion = MovieTheater.Models.Version;
 using MovieTheater.Hubs;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -24,10 +25,11 @@ namespace MovieTheater.Tests.Controller
         private readonly Mock<ICinemaService> _cinemaService = new();
         private readonly Mock<ILogger<MovieController>> _logger = new();
         private readonly Mock<IHubContext<DashboardHub>> _hubContext = new();
+        private readonly Mock<IWebHostEnvironment> _webHostEnvironment = new();
 
         private MovieController BuildController(ClaimsPrincipal user = null)
         {
-            var ctrl = new MovieController(_movieService.Object, _cinemaService.Object, _logger.Object, _hubContext.Object);
+            var ctrl = new MovieController(_movieService.Object, _cinemaService.Object, _logger.Object, _hubContext.Object, _webHostEnvironment.Object);
             if (user != null)
             {
                 ctrl.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } };
@@ -148,7 +150,7 @@ namespace MovieTheater.Tests.Controller
             _movieService.Setup(s => s.GetAllTypes()).Returns(new List<ModelType>());
             _movieService.Setup(s => s.GetAllVersions()).Returns(new List<ModelVersion>());
             // Act
-            var result = ctrl.Create(model) as ViewResult;
+            var result = ctrl.Create(model).GetAwaiter().GetResult() as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
@@ -166,7 +168,7 @@ namespace MovieTheater.Tests.Controller
             _movieService.Setup(s => s.GetAllTypes()).Returns(new List<ModelType>());
             _movieService.Setup(s => s.GetAllVersions()).Returns(new List<ModelVersion>());
             // Act
-            var result = ctrl.Create(model) as ViewResult;
+            var result = ctrl.Create(model).GetAwaiter().GetResult() as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
@@ -201,7 +203,7 @@ namespace MovieTheater.Tests.Controller
                 .Returns(Task.CompletedTask);
             _hubContext.Setup(x => x.Clients.All).Returns(clientProxyMock.Object);
             // Act
-            var result = ctrl.Create(model) as RedirectToActionResult;
+            var result = ctrl.Create(model).GetAwaiter().GetResult() as RedirectToActionResult;
             // Assert
             Assert.NotNull(result);
             Assert.Equal("MainPage", result.ActionName);
@@ -236,7 +238,7 @@ namespace MovieTheater.Tests.Controller
                 .Returns(Task.CompletedTask);
             _hubContext.Setup(x => x.Clients.All).Returns(clientProxyMock.Object);
             // Act
-            var result = ctrl.Create(model) as RedirectToActionResult;
+            var result = ctrl.Create(model).GetAwaiter().GetResult() as RedirectToActionResult;
             // Assert
             Assert.NotNull(result);
             Assert.Equal("MainPage", result.ActionName);
@@ -256,7 +258,7 @@ namespace MovieTheater.Tests.Controller
             _movieService.Setup(s => s.GetAllVersions()).Returns(new List<ModelVersion>());
             _movieService.Setup(s => s.AddMovie(It.IsAny<Movie>())).Returns(false);
             // Act
-            var result = ctrl.Create(model) as ViewResult;
+            var result = ctrl.Create(model).GetAwaiter().GetResult() as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
@@ -265,4 +267,4 @@ namespace MovieTheater.Tests.Controller
 
         // ... (Add similar Arrange/Act/Assert tests for Edit GET/POST, Delete GET/POST, MovieShow GET/POST, and all API endpoints, covering all branches as analyzed above) ...
     }
-} 
+}
