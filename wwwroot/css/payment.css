@@ -26,6 +26,7 @@ body::before {
     justify-content: center;
     padding: 2rem 0;
     background: transparent;
+    position: relative;
 }
 
     /* Animated Background */
@@ -152,6 +153,42 @@ body::before {
 .ticket-body {
     padding: 2rem;
     color: #e6edf3;
+}
+
+.ticket-body-horizontal {
+    display: flex;
+    flex-direction: row;
+    gap: 2.5rem;
+    justify-content: space-between;
+}
+.ticket-left, .ticket-center, .ticket-right {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+.ticket-left {
+    border-right: 2px dashed rgba(255,255,255,0.08);
+    padding-right: 1.5rem;
+}
+.ticket-center {
+    border-right: 2px dashed rgba(255,255,255,0.08);
+    padding: 0 1.5rem;
+}
+.ticket-right {
+    padding-left: 1.5rem;
+}
+@media (max-width: 991.98px) {
+    .ticket-body-horizontal {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .ticket-left, .ticket-center, .ticket-right {
+        border: none;
+        padding: 0;
+        min-width: unset;
+    }
 }
 
 /* Cinema Alert */
@@ -526,7 +563,12 @@ body::before {
 
 /* Payment Form Section */
 .payment-form-section {
-    margin-top: 2rem;
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+.payment-form-section .cinema-payment-btn {
+    min-width: 250px;
 }
 
 .payment-button-container {
@@ -593,6 +635,16 @@ body::before {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
 
+.cinema-payment-btn.return-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+    color: #fff;
+    margin-right: 1rem;
+}
+.cinema-payment-btn.return-btn:hover {
+    background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    color: #fff;
+}
+
 /* Ticket Perforations */
 .ticket-perforations {
     position: absolute;
@@ -648,4 +700,30 @@ body::before {
         align-items: flex-start;
         gap: 0.5rem;
     }
+}
+
+.return-btn-top {
+    position: absolute;
+    top: 2.5rem;
+    left: 2.5rem;
+    z-index: 10;
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+    color: #fff;
+    padding: 0.4rem 1.1rem;
+    font-size: 0.95rem;
+    border-radius: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    min-width: unset;
+    width: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.2s;
+}
+.return-btn-top i {
+    font-size: 1rem;
+}
+.return-btn-top:hover {
+    background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    color: #fff;
 }

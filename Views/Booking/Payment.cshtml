@@ -19,6 +19,9 @@
             <span>Step 4 of 4 - Payment</span>
         </div>
     </div>
+    <button type="button" class="cinema-payment-btn return-btn-top" onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Return
+    </button>
     <div class="cinema-ticket-card">
         <!-- Ticket Header -->
         <div class="ticket-header">
@@ -28,7 +31,7 @@
             </div>
             <div class="header-decoration"></div>
         </div>
-        <div class="ticket-body">
+        <div class="ticket-body ticket-body-horizontal">
             <!-- Error Alert -->
             @if (TempData["ErrorMessage"] != null)
             {
@@ -37,160 +40,166 @@
                     <span>@TempData["ErrorMessage"]</span>
                 </div>
             }
-            <!-- Movie Information Section -->
-            <div class="movie-info-section">
-                <div class="section-header">
-                    <i class="fas fa-film"></i>
-                    <h4>Booking Details</h4>
-                </div>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-receipt"></i>
-                            Invoice ID:
-                        </div>
-                        <div class="info-value">
-                            <span class="invoice-badge">@Model.InvoiceId</span>
-                        </div>
+            <div class="ticket-left">
+                <!-- Movie Information Section -->
+                <div class="movie-info-section">
+                    <div class="section-header">
+                        <i class="fas fa-film"></i>
+                        <h4>Booking Details</h4>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-video"></i>
-                            Movie:
-                        </div>
-                        <div class="info-value movie-title">@Model.MovieName</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-calendar-alt"></i>
-                            Show Date:
-                        </div>
-                        <div class="info-value">@Model.ShowDate.ToString("dd/MM/yyyy")</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-clock"></i>
-                            Show Time:
-                        </div>
-                        <div class="info-value">@Model.ShowTime</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-chair"></i>
-                            Seats:
-                        </div>
-                        <div class="info-value">
-                            <span class="seat-badges">@Model.Seats</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Food & Drinks Section -->
-            <div class="food-section">
-                <div class="section-header">
-                    <i class="fas fa-utensils"></i>
-                    <h4>Food & Drinks</h4>
-                </div>
-                @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
-                {
-                    <div class="food-table-container">
-                        <table class="cinema-table">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Qty</th>
-                                    <th>Price</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var food in Model.SelectedFoods)
-                                {
-                                    <tr>
-                                        <td class="food-name">@food.Name</td>
-                                        <td class="quantity">@food.Quantity</td>
-                                        <td class="price">@food.Price.ToString("N0") VND</td>
-                                        <td class="total">@((food.Price * food.Quantity).ToString("N0")) VND</td>
-                                    </tr>
-                                }
-                            </tbody>
-                            <tfoot>
-                                <tr class="total-row">
-                                    <td colspan="3">Total Food:</td>
-                                    <td class="food-total">@Model.TotalFoodPrice.ToString("N0") VND</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="no-food-message">
-                        <i class="fas fa-info-circle"></i>
-                        <span>No food items selected</span>
-                    </div>
-                }
-            </div>
-            <!-- Price Summary Section -->
-            <div class="price-summary-section">
-                <div class="price-breakdown">
-                    <div class="price-item seat-price">
-                        <div class="price-label">
-                            <i class="fas fa-chair"></i>
-                            Seat Price:
-                        </div>
-                        <div class="price-amount">@Model.TotalSeatPrice.ToString("N0") VND</div>
-                    </div>
-                    @if (Model.TotalFoodPrice > 0)
-                    {
-                        <div class="price-item food-price">
-                            <div class="price-label">
-                                <i class="fas fa-utensils"></i>
-                                Food & Drinks:
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-receipt"></i>
+                                Invoice ID:
                             </div>
-                            <div class="price-amount">@Model.TotalFoodPrice.ToString("N0") VND</div>
+                            <div class="info-value">
+                                <span class="invoice-badge">@Model.InvoiceId</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-video"></i>
+                                Movie:
+                            </div>
+                            <div class="info-value movie-title">@Model.MovieName</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Show Date:
+                            </div>
+                            <div class="info-value">@Model.ShowDate.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-clock"></i>
+                                Show Time:
+                            </div>
+                            <div class="info-value">@Model.ShowTime</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-chair"></i>
+                                Seats:
+                            </div>
+                            <div class="info-value">
+                                <span class="seat-badges">@Model.Seats</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ticket-center">
+                <!-- Food & Drinks Section -->
+                <div class="food-section">
+                    <div class="section-header">
+                        <i class="fas fa-utensils"></i>
+                        <h4>Food & Drinks</h4>
+                    </div>
+                    @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
+                    {
+                        <div class="food-table-container">
+                            <table class="cinema-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var food in Model.SelectedFoods)
+                                    {
+                                        <tr>
+                                            <td class="food-name">@food.Name</td>
+                                            <td class="quantity">@food.Quantity</td>
+                                            <td class="price">@food.Price.ToString("N0") VND</td>
+                                            <td class="total">@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="3">Total Food:</td>
+                                        <td class="food-total">@Model.TotalFoodPrice.ToString("N0") VND</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-food-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>No food items selected</span>
                         </div>
                     }
                 </div>
-                <!-- Decorative Separator -->
-                <div class="price-separator">
-                    <div class="separator-dots">
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
+            </div>
+            <div class="ticket-right">
+                <!-- Price Summary Section -->
+                <div class="price-summary-section">
+                    <div class="price-breakdown">
+                        <div class="price-item seat-price">
+                            <div class="price-label">
+                                <i class="fas fa-chair"></i>
+                                Seat Price:
+                            </div>
+                            <div class="price-amount">@Model.TotalSeatPrice.ToString("N0") VND</div>
+                        </div>
+                        @if (Model.TotalFoodPrice > 0)
+                        {
+                            <div class="price-item food-price">
+                                <div class="price-label">
+                                    <i class="fas fa-utensils"></i>
+                                    Food & Drinks:
+                                </div>
+                                <div class="price-amount">@Model.TotalFoodPrice.ToString("N0") VND</div>
+                            </div>
+                        }
+                    </div>
+                    <!-- Decorative Separator -->
+                    <div class="price-separator">
+                        <div class="separator-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
+                    <!-- Total Amount -->
+                    <div class="total-amount-section">
+                        <div class="total-label">Total Amount</div>
+                        <div class="total-amount">@Model.TotalAmount.ToString("N0") VND</div>
                     </div>
                 </div>
-                <!-- Total Amount -->
-                <div class="total-amount-section">
-                    <div class="total-label">Total Amount</div>
-                    <div class="total-amount">@Model.TotalAmount.ToString("N0") VND</div>
+            </div>
+        </div>
+        <!-- Payment Form -->
+        <div class="payment-form-section" style="text-align:center; margin-top:2.5rem;">
+            <form asp-action="ProcessPayment" method="post" style="display:inline-block;">
+                <input type="hidden" asp-for="InvoiceId" />
+                <input type="hidden" asp-for="MovieName" />
+                <input type="hidden" asp-for="ShowDate" />
+                <input type="hidden" asp-for="ShowTime" />
+                <input type="hidden" asp-for="Seats" />
+                <input type="hidden" asp-for="TotalAmount" />
+                <input type="hidden" asp-for="OrderInfo" />
+                <input type="hidden" asp-for="TotalSeatPrice" />
+                <input type="hidden" asp-for="TotalFoodPrice" />
+                <div class="payment-button-container">
+                    <button type="submit" class="cinema-payment-btn">
+                        <span class="btn-content">
+                            <i class="fas fa-credit-card"></i>
+                            Pay with VNPAY
+                        </span>
+                        <div class="btn-shine"></div>
+                    </button>
                 </div>
-            </div>
-            <!-- Payment Form -->
-            <div class="payment-form-section">
-                <form asp-action="ProcessPayment" method="post">
-                    <input type="hidden" asp-for="InvoiceId" />
-                    <input type="hidden" asp-for="MovieName" />
-                    <input type="hidden" asp-for="ShowDate" />
-                    <input type="hidden" asp-for="ShowTime" />
-                    <input type="hidden" asp-for="Seats" />
-                    <input type="hidden" asp-for="TotalAmount" />
-                    <input type="hidden" asp-for="OrderInfo" />
-                    <input type="hidden" asp-for="TotalSeatPrice" />
-                    <input type="hidden" asp-for="TotalFoodPrice" />
-                    <div class="payment-button-container">
-                        <button type="submit" class="cinema-payment-btn">
-                            <span class="btn-content">
-                                <i class="fas fa-credit-card"></i>
-                                Pay with VNPAY
-                            </span>
-                            <div class="btn-shine"></div>
-                        </button>
-                    </div>
-                </form>
-            </div>
+            </form>
         </div>
         <!-- Ticket Perforations -->
         <div class="ticket-perforations top"></div>
