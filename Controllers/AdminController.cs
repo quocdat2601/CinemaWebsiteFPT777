@@ -4,6 +4,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -23,6 +24,7 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
         private readonly IVersionRepository _versionRepository;
+        private readonly MovieTheaterContext _context;
 
         public AdminController(
             IMovieService movieService,
@@ -36,7 +38,8 @@ namespace MovieTheater.Controllers
             IInvoiceService invoiceService,
             IFoodService foodService,
             IVoucherService voucherService,
-            IRankService rankService, IVersionRepository versionRepository)
+            IRankService rankService, IVersionRepository versionRepository,
+            MovieTheaterContext context)
         {
             _movieService = movieService;
             _employeeService = employeeService;
@@ -51,6 +54,7 @@ namespace MovieTheater.Controllers
             _foodService = foodService;
             _rankService = rankService;
             _versionRepository = versionRepository;
+            _context = context;
         }
 
         // GET: AdminController
@@ -362,6 +366,89 @@ namespace MovieTheater.Controllers
                 })
                 .ToList();
 
+            // --- Food Analytics ---
+            var foodInvoices = _context.FoodInvoices
+                .Include(fi => fi.Food)
+                .Include(fi => fi.Invoice)
+                .ToList();
+
+            // Only completed, not cancelled invoices for most stats
+            var validFoodInvoices = foodInvoices.Where(fi => fi.Invoice.Status == InvoiceStatus.Completed && !fi.Invoice.Cancel).ToList();
+
+            // Recent food orders (from completed, not cancelled invoices)
+            var recentFoodOrders = validFoodInvoices
+                .OrderByDescending(fi => fi.Invoice.BookingDate)
+                .Take(10)
+                .Select(fi => new RecentFoodOrder
+                {
+                    Date = fi.Invoice.BookingDate ?? DateTime.MinValue,
+                    FoodName = fi.Food.Name,
+                    Quantity = fi.Quantity,
+                    Price = fi.Price,
+                    OrderTotal = fi.Price * fi.Quantity
+                })
+                .ToList();
+
+            // Recent food cancels (from cancelled invoices)
+            var recentFoodCancels = foodInvoices
+                .Where(fi => fi.Invoice.Status == InvoiceStatus.Completed && fi.Invoice.Cancel)
+                .OrderByDescending(fi => fi.Invoice.CancelDate)
+                .Take(10)
+                .Select(fi => new RecentFoodOrder
+                {
+                    Date = fi.Invoice.CancelDate ?? fi.Invoice.BookingDate ?? DateTime.MinValue,
+                    FoodName = fi.Food.Name,
+                    Quantity = fi.Quantity,
+                    Price = fi.Price,
+                    OrderTotal = fi.Price * fi.Quantity
+                })
+                .ToList();
+
+            // 1. FoodRevenue: total revenue from food
+            var foodRevenue = validFoodInvoices.Sum(fi => fi.Price * fi.Quantity);
+
+            // 2. Orders: number of unique invoices with food
+            var foodOrders = validFoodInvoices.Select(fi => fi.InvoiceId).Distinct().Count();
+
+            // 3. QuantitySold: total quantity of food items sold
+            var quantitySold = validFoodInvoices.Sum(fi => fi.Quantity);
+
+            // 4. AvgOrderValue: average food revenue per order
+            var avgOrderValue = foodOrders > 0 ? Math.Round(foodRevenue / foodOrders, 0) : 0;
+
+            // 5. RevenueByDayDates, RevenueByDayValues, OrdersByDayValues (last 7 days)
+            var last7Days = Enumerable.Range(0, 7).Select(i => today.AddDays(-i)).Reverse().ToList();
+            var revenueByDayValues = last7Days
+                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day).Sum(fi => fi.Price * fi.Quantity))
+                .ToList();
+            var ordersByDayValues = last7Days
+                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day).Select(fi => fi.InvoiceId).Distinct().Count())
+                .ToList();
+
+            // 6. TopFoodItems: all food items with revenue and order count
+            var topFoodItems = validFoodInvoices
+                .GroupBy(fi => fi.Food.Name)
+                .Select(g => new FoodItemQuantity {
+                    FoodName = g.Key,
+                    Quantity = g.Sum(fi => fi.Quantity),
+                    Category = g.First().Food.Category,
+                    Revenue = g.Sum(fi => fi.Price * fi.Quantity),
+                    OrderCount = g.Select(fi => fi.InvoiceId).Distinct().Count()
+                })
+                .OrderByDescending(x => x.Revenue)
+                .ToList();
+
+            // 7. SalesByCategory: revenue by food category
+            var salesByCategory = validFoodInvoices
+                .GroupBy(fi => fi.Food.Category)
+                .Select(g => (Category: g.Key, Revenue: g.Sum(fi => fi.Price * fi.Quantity)))
+                .ToList();
+
+            // 8. SalesByHour: number of food orders per hour (0-23)
+            var salesByHour = Enumerable.Range(0, 24)
+                .Select(h => validFoodInvoices.Count(fi => fi.Invoice.BookingDate.HasValue && fi.Invoice.BookingDate.Value.Hour == h))
+                .ToList();
+
             return new AdminDashboardViewModel
             {
                 RevenueToday = revenueToday,
@@ -378,7 +465,22 @@ namespace MovieTheater.Controllers
                 RecentMembers = recentMembers,
                 GrossRevenue = grossRevenue,
                 TotalRefund = totalRefund,
-                NetRevenue = netRevenue
+                NetRevenue = netRevenue,
+                FoodAnalytics = new FoodAnalyticsViewModel
+                {
+                    FoodRevenue = foodRevenue,
+                    Orders = foodOrders,
+                    QuantitySold = quantitySold,
+                    AvgOrderValue = avgOrderValue,
+                    RevenueByDayDates = last7Days,
+                    RevenueByDayValues = revenueByDayValues,
+                    OrdersByDayValues = ordersByDayValues,
+                    TopFoodItems = topFoodItems,
+                    SalesByCategory = salesByCategory,
+                    SalesByHour = salesByHour,
+                    RecentOrders = recentFoodOrders,
+                    RecentCancels = recentFoodCancels
+                }
             };
         }
 

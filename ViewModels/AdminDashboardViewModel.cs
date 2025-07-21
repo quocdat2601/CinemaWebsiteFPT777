@@ -29,6 +29,8 @@ namespace MovieTheater.ViewModels
         public decimal TotalRefund { get; set; }
         public decimal NetRevenue { get; set; }
 
+        // Food analytics for dashboard food stat tab
+        public FoodAnalyticsViewModel FoodAnalytics { get; set; }
     }
 
     public class RecentBookingInfo
@@ -47,5 +49,52 @@ namespace MovieTheater.ViewModels
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public DateOnly? JoinDate { get; set; }
+    }
+
+    public class FoodAnalyticsViewModel
+    {
+        // KPI cards
+        public decimal FoodRevenue { get; set; }
+        public int Orders { get; set; }
+        public int QuantitySold { get; set; }
+        public decimal AvgOrderValue { get; set; }
+
+        // Combo chart: Revenue & Orders by Day
+        public List<DateTime> RevenueByDayDates { get; set; }
+        public List<decimal> RevenueByDayValues { get; set; }
+        public List<int> OrdersByDayValues { get; set; }
+
+        // Top 5 Food Items
+        public List<FoodItemQuantity> TopFoodItems { get; set; }
+
+        // Sales by Category
+        public List<(string Category, decimal Revenue)> SalesByCategory { get; set; }
+
+        // Sales by Hour (0-23)
+        public List<int> SalesByHour { get; set; }
+
+        // Recent Orders
+        public List<RecentFoodOrder> RecentOrders { get; set; }
+
+        // Recent Cancels
+        public List<RecentFoodOrder> RecentCancels { get; set; }
+    }
+
+    public class FoodItemQuantity
+    {
+        public string FoodName { get; set; }
+        public int Quantity { get; set; }
+        public string Category { get; set; }
+        public decimal Revenue { get; set; }
+        public int OrderCount { get; set; }
+    }
+
+    public class RecentFoodOrder
+    {
+        public DateTime Date { get; set; }
+        public string FoodName { get; set; }
+        public int Quantity { get; set; }
+        public decimal Price { get; set; }
+        public decimal OrderTotal { get; set; }
     }
 }

@@ -4,179 +4,801 @@
 <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
+<!-- Store dashboard data for chart initialization -->
+<script id="dashboard-data" type="application/json">
+    @Html.Raw(JsonConvert.SerializeObject(new {
+        RevenueTrendDates = Model.RevenueTrendDates,
+        RevenueTrendValues = Model.RevenueTrendValues,
+        BookingTrendDates = Model.BookingTrendDates,
+        BookingTrendValues = Model.BookingTrendValues,
+        FoodAnalytics = Model.FoodAnalytics
+    }))
+</script>
+
+<!-- All styles are now in dashboard.css; no <style> blocks remain in this file. -->
 <style>
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+body, html { overflow-x: hidden; }
+#food-dashboard { overflow-x: hidden; }
+.dashboard-recent-list {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  max-height: 288px; /* 4 cards at ~72px each */
+  height: 288px;
+  overflow-y: auto;
 }
-.bg-gradient-danger {
-    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%) !important;
+.recent-list-item {
+  background-color: #1f1f2e;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;    
 }
-.bg-gradient-success {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+.recent-list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-.card.shadow {
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+.recent-list-item > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.recent-list-item .text-warning,
+.recent-list-item .fw-bold {
+  color: #ffd700;
+}
+.dashboard-recent-list::-webkit-scrollbar {
+  width: 8px;
+}
+.dashboard-recent-list::-webkit-scrollbar-thumb {
+  background: #ffd700;
+  border-radius: 4px;
+}
+.card-body.d-flex {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.card-body .nav-pills {
+  flex: 0 0 auto;
+  margin-bottom: 0.75rem;
+  z-index: 10;
+}
+.dashboard-recent-list {
+  flex: 1 1 auto;
 }
 </style>
 
 <div class="container-fluid mt-4">
-	<h2 class="mb-4">🎬 Admin Dashboard</h2>
+    <h2 class="mb-4">🎬 Admin Dashboard</h2>
 
-	<!-- KPI Cards: Revenue Block -->
-	<div class="row mb-4">
-		<div class="col-md-4 mb-3">
-			<div class="card text-white bg-gradient-primary h-100 shadow">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-cash-coin"></i> Gross Revenue</h5>
-					<p class="display-6">@Model.GrossRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-4 mb-3">
-			<div class="card text-white bg-gradient-danger h-100 shadow">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-arrow-counterclockwise"></i> Total Refund</h5>
-					<p class="display-6">@Model.TotalRefund.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-4 mb-3">
-			<div class="card text-white bg-gradient-success h-100 shadow">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-currency-exchange"></i> Net Revenue</h5>
-					<p class="display-6">@Model.NetRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
-				</div>
-			</div>
-		</div>
-	</div>
+    <!-- Tab Switcher and Actions Row -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <button id="tab-movie" class="dashboard-tab" onclick="showTab('movie')"><i class="bi bi-film"></i> Movie Stats</button>
+            <button id="tab-food" class="dashboard-tab" onclick="showTab('food')"><i class="bi bi-cup-straw"></i> Food Stats</button>
+        </div>
+        <div class="dashboard-actions">
+            <button class="btn btn-outline-light" onclick="exportFoodTableCSV()"><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</button>
+            <button class="btn btn-outline-light" onclick="downloadFoodCharts()"><i class="bi bi-image"></i> Download Charts</button>
+            <button class="btn btn-warning" onclick="window.print()"><i class="bi bi-printer"></i> Print Report</button>
+        </div>
+    </div>
 
-	<!-- KPI Cards: Today Block -->
-	<div class="row mb-5">
-		<div class="col-md-3 mb-3">
-			<div class="card text-white bg-success h-100">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-cash-coin"></i> Revenue Today</h5>
-					<p class="display-6">@Model.RevenueToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-3 mb-3">
-			<div class="card text-white bg-primary h-100">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-receipt"></i> Bookings Today</h5>
-					<p class="display-6">@Model.BookingsToday</p>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-3 mb-3">
-			<div class="card text-white bg-info h-100">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-ticket-perforated"></i> Tickets Sold</h5>
-					<p class="display-6">@Model.TicketsSoldToday</p>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-3 mb-3">
-			<div class="card text-white bg-secondary h-100">
-				<div class="card-body text-center">
-					<h5><i class="bi bi-graph-up"></i> Occupancy Rate</h5>
-					<p class="display-6">@Model.OccupancyRateToday.ToString("F1")%</p>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div id="movie-dashboard">
+        <!-- KPI Cards: Revenue Block -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card text-white bg-gradient-primary h-100 shadow">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-cash-coin"></i> Gross Revenue</h5>
+                        <p class="display-6">@Model.GrossRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-white bg-gradient-danger h-100 shadow">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-arrow-counterclockwise"></i> Total Refund</h5>
+                        <p class="display-6">@Model.TotalRefund.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-white bg-gradient-success h-100 shadow">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-currency-exchange"></i> Net Revenue</h5>
+                        <p class="display-6">@Model.NetRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	<!-- Trend Charts -->
-	<div class="row mb-5">
-		<div class="col-md-6">
-			<h5><i class="bi bi-bar-chart-line"></i> Revenue (Last 7 days)</h5>
-			<canvas id="revenueChart"></canvas>
-		</div>
-		<div class="col-md-6">
-			<h5><i class="bi bi-calendar-check"></i> Bookings (Last 7 days)</h5>
-			<canvas id="bookingChart"></canvas>
-		</div>
-	</div>
+        <!-- KPI Cards: Today Block -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-success h-100">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-cash-coin"></i> Revenue Today</h5>
+                        <p class="display-6">@Model.RevenueToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-primary h-100">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-receipt"></i> Bookings Today</h5>
+                        <p class="display-6">@Model.BookingsToday</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-info h-100">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-ticket-perforated"></i> Tickets Sold</h5>
+                        <p class="display-6">@Model.TicketsSoldToday</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-secondary h-100">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-graph-up"></i> Occupancy Rate</h5>
+                        <p class="display-6">@Model.OccupancyRateToday.ToString("F1")%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	<!-- Top Lists -->
-	<div class="row mb-5">
-		<div class="col-md-6">
-			<h5><i class="bi bi-film"></i> Top 5 Movies</h5>
-			<ul class="list-group">
-				@foreach (var m in Model.TopMovies)
-				{
-					<li class="list-group-item d-flex justify-content-between">
-						@m.MovieName
-						<span class="badge bg-primary">@m.TicketsSold</span>
-					</li>
-				}
-			</ul>
-		</div>
-		<div class="col-md-6">
-			<h5><i class="bi bi-people-fill"></i> Top 5 Members</h5>
-			<ul class="list-group">
-				@foreach (var m in Model.TopMembers)
-				{
-					<li class="list-group-item d-flex justify-content-between">
-						@m.MemberName
-						<span class="badge bg-success">@m.Bookings</span>
-					</li>
-				}
-			</ul>
-		</div>
-	</div>
+        <!-- Trend Charts -->
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <div class="dashboard-chart-container">
+                    <h5><i class="bi bi-bar-chart-line"></i> Revenue (Last 7 days)</h5>
+                    <canvas id="revenueChart" class="dashboard-chart-canvas"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="dashboard-chart-container">
+                    <h5><i class="bi bi-calendar-check"></i> Bookings (Last 7 days)</h5>
+                    <canvas id="bookingChart" class="dashboard-chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
 
-	<!-- New Members -->
-	<div class="row mb-5">
-		<div class="col">
-			<h5><i class="bi bi-person-plus"></i> New Members (Last 5)</h5>
-			<ul class="list-group">
-				@foreach (var m in Model.RecentMembers)
-				{
-					<li class="list-group-item">
-						<strong>@m.FullName</strong> (@m.Email) joined @m.JoinDate?.ToString("yyyy-MM-dd")
-					</li>
-				}
-			</ul>
-		</div>
-	</div>
+        <!-- Top Lists -->
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <h5><i class="bi bi-film"></i> Top 5 Movies</h5>
+                <ul class="list-group">
+                    @foreach (var m in Model.TopMovies)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            @m.MovieName
+                            <span class="badge bg-primary">@m.TicketsSold</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5><i class="bi bi-people-fill"></i> Top 5 Members</h5>
+                <ul class="list-group">
+                    @foreach (var m in Model.TopMembers)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            @m.MemberName
+                            <span class="badge bg-success">@m.Bookings</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
 
-	<!-- Recent Bookings -->
-	<div class="row mb-5">
-		<div class="col">
-			<h5><i class="bi bi-clock-history"></i> Recent Bookings</h5>
-			<div class="recent-bookings-container">
-				<table>
-					<thead>
-						<tr>
-							<th>Invoice</th>
-							<th>Member</th>
-							<th>Movie</th>
-							<th>Date</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach (var booking in Model.RecentBookings)
-						{
-							<tr>
-								<td>@booking.InvoiceId</td>
-								<td>@booking.MemberName</td>
-								<td>@booking.MovieName</td>
-								<td>@booking.BookingDate.ToString("yyyy-MM-dd HH:mm")</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+        <!-- New Members -->
+        <div class="row mb-5">
+            <div class="col">
+                <h5><i class="bi bi-person-plus"></i> New Members (Last 5)</h5>
+                <ul class="list-group">
+                    @foreach (var m in Model.RecentMembers)
+                    {
+                        <li class="list-group-item">
+                            <strong>@m.FullName</strong> (@m.Email) joined @m.JoinDate?.ToString("yyyy-MM-dd")
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
 
-<!-- Charts JSON -->
-<script id="dashboard-data" type="application/json">
-	{
-	  "revenueDates": @Html.Raw(JsonConvert.SerializeObject(Model.RevenueTrendDates.Select(d => d.ToString("MM-dd")))),
-	  "revenueValues": @Html.Raw(JsonConvert.SerializeObject(Model.RevenueTrendValues)),
-	  "bookingDates": @Html.Raw(JsonConvert.SerializeObject(Model.BookingTrendDates.Select(d => d.ToString("MM-dd")))),
-	  "bookingValues": @Html.Raw(JsonConvert.SerializeObject(Model.BookingTrendValues))
-	}
+        <!-- Recent Bookings -->
+        <div class="row mb-5">
+            <div class="col">
+                <h5><i class="bi bi-clock-history"></i> Recent Bookings</h5>
+                <div class="recent-bookings-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Invoice</th>
+                                <th>Member</th>
+                                <th>Movie</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in Model.RecentBookings)
+                            {
+                                <tr>
+                                    <td>@booking.InvoiceId</td>
+                                    <td>@booking.MemberName</td>
+                                    <td>@booking.MovieName</td>
+                                    <td>@booking.BookingDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="food-dashboard" style="display:none;">
+        <!-- 1) KPI Cards Row (Food Stats) -->
+        <div class="row mb-4">
+            @* Revenue @ last day *@
+            @{
+                var idx = (Model.FoodAnalytics?.RevenueByDayDates?.Count ?? 1) - 1;
+                if (idx < 0) idx = 0;
+                var date = Model.FoodAnalytics?.RevenueByDayDates?[idx].ToString("MM-dd") ?? "-";
+                var rev  = Model.FoodAnalytics?.RevenueByDayValues?[idx]  ?? 0;
+                var ord  = Model.FoodAnalytics?.OrdersByDayValues?[idx]    ?? 0;
+                var qty  = ord > 0 
+                             ? (int)Math.Round((double)rev / (Model.FoodAnalytics.AvgOrderValue > 0 ? (double)Model.FoodAnalytics.AvgOrderValue : 1)) 
+                             : 0;
+                var avg  = ord > 0 ? rev / ord : 0;
+            }
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card text-center h-100 w-100">
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-label">Revenue</div>
+                    <div class="kpi-value">@rev.ToString("N0") đ</div>
+                    <div class="kpi-date">@date</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card text-center h-100 w-100">
+                    <div class="kpi-icon">🧾</div>
+                    <div class="kpi-label">Orders</div>
+                    <div class="kpi-value">@ord</div>
+                    <div class="kpi-date">@date</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card text-center h-100 w-100">
+                    <div class="kpi-icon">🍿</div>
+                    <div class="kpi-label">Qty Sold</div>
+                    <div class="kpi-value">@qty</div>
+                    <div class="kpi-date">@date</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card text-center h-100 w-100">
+                    <div class="kpi-icon">📊</div>
+                    <div class="kpi-label">Avg Order Value</div>
+                    <div class="kpi-value">@avg.ToString("N0") đ</div>
+                    <div class="kpi-date">@date</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2) Revenue & Orders by Day and Recent Food Activity side by side -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="dashboard-chart-container h-100">
+                    <h5><i class="bi bi-bar-chart-line"></i> Revenue & Orders by Day</h5>
+                    <canvas id="foodComboChart" class="dashboard-chart-canvas"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow h-100">
+                    <div class="card-body d-flex flex-column p-3">
+                        <h5><i class="bi bi-egg-fried"></i> Recent Food Activity</h5>
+                        <div class="btn-group w-100 mb-3" role="group" aria-label="Food activity tabs">
+                            <button type="button" class="btn btn-primary active" id="orders-btn" onclick="switchTab('orders')">Orders</button>
+                            <button type="button" class="btn btn-primary" id="cancels-btn" onclick="switchTab('cancels')">Cancels</button>
+                        </div>
+                        <div class="tab-content flex-fill dashboard-recent-list">
+                            <div class="tab-pane fade show active" id="orders-list" role="tabpanel">
+                                @foreach(var o in Model.FoodAnalytics.RecentOrders.Take(8)) {
+                                    <div class="recent-list-item d-flex flex-column mb-2 p-2 bg-light rounded">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>🍽️ <strong>@o.FoodName</strong> <span class="badge bg-primary ms-2">@($"x{o.Quantity}")</span></span>
+                                            <span class="text-muted small">@o.Date.ToString("MM-dd HH:mm")</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <span>Price: <span class="text-warning">@o.Price.ToString("N0") đ</span></span>
+                                            <span>Total: <span class="fw-bold">@o.OrderTotal.ToString("N0") đ</span></span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="tab-pane fade" id="cancels-list" role="tabpanel">
+                                @foreach(var c in Model.FoodAnalytics.RecentCancels) {
+                                    <div class="recent-list-item d-flex flex-column mb-2 p-2 bg-light rounded">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>❌ <strong>@c.FoodName</strong> <span class="badge bg-danger ms-2">@($"x{c.Quantity}")</span></span>
+                                            <span class="text-muted small">@c.Date.ToString("MM-dd HH:mm")</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <span>Price: <span class="text-warning">@c.Price.ToString("N0") đ</span></span>
+                                            <span>Total: <span class="fw-bold">@c.OrderTotal.ToString("N0") đ</span></span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 3) Sales by Category and Food Items by Category side by side -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="dashboard-chart-container h-100">
+                    <h5><i class="bi bi-pie-chart"></i> Sales by Category</h5>
+                    <canvas id="foodCategoryPie" class="dashboard-chart-canvas"></canvas>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="dashboard-chart-container h-100">
+                    <h5><i class="bi bi-bar-chart"></i> Food Items by Category</h5>
+                    <canvas id="foodItemsByCategoryBar" class="dashboard-chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4) Sales by Hour Full‑Width -->
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-chart-container mb-5">
+                    <h5><i class="bi bi-graph-up"></i> Sales by Hour</h5>
+                    <canvas id="foodHourHeatmap" class="dashboard-chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script>
+    // Reusable Chart.js initialization function
+    function createResponsiveChart(ctx, config) {
+        if (!ctx) return null;
+        // Always destroy previous chart if present
+        if (ctx.chartInstance) ctx.chartInstance.destroy();
+        config.options = config.options || {};
+        config.options.responsive = true;
+        config.options.maintainAspectRatio = false;
+        const chart = new Chart(ctx, config);
+        ctx.chartInstance = chart;
+        return chart;
+    }
+
+    // Load dashboard data from hidden element
+    function getDashboardData() {
+        const el = document.getElementById('dashboard-data');
+        if (!el) return null;
+        try {
+            return JSON.parse(el.textContent);
+        } catch (e) {
+            console.error('Failed to parse dashboard data:', e);
+            return null;
+        }
+    }
+
+    // Tab switching logic
+    function showTab(tab) {
+        const movieTab = document.getElementById('tab-movie');
+        const foodTab = document.getElementById('tab-food');
+        const movieDash = document.getElementById('movie-dashboard');
+        const foodDash = document.getElementById('food-dashboard');
+        if (tab === 'movie') {
+            movieTab.classList.add('active');
+            foodTab.classList.remove('active');
+            movieDash.style.display = '';
+            foodDash.style.display = 'none';
+            const data = getDashboardData();
+            if (data) window.initMovieCharts(data);
+        } else {
+            foodTab.classList.add('active');
+            movieTab.classList.remove('active');
+            foodDash.style.display = '';
+            movieDash.style.display = 'none';
+            const data = getDashboardData();
+            if (data) {
+                window.foodAnalyticsData = data.FoodAnalytics;
+                window.initFoodCharts();
+                setTimeout(() => {
+                    renderFoodItemsByCategoryBar();
+                    renderTopBottomStackedBar();
+                }, 0);
+            }
+        }
+    }
+
+    // Chart.js initialization for movie stats
+    window.initMovieCharts = function(data) {
+        const revenueLabels = data.RevenueTrendDates || [];
+        const revenueData = data.RevenueTrendValues || [];
+        const bookingLabels = data.BookingTrendDates || [];
+        const bookingData = data.BookingTrendValues || [];
+        
+        const revCtx = document.getElementById('revenueChart')?.getContext('2d');
+        const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
+        
+        if (revCtx && revenueLabels.length) {
+            window.revenueChartObj = createResponsiveChart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: revenueLabels.map(d => (typeof d === 'string' ? d : new Date(d).toLocaleDateString())),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: revenueData,
+                        fill: true,
+                        tension: 0.4,
+                        backgroundColor: 'rgba(30,60,114,0.1)',
+                        borderColor: '#1e3c72',
+                        pointRadius: 3
+                    }]
+                },
+                options: {}
+            });
+        }
+        
+        if (bookCtx && bookingLabels.length) {
+            window.bookingChartObj = createResponsiveChart(bookCtx, {
+                type: 'line',
+                data: {
+                    labels: bookingLabels.map(d => (typeof d === 'string' ? d : new Date(d).toLocaleDateString())),
+                    datasets: [{
+                        label: 'Bookings',
+                        data: bookingData,
+                        fill: true,
+                        tension: 0.4,
+                        backgroundColor: 'rgba(0,123,255,0.1)',
+                        borderColor: '#007bff',
+                        pointRadius: 3
+                    }]
+                },
+                options: {}
+            });
+        }
+    }
+    // Remove mock data and use real data for Top vs Bottom 5 Items
+    window.foodAnalyticsData = @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics ?? new MovieTheater.ViewModels.FoodAnalyticsViewModel()));
+    function groupTopBottomByType(topFoodItems) {
+        // Group by type: { Food: [...], Drink: [...], Combo: [...] }
+        const typeMap = { Food: [], Drink: [], Combo: [] };
+        (topFoodItems || []).forEach(item => {
+            // Assume food type is in item.FoodName or add a property if available
+            // For demo, assign by keyword (customize as needed)
+            let type = 'Food';
+            const name = item.FoodName.toLowerCase();
+            if (name.includes('combo')) type = 'Combo';
+            else if (name.includes('water') || name.includes('juice') || name.includes('tea') || name.includes('soda')) type = 'Drink';
+            typeMap[type].push(item);
+        });
+        // Sort by quantity
+        Object.keys(typeMap).forEach(type => {
+            typeMap[type].sort((a, b) => b.Quantity - a.Quantity);
+        });
+        // Top 5 and bottom 5 for each type
+        const top5 = Object.keys(typeMap).map(type => typeMap[type].slice(0, 5));
+        const bot5 = Object.keys(typeMap).map(type => typeMap[type].slice(-5));
+        return { top5, bot5 };
+    }
+    function renderTopBottomStackedBar() {
+        const topFoodItems = window.foodAnalyticsData.TopFoodItems || [];
+        const { top5, bot5 } = groupTopBottomByType(topFoodItems);
+        const foodTypes = ['Food', 'Drink', 'Combo'];
+        const datasets = [];
+        // Top 5
+        foodTypes.forEach((type, idx) => {
+            (top5[idx] || []).forEach(item => {
+                const data = [0, 0, 0];
+                data[idx] = item.Quantity;
+                datasets.push({
+                    label: `★ ${item.FoodName}`,
+                    data,
+                    stack: 'TopBottom',
+                    backgroundColor: 'rgba(40,167,69,0.8)'
+                });
+            });
+        });
+        // Bottom 5
+        foodTypes.forEach((type, idx) => {
+            (bot5[idx] || []).forEach(item => {
+                const data = [0, 0, 0];
+                data[idx] = item.Quantity;
+                datasets.push({
+                    label: `☆ ${item.FoodName}`,
+                    data,
+                    stack: 'TopBottom',
+                    backgroundColor: 'rgba(40,167,69,0.3)'
+                });
+            });
+        });
+        const barCtx = document.getElementById('topBottomStackedBar')?.getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: { labels: foodTypes, datasets },
+            options:{
+                responsive:true,
+                plugins:{ legend:{ position:'bottom' } },
+                scales:{
+                    x: { stacked:true },
+                    y: {
+                        stacked:true,
+                        ticks:{
+                            callback: value => value + '%'
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                // Convert raw counts to 100%-stacked percentages
+                id: 'normalizeTo100',
+                beforeInit(chart) {
+                    const totalPerType = foodTypes.map((_, i) =>
+                        datasets.reduce((sum, ds) => sum + Number(ds.data[i]), 0)
+                    );
+                    chart.data.datasets.forEach(ds => {
+                        ds.data = ds.data.map((v,i) =>
+                            totalPerType[i] === 0 ? 0 : (v / totalPerType[i] * 100).toFixed(1)
+                        );
+                    });
+                }
+            }]
+        });
+    }
+    function renderFoodItemsByCategoryBar() {
+        const items = window.foodAnalyticsData.TopFoodItems || [];
+        const categories = ["food", "drink", "combo"];
+        // Define color palettes for each category
+        const categoryPalettes = {
+            food:   ["#8B4513", "#A0522D", "#D2691E", "#CD853F", "#DEB887", "#B87333"], // browns
+            drink:  ["#FF8C00", "#FFA500", "#FFB347", "#FFD580", "#FF7F50", "#FF9933"], // oranges
+            combo:  ["#FFD700", "#FFFACD", "#FFE066", "#FFEC8B", "#F9E79F", "#F7DC6F"]  // yellows
+        };
+        // Group food items by category
+        const itemsByCategory = {};
+        categories.forEach(cat => {
+            itemsByCategory[cat] = items.filter(x => x.Category === cat);
+        });
+        // Assign colors
+        const colorMap = {};
+        categories.forEach(cat => {
+            const palette = categoryPalettes[cat];
+            itemsByCategory[cat].forEach((item, idx) => {
+                colorMap[item.FoodName] = palette[idx % palette.length];
+            });
+        });
+        // Calculate total revenue per category
+        const totals = {};
+        categories.forEach(cat => {
+            totals[cat] = itemsByCategory[cat].reduce((sum, x) => sum + x.Revenue, 0);
+        });
+        // Build datasets: one per food item
+        const foodNames = items.map(x => x.FoodName);
+        const datasets = foodNames.map(food => {
+            const foodItem = items.find(x => x.FoodName === food);
+            return {
+                label: food,
+                data: categories.map(cat => {
+                    if (foodItem && foodItem.Category === cat) {
+                        return totals[cat] ? (foodItem.Revenue / totals[cat]) * 100 : 0;
+                    }
+                    return 0;
+                }),
+                backgroundColor: colorMap[food]
+            };
+        });
+        const ctx = document.getElementById('foodItemsByCategoryBar');
+        if (!ctx || ctx.offsetParent === null) return;
+        new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: { labels: categories, datasets },
+            options: {
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        display: true,
+                        color: '#fff',
+                        font: { weight: 'bold' },
+                        formatter: value => value > 0 ? value.toFixed(2) + '%' : ''
+                    }
+                },
+                scales: {
+                    x: { stacked: true },
+                    y: {
+                        stacked: true,
+                        max: 100,
+                        beginAtZero: true,
+                        ticks: { callback: v => v + '%' }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+    window.initFoodCharts = function() {
+        const data = {
+            revenueByDayLabels: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.RevenueByDayDates?.Select(d => d.ToString("MM-dd")) ?? new List<string>())),
+            revenueByDay: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.RevenueByDayValues ?? new List<decimal>())),
+            ordersByDay: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.OrdersByDayValues ?? new List<int>())),
+            topFoodLabels: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.TopFoodItems?.Select(x => x.FoodName) ?? new List<string>())),
+            topFoodData: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.TopFoodItems?.Select(x => x.Quantity) ?? new List<int>())),
+            categoryLabels: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.SalesByCategory?.Select(x => x.Category) ?? new List<string>())),
+            categoryData: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.SalesByCategory?.Select(x => x.Revenue) ?? new List<decimal>())),
+            salesByHour: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.SalesByHour ?? new List<int>()))
+        };
+        // Combo Chart: Revenue (bar) + Orders (line) by Day
+        const comboCtx = document.getElementById('foodComboChart')?.getContext('2d');
+        if (comboCtx) {
+            window.foodComboChartObj = createResponsiveChart(comboCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.revenueByDayLabels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Revenue',
+                            data: data.revenueByDay,
+                            backgroundColor: '#FFD700',
+                            yAxisID: 'y',
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Orders',
+                            data: data.ordersByDay,
+                            borderColor: '#007bff',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            yAxisID: 'y1',
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#007bff',
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Revenue (đ)' },
+                            ticks: { color: '#FFD700' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Orders' },
+                            ticks: { color: '#007bff' }
+                        }
+                    }
+                }
+            });
+        }
+        // Pie Chart: Sales by Category
+        const pieCtx = document.getElementById('foodCategoryPie')?.getContext('2d');
+        if (pieCtx) {
+            window.foodCategoryPieObj = createResponsiveChart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: data.categoryLabels,
+                    datasets: [{
+                        data: data.categoryData,
+                        backgroundColor: ['#FFD700', '#007bff', '#28a745', '#ffc107', '#dc3545'],
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: false },
+                        datalabels: {
+                            color: '#222',
+                            font: { weight: 'bold', size: 16 },
+                            formatter: (value, context) => {
+                                const dataArr = context.chart.data.datasets[0].data;
+                                const total = dataArr.reduce((a, b) => a + b, 0);
+                                if (!total) return '';
+                                const pct = Math.round((value / total) * 100);
+                                return pct + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+        // Bar Chart: Top Food Items
+        const topFoodCtx = document.getElementById('topFoodBar')?.getContext('2d');
+        if (topFoodCtx) {
+            window.topFoodBarObj = createResponsiveChart(topFoodCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.topFoodLabels,
+                    datasets: [{
+                        label: 'Quantity Sold',
+                        data: data.topFoodData,
+                        backgroundColor: '#FFD700',
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    }
+                }
+            });
+        }
+        // Heatmap/Bar: Sales by Hour
+        const hourCtx = document.getElementById('foodHourHeatmap')?.getContext('2d');
+        if (hourCtx) {
+            window.foodHourHeatmapObj = createResponsiveChart(hourCtx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    datasets: [{
+                        label: 'Quantity Sold',
+                        data: data.salesByHour,
+                        backgroundColor: '#007bff',
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Hour of Day' } },
+                        y: { title: { display: true, text: 'Quantity Sold' } }
+                    }
+                }
+            });
+        }
+        renderTopBottomStackedBar();
+        // renderFoodItemsByCategoryBar(); // This line is now handled by showTab
+    };
+    function switchTab(tab) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.btn-group .btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to clicked button
+        document.getElementById(tab + '-btn').classList.add('active');
+        
+        // Hide all tab panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('show', 'active');
+        });
+        
+        // Show selected tab pane
+        const selectedPane = document.getElementById(tab + '-list');
+        selectedPane.classList.add('show', 'active');
+    }
+
+    // On page load, default to movie tab and initialize charts
+    document.addEventListener('DOMContentLoaded', function() {
+        showTab('movie');
+    });
 </script>
