@@ -38,6 +38,7 @@ namespace MovieTheater.Repository
         {
             return _context.Movies
                 .Include(m => m.Types)
+                .Include(m => m.Versions)
                 .OrderBy(comparer => comparer.MovieId)
                 .ToList();
         }
