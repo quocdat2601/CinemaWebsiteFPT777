@@ -1,11 +1,11 @@
-@model MovieTheater.ViewModels.FoodListViewModel
+﻿@model MovieTheater.ViewModels.FoodListViewModel
 @{
     ViewData["Title"] = "Food Management";
     var selectedFood = ViewBag.CategoryFilter == "food" ? "selected" : "";
     var selectedDrink = ViewBag.CategoryFilter == "drink" ? "selected" : "";
     var selectedCombo = ViewBag.CategoryFilter == "combo" ? "selected" : "";
-    var selectedActive = ViewBag.StatusFilter == true ? "selected" : "";
-    var selectedInactive = ViewBag.StatusFilter == false ? "selected" : "";
+    var selectedActive = ViewBag.StatusFilter == "true" ? "selected" : "";
+    var selectedInactive = ViewBag.StatusFilter == "false" ? "selected" : "";
 }
 
 <div class="container-fluid">
@@ -62,7 +62,7 @@
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" id="statusFilter" name="statusFilter">
-                        @if (ViewBag.StatusFilter == null)
+                        @if (ViewBag.StatusFilter == null || ViewBag.StatusFilter == "")
                         {
                             <option value="" selected>All Status</option>
                         }
@@ -70,7 +70,7 @@
                         {
                             <option value="">All Status</option>
                         }
-                        @if (ViewBag.StatusFilter == true)
+                        @if (ViewBag.StatusFilter == "true")
                         {
                             <option value="true" selected>Active</option>
                         }
@@ -78,7 +78,7 @@
                         {
                             <option value="true">Active</option>
                         }
-                        @if (ViewBag.StatusFilter == false)
+                        @if (ViewBag.StatusFilter == "false")
                         {
                             <option value="false" selected>Inactive</option>
                         }
@@ -108,15 +108,15 @@
             @if (Model.Foods.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table id="food-table" class="table table-hover">
                         <thead class="table-light">
                             <tr>
                                 <th>Image</th>
-                                <th>Name</th>
-                                <th>Category</th>
-                                <th>Price</th>
+                                <th class="sortable" data-sort="name">Name <span id="sortIconName"></span></th>
+                                <th class="sortable" data-sort="category">Category <span id="sortIconCategory"></span></th>
+                                <th class="sortable" data-sort="price">Price <span id="sortIconPrice"></span></th>
                                 <th>Status</th>
-                                <th>Created Date</th>
+                                <th class="sortable" data-sort="created">Created Date <span id="sortIconCreated"></span></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -202,10 +202,54 @@
 <partial name="_ToastMessages" />
 
 <script>
-function searchFood() {
-    const keyword = document.getElementById('searchKeyword').value;
-    const category = document.getElementById('categoryFilter').value;
-    const status = document.getElementById('statusFilter').value;
-    loadTab('FoodMg', keyword, category, status);
+(function() {
+    let currentSortFood = { by: '', dir: 'asc', param: '' };
+
+    $(document).on('click', '#food-table .sortable', function() {
+        const sortBy = $(this).data('sort');
+        if (currentSortFood.by === sortBy) {
+            currentSortFood.dir = currentSortFood.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortFood.by = sortBy;
+            currentSortFood.dir = 'asc';
+        }
+        let sortParam = '';
+        if (sortBy === 'name') sortParam = currentSortFood.dir === 'asc' ? 'name_az' : 'name_za';
+        if (sortBy === 'category') sortParam = currentSortFood.dir === 'asc' ? 'category_az' : 'category_za';
+        if (sortBy === 'price') sortParam = currentSortFood.dir === 'asc' ? 'price_asc' : 'price_desc';
+        if (sortBy === 'created') sortParam = currentSortFood.dir === 'asc' ? 'created_asc' : 'created_desc';
+        currentSortFood.param = sortParam;
+        searchFood();
+        updateSortIconsFood();
+    });
+
+    window.searchFood = function() {
+        const keyword = document.getElementById('searchKeyword').value;
+        const category = document.getElementById('categoryFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        loadTab('FoodMg', { keyword, categoryFilter: category, statusFilter: status, sortBy: currentSortFood.param });
+    }
+
+    function updateSortIconsFood() {
+        $('#sortIconName, #sortIconCategory, #sortIconPrice, #sortIconCreated').html('');
+        if (currentSortFood.by === 'name') {
+            $('#sortIconName').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortFood.by === 'category') {
+            $('#sortIconCategory').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortFood.by === 'price') {
+            $('#sortIconPrice').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSortFood.by === 'created') {
+            $('#sortIconCreated').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        }
+    }
+})();
+</script>
+<style>
+.sortable {
+    cursor: pointer;
+    user-select: none;
 }
-</script> 
+</style> 

@@ -231,9 +231,21 @@
         <hr />
         <!-- Member selection UI -->
         <div class="mb-3">
-            <label class="soft-label"><strong>Select Member: *</strong></label>
+            <label class="soft-label"><strong>Customer Type:</strong></label>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="customerType" id="memberCustomer" value="member" checked>
+                <label class="btn btn-outline-primary" for="memberCustomer">Member</label>
+                
+                <input type="radio" class="btn-check" name="customerType" id="guestCustomer" value="guest">
+                <label class="btn btn-outline-secondary" for="guestCustomer">Guest</label>
+            </div>
+        </div>
+        
+        <div id="memberSelectionSection">
+            <label class="soft-label"><strong>Select Member:</strong></label>
             <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
         </div>
+        
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
             <div class="section-title">Member Information</div>
@@ -272,7 +284,8 @@
             </div>
         </div>
         <div class="text-center mt-4">
-            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg" disabled>Confirm Ticket Booking</button>
+            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg me-2" disabled>Confirm Ticket Booking</button>
+            <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Create QR Code</button>
         </div>
         <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
         <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
@@ -338,6 +351,44 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            console.log('Document ready - initializing guest functionality');
+            
+            // Test guest section visibility
+            $('input[name="customerType"]').change(function() {
+                console.log('Customer type changed to:', $(this).val());
+            });
+            // Customer type selection
+            $('input[name="customerType"]').change(function() {
+                const customerType = $(this).val();
+                if (customerType === 'member') {
+                    $('#memberSelectionSection').show();
+                    $('#guestInfoSection').hide();
+                    $('#guestName').prop('disabled', true);
+                    $('#guestPhone').prop('disabled', true);
+                    $('#memberDetails').hide();
+                    // Clear guest info
+                    $('#guestName').val('');
+                    $('#guestPhone').val('');
+                    $('#guestValidationMessage').hide();
+                } else {
+                    $('#memberSelectionSection').hide();
+                    $('#guestInfoSection').show();
+                    $('#guestName').val('').prop('disabled', true);
+                    $('#guestPhone').val('').prop('disabled', true);
+                    $('#memberDetails').hide();
+                    // Clear member info
+                    $('#memberId').val('');
+                    $('#memberFullName').val('');
+                    $('#memberIdentityCard').val('');
+                    $('#memberPhoneNumber').val('');
+                    $('#memberScore').val('');
+                    // Reset buttons for guest
+                    $('#confirmTicketAdminBtn').prop('disabled', true);
+                    $('#createQRCodeBtn').prop('disabled', true);
+                }
+                updateConfirmButtonState();
+            });
+
             // Open modal using Bootstrap 5 API
             let memberModalInstance = null;
             let selectedAccountId = null;
@@ -393,22 +444,41 @@
             }
 
             let memberSelected = false;
+            let guestSelected = false;
             function updateConfirmButtonState() {
-                // Check if a member is selected
-                memberSelected = !!$('#memberId').val();
-                // Validate score
-                var used = parseInt($('#useScore').val()) || 0;
-                var maxPoints = updateMaxUsablePoints();
-                var validScore = true;
-                if (used === 0) {
-                    validScore = true;
-                } else if (used < 20) {
-                    validScore = false;
-                } else if (used > maxPoints) {
-                    validScore = false;
+                const customerType = $('input[name="customerType"]:checked').val();
+                
+                if (customerType === 'member') {
+                    // Check if a member is selected
+                    memberSelected = !!$('#memberId').val();
+                    // Validate score
+                    var used = parseInt($('#useScore').val()) || 0;
+                    var maxPoints = updateMaxUsablePoints();
+                    var validScore = true;
+                    if (used === 0) {
+                        validScore = true;
+                    } else if (used < 20) {
+                        validScore = false;
+                    } else if (used > maxPoints) {
+                        validScore = false;
+                    }
+                    // Enable only if member is selected and score is valid
+                    $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
+                    $('#createQRCodeBtn').prop('disabled', true); // Disable QR for members
+                } else {
+                    // Guest customer - KHÔNG cần validate tên/sđt
+                    $('#confirmTicketAdminBtn').prop('disabled', false);
+                    $('#createQRCodeBtn').prop('disabled', false);
+                    
+                    // Debug info
+                    console.log('Guest validation:', {
+                        guestName: $('#guestName').val(),
+                        guestPhone: $('#guestPhone').val(),
+                        guestNameLength: $('#guestName').val().length,
+                        guestPhoneLength: $('#guestPhone').val().length,
+                        guestSelected: guestSelected
+                    });
                 }
-                // Enable only if both member is selected and score is valid
-                $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
             }
 
             function fillMemberInfo(member) {
@@ -441,6 +511,8 @@
 
             // Confirm Ticket Admin Button Click
             $('#confirmTicketAdminBtn').click(function () {
+                const customerType = $('input[name="customerType"]:checked').val();
+                
                 var model = {
                     BookingDetails: {
                         MovieId: '@Model.BookingDetails.MovieId',
@@ -454,17 +526,18 @@
                         MovieShowId: @Model.MovieShowId,
                         PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
                     },
-                    MemberIdInput: $('#memberInput').val(),
-                    MemberId: $('#memberId').val(),
-                    MemberFullName: $('#memberFullName').val(),
-                    MemberIdentityCard: $('#memberIdentityCard').val(),
-                    MemberPhoneNumber: $('#memberPhoneNumber').val(),
-                    MemberScore: parseInt($('#memberScore').val()) || 0,
-                    UsedScore: parseInt($('#useScore').val()) || 0,
-                    SelectedVoucherId: $('#selectedVoucherId').val(),
-                    VoucherAmount: parseInt($('#voucherAmountHidden').val()) || 0,
-                    AccountId: $('#accountId').val(),
-                    RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0,
+                    CustomerType: customerType,
+                    MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
+                    MemberId: customerType === 'member' ? $('#memberId').val() : '',
+                    MemberFullName: customerType === 'member' ? $('#memberFullName').val() : $('#guestName').val(),
+                    MemberIdentityCard: customerType === 'member' ? $('#memberIdentityCard').val() : '',
+                    MemberPhoneNumber: customerType === 'member' ? $('#memberPhoneNumber').val() : $('#guestPhone').val(),
+                    MemberScore: customerType === 'member' ? (parseInt($('#memberScore').val()) || 0) : 0,
+                    UsedScore: customerType === 'member' ? (parseInt($('#useScore').val()) || 0) : 0,
+                    SelectedVoucherId: customerType === 'member' ? $('#selectedVoucherId').val() : '',
+                    VoucherAmount: customerType === 'member' ? (parseInt($('#voucherAmountHidden').val()) || 0) : 0,
+                    AccountId: customerType === 'member' ? $('#accountId').val() : '',
+                    RankDiscountPercent: customerType === 'member' ? (parseFloat($('#rankDiscountPercent').val()) || 0) : 0,
                     MovieShowId: @Model.MovieShowId,
                     SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
                     TotalFoodPrice: @Model.TotalFoodPrice
@@ -488,6 +561,57 @@
                         $('#memberMessage').text("An error occurred during booking confirmation.").show();
                     }
                 });
+            });
+
+            // Create QR Code button for Guest
+            $('#createQRCodeBtn').click(function () {
+                const customerType = $('input[name="customerType"]:checked').val();
+                
+                var model = {
+                    BookingDetails: {
+                        MovieId: '@Model.BookingDetails.MovieId',
+                        MovieName: '@Model.BookingDetails.MovieName',
+                        CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
+                        ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
+                        ShowTime: '@Model.BookingDetails.ShowTime',
+                        SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
+                        TotalPrice: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        MovieShowId: @Model.MovieShowId,
+                        PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
+                    },
+                    CustomerType: customerType,
+                    MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
+                    MemberId: customerType === 'member' ? $('#memberId').val() : '',
+                    MemberFullName: customerType === 'member' ? $('#memberFullName').val() : $('#guestName').val(),
+                    MemberIdentityCard: customerType === 'member' ? $('#memberIdentityCard').val() : '',
+                    MemberPhoneNumber: customerType === 'member' ? $('#memberPhoneNumber').val() : $('#guestPhone').val(),
+                    MemberScore: customerType === 'member' ? (parseInt($('#memberScore').val()) || 0) : 0,
+                    UsedScore: customerType === 'member' ? (parseInt($('#useScore').val()) || 0) : 0,
+                    SelectedVoucherId: customerType === 'member' ? $('#selectedVoucherId').val() : '',
+                    VoucherAmount: customerType === 'member' ? (parseInt($('#voucherAmountHidden').val()) || 0) : 0,
+                    AccountId: customerType === 'member' ? $('#accountId').val() : '',
+                    RankDiscountPercent: customerType === 'member' ? (parseFloat($('#rankDiscountPercent').val()) || 0) : 0,
+                    MovieShowId: @Model.MovieShowId,
+                    SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
+                    TotalFoodPrice: @Model.TotalFoodPrice
+                };
+
+                // Submit form để redirect đến QR code page
+                var form = $('<form>', {
+                    'method': 'POST',
+                    'action': '@Url.Action("CreateQRCode", "QRPayment")'
+                });
+                
+                // Thêm input hidden cho model data
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'modelData',
+                    'value': JSON.stringify(model)
+                }));
+                
+                $('body').append(form);
+                form.submit();
             });
 
             // Remove ticketsToConvert logic, add useScore logic
@@ -613,6 +737,41 @@
                     updatePriceAll();
                 });
             }
+            // Guest info validation
+            $('#guestName, #guestPhone').on('input', function() {
+                console.log('Guest input changed:', $(this).attr('id'), 'value:', $(this).val());
+                updateConfirmButtonState();
+                validateGuestInfo();
+            });
+            
+            // Also trigger on blur to ensure validation
+            $('#guestName, #guestPhone').on('blur', function() {
+                updateConfirmButtonState();
+                validateGuestInfo();
+            });
+            
+            function validateGuestInfo() {
+                var guestName = $('#guestName').val().trim();
+                var guestPhone = $('#guestPhone').val().trim();
+                var message = '';
+                
+                if (guestName.length === 0 && guestPhone.length === 0) {
+                    message = '';
+                } else if (guestName.length === 0) {
+                    message = 'Please enter guest name.';
+                } else if (guestPhone.length === 0) {
+                    message = 'Please enter phone number.';
+                } else if (guestPhone.length < 10) {
+                    message = 'Phone number must be at least 10 digits.';
+                }
+                
+                if (message.length > 0) {
+                    $('#guestValidationMessage').text(message).show();
+                } else {
+                    $('#guestValidationMessage').hide();
+                }
+            }
+
             // On page load, show initial state
             updatePriceAll();
             updateConfirmButtonState(); // <-- update button state

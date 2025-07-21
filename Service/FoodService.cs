@@ -13,25 +13,24 @@ namespace MovieTheater.Service
             _foodRepository = foodRepository;
         }
 
-        public async Task<FoodListViewModel> GetAllAsync(string? searchKeyword = null, string? categoryFilter = null, bool? statusFilter = null)
+       public async Task<FoodListViewModel> GetAllAsync(string? searchKeyword = null, string? categoryFilter = null, bool? statusFilter = null)
         {
-            IEnumerable<Food> foods;
+            var foods = await _foodRepository.GetAllAsync();
 
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                foods = await _foodRepository.SearchAsync(searchKeyword);
+                foods = foods.Where(f =>
+                    (!string.IsNullOrEmpty(f.Name) && f.Name.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(f.Description) && f.Description.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase))
+                );
             }
-            else if (!string.IsNullOrEmpty(categoryFilter))
+            if (!string.IsNullOrEmpty(categoryFilter))
             {
-                foods = await _foodRepository.GetByCategoryAsync(categoryFilter);
+                foods = foods.Where(f => f.Category != null && f.Category.Equals(categoryFilter, StringComparison.OrdinalIgnoreCase));
             }
-            else if (statusFilter.HasValue)
+            if (statusFilter.HasValue)
             {
-                foods = await _foodRepository.GetByStatusAsync(statusFilter.Value);
-            }
-            else
-            {
-                foods = await _foodRepository.GetAllAsync();
+                foods = foods.Where(f => f.Status == statusFilter.Value);
             }
 
             var foodViewModels = foods.Select(f => new FoodViewModel
