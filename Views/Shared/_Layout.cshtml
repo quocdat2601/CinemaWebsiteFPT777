@@ -206,10 +206,7 @@
             </div>
         </nav>
     </header>
-@if (ViewContext.RouteData.Values["controller"]?.ToString() == "Booking")
-{
-    @Html.Partial("_BookingStepper")
-}
+
 
     <main role="main" class="fade-in" style="padding-top:0;">
         @RenderBody()

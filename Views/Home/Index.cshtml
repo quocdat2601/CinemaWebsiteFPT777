@@ -262,7 +262,7 @@
                                                 <div>16+</div>
                                             </div>
                                             <div style="display:flex; justify-content:center; gap:0.8rem; flex-wrap:nowrap;">
-                                                <a href="#" class="btn btn-outline-light btn-hover" style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; border:1.5px solid #ffe066; color:#ffe066; background:transparent; font-weight:600; display:inline-flex; align-items:center; gap:0.3rem; white-space:nowrap; min-width:0;">
+                                                <a href="#" class="btn btn-outline-light btn-hover watch-trailer-btn" data-trailer-url="@movie.TrailerUrl" style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; border:1.5px solid #ffe066; color:#ffe066; background:transparent; font-weight:600; display:inline-flex; align-items:center; gap:0.3rem; white-space:nowrap; min-width:0;">
                                                     <i class="fa fa-play-circle"></i> <span>Watch Trailer</span>
                                                 </a>
                                                 <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="btn btn-warning btn-hover" style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; font-weight:700; color:#222; background:#ffe066; border:none; white-space:nowrap; min-width:0;">
@@ -384,6 +384,20 @@
         <div class="copyright" style="margin-top:1rem;">Copyright 2024 <a href="#" target="_blank">Team03</a></div>
     </div>
 </section>
+<!-- Modal for Trailer -->
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background:#181a20;">
+      <div class="modal-header border-0">
+        <h5 class="modal-title text-white" id="trailerModalLabel">Movie Trailer</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0" style="height:450px;">
+        <iframe id="trailerFrame" width="100%" height="100%" src="" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
 @section Scripts {
     <!-- Xóa jQuery vì đã có trong layout -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
@@ -442,6 +456,34 @@
                     600: { items: 2, slideBy: 2 },
                     1000: { items: 3, slideBy: 3 }
                 }
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var trailerModal = new bootstrap.Modal(document.getElementById('trailerModal'));
+            var trailerFrame = document.getElementById('trailerFrame');
+            document.querySelectorAll('.watch-trailer-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var url = btn.getAttribute('data-trailer-url');
+                    if (url) {
+                        // Convert to embed if needed
+                        var embedUrl = url;
+                        if (url.includes('youtube.com/watch?v=')) {
+                            var videoId = url.split('v=')[1].split('&')[0];
+                            embedUrl = 'https://www.youtube.com/embed/' + videoId;
+                        } else if (url.includes('youtu.be/')) {
+                            var videoId = url.split('youtu.be/')[1].split('?')[0];
+                            embedUrl = 'https://www.youtube.com/embed/' + videoId;
+                        }
+                        trailerFrame.src = embedUrl + '?autoplay=1';
+                        trailerModal.show();
+                    }
+                });
+            });
+            document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function () {
+                trailerFrame.src = '';
             });
         });
     </script>
