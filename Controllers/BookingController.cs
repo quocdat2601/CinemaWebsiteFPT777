@@ -481,10 +481,11 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Failed (GET)</remarks>
         [HttpGet]
-        public IActionResult Failed()
+        public async Task<IActionResult> Failed()
         {
             var invoiceId = TempData["InvoiceId"] as string;
-            if (!string.IsNullOrEmpty(invoiceId))
+            var userId = _accountService.GetCurrentUser()?.AccountId;
+            if (!string.IsNullOrEmpty(invoiceId) && userId != null)
             {
                 var invoice = _invoiceService.GetById(invoiceId);
                 if (invoice != null && invoice.Status != InvoiceStatus.Incomplete)
@@ -494,44 +495,12 @@ namespace MovieTheater.Controllers
                     _context.Invoices.Update(invoice);
                     _context.SaveChanges();
                 }
-                // Gửi realtime dashboard khi failed
-                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
-                // Giữ lại các trường cần thiết trong TempData để View sử dụng
-                TempData.Keep("PromotionDiscount");
-                TempData.Keep("VoucherAmount");
-                TempData.Keep("RankDiscount");
-                TempData.Keep("OriginalPrice");
-                TempData.Keep("UsedScore");
-                TempData.Keep("FinalPrice");
-                // Lấy danh sách ghế chi tiết
-                var seatNamesArr = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToArray();
-                var seats = new List<SeatDetailViewModel>();
-                foreach (var seatName in seatNamesArr)
-                {
-                    var seat = _seatService.GetSeatByName(seatName);
-                    if (seat == null)
-                    {
-                        continue;
-                    }
-                    SeatType seatType = null;
-                    if (seat.SeatTypeId.HasValue)
-                    {
-                        seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
-                    }
-                    seats.Add(new SeatDetailViewModel
-                    {
-                        SeatId = seat.SeatId,
-                        SeatName = seat.SeatName,
-                        SeatType = seatType?.TypeName ?? "N/A",
-                        Price = seatType?.PricePercent ?? 0
-                    });
-                }
-                ViewBag.SeatDetails = seats;
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
+                var viewModel = await _bookingDomainService.BuildSuccessViewModelAsync(invoiceId, userId);
+                return View(viewModel);
             }
-            return View();
+            // Nếu không có invoiceId hoặc userId, truyền ViewModel rỗng để tránh null
+            return View(new BookingSuccessViewModel());
         }
 
         /// <summary>
