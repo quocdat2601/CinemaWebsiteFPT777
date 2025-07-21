@@ -196,7 +196,7 @@ CREATE TABLE Invoice (
     Seat_IDs NVARCHAR(MAX) NULL,
     Account_ID VARCHAR(10),
     Movie_Show_Id INT, 
-    Promotion_Discount NVARCHAR(100) DEFAULT '0',
+    Promotion_Discount NVARCHAR(1000) DEFAULT '0',
     Voucher_ID VARCHAR(10) NULL,
     Cancel BIT NOT NULL DEFAULT 0,         -- true/false, mặc định là false (chưa hủy)
     CancelDate DATETIME NULL,              -- ngày hủy, cho phép null
