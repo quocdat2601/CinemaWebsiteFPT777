@@ -283,7 +283,7 @@ namespace MovieTheater.Controllers
             // Lấy thể loại (genre) dạng chuỗi
             string genre = movie.Types != null && movie.Types.Any() ? string.Join(", ", movie.Types.Select(t => t.TypeName)) : string.Empty;
             // Lấy poster
-            string poster = !string.IsNullOrEmpty(movie.LargeImage) ? movie.LargeImage : movie.SmallImage;
+            string poster = movie.SmallImage;
 
             var viewModel = new SeatSelectionViewModel
             {
