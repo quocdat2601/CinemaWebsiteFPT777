@@ -139,55 +139,35 @@ namespace MovieTheater.Controllers
             try
             {
                 _logger.LogInformation("DisplayQR called with orderId: {OrderId}, amount: {Amount}", orderId, amount);
-                
-                // Tạo thông tin đơn hàng
+
                 var orderInfo = $"Ve xem phim - {movieName}";
-                
-                // Tạo QR code VietQR thực tế
-                var qrData = _qrPaymentService.GenerateVietQRCode(amount, orderInfo, orderId);
-                var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
-                _logger.LogInformation("VietQR image URL: {QRImage}", qrImage);
-                
-                // Tạo view model
+                // Chỉ tạo QR PayOS
+                var payosQrUrl = _qrPaymentService.GeneratePayOSQRCode(amount, orderInfo, orderId);
+
                 var viewModel = new QRPaymentViewModel
                 {
                     OrderId = orderId,
                     Amount = amount,
                     OrderInfo = orderInfo,
-                    QRCodeData = qrData,
-                    QRCodeImage = qrImage,
+                    QRCodeData = payosQrUrl, // dùng luôn link QR PayOS nếu là ảnh
+                    QRCodeImage = payosQrUrl, // dùng luôn link QR PayOS nếu là ảnh
                     ExpiredTime = DateTime.Now.AddMinutes(15),
                     CustomerName = customerName,
                     CustomerPhone = customerPhone,
                     MovieName = movieName,
                     ShowTime = showTime,
-                    SeatInfo = seatInfo
+                    SeatInfo = seatInfo,
+                    PayOSQRCodeUrl = payosQrUrl
                 };
 
-                _logger.LogInformation("QR Payment view model created successfully");
+                _logger.LogInformation("PayOS QR URL: {PayOSQRCodeUrl}", payosQrUrl);
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in DisplayQR: {Message}", ex.Message);
-                
-                // Fallback view model với VietQR demo
-                var fallbackViewModel = new QRPaymentViewModel
-                {
-                    OrderId = orderId ?? "DEMO001",
-                    Amount = amount,
-                    OrderInfo = $"Ve xem phim - {movieName ?? "Demo Movie"}",
-                    QRCodeData = $"https://api.vietqr.io/image/VCB/1234567890/{amount}/Ve xem phim - {movieName ?? "Demo Movie"}",
-                    QRCodeImage = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://api.vietqr.io/image/VCB/1234567890/{amount}/Ve xem phim - {movieName ?? "Demo Movie"}",
-                    ExpiredTime = DateTime.Now.AddMinutes(15),
-                    CustomerName = customerName ?? "Demo Customer",
-                    CustomerPhone = customerPhone ?? "Demo Phone",
-                    MovieName = movieName ?? "Demo Movie",
-                    ShowTime = showTime ?? "Demo Time",
-                    SeatInfo = seatInfo ?? "Demo Seat"
-                };
-                
-                return View(fallbackViewModel);
+                // Fallback view model
+                return View(new QRPaymentViewModel { OrderId = orderId, Amount = amount });
             }
         }
 

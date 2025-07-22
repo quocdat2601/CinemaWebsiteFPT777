@@ -13,5 +13,7 @@ namespace MovieTheater.ViewModels
         public string MovieName { get; set; }
         public string ShowTime { get; set; }
         public string SeatInfo { get; set; }
+        public string MoMoQRCodeBase64 { get; set; }
+        public string PayOSQRCodeUrl { get; set; }
     }
 } 

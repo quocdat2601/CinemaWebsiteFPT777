@@ -8,5 +8,10 @@ namespace MovieTheater.Models
         public string BankName { get; set; }
         public string QRContent { get; set; }
         public int ExpiredTime { get; set; } // Expiration time in minutes
+        public string PayOSClientId { get; set; }
+        public string PayOSApiKey { get; set; }
+        public string PayOSChecksumKey { get; set; }
+        public string PayOSReturnUrl { get; set; }
+        public string PayOSCancelUrl { get; set; }
     }
 } 

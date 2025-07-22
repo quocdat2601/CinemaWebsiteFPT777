@@ -2,7 +2,6 @@ using MovieTheater.Models;
 using QRCoder;
 using System.Security.Cryptography;
 using System.Text;
-using System.Globalization;
 
 namespace MovieTheater.Service
 {
@@ -205,6 +204,122 @@ namespace MovieTheater.Service
                 _logger.LogError(ex, "Error generating simple QR code");
                 return "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DEMO_QR_CODE";
             }
+        }
+
+        public string GenerateMoMoQRCodeBase64(string phoneNumber)
+        {
+            if (phoneNumber.StartsWith("0"))
+            {
+                phoneNumber = "84" + phoneNumber.Substring(1);
+            }
+
+            string momoData = $"2|99|{phoneNumber}";
+
+            // 1. Tạo dữ liệu QR
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(momoData, QRCodeGenerator.ECCLevel.Q);
+
+            // 2. Dùng PngByteQRCode để render ra ảnh PNG dưới dạng mảng byte
+            PngByteQRCode pngQrCode = new PngByteQRCode(qrCodeData);
+            byte[] qrCodeImageBytes = pngQrCode.GetGraphic(20);
+
+            // 3. Chuyển mảng byte sang Base64
+            string base64 = Convert.ToBase64String(qrCodeImageBytes);
+
+            return $"data:image/png;base64,{base64}";
+        }
+
+        public string GeneratePayOSQRCode(decimal amount, string orderInfo, string orderId)
+        {
+            try
+            {
+                var clientId = _config.PayOSClientId;
+                var apiKey = _config.PayOSApiKey;
+                var checksumKey = _config.PayOSChecksumKey;
+                var returnUrl = _config.PayOSReturnUrl;
+                var cancelUrl = _config.PayOSCancelUrl;
+
+                // Lấy orderCode là số nguyên dương từ orderId (ví dụ: INV142 -> 142)
+                int orderCode = 0;
+                if (!string.IsNullOrEmpty(orderId) && orderId.StartsWith("INV"))
+                {
+                    int.TryParse(orderId.Substring(3), out orderCode);
+                }
+                // Nếu không lấy được thì sinh số ngẫu nhiên nhỏ hơn 9007199254740991
+                if (orderCode <= 0 || orderCode > 9007199254740991)
+                {
+                    orderCode = new Random().Next(1, 999999999); // hoặc dùng timestamp
+                }
+
+                // Truncate description to max 25 characters for PayOS
+                string shortDescription = orderInfo;
+                if (!string.IsNullOrEmpty(shortDescription) && shortDescription.Length > 25)
+                {
+                    shortDescription = shortDescription.Substring(0, 25);
+                }
+
+                // Tạo signature đúng chuẩn PayOS
+                var dataString = $"amount={(int)amount}&cancelUrl={cancelUrl}&description={shortDescription}&orderCode={orderCode}&returnUrl={returnUrl}";
+                var signature = CreatePayOSSignature(dataString, checksumKey);
+
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("x-client-id", clientId);
+                    client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+
+                    var order = new
+                    {
+                        amount = (int)amount,
+                        description = shortDescription,
+                        orderCode = orderCode,
+                        returnUrl = returnUrl,
+                        cancelUrl = cancelUrl,
+                        signature = signature
+                    };
+                    var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(order), Encoding.UTF8, "application/json");
+                    var response = client.PostAsync("https://api-merchant.payos.vn/v2/payment-requests", content).Result;
+                    var responseBody = response.Content.ReadAsStringAsync().Result;
+                    using var doc = System.Text.Json.JsonDocument.Parse(responseBody);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("data", out var data))
+                    {
+                        if (data.TryGetProperty("qrCode", out var qrCode))
+                        {
+                            var qrString = qrCode.GetString();
+                            // Render chuỗi qrCode thành ảnh QR (base64 PNG) bằng QRCoder
+                            return RenderQRCodeBase64(qrString);
+                        }
+                    }
+                    _logger.LogError($"PayOS response error (không có qrCode): {responseBody}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating PayOS QR code");
+                return null;
+            }
+        }
+
+        // Hàm tạo signature HMAC_SHA256
+        private string CreatePayOSSignature(string data, string key)
+        {
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key)))
+            {
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+                return BitConverter.ToString(hash).Replace("-", "").ToLower();
+            }
+        }
+
+        // Hàm render chuỗi QR thành ảnh base64 PNG
+        private string RenderQRCodeBase64(string qrString)
+        {
+            if (string.IsNullOrEmpty(qrString)) return null;
+            var qrGenerator = new QRCoder.QRCodeGenerator();
+            var qrCodeData = qrGenerator.CreateQrCode(qrString, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
+            var qrBytes = qrCode.GetGraphic(20);
+            return $"data:image/png;base64,{Convert.ToBase64String(qrBytes)}";
         }
     }
 
