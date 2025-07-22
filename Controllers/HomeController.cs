@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using System.Security.Claims;
+using MovieTheater.Models; // Added for Movie model
+using System.Linq; // Added for ToList()
 
 namespace MovieTheater.Controllers
 {
@@ -32,13 +34,16 @@ namespace MovieTheater.Controllers
                 }
             }
 
-            var movies = _movieService.GetAll();
+            var movies = _movieService.GetAll().ToList();
             var promotions = _promotionService.GetAll();
+
+            // Truyền movie đầu tiên làm Model (active movie)
+            Movie? activeMovie = movies.FirstOrDefault();
 
             ViewBag.Movies = movies;
             ViewBag.Promotions = promotions;
 
-            return View();
+            return View(activeMovie);
         }
         /// <summary>
         /// [GET] /Home/Chat

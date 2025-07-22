@@ -280,6 +280,11 @@ namespace MovieTheater.Controllers
             var foods = await _foodService.GetAllAsync(null, null, true);
             ViewBag.Foods = foods.Foods;
 
+            // Lấy thể loại (genre) dạng chuỗi
+            string genre = movie.Types != null && movie.Types.Any() ? string.Join(", ", movie.Types.Select(t => t.TypeName)) : string.Empty;
+            // Lấy poster
+            string poster = movie.SmallImage;
+
             var viewModel = new SeatSelectionViewModel
             {
                 MovieId = movieId,
@@ -293,7 +298,15 @@ namespace MovieTheater.Controllers
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,
-                SeatTypes = seatTypes
+                SeatTypes = seatTypes,
+                // Bổ sung thông tin phim
+                MoviePoster = poster,
+                MovieContent = movie.Content,
+                MovieDirector = movie.Director,
+                MovieActor = movie.Actor,
+                MovieGenre = genre,
+                MovieFromDate = movie.FromDate,
+                MovieDuration = movie.Duration
             };
 
             return View("View", viewModel);

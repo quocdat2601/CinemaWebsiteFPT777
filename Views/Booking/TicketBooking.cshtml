@@ -3,19 +3,14 @@
     var movieList = ViewBag.MovieList as List<MovieTheater.Models.Movie>;
     var selectedMovieId = ViewBag.SelectedMovieId as string;
     var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
+    ViewBag.CurrentStep = 1;
 }
-
+@Html.Partial("_BookingProgress")
 <div class="booking-bg-custom"></div>
 <div class="booking-bg-overlay"></div>
 <div class="booking-content-wrapper">
     <div class="container mt-5 d-flex justify-content-center align-items-center" style="min-height:70vh;">
         <div class="booking-card-modern glass-card p-4 w-100" style="max-width: 480px;">
-            <div class="stepper mb-4">
-                <div class="step active"><span class="step-icon">🎬</span><span>Movie</span></div>
-                <div class="step"><span class="step-icon">🗓️</span><span>Date</span></div>
-                <div class="step"><span class="step-icon">🎞️</span><span>Version</span></div>
-                <div class="step"><span class="step-icon">⏰</span><span>Time</span></div>
-            </div>
             <h2 class="text-center mb-4 booking-title"><i class="fas fa-ticket-alt me-2"></i>Book Your Ticket</h2>
             <form id="bookingForm" novalidate>
                 <div class="mb-4">

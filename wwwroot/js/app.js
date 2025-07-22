@@ -47,7 +47,7 @@ $(document).ready(() => {
     $('.movies-slide').owlCarousel({
         items: 2,
         dots: false,
-        nav:true,
+        nav: true,
         navText: navText,
         margin: 15,
         responsive: {
@@ -79,4 +79,26 @@ $(document).ready(() => {
     //         1000: { items: 4 }
     //     }
     // });
-})
+
+    // Hiệu ứng ripple cho nút .btn-hover
+    $(document).on('click', '.btn-hover', function(e) {
+        const btn = $(this);
+        // Xóa ripple cũ nếu có
+        btn.find('.ripple').remove();
+        // Tính vị trí click
+        const offset = btn.offset();
+        const x = e.pageX - offset.left;
+        const y = e.pageY - offset.top;
+        // Tạo ripple
+        const ripple = $('<span class="ripple"></span>');
+        ripple.css({
+            left: x + 'px',
+            top: y + 'px',
+            width: btn.outerWidth(),
+            height: btn.outerWidth()
+        });
+        btn.append(ripple);
+        // Xóa ripple sau khi animation xong
+        setTimeout(() => ripple.remove(), 500);
+    });
+});
