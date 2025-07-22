@@ -1,0 +1,41 @@
+﻿@using MovieTheater.Models
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+    }
+
+        .nav-tabs .nav-link.active {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+        }
+</style>
+<div class="text-center">
+    <h2>List of Persons</h2>
+</div>
+
+<div class="text-center mb-2">
+    <a asp-action="Create" asp-controller="Cast" class="btn btn-sm btn-primary">
+        Create a cast/director
+    </a>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="personTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-dark" id="actor-tab" data-bs-toggle="tab" data-bs-target="#actor" type="button" role="tab">Actors</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark" id="director-tab" data-bs-toggle="tab" data-bs-target="#director" type="button" role="tab">Directors</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="personTabsContent">
+    <div class="tab-pane fade show active" id="actor" role="tabpanel">
+        @Html.Partial("_CastTable", ViewBag.Actors as List<Person>)
+    </div>
+    <div class="tab-pane fade" id="director" role="tabpanel">
+        @Html.Partial("_CastTable", ViewBag.Directors as List<Person>)
+    </div>
+</div>
+<partial name="_ToastMessages" />

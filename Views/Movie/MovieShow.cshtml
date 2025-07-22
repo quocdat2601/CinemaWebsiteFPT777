@@ -281,10 +281,12 @@
             if (!roomId) return;
             // Populate show dates from model (filter by today and toDate)
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to midnight
             const toDate = '@Model.ToDate';
             const availableShowDates = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.AvailableShowDates.OrderBy(d => d).Select(d => new { value = d.ToString("yyyy-MM-dd"), text = d.ToString("dd/MM/yyyy") })));
             const filteredDates = availableShowDates.filter(d => {
                 const dateObj = new Date(d.value);
+                    dateObj.setHours(0, 0, 0, 0); // Set to midnight
                 return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
             });
             populateShowDates(filteredDates);

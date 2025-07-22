@@ -66,12 +66,6 @@
 						<span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
 					</div>
 
-					<div class="form-group mb-3">
-						<strong>Movie Name (VN)</strong>
-						<input type="text" class="form-control" asp-for="MovieNameVn" />
-						<span asp-validation-for="MovieNameVn" class="text-danger"></span>
-					</div>
-
 					<div class="row mb-3">
 						<div class="col">
 							<strong>From Date</strong>
@@ -86,12 +80,6 @@
 					</div>
 
 					<div class="form-group mb-3">
-						<strong>Actor</strong>
-						<input type="text" class="form-control" asp-for="Actor" />
-						<span asp-validation-for="Actor" class="text-danger"></span>
-					</div>
-
-					<div class="form-group mb-3">
 						<strong>Production Company</strong>
 						<input type="text" class="form-control" asp-for="MovieProductionCompany" />
 						<span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
@@ -99,8 +87,22 @@
 
 					<div class="form-group mb-3">
 						<strong>Director</strong>
-						<input type="text" class="form-control" asp-for="Director" />
-						<span asp-validation-for="Director" class="text-danger"></span>
+						<div class="d-flex align-items-center">
+							<input type="text" class="form-control me-2" id="selectedDirectors" readonly placeholder="Selected directors will appear here" />
+							<button type="button" class="btn btn-primary" onclick="openDirectorPopup()">Select</button>
+						</div>
+						<input type="hidden" asp-for="SelectedDirectorIds" id="selectedDirectorIds" />
+						<span asp-validation-for="SelectedDirectorIds" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Actors</strong>
+						<div class="d-flex align-items-center">
+							<input type="text" class="form-control me-2" id="selectedActors" readonly placeholder="Selected actors will appear here" />
+							<button type="button" class="btn btn-primary" onclick="openActorPopup()">Select</button>
+						</div>
+						<input type="hidden" asp-for="SelectedActorIds" id="selectedActorIds" />
+						<span asp-validation-for="SelectedActorIds" class="text-danger"></span>
 					</div>
 
 					<div class="form-group mb-3">
@@ -131,6 +133,8 @@
 							</label>
 						}
 					</div>
+
+
 				</div>
 			</div>
 
@@ -162,19 +166,270 @@
 	</div>
 </div>
 
-<script>
-	function previewImage(input, previewId) {
-		var preview = document.getElementById(previewId);
-		if (input.files && input.files[0]) {
-			var reader = new FileReader();
-			reader.onload = function (e) {
-				preview.src = e.target.result;
-				preview.style.display = "block";
-			}
-			reader.readAsDataURL(input.files[0]);
-		} else {
-			preview.src = "#";
-			preview.style.display = "none";
+<!-- Director Selection Modal -->
+<div class="modal fade" id="directorModal" tabindex="-1" aria-labelledby="directorModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="directorModalLabel">Select Directors</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="search-container mb-3">
+					<input type="text" class="form-control" id="directorSearch" placeholder="Search directors..." onkeyup="filterDirectors()">
+				</div>
+				<div class="row" id="directorsList">
+					<!-- Directors will be loaded here -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="confirmDirectorSelection()">Confirm Selection</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Actor Selection Modal -->
+<div class="modal fade" id="actorModal" tabindex="-1" aria-labelledby="actorModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="actorModalLabel">Select Actors</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="search-container mb-3">
+					<input type="text" class="form-control" id="actorSearch" placeholder="Search actors..." onkeyup="filterActors()">
+				</div>
+				<div class="row" id="actorsList">
+					<!-- Actors will be loaded here -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="confirmActorSelection()">Confirm Selection</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+	<style>
+
+
+		.director-card, .actor-card {
+			transition: transform 0.2s;
 		}
-	}
-</script>
+
+		.director-card:hover, .actor-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+		}
+
+		.modal-xl .card-img-top {
+			height: 150px !important;
+			object-fit: cover;
+		}
+
+		.modal-xl .row {
+			margin: -8px;
+		}
+
+		.modal-xl .col-md-4 {
+			padding: 8px;
+		}
+
+		.card-body {
+			padding: 0.75rem;
+		}
+
+		.card-title {
+			margin-bottom: 0.5rem;
+			font-size: 0.9rem;
+		}
+
+		.director-card, .actor-card {
+			cursor: pointer;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.selection-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			opacity: 0;
+			transition: opacity 0.2s ease;
+		}
+
+		.selection-overlay i {
+			color: white;
+			font-size: 2rem;
+			opacity: 0;
+			transform: scale(0.5);
+			transition: all 0.2s ease;
+		}
+
+		.card.selected .selection-overlay {
+			opacity: 1;
+		}
+
+		.card.selected .selection-overlay i {
+			opacity: 1;
+			transform: scale(1);
+		}
+
+		.card:not(.selected):hover .selection-overlay {
+			opacity: 0.3;
+		}
+
+		.card:not(.selected):hover .selection-overlay i {
+			opacity: 0.7;
+			transform: scale(0.8);
+		}
+	</style>
+	<script>
+		let selectedDirectors = [];
+		let selectedActors = [];
+
+		let allDirectors = [];
+		let allActors = [];
+
+		function openDirectorPopup() {
+			$.get('/Movie/GetDirectors', function(data) {
+				allDirectors = data;
+				renderDirectors(data);
+				$('#directorModal').modal('show');
+			});
+		}
+
+		function openActorPopup() {
+			$.get('/Movie/GetActors', function(data) {
+				allActors = data;
+				renderActors(data);
+				$('#actorModal').modal('show');
+			});
+		}
+
+		function renderDirectors(directors) {
+			const directorsList = $('#directorsList');
+			directorsList.empty();
+			
+			directors.forEach(director => {
+				const directorCard = `
+					<div class="col-md-3 mb-3">
+													<div class="card director-card" data-id="${director.id}" data-name="${director.name.toLowerCase()}" onclick="toggleDirector(${director.id}, '${director.name}')">
+							<div class="selection-overlay">
+								<i class="fas fa-check-circle"></i>
+							</div>
+							<img src="${director.image || '/image/default-movie.png'}" class="card-img-top" alt="${director.name}">
+							<div class="card-body">
+								<h6 class="card-title">${director.name}</h6>
+							</div>
+						</div>
+					</div>
+				`;
+				directorsList.append(directorCard);
+			});
+
+			// Restore previously selected states
+			selectedDirectors.forEach(id => {
+				$(`.director-card[data-id="${id}"]`).addClass('selected');
+			});
+		}
+
+		function renderActors(actors) {
+			const actorsList = $('#actorsList');
+			actorsList.empty();
+			
+			actors.forEach(actor => {
+				const actorCard = `
+					<div class="col-md-3 mb-3">
+						<div class="card actor-card" data-id="${actor.id}" data-name="${actor.name.toLowerCase()}" onclick="toggleActor(${actor.id}, '${actor.name}')">
+							<div class="selection-overlay">
+								<i class="fas fa-check-circle"></i>
+							</div>
+							<img src="${actor.image || '/image/default-movie.png'}" class="card-img-top" alt="${actor.name}">
+							<div class="card-body">
+								<h6 class="card-title">${actor.name}</h6>
+							</div>
+						</div>
+					</div>
+				`;
+				actorsList.append(actorCard);
+			});
+		}
+
+		function filterDirectors() {
+			const searchTerm = $('#directorSearch').val().toLowerCase();
+			const filteredDirectors = allDirectors.filter(director => 
+				director.name.toLowerCase().includes(searchTerm)
+			);
+			renderDirectors(filteredDirectors);
+		}
+
+		function filterActors() {
+			const searchTerm = $('#actorSearch').val().toLowerCase();
+			const filteredActors = allActors.filter(actor => 
+				actor.name.toLowerCase().includes(searchTerm)
+			);
+			renderActors(filteredActors);
+		}
+
+		function toggleDirector(id, name) {
+			const index = selectedDirectors.indexOf(id.toString());
+			const card = $(`.director-card[data-id="${id}"]`);
+			
+			if (index === -1) {
+				selectedDirectors.push(id.toString());
+				card.addClass('selected');
+			} else {
+				selectedDirectors.splice(index, 1);
+				card.removeClass('selected');
+			}
+			
+			updateDirectorSelection();
+		}
+
+		function toggleActor(id, name) {
+			const index = selectedActors.indexOf(id.toString());
+			const card = $(`.actor-card[data-id="${id}"]`);
+			
+			if (index === -1) {
+				selectedActors.push(id.toString());
+				card.addClass('selected');
+			} else {
+				selectedActors.splice(index, 1);
+				card.removeClass('selected');
+			}
+			
+			updateActorSelection();
+		}
+
+		function updateDirectorSelection() {
+			$('#selectedDirectorIds').val(selectedDirectors.join(','));
+			$('#selectedDirectors').val(selectedDirectors.length + ' director(s) selected');
+		}
+
+		function updateActorSelection() {
+			$('#selectedActorIds').val(selectedActors.join(','));
+			$('#selectedActors').val(selectedActors.length + ' actor(s) selected');
+		}
+
+		function confirmDirectorSelection() {
+			$('#directorModal').modal('hide');
+		}
+
+		function confirmActorSelection() {
+			$('#actorModal').modal('hide');
+		}
+	</script>
+}

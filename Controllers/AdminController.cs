@@ -23,7 +23,7 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
         private readonly IVersionRepository _versionRepository;
-
+        private readonly IPersonRepository _personRepository;
         public AdminController(
             IMovieService movieService,
             IEmployeeService employeeService,
@@ -34,7 +34,7 @@ namespace MovieTheater.Controllers
             IAccountService accountService,
             ISeatService seatService,
             IInvoiceService invoiceService,
-            IFoodService foodService,
+            IFoodService foodService, IPersonRepository personRepository,
             IVoucherService voucherService,
             IRankService rankService, IVersionRepository versionRepository)
         {
@@ -51,6 +51,7 @@ namespace MovieTheater.Controllers
             _foodService = foodService;
             _rankService = rankService;
             _versionRepository = versionRepository;
+            _personRepository = personRepository;
         }
 
         // GET: AdminController
@@ -162,6 +163,12 @@ namespace MovieTheater.Controllers
                 case "RankMg":
                     var ranks = _rankService.GetAllRanks();
                     return PartialView("RankMg", ranks);
+                case "CastMg":
+                    var persons = _personRepository.GetAll();
+                    ViewBag.Persons = persons;
+                    ViewBag.Actors = persons.Where(c => c.IsDirector == false).ToList();
+                    ViewBag.Directors = persons.Where(c => c.IsDirector == true).ToList();
+                    return PartialView("CastMg");
                 default:
                     return Content("Tab not found.");
             }

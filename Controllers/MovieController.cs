@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
@@ -19,14 +19,16 @@ namespace MovieTheater.Controllers
         private readonly ILogger<MovieController> _logger;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IPersonRepository _personRepository;
 
-        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext, IWebHostEnvironment webHostEnvironment)
+        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext, IWebHostEnvironment webHostEnvironment, IPersonRepository personRepository)
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
             _logger = logger;
             _dashboardHubContext = dashboardHubContext;
             _webHostEnvironment = webHostEnvironment;
+            _personRepository = personRepository;
         }
 
         /// <summary>
@@ -79,31 +81,24 @@ namespace MovieTheater.Controllers
             {
                 return NotFound();
             }
-
-            CinemaRoom cinemaRoom = null;
-            if (movie.CinemaRoomId != null)
-            {
-                cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId);
-            }
+            var actors = movie.People.Where(p => p.IsDirector == false).ToList();
+            var directors = movie.People.Where(p => p.IsDirector == true).ToList();
 
             var viewModel = new MovieDetailViewModel
             {
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
-                MovieNameVn = movie.MovieNameVn,
                 FromDate = movie.FromDate,
                 ToDate = movie.ToDate,
-                Actor = movie.Actor,
                 MovieProductionCompany = movie.MovieProductionCompany,
-                Director = movie.Director,
                 Duration = movie.Duration,
                 Content = movie.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(movie.TrailerUrl),
-                LargeImage = movie.LargeImage,
+                SmallImage = movie.SmallImage,
                 AvailableTypes = movie.Types.ToList(),
-                AvailableVersions = movie.Versions.ToList()
+                AvailableVersions = movie.Versions.ToList(),
+                People = movie.People.ToList()
             };
-
             return View(viewModel);
         }
 
@@ -186,13 +181,34 @@ namespace MovieTheater.Controllers
 
             var selectedVersions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
 
+            // Parse selected actor and director IDs
+            var selectedActorIds = new List<int>();
+            var selectedDirectorIds = new List<int>();
+            
+            if (!string.IsNullOrEmpty(model.SelectedActorIds))
+            {
+                selectedActorIds = model.SelectedActorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+            
+            if (!string.IsNullOrEmpty(model.SelectedDirectorIds))
+            {
+                selectedDirectorIds = model.SelectedDirectorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+
+            // Get selected actors and directors
+            var selectedActors = _personRepository.GetActors().Where(a => selectedActorIds.Contains(a.PersonId)).ToList();
+            var selectedDirectors = _personRepository.GetDirectors().Where(d => selectedDirectorIds.Contains(d.PersonId)).ToList();
+
             var movie = new Movie
             {
                 MovieId = model.MovieId,
                 MovieNameEnglish = model.MovieNameEnglish,
-                MovieNameVn = model.MovieNameVn,
-                Actor = model.Actor,
-                Director = model.Director,
                 Duration = model.Duration,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
@@ -203,6 +219,7 @@ namespace MovieTheater.Controllers
                 SmallImage = smallImagePath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
+                People = selectedActors.Concat(selectedDirectors).ToList()
             };
 
             if (_movieService.AddMovie(movie))
@@ -236,13 +253,14 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
+            // Get actors and directors from the movie's People collection
+            var actors = movie.People.Where(p => p.IsDirector == false).ToList();
+            var directors = movie.People.Where(p => p.IsDirector == true).ToList();
+
             var model = new MovieDetailViewModel
             {
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
-                MovieNameVn = movie.MovieNameVn,
-                Actor = movie.Actor,
-                Director = movie.Director,
                 Duration = movie.Duration,
                 FromDate = movie.FromDate,
                 ToDate = movie.ToDate,
@@ -254,7 +272,9 @@ namespace MovieTheater.Controllers
                 AvailableTypes = _movieService.GetAllTypes(),
                 AvailableVersions = _movieService.GetAllVersions(),
                 SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
-                SelectedVersionIds = movie.Versions.Select(v => v.VersionId).ToList()
+                SelectedVersionIds = movie.Versions.Select(v => v.VersionId).ToList(),
+                SelectedActorIds = string.Join(",", actors.Select(a => a.PersonId)),
+                SelectedDirectorIds = string.Join(",", directors.Select(d => d.PersonId))
             };
 
             return View(model);
@@ -379,13 +399,34 @@ namespace MovieTheater.Controllers
                 }
             }
 
+            // Parse selected actor and director IDs
+            var selectedActorIds = new List<int>();
+            var selectedDirectorIds = new List<int>();
+            
+            if (!string.IsNullOrEmpty(model.SelectedActorIds))
+            {
+                selectedActorIds = model.SelectedActorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+            
+            if (!string.IsNullOrEmpty(model.SelectedDirectorIds))
+            {
+                selectedDirectorIds = model.SelectedDirectorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+
+            // Get selected actors and directors
+            var selectedActors = _personRepository.GetActors().Where(a => selectedActorIds.Contains(a.PersonId)).ToList();
+            var selectedDirectors = _personRepository.GetDirectors().Where(d => selectedDirectorIds.Contains(d.PersonId)).ToList();
+
             var movie = new Movie
             {
                 MovieId = model.MovieId,
                 MovieNameEnglish = model.MovieNameEnglish,
-                MovieNameVn = model.MovieNameVn,
-                Actor = model.Actor,
-                Director = model.Director,
                 Duration = model.Duration,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
@@ -396,6 +437,7 @@ namespace MovieTheater.Controllers
                 SmallImage = smallImagePath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
+                People = selectedActors.Concat(selectedDirectors).ToList()
             };
 
             if (_movieService.UpdateMovie(movie))
@@ -771,6 +813,28 @@ namespace MovieTheater.Controllers
             // Delete the show
             bool deleted = _movieService.DeleteMovieShows(movieShowId);
             return Json(new { success = deleted, message = deleted ? "Show deleted." : "Failed to delete show." });
+        }
+
+        [HttpGet]
+        public IActionResult GetDirectors()
+        {
+            var directors = _personRepository.GetDirectors();
+            return Json(directors.Select(d => new { 
+                id = d.PersonId, 
+                name = d.Name,
+                image = d.Image 
+            }));
+        }
+
+        [HttpGet]
+        public IActionResult GetActors()
+        {
+            var actors = _personRepository.GetActors();
+            return Json(actors.Select(a => new { 
+                id = a.PersonId, 
+                name = a.Name,
+                image = a.Image 
+            }));
         }
     }
 }

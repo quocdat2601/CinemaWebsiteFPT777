@@ -58,8 +58,6 @@
             <h1 class="movie-title">@movies.FirstOrDefault()?.MovieNameEnglish</h1>
             <div class="movie-meta">
                 <span class="movie-duration">@movies.FirstOrDefault()?.Duration</span>
-                <span class="movie-director">@movies.FirstOrDefault()?.Director</span>
-                <span class="movie-actor">@movies.FirstOrDefault()?.Actor</span>
             </div>
             <p class="movie-desc">@movies.FirstOrDefault()?.Content</p>
             <div class="movie-actions">
@@ -76,8 +74,6 @@
                                  data-large="@movie.LargeImage"
                                  data-title="@movie.MovieNameEnglish"
                                  data-duration="@movie.Duration"
-                                 data-director="@movie.Director"
-                                 data-actor="@movie.Actor"
                                  data-desc="@movie.Content">
                                 <img src="@movie.SmallImage" class="slider-img" alt="@movie.MovieNameEnglish">
                             </div>
