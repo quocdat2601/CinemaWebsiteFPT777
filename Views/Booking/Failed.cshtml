@@ -19,6 +19,7 @@
     var ticketId = booking.InvoiceId;
     var bookingDate = booking.BookingDate?.ToString("yyyy-MM-dd HH:mm") ?? "";
 }
+@Html.Partial("_BookingProgress")
 <style>
     .ticket-failed-header {
         background: #ffe3e3;

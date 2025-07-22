@@ -177,12 +177,21 @@
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding:0;">
                                     <img src="@(User.FindFirst("Image")?.Value ?? "/image/profile.jpg")" alt="Avatar" class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid #eee;">
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                <ul class="dropdown-menu dropdown-menu-end profile-dropdown-menu shadow-lg animate__animated animate__fadeIn" aria-labelledby="profileDropdown">
                                     @if (userRole == "Member")
                                     {
-                                        <li><a class="dropdown-item" href="/MyAccount/MainPage">View Profile</a></li>
+                                        <li>
+                                            <a class="dropdown-item profile-dropdown-item d-flex align-items-center gap-2" href="/MyAccount/MainPage">
+                                                <i class="fas fa-user-circle"></i> View Profile
+                                            </a>
+                                        </li>
                                     }
-                                    <li><a class="dropdown-item" href="/Account/Logout">Logout</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item profile-dropdown-item d-flex align-items-center gap-2" href="/Account/Logout">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         }
@@ -197,6 +206,7 @@
             </div>
         </nav>
     </header>
+
 
     <main role="main" class="fade-in" style="padding-top:0;">
         @RenderBody()
@@ -308,5 +318,64 @@
     }
   });
 </script>
+<footer class="footer mt-5 pt-4 pb-2" style="background: #10131a; color: #fff;">
+    <div class="container-fluid px-0">
+        <div class="row footer-content py-4 justify-content-between">
+            <!-- FOOTER -->
+            <div class="col-lg-4 d-flex flex-column align-items-start mb-4">
+                <h5 class="fw-bold mb-3">ABOUT FPT 777</h5>
+                <div class="footer-underline mb-2"></div>
+                <ul class="list-unstyled">
+                    <li><a href="#" class="footer-link">Theater System</a></li>
+                    <li><a href="#" class="footer-link">Theater Cluster</a></li>
+                    <li><a href="#" class="footer-link">Contact</a></li>
+                </ul>
+                    <img src="https://www.bhdstar.vn/wp-content/uploads/2023/08/image-21.png" alt="Đã thông báo Bộ Công Thương" style="width=190px,height:48px;margin-top:10px">
+            </div>
+            <div class="col-lg-4 d-flex flex-column align-items-start mb-4">
+                 <h5 class="fw-bold mb-3">TERMS & CONDITIONS</h5>
+                <div class="footer-underline mb-2"></div>
+                <ul class="list-unstyled">
+                        <li><a href="#" class="footer-link">Membership regulations</a></li>
+                    <li><a href="#" class="footer-link">Terms</a></li>
+                    <li><a href="#" class="footer-link">Guide how to book ticket online</a></li>
+                     <li><a href="#" class="footer-link">General rules and policies</a></li>
+                    <li>
+                        <a href="#" class="footer-link">
+                                Consumer personal information protection policy
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-lg-4 d-flex flex-column align-items-start mb-4">
+                <h5 class="fw-bold mb-3">CUSTOMER SERVICES</h5>
+                <div class="footer-underline mb-2"></div>
+                <p class="mb-1"><b>Hotline:</b> 19002099</p>
+                    <p class="mb-1"><b>Office hours:</b> 9:00 - 22:00 (Every single day, including Tet, holidays)</p>
+                <p class="mb-1"><b>Email support:</b> fpt777@support.com</p>
+                <div class="mt-3">
+                    <span class="fw-bold">SOCIAL MEDIAS</span>
+                    <div class="d-flex gap-3 mt-2">
+                        <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook fa-2x"></i></a>
+                        <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram fa-2x"></i></a>
+                        <a href="#" class="social-link" title="TikTok"><i class="fab fa-tiktok fa-2x"></i></a>
+                        <a href="#" class="social-link" title="YouTube"><i class="fab fa-youtube fa-2x"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- BOTTOM -->
+        <div class="footer-bottom-row d-flex align-items-center py-3 border-top" style="border-color: #222 !important;">
+            <img src="~/image/logo.png" alt="FPT777 Logo" style="height:56px;" class="me-3 ms-2">
+            <div class="footer-company-info small">
+                <b>FPT777 INDUSTRY</b><br>
+                <b>Business license:</b> Business license number: 01111111. First registered April 15, 2025<br>
+                <b>Address:</b> Saigon Hitech Park, Tan Phu Ward, Thu Duc, Ho Chi Minh City<br>
+                <b>Hotline:</b> 19002099<br>
+                COPYRIGHT 2025 FPT777NUMBER1. ALL RIGHTS RESERVED
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>
