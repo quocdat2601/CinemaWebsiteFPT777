@@ -409,6 +409,7 @@
             var maxPoints = Math.floor((discountedTotal * 0.9) / pointValue);
             maxPoints = Math.min(maxPoints, currentScore);
             $('#maxUsablePoints').text(maxPoints);
+            $('#useScore').attr('max', maxPoints);
             return maxPoints;
         }
 
@@ -426,37 +427,44 @@
             var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
             var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
             var afterPromo = afterRank - promoDiscountAmount;
+            if (afterPromo < 0) afterPromo = 0;
 
+            // Voucher chỉ áp dụng cho seat
             var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-
-            // Calculate seat after rank discount
-            var seatAfterRank = subtotal - rankDiscountAmount;
-            if (seatAfterRank < 0) seatAfterRank = 0;
-
-            // Add food
-            var seatAndFood = seatAfterRank + parseInt(foodPrices);
-
-            // Apply voucher to (seat + food)
-            var afterVoucher = seatAndFood - voucherAmount;
+            var afterVoucher = afterPromo - voucherAmount;
             if (afterVoucher < 0) afterVoucher = 0;
 
-            // Apply points
+            // Points chỉ áp dụng cho seat
             var useScore = parseInt($('#useScore').val()) || 0;
             var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
             var valid = true;
             var validationMsg = '';
 
-            var finalTotal = afterVoucher;
-            if (valid && useScore > 0) {
-                var pointsValue = useScore * pointValue;
-                finalTotal = afterVoucher - pointsValue;
-                if (finalTotal < 0) finalTotal = 0;
+            var pointsValue = useScore * pointValue;
+            if (useScore > maxUsablePoints) {
+                useScore = maxUsablePoints;
+                $('#useScore').val(useScore);
             }
+            if (useScore < 0) useScore = 0;
+            if (useScore > 0 && pointsValue > afterVoucher) {
+                useScore = Math.floor(afterVoucher / pointValue);
+                $('#useScore').val(useScore);
+            }
+            pointsValue = useScore * pointValue;
+
+            var seatFinal = afterVoucher - pointsValue;
+            if (seatFinal < 0) seatFinal = 0;
+
+            // Tổng cuối cùng = seatFinal + food
+            var finalTotal = seatFinal + parseInt(foodPrices);
 
             // Update UI
             $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
             $('#subtotal').text(Number(subtotal).toLocaleString() + ' VND');
             $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
+
+            // Cập nhật input ẩn tổng tiền để gửi sang payment
+            $("#TotalPrice").val(finalTotal);
 
             // Rank discount row
             if (rankDiscountPercent > 0) {
@@ -495,7 +503,7 @@
             // Point earning preview
             var pointsToEarn = 0;
             if (valid) {
-                pointsToEarn = Math.round(finalTotal * earningRate / 100 / pointValue);
+                pointsToEarn = Math.round(seatFinal * earningRate / 100 / pointValue);
             }
             $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
 
@@ -517,6 +525,11 @@
         }
 
         $('#useScore').on('input', function () {
+            var max = parseInt($(this).attr('max')) || 0;
+            var val = parseInt($(this).val()) || 0;
+            if (val > max) {
+                $(this).val(max);
+            }
             updatePriceFlow();
         });
 

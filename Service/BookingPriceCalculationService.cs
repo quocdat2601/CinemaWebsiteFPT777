@@ -57,15 +57,10 @@ namespace MovieTheater.Service
                 }
             }
             // Final seat total after all discounts
-            decimal seatTotalAfterDiscounts = promoSubtotal - rankDiscount - usedScoreValue - voucher;
+            decimal seatTotalAfterDiscounts = promoSubtotal - rankDiscount - voucher - usedScoreValue;
             if (seatTotalAfterDiscounts < 0) seatTotalAfterDiscounts = 0;
-            // Add food for display only
+            // Tổng cuối cùng = seat sau giảm + food
             decimal totalPrice = seatTotalAfterDiscounts + totalFoodPrice;
-            // AddScore is based only on seatTotalAfterDiscounts
-            // New logic: apply voucher to (seat + food) after rank discount and used score
-            decimal seatAndFoodTotal = promoSubtotal - rankDiscount - usedScoreValue + totalFoodPrice;
-            decimal totalAfterVoucher = seatAndFoodTotal - voucher;
-            if (totalAfterVoucher < 0) totalAfterVoucher = 0;
             // AddScore is based only on seat portion after discounts
             decimal earningRate = user?.Rank?.PointEarningPercentage ?? 1;
             int addScore = (int)Math.Floor((promoSubtotal - rankDiscount - usedScoreValue) * earningRate / 100 / 1000);
@@ -80,9 +75,9 @@ namespace MovieTheater.Service
                 UseScore = usedScore,
                 UseScoreValue = usedScoreValue,
                 TotalFoodPrice = totalFoodPrice,
-                TotalPrice = totalAfterVoucher,
+                TotalPrice = totalPrice, // Đã sửa: tổng cuối cùng đúng logic
                 AddScore = addScore,
-                SeatTotalAfterDiscounts = promoSubtotal - rankDiscount - usedScoreValue,
+                SeatTotalAfterDiscounts = seatTotalAfterDiscounts,
                 SeatDetails = seats,
                 FoodDetails = foodDetails
             };

@@ -110,6 +110,141 @@
         box-shadow: 0 2px 8px rgba(30,41,59,0.07);
         background: #fff;
     }
+    /* Loại bỏ giới hạn chiều rộng và overflow ở sơ đồ ghế */
+    .seat-layout-container, .seat-container, .seat-map-compact, .seat-layout-bordered-area {
+        max-width: none !important;
+        width: auto !important;
+        overflow-x: visible !important;
+    }
+    .table {
+        width: auto !important;
+        min-width: unset !important;
+        max-width: none !important;
+    }
+    /* Nút Continue đẹp hơn */
+    #bookButton {
+        background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%);
+        color: #fff;
+        font-weight: bold;
+        font-size: 1.15rem;
+        border: none;
+        border-radius: 999px;
+        padding: 0.85rem 2.5rem 0.85rem 2.1rem;
+        box-shadow: 0 2px 12px rgba(221,36,118,0.10);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+    #bookButton:hover:not(:disabled) {
+        background: linear-gradient(90deg, #dd2476 0%, #ff512f 100%);
+        color: #fff;
+        transform: translateY(-2px) scale(1.04);
+        box-shadow: 0 6px 24px rgba(221,36,118,0.16);
+    }
+    #bookButton:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    #bookButton .continue-arrow {
+        font-size: 1.3em;
+        margin-left: 0.2em;
+        transition: transform 0.18s;
+    }
+    #bookButton:hover .continue-arrow {
+        transform: translateX(4px);
+    }
+    /* Sidebar đơn giản, hiện đại */
+    .fixed-sidebar {
+        border: none !important;
+        outline: none !important;
+        box-shadow: 0 4px 24px rgba(30,41,59,0.08);
+        background: #fff;
+        border-radius: 18px;
+        padding: 1.2rem 1.1rem 1.3rem 1.1rem;
+        margin: 0 auto;
+        max-width: 340px;
+        min-width: 260px;
+    }
+    .summary-block {
+        border-bottom: 1px solid #f0f1f5;
+        margin-bottom: 0.7rem;
+        padding-bottom: 0.5rem;
+    }
+    .summary-movie {
+        color: #1a237e;
+        font-weight: 700;
+        font-size: 1.13rem;
+        margin-bottom: 0.5rem;
+    }
+    .summary-label {
+        color: #607d8b;
+        font-weight: 600;
+    }
+    #bookButton {
+        background: #e3f0ff;
+        color: #1976d2;
+        font-weight: bold;
+        font-size: 1.13rem;
+        border: none;
+        border-radius: 999px;
+        padding: 0.85rem 2.5rem 0.85rem 2.1rem;
+        box-shadow: 0 2px 12px rgba(25,118,210,0.08);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.12s;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin-top: 0.7rem;
+    }
+    #bookButton:hover:not(:disabled) {
+        background: #1976d2;
+        color: #fff;
+        transform: translateY(-2px) scale(1.04);
+        box-shadow: 0 6px 24px rgba(25,118,210,0.13);
+    }
+    #bookButton:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    #bookButton .continue-arrow {
+        font-size: 1.3em;
+        margin-left: 0.2em;
+        transition: transform 0.18s;
+    }
+    #bookButton:hover .continue-arrow {
+        transform: translateX(4px);
+    }
+    .summary-seat p, .summary-seat ul {
+        margin-bottom: 0.3rem;
+    }
+    .summary-seat #grandTotal {
+        color: #1976d2;
+        font-weight: bold;
+        font-size: 1.13rem;
+    }
+    .summary-seat #countdownTimer {
+        color: #e53935;
+        font-weight: bold;
+        font-size: 1.08rem;
+        margin-bottom: 0.2rem;
+    }
+    .summary-seat #seatInfo {
+        margin-bottom: 0.5rem;
+    }
+    .summary-seat #noSeatAlert {
+        color: #e53935;
+        font-weight: 600;
+        background: #fff3f3;
+        border-radius: 8px;
+        padding: 0.5rem 0.7rem;
+        margin-bottom: 0.5rem;
+    }
 </style>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
@@ -146,7 +281,7 @@
 <link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
 
-<div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
+<div class="seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
     <div class="text-start p-3">
         <a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
     </div>
@@ -174,7 +309,9 @@
 
 	<div class="row">
 		<!-- MAIN CONTENT AREA -->
-		<div class="col-lg-8 col-md-12">
+			<div class="col-lg-8 col-md-12" style="
+    padding-left: 100px;
+">
 			
 
 			<!-- SEAT SELECTION SECTION -->
@@ -182,7 +319,7 @@
 				<div class="seat-layout-container" id="seatLayoutArea">
 					<div class="screen-label text-center mb-4">Screen</div>
 
-					<div class="seat-layout-bordered-area border p-3 mb-4">
+					<div>
 						<div class="seat-container @(isCompactSeatMap ? "seat-map-compact" : "")">
 							<table class="table table-bordered text-center">
 								<tbody>
@@ -306,7 +443,9 @@
 							@if (!string.IsNullOrEmpty(time))
 							{
 								<div class="text-center mt-3">
-									<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
+									<button id="bookButton" class="btn btn-primary" disabled>
+    Continue <span class="continue-arrow">&#8594;</span>
+</button>
 								</div>
 							}
 						</div>
@@ -420,6 +559,12 @@
     border-color: #2563eb;
     transform: translateY(-2px) scale(1.04);
     box-shadow: 0 4px 16px rgba(56,189,248,0.10);
+}
+/* Loại bỏ viền xanh dương phía trên */
+.seat-view-page {
+    border-top: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
 }
 </style>
 
