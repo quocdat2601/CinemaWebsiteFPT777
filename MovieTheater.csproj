@@ -16,6 +16,10 @@
 	  <None Remove="MovieTheater.Tests\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="Views\Home\HeroSection.cshtml" />
+  </ItemGroup>
+
  
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.5" />
@@ -52,6 +56,10 @@
 
   <ItemGroup>
     <Folder Include="MovieTheater.Tests\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Views\Home\HeroSection.cshtml" />
   </ItemGroup>
 
 </Project>
