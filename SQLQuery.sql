@@ -79,7 +79,8 @@ CREATE TABLE Movie (
     Movie_Name_English VARCHAR(255),
     Large_Image VARCHAR(255),
     Small_Image VARCHAR(255),
-	TrailerUrl VARCHAR(255)
+	TrailerUrl VARCHAR(255),
+    LogoImage NVARCHAR(255) NULL
 );
 
 CREATE TABLE Person (
@@ -324,6 +325,16 @@ VALUES
 ('MV008', 'Decades after his first mission, Pete "Maverick" Mitchell returns to train a new generation of Top Gun pilots for a nearly impossible task. As danger looms, Maverick confronts ghosts from his past in a heart-pounding aerial adventure.', 131, '2025-06-29', 'Paramount Pictures', '2025-08-02', 'Top Gun: Maverick', '/image/li-topgun.jpg', '/image/topgun.jpg', 'https://www.youtube.com/embed/giXco2jaZ_4'),
 
 ('MV009', 'A darkly comedic thriller where a cunning lower-class family schemes its way into employment within a wealthy household. What begins as petty deceit spirals into an unsettling clash of social classes, culminating in shocking consequences.', 132, '2025-06-30', 'CJ Entertainment', '2025-08-02', 'Parasite', '/image/li-parasite.jpg', '/image/parasite.jpg', 'https://www.youtube.com/embed/5xH0HfJHsaY');
+
+UPDATE Movie SET LogoImage = '/images/logo/open-logo.png'     WHERE Movie_ID = 'MV001';
+UPDATE Movie SET LogoImage = '/images/logo/spiderman-logo.png' WHERE Movie_ID = 'MV002';
+UPDATE Movie SET LogoImage = '/images/logo/dune-logo.png'      WHERE Movie_ID = 'MV003';
+UPDATE Movie SET LogoImage = '/images/logo/barbie-logo.png'    WHERE Movie_ID = 'MV004';
+UPDATE Movie SET LogoImage = '/images/logo/every-logo.png'     WHERE Movie_ID = 'MV005';
+UPDATE Movie SET LogoImage = '/images/logo/avatar-logo.png'    WHERE Movie_ID = 'MV006';
+UPDATE Movie SET LogoImage = '/images/logo/batman-logo.png'    WHERE Movie_ID = 'MV007';
+UPDATE Movie SET LogoImage = '/images/logo/topgun-logo.png'    WHERE Movie_ID = 'MV008';
+UPDATE Movie SET LogoImage = '/images/logo/parasite-logo.png'  WHERE Movie_ID = 'MV009';
 
 INSERT INTO Person (Name, Date_Of_Birth, Nationality, Gender, Image, IsDirector, Description)
 VALUES

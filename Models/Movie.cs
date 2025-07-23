@@ -27,6 +27,8 @@ public partial class Movie
 
     public string? TrailerUrl { get; set; }
 
+    public string? LogoImage { get; set; }
+
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
