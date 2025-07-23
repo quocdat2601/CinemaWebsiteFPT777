@@ -155,6 +155,8 @@ namespace MovieTheater.Controllers
             // Handle image uploads (LargeImageFile, SmallImageFile)
             string largeImagePath = null;
             string smallImagePath = null;
+            string logoPath = null;
+
             string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "movies");
             if (!Directory.Exists(uploadsFolder))
                 Directory.CreateDirectory(uploadsFolder);
@@ -187,6 +189,21 @@ namespace MovieTheater.Controllers
             else
             {
                 smallImagePath = "/images/movies/default-movie.jpg";
+            }
+
+            if (model.LogoFile != null && model.LogoFile.Length > 0)
+            {
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.SmallImageFile.CopyToAsync(fileStream);
+                }
+                logoPath = "/images/movies/" + uniqueFileName;
+            }
+            else
+            {
+                logoPath = "/images/movies/default-movie.jpg";
             }
 
             var selectedVersions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
@@ -227,6 +244,7 @@ namespace MovieTheater.Controllers
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
                 LargeImage = largeImagePath,
                 SmallImage = smallImagePath,
+                LogoImage = logoPath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
                 People = selectedActors.Concat(selectedDirectors).ToList()
@@ -279,6 +297,7 @@ namespace MovieTheater.Controllers
                 TrailerUrl = movie.TrailerUrl,
                 LargeImage = movie.LargeImage,
                 SmallImage = movie.SmallImage,
+                Logo = movie.LogoImage,
                 AvailableTypes = _movieService.GetAllTypes(),
                 AvailableVersions = _movieService.GetAllVersions(),
                 SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
@@ -326,6 +345,7 @@ namespace MovieTheater.Controllers
             // Handle image uploads
             string largeImagePath = existingMovie.LargeImage ?? "/images/movies/default-movie.jpg";
             string smallImagePath = existingMovie.SmallImage ?? "/images/movies/default-movie.jpg";
+            string logoPath = existingMovie.LogoImage ?? "/images/movies/default-movie.jpg";
             string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "movies");
             if (!Directory.Exists(uploadsFolder))
                 Directory.CreateDirectory(uploadsFolder);
@@ -365,6 +385,23 @@ namespace MovieTheater.Controllers
                     await model.SmallImageFile.CopyToAsync(fileStream);
                 }
                 smallImagePath = "/images/movies/" + uniqueFileName;
+            }
+
+            if (model.LogoFile != null && model.LogoFile.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(existingMovie.LogoImage) && !existingMovie.LogoImage.Contains("default-movie.jpg"))
+                {
+                    string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingMovie.LogoImage.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
+                }
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LogoFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.LogoFile.CopyToAsync(fileStream);
+                }
+                logoPath = "/images/movies/" + uniqueFileName;
             }
 
             existingMovie.Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList();
@@ -445,6 +482,7 @@ namespace MovieTheater.Controllers
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
                 LargeImage = largeImagePath,
                 SmallImage = smallImagePath,
+                LogoImage = logoPath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
                 People = selectedActors.Concat(selectedDirectors).ToList()

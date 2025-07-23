@@ -31,9 +31,11 @@ namespace MovieTheater.ViewModels
         public IFormFile? LargeImageFile { get; set; }
 
         public IFormFile? SmallImageFile { get; set; }
+        public IFormFile? LogoFile { get; set; }
 
         public string? LargeImage { get; set; }
         public string? SmallImage { get; set; }
+        public string? Logo { get; set; }
 
         public List<int> SelectedScheduleIds { get; set; } = new();
 

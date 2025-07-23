@@ -60,6 +60,19 @@
                         <input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
                         <span asp-validation-for="LargeImageFile" class="text-danger"></span>
                     </div>
+                    <div class="form-group mb-3">
+                        <strong>Logo:</strong><br />
+                        @if (!string.IsNullOrEmpty(Model.Logo))
+                        {
+                            <img id="logoPreview" src="@Url.Content(Model.Logo)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+                        }
+                        else
+                        {
+                            <img id="logoPreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
+                        }
+                        <input type="file" class="form-control" asp-for="LogoFile" onchange="previewImage(this, 'logoPreview')" />
+                        <span asp-validation-for="LogoFile" class="text-danger"></span>
+                    </div>
                 </div>
 
                 <!-- Right Column: Movie Details -->

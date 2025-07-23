@@ -1,4 +1,4 @@
-﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+@model MovieTheater.ViewModels.MovieDetailViewModel
 @using System.Security.Claims
 
 @{
@@ -55,6 +55,20 @@
 						}
 						<input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
 						<span asp-validation-for="LargeImageFile" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Logo:</strong><br />
+						@if (!string.IsNullOrEmpty(Model.Logo))
+						{
+							<img id="logoPreview" src="@Url.Content(Model.Logo)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						else
+						{
+							<img id="logoPreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						<input type="file" class="form-control" asp-for="LogoFile" onchange="previewImage(this, 'logoPreview')" />
+						<span asp-validation-for="LogoFile" class="text-danger"></span>
 					</div>
 				</div>
 
@@ -430,6 +444,17 @@
 
 		function confirmActorSelection() {
 			$('#actorModal').modal('hide');
+		}
+
+		// Image preview function
+		function previewImage(input, previewId) {
+			if (input.files && input.files[0]) {
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					document.getElementById(previewId).src = e.target.result;
+				};
+				reader.readAsDataURL(input.files[0]);
+			}
 		}
 	</script>
 }

@@ -97,6 +97,7 @@ namespace MovieTheater.Repository
                     existingMovie.TrailerUrl = movie.TrailerUrl;
                     existingMovie.LargeImage = movie.LargeImage;
                     existingMovie.SmallImage = movie.SmallImage;
+                    existingMovie.LogoImage = movie.LogoImage;
 
                     // Update People collection
                     existingMovie.People.Clear();
