@@ -45,8 +45,11 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/MovieList")]
-        public IActionResult MovieList(string searchTerm)
+        public IActionResult MovieList(string searchTerm, string typeIds, string versionIds)
         {
+            var selectedTypeIds = string.IsNullOrEmpty(typeIds) ? new List<int>() : typeIds.Split(',').Select(int.Parse).ToList();
+            var selectedVersionIds = string.IsNullOrEmpty(versionIds) ? new List<int>() : versionIds.Split(',').Select(int.Parse).ToList();
+
             var movies = _movieService.SearchMovies(searchTerm)
                 .Select(m => new MovieViewModel
                 {
@@ -54,15 +57,22 @@ namespace MovieTheater.Controllers
                     MovieNameEnglish = m.MovieNameEnglish,
                     Duration = m.Duration,
                     SmallImage = m.SmallImage,
-                    Types = m.Types.ToList()
+                    Types = m.Types.ToList(),
+                    Versions = m.Versions.ToList()
                 })
+                .Where(m => (selectedTypeIds.Count == 0 || (m.Types ?? new List<Models.Type>()).Any(t => selectedTypeIds.Contains(t.TypeId))) &&
+                            (selectedVersionIds.Count == 0 || (m.Versions ?? new List<Models.Version>()).Any(v => selectedVersionIds.Contains(v.VersionId))))
                 .ToList();
 
+            ViewBag.AllTypes = _movieService.GetAllTypes();
+            ViewBag.AllVersions = _movieService.GetAllVersions();
+            ViewBag.SelectedTypeIds = selectedTypeIds;
+            ViewBag.SelectedVersionIds = selectedVersionIds;
             ViewBag.SearchTerm = searchTerm;
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return PartialView("_MovieGrid", movies);
+                return PartialView("_MovieFilterAndGrid", movies);
             }
 
             return View(movies);

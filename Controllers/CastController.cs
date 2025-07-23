@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
+using MovieTheater.ViewModels;
 using System;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,25 @@ namespace MovieTheater.Controllers
         public CastController(IPersonRepository personRepository)
         {
             _personRepository = personRepository;
+        }
+
+        // GET: CastController/Detail/5
+        public ActionResult Detail(int id)
+        {
+            var person = _personRepository.GetById(id);
+            if (person == null)
+            {
+                return NotFound();
+            }
+
+            var movies = _personRepository.GetMovieByPerson(id);
+            var viewModel = new CastDetailViewModel
+            {
+                Person = person,
+                Movies = movies
+            };
+
+            return View(viewModel);
         }
 
         // GET: CastController/Create

@@ -309,15 +309,15 @@ INSERT INTO Movie (Movie_ID, Content, Duration, From_Date, Movie_Production_Comp
 VALUES
 ('MV001', 'A gripping biographical drama chronicling the life of American theoretical physicist J. Robert Oppenheimer, exploring his moral struggles, political entanglements, and pivotal role in developing the atomic bomb during World War II.', 180, '2025-06-21', 'Universal Pictures', '2025-07-25', 'Oppenheimer', '/image/li-open.jpg', '/image/open.jpg', 'https://www.youtube.com/embed/uYPbbksJxIg'),
 
-('MV002', 'Peter Parker, exposed as Spider-Man, seeks help from Doctor Strange to undo the chaos caused by his unmasked identity—triggering a rift in the multiverse that unleashes familiar foes and unexpected consequences.', 148, '2025-06-20', 'Marvel Studios', '2025-07-25', 'Spider-Man: No Way Home', '/image/li-spiderman.jpg', '/image/spider.jpg', 'https://www.youtube.com/embed/rt-2cxAiPJk'),
+('MV002', 'Peter Parker, exposed as Spider-Man, seeks help from Doctor Strange to undo the chaos caused by his unmasked identity—triggering a rift in the multiverse that unleashes familiar foes and unexpected consequences.', 148, '2025-06-20', 'Marvel Studios', '2025-07-25', 'Spider-Man: No Way Home', '/image/li-spiderman.png', '/image/spider.jpg', 'https://www.youtube.com/embed/rt-2cxAiPJk'),
 
 ('MV003', 'The epic continuation of Paul Atreides’ journey as he joins the desert-dwelling Fremen and leads a bold revolt against those responsible for his family’s downfall. As destiny and prophecy collide, Paul must confront not only external threats but his own fate.', 166, '2025-06-01', 'Legendary Pictures', '2025-07-21', 'Dune: Part Two', '/image/li-dune.jpg', '/image/dune.jpg', 'https://www.youtube.com/embed/Way9Dexny3w'),
 
-('MV004', 'In an imaginative and vibrant world, Barbie begins to question her perfect existence, leading her on a thought-provoking journey into the real world where she must grapple with identity, self-worth, and deeper meaning.', 114, '2025-06-21', 'Warner Bros.', '2025-07-27', 'Barbie', '/image/li-barbie.jpg', '/image/barbie.jpg', 'https://www.youtube.com/embed/pBk4NYhWNMM'),
+('MV004', 'In an imaginative and vibrant world, Barbie begins to question her perfect existence, leading her on a thought-provoking journey into the real world where she must grapple with identity, self-worth, and deeper meaning.', 114, '2025-06-21', 'Warner Bros.', '2025-07-27', 'Barbie', '/image/li-barbie.png', '/image/barbie.jpg', 'https://www.youtube.com/embed/pBk4NYhWNMM'),
 
-('MV005', 'An eccentric sci-fi comedy where a disillusioned woman is pulled into an interdimensional war. She must navigate bizarre parallel lives to reconnect with her family, harness hidden strengths, and ultimately save all timelines from collapse.', 139, '2025-06-25', 'A24', '2025-07-02', 'Everything Everywhere All at Once', '/image/li-everything.jpg', '/image/everything.jpg', 'https://www.youtube.com/embed/wxN1T1uxQ2g'),
+('MV005', 'An eccentric sci-fi comedy where a disillusioned woman is pulled into an interdimensional war. She must navigate bizarre parallel lives to reconnect with her family, harness hidden strengths, and ultimately save all timelines from collapse.', 139, '2025-06-25', 'A24', '2025-07-02', 'Everything Everywhere All at Once', '/image/li-everything.jpeg', '/image/everything.jpg', 'https://www.youtube.com/embed/wxN1T1uxQ2g'),
 
-('MV006', 'Years after the events of Avatar, Jake Sully lives peacefully among the Na’vi on Pandora. But when an old enemy returns with dangerous new forces, Jake must fight to protect his family and their homeland in a spectacular battle for survival.', 192, '2025-06-27', '20th Century Studios', '2025-07-02', 'Avatar: The Way of Water', '/image/li-ava.jpg', '/image/avatar.jpg', 'https://www.youtube.com/embed/d9MyW72ELq0'),
+('MV006', 'Years after the events of Avatar, Jake Sully lives peacefully among the Na’vi on Pandora. But when an old enemy returns with dangerous new forces, Jake must fight to protect his family and their homeland in a spectacular battle for survival.', 192, '2025-06-27', '20th Century Studios', '2025-07-02', 'Avatar: The Way of Water', '/image/li-avt.jpg', '/image/avatar.jpg', 'https://www.youtube.com/embed/d9MyW72ELq0'),
 
 ('MV007', 'Gotham City’s dark and gritty underbelly is revealed as Batman faces a cryptic serial killer known as the Riddler. As the mystery unfolds, he uncovers corruption and secrets that shake the foundations of the city—and his own legacy.', 176, '2025-06-28', 'Warner Bros.', '2025-08-02', 'The Batman', '/image/li-batman.jpg', '/image/batman.jpg', 'https://www.youtube.com/embed/mqqft2x_Aa4'),
 
@@ -465,8 +465,8 @@ VALUES
 
 -- First Time Promo (20% off)
 INSERT INTO Promotion (Promotion_ID, Title, Detail, Discount_Level, Start_Time, End_Time, Image, Is_Active) VALUES
-(1, 'First Time Promo', 'Get 20% off on your first order!', 20, '2025-05-01', '2025-12-31', 'first_time.png', 1),
-(2, 'Group Discount', 'Order with 3 or more people and save 15%!', 15, '2025-05-01', '2025-12-31', 'group_discount.png', 1);
+(1, 'First Time Promo', 'Get 20% off on your first order!', 20, '2025-05-01', '2025-12-31', '/images/promotions/first_time.png', 1),
+(2, 'Group Discount', 'Order with 3 or more people and save 15%!', 15, '2025-05-01', '2025-12-31', '/images/promotions/group_discount.png', 1);
 
 -- First Time Promo condition: User.OrderCount = 0
 INSERT INTO PromotionCondition (Promotion_ID, ConditionType_ID, Target_Entity, Target_Field, Operator, Target_Value) VALUES 

@@ -23,6 +23,13 @@ namespace MovieTheater.Repository
                 .FirstOrDefault(m => m.PersonId == personId);
         }
 
+        public IEnumerable<Movie> GetMovieByPerson(int personId)
+        {
+            return _context.Movies
+                .Where(m => m.People.Any(c => c.PersonId == personId))
+                .ToList();
+        }
+
         public IEnumerable<Person> GetDirectors()
         {
             return _context.People.Where(p => p.IsDirector == true).ToList();

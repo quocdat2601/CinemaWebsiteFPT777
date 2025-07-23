@@ -182,15 +182,7 @@
             <a href="@Url.Action("Detail", "Movie", new { id = Model?.MovieId })" class="btn btn-warning btn-hover" style="font-size:1.2rem; padding:0.7rem 2.5rem; border-radius:10px; font-weight:700; color:#222; background:#ffe066; border:none; margin-bottom:1.7rem; width:max-content;">
                 <span>Book Now</span>
             </a>
-            <div class="hero-extra-info" style="margin-top:0.7rem; color:#bbb; font-size:1.13rem;">
-                <div><b>Starring:</b> @Model?.Actor</div>
-                <div><b>This show is:</b> @if (Model?.Types != null && Model.Types.Any())
-                    {
-                        @(string.Join(", ", Model.Types.Select(t => t.TypeName)))
-                    }
-                </div>
-                <div><b>Director:</b> @Model?.Director</div>
-            </div>
+          
         </div>
         <!-- Play button overlay (center right) -->
         <div class="hero-trailer" style="flex:1; display:flex; align-items:center; justify-content:flex-end; min-width:420px; max-width:700px; padding-right:4vw;">
@@ -230,9 +222,7 @@
                     data-movie-duration="@movie.Duration"
                     data-movie-versions="@(string.Join(", ", movie.Versions.Select(v => v.VersionName)))"
                     data-movie-content="@movie.Content"
-                    data-movie-actor="@movie.Actor"
                     data-movie-types="@(string.Join(", ", movie.Types.Select(t => t.TypeName)))"
-                    data-movie-director="@movie.Director"
                     data-movie-largeimage="@movie.LargeImage"
                     data-movie-trailerurl="@movie.TrailerUrl"
                 >

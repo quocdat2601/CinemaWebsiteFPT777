@@ -13,5 +13,6 @@ namespace MovieTheater.Repository
         public void Update(Person person);
         public void Delete(int personId);
         public void Save();
+        public IEnumerable<Movie> GetMovieByPerson(int personId);
     }
 }
