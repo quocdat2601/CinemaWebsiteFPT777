@@ -395,16 +395,36 @@ body.dark-mode .recent-list-item {
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
   background: #23233a;
   color: #fff;
-  padding: 1.5rem 1rem;
   text-align: center;
   transition: background 0.2s, color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .kpi-card .kpi-label,
 .kpi-card .kpi-value,
 .kpi-card .kpi-date,
 .kpi-card h5,
 .kpi-card .display-6 {
   color: #fff;
+}
+
+.kpi-comparison {
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.kpi-comparison.positive {
+  color: #28a745;
+}
+
+.kpi-comparison.negative {
+  color: #dc3545;
+}
+
+.sparkline {
+  width: 100%;
+  height: 50px;
+  margin-top: 10px;
 }
 body.light-mode .kpi-card {
   background: #fff !important;
@@ -587,4 +607,23 @@ body.light-mode .card .card-body .display-6 {
 /* Remove any min-height constraints */
 .min-vh-100 {
     min-height: auto !important;
+}
+
+.small-stat {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: -0.5rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #007bff, #6610f2);
+}
+
+.bg-gradient-danger {
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(45deg, #28a745, #20c997);
 }

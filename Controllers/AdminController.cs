@@ -449,6 +449,48 @@ namespace MovieTheater.Controllers
                 .Select(h => validFoodInvoices.Count(fi => fi.Invoice.BookingDate.HasValue && fi.Invoice.BookingDate.Value.Hour == h))
                 .ToList();
 
+            // 1. All food invoices on completed orders (whether cancelled or not)
+            var allFoodInvoices = _context.FoodInvoices
+                .Include(fi => fi.Invoice)
+                .Where(fi => fi.Invoice.Status == InvoiceStatus.Completed)
+                .ToList();
+
+            // 2. Split into valid sales vs cancelled sales
+            var validFoodSales = allFoodInvoices.Where(fi => !fi.Invoice.Cancel);
+            var cancelledFoodSales = allFoodInvoices.Where(fi => fi.Invoice.Cancel);
+
+            // 3. Compute gross & refund amounts
+            var foodGrossRevenue = validFoodSales.Sum(fi => fi.Price * fi.Quantity)
+                                 + cancelledFoodSales.Sum(fi => fi.Price * fi.Quantity);
+
+            var foodTotalRefund = cancelledFoodSales.Sum(fi => fi.Price * fi.Quantity);
+
+            // 4. Net Food Revenue
+            var foodNetRevenue = foodGrossRevenue - foodTotalRefund;
+
+            var todayFoodInvoices = allFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == today).ToList();
+            var todayFoodGross = todayFoodInvoices.Sum(fi => fi.Price * fi.Quantity);
+            var todayFoodRefund = todayFoodInvoices.Where(fi => fi.Invoice.Cancel).Sum(fi => fi.Price * fi.Quantity);
+            var todayFoodNet = todayFoodGross - todayFoodRefund;
+
+            var todayValidFoodInvoices = todayFoodInvoices.Where(fi => !fi.Invoice.Cancel).ToList();
+            var todayFoodRevenue = todayValidFoodInvoices.Sum(fi => fi.Price * fi.Quantity);
+            var todayFoodOrders = todayValidFoodInvoices.Select(fi => fi.InvoiceId).Distinct().Count();
+            var todayQuantitySold = todayValidFoodInvoices.Sum(fi => fi.Quantity);
+            var todayAvgOrderValue = todayFoodOrders > 0 ? Math.Round(todayFoodRevenue / todayFoodOrders, 0) : 0;
+
+            // Calculate 7-day averages
+            var sevenDayTotalRevenue = revenueByDayValues.Sum();
+            var sevenDayTotalOrders = ordersByDayValues.Sum();
+            var sevenDayAverageRevenue = sevenDayTotalRevenue / 7;
+            var sevenDayAverageOrders = sevenDayTotalOrders / 7;
+
+            var sevenDayTotalQuantity = last7Days
+                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day).Sum(fi => fi.Quantity))
+                .Sum();
+            var sevenDayAverageItemsPerOrder = sevenDayTotalOrders > 0 ? (decimal)sevenDayTotalQuantity / sevenDayTotalOrders : 0;
+
+
             return new AdminDashboardViewModel
             {
                 RevenueToday = revenueToday,
@@ -468,6 +510,19 @@ namespace MovieTheater.Controllers
                 NetRevenue = netRevenue,
                 FoodAnalytics = new FoodAnalyticsViewModel
                 {
+                    GrossRevenue = foodGrossRevenue,
+                    TotalRefund = foodTotalRefund,
+                    NetRevenue = foodNetRevenue,
+                    GrossRevenueToday = todayFoodGross,
+                    NetRevenueToday = todayFoodNet,
+                    TotalRefundToday = todayFoodRefund,
+                    OrdersToday = todayFoodOrders,
+                    QuantitySoldToday = todayQuantitySold,
+                    AvgOrderValueToday = todayAvgOrderValue,
+                    SevenDayAverageRevenue = sevenDayAverageRevenue,
+                    SevenDayAverageOrders = sevenDayAverageOrders,
+                    SevenDayAverageItemsPerOrder = sevenDayAverageItemsPerOrder,
+                    FoodRevenueToday = todayFoodRevenue,
                     FoodRevenue = foodRevenue,
                     Orders = foodOrders,
                     QuantitySold = quantitySold,

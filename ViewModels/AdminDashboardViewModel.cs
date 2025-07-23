@@ -54,10 +54,31 @@ namespace MovieTheater.ViewModels
     public class FoodAnalyticsViewModel
     {
         // KPI cards
+        public decimal GrossRevenue   { get; set; }
+    public decimal TotalRefund    { get; set; }
+    public decimal NetRevenue     { get; set; }
+    public decimal GrossRevenueToday { get; set; }
+    public decimal NetRevenueToday { get; set; }
+    public decimal TotalRefundToday { get; set; }
+    public int OrdersToday { get; set; }
+    public int QuantitySoldToday { get; set; }
+    public decimal AvgOrderValueToday { get; set; }
+    public decimal ItemsPerOrderToday => OrdersToday > 0 ? (decimal)QuantitySoldToday / OrdersToday : 0;
+
+    // 7-day averages for comparison
+    public decimal SevenDayAverageRevenue { get; set; }
+    public int SevenDayAverageOrders { get; set; }
+    public decimal SevenDayAverageItemsPerOrder { get; set; }
+
+    // Percentage changes
+    public decimal RevenueChangePercentage => SevenDayAverageRevenue > 0 ? ((NetRevenueToday - SevenDayAverageRevenue) / SevenDayAverageRevenue) * 100 : 0;
+    public decimal OrdersChangePercentage => SevenDayAverageOrders > 0 ? (((decimal)OrdersToday - SevenDayAverageOrders) / SevenDayAverageOrders) * 100 : 0;
+    public decimal ItemsPerOrderChangePercentage => SevenDayAverageItemsPerOrder > 0 ? ((ItemsPerOrderToday - SevenDayAverageItemsPerOrder) / SevenDayAverageItemsPerOrder) * 100 : 0;
         public decimal FoodRevenue { get; set; }
         public int Orders { get; set; }
         public int QuantitySold { get; set; }
         public decimal AvgOrderValue { get; set; }
+        public decimal FoodRevenueToday { get; set; }
 
         // Combo chart: Revenue & Orders by Day
         public List<DateTime> RevenueByDayDates { get; set; }

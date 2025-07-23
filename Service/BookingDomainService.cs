@@ -263,7 +263,7 @@ namespace MovieTheater.Service
                 RankDiscountPercentage = rankDiscountPercent,
                 AddScore = addScore,
                 UseScore = priceResult.UseScore,
-                PromotionDiscount = (int?)promotionDiscountPercent,
+                PromotionDiscount = promotionDiscountPercent.ToString(),
                 VoucherId = selectedVoucherId // Use selectedVoucherId directly
             };
             _context.Invoices.Add(invoice);
@@ -368,7 +368,9 @@ namespace MovieTheater.Service
                 .Where(s => s.InvoiceId == invoiceId && seatIdList.Contains((int)s.SeatId))
                 .ToList();
 
-            var promotionDiscountPercent = invoice.PromotionDiscount ?? 0;
+            decimal promotionDiscountPercent = 0;
+            if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
+                decimal.TryParse(invoice.PromotionDiscount, out promotionDiscountPercent);
             var seatDetails = scheduleSeats.Select(ss => {
                 var seat = ss.Seat;
                 var seatType = seat?.SeatType;
@@ -630,7 +632,9 @@ namespace MovieTheater.Service
                 }
             }
             // Only use the value from the view model
-            int promotionDiscountPercent = (int)model.BookingDetails.PromotionDiscountPercent;
+            int promotionDiscountPercent = 0;
+            if (!string.IsNullOrEmpty(model.BookingDetails.PromotionDiscountPercent.ToString()))
+                int.TryParse(model.BookingDetails.PromotionDiscountPercent.ToString(), out promotionDiscountPercent);
             var invoice = new Invoice
             {
                 InvoiceId = await _bookingService.GenerateInvoiceIdAsync(),
@@ -643,7 +647,7 @@ namespace MovieTheater.Service
                 Seat = string.Join(", ", seatViewModels.Select(s => s.SeatName)),
                 SeatIds = string.Join(",", seatViewModels.Select(s => s.SeatId)),
                 MovieShowId = model.MovieShowId,
-                PromotionDiscount = promotionDiscountPercent, // save the percent used
+                PromotionDiscount = promotionDiscountPercent.ToString(), // save the percent used
                 VoucherId = adminVoucher?.VoucherId,
                 RankDiscountPercentage = priceResult.RankDiscountPercent
             };
@@ -766,7 +770,9 @@ namespace MovieTheater.Service
                 // Apply version multiplier if available
                 if (movieShow.Version != null)
                     originalPrice *= (decimal)movieShow.Version.Multi;
-                decimal seatPromotionDiscount = invoice.PromotionDiscount ?? 0;
+                decimal seatPromotionDiscount = 0;
+                if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
+                    decimal.TryParse(invoice.PromotionDiscount, out seatPromotionDiscount);
                 decimal priceAfterPromotion = originalPrice;
                 if (seatPromotionDiscount > 0)
                 {

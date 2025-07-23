@@ -53,7 +53,9 @@ public class TicketService : ITicketService
         if (booking == null) return null;
 
         List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
-        decimal promotionDiscount = booking.PromotionDiscount ?? 0;
+        decimal promotionDiscount = 0;
+        if (!string.IsNullOrEmpty(booking.PromotionDiscount))
+            decimal.TryParse(booking.PromotionDiscount, out promotionDiscount);
         var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
         if (!string.IsNullOrEmpty(booking.SeatIds))
         {
@@ -154,7 +156,7 @@ public class TicketService : ITicketService
             FoodDetails = foodDetails,
             TotalFoodPrice = totalFoodPrice,
             TotalAmount = booking.TotalMoney ?? 0,
-            PromotionDiscountPercent = booking.PromotionDiscount ?? 0
+            PromotionDiscountPercent = promotionDiscount
         };
         return result;
     }
@@ -380,7 +382,9 @@ public class TicketService : ITicketService
     public List<SeatDetailViewModel> BuildSeatDetails(Invoice booking)
     {
         var seatDetails = new List<SeatDetailViewModel>();
-        decimal promotionDiscount = booking.PromotionDiscount ?? 0;
+        decimal promotionDiscount = 0;
+        if (!string.IsNullOrEmpty(booking.PromotionDiscount))
+            decimal.TryParse(booking.PromotionDiscount, out promotionDiscount);
         var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
         if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
         {

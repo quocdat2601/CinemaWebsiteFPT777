@@ -242,9 +242,12 @@ namespace MovieTheater.Service
                     decimal seatPrice = scheduleSeat.Seat.SeatType.PricePercent;
                     
                     // Apply promotion discount if available
-                    if (invoice.PromotionDiscount.HasValue && invoice.PromotionDiscount.Value > 0)
+                    decimal promotionDiscount = 0;
+                    if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
+                        decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
+                    if (promotionDiscount > 0)
                     {
-                        decimal discount = Math.Round(seatPrice * (invoice.PromotionDiscount.Value / 100m));
+                        decimal discount = Math.Round(seatPrice * (promotionDiscount / 100m));
                         seatPrice -= discount;
                     }
                     

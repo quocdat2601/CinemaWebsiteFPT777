@@ -138,7 +138,9 @@ namespace MovieTheater.Controllers
                     // Update BookedPrice for all ScheduleSeat records after VNPay payment
                     if (invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
                     {
-                        decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
+                        decimal promotionDiscount = 0;
+                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
+                            decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
                         foreach (var scheduleSeat in invoice.ScheduleSeats)
                         {
                             var seatType = scheduleSeat.Seat.SeatType;
@@ -250,7 +252,9 @@ namespace MovieTheater.Controllers
                         decimal basePrice = seatType?.PricePercent ?? 0;
                         if (invoice.MovieShow?.Version != null)
                             basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                        decimal promotionDiscount = invoice.PromotionDiscount ?? 0;
+                        decimal promotionDiscount = 0;
+                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
+                            decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
                         decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
                         decimal priceAfterPromotion = basePrice - discount;
                         return new MovieTheater.ViewModels.SeatDetailViewModel

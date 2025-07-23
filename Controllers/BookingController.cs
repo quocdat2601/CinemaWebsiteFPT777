@@ -390,7 +390,10 @@ namespace MovieTheater.Controllers
                     decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
                     TempData["RankDiscount"] = rankDiscount;
                 }
-                TempData["PromotionDiscount"] = invoice.PromotionDiscount ?? 0;
+                decimal promotionDiscount = 0;
+                if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
+                    decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
+                TempData["PromotionDiscount"] = promotionDiscount.ToString();
                 decimal voucherAmount = 0;
                 if (!string.IsNullOrEmpty(invoice.VoucherId))
                 {
@@ -400,7 +403,7 @@ namespace MovieTheater.Controllers
                         voucherAmount = voucher.Value;
                     }
                 }
-                TempData["VoucherAmount"] = voucherAmount;
+                TempData["VoucherAmount"] = voucherAmount.ToString();
                 return RedirectToAction("Failed");
             }
         }
