@@ -32,6 +32,23 @@ namespace MovieTheater.Controllers
                 var model = JsonSerializer.Deserialize<ConfirmTicketAdminViewModel>(modelData);
                 var context = (MovieTheaterContext)HttpContext.RequestServices.GetService(typeof(MovieTheaterContext));
                 var bookingService = (IBookingService)HttpContext.RequestServices.GetService(typeof(IBookingService));
+
+                // Ensure GUEST account exists
+                var guestAccount = context.Accounts.FirstOrDefault(a => a.AccountId == "GUEST");
+                if (guestAccount == null)
+                {
+                    guestAccount = new Account
+                    {
+                        AccountId = "GUEST",
+                        Email = "guest@movietheater.com",
+                        // Sửa lại tên trường cho đúng với model, ví dụ:
+                        FullName = "Khách vãng lai",      // Nếu là FullName, không phải Full_Name
+                        Password = "guest",
+                        Address = "Không xác định",
+                    };
+                    context.Accounts.Add(guestAccount);
+                    context.SaveChanges();
+                }
                 var orderId = await bookingService.GenerateInvoiceIdAsync();
                 // Tổng tiền = seat + food
                 decimal totalAmount = model.BookingDetails.TotalPrice + model.TotalFoodPrice;
@@ -149,15 +166,13 @@ namespace MovieTheater.Controllers
                     OrderId = orderId,
                     Amount = amount,
                     OrderInfo = orderInfo,
-                    QRCodeData = payosQrUrl, // dùng luôn link QR PayOS nếu là ảnh
-                    QRCodeImage = payosQrUrl, // dùng luôn link QR PayOS nếu là ảnh
+                    PayOSQRCodeUrl = payosQrUrl,
                     ExpiredTime = DateTime.Now.AddMinutes(15),
                     CustomerName = customerName,
                     CustomerPhone = customerPhone,
                     MovieName = movieName,
                     ShowTime = showTime,
-                    SeatInfo = seatInfo,
-                    PayOSQRCodeUrl = payosQrUrl
+                    SeatInfo = seatInfo
                 };
 
                 _logger.LogInformation("PayOS QR URL: {PayOSQRCodeUrl}", payosQrUrl);
