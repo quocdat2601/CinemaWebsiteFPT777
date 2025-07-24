@@ -60,13 +60,9 @@ document.addEventListener("DOMContentLoaded", function () {
     startProgressBar();
   }
 
-  // Khi Swiper bắt đầu chuyển slide
+  // Khi Swiper bắt đầu chuyển slide, update ngay background track để chạy song song
   heroSwiper.on('slideChangeTransitionStart', function () {
-    var heroInfo = document.getElementById('hero-info');
-    var heroBg = document.getElementById('hero-bg');
-    heroInfo.classList.remove('active');
-    heroBg.classList.remove('active');
-    progressBar.style.width = '0%';
+    updateHeroBgTrack(heroSwiper.realIndex);
   });
 
   // Khi click vào slide, chuyển đến slide đó
