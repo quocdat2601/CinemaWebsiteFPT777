@@ -3,6 +3,7 @@
     ViewData["Title"] = "Home";
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
+    var movieList = movies.ToList();
 }
 <!-- GOOGLE FONTS -->
 <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -17,8 +18,140 @@
 <link rel="stylesheet" href="~/css/grid.css" />
 <link rel="stylesheet" href="~/css/app.css" />
 
+<!-- HERO SECTION CSS -->
+<link rel="stylesheet" href="~/css/hero-section.css" />
+
 <!-- ===== HERO SECTION PLACEHOLDER ===== -->
-<!-- Hero Section (slide 1) đã được dọn sạch. Import file cshtml mới tại đây. -->
+<!-- HERO SECTION (dùng SwiperJS) -->
+<section class="hero-section">
+    <!-- Background image -->
+    <div class="hero-bg" id="hero-bg">
+        <div class="hero-bg-track">
+            @if (movieList.Count > 0)
+            {
+                // Clone cuối vào đầu
+                var lastMovie = movieList[movieList.Count - 1];
+                <img class="hero-bg-img" src="@lastMovie.LargeImage" alt="@lastMovie.MovieNameEnglish" data-index="-1" />
+            }
+            @for (int i = 0; i < movieList.Count; i++)
+            {
+                var movie = movieList[i];
+                <img class="hero-bg-img" src="@movie.LargeImage" alt="@movie.MovieNameEnglish" data-index="@i" />
+            }
+            @if (movieList.Count > 0)
+            {
+                // Clone đầu vào cuối
+                var firstMovie = movieList[0];
+                <img class="hero-bg-img" src="@firstMovie.LargeImage" alt="@firstMovie.MovieNameEnglish" data-index="@movieList.Count" />
+            }
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="hero-content">
+        <div class="hero-info" id="hero-info">
+            @if (!string.IsNullOrEmpty(Model?.LogoImage))
+            {
+                <img class="hero-movie-logo" src="@Model.LogoImage" alt="@Model.MovieNameEnglish Logo">
+            }
+            else
+            {
+                <h2 class="hero-title">@Model?.MovieNameEnglish</h2>
+            }
+
+            <div class="hero-meta">
+                <span><i class="bx bxs-time"></i> @Model?.Duration'</span>
+                <span>
+                    @if (Model?.Versions != null && Model.Versions.Any())
+                    {
+                        @(string.Join(", ", Model.Versions.Select(v => v.VersionName)))
+                    }
+                    else
+                    {
+                        <span>HD</span>
+                    }
+                </span>
+            </div>
+
+            <div class="hero-desc">
+                @Model?.Content
+            </div>
+
+            <div class="hero-extra-info">
+                <div><b>Starring:</b> @Model?.Actor</div>
+                <div>
+                    <b>This show is:</b>
+                    @if (Model?.Types != null && Model.Types.Any())
+                    {
+                        @(string.Join(", ", Model.Types.Select(t => t.TypeName)))
+                    }
+                </div>
+                <div><b>Director:</b> @Model?.Director</div>
+            </div>
+
+            <a href="@Url.Action("Detail", "Movie", new { id = Model?.MovieId })" class="book-now-btn">
+                <span>Book Now</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Navigation buttons -->
+    <button id="hero-prev" class="hero-nav-btn hero-prev" style="background:none; border:none; box-shadow:none; width:auto; height:auto; left:2vw;">
+        <i class="bx bx-chevron-left" style="font-size:3.5rem;color:#fff;"></i>
+    </button>
+    <button id="hero-next" class="hero-nav-btn hero-next" style="background:none; border:none; box-shadow:none; width:auto; height:auto; right:2vw;">
+        <i class="bx bx-chevron-right" style="font-size:3.5rem;color:#fff;"></i>
+    </button>
+    <!-- Side bar navigation invisible -->
+    <div class="hero-nav-side hero-nav-side-left" style="position:absolute;top:0;left:0;width:8vw;height:100%;background:transparent;z-index:30;cursor:pointer;"></div>
+    <div class="hero-nav-side hero-nav-side-right" style="position:absolute;top:0;right:0;width:8vw;height:100%;background:transparent;z-index:30;cursor:pointer;"></div>
+
+    <!-- Movie carousel (SwiperJS) -->
+    <div class="hero-carousel-container">
+        <div class="hero-carousel">
+            <div class="swiper hero-swiper">
+                <div class="swiper-wrapper">
+                @{
+                    var activeId = Model?.MovieId;
+                }
+                @for (int i = 0; i < movieList.Count; i++)
+                {
+                    var movie = movieList[i];
+                    var isActive = movie.MovieId == activeId;
+                        <div class="swiper-slide @(isActive ? "active" : "")"
+                        data-movie-id="@movie.MovieId"
+                        data-movie-name="@movie.MovieNameEnglish"
+                        data-movie-duration="@movie.Duration"
+                        data-movie-versions="@(string.Join(", ", movie.Versions.Select(v => v.VersionName)))"
+                        data-movie-content="@movie.Content"
+                        data-movie-actor="@movie.Actor"
+                        data-movie-types="@(string.Join(", ", movie.Types.Select(t => t.TypeName)))"
+                        data-movie-director="@movie.Director"
+                        data-movie-largeimage="@movie.LargeImage"
+                        data-movie-trailerurl="@movie.TrailerUrl"
+                        data-movie-logoimage="@movie.LogoImage">
+                            <div class="carousel-img-rect">
+                                <img src="@movie.LargeImage" alt="@movie.MovieNameEnglish">
+                                @if (!string.IsNullOrEmpty(movie.LogoImage))
+                                {
+                                    <div class="carousel-logo-wrapper">
+                                        <img class="carousel-logo" src="@movie.LogoImage" alt="@movie.MovieNameEnglish Logo">
+                                    </div>
+                                }
+                            </div>
+                            <div class="hero-carousel-title">@movie.MovieNameEnglish</div>
+                    </div>
+                }
+                </div>
+                <!-- Đã xóa navigation Swiper ở đây -->
+            </div>
+        </div>
+        <div class="hero-progress">
+            <div class="hero-progress-bar" id="hero-progress-bar"></div>
+        </div>
+    </div>
+</section>
+
 <!-- ===== END HERO SECTION PLACEHOLDER ===== -->
 
 <!-- SLIDE 2: NOW SHOWING CAROUSEL (CHUYỂN SANG SWIPER) -->
@@ -203,6 +336,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
     <script src="/js/app.js"></script>
+    <script src="/js/hero-section.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var trailerModal = new bootstrap.Modal(document.getElementById('trailerModal'));
