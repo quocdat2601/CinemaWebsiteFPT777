@@ -1,0 +1,63 @@
+@model MovieTheater.ViewModels.CastDetailViewModel
+
+@{
+    ViewData["Title"] = "Cast Detail";
+}
+<div style="margin: 20px 0px 20px 20px">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+        &larr; Back
+    </a>
+</div>
+
+<div style="font-size: 18px" class="container-fluid px-5 py-4">
+    <div class="d-flex justify-content-center mb-5">
+        <div class="row g-3 align-items-start">
+            <div class="col-md-4 text-center" style="flex-shrink: 0; width: 300px">
+                <img src="@Url.Content(Model.Person.Image)" alt="@Model.Person.Name" class="rounded-circle shadow-sm" style="width: 200px; height: 200px; object-fit: cover">
+            </div>
+
+            <div class="col-md-2 d-flex flex-column justify-content-start" style="margin: 0; flex-shrink: 0; width: 250px">
+                <h2>Basic Info</h2>
+                <p><strong>Name: </strong>@Model.Person.Name</p>
+                <p><strong>Date of Birth: </strong>@Model.Person.DateOfBirth</p>
+                <p><strong>Nationality: </strong>@Model.Person.Nationality</p>
+                <p><strong>Gender: </strong>@(Model.Person.Gender.Value ? "Female" : "Male")</p>
+            </div>
+
+            <div class="col-md-5 d-flex flex-column justify-content-start" style="margin: 0 15px 0 0; flex-shrink: 0; width: 500px">
+                <h2>About @Model.Person.Name</h2>
+                <p>@Model.Person.Description</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin: 0px 50px; font-size: 17px">
+        @if (Model.Person.IsDirector == false)
+        {
+            <h2>Starred in</h2>
+        }
+        else
+        {
+            <h2>Directed by @Model.Person.Name</h2>
+        }
+
+        <div class="row mt-4">
+            @foreach (var movie in Model.Movies)
+            {
+                <div class="col-md-3 mb-4">
+                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="text-decoration-none text-reset">
+                        <div class="card h-100 shadow-sm">
+                            <img src="@Url.Content(movie.SmallImage)" class="card-img-top" alt="@movie.MovieNameEnglish" style="height: 300px; object-fit: cover;" />
+                            <div class="card-body text-center">
+                                <h4>@movie.MovieNameEnglish</h4>
+                                <p class="card-text">
+                                    @(movie.ToDate.HasValue? movie.ToDate.Value.Year.ToString() : "N/A")
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

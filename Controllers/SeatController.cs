@@ -302,8 +302,6 @@ namespace MovieTheater.Controllers
                 // Bổ sung thông tin phim
                 MoviePoster = poster,
                 MovieContent = movie.Content,
-                MovieDirector = movie.Director,
-                MovieActor = movie.Actor,
                 MovieGenre = genre,
                 MovieFromDate = movie.FromDate,
                 MovieDuration = movie.Duration
