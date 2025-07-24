@@ -1,192 +1,244 @@
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialize hero section
-  initHeroSection()
-
-  // Add active class to hero elements with delay for animation
-  setTimeout(() => {
-    document.getElementById("hero-bg").classList.add("active")
-    document.getElementById("hero-info").classList.add("active")
-  }, 100)
-})
-
-function initHeroSection() {
-  // Initialize Owl Carousel
-  const heroCarousel = window.$("#hero-carousel").owlCarousel({
-    items: 5,
+document.addEventListener("DOMContentLoaded", function () {
+  // Khởi tạo Swiper cho hero section
+  var heroSwiper = new Swiper('.hero-swiper', {
+    effect: 'slide',
+    grabCursor: true,
+    centeredSlides: true,
+    slidesPerView: 5,
+    spaceBetween: 20,
     loop: true,
-    margin: 20,
-    nav: false,
-    dots: false,
-    center: true,
-    autoWidth: false, // Đã tắt autoWidth để tránh lỗi owl-stage quá rộng
-    responsive: {
-      0: { items: 1 },
-      576: { items: 3 },
-      992: { items: 5 },
+    speed: 400, // đồng bộ với background
+    // Không dùng navigation Swiper ở dưới nữa
+    autoplay: {
+      delay: 8000,
+      disableOnInteraction: false,
     },
-  })
+    breakpoints: {
+      0: { slidesPerView: 1 },
+      576: { slidesPerView: 3 },
+      992: { slidesPerView: 5 }
+    }
+  });
 
-  // Navigation buttons
-  window.$("#hero-prev").on("click", () => {
-    heroCarousel.trigger("prev.owl.carousel")
-    resetProgressBar()
-  })
+  // Gán sự kiện cho nút prev/next lớn trên hero content
+  document.getElementById('hero-prev').addEventListener('click', function() {
+    heroSwiper.slidePrev();
+  });
+  document.getElementById('hero-next').addEventListener('click', function() {
+    heroSwiper.slideNext();
+  });
+  // Gán sự kiện cho side bar navigation
+  document.querySelector('.hero-nav-side-left').addEventListener('click', function() {
+    heroSwiper.slidePrev();
+  });
+  document.querySelector('.hero-nav-side-right').addEventListener('click', function() {
+    heroSwiper.slideNext();
+  });
 
-  window.$("#hero-next").on("click", () => {
-    heroCarousel.trigger("next.owl.carousel")
-    resetProgressBar()
-  })
-
-  // Click on carousel item
-  window.$(document).on("click", ".hero-carousel-item", function () {
-    const index = window.$(this).parent().index()
-    heroCarousel.trigger("to.owl.carousel", [index, 300])
-    resetProgressBar()
-  })
-
-  // When carousel changes
-  heroCarousel.on("changed.owl.carousel", (event) => {
-    updateHeroContent(event.item.index)
-  })
-
-  // Auto slide with progress bar
-  let progressInterval
-  const slideDuration = 8000 // 8 seconds per slide
-  const progressStep = 10 // Update progress every 10ms
-  let progress = 0
+  // Progress bar logic
+  var progressBar = document.getElementById('hero-progress-bar');
+  var progressInterval;
+  var slideDuration = 8000;
+  var progressStep = 10;
+  var progress = 0;
 
   function startProgressBar() {
-    const progressBar = document.getElementById("hero-progress-bar")
-    progress = 0
-    progressBar.style.width = "0%"
-
-    progressInterval = setInterval(() => {
-      progress += (progressStep / slideDuration) * 100
-      progressBar.style.width = `${progress}%`
-
+    progress = 0;
+    progressBar.style.width = '0%';
+    clearInterval(progressInterval);
+    progressInterval = setInterval(function () {
+      progress += (progressStep / slideDuration) * 100;
+      progressBar.style.width = progress + '%';
       if (progress >= 100) {
-        window.$("#hero-next").click()
+        heroSwiper.slideNext();
       }
-    }, progressStep)
+    }, progressStep);
   }
 
   function resetProgressBar() {
-    clearInterval(progressInterval)
-    startProgressBar()
+    clearInterval(progressInterval);
+    startProgressBar();
   }
 
-  // Start auto slide
-  startProgressBar()
+  // Khi Swiper bắt đầu chuyển slide
+  heroSwiper.on('slideChangeTransitionStart', function () {
+    var heroInfo = document.getElementById('hero-info');
+    var heroBg = document.getElementById('hero-bg');
+    heroInfo.classList.remove('active');
+    heroBg.classList.remove('active');
+    progressBar.style.width = '0%';
+  });
+
+  // Khi click vào slide, chuyển đến slide đó
+  document.querySelectorAll('.hero-swiper .swiper-slide').forEach(function (slide) {
+    slide.addEventListener('click', function () {
+      var realIndex = parseInt(this.getAttribute('data-swiper-slide-index'));
+      heroSwiper.slideToLoop(realIndex);
+    });
+  });
+
+  // Lần đầu load cũng cập nhật đúng info
+  updateHeroContentByIndex(heroSwiper.realIndex);
+  startProgressBar();
 
   // Pause auto slide on hover
-  window.$(".hero-section").hover(
-    () => {
-      clearInterval(progressInterval)
-    },
-    () => {
-      startProgressBar()
-    },
-  )
-}
+  document.querySelector('.hero-section').addEventListener('mouseenter', function () {
+    heroSwiper.autoplay.stop();
+    clearInterval(progressInterval);
+  });
+  document.querySelector('.hero-section').addEventListener('mouseleave', function () {
+    heroSwiper.autoplay.start();
+    startProgressBar();
+  });
 
-function updateHeroContent(index) {
-  // Find the active item
-  const $item = window.$(".owl-item").eq(index).find(".hero-carousel-item")
-  if (!$item.length) return
+  // === HERO BG TRACK LOGIC ===
+  var heroBg = document.getElementById('hero-bg');
+  var heroBgTrack = heroBg.querySelector('.hero-bg-track');
+  var slides = document.querySelectorAll('.hero-swiper .swiper-slide');
+  var slideCount = slides.length;
+  var currentIndex = heroSwiper.realIndex;
 
-  // Get movie data
-  const data = {
-    id: $item.data("movie-id"),
-    name: $item.data("movie-name"),
-    duration: $item.data("movie-duration"),
-    versions: $item.data("movie-versions"),
-    content: $item.data("movie-content"),
-    actor: $item.data("movie-actor"),
-    types: $item.data("movie-types"),
-    director: $item.data("movie-director"),
-    largeimage: $item.data("movie-largeimage"),
-    trailerurl: $item.data("movie-trailerurl"),
-    logoimage: $item.data("movie-logoimage"),
+  function updateHeroBgTrack(index, peek, animate = true) {
+    var bgWidth = heroBg.offsetWidth;
+    var offset = -(index + 1) * bgWidth; // +1 vì có 1 clone đầu
+    if (peek === 'left') offset += bgWidth * 0.1;
+    if (peek === 'right') offset -= bgWidth * 0.1;
+    if (!animate) heroBgTrack.style.transition = 'none';
+    else heroBgTrack.style.transition = '';
+    heroBgTrack.style.transform = 'translateX(' + offset + 'px)';
   }
 
-  // Update active state in carousel
-  window.$(".hero-carousel-item").removeClass("active")
-  $item.addClass("active")
+  // Lần đầu load
+  updateHeroBgTrack(heroSwiper.realIndex);
 
-  // Animate content change
-  const $heroInfo = window.$("#hero-info")
-  const $heroBg = window.$("#hero-bg")
-
-  // Fade out
-  $heroInfo.removeClass("active")
-
-  // Change background with crossfade
-  const $newBg = window.$('<div class="hero-bg"><img src="' + data.largeimage + '" alt="' + data.name + '"></div>')
-  $newBg.css("opacity", 0)
-  $heroBg.after($newBg)
-
-  setTimeout(() => {
-    $newBg.css("opacity", 1)
-    setTimeout(() => {
-      $heroBg.remove()
-      $newBg.attr("id", "hero-bg")
-      $newBg.addClass("active")
-    }, 500)
-  }, 100)
-
-  // Update content after short delay
-  setTimeout(() => {
-    // Update logo or title
-    if (data.logoimage && data.logoimage.length > 0) {
-      if ($heroInfo.find(".hero-movie-logo").length) {
-        $heroInfo.find(".hero-movie-logo").attr("src", data.logoimage)
-      } else {
-        $heroInfo.find(".hero-title").remove()
-        $heroInfo.prepend('<img class="hero-movie-logo" src="' + data.logoimage + '" alt="' + data.name + ' Logo">')
-      }
+  // Khi Swiper chuyển slide xong
+  heroSwiper.on('slideChangeTransitionEnd', function () {
+    currentIndex = heroSwiper.realIndex;
+    // Xử lý loop: nếu activeIndex là 0 (clone cuối), reset về cuối thực; nếu là slideCount+1 (clone đầu), reset về đầu thực
+    if (heroSwiper.activeIndex === 0) {
+      // Đang ở clone cuối, reset về cuối thực (không animate)
+      updateHeroBgTrack(slideCount - 1, undefined, false);
+    } else if (heroSwiper.activeIndex === slideCount + 1) {
+      // Đang ở clone đầu, reset về đầu thực (không animate)
+      updateHeroBgTrack(0, undefined, false);
     } else {
-      if ($heroInfo.find(".hero-title").length) {
-        $heroInfo.find(".hero-title").text(data.name)
-      } else {
-        $heroInfo.find(".hero-movie-logo").remove()
-        $heroInfo.prepend('<h2 class="hero-title">' + data.name + "</h2>")
-      }
+      updateHeroBgTrack(currentIndex);
     }
+    heroBg.classList.remove('peek-left','peek-right','slide-left','slide-right');
+    updateHeroContentByIndex(currentIndex);
+    resetProgressBar();
+  });
 
-    // Update meta info
-    $heroInfo
-      .find(".hero-meta span")
-      .eq(0)
-      .html('<i class="bx bxs-time"></i> ' + data.duration + "'")
-    $heroInfo
-      .find(".hero-meta span")
-      .eq(1)
-      .text(data.versions || "HD")
+  // Hiệu ứng peek động cho hero-bg-track khi hover vào 10% trái/phải
+  var heroSection = document.querySelector('.hero-section');
+  heroSection.addEventListener('mousemove', function(e) {
+    var rect = heroSection.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var width = rect.width;
+    if (x < width * 0.1) {
+      heroBg.classList.add('peek-left');
+      heroBg.classList.remove('peek-right');
+      updateHeroBgTrack(currentIndex, 'left');
+    } else if (x > width * 0.9) {
+      heroBg.classList.add('peek-right');
+      heroBg.classList.remove('peek-left');
+      updateHeroBgTrack(currentIndex, 'right');
+    } else {
+      heroBg.classList.remove('peek-left');
+      heroBg.classList.remove('peek-right');
+      updateHeroBgTrack(currentIndex);
+    }
+  });
+  heroSection.addEventListener('mouseleave', function() {
+    heroBg.classList.remove('peek-left');
+    heroBg.classList.remove('peek-right');
+    updateHeroBgTrack(currentIndex);
+  });
+  // Khi click vào vùng 10% trái/phải, animate background và chuyển slide tương ứng
+  heroSection.addEventListener('click', function(e) {
+    var rect = heroSection.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var width = rect.width;
+    if (x < width * 0.1) {
+      heroSwiper.slidePrev();
+    } else if (x > width * 0.9) {
+      heroSwiper.slideNext();
+    }
+  });
 
-    // Update description
-    $heroInfo.find(".hero-desc").text(data.content)
-
-    // Update extra info
-    $heroInfo
-      .find(".hero-extra-info")
-      .html(
-        "<div><b>Starring:</b> " +
-          data.actor +
-          "</div>" +
-          "<div><b>This show is:</b> " +
-          data.types +
-          "</div>" +
-          "<div><b>Director:</b> " +
-          data.director +
-          "</div>",
-      )
-
-    // Update book now button link
-    $heroInfo.find(".book-now-btn").attr("href", "/Movie/Detail/" + data.id)
-
-    // Fade in
-    setTimeout(() => {
-      $heroInfo.addClass("active")
-    }, 100)
-  }, 300)
-}
+  // Hàm cập nhật hero-info và background
+  function updateHeroContentByIndex(index) {
+    var slide = document.querySelector('.hero-swiper .swiper-slide[data-swiper-slide-index="' + index + '"]');
+    var heroInfo = document.getElementById('hero-info');
+    var heroBg = document.getElementById('hero-bg');
+    if (!slide) return;
+    // Lấy data từ slide
+    var data = {
+      name: slide.getAttribute('data-movie-name'),
+      duration: slide.getAttribute('data-movie-duration'),
+      versions: slide.getAttribute('data-movie-versions'),
+      content: slide.getAttribute('data-movie-content'),
+      actor: slide.getAttribute('data-movie-actor'),
+      types: slide.getAttribute('data-movie-types'),
+      director: slide.getAttribute('data-movie-director'),
+      largeimage: slide.getAttribute('data-movie-largeimage'),
+      logoimage: slide.getAttribute('data-movie-logoimage'),
+      id: slide.getAttribute('data-movie-id'),
+    };
+    // Update background
+    var bgImg = heroBg.querySelector('img');
+    if (bgImg) {
+      bgImg.src = data.largeimage;
+      bgImg.alt = data.name;
+    }
+    // Update info
+    setTimeout(function () {
+      // Logo hoặc title
+      var logo = heroInfo.querySelector('.hero-movie-logo');
+      var title = heroInfo.querySelector('.hero-title');
+      if (data.logoimage && data.logoimage.length > 0) {
+        if (logo) {
+          logo.src = data.logoimage;
+        } else {
+          if (title) title.remove();
+          var img = document.createElement('img');
+          img.className = 'hero-movie-logo';
+          img.src = data.logoimage;
+          img.alt = data.name + ' Logo';
+          heroInfo.prepend(img);
+        }
+      } else {
+        if (title) {
+          title.textContent = data.name;
+        } else {
+          if (logo) logo.remove();
+          var h2 = document.createElement('h2');
+          h2.className = 'hero-title';
+          h2.textContent = data.name;
+          heroInfo.prepend(h2);
+        }
+      }
+      // Meta
+      var metaSpans = heroInfo.querySelectorAll('.hero-meta span');
+      if (metaSpans.length > 0) metaSpans[0].innerHTML = '<i class="bx bxs-time"></i> ' + data.duration + "'";
+      if (metaSpans.length > 1) metaSpans[1].textContent = data.versions || 'HD';
+      // Desc
+      var desc = heroInfo.querySelector('.hero-desc');
+      if (desc) desc.textContent = data.content;
+      // Extra info
+      var extra = heroInfo.querySelector('.hero-extra-info');
+      if (extra) extra.innerHTML =
+        '<div><b>Starring:</b> ' + data.actor + '</div>' +
+        '<div><b>This show is:</b> ' + data.types + '</div>' +
+        '<div><b>Director:</b> ' + data.director + '</div>';
+      // Book now
+      var bookBtn = heroInfo.querySelector('.book-now-btn');
+      if (bookBtn) bookBtn.setAttribute('href', '/Movie/Detail/' + data.id);
+      // Fade in
+      setTimeout(function () {
+        heroInfo.classList.add('active');
+        heroBg.classList.add('active');
+      }, 100);
+    }, 300);
+  }
+});

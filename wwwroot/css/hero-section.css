@@ -13,17 +13,55 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  transition: opacity 0.8s ease-in-out, transform 1.2s ease-out;
+  overflow: hidden;
+  width: 100vw;
 }
-
-.hero-bg img {
+.hero-bg-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+  will-change: transform;
+}
+.hero-bg-img {
   width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Tăng độ sáng và giảm blur để bg nổi bật hơn */
+  flex-shrink: 0;
   filter: brightness(0.85) blur(1px);
-  transform: scale(1.05);
-  transition: transform 8s ease-out, filter 0.8s;
+}
+.hero-bg-main, .hero-bg-peek {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  filter: brightness(0.85) blur(1px);
+  transition: transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.5s, filter 0.8s;
+}
+.hero-bg-main {
+  z-index: 2;
+  opacity: 1;
+  transform: scale(1.05) translateX(0);
+}
+.hero-bg-peek {
+  z-index: 1;
+  opacity: 0;
+  transform: scale(1.05) translateX(0);
+  pointer-events: none;
+}
+.hero-bg.peek-left .hero-bg-main {
+  transform: scale(1.05) translateX(10%);
+}
+.hero-bg.peek-left .hero-bg-peek {
+  opacity: 1;
+  transform: scale(1.05) translateX(-90%);
+}
+.hero-bg.peek-right .hero-bg-main {
+  transform: scale(1.05) translateX(-10%);
+}
+.hero-bg.peek-right .hero-bg-peek {
+  opacity: 1;
+  transform: scale(1.05) translateX(90%);
 }
 
 .hero-bg.active img {
@@ -412,6 +450,55 @@
     overflow: hidden;
     pointer-events: none;
     z-index: 2;
+}
+
+/* Swiper hero section active effect */
+.hero-swiper .swiper-slide {
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), filter 0.4s, box-shadow 0.4s, border 0.4s, opacity 0.4s;
+  opacity: 0.5;
+  filter: grayscale(0.5) blur(0.5px);
+  border: 3px solid transparent;
+  box-shadow: none;
+  z-index: 1;
+}
+.hero-swiper .swiper-slide.swiper-slide-active {
+  transform: scale(1.15);
+  opacity: 1;
+  filter: none;
+  border: 3px solid #ffe066;
+  box-shadow: 0 0 24px 0 rgba(255,224,102,0.25), 0 2px 8px rgba(255,224,102,0.10);
+  z-index: 2;
+}
+.hero-swiper .swiper-slide:not(.swiper-slide-active) {
+  pointer-events: auto;
+}
+.hero-swiper .swiper-slide .carousel-img-rect {
+  transition: box-shadow 0.4s, border 0.4s;
+}
+.hero-swiper .swiper-slide.swiper-slide-active .carousel-img-rect {
+  box-shadow: 0 8px 32px 0 rgba(255,224,102,0.18), 0 2px 8px rgba(255,224,102,0.10);
+  border-radius: 18px;
+}
+
+.hero-bg.slide-left .hero-bg-main {
+  z-index: 2;
+  transform: scale(1.05) translateX(-100%);
+  opacity: 0;
+}
+.hero-bg.slide-left .hero-bg-peek {
+  z-index: 3;
+  opacity: 1;
+  transform: scale(1.05) translateX(0);
+}
+.hero-bg.slide-right .hero-bg-main {
+  z-index: 2;
+  transform: scale(1.05) translateX(100%);
+  opacity: 0;
+}
+.hero-bg.slide-right .hero-bg-peek {
+  z-index: 3;
+  opacity: 1;
+  transform: scale(1.05) translateX(0);
 }
 
 
