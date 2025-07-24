@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using MovieTheater.Controllers;
+using MovieTheater.Repository;
 using MovieTheater.Service;
 using System.Security.Claims;
 using Xunit;
@@ -13,6 +14,7 @@ namespace MovieTheater.Tests.Controller
         private readonly Mock<IPromotionService> _promotionServiceMock;
         private readonly Mock<IMovieService> _movieServiceMock;
         private readonly Mock<IAccountService> _accountServiceMock;
+        private readonly Mock<IPersonRepository> _personRepositoryMock;
         private readonly HomeController _controller;
 
         public HomeControllerTests()
@@ -20,7 +22,8 @@ namespace MovieTheater.Tests.Controller
             _promotionServiceMock = new Mock<IPromotionService>();
             _movieServiceMock = new Mock<IMovieService>();
             _accountServiceMock = new Mock<IAccountService>();
-            _controller = new HomeController(_promotionServiceMock.Object, _movieServiceMock.Object, _accountServiceMock.Object);
+            _personRepositoryMock = new Mock<IPersonRepository>();
+            _controller = new HomeController(_promotionServiceMock.Object, _movieServiceMock.Object, _accountServiceMock.Object, _personRepositoryMock.Object);
         }
 
         private void SetUser(bool isAuthenticated, string role = null, string userId = null)
