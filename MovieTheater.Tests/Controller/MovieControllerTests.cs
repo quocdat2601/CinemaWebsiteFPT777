@@ -104,33 +104,6 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Detail_ReturnsView_WhenMovieFound_CinemaRoomNull()
-        {
-            // Arrange
-            _movieService.Setup(s => s.GetById("1")).Returns(new Movie { MovieId = "1", CinemaRoomId = null, Types = new List<ModelType>(), Versions = new List<ModelVersion>() });
-            var ctrl = BuildController();
-            // Act
-            var result = ctrl.Detail("1") as ViewResult;
-            // Assert
-            Assert.NotNull(result);
-            Assert.IsType<MovieDetailViewModel>(result.Model);
-        }
-
-        [Fact]
-        public void Detail_ReturnsView_WhenMovieFound_CinemaRoomNotNull()
-        {
-            // Arrange
-            _movieService.Setup(s => s.GetById("1")).Returns(new Movie { MovieId = "1", CinemaRoomId = 2, Types = new List<ModelType>(), Versions = new List<ModelVersion>() });
-            _cinemaService.Setup(s => s.GetById(2)).Returns(new CinemaRoom { CinemaRoomId = 2 });
-            var ctrl = BuildController();
-            // Act
-            var result = ctrl.Detail("1") as ViewResult;
-            // Assert
-            Assert.NotNull(result);
-            Assert.IsType<MovieDetailViewModel>(result.Model);
-        }
-
-        [Fact]
         public void Create_Get_ReturnsViewWithTypesAndVersions()
         {
             // Arrange

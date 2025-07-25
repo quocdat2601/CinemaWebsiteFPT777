@@ -158,7 +158,8 @@ namespace MovieTheater.Controllers
         /// Xem ghế theo phim
         /// </summary>
         /// <remarks>url: /Seat/ViewByMovie/{movieId} (GET)</remarks>
-        [HttpGet("Seat/ViewByMovie/{movieId}")]
+ 
+        /*[HttpGet("Seat/ViewByMovie/{movieId}")]
         public async Task<IActionResult> ViewByMovie(string movieId)
         {
             var movie = _movieService.GetById(movieId);
@@ -206,7 +207,7 @@ namespace MovieTheater.Controllers
             };
 
             return View("View", viewModel);
-        }
+        } */
 
         /// <summary>
         /// Chọn ghế cho suất chiếu
