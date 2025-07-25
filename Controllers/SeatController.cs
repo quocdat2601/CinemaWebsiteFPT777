@@ -155,60 +155,6 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Xem ghế theo phim
-        /// </summary>
-        /// <remarks>url: /Seat/ViewByMovie/{movieId} (GET)</remarks>
-        [HttpGet("Seat/ViewByMovie/{movieId}")]
-        public async Task<IActionResult> ViewByMovie(string movieId)
-        {
-            var movie = _movieService.GetById(movieId);
-            if (movie == null || !movie.CinemaRoomId.HasValue)
-            {
-                return NotFound();
-            }
-
-            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
-            if (cinemaRoom == null)
-            {
-                return NotFound();
-            }
-
-            var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
-            var seatTypes = _seatTypeService.GetAll().ToList();
-            ViewBag.MovieId = movieId;
-
-            // Lấy movie show mới nhất cho phòng này
-            var movieShows = _movieService.GetMovieShow().Where(ms => ms.CinemaRoomId == cinemaRoom.CinemaRoomId).ToList();
-            var latestMovieShow = movieShows.OrderByDescending(ms => ms.MovieShowId).FirstOrDefault();
-            List<int> bookedSeats = new List<int>();
-            if (latestMovieShow != null)
-            {
-                var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(latestMovieShow.MovieShowId);
-                bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
-            }
-            ViewBag.BookedSeats = bookedSeats;
-
-            // Lấy danh sách food/drink/combo đang active
-            var foods = await _foodService.GetAllAsync(null, null, true);
-            ViewBag.Foods = foods.Foods;
-
-            var viewModel = new SeatSelectionViewModel
-            {
-                MovieId = movieId,
-                MovieName = movie.MovieNameEnglish,
-                CinemaRoomId = movie.CinemaRoomId.Value,
-                CinemaRoomName = cinemaRoom.CinemaRoomName,
-                VersionName = cinemaRoom.Version?.VersionName ?? "N/A",
-                SeatLength = cinemaRoom.SeatLength ?? 0,
-                SeatWidth = cinemaRoom.SeatWidth ?? 0,
-                Seats = seats,
-                SeatTypes = seatTypes
-            };
-
-            return View("View", viewModel);
-        }
-
-        /// <summary>
         /// Chọn ghế cho suất chiếu
         /// </summary>
         /// <remarks>url: /Seat/Select (GET)</remarks>

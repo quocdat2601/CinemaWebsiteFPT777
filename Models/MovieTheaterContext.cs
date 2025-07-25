@@ -373,7 +373,6 @@ public partial class MovieTheaterContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Movie_ID");
-            entity.Property(e => e.CinemaRoomId).HasColumnName("Cinema_Room_ID");
             entity.Property(e => e.Content)
                 .HasMaxLength(1000)
                 .IsUnicode(false);

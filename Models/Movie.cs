@@ -7,8 +7,6 @@ public partial class Movie
 {
     public string MovieId { get; set; } = null!;
 
-    public int? CinemaRoomId { get; set; }
-
     public string? Content { get; set; }
 
     public int? Duration { get; set; }

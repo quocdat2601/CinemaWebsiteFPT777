@@ -107,7 +107,7 @@ namespace MovieTheater.Tests.Controller
         public void Detail_ReturnsView_WhenMovieFound_CinemaRoomNull()
         {
             // Arrange
-            _movieService.Setup(s => s.GetById("1")).Returns(new Movie { MovieId = "1", CinemaRoomId = null, Types = new List<ModelType>(), Versions = new List<ModelVersion>() });
+            _movieService.Setup(s => s.GetById("1")).Returns(new Movie { MovieId = "1", Types = new List<ModelType>(), Versions = new List<ModelVersion>() });
             var ctrl = BuildController();
             // Act
             var result = ctrl.Detail("1") as ViewResult;
@@ -120,7 +120,7 @@ namespace MovieTheater.Tests.Controller
         public void Detail_ReturnsView_WhenMovieFound_CinemaRoomNotNull()
         {
             // Arrange
-            _movieService.Setup(s => s.GetById("1")).Returns(new Movie { MovieId = "1", CinemaRoomId = 2, Types = new List<ModelType>(), Versions = new List<ModelVersion>() });
+            _movieService.Setup(s => s.GetById("1")).Returns(new Movie { MovieId = "1", Types = new List<ModelType>(), Versions = new List<ModelVersion>() });
             _cinemaService.Setup(s => s.GetById(2)).Returns(new CinemaRoom { CinemaRoomId = 2 });
             var ctrl = BuildController();
             // Act

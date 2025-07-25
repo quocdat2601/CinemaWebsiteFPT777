@@ -96,41 +96,5 @@ namespace MovieTheater.Tests.Controller
             Assert.IsType<SeatSelectionViewModel>(viewResult.Model);
         }
 
-        [Fact]
-        public void ViewByMovie_Get_ReturnsNotFound_WhenMovieOrCinemaRoomMissing()
-        {
-            // Arrange
-            string movieId = "m1";
-            _movieService.Setup(s => s.GetById(movieId)).Returns((Movie)null);
-            var ctrl = BuildController();
-            // Act
-            var result = ctrl.ViewByMovie(movieId).GetAwaiter().GetResult();
-            // Assert
-            Assert.IsType<NotFoundResult>(result);
-        }
-
-        [Fact]
-        public void ViewByMovie_Get_ReturnsView_WhenMovieAndCinemaRoomExist()
-        {
-            // Arrange
-            string movieId = "m2";
-            int cinemaRoomId = 4;
-            var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie", CinemaRoomId = cinemaRoomId };
-            var cinemaRoom = new CinemaRoom { CinemaRoomId = cinemaRoomId, CinemaRoomName = "Room 4", SeatLength = 5, SeatWidth = 5 };
-            _movieService.Setup(s => s.GetById(movieId)).Returns(movie);
-            _cinemaService.Setup(s => s.GetById(cinemaRoomId)).Returns(cinemaRoom);
-            _seatService.Setup(s => s.GetSeatsByRoomIdAsync(cinemaRoomId)).ReturnsAsync(new List<Seat>());
-            _seatTypeService.Setup(s => s.GetAll()).Returns(new List<SeatType>());
-            _movieService.Setup(s => s.GetMovieShow()).Returns(new List<MovieShow> { new MovieShow { MovieShowId = 20, CinemaRoomId = cinemaRoomId } });
-            _scheduleSeatRepository.Setup(s => s.GetScheduleSeatsByMovieShowAsync(20)).ReturnsAsync(new List<ScheduleSeat>());
-            _foodService.Setup(s => s.GetAllAsync(null, null, true)).ReturnsAsync(new FoodListViewModel { Foods = new List<FoodViewModel>() });
-            _coupleSeatService.Setup(s => s.GetAllCoupleSeatsAsync()).ReturnsAsync(new List<CoupleSeat>());
-            var ctrl = BuildController();
-            // Act
-            var result = ctrl.ViewByMovie(movieId).GetAwaiter().GetResult();
-            // Assert
-            var viewResult = Assert.IsType<ViewResult>(result);
-            Assert.IsType<SeatSelectionViewModel>(viewResult.Model);
-        }
     }
 }

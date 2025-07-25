@@ -4,6 +4,9 @@
 @{
     ViewData["Title"] = "Movie Detail";
     var isAuthenticated = User.Identity.IsAuthenticated;
+    var movieList = ViewBag.MovieList as List<MovieTheater.Models.Movie>;
+    var selectedMovieId = ViewBag.SelectedMovieId as string;
+    var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
 }
 
 
@@ -91,13 +94,16 @@
                 </div>
 
                 <div class="row mb-4 me-2" style="width: 80%">
-                    <div class="col-md-6 text-end">
-                        <a asp-controller="Booking" id="bookBtn"
+                    <div class="col-md-6 text-end" id="bookSection">
+                        @* <a asp-controller="Booking" id="bookBtn"
                            asp-action="TicketBooking"
                            asp-route-movieId="@Model.MovieId"
                            class="btn btn-primary btn-lg" style="width: 200px; border-radius: 20px">
                             Book Tickets
-                        </a>
+                        </a> *@
+                        <button type="button" class="btn btn-primary btn-lg" style="width: 200px; border-radius: 20px" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                            Book Tickets
+                        </button>
                     </div>
                     <div class="col-md-6 text-start">
                         <button class="btn btn-outline-primary btn-lg" style="width: 200px; border-radius: 20px" data-bs-toggle="modal" data-bs-target="#trailerModal">
@@ -112,7 +118,7 @@
     <!-- Schedule -->
     <div class="mb-4" id="scheduleSection" style="margin-left: 15rem; margin-top: 3rem">
         <h2 class="mb-3">Schedule</h2>
-        <div id="movieShowsContainer" class="schedule-container" ">
+        <div id="movieShowsContainer" class="schedule-container">
             <!-- Dynamic movie shows will appear here -->
         </div>
     </div>
@@ -128,31 +134,54 @@
 </div>
 
 <script>
-        document.getElementById('bookBtn').addEventListener('click', function(event) {
-        var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
-        if (!isAuthenticated) {
-            event.preventDefault();
-            window.location.href = '@Url.Action("Login", "Account")';
-        }
-    });
-
-    // Add event listeners for actor links
+    // Initialize everything when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize book button event listener
+        const bookBtn = document.getElementById('bookBtn');
+        if (bookBtn) {
+            bookBtn.addEventListener('click', function(event) {
+                var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+                if (!isAuthenticated) {
+                    event.preventDefault();
+                    window.location.href = '@Url.Action("Login", "Account")';
+                }
+            });
+        }
+
+        // Add event listeners for person links (actors/directors)
         document.querySelectorAll('.person-link').forEach(function(link) {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                const actor = {
+                const person = {
                     id: this.dataset.id,
-                    image: this.dataset.image || 'Unknown',
+                    image: this.dataset.image || '',
                     name: this.dataset.name || 'Unknown',
                     dateOfBirth: this.dataset.dob || '',
                     nationality: this.dataset.nationality || '',
                     gender: this.dataset.gender === 'True' ? true : this.dataset.gender === 'False' ? false : null,
                     description: this.dataset.description || ''
                 };
-                showActorModal(actor);
+                showActorModal(person);
             });
         });
+
+        // Load movie shows after DOM is ready
+        loadMovieShows();
+        
+        // Initialize booking modal event listener
+        const bookingModal = document.getElementById('addBookingModal');
+        if (bookingModal) {
+            bookingModal.addEventListener('shown.bs.modal', function () {
+                // Populate date picker when modal opens
+                populateDatePicker();
+                
+                // Focus on date select when modal opens
+                const dateSelect = document.getElementById('dateSelect');
+                if (dateSelect) {
+                    dateSelect.focus();
+                }
+            });
+        }
     });
 
     function showActorModal(actor) {
@@ -211,10 +240,17 @@
             const shows = await response.json();
             const container = document.getElementById('movieShowsContainer');
             container.innerHTML = ''; // Clear container
+            
+            // Clear and populate available dates for booking modal
+            availableDates.clear();
 
             // Group shows by date and version
             const groupedShows = shows.reduce((acc, show) => {
                 const dateKey = show.showDate;
+                
+                // Add date to available dates set for booking modal
+                availableDates.add(dateKey);
+                
                 if (!acc[dateKey]) {
                     acc[dateKey] = {
                         dateText: dateKey,
@@ -238,11 +274,13 @@
                 container.innerHTML = '<div class="text-muted">No shows scheduled yet.</div>';
                 if (scheduleSection) {
                 scheduleSection.style.display = 'none';
+                bookSection.style.display = 'none';
                 }
                 return;
             }
             if (scheduleSection) {
                  scheduleSection.style.display = 'block';
+                 bookSection.style.display = 'block';
             }
 
             sortedGroups.forEach(group => {
@@ -292,7 +330,116 @@
         }
     }
 
-    loadMovieShows();
+    // Serialize showsByDate for use in booking modal
+    const showsByDate = @Html.Raw(Json.Serialize(showsByDate));
+    
+    // Global variable to store available dates from movie shows
+    let availableDates = new Set();
+
+    // Function to populate date picker with available dates
+    function populateDatePicker() {
+        const dateSelect = document.getElementById('dateSelect');
+        if (!dateSelect) return;
+        
+        dateSelect.innerHTML = '<option value="">— Select Date —</option>';
+        
+        if (availableDates.size > 0) {
+            // Convert Set to Array and sort dates chronologically
+            const sortedDates = Array.from(availableDates).sort((a, b) => {
+                const [dayA, monthA, yearA] = a.split('/');
+                const [dayB, monthB, yearB] = b.split('/');
+                const dateA = new Date(yearA, monthA - 1, dayA);
+                const dateB = new Date(yearB, monthB - 1, dayB);
+                return dateA - dateB;
+            });
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+            
+            sortedDates.forEach(date => {
+                // Parse the date to check if it's today or future
+                const [day, month, year] = date.split('/');
+                const dateObj = new Date(year, month - 1, day);
+                
+                if (dateObj >= today) {
+                    const option = document.createElement('option');
+                    // Convert DD/MM/YYYY to YYYY-MM-DD for the value
+                    option.value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    option.textContent = date; // Display as DD/MM/YYYY
+                    dateSelect.appendChild(option);
+                }
+            });
+        }
+    }
+
+        function updateVersions() {
+            const movieId = document.getElementById('movieId').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+            versionSelect.disabled = true;
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+
+            if (movieId && date) {
+                fetch(`/Booking/GetVersions?movieId=${movieId}&date=${date}`)
+                    .then(response => response.json())
+                    .then(versions => {
+                        if (versions.length > 0) {
+                            versions.forEach(v => {
+                                const option = document.createElement('option');
+                                option.value = v.versionId;
+                                option.textContent = v.versionName;
+                                versionSelect.appendChild(option);
+                            });
+                            versionSelect.disabled = false;
+                        }
+                    });
+            }
+        }
+
+        function updateTimes() {
+            const movieId = document.getElementById('movieId').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const timeSelect = document.getElementById('timeSelect');
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+
+            if (movieId && date && versionId) {
+                fetch(`/Booking/GetTimes?movieId=${movieId}&date=${date}&versionId=${versionId}`)
+                    .then(response => response.json())
+                    .then(times => {
+                        if (times.length > 0) {
+                            times.forEach(time => {
+                                const option = document.createElement('option');
+                                option.value = time;
+                                option.textContent = time;
+                                timeSelect.appendChild(option);
+                            });
+                            timeSelect.disabled = false;
+                        }
+                    });
+            }
+        }
+
+        function continueToSeats() {
+            const movieId = document.getElementById('movieId').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const time = document.getElementById('timeSelect').value;
+
+            if (!movieId || !date || !versionId || !time) {
+                alert('Please select all options');
+                return;
+            }
+
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${versionId}&time=${time}`;
+        }
 </script>
 
 <div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
@@ -320,6 +467,46 @@
         <div class="modal-content" style="border-radius: 20px">
             <div class="modal-body" id="actorModalBody">
                 <!-- Actor details will be injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBookingModalLabel">
+                    <i class="fas fa-ticket-alt me-2"></i>Book Your Ticket
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm" novalidate>
+                    <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
+                    <div class="mb-4">
+                        <label for="dateSelect" class="form-label booking-label"><span class="label-icon">🗓️</span> <strong>Date</strong></label>
+                        <select id="dateSelect" class="form-select booking-select" onchange="updateVersions()">
+                            <option value="">— Select Date —</option>
+                            <!-- Dates will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="versionSelect" class="form-label booking-label"><span class="label-icon">🎞️</span> <strong>Version</strong></label>
+                        <select id="versionSelect" class="form-select booking-select" disabled onchange="updateTimes()">
+                            <option value="">— Select Version —</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="timeSelect" class="form-label booking-label"><span class="label-icon">⏰</span> <strong>Time</strong></label>
+                        <select id="timeSelect" class="form-select booking-select" disabled>
+                            <option value="">— Select Time —</option>
+                        </select>
+                    </div>
+                    <button type="button" id="bookBtn" class="btn booking-btn-gradient w-100 mt-2" onclick="continueToSeats()">
+                        <span>Continue to Seat Selection</span> <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
