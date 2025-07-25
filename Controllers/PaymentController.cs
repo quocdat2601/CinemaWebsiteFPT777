@@ -224,14 +224,22 @@ namespace MovieTheater.Controllers
                 }
                 if (invoice != null && invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
                 {
+                    // Cập nhật trạng thái ghế thành booked (SeatStatusId = 2)
                     foreach (var scheduleSeat in invoice.ScheduleSeats)
                     {
-                        var seat = scheduleSeat.Seat;
-                        decimal? bookedPrice = scheduleSeat.BookedPrice;
-                        // Use seat, seatType, and bookedPrice as needed for calculations or TempData
-                        // Example: accumulate subtotal, build seat info, etc.
+                        scheduleSeat.SeatStatusId = 2;
                     }
                     _context.SaveChanges();
+
+                    var seatHubContext = (IHubContext<MovieTheater.Hubs.SeatHub>)HttpContext.RequestServices.GetService(typeof(IHubContext<MovieTheater.Hubs.SeatHub>));
+                    foreach (var scheduleSeat in invoice.ScheduleSeats)
+                    {
+                        // Gửi thông báo realtime cập nhật trạng thái ghế
+                        if (seatHubContext != null && scheduleSeat.SeatId.HasValue)
+                        {
+                            await seatHubContext.Clients.Group(invoice.MovieShowId.ToString()).SendAsync("SeatStatusChanged", scheduleSeat.SeatId.Value, 2);
+                        }
+                    }
                 }
 
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---

@@ -205,6 +205,8 @@ public class TicketService : ITicketService
             if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
             {
                 await _seatHubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                // Also release hold immediately so heldByMe is cleared
+                MovieTheater.Hubs.SeatHub.ReleaseHold(seat.MovieShowId.Value, seat.SeatId.Value); // Release hold on cancel
             }
         }
         _scheduleSeatRepository.Save();
@@ -334,6 +336,8 @@ public class TicketService : ITicketService
             if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
             {
                 await _seatHubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                // Also release hold immediately so heldByMe is cleared
+                MovieTheater.Hubs.SeatHub.ReleaseHold(seat.MovieShowId.Value, seat.SeatId.Value); // Release hold on cancel
             }
         }
         _scheduleSeatRepository.Save();
