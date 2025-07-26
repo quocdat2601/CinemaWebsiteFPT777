@@ -645,8 +645,6 @@ public partial class MovieTheaterContext : DbContext
             entity.Property(e => e.BookedPrice)
                 .HasColumnType("decimal(18, 2)")
                 .HasColumnName("Booked_Price");
-            entity.Property(e => e.HoldBy).HasMaxLength(100);
-            entity.Property(e => e.HoldUntil).HasColumnType("datetime");
             entity.Property(e => e.InvoiceId)
                 .HasMaxLength(10)
                 .IsUnicode(false)
