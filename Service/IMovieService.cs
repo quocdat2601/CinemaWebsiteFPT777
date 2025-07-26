@@ -1,4 +1,4 @@
-﻿using MovieTheater.Models;
+using MovieTheater.Models;
 
 namespace MovieTheater.Service
 {

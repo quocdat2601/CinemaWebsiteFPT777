@@ -568,6 +568,21 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetMovieShows(string movieId)
+        {
+            var movieShows = _movieService.GetMovieShowsByMovieId(movieId)
+                .Select(ms => new {
+                    ms.MovieShowId,
+                    ms.MovieId,
+                    ms.ShowDate,
+                    ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
+                    VersionName = ms.Version?.VersionName,
+                    VersionId = ms.VersionId
+                }).ToList();
+            return Json(movieShows);
+        }
+
+        [HttpGet]
         [Route("Movie/MovieShow/{id}")]
         public IActionResult MovieShow(string id)
         {

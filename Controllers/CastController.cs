@@ -41,18 +41,44 @@ namespace MovieTheater.Controllers
         // GET: CastController/Create
         public ActionResult Create()
         {
-            return View(new Person());
+            return View(new PersonFormModel());
         }
 
         // POST: CastController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(Person person, IFormFile ImageFile)
+        public ActionResult Create(PersonFormModel person, IFormFile ImageFile)
         {
+            // Remove ImageFile from validation since it's optional
+            ModelState.Remove("ImageFile");
+            
+            // Debug: Check what validation errors exist
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .Select(x => new { Field = x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage) })
+                    .ToList();
+                
+                TempData["ValidationErrors"] = string.Join("; ", errors.SelectMany(e => e.Errors));
+            }
+            
             if (ModelState.IsValid)
             {
                 try
                 {
+                    // Create new Person entity from PersonFormModel
+                    var newPerson = new Person
+                    {
+                        Name = person.Name,
+                        DateOfBirth = person.DateOfBirth ?? DateOnly.FromDateTime(DateTime.Now),
+                        Nationality = person.Nationality,
+                        Gender = person.Gender,
+                        IsDirector = person.IsDirector,
+                        Description = person.Description
+                    };
+
+                    // Handle image upload
                     if (ImageFile != null && ImageFile.Length > 0)
                     {
                         var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageFile.FileName);
@@ -66,10 +92,14 @@ namespace MovieTheater.Controllers
                         {
                             ImageFile.CopyTo(stream);
                         }
-                        person.Image = "/images/avatars/" + fileName;
+                        newPerson.Image = "/images/avatars/" + fileName;
+                    }
+                    else
+                    {
+                        newPerson.Image = "/image/default-movie.png";
                     }
 
-                    _personRepository.Add(person);
+                    _personRepository.Add(newPerson);
                     _personRepository.Save();
                     TempData["ToastMessage"] = "Cast created successfully.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
@@ -78,6 +108,7 @@ namespace MovieTheater.Controllers
                 {
                     TempData["ErrorMessage"] = "Cast created unsuccessfully.";
                     ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
+                    return View(person);
                 }
             }
             return View(person);
@@ -91,13 +122,27 @@ namespace MovieTheater.Controllers
             {
                 return NotFound();
             }
-            return View(person);
+            
+            // Map Person to PersonFormModel for the view
+            var personFormModel = new PersonFormModel
+            {
+                PersonId = person.PersonId,
+                Name = person.Name,
+                DateOfBirth = person.DateOfBirth ?? DateOnly.FromDateTime(DateTime.Now),
+                Nationality = person.Nationality ?? string.Empty,
+                Gender = person.Gender,
+                IsDirector = person.IsDirector,
+                Description = person.Description ?? string.Empty,
+                Image = person.Image
+            };
+            
+            return View(personFormModel);
         }
 
         // POST: CastController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, Person person, IFormFile? ImageFile)
+        public ActionResult Edit(int id, PersonFormModel person, IFormFile? ImageFile)
         {
             if (id != person.PersonId)
             {
@@ -128,7 +173,7 @@ namespace MovieTheater.Controllers
 
                 // Update all fields
                 existingPerson.Name = person.Name;
-                existingPerson.DateOfBirth = person.DateOfBirth;
+                existingPerson.DateOfBirth = person.DateOfBirth ?? DateOnly.FromDateTime(DateTime.Now);
                 existingPerson.Nationality = person.Nationality;
                 existingPerson.Gender = person.Gender;
                 existingPerson.IsDirector = person.IsDirector;
@@ -187,17 +232,26 @@ namespace MovieTheater.Controllers
                 var cast = _personRepository.GetById(id);
                 if (cast == null)
                 {
-                    TempData["ToastMessage"] = "Cast not found.";
+                    TempData["ErrorMessage"] = "Cast not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                }
+
+                // Check if person is associated with any movies
+                var movies = _personRepository.GetMovieByPerson(id);
+                if (movies != null && movies.Any())
+                {
+                    TempData["ErrorMessage"] = $"Cannot delete {cast.Name} because they are associated with {movies.Count()} movie(s). Please remove them from all movies first.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
                 }
 
                 _personRepository.Delete(id);
+                _personRepository.Save(); // Ensure changes are committed
                 TempData["ToastMessage"] = "Cast deleted successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
             }
             catch (Exception ex)
             {
-                TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
+                TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}. Details: {ex.InnerException?.Message}";
                 return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
             }
         }

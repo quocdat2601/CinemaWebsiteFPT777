@@ -1,3 +1,4 @@
+@using System.Web
 @model MovieTheater.Models.Movie
 @{
     ViewData["Title"] = "Home";
@@ -7,7 +8,8 @@
     var people = ViewBag.People as IEnumerable<MovieTheater.Models.Person> ?? new List<MovieTheater.Models.Person>();
     var actorNames = people.Where(p => p != null && p.IsDirector == false).Select(p => p.Name ?? "").ToList();
     var directorNames = people.Where(p => p != null && p.IsDirector == true).Select(p => p.Name ?? "").ToList();
-    var movieList = movies.ToList();
+    var movieList = movies?.ToList() ?? new List<MovieTheater.Models.Movie>();
+    var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
 }
 <!-- GOOGLE FONTS -->
 <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -84,7 +86,7 @@
             <div class="hero-extra-info">
                 <div>
                     <b>Starring: </b> @(string.Join(", ", actorNames))
-                 </div>
+                </div>
                 <div>
                     <b>This show is:</b>
                     @if (Model?.Types != null && Model.Types.Any())
@@ -98,9 +100,9 @@
                 </div>
             </div>
 
-            <a href="@Url.Action("Detail", "Movie", new { id = Model?.MovieId })" class="book-now-btn">
+            <button type="button" class="book-now-btn" data-bs-toggle="modal" data-bs-target="#addBookingModal" onclick="openBookingModalFromHero()">
                 <span>Book Now</span>
-            </a>
+            </button>
         </div>
     </div>
 
@@ -131,11 +133,11 @@
                              data-movie-id="@movie.MovieId"
                              data-movie-name="@movie.MovieNameEnglish"
                              data-movie-duration="@movie.Duration"
-                             data-movie-versions="@(string.Join(", ", movie.Versions.Select(v => v.VersionName)))"
+                             data-movie-versions="@(string.Join(", ", movie.Versions?.Select(v => v.VersionName) ?? Enumerable.Empty<string>()))"
                              data-movie-content="@movie.Content"
-                             data-movie-actor="@(string.Join(", ", movie.People.Where(p => p.IsDirector == false).Select(p => p.Name)))"
-                             data-movie-types="@(string.Join(", ", movie.Types.Select(t => t.TypeName)))"
-                             data-movie-director="@(string.Join(", ", movie.People.Where(p => p.IsDirector == true).Select(p => p.Name)))"
+                             data-movie-actor="@(string.Join(", ", movie.People?.Where(p => p.IsDirector == false).Select(p => p.Name) ?? Enumerable.Empty<string>()))"
+                             data-movie-types="@(string.Join(", ", movie.Types?.Select(t => t.TypeName) ?? Enumerable.Empty<string>()))"
+                             data-movie-director="@(string.Join(", ", movie.People?.Where(p => p.IsDirector == true).Select(p => p.Name) ?? Enumerable.Empty<string>()))"
                              data-movie-largeimage="@movie.LargeImage"
                              data-movie-trailerurl="@movie.TrailerUrl"
                              data-movie-logoimage="@movie.LogoImage">
@@ -175,7 +177,7 @@
                     <!-- Swiper -->
                     <div class="swiper nowshowing-swiper">
                         <div class="swiper-wrapper">
-                            @foreach (var movie in movies)
+                            @foreach (var movie in movies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
                             {
                                 <div class="swiper-slide" style="padding:0 10px;">
                                     <div class="web-movie-box" style="background:#181a20; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,0.13); width:100%; max-width:320px; margin:auto; display:flex; flex-direction:column; align-items:center; padding-bottom:18px;">
@@ -187,7 +189,7 @@
                                             <div style="display:flex; justify-content:center; gap:0.7rem; font-size:0.97rem; color:#bbb; margin-bottom:0.7rem">
                                                 <div><i class="bx bxs-time"></i> @movie.Duration' </div>
                                                 <div>
-                                                    @if (movie.Versions != null && movie.Versions.Any())
+                                                    @if (movie.Versions?.Any() == true)
                                                     {
                                                         @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
                                                     }
@@ -202,9 +204,12 @@
                                                 <a href="#" class="btn btn-outline-light btn-hover watch-trailer-btn" data-trailer-url="@movie.TrailerUrl" style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; border:1.5px solid #ffe066; color:#ffe066; background:transparent; font-weight:600; display:inline-flex; align-items:center; gap:0.3rem; white-space:nowrap; min-width:0;">
                                                     <i class="fa fa-play-circle"></i> <span>Watch Trailer</span>
                                                 </a>
-                                                <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="btn btn-warning btn-hover" style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; font-weight:700; color:#222; background:#ffe066; border:none; white-space:nowrap; min-width:0;">
-                                                    <span>Book Now</span>
-                                                </a>
+                                                <button class="btn btn-warning btn-hover book-movie-btn"
+                                                        data-movie-id="@movie.MovieId"
+                                                        data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))"
+                                                        style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; font-weight:700; color:#222; background:#ffe066; border:none; white-space:nowrap; min-width:0;">
+                                                    Book Now
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -346,31 +351,285 @@
     <script src="/js/app.js"></script>
     <script src="/js/hero-section.js"></script>
     <script>
+        // Global variables
+        window.movieShowsCache = new Map(); // Cache for movie shows
+        window.currentMovieShows = [];
+        window.availableDates = new Set();
+
+        // Initialize all functions before DOMContentLoaded
+        window.initializeBooking = function() {
+            // Initialize modal event listeners
+            const bookingModal = document.getElementById('addBookingModal');
+            if (bookingModal) {
+                bookingModal.addEventListener('shown.bs.modal', function () {
+                    // Focus on date select when modal opens
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.focus();
+                    }
+                });
+            }
+        };
+
+        // Function to open booking modal for selected movie
+        window.openBookingModal = function(movieId, movieName) {
+            console.log('Opening booking modal for movie ID:', movieId);
+
+            // Set the movie ID in the hidden input
+            const movieIdInput = document.getElementById('movieId');
+            if (movieIdInput) {
+                movieIdInput.value = movieId;
+                console.log('Movie ID set in input:', movieIdInput.value);
+            }
+
+            // Update modal title with movie name
+            const modalTitle = document.getElementById('addBookingModalLabel');
+            if (modalTitle && movieName) {
+                modalTitle.innerHTML = `<i class="fas fa-ticket-alt me-2"></i>Book Tickets for "${movieName}"`;
+            }
+
+            // Update the movie name in the modal body
+            const movieNameElem = document.getElementById('selectedMovieName');
+            if (movieNameElem && movieName) {
+                movieNameElem.textContent = movieName;
+            }
+
+            // Reset form selections
+            const dateSelect = document.getElementById('dateSelect');
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+
+            if (dateSelect) {
+                dateSelect.innerHTML = '<option value="">Loading dates...</option>';
+                dateSelect.disabled = true;
+            }
+            if (versionSelect) {
+                versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+                versionSelect.disabled = true;
+            }
+            if (timeSelect) {
+                timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+                timeSelect.disabled = true;
+            }
+
+            // Load movie shows for this specific movie
+            window.loadMovieShowsForMovie(movieId, movieName);
+        };
+
+        // Function to load movie shows for a specific movie
+        window.loadMovieShowsForMovie = function(movieId, movieName) {
+            console.log('Loading movie shows for movie ID:', movieId);
+
+            // Check if we already have this movie's shows cached
+            if (window.movieShowsCache.has(movieId)) {
+                console.log('Using cached movie shows for movie ID:', movieId);
+                window.currentMovieShows = window.movieShowsCache.get(movieId);
+                window.populateDateDropdown();
+                window.showBookingModal();
+                return;
+            }
+
+            // Fetch movie shows for this specific movie
+            fetch(`/Movie/GetMovieShows?movieId=${movieId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load movie shows');
+                    return response.json();
+                })
+                .then(shows => {
+                    console.log('Movie shows loaded for movie ID:', movieId, shows);
+                    // Cache the results
+                    window.movieShowsCache.set(movieId, shows);
+                    window.currentMovieShows = shows;
+                    window.populateDateDropdown();
+                    window.showBookingModal();
+                })
+                .catch(error => {
+                    console.error('Error loading movie shows:', error);
+                    // Show error state
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.innerHTML = '<option value="">Error loading dates</option>';
+                        dateSelect.disabled = true;
+                    }
+                });
+        }
+
+        window.populateDateDropdown = function () {
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
+            dateSelect.disabled = true;
+
+            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // normalize time
+
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+
+            uniqueDates.forEach(dateStr => {
+                const showDate = new Date(dateStr);
+                showDate.setHours(0, 0, 0, 0); // normalize show date
+
+                if (showDate >= today) {
+                    const [year, month, day] = dateStr.split('-');
+                    const displayDate = `${day}/${month}/${year}`;
+                    const option = document.createElement('option');
+                    option.value = dateStr;
+                    option.textContent = displayDate;
+                    dateSelect.appendChild(option);
+                }
+            });
+
+            if (dateSelect.options.length > 1) {
+                dateSelect.disabled = false;
+            }
+        };
+
+        // Populate version dropdown
+        window.updateVersions = function() {
+            const date = document.getElementById('dateSelect').value;
+            const versionSelect = document.getElementById('versionSelect');
+            versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+            versionSelect.disabled = true;
+            document.getElementById('timeSelect').innerHTML = '<option value="">— Select Time —</option>';
+            document.getElementById('timeSelect').disabled = true;
+            if (!date) return;
+            const filtered = window.currentMovieShows.filter(show => show.showDate === date);
+            // Use a Map to ensure unique versionId-versionName pairs
+            const versionMap = new Map();
+            filtered.forEach(show => {
+                if (show.versionId && show.versionName && !versionMap.has(show.versionId)) {
+                    versionMap.set(show.versionId, show.versionName);
+                }
+            });
+            versionMap.forEach((name, id) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                versionSelect.appendChild(option);
+            });
+            versionSelect.disabled = false;
+        }
+
+        // Populate time dropdown
+        window.updateTimes = function() {
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const timeSelect = document.getElementById('timeSelect');
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+            if (!date || !versionId) return;
+            const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
+            // Use a Set to ensure unique times
+            const timeSet = new Set();
+            filtered.forEach(show => {
+                if (show.scheduleTime && !timeSet.has(show.scheduleTime)) {
+                    const option = document.createElement('option');
+                    option.value = show.scheduleTime;
+                    option.textContent = show.scheduleTime;
+                    timeSelect.appendChild(option);
+                    timeSet.add(show.scheduleTime);
+                }
+            });
+            timeSelect.disabled = false;
+        }
+
+        window.continueToSeats = function() {
+            const movieId = document.getElementById('movieId').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const time = document.getElementById('timeSelect').value;
+
+            if (!movieId || !date || !versionId || !time) {
+                alert('Please select all options');
+                return;
+            }
+
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${encodeURIComponent(versionId)}&time=${encodeURIComponent(time)}`;
+        }
+
+        // Function to show the booking modal
+        window.showBookingModal = function() {
+            const bookingModal = new bootstrap.Modal(document.getElementById('addBookingModal'));
+            bookingModal.show();
+        }
+
+        // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function () {
             var trailerModal = new bootstrap.Modal(document.getElementById('trailerModal'));
             var trailerFrame = document.getElementById('trailerFrame');
+
+            // Trailer button event listeners
             document.querySelectorAll('.watch-trailer-btn').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var url = btn.getAttribute('data-trailer-url');
-                    if (url) {
-                        // Convert to embed if needed
-                        var embedUrl = url;
-                        if (url.includes('youtube.com/watch?v=')) {
-                            var videoId = url.split('v=')[1].split('&')[0];
-                            embedUrl = 'https://www.youtube.com/embed/' + videoId;
-                        } else if (url.includes('youtu.be/')) {
-                            var videoId = url.split('youtu.be/')[1].split('?')[0];
-                            embedUrl = 'https://www.youtube.com/embed/' + videoId;
-                        }
-                        trailerFrame.src = embedUrl + '?autoplay=1';
+                btn.addEventListener('click', function() {
+                    const trailerUrl = this.getAttribute('data-trailer-url');
+                    if (trailerUrl) {
+                        trailerFrame.src = trailerUrl;
                         trailerModal.show();
                     }
                 });
             });
+
+            // Book movie button event listeners
+            document.querySelectorAll('.book-movie-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const movieId = this.getAttribute('data-movie-id');
+                    const movieName = this.getAttribute('data-movie-name');
+                    if (movieId && movieName) {
+                        window.openBookingModal(movieId, movieName);
+                    }
+                });
+            });
+
             document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function () {
                 trailerFrame.src = '';
             });
+
+            window.initializeBooking();
         });
     </script>
 }
+
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-center me-2" style="color: black; font-weight: bold" id="selectedMovieName"></h3>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm" novalidate>
+                    <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
+                    <div class="mb-4">
+                        <label for="dateSelect" class="form-label booking-label"><span class="label-icon">🗓️</span> <strong>Date</strong></label>
+                        <select id="dateSelect" class="form-select booking-select" onchange="updateVersions()">
+                            <option value="">— Select Date —</option>
+                            <!-- Dates will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="versionSelect" class="form-label booking-label"><span class="label-icon">🎞️</span> <strong>Version</strong></label>
+                        <select id="versionSelect" class="form-select booking-select" disabled onchange="updateTimes()">
+                            <option value="">— Select Version —</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="timeSelect" class="form-label booking-label"><span class="label-icon">⏰</span> <strong>Time</strong></label>
+                        <select id="timeSelect" class="form-select booking-select" disabled>
+                            <option value="">— Select Time —</option>
+                        </select>
+                    </div>
+                    <button type="button" id="bookBtn" class="btn booking-btn-gradient w-100 mt-2" onclick="continueToSeats()">
+                        <span>Continue to Seat Selection</span> <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

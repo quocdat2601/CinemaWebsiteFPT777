@@ -1,10 +1,18 @@
-﻿@model MovieTheater.Models.Person
+@model MovieTheater.ViewModels.PersonFormModel
 
 <link rel="stylesheet" href="/css/cast.css">
 <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="CastMg" class="btn btn-secondary mb-2 mt-2 ml-4">
     &larr; Return
 </a>
 <h2>Create Cast</h2>
+
+@if (TempData["ValidationErrors"] != null)
+{
+    <div class="alert alert-danger">
+        <strong>Validation Errors:</strong> @TempData["ValidationErrors"]
+    </div>
+}
+
 <form asp-action="Create" method="post" enctype="multipart/form-data">
     <!-- Top section layout -->
     <div class="row mt-2">
@@ -26,7 +34,7 @@
             </div>
             <div class="mb-3">
                 <label asp-for="DateOfBirth" class="form-label">Date Of Birth</label>
-                <input asp-for="DateOfBirth" class="form-control" type="date" />
+                <input asp-for="DateOfBirth" class="form-control" type="date" max="@DateTime.Now.ToString("yyyy-MM-dd")"/>
                 <span asp-validation-for="DateOfBirth" class="text-danger"></span>
             </div>
             <div class="mb-3">

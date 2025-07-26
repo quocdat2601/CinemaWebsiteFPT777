@@ -95,12 +95,6 @@
 
                 <div class="row mb-4 me-2" style="width: 80%">
                     <div class="col-md-6 text-end" id="bookSection">
-                        @* <a asp-controller="Booking" id="bookBtn"
-                           asp-action="TicketBooking"
-                           asp-route-movieId="@Model.MovieId"
-                           class="btn btn-primary btn-lg" style="width: 200px; border-radius: 20px">
-                            Book Tickets
-                        </a> *@
                         <button type="button" class="btn btn-primary btn-lg" style="width: 200px; border-radius: 20px" data-bs-toggle="modal" data-bs-target="#addBookingModal">
                             Book Tickets
                         </button>
@@ -266,7 +260,17 @@
                 return acc;
             }, {});
 
-            const sortedGroups = Object.values(groupedShows).sort((a, b) =>
+            // Filter out past dates - only show today and future dates
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+            
+            const filteredGroups = Object.values(groupedShows).filter(group => {
+                const [day, month, year] = group.dateText.split('/');
+                const dateObj = new Date(year, month - 1, day);
+                return dateObj >= today; // Only include today and future dates
+            });
+            
+            const sortedGroups = filteredGroups.sort((a, b) =>
                 new Date(a.dateText.split('/').reverse().join('-')) - new Date(b.dateText.split('/').reverse().join('-'))
             );
             const scheduleSection = document.getElementById('scheduleSection');
