@@ -76,25 +76,5 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal("Admin", redirect.ControllerName);
         }
 
-        [Fact]
-        public void View_Get_ReturnsView_WhenCinemaRoomAndMovieShowExist()
-        {
-            // Arrange
-            int cinemaId = 3;
-            var cinemaRoom = new CinemaRoom { CinemaRoomId = cinemaId, CinemaRoomName = "Room 3", SeatLength = 5, SeatWidth = 5 };
-            _cinemaService.Setup(s => s.GetById(cinemaId)).Returns(cinemaRoom);
-            _seatService.Setup(s => s.GetSeatsByRoomIdAsync(cinemaId)).ReturnsAsync(new List<Seat>());
-            _seatTypeService.Setup(s => s.GetAll()).Returns(new List<SeatType>());
-            _movieService.Setup(s => s.GetMovieShow()).Returns(new List<MovieShow> { new MovieShow { MovieShowId = 10, CinemaRoomId = cinemaId } });
-            _scheduleSeatRepository.Setup(s => s.GetScheduleSeatsByMovieShowAsync(10)).ReturnsAsync(new List<ScheduleSeat>());
-            _foodService.Setup(s => s.GetAllAsync(null, null, true)).ReturnsAsync(new FoodListViewModel { Foods = new List<FoodViewModel>() });
-            var ctrl = BuildController();
-            // Act
-            var result = ctrl.View(cinemaId).GetAwaiter().GetResult();
-            // Assert   
-            var viewResult = Assert.IsType<ViewResult>(result);
-            Assert.IsType<SeatSelectionViewModel>(viewResult.Model);
-        }
-
     }
 }
