@@ -491,10 +491,28 @@ body.dark-mode .filter-tag.active {
     transition: all var(--transition-speed) ease;
 }
 
+/* Override for hero-transparent class */
+.app-navbar.hero-transparent {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
 body.dark-mode .app-navbar {
     background: rgba(22, 33, 62, 0.8);
     border-bottom: 1px solid rgba(99, 102, 241, 0.2);
     box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1);
+}
+
+/* Override for hero-transparent class in dark mode */
+body.dark-mode .app-navbar.hero-transparent {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
 }
 
 .app-navbar .navbar-brand,
@@ -617,6 +635,12 @@ body {
     background: linear-gradient(135deg, var(--primary-color), #34495e);
     padding: 1rem 0;
     box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+/* Override for hero-transparent class */
+.app-navbar.hero-transparent {
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .navbar-brand {

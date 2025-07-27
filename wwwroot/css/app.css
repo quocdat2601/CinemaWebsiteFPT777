@@ -105,7 +105,7 @@ img {
     left: 0;
     width: 100%;
     z-index: 99;
-    background-color: #000000;
+    background-color: transparent;
 }
 
 .nav {
@@ -646,7 +646,7 @@ footer .content {
     }
 }
 
-/* --- FIX PROFILE DROPDOWN & LAYOUT PADDING --- */
+/* --- STICKY NAVBAR & LAYOUT PADDING --- */
 .dropdown-menu {
     z-index: 3000 !important;
 }
@@ -654,13 +654,33 @@ body, html {
     padding-top: 0 !important;
     margin-top: 0 !important;
 }
-header, .app-navbar, .navbar {
+header {
     margin-top: 0 !important;
     padding-top: 0 !important;
-    position: sticky;
-    top: 0;
-    z-index: 1055;
 }
+.app-navbar, .navbar {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    z-index: 1055 !important;
+    width: 100% !important;
+}
+
+/* Override nav-wrapper for hero transparency */
+.nav-wrapper {
+    background-color: transparent !important;
+}
+
+/* Ensure nav-wrapper follows hero-transparent logic */
+body:not(.dark-mode) .nav-wrapper.hero-transparent {
+    background-color: transparent !important;
+}
+
+body.dark-mode .nav-wrapper.hero-transparent {
+    background-color: transparent !important;
+}
+
 footer.section {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
@@ -669,7 +689,7 @@ footer.section {
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
 }
-/* --- END FIX PROFILE DROPDOWN & LAYOUT PADDING --- */
+/* --- END STICKY NAVBAR & LAYOUT PADDING --- */
 
 .web-movie-box .content > div[style*='display:flex'][style*='gap:0.8rem'] {
     flex-wrap: nowrap !important;
