@@ -681,6 +681,159 @@ body.dark-mode .nav-wrapper.hero-transparent {
     background-color: transparent !important;
 }
 
+/* Navbar container padding improvements */
+.app-navbar .container-fluid {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 1920px !important;
+    margin: 0 auto !important;
+}
+
+/* Responsive padding for navbar */
+@media (max-width: 1200px) {
+    .app-navbar .container-fluid {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-navbar .container-fluid {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .app-navbar .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}
+
+/* Navbar items spacing improvements */
+.app-navbar .navbar-nav .nav-item {
+    margin-right: 0.5rem !important;
+}
+
+.app-navbar .navbar-nav .nav-item:last-child {
+    margin-right: 0 !important;
+}
+
+.app-navbar .navbar-brand {
+    margin-right: 2rem !important;
+}
+
+/* Compact navbar styles */
+.app-navbar {
+    min-height: 60px !important;
+    padding: 0.5rem 0 !important;
+}
+
+.app-navbar .navbar-brand {
+    font-size: 1.1rem !important;
+}
+
+.app-navbar .navbar-brand img {
+    height: 32px !important;
+}
+
+.app-navbar .navbar-brand i {
+    font-size: 1.5rem !important;
+}
+
+.app-navbar .nav-link {
+    font-size: 0.9rem !important;
+    padding: 0.4rem 0.8rem !important;
+}
+
+.app-navbar .btn {
+    font-size: 0.85rem !important;
+    padding: 0.3rem 0.8rem !important;
+}
+
+.app-navbar .dropdown-toggle img {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+/* Mobile navbar improvements */
+@media (max-width: 768px) {
+    .app-navbar .navbar-brand {
+        margin-right: 1rem !important;
+    }
+    
+    .app-navbar .navbar-nav .nav-item {
+        margin-right: 0.25rem !important;
+    }
+    
+    .app-navbar {
+        min-height: 55px !important;
+        padding: 0.4rem 0 !important;
+    }
+    
+    .app-navbar .navbar-brand {
+        font-size: 1rem !important;
+    }
+    
+    .app-navbar .navbar-brand img {
+        height: 28px !important;
+    }
+    
+    .app-navbar .navbar-brand i {
+        font-size: 1.3rem !important;
+    }
+    
+    .app-navbar .nav-link {
+        font-size: 0.85rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+    
+    .app-navbar .btn {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.6rem !important;
+    }
+    
+    .app-navbar .dropdown-toggle img {
+        width: 28px !important;
+        height: 28px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .app-navbar {
+        min-height: 50px !important;
+        padding: 0.3rem 0 !important;
+    }
+    
+    .app-navbar .navbar-brand {
+        font-size: 0.9rem !important;
+    }
+    
+    .app-navbar .navbar-brand img {
+        height: 24px !important;
+    }
+    
+    .app-navbar .navbar-brand i {
+        font-size: 1.2rem !important;
+    }
+    
+    .app-navbar .nav-link {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .app-navbar .btn {
+        font-size: 0.75rem !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+    
+    .app-navbar .dropdown-toggle img {
+        width: 24px !important;
+        height: 24px !important;
+    }
+}
+
 footer.section {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;

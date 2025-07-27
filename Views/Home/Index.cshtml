@@ -33,8 +33,9 @@
         <div class="hero-bg-track">
             @if (movieList.Count > 0)
             {
-                // Clone cuối vào đầu
+                // Clone cuối vào đầu (thêm 2 clone để hoàn thiện loop)
                 var lastMovie = movieList[movieList.Count - 1];
+                <img class="hero-bg-img" src="@lastMovie.LargeImage" alt="@lastMovie.MovieNameEnglish" data-index="-2" />
                 <img class="hero-bg-img" src="@lastMovie.LargeImage" alt="@lastMovie.MovieNameEnglish" data-index="-1" />
             }
             @for (int i = 0; i < movieList.Count; i++)
@@ -44,9 +45,10 @@
             }
             @if (movieList.Count > 0)
             {
-                // Clone đầu vào cuối
+                // Clone đầu vào cuối (thêm 2 clone để hoàn thiện loop)
                 var firstMovie = movieList[0];
                 <img class="hero-bg-img" src="@firstMovie.LargeImage" alt="@firstMovie.MovieNameEnglish" data-index="@movieList.Count" />
+                <img class="hero-bg-img" src="@firstMovie.LargeImage" alt="@firstMovie.MovieNameEnglish" data-index="@(movieList.Count + 1)" />
             }
         </div>
     </div>
