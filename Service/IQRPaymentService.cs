@@ -8,5 +8,7 @@ namespace MovieTheater.Service
         bool ValidatePayment(string orderId, string transactionId);
         string GetQRCodeImage(string qrData);
         string GenerateSimpleQRCode(string text);
+        string GenerateMoMoQRCodeBase64(string phoneNumber);
+        string GeneratePayOSQRCode(decimal amount, string orderInfo, string orderId);
     }
 } 

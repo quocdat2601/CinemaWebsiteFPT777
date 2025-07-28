@@ -335,14 +335,15 @@ namespace MovieTheater.Service
                 }
             }
 
+            // Đừng set SeatStatusId = 2 ở đây nữa, chỉ tạo ScheduleSeat nếu cần, không set trạng thái booked
             foreach (var seat in seats)
             {
                 var scheduleSeat = new ScheduleSeat
                 {
                     InvoiceId = invoice.InvoiceId,
                     SeatId = seat.SeatId,
-                    MovieShowId = model.MovieShowId,
-                    SeatStatusId = 2 // Booked
+                    MovieShowId = model.MovieShowId
+                    // KHÔNG set SeatStatusId ở đây
                 };
                 _context.ScheduleSeats.Add(scheduleSeat);
             }
@@ -362,11 +363,11 @@ namespace MovieTheater.Service
             }
             await _context.SaveChangesAsync();
 
-            // Release held seats after booking (SignalR)
-            foreach (var seat in seats)
-            {
-                MovieTheater.Hubs.SeatHub.ReleaseHold(model.MovieShowId, seat.SeatId);
-            }
+            // Do NOT release hold here. Hold should only be released on payment success, seat deselect, or timeout.
+            // foreach (var seat in seats)
+            // {
+            //     MovieTheater.Hubs.SeatHub.ReleaseHold(model.MovieShowId, seat.SeatId);
+            // }
 
             // Calculate total price after all discounts (seat subtotal - rank discount - voucher - points)
             totalPrice = subtotal - rankDiscount - voucherAmount - (priceResult.UseScore * 1000);
@@ -775,8 +776,8 @@ namespace MovieTheater.Service
                 {
                     InvoiceId = invoice.InvoiceId,
                     SeatId = seat.SeatId,
-                    MovieShowId = model.MovieShowId,
-                    SeatStatusId = 2 // Booked
+                    MovieShowId = model.MovieShowId
+                    // KHÔNG set SeatStatusId ở đây
                 };
                 _context.ScheduleSeats.Add(scheduleSeat);
             }
@@ -822,7 +823,7 @@ namespace MovieTheater.Service
                     .FirstOrDefault(ss => ss.SeatId == seatVm.SeatId && ss.MovieShowId == model.BookingDetails.MovieShowId);
                 if (existing != null)
                 {
-                    existing.SeatStatusId = 2; // Booked
+                    // KHÔNG set SeatStatusId ở đây
                     existing.InvoiceId = invoice.InvoiceId;
                     _context.ScheduleSeats.Update(existing);
                 }
@@ -832,17 +833,18 @@ namespace MovieTheater.Service
                     {
                         InvoiceId = invoice.InvoiceId,
                         SeatId = seatVm.SeatId,
-                        MovieShowId = model.BookingDetails.MovieShowId,
-                        SeatStatusId = 2 // Booked
+                        MovieShowId = model.BookingDetails.MovieShowId
+                        // KHÔNG set SeatStatusId ở đây
                     };
                     _context.ScheduleSeats.Add(scheduleSeat);
                 }
             }
             await _context.SaveChangesAsync();
-            foreach (var seatVm in seatViewModels)
-            {
-                MovieTheater.Hubs.SeatHub.ReleaseHold(model.BookingDetails.MovieShowId, seatVm.SeatId ?? 0);
-            }
+            // Do NOT release hold here. Hold should only be released on payment success, seat deselect, or timeout.
+            // foreach (var seatVm in seatViewModels)
+            // {
+            //     MovieTheater.Hubs.SeatHub.ReleaseHold(model.BookingDetails.MovieShowId, seatVm.SeatId ?? 0);
+            // }
             Console.WriteLine($"Created invoice with ID: {invoice.InvoiceId}");
             return new BookingResult { Success = true, InvoiceId = invoice.InvoiceId };
         }

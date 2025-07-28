@@ -208,13 +208,17 @@
         </div>
         
         <div class="qr-code-container">
-            <h5 class="mb-3">Scan QR Code with Banking App</h5>
-            <div class="qr-code-image">
-                <img src="@Model.QRCodeImage" alt="QR Code" style="max-width: 300px; max-height: 300px; border: 8px solid white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" 
-                     onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DEMO_QR_CODE';" />
+            @if (!string.IsNullOrEmpty(Model.PayOSQRCodeUrl))
+            {
+                <div class="text-center">
+                    <h5 class="mb-2">Scan QR PayOS to pay</h5>
+                    <img src="@Model.PayOSQRCodeUrl" alt="QR PayOS" style="max-width: 300px; max-height: 300px; border: 8px solid #f5f5f5; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);" />
+                    <div class="mt-2">
+                        <a href="@Model.PayOSQRCodeUrl" target="_blank" class="btn btn-primary mt-2">Open link payment PayOS</a>
+                    </div>
+                    <p class="text-muted mt-3">Use banking app or e-wallet scan this QR code to pay.</p>
             </div>
-            <p class="text-muted mt-3">Open your banking app and scan this QR code to complete payment</p>
-            <p class="text-info mt-2"><small><i class="fas fa-info-circle"></i> VietQR Code - Compatible with all Vietnamese banking apps</small></p>
+            }
         </div>
         
         <div class="expired-timer">
@@ -360,12 +364,12 @@
                 }
             });
             
-            // Auto check payment status every 10 seconds
-            setInterval(function() {
-                if (timeLeft > 0) {
-                    $('#checkPaymentBtn').click();
-                }
-            }, 10000);
+            // XÓA hoặc COMMENT đoạn này để không tự động check/redirect
+            // setInterval(function() {
+            //     if (timeLeft > 0) {
+            //         $('#checkPaymentBtn').click();
+            //     }
+            // }, 10000);
         });
     </script>
 } 
