@@ -53,9 +53,16 @@ public class TicketService : ITicketService
         if (booking == null) return null;
 
         List<SeatDetailViewModel> seatDetails = new List<SeatDetailViewModel>();
-        decimal promotionDiscount = 0;
-        if (!string.IsNullOrEmpty(booking.PromotionDiscount))
-            decimal.TryParse(booking.PromotionDiscount, out promotionDiscount);
+        int promotionDiscount = 0;
+        if (!string.IsNullOrEmpty(booking.PromotionDiscount) && booking.PromotionDiscount != "0")
+        {
+            try
+            {
+                var promoObj = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(booking.PromotionDiscount);
+                promotionDiscount = (int)(promoObj.seat ?? 0);
+            }
+            catch { promotionDiscount = 0; }
+        }
         var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
         if (!string.IsNullOrEmpty(booking.SeatIds))
         {
@@ -144,6 +151,16 @@ public class TicketService : ITicketService
         var foodDetails = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(ticketId)).ToList();
         var totalFoodPrice = await _foodInvoiceService.GetTotalFoodPriceByInvoiceIdAsync(ticketId);
 
+      
+        if (!string.IsNullOrEmpty(booking.PromotionDiscount) && booking.PromotionDiscount != "0")
+        {
+            try
+            {
+                var promoObj = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(booking.PromotionDiscount);
+                promotionDiscount = (int)(promoObj.seat ?? 0);
+            }
+            catch { promotionDiscount = 0; }
+        }
         var result = new TicketDetailsViewModel
         {
             Booking = booking,
@@ -188,6 +205,8 @@ public class TicketService : ITicketService
             if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
             {
                 await _seatHubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                // Also release hold immediately so heldByMe is cleared
+                MovieTheater.Hubs.SeatHub.ReleaseHold(seat.MovieShowId.Value, seat.SeatId.Value); // Release hold on cancel
             }
         }
         _scheduleSeatRepository.Save();
@@ -317,6 +336,8 @@ public class TicketService : ITicketService
             if (seat.MovieShowId.HasValue && seat.SeatId.HasValue)
             {
                 await _seatHubContext.Clients.Group(seat.MovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", seat.SeatId.Value, 1);
+                // Also release hold immediately so heldByMe is cleared
+                MovieTheater.Hubs.SeatHub.ReleaseHold(seat.MovieShowId.Value, seat.SeatId.Value); // Release hold on cancel
             }
         }
         _scheduleSeatRepository.Save();
@@ -382,9 +403,16 @@ public class TicketService : ITicketService
     public List<SeatDetailViewModel> BuildSeatDetails(Invoice booking)
     {
         var seatDetails = new List<SeatDetailViewModel>();
-        decimal promotionDiscount = 0;
-        if (!string.IsNullOrEmpty(booking.PromotionDiscount))
-            decimal.TryParse(booking.PromotionDiscount, out promotionDiscount);
+        int promotionDiscount = 0;
+        if (!string.IsNullOrEmpty(booking.PromotionDiscount) && booking.PromotionDiscount != "0")
+        {
+            try
+            {
+                var promoObj = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(booking.PromotionDiscount);
+                promotionDiscount = (int)(promoObj.seat ?? 0);
+            }
+            catch { promotionDiscount = 0; }
+        }
         var versionMulti = booking.MovieShow?.Version?.Multi ?? 1;
         if (booking.ScheduleSeats != null && booking.ScheduleSeats.Any(ss => ss.Seat != null))
         {

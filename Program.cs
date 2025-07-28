@@ -130,10 +130,18 @@ namespace MovieTheater
             builder.Services.AddScoped<IFoodInvoiceService, FoodInvoiceService>();
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddScoped<IVersionRepository, VersionRepository>();
+            builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
                 );
+            
+            builder.Services.Configure<QRPaymentConfig>(
+             builder.Configuration.GetSection("QRPayment")
+                );
+            
+            builder.Services.AddScoped<IQRPaymentService, QRPaymentService>();
+            builder.Services.AddScoped<IGuestInvoiceService, GuestInvoiceService>();
 
             builder.Services.AddHttpContextAccessor();
 

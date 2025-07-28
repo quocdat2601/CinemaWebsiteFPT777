@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using System.Security.Claims;
+using MovieTheater.Models; // Added for Movie model
+using System.Linq;
+using MovieTheater.Repository; // Added for ToList()
 
 namespace MovieTheater.Controllers
 {
@@ -9,12 +12,14 @@ namespace MovieTheater.Controllers
         private readonly IMovieService _movieService;
         private readonly IPromotionService _promotionService;
         private readonly IAccountService _accountService;
+        private readonly IPersonRepository _personRepository;
 
-        public HomeController(IPromotionService promotionService, IMovieService movieService, IAccountService accountService)
+        public HomeController(IPromotionService promotionService, IMovieService movieService, IAccountService accountService, IPersonRepository personRepository)
         {
             _promotionService = promotionService;
             _movieService = movieService;
             _accountService = accountService;
+            _personRepository = personRepository;
         }
 
         /// <summary>
@@ -32,14 +37,19 @@ namespace MovieTheater.Controllers
                 }
             }
 
-            var movies = _movieService.GetAll();
+            var movies = _movieService.GetAll().ToList();
             var promotions = _promotionService.GetAll();
+            var people = _personRepository.GetAll().ToList();
 
+            // Truyền movie đầu tiên làm Model (active movie)
+            Movie? activeMovie = movies.FirstOrDefault();
+            ViewBag.People = people;
             ViewBag.Movies = movies;
             ViewBag.Promotions = promotions;
 
-            return View();
+            return View(activeMovie);
         }
+
         /// <summary>
         /// [GET] /Home/Chat
         /// Trang test chat realtime.

@@ -16,6 +16,7 @@
 	  <None Remove="MovieTheater.Tests\**" />
   </ItemGroup>
 
+ 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" />
@@ -33,12 +34,14 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Drawing.Common" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,6 +52,11 @@
 
   <ItemGroup>
     <Folder Include="MovieTheater.Tests\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\css\hero-section.css" />
+    <None Include="wwwroot\js\hero-section.js" />
   </ItemGroup>
 
 </Project>

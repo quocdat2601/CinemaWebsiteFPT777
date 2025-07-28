@@ -24,7 +24,7 @@
 
     <h2 class="schedule-page-title mb-0 text-center" style="font-size: xx-large">Movie Schedule</h2>
 
-    <div class="movie-info mb-4" style="font-size: large">
+    <div class="movie-info mb-2" style="font-size: large">
         <p class="text-muted mb-1">
             <span class="fw-bold">Movie ID:</span> @Model.MovieId
         </p>
@@ -35,70 +35,64 @@
             <span class="fw-bold">Duration:</span> @Model.Duration minutes
         </p>
         <input type="hidden" id="movieDuration" value="@Model.Duration" />
-         <p class="text-muted mb-1">
-            <strong>Version: </strong>
-            @foreach (var version in Model.AvailableVersions)
-            {
-                <label class="me-3">
-                    <input type="radio"
-                           name="SelectedVersionIds"
-                           value="@version.VersionId"
-                           @(Model.SelectedVersionIds.Contains(version.VersionId) ? "checked" : "")
-                           class="version-radio" />
-                    @version.VersionName
-                </label>
-            }
-            <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
-        </p>
+    </p>
+
     </div>
 
     <div class="schedule-form">
         <input type="hidden" id="movieId" value="@Model.MovieId" />
         <div id="validationSummary" class="text-danger"></div>
 
-        <!-- Cinema Room Selection -->
+        <!-- Version Selection (First) -->
+        <div class="form-group mb-4">
+            <label class="section-title">Version</label>
+            <div id="versionRadioGroup" class="d-flex justify-content-center">
+                @foreach (var version in Model.AvailableVersions)
+                {
+                    <label class="me-5">
+                        <input type="radio"
+                               name="SelectedVersionIds"
+                               value="@version.VersionId"
+                               @(Model.SelectedVersionIds.Contains(version.VersionId) ? "checked" : "")
+                               class="version-radio" />
+                        @version.VersionName
+                    </label>
+                }
+            </div>
+            <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
+        </div>
+
+        <!-- Cinema Room Selection (Second) -->
         <div class="form-group mb-4">
             <label for="cinemaRoomSelect" class="section-title">Cinema Room</label>
-            <select class="form-control" id="cinemaRoomSelect">
-                <option value="">-- Select a Cinema Room --</option>
-                @foreach (var room in Model.AvailableCinemaRooms)
-                {
-                    <option value="@room.CinemaRoomId">@room.CinemaRoomName</option>
-                }
-            </select>
+            <div class="d-flex justify-content-center">
+                <select class="form-control w-75" id="cinemaRoomSelect" disabled>
+                    <option value="">-- Select a Cinema Room --</option>
+                </select>
+            </div>
             <span class="text-danger" id="cinemaRoomError"></span>
         </div>
 
-        <!-- Show Dates -->
+        <!-- Show Dates (Third) -->
         <div class="form-group mb-4">
             <label class="section-title">Show Date</label>
-            <select class="form-control" id="showDateSelect">
-                <option value="">-- Select a Show Date --</option>
-                @{
-                    var today = DateOnly.FromDateTime(DateTime.Today);
-                    var toDate = Model.ToDate;
-                    foreach (var showDate in Model.AvailableShowDates.OrderBy(d => d))
-                    {
-                        if (showDate >= today && (toDate == null || showDate <= toDate))
-                        {
-                            <option value="@showDate.ToString("yyyy-MM-dd")">@showDate.ToString("dd/MM/yyyy")</option>
-                        }
-                    }
-                }
-            </select>
+            <div class="d-flex justify-content-center">
+                <select class="form-control w-75" id="showDateSelect" disabled>
+                    <option value="">-- Select a Show Date --</option>
+                </select>
+            </div>
             <span class="text-danger" id="showDateError"></span>
         </div>
 
-        <!-- Schedules -->
+        <!-- Schedules (Fourth) -->
         <div class="form-group mb-4">
             <label class="section-title">Available Schedules</label>
-            <div id="lastShowEndTime" class="text-muted" style="font-size: 0.9em; margin-bottom: 5px;"></div>
-            <select class="form-control" id="scheduleSelect">
-                @foreach (var schedule in Model.AvailableSchedules)
-                {
-                    <option value="@schedule.ScheduleId">@schedule.ScheduleTime</option>
-                }
-            </select>
+            <div id="lastShowEndTime" class="text-muted text-center" style="font-size: 0.9em; margin-bottom: 5px;"></div>
+            <div class="d-flex justify-content-center">
+                <select class="form-control w-75" id="scheduleSelect" disabled>
+                    <option value="">-- Select a Schedule --</option>
+                </select>
+            </div>
             <span class="text-danger" id="scheduleError"></span>
         </div>
 
@@ -227,17 +221,99 @@
             addMovieShowBtn.disabled = !(hasRoom && hasDate && hasSchedule);
         }
 
-        cinemaRoomSelect.addEventListener('change', async function() {
-            await updateAvailableSchedules();
-            updateAddButtonState();
+        // Helper: Populate Cinema Room options
+        function populateCinemaRooms(rooms) {
+            cinemaRoomSelect.innerHTML = '<option value="">-- Select a Cinema Room --</option>';
+            rooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.cinemaRoomId;
+                option.textContent = room.cinemaRoomName;
+                cinemaRoomSelect.appendChild(option);
+            });
+        }
+
+        // Helper: Populate Show Dates
+        function populateShowDates(showDates) {
+            showDateSelect.innerHTML = '<option value="">-- Select a Show Date --</option>';
+            showDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date.value;
+                option.textContent = date.text;
+                showDateSelect.appendChild(option);
+            });
+        }
+
+        // Helper: Reset and disable dependent selects
+        function resetAndDisable(select) {
+            select.innerHTML = '<option value="">-- Select --</option>';
+            select.disabled = true;
+        }
+
+        // 1. Version selection enables Cinema Room
+        const versionRadios = document.querySelectorAll('.version-radio');
+        versionRadios.forEach(radio => {
+            radio.addEventListener('change', async function() {
+                const versionId = this.value;
+                // Reset and disable all dependent selects
+                resetAndDisable(cinemaRoomSelect);
+                resetAndDisable(showDateSelect);
+                resetAndDisable(scheduleSelect);
+                addMovieShowBtn.disabled = true;
+
+                // Fetch rooms for this version
+                const response = await fetch(`/Cinema/GetRoomsByVersion?versionId=${versionId}`);
+                if (response.ok) {
+                    const rooms = await response.json();
+                    populateCinemaRooms(rooms);
+                    cinemaRoomSelect.disabled = false;
+                } else {
+                    cinemaRoomSelect.innerHTML = '<option value="">-- No rooms available --</option>';
+                }
+            });
         });
 
+        // 2. Cinema Room selection enables Show Date
+        cinemaRoomSelect.addEventListener('change', function() {
+            resetAndDisable(showDateSelect);
+            resetAndDisable(scheduleSelect);
+            addMovieShowBtn.disabled = true;
+            const roomId = cinemaRoomSelect.value;
+            if (!roomId) return;
+            // Populate show dates from model (filter by today and toDate)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to midnight
+            const toDate = '@Model.ToDate';
+            const availableShowDates = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.AvailableShowDates.OrderBy(d => d).Select(d => new { value = d.ToString("yyyy-MM-dd"), text = d.ToString("dd/MM/yyyy") })));
+            const filteredDates = availableShowDates.filter(d => {
+                const dateObj = new Date(d.value);
+                    dateObj.setHours(0, 0, 0, 0); // Set to midnight
+                return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
+            });
+            populateShowDates(filteredDates);
+            showDateSelect.disabled = false;
+        });
+
+        // 3. Show Date selection enables Schedule
         showDateSelect.addEventListener('change', async function() {
+            resetAndDisable(scheduleSelect);
+            addMovieShowBtn.disabled = true;
+            const roomId = cinemaRoomSelect.value;
+            const selectedDate = showDateSelect.value;
+            if (!roomId || !selectedDate) return;
             await updateAvailableSchedules();
+            scheduleSelect.disabled = false;
+        });
+
+        // 4. Schedule selection enables Add button
+        scheduleSelect.addEventListener('change', function() {
             updateAddButtonState();
         });
 
-        scheduleSelect.addEventListener('change', updateAddButtonState);
+        // Initial state: all selects except version are disabled
+        resetAndDisable(cinemaRoomSelect);
+        resetAndDisable(showDateSelect);
+        resetAndDisable(scheduleSelect);
+        addMovieShowBtn.disabled = true;
 
         addMovieShowBtn.addEventListener('click', addMovieShow);
 
@@ -366,12 +442,19 @@
         }
 
         saveChangesBtn.addEventListener('click', async function() {
-            if (movieShowItems.length === 0) {
-                alert('Please add at least one movie show before saving.');
-                return;
-            }
-
             try {
+                if (movieShowItems.length === 0) {
+                    // Call backend to delete all shows for this movie
+                    await fetch('/Movie/DeleteAllMovieShows', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ movieId: movieId })
+                    });
+                    alert('All movie shows deleted.');
+                    window.location.reload();
+                    return;
+                }
+
                 // 1. Fetch current shows from backend (get all for this movie)
                 const resp = await fetch(`/Movie/ViewShow/${movieId}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -440,26 +523,6 @@
                 console.error('Error saving movie shows:', error);
                 alert('An error occurred while saving the movie shows. Please try again.');
             }
-        });
-
-        const versionRadios = document.querySelectorAll('.version-radio');
-        versionRadios.forEach(radio => {
-            radio.addEventListener('change', async function() {
-                const versionId = this.value;
-                const response = await fetch(`/Cinema/GetRoomsByVersion?versionId=${versionId}`);
-                if (response.ok) {
-                    const rooms = await response.json();
-                    cinemaRoomSelect.innerHTML = '<option value="">-- Select a Cinema Room --</option>';
-                    rooms.forEach(room => {
-                        const option = document.createElement('option');
-                        option.value = room.cinemaRoomId;
-                        option.textContent = room.cinemaRoomName;
-                        cinemaRoomSelect.appendChild(option);
-                    });
-                } else {
-                    cinemaRoomSelect.innerHTML = '<option value="">-- No rooms available --</option>';
-                }
-            });
         });
 
         async function getMergedShowsForRoomDate(roomId, dateId) {

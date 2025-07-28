@@ -1,6 +1,7 @@
 using MovieTheater.ViewModels;
 using MovieTheater.Models;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace MovieTheater.Service
 {
@@ -234,23 +235,30 @@ namespace MovieTheater.Service
         {
             decimal totalAmount = 0;
 
+            // Parse promotion discount JSON
+            int seatPromotionDiscount = 0;
+            if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+            {
+                try
+                {
+                    var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                    seatPromotionDiscount = (int)(promoObj.seat ?? 0);
+                }
+                catch { seatPromotionDiscount = 0; }
+            }
+
             // Calculate seat prices
             foreach (var scheduleSeat in invoice.ScheduleSeats)
             {
                 if (scheduleSeat.Seat?.SeatType != null)
                 {
                     decimal seatPrice = scheduleSeat.Seat.SeatType.PricePercent;
-                    
                     // Apply promotion discount if available
-                    decimal promotionDiscount = 0;
-                    if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
-                        decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
-                    if (promotionDiscount > 0)
+                    if (seatPromotionDiscount > 0)
                     {
-                        decimal discount = Math.Round(seatPrice * (promotionDiscount / 100m));
+                        decimal discount = Math.Round(seatPrice * (seatPromotionDiscount / 100m));
                         seatPrice -= discount;
                     }
-                    
                     totalAmount += seatPrice;
                 }
             }

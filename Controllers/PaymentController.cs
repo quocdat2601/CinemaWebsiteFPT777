@@ -119,6 +119,22 @@ namespace MovieTheater.Controllers
                         .Where(seat => !existingScheduleSeats.Contains(seat.SeatId))
                         .Select(seat =>
                         {
+                            var seatType = _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+                            decimal basePrice = seatType?.PricePercent ?? 0;
+                            if (invoice.MovieShow?.Version != null)
+                                basePrice *= (decimal)invoice.MovieShow.Version.Multi;
+                            int promotionDiscount = 0;
+                            if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                            {
+                                try
+                                {
+                                    var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                    promotionDiscount = (int)(promoObj.seat ?? 0);
+                                }
+                                catch { promotionDiscount = 0; }
+                            }
+                            decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
+                            decimal priceAfterPromotion = basePrice - discount;
                             return new MovieTheater.Models.ScheduleSeat
                             {
                                 MovieShowId = invoice.MovieShowId,
@@ -138,9 +154,16 @@ namespace MovieTheater.Controllers
                     // Update BookedPrice for all ScheduleSeat records after VNPay payment
                     if (invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
                     {
-                        decimal promotionDiscount = 0;
-                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
-                            decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
+                        int promotionDiscount = 0;
+                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                        {
+                            try
+                            {
+                                var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                promotionDiscount = (int)(promoObj.seat ?? 0);
+                            }
+                            catch { promotionDiscount = 0; }
+                        }
                         foreach (var scheduleSeat in invoice.ScheduleSeats)
                         {
                             var seatType = scheduleSeat.Seat.SeatType;
@@ -201,14 +224,22 @@ namespace MovieTheater.Controllers
                 }
                 if (invoice != null && invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
                 {
+                    // Cập nhật trạng thái ghế thành booked (SeatStatusId = 2)
                     foreach (var scheduleSeat in invoice.ScheduleSeats)
                     {
-                        var seat = scheduleSeat.Seat;
-                        decimal? bookedPrice = scheduleSeat.BookedPrice;
-                        // Use seat, seatType, and bookedPrice as needed for calculations or TempData
-                        // Example: accumulate subtotal, build seat info, etc.
+                        scheduleSeat.SeatStatusId = 2;
                     }
                     _context.SaveChanges();
+
+                    var seatHubContext = (IHubContext<MovieTheater.Hubs.SeatHub>)HttpContext.RequestServices.GetService(typeof(IHubContext<MovieTheater.Hubs.SeatHub>));
+                    foreach (var scheduleSeat in invoice.ScheduleSeats)
+                    {
+                        // Gửi thông báo realtime cập nhật trạng thái ghế
+                        if (seatHubContext != null && scheduleSeat.SeatId.HasValue)
+                        {
+                            await seatHubContext.Clients.Group(invoice.MovieShowId.ToString()).SendAsync("SeatStatusChanged", scheduleSeat.SeatId.Value, 2);
+                        }
+                    }
                 }
 
                 // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
@@ -252,9 +283,16 @@ namespace MovieTheater.Controllers
                         decimal basePrice = seatType?.PricePercent ?? 0;
                         if (invoice.MovieShow?.Version != null)
                             basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                        decimal promotionDiscount = 0;
-                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount))
-                            decimal.TryParse(invoice.PromotionDiscount, out promotionDiscount);
+                        int promotionDiscount = 0;
+                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                        {
+                            try
+                            {
+                                var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                promotionDiscount = (int)(promoObj.seat ?? 0);
+                            }
+                            catch { promotionDiscount = 0; }
+                        }
                         decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
                         decimal priceAfterPromotion = basePrice - discount;
                         return new MovieTheater.ViewModels.SeatDetailViewModel

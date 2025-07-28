@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using MovieTheater.Repository;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
+using Microsoft.AspNetCore.Hosting;
 
 namespace MovieTheater.Controllers
 {//movie
@@ -17,13 +18,17 @@ namespace MovieTheater.Controllers
         private readonly ICinemaService _cinemaService;
         private readonly ILogger<MovieController> _logger;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IPersonRepository _personRepository;
 
-        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext)
+        public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext, IWebHostEnvironment webHostEnvironment, IPersonRepository personRepository)
         {
             _movieService = movieService;
             _cinemaService = cinemaService;
             _logger = logger;
             _dashboardHubContext = dashboardHubContext;
+            _webHostEnvironment = webHostEnvironment;
+            _personRepository = personRepository;
         }
 
         /// <summary>
@@ -40,8 +45,11 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/MovieList")]
-        public IActionResult MovieList(string searchTerm)
+        public IActionResult MovieList(string searchTerm, string typeIds, string versionIds)
         {
+            var selectedTypeIds = string.IsNullOrEmpty(typeIds) ? new List<int>() : typeIds.Split(',').Select(int.Parse).ToList();
+            var selectedVersionIds = string.IsNullOrEmpty(versionIds) ? new List<int>() : versionIds.Split(',').Select(int.Parse).ToList();
+
             var movies = _movieService.SearchMovies(searchTerm)
                 .Select(m => new MovieViewModel
                 {
@@ -49,15 +57,22 @@ namespace MovieTheater.Controllers
                     MovieNameEnglish = m.MovieNameEnglish,
                     Duration = m.Duration,
                     SmallImage = m.SmallImage,
-                    Types = m.Types.ToList()
+                    Types = m.Types.ToList(),
+                    Versions = m.Versions.ToList()
                 })
+                .Where(m => (selectedTypeIds.Count == 0 || (m.Types ?? new List<Models.Type>()).Any(t => selectedTypeIds.Contains(t.TypeId))) &&
+                            (selectedVersionIds.Count == 0 || (m.Versions ?? new List<Models.Version>()).Any(v => selectedVersionIds.Contains(v.VersionId))))
                 .ToList();
 
+            ViewBag.AllTypes = _movieService.GetAllTypes();
+            ViewBag.AllVersions = _movieService.GetAllVersions();
+            ViewBag.SelectedTypeIds = selectedTypeIds;
+            ViewBag.SelectedVersionIds = selectedVersionIds;
             ViewBag.SearchTerm = searchTerm;
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return PartialView("_MovieGrid", movies);
+                return PartialView("_MovieFilterAndGrid", movies);
             }
 
             return View(movies);
@@ -76,31 +91,24 @@ namespace MovieTheater.Controllers
             {
                 return NotFound();
             }
-
-            CinemaRoom cinemaRoom = null;
-            if (movie.CinemaRoomId != null)
-            {
-                cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId);
-            }
+            var actors = movie.People.Where(p => p.IsDirector == false).ToList();
+            var directors = movie.People.Where(p => p.IsDirector == true).ToList();
 
             var viewModel = new MovieDetailViewModel
             {
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
-                MovieNameVn = movie.MovieNameVn,
                 FromDate = movie.FromDate,
                 ToDate = movie.ToDate,
-                Actor = movie.Actor,
                 MovieProductionCompany = movie.MovieProductionCompany,
-                Director = movie.Director,
                 Duration = movie.Duration,
                 Content = movie.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(movie.TrailerUrl),
-                LargeImage = movie.LargeImage,
+                SmallImage = movie.SmallImage,
                 AvailableTypes = movie.Types.ToList(),
-                AvailableVersions = movie.Versions.ToList()
+                AvailableVersions = movie.Versions.ToList(),
+                People = movie.People.ToList()
             };
-
             return View(viewModel);
         }
 
@@ -127,7 +135,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Create")]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(MovieDetailViewModel model)
+        public async Task<IActionResult> Create(MovieDetailViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -144,31 +152,108 @@ namespace MovieTheater.Controllers
                 return View(model);
             }
 
+            // Handle image uploads (LargeImageFile, SmallImageFile)
+            string largeImagePath = null;
+            string smallImagePath = null;
+            string logoPath = null;
+
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "movies");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
+            {
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.LargeImageFile.CopyToAsync(fileStream);
+                }
+                largeImagePath = "/images/movies/" + uniqueFileName;
+            }
+            else
+            {
+                largeImagePath = "/images/movies/default-movie.jpg";
+            }
+
+            if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
+            {
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.SmallImageFile.CopyToAsync(fileStream);
+                }
+                smallImagePath = "/images/movies/" + uniqueFileName;
+            }
+            else
+            {
+                smallImagePath = "/images/movies/default-movie.jpg";
+            }
+
+            if (model.LogoFile != null && model.LogoFile.Length > 0)
+            {
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.SmallImageFile.CopyToAsync(fileStream);
+                }
+                logoPath = "/images/movies/" + uniqueFileName;
+            }
+            else
+            {
+                logoPath = "/images/movies/default-movie.jpg";
+            }
+
             var selectedVersions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList();
+
+            // Parse selected actor and director IDs
+            var selectedActorIds = new List<int>();
+            var selectedDirectorIds = new List<int>();
+            
+            if (!string.IsNullOrEmpty(model.SelectedActorIds))
+            {
+                selectedActorIds = model.SelectedActorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+            
+            if (!string.IsNullOrEmpty(model.SelectedDirectorIds))
+            {
+                selectedDirectorIds = model.SelectedDirectorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+
+            // Get selected actors and directors
+            var selectedActors = _personRepository.GetActors().Where(a => selectedActorIds.Contains(a.PersonId)).ToList();
+            var selectedDirectors = _personRepository.GetDirectors().Where(d => selectedDirectorIds.Contains(d.PersonId)).ToList();
 
             var movie = new Movie
             {
                 MovieId = model.MovieId,
                 MovieNameEnglish = model.MovieNameEnglish,
-                MovieNameVn = model.MovieNameVn,
-                Actor = model.Actor,
-                Director = model.Director,
                 Duration = model.Duration,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
                 MovieProductionCompany = model.MovieProductionCompany,
                 Content = model.Content,
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
-                LargeImage = model.LargeImage,
-                SmallImage = model.SmallImage,
+                LargeImage = largeImagePath,
+                SmallImage = smallImagePath,
+                LogoImage = logoPath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
+                People = selectedActors.Concat(selectedDirectors).ToList()
             };
 
             if (_movieService.AddMovie(movie))
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
-                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
@@ -196,13 +281,14 @@ namespace MovieTheater.Controllers
                 return NotFound();
             }
 
+            // Get actors and directors from the movie's People collection
+            var actors = movie.People.Where(p => p.IsDirector == false).ToList();
+            var directors = movie.People.Where(p => p.IsDirector == true).ToList();
+
             var model = new MovieDetailViewModel
             {
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
-                MovieNameVn = movie.MovieNameVn,
-                Actor = movie.Actor,
-                Director = movie.Director,
                 Duration = movie.Duration,
                 FromDate = movie.FromDate,
                 ToDate = movie.ToDate,
@@ -211,10 +297,13 @@ namespace MovieTheater.Controllers
                 TrailerUrl = movie.TrailerUrl,
                 LargeImage = movie.LargeImage,
                 SmallImage = movie.SmallImage,
+                Logo = movie.LogoImage,
                 AvailableTypes = _movieService.GetAllTypes(),
                 AvailableVersions = _movieService.GetAllVersions(),
                 SelectedTypeIds = movie.Types.Select(t => t.TypeId).ToList(),
-                SelectedVersionIds = movie.Versions.Select(v => v.VersionId).ToList()
+                SelectedVersionIds = movie.Versions.Select(v => v.VersionId).ToList(),
+                SelectedActorIds = string.Join(",", actors.Select(a => a.PersonId)),
+                SelectedDirectorIds = string.Join(",", directors.Select(d => d.PersonId))
             };
 
             return View(model);
@@ -227,7 +316,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(string id, MovieDetailViewModel model)
+        public async Task<IActionResult> Edit(string id, MovieDetailViewModel model)
         {
             if (id != model.MovieId)
             {
@@ -254,47 +343,65 @@ namespace MovieTheater.Controllers
             }
 
             // Handle image uploads
-            string largeImagePath = existingMovie.LargeImage ?? "";
-            string smallImagePath = existingMovie.SmallImage ?? "";
+            string largeImagePath = existingMovie.LargeImage ?? "/images/movies/default-movie.jpg";
+            string smallImagePath = existingMovie.SmallImage ?? "/images/movies/default-movie.jpg";
+            string logoPath = existingMovie.LogoImage ?? "/images/movies/default-movie.jpg";
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "movies");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
 
             // Process large image upload
             if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
             {
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                if (!Directory.Exists(uploadsFolder))
+                // Delete old image if exists and not default
+                if (!string.IsNullOrEmpty(existingMovie.LargeImage) && !existingMovie.LargeImage.Contains("default-movie.jpg"))
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingMovie.LargeImage.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
                 }
-
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    model.LargeImageFile.CopyTo(fileStream);
+                    await model.LargeImageFile.CopyToAsync(fileStream);
                 }
-
-                largeImagePath = "/image/" + uniqueFileName;
+                largeImagePath = "/images/movies/" + uniqueFileName;
             }
 
             // Process small image upload
             if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
             {
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image");
-                if (!Directory.Exists(uploadsFolder))
+                if (!string.IsNullOrEmpty(existingMovie.SmallImage) && !existingMovie.SmallImage.Contains("default-movie.jpg"))
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingMovie.SmallImage.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
                 }
-
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    model.SmallImageFile.CopyTo(fileStream);
+                    await model.SmallImageFile.CopyToAsync(fileStream);
                 }
+                smallImagePath = "/images/movies/" + uniqueFileName;
+            }
 
-                smallImagePath = "/image/" + uniqueFileName;
+            if (model.LogoFile != null && model.LogoFile.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(existingMovie.LogoImage) && !existingMovie.LogoImage.Contains("default-movie.jpg"))
+                {
+                    string oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, existingMovie.LogoImage.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
+                }
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LogoFile.FileName;
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.LogoFile.CopyToAsync(fileStream);
+                }
+                logoPath = "/images/movies/" + uniqueFileName;
             }
 
             existingMovie.Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList();
@@ -339,13 +446,34 @@ namespace MovieTheater.Controllers
                 }
             }
 
+            // Parse selected actor and director IDs
+            var selectedActorIds = new List<int>();
+            var selectedDirectorIds = new List<int>();
+            
+            if (!string.IsNullOrEmpty(model.SelectedActorIds))
+            {
+                selectedActorIds = model.SelectedActorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+            
+            if (!string.IsNullOrEmpty(model.SelectedDirectorIds))
+            {
+                selectedDirectorIds = model.SelectedDirectorIds.Split(',')
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(int.Parse)
+                    .ToList();
+            }
+
+            // Get selected actors and directors
+            var selectedActors = _personRepository.GetActors().Where(a => selectedActorIds.Contains(a.PersonId)).ToList();
+            var selectedDirectors = _personRepository.GetDirectors().Where(d => selectedDirectorIds.Contains(d.PersonId)).ToList();
+
             var movie = new Movie
             {
                 MovieId = model.MovieId,
                 MovieNameEnglish = model.MovieNameEnglish,
-                MovieNameVn = model.MovieNameVn,
-                Actor = model.Actor,
-                Director = model.Director,
                 Duration = model.Duration,
                 FromDate = model.FromDate,
                 ToDate = model.ToDate,
@@ -354,14 +482,16 @@ namespace MovieTheater.Controllers
                 TrailerUrl = _movieService.ConvertToEmbedUrl(model.TrailerUrl),
                 LargeImage = largeImagePath,
                 SmallImage = smallImagePath,
+                LogoImage = logoPath,
                 Types = _movieService.GetAllTypes().Where(t => model.SelectedTypeIds.Contains(t.TypeId)).ToList(),
                 Versions = _movieService.GetAllVersions().Where(v => model.SelectedVersionIds.Contains(v.VersionId)).ToList(),
+                People = selectedActors.Concat(selectedDirectors).ToList()
             };
 
             if (_movieService.UpdateMovie(movie))
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
-                _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
@@ -438,6 +568,21 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetMovieShows(string movieId)
+        {
+            var movieShows = _movieService.GetMovieShowsByMovieId(movieId)
+                .Select(ms => new {
+                    ms.MovieShowId,
+                    ms.MovieId,
+                    ms.ShowDate,
+                    ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
+                    VersionName = ms.Version?.VersionName,
+                    VersionId = ms.VersionId
+                }).ToList();
+            return Json(movieShows);
+        }
+
+        [HttpGet]
         [Route("Movie/MovieShow/{id}")]
         public IActionResult MovieShow(string id)
         {
@@ -482,7 +627,9 @@ namespace MovieTheater.Controllers
                 MovieId = movie.MovieId,
                 MovieNameEnglish = movie.MovieNameEnglish,
                 Duration = movie.Duration,
-                AvailableCinemaRooms = _cinemaService.GetAll().ToList(),
+                AvailableCinemaRooms = _cinemaService.GetAll()
+                    .Where(r => r.StatusId == 1)
+                    .ToList(),
                 AvailableShowDates = showDates,
                 AvailableSchedules = _movieService.GetSchedules().ToList(),
                 CurrentMovieShows = movieShows,
@@ -504,7 +651,9 @@ namespace MovieTheater.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
+                model.AvailableCinemaRooms = _cinemaService.GetAll()
+                    .Where(r => r.StatusId == 1)
+                    .ToList();
                 model.AvailableShowDates = _movieService.GetShowDates(model.MovieId).ToList();
                 model.AvailableSchedules = _movieService.GetSchedules().ToList();
                 return View(model);
@@ -520,7 +669,9 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Error updating movie shows for movie {MovieId}", id);
                 TempData["ErrorMessage"] = "An error occurred while updating movie shows.";
-                model.AvailableCinemaRooms = _cinemaService.GetAll().ToList();
+                model.AvailableCinemaRooms = _cinemaService.GetAll()
+                    .Where(r => r.StatusId == 1)
+                    .ToList();
                 model.AvailableShowDates = _movieService.GetShowDates(model.MovieId).ToList();
                 model.AvailableSchedules = _movieService.GetSchedules().ToList();
                 return View(model);
@@ -606,14 +757,21 @@ namespace MovieTheater.Controllers
         }
         
         [HttpPost]
-        public async Task<IActionResult> DeleteAllMovieShows(string movieId)
+        public async Task<IActionResult> DeleteAllMovieShows([FromBody] MovieShowRequestDeleteAll request)
         {
-            var success = _movieService.DeleteAllMovieShows(movieId);
+            if (request == null || string.IsNullOrEmpty(request.MovieId))
+                return BadRequest("Missing movieId");
+            var success = _movieService.DeleteAllMovieShows(request.MovieId);
             if (success)
             {
                 return Ok();
             }
             return BadRequest("Could not delete all movie shows.");
+        }
+
+        public class MovieShowRequestDeleteAll
+        {
+            public string MovieId { get; set; }
         }
 
         [HttpGet]
@@ -718,6 +876,28 @@ namespace MovieTheater.Controllers
             // Delete the show
             bool deleted = _movieService.DeleteMovieShows(movieShowId);
             return Json(new { success = deleted, message = deleted ? "Show deleted." : "Failed to delete show." });
+        }
+
+        [HttpGet]
+        public IActionResult GetDirectors()
+        {
+            var directors = _personRepository.GetDirectors();
+            return Json(directors.Select(d => new { 
+                id = d.PersonId, 
+                name = d.Name,
+                image = d.Image 
+            }));
+        }
+
+        [HttpGet]
+        public IActionResult GetActors()
+        {
+            var actors = _personRepository.GetActors();
+            return Json(actors.Select(a => new { 
+                id = a.PersonId, 
+                name = a.Name,
+                image = a.Image 
+            }));
         }
     }
 }

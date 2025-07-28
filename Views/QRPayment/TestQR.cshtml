@@ -1,0 +1,44 @@
+@{
+    ViewBag.Title = "Test QR Code";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Test QR Code</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h5>QR Code Test</h5>
+                        <p>Scan this QR code with your banking app to test payment functionality</p>
+                        
+                        <div class="qr-test-container">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://api.vietqr.io/image/VCB/1234567890/50000/Ve xem phim - Test Movie" 
+                                 alt="Test QR Code" 
+                                 style="max-width: 300px; border: 8px solid white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+                        </div>
+                        
+                        <div class="mt-3">
+                            <p><strong>Test Data:</strong></p>
+                            <ul class="list-unstyled">
+                                <li>Bank: Vietcombank (VCB)</li>
+                                <li>Account: 1234567890</li>
+                                <li>Amount: 50,000 VND</li>
+                                <li>Description: Ve xem phim - Test Movie</li>
+                                <li>QR Type: VietQR Standard</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="@Url.Action("TestQR", "QRPayment")" class="btn btn-primary">Generate New Test QR</a>
+                            <a href="@Url.Action("MainPage", "Admin")" class="btn btn-secondary">Back to Admin</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

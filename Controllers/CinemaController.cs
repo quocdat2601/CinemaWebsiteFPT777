@@ -118,6 +118,29 @@ namespace MovieTheater.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Active(int id, IFormCollection collection)
+        {
+            try
+            {
+                var cinema = _cinemaService.GetById(id);
+                if (cinema == null)
+                {
+                    TempData["ToastMessage"] = "Showroom not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                }
+
+                await _cinemaService.Active(id);
+                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+            }
+            catch (Exception ex)
+            {
+                TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
+                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+            }
+        }
+
         [HttpGet]
         public IActionResult GetRoomsByVersion(int versionId)
         {

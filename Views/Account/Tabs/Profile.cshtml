@@ -335,7 +335,10 @@
         let currentPage = 1;
         const pageSize = 6;
         function renderHistoryCards(historyData) {
-            historyDataCache = historyData || [];
+            // Lọc chỉ lấy booking đã complete
+            historyDataCache = (historyData || []).filter(function(booking) {
+                return booking.status === 1;
+            });
             renderHistoryPage(currentPage);
             renderHistoryPagination();
         }

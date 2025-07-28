@@ -2,172 +2,239 @@
 
 @{
     ViewData["Title"] = "Payment";
+    ViewBag.CurrentStep = 4;
 }
+@Html.Partial("_BookingProgress")
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/payment.css" />
+    <link rel="stylesheet" href="~/css//payment.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 }
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="text-center">Payment Information</h3>
+<div class="cinema-payment-container">
+    <!-- Progress Indicator -->
+    <div class="text-center mb-4">
+        <div class="progress-indicator">
+            <i class="fas fa-check-circle"></i>
+            <span>Step 4 of 4 - Payment</span>
+        </div>
+    </div>
+    <button type="button" class="cinema-payment-btn return-btn-top" onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Return
+    </button>
+    <div class="cinema-ticket-card">
+        <!-- Ticket Header -->
+        <div class="ticket-header">
+            <div class="header-content">
+                <i class="fas fa-ticket-alt ticket-icon"></i>
+                <h3>Cinema Ticket Payment</h3>
+            </div>
+            <div class="header-decoration"></div>
+        </div>
+        <div class="ticket-body ticket-body-horizontal">
+            <!-- Error Alert -->
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="cinema-alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>@TempData["ErrorMessage"]</span>
                 </div>
-                <div class="card-body">
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger">
-                            @TempData["ErrorMessage"]
+            }
+            <div class="ticket-left">
+                <!-- Movie Information Section -->
+                <div class="movie-info-section">
+                    <div class="section-header">
+                        <i class="fas fa-film"></i>
+                        <h4>Booking Details</h4>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-receipt"></i>
+                                Invoice ID:
+                            </div>
+                            <div class="info-value">
+                                <span class="invoice-badge">@Model.InvoiceId</span>
+                            </div>
                         </div>
-                    }
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Invoice ID:</strong>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-video"></i>
+                                Movie:
+                            </div>
+                            <div class="info-value movie-title">@Model.MovieName</div>
                         </div>
-                        <div class="col-md-8">
-                            @Model.InvoiceId
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Show Date:
+                            </div>
+                            <div class="info-value">@Model.ShowDate.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-clock"></i>
+                                Show Time:
+                            </div>
+                            <div class="info-value">@Model.ShowTime</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-chair"></i>
+                                Seats:
+                            </div>
+                            <div class="info-value">
+                                <span class="seat-badges">@Model.Seats</span>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Movie:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.MovieName
-                        </div>
+                </div>
+            </div>
+            <div class="ticket-center">
+                <!-- Food & Drinks Section -->
+                <div class="food-section">
+                    <div class="section-header">
+                        <i class="fas fa-utensils"></i>
+                        <h4>Food & Drinks</h4>
                     </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Show Date:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.ShowDate.ToString("dd/MM/yyyy")
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Show Time:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.ShowTime
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Seats:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.Seats
-                        </div>
-                    </div>
-
                     @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
                     {
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Food & Drinks:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <table class="table table-sm">
-                                    <thead>
+                        <div class="food-table-container">
+                            <table class="cinema-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var food in Model.SelectedFoods)
+                                    {
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Qty</th>
-                                            <th>Price</th>
-                                            <th>Total</th>
+                                            <td class="food-name">@food.Name</td>
+                                            <td class="quantity">@food.Quantity</td>
+                                            <td class="price">@food.Price.ToString("N0") VND</td>
+                                            <td class="total">@((food.Price * food.Quantity).ToString("N0")) VND</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var food in Model.SelectedFoods)
-                                        {
-                                            <tr>
-                                                <td>@food.Name</td>
-                                                <td>@food.Quantity</td>
-                                                <td>@food.Price.ToString("N0") VND</td>
-                                                <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
-                                            <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="3">Total Food:</td>
+                                        <td class="food-total">@Model.TotalFoodPrice.ToString("N0") VND</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     }
                     else
                     {
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Food & Drinks:</strong>
-                            </div>
-                            <div class="col-md-8 text-danger">
-                                No food selected.
-                            </div>
+                        <div class="no-food-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>No food items selected</span>
                         </div>
                     }
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Seat Price:</strong>
+                </div>
+            </div>
+            <div class="ticket-right">
+                <!-- Price Summary Section -->
+                <div class="price-summary-section">
+                    <div class="price-breakdown">
+                        <div class="price-item seat-price">
+                            <div class="price-label">
+                                <i class="fas fa-chair"></i>
+                                Seat Price:
+                            </div>
+                            <div class="price-amount">@Model.TotalSeatPrice.ToString("N0") VND</div>
                         </div>
-                        <div class="col-md-8">
-                            <span class="text-success">@Model.TotalSeatPrice.ToString("N0") VND</span>
+                        @if (Model.TotalFoodPrice > 0)
+                        {
+                            <div class="price-item food-price">
+                                <div class="price-label">
+                                    <i class="fas fa-utensils"></i>
+                                    Food & Drinks:
+                                </div>
+                                <div class="price-amount">@Model.TotalFoodPrice.ToString("N0") VND</div>
+                            </div>
+                        }
+                    </div>
+                    <!-- Decorative Separator -->
+                    <div class="price-separator">
+                        <div class="separator-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
                         </div>
                     </div>
-
-                    @if (Model.TotalFoodPrice > 0)
-                    {
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Food & Drinks Price:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <span class="text-info">@Model.TotalFoodPrice.ToString("N0") VND</span>
-                            </div>
-                        </div>
-                    }
-
-                    <hr class="my-3" />
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Total Amount:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            <strong class="text-primary fs-4 fw-bold">@Model.TotalAmount.ToString("N0") VND</strong>
-                        </div>
+                    <!-- Total Amount -->
+                    <div class="total-amount-section">
+                        <div class="total-label">Total Amount</div>
+                        <div class="total-amount">@Model.TotalAmount.ToString("N0") VND</div>
                     </div>
-
-                    <form asp-action="ProcessPayment" method="post">
-                        <input type="hidden" asp-for="InvoiceId" />
-                        <input type="hidden" asp-for="MovieName" />
-                        <input type="hidden" asp-for="ShowDate" />
-                        <input type="hidden" asp-for="ShowTime" />
-                        <input type="hidden" asp-for="Seats" />
-                        <input type="hidden" asp-for="TotalAmount" />
-                        <input type="hidden" asp-for="OrderInfo" />
-                        <input type="hidden" asp-for="TotalSeatPrice" />
-                        <input type="hidden" asp-for="TotalFoodPrice" />
-
-                        <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                Pay with VNPAY
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
+        <!-- Payment Form -->
+        <div class="payment-form-section" style="text-align:center; margin-top:2.5rem;">
+            <form asp-action="ProcessPayment" method="post" style="display:inline-block;">
+                <input type="hidden" asp-for="InvoiceId" />
+                <input type="hidden" asp-for="MovieName" />
+                <input type="hidden" asp-for="ShowDate" />
+                <input type="hidden" asp-for="ShowTime" />
+                <input type="hidden" asp-for="Seats" />
+                <input type="hidden" asp-for="TotalAmount" />
+                <input type="hidden" asp-for="OrderInfo" />
+                <input type="hidden" asp-for="TotalSeatPrice" />
+                <input type="hidden" asp-for="TotalFoodPrice" />
+                <div class="payment-button-container">
+                    <button type="submit" class="cinema-payment-btn">
+                        <span class="btn-content">
+                            <i class="fas fa-credit-card"></i>
+                            Pay with VNPAY
+                        </span>
+                        <div class="btn-shine"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- Ticket Perforations -->
+        <div class="ticket-perforations top"></div>
+        <div class="ticket-perforations bottom"></div>
     </div>
-</div> 
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const paymentForm = document.querySelector('.payment-form');
+            const paymentBtn = document.querySelector('.cinema-payment-btn');
+            paymentForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                // Show loading state
+                paymentBtn.classList.add('loading');
+                paymentBtn.disabled = true;
+                const btnContent = paymentBtn.querySelector('.btn-content');
+                const originalContent = btnContent.innerHTML;
+                btnContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                // Simulate processing (remove this in production)
+                setTimeout(() => {
+                    btnContent.innerHTML = '<i class="fas fa-check"></i> Payment Successful!';
+                    paymentBtn.classList.remove('loading');
+                    paymentBtn.classList.add('success');
+                    // Reset after success animation
+                    setTimeout(() => {
+                        btnContent.innerHTML = originalContent;
+                        paymentBtn.classList.remove('success');
+                        paymentBtn.disabled = false;
+                        // In real implementation, redirect or submit form here
+                        // this.submit();
+                    }, 2000);
+                }, 2000);
+            });
+        });
+    </script>
+}

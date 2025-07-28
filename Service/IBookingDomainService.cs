@@ -12,7 +12,7 @@ namespace MovieTheater.Service
         Task<BookingResult> ConfirmBookingAsync(ConfirmBookingViewModel model, string userId, string isTestSuccess);
         Task<BookingSuccessViewModel> BuildSuccessViewModelAsync(string invoiceId, string userId);
         // Admin ticket selling (for BookingController)
-        Task<ConfirmTicketAdminViewModel> BuildConfirmTicketAdminViewModelAsync(int movieShowId, List<int> selectedSeatIds, List<int> foodIds, List<int> foodQtys);
+        Task<ConfirmTicketAdminViewModel> BuildConfirmTicketAdminViewModelAsync(int movieShowId, List<int> selectedSeatIds, List<int> foodIds, List<int> foodQtys, string memberId = null);
         Task<BookingResult> ConfirmTicketForAdminAsync(ConfirmTicketAdminViewModel model);
         Task<ConfirmTicketAdminViewModel> BuildTicketBookingConfirmedViewModelAsync(string invoiceId);
     }

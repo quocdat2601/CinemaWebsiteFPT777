@@ -10,6 +10,7 @@ namespace MovieTheater.Service
         public bool Update(int id, CinemaRoom cinemaRoom);
         Task<bool> DeleteAsync(int id);
         Task SaveAsync();
+        Task Active(int id);
         public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId);
     }
 }

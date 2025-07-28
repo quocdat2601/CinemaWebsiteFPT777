@@ -22,6 +22,7 @@ namespace MovieTheater.Service
                 FoodId = fi.Food.FoodId,
                 Name = fi.Food.Name,
                 Price = fi.Price, // Use the price at the time of order
+                OriginalPrice = fi.Food.Price, // Giá gốc
                 Image = fi.Food.Image,
                 Description = fi.Food.Description,
                 Category = fi.Food.Category,
