@@ -70,7 +70,6 @@ GO
 
 CREATE TABLE Movie (
     Movie_ID VARCHAR(10) PRIMARY KEY,
-    Cinema_Room_ID INT,
     Content VARCHAR(1000),
     Duration INT,
     From_Date DATE,
