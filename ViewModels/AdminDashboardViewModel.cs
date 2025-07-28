@@ -20,6 +20,7 @@ namespace MovieTheater.ViewModels
 
         // Recent bookings 
         public List<RecentBookingInfo> RecentBookings { get; set; }
+        public MovieAnalyticsViewModel MovieAnalytics { get; set; }
 
         // Newest 5 members
         public List<RecentMemberInfo> RecentMembers { get; set; }
@@ -40,6 +41,21 @@ namespace MovieTheater.ViewModels
         public string MovieName { get; set; }
         public DateTime BookingDate { get; set; }
         public string Status { get; set; }
+    }
+
+    public class RecentMovieActivityInfo
+    {
+        public string InvoiceId { get; set; }
+        public string MemberName { get; set; }
+        public string MovieName { get; set; }
+        public DateTime ActivityDate { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
+
+    public class MovieAnalyticsViewModel
+    {
+        public List<RecentMovieActivityInfo> RecentBookings { get; set; }
+        public List<RecentMovieActivityInfo> RecentCancellations { get; set; }
     }
 
     public class RecentMemberInfo

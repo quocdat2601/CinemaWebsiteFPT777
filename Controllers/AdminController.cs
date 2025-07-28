@@ -351,6 +351,34 @@ namespace MovieTheater.Controllers
                 })
                 .ToList();
 
+            var recentMovieBookings = allInvoices
+                .Where(i => !i.Cancel)
+                .OrderByDescending(i => i.BookingDate)
+                .Take(10)
+                .Select(i => new RecentMovieActivityInfo
+                {
+                    InvoiceId = i.InvoiceId,
+                    MemberName = i.Account?.FullName ?? "N/A",
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish,
+                    ActivityDate = i.BookingDate ?? DateTime.MinValue,
+                    TotalAmount = i.TotalMoney ?? 0m
+                })
+                .ToList();
+
+            var recentMovieCancellations = allInvoices
+                .Where(i => i.Cancel)
+                .OrderByDescending(i => i.CancelDate)
+                .Take(10)
+                .Select(i => new RecentMovieActivityInfo
+                {
+                    InvoiceId = i.InvoiceId,
+                    MemberName = i.Account?.FullName ?? "N/A",
+                    MovieName = i.MovieShow.Movie.MovieNameEnglish,
+                    ActivityDate = i.CancelDate ?? DateTime.MinValue,
+                    TotalAmount = i.TotalMoney ?? 0m
+                })
+                .ToList();
+
             // 6) Recent members
             var recentMembers = _memberRepository.GetAll()
                 .Where(m => m.Account?.RegisterDate != null)
@@ -504,6 +532,11 @@ namespace MovieTheater.Controllers
                 TopMovies = topMovies,
                 TopMembers = topMembers,
                 RecentBookings = recentBookings,
+                MovieAnalytics = new MovieAnalyticsViewModel
+                {
+                    RecentBookings = recentMovieBookings,
+                    RecentCancellations = recentMovieCancellations
+                },
                 RecentMembers = recentMembers,
                 GrossRevenue = grossRevenue,
                 TotalRefund = totalRefund,

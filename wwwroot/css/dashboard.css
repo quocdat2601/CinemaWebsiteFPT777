@@ -9,15 +9,26 @@
 
 .bg-gradient-primary {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .bg-gradient-danger {
     background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .bg-gradient-success {
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .card.shadow {
     box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+    border-radius: 0.75rem !important;
+    border: 2px solid #d0d0d0 !important;
 }
 .dashboard-tab {
     color: #FFD700;
@@ -97,13 +108,13 @@ canvas {
 }
 
 /* Fix chart height for dashboard charts */
-.dashboard-card canvas {
-  height: 300px !important;
-  max-height: 300px !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  display: block;
-  margin: 0 auto;
+.dashboard-chart-canvas {
+    height: 300px !important;
+    max-height: 300px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block;
+    margin: 0 auto;
 }
 
 /* Remove card look for food stat charts */
@@ -120,8 +131,14 @@ body.dark-mode .dashboard-card canvas.dashboard-chart-canvas {
   box-shadow: 0 2px 16px 0 rgba(0,0,0,0.30), 0 1.5px 4px 0 rgba(0,0,0,0.18);
 }
 
-/* Remove card look for food stat charts */
-.dashboard-card:not(.kpi-card) { box-shadow: none; background: none; border: none; padding: 0; }
+/* Food stats cards - match movie stats styling */
+.dashboard-card:not(.kpi-card) { 
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important; 
+  background: #fff; 
+  border: 2px solid #d0d0d0; 
+  border-radius: 0.75rem;
+  padding: 1.5rem; 
+}
 
 /* Dashboard action buttons: visible in both modes */
 .dashboard-actions .btn {
@@ -441,13 +458,13 @@ body.light-mode .kpi-card * {
   color: #222 !important;
 }
 
-/* Remove box styling from chart containers */
+/* Chart containers - match movie stats styling */
 .dashboard-chart-container {
   background: #fff !important;
   border: 2px solid #d0d0d0 !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
   border-radius: 0.75rem;
-  padding: 1.5rem 1rem;
+  padding: 1.5rem;
 }
 body.light-mode .dashboard-chart-container, .light-mode .dashboard-chart-container {
   background: #fff !important;
@@ -484,7 +501,6 @@ body.light-mode .card .card-body .display-6 {
   max-width: 100%;
   max-height: 350px;
   width: 100% !important;
-  height: 100% !important;
   background: none !important;
   border: none !important;
   box-shadow: none !important;
@@ -494,7 +510,7 @@ body.light-mode .card .card-body .display-6 {
 #food-dashboard .card.shadow.h-100 {
   border-radius: 0.75rem;
   border: 2px solid #d0d0d0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
   background: #fff;
 }
 
@@ -618,12 +634,95 @@ body.light-mode .card .card-body .display-6 {
 
 .bg-gradient-primary {
     background: linear-gradient(45deg, #007bff, #6610f2);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .bg-gradient-danger {
     background: linear-gradient(45deg, #dc3545, #fd7e14);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .bg-gradient-success {
     background: linear-gradient(45deg, #28a745, #20c997);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* Additional Dashboard Styles - Moved from inline styles */
+body, html {
+    overflow-x: hidden;
+}
+
+#food-dashboard {
+    overflow-x: hidden;
+}
+
+.dashboard-recent-list {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    max-height: 288px; /* 4 cards at ~72px each */
+    height: 288px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.recent-list-item {
+    background-color: #1f1f2e;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.recent-list-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.recent-list-item > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recent-list-item .text-warning,
+.recent-list-item .fw-bold {
+    color: #ffd700;
+}
+
+.dashboard-recent-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dashboard-recent-list::-webkit-scrollbar-thumb {
+    background: #ffd700;
+    border-radius: 4px;
+}
+
+.card-body.d-flex {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card-body .nav-pills {
+    flex: 0 0 auto;
+    margin-bottom: 0.75rem;
+    z-index: 10;
+}
+
+/* Override small-stat from previous definition */
+.small-stat {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
 }
