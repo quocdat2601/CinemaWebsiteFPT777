@@ -11,6 +11,7 @@
                                 RevenueTrendValues = Model.RevenueTrendValues,
                                 BookingTrendDates = Model.BookingTrendDates,
                                 BookingTrendValues = Model.BookingTrendValues,
+                                VoucherTrendValues = Model.VoucherTrendValues,
                                 TopMovies = Model.TopMovies,
                                 TopMembers = Model.TopMembers,
                                 FoodAnalytics = Model.FoodAnalytics
@@ -27,7 +28,6 @@
             <button id="tab-food" class="dashboard-tab" onclick="showTab('food')"><i class="bi bi-cup-straw"></i> Food Stats</button>
         </div>
         <div class="dashboard-actions">
-            <button id="export-csv-btn" class="btn btn-outline-light"><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</button>
             <button id="download-charts-btn" class="btn btn-outline-light"><i class="bi bi-image"></i> Download Charts</button>
             <button class="btn btn-warning" onclick="window.print()"><i class="bi bi-printer"></i> Print Report</button>
         </div>
@@ -50,10 +50,10 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-gradient-danger h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-arrow-return-left"></i> Total Refund</h5>
-                        <p class="display-6">@Model.TotalRefund.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
+                        <h5><i class="bi bi-ticket-perforated"></i> Vouchers Issued</h5>
+                        <p class="display-6">@Model.TotalVouchersIssued.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
                         <p class="small-stat">
-                            Today: @((Model.MovieAnalytics?.RecentCancellations?.Where(c => c.ActivityDate.Date == DateTime.Today)?.Sum(c => c.TotalAmount) ?? 0m).ToString("#,##0", new System.Globalization.CultureInfo("vi-VN"))) đ
+                            Today: @Model.VouchersToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ
                         </p>
                     </div>
                 </div>
@@ -72,8 +72,11 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-warning h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-calendar-check"></i> Bookings Today</h5>
-                        <p class="display-6">@Model.BookingsToday</p>
+                        <h5><i class="bi bi-calendar-check"></i> Bookings</h5>
+                        <p class="display-6">@Model.TotalBookings</p>
+                        <p class="small-stat">
+                            Today: @Model.BookingsToday
+                        </p>
                     </div>
                 </div>
             </div>
@@ -84,7 +87,7 @@
             <div class="col-md-8">
                 <div class="card shadow h-100">
                     <div class="card-body p-3">
-                        <h5><i class="bi bi-bar-chart-line"></i> Revenue & Bookings (Last 7 days)</h5>
+                        <h5><i class="bi bi-bar-chart-line"></i> Revenue, Vouchers & Bookings (Last 7 days)</h5>
                         <canvas id="movieComboChart" class="dashboard-chart-canvas"></canvas>
                     </div>
                 </div>
@@ -121,8 +124,8 @@
                             <span class="badge bg-danger fs-6">
                                 @{
                                     var todayCancellations = Model.MovieAnalytics?.RecentCancellations?.Count(c => c.ActivityDate.Date == DateTime.Today) ?? 0;
-                                    var totalBookings = Model.BookingsToday + todayCancellations;
-                                    var cancelRate = totalBookings > 0 ? (todayCancellations * 100.0 / totalBookings) : 0.0;
+                                    var totalBookingsToday = Model.BookingsToday + todayCancellations; // Total bookings made today (including cancelled)
+                                    var cancelRate = totalBookingsToday > 0 ? (todayCancellations * 100.0 / totalBookingsToday) : 0.0;
                                 }
                                 @cancelRate.ToString("F1")%
                             </span>
@@ -235,7 +238,7 @@
         <!-- 1) KPI Cards Row (Food Stats) -->
         <div class="row mb-4 align-items-stretch">
             <!-- 1) Gross Revenue -->
-            <div class="col-lg-3 col-md-6 mb-3">
+            <div class="col-lg-6 col-md-6 mb-3">
                 <div class="card text-white bg-gradient-primary shadow h-100">
                     <div class="card-body text-center">
                         <h5><i class="bi bi-cash-coin"></i> Gross Revenue</h5>
@@ -249,42 +252,15 @@
                 </div>
             </div>
 
-            <!-- 2) Total Refunds -->
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="card text-white bg-gradient-danger shadow h-100">
-                    <div class="card-body text-center">
-                        <h5><i class="bi bi-arrow-return-left"></i> Total Refunds</h5>
-                        <p class="display-6">
-                            @Model.FoodAnalytics.TotalRefund.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
-                        </p>
-                        <p class="small-stat">
-                            Today: @Model.FoodAnalytics.TotalRefundToday.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3) Net Revenue -->
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="card text-white bg-gradient-success shadow h-100">
-                    <div class="card-body text-center">
-                        <h5><i class="bi bi-currency-dollar"></i> Net Revenue</h5>
-                        <p class="display-6">
-                            @Model.FoodAnalytics.NetRevenue.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
-                        </p>
-                        <p class="small-stat">
-                            Today: @Model.FoodAnalytics.NetRevenueToday.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4) Orders Today -->
-            <div class="col-lg-3 col-md-6 mb-3">
+            <!-- 2) Orders -->
+            <div class="col-lg-6 col-md-6 mb-3">
                 <div class="card text-white bg-warning h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-receipt"></i> Orders Today</h5>
-                        <p class="display-6">@Model.FoodAnalytics.OrdersToday</p>
+                        <h5><i class="bi bi-receipt"></i> Orders</h5>
+                        <p class="display-6">@Model.FoodAnalytics.TotalOrders</p>
+                        <p class="small-stat">
+                            Today: @Model.FoodAnalytics.OrdersToday
+                        </p>
                     </div>
                 </div>
             </div>
@@ -296,7 +272,7 @@
             <div class="col-md-8">
                 <div class="card shadow h-100">
                     <div class="card-body">
-                        <h5><i class="bi bi-bar-chart-line"></i> Revenue & Orders by Day</h5>
+                        <h5><i class="bi bi-bar-chart-line"></i> Revenue & Orders (Last 7 days)</h5>
                         <canvas id="foodComboChart" class="dashboard-chart-canvas"></canvas>
                     </div>
                 </div>
@@ -414,7 +390,6 @@
             const foodTab = document.getElementById('tab-food');
             const movieDash = document.getElementById('movie-dashboard');
             const foodDash = document.getElementById('food-dashboard');
-            const exportBtn = document.getElementById('export-csv-btn');
             const downloadBtn = document.getElementById('download-charts-btn');
 
             if (tab === 'movie') {
@@ -422,7 +397,6 @@
                 foodTab.classList.remove('active');
                 movieDash.style.display = '';
                 foodDash.style.display = 'none';
-                exportBtn.onclick = exportMovieDataCSV;
                 downloadBtn.onclick = downloadMovieCharts;
                 const data = getDashboardData();
                 if (data) window.initMovieCharts(data);
@@ -431,7 +405,6 @@
                 movieTab.classList.remove('active');
                 foodDash.style.display = '';
                 movieDash.style.display = 'none';
-                exportBtn.onclick = exportFoodTableCSV;
                 downloadBtn.onclick = downloadFoodCharts;
                 const data = getDashboardData();
                 if (data) {
@@ -451,6 +424,7 @@
             const revenueData = data.RevenueTrendValues || [];
             const bookingLabels = data.BookingTrendDates || [];
             const bookingData = data.BookingTrendValues || [];
+            const voucherData = data.VoucherTrendValues || [];
             const topMoviesData = data.TopMovies || [];
             const topMembersData = data.TopMembers || [];
 
@@ -468,15 +442,31 @@
                         datasets: [
                             {
                                 type: 'bar',
-                                label: 'Revenue',
+                                label: 'Gross Revenue',
                                 data: revenueData,
                                 backgroundColor: '#FFD700',
+                                yAxisID: 'y',
+                                order: 4
+                            },
+                            {
+                                type: 'bar',
+                                label: 'Vouchers Issued',
+                                data: voucherData,
+                                backgroundColor: '#dc3545',
+                                yAxisID: 'y',
+                                order: 3
+                            },
+                            {
+                                type: 'bar',
+                                label: 'Net Revenue',
+                                data: revenueData.map((rev, i) => rev - (voucherData[i] || 0)),
+                                backgroundColor: '#28a745',
                                 yAxisID: 'y',
                                 order: 2
                             },
                             {
                                 type: 'line',
-                                label: 'Bookings',
+                                label: 'Valid Bookings',
                                 data: bookingData,
                                 borderColor: '#007bff',
                                 backgroundColor: 'transparent',
@@ -998,79 +988,12 @@
         switchMovieTab('booked');
     });
 
-        function exportMovieDataCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,";
 
-            // Top 5 Movies
-            const topMovies = @Html.Raw(JsonConvert.SerializeObject(Model.TopMovies));
-            csvContent += "Top 5 Movies\n";
-            csvContent += "Movie Name,Tickets Sold\n";
-            if (topMovies && topMovies.length > 0) {
-                topMovies.forEach(m => {
-                    csvContent += `${m.Item1},${m.Item2}\n`;
-                });
-            }
-            csvContent += "\n";
-
-            // Top 5 Members
-            const topMembers = @Html.Raw(JsonConvert.SerializeObject(Model.TopMembers));
-            csvContent += "Top 5 Members\n";
-            csvContent += "Member Name,Bookings\n";
-            if (topMembers && topMembers.length > 0) {
-                topMembers.forEach(m => {
-                    csvContent += `${m.Item1},${m.Item2}\n`;
-                });
-            }
-            csvContent += "\n";
-
-            // Recent Movie Activity
-            const recentBookings = @Html.Raw(JsonConvert.SerializeObject(Model.MovieAnalytics?.RecentBookings));
-            csvContent += "Recent Movie Activity (Bookings)\n";
-            csvContent += "Movie Name,Member Name,Total Amount,Activity Date\n";
-            if (recentBookings && recentBookings.length > 0) {
-                recentBookings.forEach(b => {
-                    csvContent += `${b.MovieName},${b.MemberName},${b.TotalAmount},${new Date(b.ActivityDate).toLocaleString()}\n`;
-                });
-            }
-            csvContent += "\n";
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "movie_stats.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function exportFoodTableCSV() {
-            const orders = @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics.RecentOrders));
-            const cancels = @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics.RecentCancels));
-
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Type,Date,Food,Quantity,Price,Total\n";
-
-            orders.forEach(o => {
-                csvContent += `Order,${new Date(o.Date).toLocaleString()},${o.FoodName},${o.Quantity},${o.Price},${o.OrderTotal}\n`;
-            });
-
-            cancels.forEach(c => {
-                csvContent += `Cancel,${new Date(c.Date).toLocaleString()},${c.FoodName},${c.Quantity},${c.Price},${c.OrderTotal}\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "food_activity.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
 
         function downloadFoodCharts() {
             const zip = new JSZip();
             const charts = [
-                { id: 'foodComboChart', name: 'revenue_orders_by_day.png' },
+                { id: 'foodComboChart', name: 'revenue_orders_trend.png' },
                 { id: 'foodCategoryPie', name: 'sales_by_category.png' },
                 { id: 'foodItemsByCategoryBar', name: 'food_items_by_category.png' },
                 { id: 'foodHourHeatmap', name: 'sales_by_hour.png' }
@@ -1104,7 +1027,7 @@
         function downloadMovieCharts() {
             const zip = new JSZip();
             const charts = [
-                { id: 'movieComboChart', name: 'revenue_bookings_trend.png' },
+                { id: 'movieComboChart', name: 'revenue_vouchers_bookings_trend.png' },
                 { id: 'topMoviesChart', name: 'top_movies.png' },
                 { id: 'topMembersChart', name: 'top_members.png' }
             ];
