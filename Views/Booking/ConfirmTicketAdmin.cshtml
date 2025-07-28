@@ -370,11 +370,17 @@
                     $('#guestName').val('');
                     $('#guestPhone').val('');
                     $('#guestValidationMessage').hide();
+                    
+                    // SỬA: Reset rank discount khi chuyển sang Member (sẽ được set lại khi chọn member)
+                    currentDiscountPercent = 0;
+                    currentEarningRate = 0;
+                    $('#rankDiscountPercent').val(0);
+                    $('#discountInfo').html('Rank discount: 0% (-0 VND)');
                 } else {
                     $('#memberSelectionSection').hide();
                     $('#guestInfoSection').show();
-                    $('#guestName').val('').prop('disabled', true);
-                    $('#guestPhone').val('').prop('disabled', true);
+                    $('#guestName').val('').prop('disabled', false);
+                    $('#guestPhone').val('').prop('disabled', false);
                     $('#memberDetails').hide();
                     // Clear member info
                     $('#memberId').val('');
@@ -382,9 +388,31 @@
                     $('#memberIdentityCard').val('');
                     $('#memberPhoneNumber').val('');
                     $('#memberScore').val('');
+                    $('#accountId').val('');
+                    
+                    // SỬA: Reset rank discount khi chuyển sang Guest
+                    currentDiscountPercent = 0;
+                    currentEarningRate = 0;
+                    $('#rankDiscountPercent').val(0);
+                    selectedAccountId = null;
+                    selectedVoucher = null;
+                    $('#selectedVoucherInfo').text('');
+                    $('#selectedVoucherId').val('');
+                    $('#voucherAmountHidden').val('0');
+                    $('#useScore').val(0);
+                    
+                    // Disable voucher button for guest
+                    $('#openVoucherModalBtn').prop('disabled', true);
+                    
                     // Reset buttons for guest
                     $('#confirmTicketAdminBtn').prop('disabled', true);
                     $('#createQRCodeBtn').prop('disabled', true);
+                    
+                    // Update price calculation
+                    updatePriceAll();
+                    
+                    // SỬA: Ẩn rank discount info cho guest
+                    $('#discountInfo').html('');
                 }
                 updateConfirmButtonState();
             });
@@ -526,6 +554,14 @@
                     currentDiscountPercent = data.discountPercent || 0;
                     currentEarningRate = data.earningRate || 0;
                     updatePriceAll();
+                    
+                    // SỬA: Hiển thị rank discount info khi chọn member
+                    var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                    if (data.discountPercent > 0) {
+                        $('#discountInfo').html(`Rank discount: ${data.discountPercent}% (-${Math.round(originalTotal * (data.discountPercent / 100)).toLocaleString()} VND)`);
+                    } else {
+                        $('#discountInfo').html('Rank discount: 0% (-0 VND)');
+                    }
                 });
                 
                 $('#memberDetails').show();
@@ -682,7 +718,10 @@
                 // Áp dụng rank benefit trước (chỉ cho seat, không cho food)
                 var discountPercent = currentDiscountPercent || 0;
                 var discountAmount = 0;
-                if (originalTotal > 0) {
+                
+                // SỬA: Chỉ tính rank discount cho member
+                var customerType = $('input[name="customerType"]:checked').val();
+                if (customerType === 'member' && originalTotal > 0) {
                     discountAmount = Math.round(originalTotal * (discountPercent / 100));
                 }
                 var afterRank = originalTotal - discountAmount;
@@ -768,11 +807,18 @@
 
                 // Hiển thị voucher
                 let discountInfoHtml = '';
-                // Hiển thị rank discount
-                discountInfoHtml +=
-                    discountPercent > 0 && originalTotal > 0
-                    ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`
-                    : 'Rank discount: 0% (-0 VND)';
+                // Hiển thị rank discount - chỉ hiển thị cho member
+                var customerType = $('input[name="customerType"]:checked').val();
+                if (customerType === 'member' && discountPercent > 0 && originalTotal > 0) {
+                    discountInfoHtml += `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`;
+                } else {
+                    // SỬA: Ẩn rank discount info cho guest
+                    if (customerType === 'guest') {
+                        discountInfoHtml += ''; // Không hiển thị rank discount cho guest
+                    } else {
+                        discountInfoHtml += 'Rank discount: 0% (-0 VND)';
+                    }
+                }
                 
                 if (voucherAmount > 0) {
                     discountInfoHtml += `<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`;
@@ -872,6 +918,13 @@
                 }
                 // Fetch promotions
                 fetchEligiblePromotions();
+            } else {
+                // SỬA: Reset rank discount nếu không có member (Guest)
+                currentDiscountPercent = 0;
+                currentEarningRate = 0;
+                $('#rankDiscountPercent').val(0);
+                $('#openVoucherModalBtn').prop('disabled', true);
+                updatePriceAll();
             }
 
             // VOUCHER PICKER LOGIC
