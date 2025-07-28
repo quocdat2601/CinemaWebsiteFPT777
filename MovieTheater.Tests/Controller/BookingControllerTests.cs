@@ -338,40 +338,40 @@
 //            Assert.Equal("http://pay", result.Url);
 //        }
 
-//        [Fact]
-//        public void ProcessPayment_RedirectsToFailed_WhenNoUrl()
-//        {
-//            // Arrange
-//            var model = new PaymentViewModel { InvoiceId = "I1", OrderInfo = "info", TotalAmount = 123 };
-//            _vnPayService.Setup(v => v.CreatePaymentUrl(123, "info", "I1")).Throws(new Exception("fail"));
-//            var invoice = new Invoice
-//            {
-//                InvoiceId = "I1",
-//                MovieShow = new MovieShow
-//                {
-//                    Movie = new Movie { MovieNameEnglish = "Test Movie" },
-//                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
-//                    Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) },
-//                    CinemaRoom = new CinemaRoom { CinemaRoomName = "Room1" }
-//                },
-//                Seat = "A1",
-//                TotalMoney = 100m,
-//                ScheduleSeats = new List<ScheduleSeat> { new ScheduleSeat { SeatId = 1, MovieShowId = 1 } },
-//                PromotionDiscount = 0,
-//                VoucherId = null,
-//                UseScore = 0
-//            };
-//            _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
-//            var ctrl = BuildController();
-//            ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
-//                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
-//                Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
-//            // Act
-//            var result = ctrl.ProcessPayment(model) as RedirectToActionResult;
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal("Failed", result.ActionName);
-//        }
+        //[Fact]
+        //public void ProcessPayment_RedirectsToFailed_WhenNoUrl()
+        //{
+        //    // Arrange
+        //    var model = new PaymentViewModel { InvoiceId = "I1", OrderInfo = "info", TotalAmount = 123 };
+        //    _vnPayService.Setup(v => v.CreatePaymentUrl(123, "info", "I1")).Throws(new Exception("fail"));
+        //    var invoice = new Invoice
+        //    {
+        //        InvoiceId = "I1",
+        //        MovieShow = new MovieShow
+        //        {
+        //            Movie = new Movie { MovieNameEnglish = "Test Movie" },
+        //            ShowDate = DateOnly.FromDateTime(DateTime.Today),
+        //            Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) },
+        //            CinemaRoom = new CinemaRoom { CinemaRoomName = "Room1" }
+        //        },
+        //        Seat = "A1",
+        //        TotalMoney = 100m,
+        //        ScheduleSeats = new List<ScheduleSeat> { new ScheduleSeat { SeatId = 1, MovieShowId = 1 } },
+        //        PromotionDiscount = 0,
+        //        VoucherId = null,
+        //        UseScore = 0
+        //    };
+        //    _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
+        //    var ctrl = BuildController();
+        //    ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+        //        new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+        //        Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
+        //    // Act
+        //    var result = ctrl.ProcessPayment(model) as RedirectToActionResult;
+        //    // Assert
+        //    Assert.NotNull(result);
+        //    Assert.Equal("Failed", result.ActionName);
+        //}
 
 //        [Fact]
 //        public async Task CheckMemberDetails_ReturnsJson_WhenFound()

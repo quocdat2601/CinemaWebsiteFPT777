@@ -503,7 +503,7 @@ namespace MovieTheater.Controllers
                         voucherAmount = voucher.Value;
                     }
                 }
-                TempData["VoucherAmount"] = voucherAmount;
+                TempData["VoucherAmount"] = voucherAmount.ToString();
                 return RedirectToAction("Failed");
             }
         }
