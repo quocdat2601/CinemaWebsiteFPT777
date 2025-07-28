@@ -753,7 +753,8 @@ namespace MovieTheater.Service
                     return new BookingResult { Success = false, ErrorMessage = "Selected voucher does not exist." };
                 }
             }
-            int seatPromotionDiscount = (int?)priceResult.PromotionDiscountPercent ?? 0;
+            // SỬA: Sử dụng PromotionDiscountPercent từ client
+            int seatPromotionDiscount = (int)model.BookingDetails.PromotionDiscountPercent;
             var foodDiscounts = new List<object>();
             if (model.SelectedFoods != null)
             {
@@ -767,11 +768,15 @@ namespace MovieTheater.Service
                 food = foodDiscounts
             };
             string promotionDiscountJson = JsonConvert.SerializeObject(promotionDiscountObj);
-            // Tính lại tổng food sau giảm
-            decimal totalFoodDiscounted = model.SelectedFoods?.Sum(f => f.Price * f.Quantity) ?? 0;
-            decimal finalTotalPrice = priceResult.SeatTotalAfterDiscounts + totalFoodDiscounted;
-            // Trừ tiếp voucher, điểm nếu cần (đã tính trong priceResult.SeatTotalAfterDiscounts)
+            // SỬA: Sử dụng TotalPrice từ client thay vì tính lại
+            decimal finalTotalPrice = model.BookingDetails.TotalPrice;
             if (finalTotalPrice < 0) finalTotalPrice = 0;
+            
+            // Debug logging
+            Console.WriteLine($"[BookingDomainService] Client TotalPrice: {model.BookingDetails.TotalPrice}");
+            Console.WriteLine($"[BookingDomainService] Server calculated: {priceResult.SeatTotalAfterDiscounts + (model.SelectedFoods?.Sum(f => f.Price * f.Quantity) ?? 0)}");
+            Console.WriteLine($"[BookingDomainService] Final TotalPrice: {finalTotalPrice}");
+            Console.WriteLine($"[BookingDomainService] PromotionDiscountPercent: {model.BookingDetails.PromotionDiscountPercent}");
             // TẠO INVOICE_ID TĂNG DẦN DẠNG INVxxx
             string invoiceId = await _bookingService.GenerateInvoiceIdAsync();
             var invoice = new Invoice
@@ -982,7 +987,7 @@ namespace MovieTheater.Service
                 ShowTime = showTime,
                 VersionName = versionName,
                 SelectedSeats = seats,
-                TotalPrice = invoice.TotalMoney ?? 0,
+                TotalPrice = invoice.TotalMoney ?? 0, // SỬA: Sử dụng TotalMoney từ database
                 PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
@@ -1033,9 +1038,8 @@ namespace MovieTheater.Service
                 }
             }
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
-            if (totalPrice < 0) totalPrice = 0;
-            decimal grandTotal = totalPrice + totalFoodPrice;
+            // SỬA: Sử dụng TotalMoney từ database thay vì tính lại
+            decimal finalTotalPrice = invoice.TotalMoney ?? 0;
             var viewModel = new ConfirmTicketAdminViewModel
             {
                 BookingDetails = bookingDetails,
@@ -1053,7 +1057,7 @@ namespace MovieTheater.Service
                 Subtotal = subtotal,
                 RankDiscount = rankDiscount,
                 VoucherAmount = voucherAmount,
-                TotalPrice = grandTotal,
+                TotalPrice = finalTotalPrice, // SỬA: Sử dụng giá từ database
                 RankDiscountPercent = invoice.RankDiscountPercentage ?? 0,
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice

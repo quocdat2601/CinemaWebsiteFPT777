@@ -583,6 +583,34 @@
             $('#confirmTicketAdminBtn').click(function () {
                 const customerType = $('input[name="customerType"]:checked').val();
                 
+                // SỬA: Tính toán giá cuối cùng từ JavaScript
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                var totalFoodPrice = @Model.TotalFoodPrice;
+                var discountPercent = currentDiscountPercent || 0;
+                var discountAmount = 0;
+                
+                // Tính rank discount
+                if (customerType === 'member' && originalTotal > 0) {
+                    discountAmount = Math.round(originalTotal * (discountPercent / 100));
+                }
+                var afterRank = originalTotal - discountAmount;
+                if (afterRank < 0) afterRank = 0;
+                
+                // Tính voucher amount
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterRank - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+                
+                // Tính điểm sử dụng
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var pointValue = 1000;
+                var savings = useScore * pointValue;
+                var finalSeatPrice = afterVoucher - savings;
+                if (finalSeatPrice < 0) finalSeatPrice = 0;
+                
+                // Tổng cuối cùng
+                var finalTotal = finalSeatPrice + totalFoodPrice;
+                
                 var model = {
                     BookingDetails: {
                         MovieId: '@Model.BookingDetails.MovieId',
@@ -591,10 +619,10 @@
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
-                        TotalPrice: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        TotalPrice: finalTotal, // SỬA: Gửi giá cuối cùng
                         PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         MovieShowId: @Model.MovieShowId,
-                        PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
+                        PromotionDiscountPercent: discountPercent, // SỬA: Gửi discount hiện tại
                     },
                     CustomerType: customerType,
                     MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
@@ -637,6 +665,34 @@
             $('#createQRCodeBtn').click(function () {
                 const customerType = $('input[name="customerType"]:checked').val();
                 
+                // SỬA: Tính toán giá cuối cùng từ JavaScript (tương tự như Confirm button)
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                var totalFoodPrice = @Model.TotalFoodPrice;
+                var discountPercent = currentDiscountPercent || 0;
+                var discountAmount = 0;
+                
+                // Tính rank discount
+                if (customerType === 'member' && originalTotal > 0) {
+                    discountAmount = Math.round(originalTotal * (discountPercent / 100));
+                }
+                var afterRank = originalTotal - discountAmount;
+                if (afterRank < 0) afterRank = 0;
+                
+                // Tính voucher amount
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterRank - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+                
+                // Tính điểm sử dụng
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var pointValue = 1000;
+                var savings = useScore * pointValue;
+                var finalSeatPrice = afterVoucher - savings;
+                if (finalSeatPrice < 0) finalSeatPrice = 0;
+                
+                // Tổng cuối cùng
+                var finalTotal = finalSeatPrice + totalFoodPrice;
+                
                 var model = {
                     BookingDetails: {
                         MovieId: '@Model.BookingDetails.MovieId',
@@ -645,10 +701,10 @@
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
-                        TotalPrice: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        TotalPrice: finalTotal, // SỬA: Gửi giá cuối cùng
                         PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         MovieShowId: @Model.MovieShowId,
-                        PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
+                        PromotionDiscountPercent: discountPercent, // SỬA: Gửi discount hiện tại
                     },
                     CustomerType: customerType,
                     MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
