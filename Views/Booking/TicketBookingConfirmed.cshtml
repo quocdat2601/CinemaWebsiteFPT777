@@ -40,17 +40,16 @@
     var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
     decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
 
-    // Calculate the correct seat price (sum of booked/discounted prices)
-
+    // SỬA: Tính toán đúng Total Amount
+    // Lấy giá gốc của seat (sau promotion, trước rank discount)
     decimal seatPrice = booking != null && booking.SelectedSeats != null
         ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
-    // Use the backend-calculated, already-discounted total
-    decimal totalAmount = booking?.TotalPrice ?? 0;
-    decimal runningTotal = seatPrice + totalFoodPrice;
-    if (Model.RankDiscount > 0) runningTotal -= Model.RankDiscount;
-    if (Model.VoucherAmount > 0) runningTotal -= Model.VoucherAmount;
-    if (Model.UsedScoreValue > 0) runningTotal -= Model.UsedScoreValue;
-    if (runningTotal < 0) runningTotal = 0;
+    
+    // Sử dụng TotalPrice từ database (đã được tính đúng từ backend)
+    decimal finalTotalAmount = booking?.TotalPrice ?? 0;
+    
+    // Tính toán để hiển thị breakdown - sử dụng giá cuối cùng từ database
+    decimal runningTotal = finalTotalAmount;
 
     var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
 }
@@ -332,7 +331,7 @@
                             </table>
                         </div>
                     }
-                    @if (Model.Subtotal > 0)
+                    @if (Model.Subtotal > 0 || Model.RankDiscount > 0 || Model.VoucherAmount > 0 || Model.UsedScore > 0)
                     {
                         <div class="ticket-breakdown-card">
                             <div class="ticket-section-title">Price Breakdown</div>

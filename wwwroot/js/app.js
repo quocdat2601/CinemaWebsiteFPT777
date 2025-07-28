@@ -76,10 +76,81 @@ $(document).ready(() => {
     });
 });
 
-// Khởi tạo Swiper cho slide 2 (Now Showing)
+// Khởi tạo Swiper cho slide 2 (Now Showing), slide 3 (Coming Soon) và slide 4 (Promotion)
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof Swiper !== 'undefined') {
+        // Swiper cho Now Showing
         new Swiper('.nowshowing-swiper', {
+            slidesPerView: 4,
+            slidesPerGroup: 4,
+            spaceBetween: 16,
+            loop: true,
+            autoplay: false,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                480: {
+                    slidesPerView: 1,
+                    slidesPerGroup: 1,
+                    spaceBetween: 10,
+                },
+                640: {
+                    slidesPerView: 2,
+                    slidesPerGroup: 2,
+                    spaceBetween: 16,
+                },
+                900: {
+                    slidesPerView: 3,
+                    slidesPerGroup: 3,
+                    spaceBetween: 18,
+                },
+                1200: {
+                    slidesPerView: 4,
+                    slidesPerGroup: 4,
+                    spaceBetween: 20,
+                },
+            }
+        });
+
+        // Swiper cho Coming Soon
+        new Swiper('.comingsoon-swiper', {
+            slidesPerView: 4,
+            slidesPerGroup: 4,
+            spaceBetween: 16,
+            loop: true,
+            autoplay: false,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                480: {
+                    slidesPerView: 1,
+                    slidesPerGroup: 1,
+                    spaceBetween: 10,
+                },
+                640: {
+                    slidesPerView: 2,
+                    slidesPerGroup: 2,
+                    spaceBetween: 16,
+                },
+                900: {
+                    slidesPerView: 3,
+                    slidesPerGroup: 3,
+                    spaceBetween: 18,
+                },
+                1200: {
+                    slidesPerView: 4,
+                    slidesPerGroup: 4,
+                    spaceBetween: 20,
+                },
+            }
+        });
+
+        // Swiper cho Promotion
+        new Swiper('.promotion-swiper', {
             slidesPerView: 4,
             slidesPerGroup: 4,
             spaceBetween: 16,

@@ -42,15 +42,15 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
-                                            <label asp-for="TargetField" class="control-label">Target Table</label>
+                                            <label asp-for="TargetField" class="control-label"> Promotion type</label>
                                             <select asp-for="TargetField" class="form-control" id="TargetField">
                                                 <option value="">-- Select Table --</option>
                                                 <option value="Account">Account</option>
-                                                <option value="Invoice">Invoice</option>
+                                                <option value="Invoice">booking</option>
                                                 <option value="Member">Member</option>
                                                 <option value="Movie">Movie</option>
-                                                <option value="Seat">Seat</option>
-                                                <option value="Type">Type</option>
+                                                <option value="SeatType">SeatType</option>
+                                                <option value="Type">MovieType</option>
                                                 <option value="Food">Food</option>
                                             </select>
                                             <span asp-validation-for="TargetField" class="text-danger"></span>
@@ -142,36 +142,29 @@
 
         // Table columns mapping (update as needed)
         const tableColumns = {
-            Account: ["AccountId", "DateOfBirth", "RegisterDate", "RoleId", "Status", "Username", "RankId"],
-            Invoice: [ "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "Seat"],
-            Member: ["MemberId", "Score", "AccountId"],
-            Movie: ["MovieId", "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish"],
-            Seat: ["CinemaRoomId", "SeatColumn", "SeatRow", "SeatStatusId", "SeatTypeId", "SeatName"],
-            Type: ["TypeId", "TypeName"],
-            Food: ["FoodId", "FoodName", "Price", "Status", "Category"]
+            Account: [ "Address", "DateOfBirth", "Email", "Gender",  "PhoneNumber", "RegisterDate", "RoleId", "Status", "RankId"],
+            Invoice: [ "AddScore", "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "UseScore", "Seat", "AccountId"],
+            Member: [ "Score", "AccountId"],
+            Movie: [ "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish", "MovieNameVn", "LargeImage", "SmallImage", "TrailerUrl"],
+            SeatType: ["TypeName", "PricePercent", "ColorHex"],
+            Type: [ "TypeName"],
+            Food: [ "FoodName", "Price", "Status", "Category"]
         };
 
         // Column type mapping for all tables and columns
         const columnTypes = {
             Account: {
-                AccountId: "string",
                 Address: "string",
                 DateOfBirth: "date",
                 Email: "string",
-                FullName: "string",
                 Gender: "string",
-                IdentityCard: "string",
-                Image: "string",
-                Password: "string",
                 PhoneNumber: "string",
                 RegisterDate: "date",
                 RoleId: "number",
                 Status: "number",
-                Username: "string",
                 RankId: "number"
             },
             Invoice: {
-                InvoiceId: "string",
                 AddScore: "number",
                 BookingDate: "date",
                 MovieName: "string",
@@ -184,12 +177,10 @@
                 AccountId: "string"
             },
             Member: {
-                MemberId: "string",
                 Score: "number",
                 AccountId: "string"
             },
             Movie: {
-                MovieId: "string",
                 Actor: "string",
                 CinemaRoomId: "number",
                 Content: "string",
@@ -205,21 +196,15 @@
                 SmallImage: "string",
                 TrailerUrl: "string"
             },
-            Seat: {
-                SeatId: "number",
-                CinemaRoomId: "number",
-                SeatColumn: "string",
-                SeatRow: "number",
-                SeatStatusId: "number",
-                SeatTypeId: "number",
-                SeatName: "string"
+            SeatType: {
+                TypeName: "string",
+                PricePercent: "number",
+                ColorHex: "string"
             },
             Type: {
-                TypeId: "number",
                 TypeName: "string"
             },
             Food: {
-                FoodId: "number",
                 FoodName: "string",
                 Price: "number",
                 Status: "number",

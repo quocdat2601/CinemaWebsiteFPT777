@@ -760,7 +760,6 @@ main {
 #account-sidebar {
     background-color: var(--container-bg) !important;
     padding: 1.5rem 1rem;
-    border-radius: var(--border-radius);
     box-shadow: var(--shadow);
 }
 

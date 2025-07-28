@@ -56,14 +56,23 @@ namespace MovieTheater.Service
                     promotionDiscountPercent = Math.Round((discount / original) * 100);
                 }
             }
-            // Final seat total after all discounts
-            decimal seatTotalAfterDiscounts = promoSubtotal - rankDiscount - voucher - usedScoreValue;
-            if (seatTotalAfterDiscounts < 0) seatTotalAfterDiscounts = 0;
-            // Tổng cuối cùng = seat sau giảm + food
-            decimal totalPrice = seatTotalAfterDiscounts + totalFoodPrice;
+            
+            // SỬA: Tính toán đúng total price
+            // Seat total after rank discount and used score
+            decimal seatTotalAfterRankAndScore = promoSubtotal - rankDiscount - usedScoreValue;
+            if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
+            
+            // Add food price
+            decimal seatAndFoodTotal = seatTotalAfterRankAndScore + totalFoodPrice;
+            
+            // Apply voucher to total (seat + food)
+            decimal totalAfterVoucher = seatAndFoodTotal - voucher;
+            if (totalAfterVoucher < 0) totalAfterVoucher = 0;
+            
             // AddScore is based only on seat portion after discounts
             decimal earningRate = user?.Rank?.PointEarningPercentage ?? 1;
             int addScore = (int)Math.Floor((promoSubtotal - rankDiscount - usedScoreValue) * earningRate / 100 / 1000);
+            
             return new BookingPriceResult
             {
                 Subtotal = promoSubtotal,
@@ -77,7 +86,7 @@ namespace MovieTheater.Service
                 TotalFoodPrice = totalFoodPrice,
                 TotalPrice = totalPrice, // Đã sửa: tổng cuối cùng đúng logic
                 AddScore = addScore,
-                SeatTotalAfterDiscounts = seatTotalAfterDiscounts,
+                SeatTotalAfterDiscounts = seatTotalAfterRankAndScore,
                 SeatDetails = seats,
                 FoodDetails = foodDetails
             };

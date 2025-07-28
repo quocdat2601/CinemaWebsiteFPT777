@@ -7,6 +7,31 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
 
+<style>
+    /* Custom CSS để làm mờ navigation buttons */
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: rgba(255, 255, 255, 0.3) !important;
+        background-color: rgba(0, 0, 0, 0.1) !important;
+        border-radius: 50%;
+        width: 40px !important;
+        height: 40px !important;
+        transition: all 0.3s ease;
+    }
+    
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: rgba(255, 255, 255, 0.8) !important;
+        background-color: rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Ẩn navigation khi không cần thiết */
+    .swiper-button-disabled {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+</style>
+
 <div class="container mt-4">
     <h2 class="mb-4">Promotions!!!</h2>
 
