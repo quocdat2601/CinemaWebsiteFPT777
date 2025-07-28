@@ -37,7 +37,6 @@ namespace MovieTheater.Repository
         public Dictionary<DateOnly, List<string>> GetMovieShowSummaryByMonth(int year, int month);
         List<Models.Version> GetAllVersions();
         Models.Version? GetVersionById(int versionId);
-        
-
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId);
     }
 }

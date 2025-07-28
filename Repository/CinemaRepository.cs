@@ -28,13 +28,16 @@ namespace MovieTheater.Repository
             return _context.CinemaRooms
                 .Include(c => c.Version)
                 .Include(s => s.Status)
+                .Include(m => m.MovieShows)
                 .FirstOrDefault(a => a.CinemaRoomId == id);
         }
+
         public async Task<CinemaRoom?> GetByIdAsync(int? id)
         {
             return await _context.CinemaRooms
                 .Include(c => c.Version)
                 .Include(s => s.Status)
+                .Include(m => m.MovieShows)
                 .FirstOrDefaultAsync(a => a.CinemaRoomId == id);
         }
 
@@ -113,17 +116,33 @@ namespace MovieTheater.Repository
                 await Save();
             }
         }
-        public async Task Active(int id)
+
+        public async Task Active(CinemaRoom cinemaRoom)
         {
-            var cinemaRoom = await GetByIdAsync(id);
-            if (cinemaRoom != null)
+            var existingCinema = _context.CinemaRooms
+                           .Include(c => c.Seats)
+                           .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
+            try
             {
-                if (cinemaRoom.StatusId == 3)
+                if (existingCinema.StatusId == 3)
                 {
-                    cinemaRoom.StatusId = 1;
-                } else
-                    cinemaRoom.StatusId = 3;
+                    existingCinema.StatusId = 1;
+                    existingCinema.UnavailableEndDate = null;
+                    existingCinema.UnavailableStartDate = null;
+                    existingCinema.DisableReason = null;
+                }
+                else
+                {
+                    existingCinema.UnavailableEndDate = cinemaRoom.UnavailableEndDate;
+                    existingCinema.UnavailableStartDate = cinemaRoom.UnavailableStartDate;
+                    existingCinema.DisableReason = cinemaRoom.DisableReason;
+                    existingCinema.StatusId = 3;
+                }
                 await Save();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error activating cinema room: {ex.Message}", ex);
             }
         }
 

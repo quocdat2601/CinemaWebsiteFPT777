@@ -31,5 +31,6 @@ namespace MovieTheater.Service
         public List<MovieShow> GetMovieShowsByMovieId(string movieId);
         public List<Models.Version> GetAllVersions();
         public Models.Version? GetVersionById(int versionId);
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId);
     }
 }

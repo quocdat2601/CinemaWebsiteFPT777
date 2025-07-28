@@ -39,7 +39,7 @@ namespace MovieTheater.Service
             await _repository.Save();
         }
 
-        public bool Update(int id, CinemaRoom cinemaRoom)
+        public bool Update(CinemaRoom cinemaRoom)
         {
             try
             {
@@ -51,9 +51,10 @@ namespace MovieTheater.Service
                 return false;
             }
         }
-        public async Task Active(int id)
+        public bool Active(CinemaRoom cinemaRoom)
         {
-            await _repository.Active(id);
+            _repository.Active(cinemaRoom);
+            return true;
         }
 
         public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId){

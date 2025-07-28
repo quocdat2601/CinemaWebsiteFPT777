@@ -59,7 +59,7 @@ namespace MovieTheater.Controllers
         // POST: CinemaController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, CinemaRoom cinemaRoom, int VersionId)
+        public IActionResult Edit(CinemaRoom cinemaRoom, int VersionId)
         {
             if (!ModelState.IsValid)
             {
@@ -69,7 +69,7 @@ namespace MovieTheater.Controllers
                 return View(cinemaRoom);
             }
             cinemaRoom.VersionId = VersionId;
-            bool success = _cinemaService.Update(id, cinemaRoom);
+            bool success = _cinemaService.Update(cinemaRoom);
             if (!success)
             {
                 TempData["ErrorMessage"] = "Showroom updated unsuccessfully!";
@@ -78,12 +78,6 @@ namespace MovieTheater.Controllers
             }
             TempData["ToastMessage"] = "Showroom updated successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
-        }
-
-        // GET: CinemaController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
         }
 
         // POST: CinemaController/Delete/5
@@ -118,25 +112,36 @@ namespace MovieTheater.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult Active(int id)
+        {
+            var cinemaRoom = _cinemaService.GetById(id); 
+            if (cinemaRoom == null)
+            {
+                return NotFound(); 
+            }
+            return View(cinemaRoom);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Active(int id, IFormCollection collection)
+        public IActionResult Active(CinemaRoom cinemaRoom)
         {
             try
             {
-                var cinema = _cinemaService.GetById(id);
-                if (cinema == null)
+                bool success = _cinemaService.Active(cinemaRoom);
+                _cinemaService.SaveAsync();
+                if (!success)
                 {
-                    TempData["ToastMessage"] = "Showroom not found.";
+                    TempData["ErrorMessage"] = "Failed to update showroom status.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
                 }
-
-                await _cinemaService.Active(id);
+                TempData["ToastMessage"] = "Showroom status updated successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
             catch (Exception ex)
             {
-                TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
+                TempData["ErrorMessage"] = $"An error occurred while activating the showroom: {ex.Message}";
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
         }
@@ -148,6 +153,20 @@ namespace MovieTheater.Controllers
                 .Select(r => new { r.CinemaRoomId, r.CinemaRoomName })
                 .ToList();
             return Json(rooms);
+        }
+
+        [HttpGet]
+        public IActionResult GetMovieShowsByCinemaRoomGrouped(int cinemaRoomId)
+        {
+            var shows = _movieService.GetMovieShow()
+                .Where(ms => ms.CinemaRoomId == cinemaRoomId)
+                .GroupBy(ms => ms.ShowDate)
+                .OrderBy(g => g.Key)
+                .Select(g => new {
+                    date = g.Key.ToString("dd/MM/yyyy"),
+                    times = g.OrderBy(ms => ms.Schedule?.ScheduleTime).Select(ms => ms.Schedule?.ScheduleTime?.ToString("HH:mm")).ToList()
+                }).ToList();
+            return Json(shows);
         }
     }
 }

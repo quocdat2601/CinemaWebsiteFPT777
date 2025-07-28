@@ -290,5 +290,10 @@ namespace MovieTheater.Service
         {
             return _movieRepository.GetVersionById(versionId);
         }
+
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId)
+        {
+            return _movieRepository.GetMovieShowByCinemaRoomId(cinemaRoomId);
+        }
     }
 }

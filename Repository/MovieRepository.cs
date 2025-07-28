@@ -296,6 +296,16 @@ namespace MovieTheater.Repository
                 .FirstOrDefault(ms => ms.MovieShowId == id);
         }
 
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .FirstOrDefault(ms => ms.CinemaRoomId == cinemaRoomId);
+        }
+
         public List<MovieShow> GetMovieShowsByMovieId(string movieId)
         {
             return _context.MovieShows
