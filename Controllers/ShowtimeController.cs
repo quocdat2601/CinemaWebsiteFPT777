@@ -170,7 +170,7 @@ namespace MovieTheater.Controllers
                 .Select(g => new MovieShowtimeInfo
                 {
                     MovieId = g.Key.MovieId,
-                    MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
+                    MovieName = g.Key.MovieNameEnglish ?? "Unknown",
                     PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
                     VersionShowtimes = g.Where(ms => ms.Schedule != null && ms.Version != null)
                                         .GroupBy(ms => new { ms.VersionId, ms.Version.VersionName })

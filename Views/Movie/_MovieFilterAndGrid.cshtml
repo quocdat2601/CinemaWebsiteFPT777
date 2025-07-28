@@ -1,0 +1,54 @@
+@model IEnumerable<MovieTheater.ViewModels.MovieViewModel>
+@{
+    var allTypes = ViewBag.AllTypes as List<MovieTheater.Models.Type>;
+    var allVersions = ViewBag.AllVersions as List<MovieTheater.Models.Version>;
+    var selectedTypeIds = ViewBag.SelectedTypeIds as List<int> ?? new List<int>();
+    var selectedVersionIds = ViewBag.SelectedVersionIds as List<int> ?? new List<int>();
+}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <h1 class="header-title">Our Movies</h1>
+    </div>
+    <div class="col-md-6 d-flex justify-content-end">
+        <div style="width: 300px; margin-right: 50px">
+            <input type="text" id="searchInput" value="@ViewBag.SearchTerm" maxlength="50" class="form-control" placeholder="🔍 Search by movies.." />
+        </div>
+    </div>
+</div>
+<div class="filter-chips mb-4">
+    <div class="chip-row mb-3">
+        <span class="chip-label">Type(s)</span>
+        <div class="chip-content" id="typeChips">
+            @foreach (var type in allTypes)
+            {
+                var selected = selectedTypeIds.Contains(type.TypeId) ? "selected" : "";
+                <span class="chip @selected" data-typeid="@type.TypeId">
+                    @type.TypeName
+                    @if (selected != "")
+                    {
+                        <span class="chip-x" onclick="removeChip(event, 'type', @type.TypeId)">×</span>
+                    }
+                </span>
+            }
+        </div>
+    </div>
+    <div class="chip-row">
+        <span class="chip-label">Version(s)</span>
+        <div class="chip-content" id="versionChips">
+            @foreach (var version in allVersions)
+            {
+                var selected = selectedVersionIds.Contains(version.VersionId) ? "selected" : "";
+                <span class="chip @selected" data-versionid="@version.VersionId">
+                    @version.VersionName
+                    @if (selected != "")
+                    {
+                        <span class="chip-x" onclick="removeChip(event, 'version', @version.VersionId)">×</span>
+                    }
+                </span>
+            }
+        </div>
+    </div>
+</div>
+<main class="movie-grid" id="movieGrid">
+    @await Html.PartialAsync("_MovieGrid", Model)
+</main>

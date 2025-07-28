@@ -39,6 +39,7 @@ namespace MovieTheater.Repository
             return _context.Movies
                 .Include(m => m.Types)
                 .Include(m => m.Versions)
+                .Include(m => m.People)
                 .OrderBy(comparer => comparer.MovieId)
                 .ToList();
         }
@@ -52,6 +53,7 @@ namespace MovieTheater.Repository
                     .ThenInclude(ms => ms.Schedule)
                 .Include(m => m.MovieShows)
                     .ThenInclude(ms => ms.Version)
+                .Include(m => m.People)
                 .FirstOrDefault(m => m.MovieId == id);
         }
 
@@ -82,14 +84,12 @@ namespace MovieTheater.Repository
                 var existingMovie = _context.Movies
                     .Include(m => m.Types)
                     .Include(m => m.Versions)
+                    .Include(m => m.People)
                     .FirstOrDefault(m => m.MovieId == movie.MovieId);
 
                 if (existingMovie != null)
                 {
                     existingMovie.MovieNameEnglish = movie.MovieNameEnglish;
-                    existingMovie.MovieNameVn = movie.MovieNameVn;
-                    existingMovie.Actor = movie.Actor;
-                    existingMovie.Director = movie.Director;
                     existingMovie.Duration = movie.Duration;
                     existingMovie.FromDate = movie.FromDate;
                     existingMovie.ToDate = movie.ToDate;
@@ -98,6 +98,18 @@ namespace MovieTheater.Repository
                     existingMovie.TrailerUrl = movie.TrailerUrl;
                     existingMovie.LargeImage = movie.LargeImage;
                     existingMovie.SmallImage = movie.SmallImage;
+                    existingMovie.LogoImage = movie.LogoImage;
+
+                    // Update People collection
+                    existingMovie.People.Clear();
+                    foreach (var person in movie.People)
+                    {
+                        var existingPerson = _context.People.Find(person.PersonId);
+                        if (existingPerson != null)
+                        {
+                            existingMovie.People.Add(existingPerson);
+                        }
+                    }
 
                     // Clear existing types
                     existingMovie.Types.Clear();
@@ -465,7 +477,7 @@ namespace MovieTheater.Repository
             .Select(g => new MovieShowtimeInfo
             {
                 MovieId = g.Key.MovieId,
-                MovieName = g.Key.MovieNameEnglish ?? g.Key.MovieNameVn ?? "Unknown",
+                MovieName = g.Key.MovieNameEnglish ?? "Unknown",
                 PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
                 VersionShowtimes = g.Where(ms => ms.Schedule != null && ms.Version != null)
                                 .GroupBy(ms => new { ms.VersionId, ms.Version.VersionName })

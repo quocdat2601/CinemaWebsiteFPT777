@@ -7,13 +7,7 @@ public partial class Movie
 {
     public string MovieId { get; set; } = null!;
 
-    public string? Actor { get; set; }
-
-    public int? CinemaRoomId { get; set; }
-
     public string? Content { get; set; }
-
-    public string? Director { get; set; }
 
     public int? Duration { get; set; }
 
@@ -25,17 +19,19 @@ public partial class Movie
 
     public string? MovieNameEnglish { get; set; }
 
-    public string? MovieNameVn { get; set; }
-
     public string? LargeImage { get; set; }
 
     public string? SmallImage { get; set; }
 
     public string? TrailerUrl { get; set; }
 
+    public string? LogoImage { get; set; }
+
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
+
+    public virtual ICollection<Person> People { get; set; } = new List<Person>();
 
     public virtual ICollection<Type> Types { get; set; } = new List<Type>();
 

@@ -11,18 +11,8 @@ $(document).ready(() => {
         $('body').css('padding-top', $('.nav-wrapper').innerHeight())
     })
 
-    // set owl carousel
+    // set owl carousel cho các phần khác ngoài hero section
     let navText = ["<i class='bx bx-chevron-left'></i>", "<i class='bx bx-chevron-right'></i>"]
-
-    $('#hero-carousel').owlCarousel({
-        items: 1,
-        dots: false,
-        loop: true,
-        nav: true,
-        navText: navText,
-        autoplay: true,
-        autoplayHoverPause: true
-    })
 
     $('#top-movies-slide').owlCarousel({
         items: 2,
@@ -63,23 +53,6 @@ $(document).ready(() => {
         }
     })
 
-    // XÓA PHẦN NÀY VÌ ĐÃ CHUYỂN SANG SWIPER
-    // $('#nowshowing-carousel').owlCarousel({
-    //     items: 4,
-    //     dots: false,
-    //     nav: true,
-    //     navText: navText,
-    //     margin: 15,
-    //     loop: true,
-    //     autoplay: true,
-    //     autoplayHoverPause: true,
-    //     responsive: {
-    //         0: { items: 1 },
-    //         600: { items: 2 },
-    //         1000: { items: 4 }
-    //     }
-    // });
-
     // Hiệu ứng ripple cho nút .btn-hover
     $(document).on('click', '.btn-hover', function(e) {
         const btn = $(this);
@@ -101,4 +74,43 @@ $(document).ready(() => {
         // Xóa ripple sau khi animation xong
         setTimeout(() => ripple.remove(), 500);
     });
+});
+
+// Khởi tạo Swiper cho slide 2 (Now Showing)
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Swiper !== 'undefined') {
+        new Swiper('.nowshowing-swiper', {
+            slidesPerView: 4,
+            slidesPerGroup: 4,
+            spaceBetween: 16,
+            loop: true,
+            autoplay: false,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                480: {
+                    slidesPerView: 1,
+                    slidesPerGroup: 1,
+                    spaceBetween: 10,
+                },
+                640: {
+                    slidesPerView: 2,
+                    slidesPerGroup: 2,
+                    spaceBetween: 16,
+                },
+                900: {
+                    slidesPerView: 3,
+                    slidesPerGroup: 3,
+                    spaceBetween: 18,
+                },
+                1200: {
+                    slidesPerView: 4,
+                    slidesPerGroup: 4,
+                    spaceBetween: 20,
+                },
+            }
+        });
+    }
 });

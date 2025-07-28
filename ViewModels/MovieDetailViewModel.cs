@@ -10,23 +10,14 @@ namespace MovieTheater.ViewModels
         [Required(ErrorMessage = "Movie name (English) is required.")]
         public string? MovieNameEnglish { get; set; }
 
-        [Required(ErrorMessage = "Movie name (Vietnamese) is required.")]
-        public string? MovieNameVn { get; set; }
-
         [Required(ErrorMessage = "Start date is required.")]
         public DateOnly? FromDate { get; set; }
 
         [Required(ErrorMessage = "End date is required.")]
         public DateOnly? ToDate { get; set; }
 
-        [Required(ErrorMessage = "Actor is required.")]
-        public string? Actor { get; set; }
-
         [Required(ErrorMessage = "Production company is required.")]
         public string? MovieProductionCompany { get; set; }
-
-        [Required(ErrorMessage = "Director is required.")]
-        public string? Director { get; set; }
 
         [Required(ErrorMessage = "Duration is required.")]
         [Range(1, 500, ErrorMessage = "Duration must be between 1 and 500 minutes.")]
@@ -40,9 +31,11 @@ namespace MovieTheater.ViewModels
         public IFormFile? LargeImageFile { get; set; }
 
         public IFormFile? SmallImageFile { get; set; }
+        public IFormFile? LogoFile { get; set; }
 
         public string? LargeImage { get; set; }
         public string? SmallImage { get; set; }
+        public string? Logo { get; set; }
 
         public List<int> SelectedScheduleIds { get; set; } = new();
 
@@ -51,6 +44,11 @@ namespace MovieTheater.ViewModels
         public List<int> SelectedVersionIds { get; set; } = new();
         public List<int> SelectedCinemaRoomIds { get; set; } = new();
         public List<int> SelectedShowDateIds { get; set; } = new();
+        
+        // New properties for actor and director selection
+        public string? SelectedActorIds { get; set; }
+        public string? SelectedDirectorIds { get; set; }
+        
         public string? CinemaRoomName { get; set; }
         public List<Schedule>? AvailableSchedules { get; set; }
         public List<DateOnly>? AvailableShowDates { get; set; }
@@ -59,5 +57,7 @@ namespace MovieTheater.ViewModels
         public List<CinemaRoom> AvailableCinemaRooms { get; set; } = new();
         public List<MovieShow> CurrentMovieShows { get; set; } = new();
 
+        // List of people (actors and directors) associated with the movie
+        public List<Person> People { get; set; } = new();
     }
 }
