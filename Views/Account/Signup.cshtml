@@ -126,6 +126,35 @@ body.dark-mode .btn-primary {
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: #fff;
 }
+/* Password input container with icon inside */
+.password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    z-index: 10;
+    transition: color 0.3s ease;
+}
+
+.password-toggle-btn:hover {
+    color: #333;
+}
+
+.password-input-container .form-control {
+    padding-right: 40px;
+}
+
 @@media (max-width: 900px) {
     .signup-main-container {
         flex-direction: column;
@@ -171,13 +200,33 @@ body.dark-mode .btn-primary {
 
                         <div class="form-group">
                             <strong>Password</strong>
-                            <input type="password" class="form-control" asp-for="Password" placeholder="Password" />
+                            <div class="password-input-container">
+                                <input type="password" class="form-control" asp-for="Password" placeholder="Password" id="password" />
+                                <button class="password-toggle-btn" type="button" id="togglePassword">
+                                    <i class="fas fa-eye" id="passwordIcon"></i>
+                                </button>
+                            </div>
+                            <div class="password-requirements mt-2">
+                               
+                                <ul class="list-unstyled mt-1">
+                                    <li id="length-check"><small>• 8-16 characters</small></li>
+                                    <li id="uppercase-check"><small>• At least one uppercase letter</small></li>
+                                    <li id="lowercase-check"><small>• At least one lowercase letter</small></li>
+                                    <li id="number-check"><small>• At least one number</small></li>
+                                    <li id="special-check"><small>• At least one special character (!@@#$%^&*)</small></li>
+                                </ul>
+                            </div>
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
 
                         <div class="form-group">
                             <strong>Confirm Password</strong>
-                            <input type="password" class="form-control" asp-for="ConfirmPassword" placeholder="Confirm Password" />
+                            <div class="password-input-container">
+                                <input type="password" class="form-control" asp-for="ConfirmPassword" placeholder="Confirm Password" id="confirmPassword" />
+                                <button class="password-toggle-btn" type="button" id="toggleConfirmPassword">
+                                    <i class="fas fa-eye" id="confirmPasswordIcon"></i>
+                                </button>
+                            </div>
                             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                         </div>
 
@@ -228,7 +277,7 @@ body.dark-mode .btn-primary {
                             <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 mt-3">Sign Up</button>
+                        <button type="submit" class="btn btn-primary w-100 mt-3" id="signupBtn" disabled>Sign Up</button>
                         <p class="mt-3 text-center">
                             Already have an account? <a asp-controller="Account" asp-action="Login">Login</a>
                         </p>
@@ -236,6 +285,68 @@ body.dark-mode .btn-primary {
                 </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const passwordInput = document.getElementById('password');
+                const confirmPasswordInput = document.getElementById('confirmPassword');
+                const signupBtn = document.getElementById('signupBtn');
+                
+                // Toggle password visibility
+                const togglePassword = document.getElementById('togglePassword');
+                const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+                const passwordIcon = document.getElementById('passwordIcon');
+                const confirmPasswordIcon = document.getElementById('confirmPasswordIcon');
+                
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    passwordIcon.classList.toggle('fa-eye');
+                    passwordIcon.classList.toggle('fa-eye-slash');
+                });
+                
+                toggleConfirmPassword.addEventListener('click', function() {
+                    const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    confirmPasswordInput.setAttribute('type', type);
+                    confirmPasswordIcon.classList.toggle('fa-eye');
+                    confirmPasswordIcon.classList.toggle('fa-eye-slash');
+                });
+                
+                function validatePassword(password) {
+                    const requirements = {
+                        length: password.length >= 8 && password.length <= 16,
+                        uppercase: /[A-Z]/.test(password),
+                        lowercase: /[a-z]/.test(password),
+                        number: /\d/.test(password),
+                        special: /[!@@#$%^&*]/.test(password)
+                    };
+                    
+                    // Update visual indicators
+                    document.getElementById('length-check').style.color = requirements.length ? '#28a745' : '#dc3545';
+                    document.getElementById('uppercase-check').style.color = requirements.uppercase ? '#28a745' : '#dc3545';
+                    document.getElementById('lowercase-check').style.color = requirements.lowercase ? '#28a745' : '#dc3545';
+                    document.getElementById('number-check').style.color = requirements.number ? '#28a745' : '#dc3545';
+                    document.getElementById('special-check').style.color = requirements.special ? '#28a745' : '#dc3545';
+                    
+                    return Object.values(requirements).every(req => req);
+                }
+                
+                function validateForm() {
+                    const password = passwordInput.value;
+                    const confirmPassword = confirmPasswordInput.value;
+                    const isPasswordValid = validatePassword(password);
+                    const isConfirmPasswordValid = password === confirmPassword && password.length > 0;
+                    
+                    signupBtn.disabled = !(isPasswordValid && isConfirmPasswordValid);
+                }
+                
+                passwordInput.addEventListener('input', validateForm);
+                confirmPasswordInput.addEventListener('input', validateForm);
+                
+                // Initial validation
+                validateForm();
+            });
+        </script>
 
     @if (TempData["ToastMessage"] != null) 
     {

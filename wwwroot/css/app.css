@@ -873,9 +873,13 @@ footer.section {
     margin-bottom: 0 !important;
 }
 
-/* ===== Swiper (slide 2) & Modern Movie Heading ===== */
+/* ===== Swiper (slide 2, 3 & 4) & Modern Movie Heading ===== */
 .nowshowing-swiper .swiper-button-next,
-.nowshowing-swiper .swiper-button-prev {
+.nowshowing-swiper .swiper-button-prev,
+.comingsoon-swiper .swiper-button-next,
+.comingsoon-swiper .swiper-button-prev,
+.promotion-swiper .swiper-button-next,
+.promotion-swiper .swiper-button-prev {
     color: #ffe066;
     background: rgba(0,0,0,0.18);
     border-radius: 50%;
@@ -885,11 +889,19 @@ footer.section {
     transition: background 0.2s;
 }
 .nowshowing-swiper .swiper-button-next:hover,
-.nowshowing-swiper .swiper-button-prev:hover {
+.nowshowing-swiper .swiper-button-prev:hover,
+.comingsoon-swiper .swiper-button-next:hover,
+.comingsoon-swiper .swiper-button-prev:hover,
+.promotion-swiper .swiper-button-next:hover,
+.promotion-swiper .swiper-button-prev:hover {
     background: rgba(0,0,0,0.3);
 }
 .nowshowing-swiper .swiper-button-next:after,
-.nowshowing-swiper .swiper-button-prev:after {
+.nowshowing-swiper .swiper-button-prev:after,
+.comingsoon-swiper .swiper-button-next:after,
+.comingsoon-swiper .swiper-button-prev:after,
+.promotion-swiper .swiper-button-next:after,
+.promotion-swiper .swiper-button-prev:after {
     font-size: 1.5rem;
 }
 .modern-movie-heading {
@@ -964,6 +976,8 @@ footer.section {
     color: #181616 !important;
 }
 
+
+
 /* --- Book Now Button Hover Effect --- */
 .btn-warning, .btn-warning.btn-hover {
     background: linear-gradient(90deg, #ffe066 60%, #ffd700 100%);
@@ -982,4 +996,39 @@ footer.section {
 }
 .btn-warning.btn-hover::before {
     background-color: #fffbe6;
+}
+
+/* ===== Promotion Box Styles ===== */
+.promotion-box {
+    transition: box-shadow 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.promotion-box:hover {
+    box-shadow: 0 12px 36px rgba(255,224,102,0.25), 0 2px 12px rgba(192,57,43,0.10);
+    transform: translateY(-10px) scale(1.05);
+}
+
+.promotion-box .hover-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(120deg, rgba(255,224,102,0.10) 0%, rgba(192,57,43,0.13) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 2;
+    border-radius: 18px;
+}
+
+.promotion-box:hover .hover-overlay {
+    opacity: 1;
+}
+
+.promotion-box img {
+    transition: transform 0.3s;
+}
+
+.promotion-box:hover img {
+    transform: scale(1.07);
 }

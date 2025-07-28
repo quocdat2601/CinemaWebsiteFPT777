@@ -37,14 +37,20 @@ namespace MovieTheater.Controllers
                 }
             }
 
-            var movies = _movieService.GetAll().ToList();
+            // Get categorized movies
+            var currentlyShowingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails().ToList();
+            var comingSoonMovies = _movieService.GetComingSoonMoviesWithDetails().ToList();
             var promotions = _promotionService.GetAll();
             var people = _personRepository.GetAll().ToList();
+            var movies = _movieService.GetAll().ToList();
 
-            // Truyền movie đầu tiên làm Model (active movie)
-            Movie? activeMovie = movies.FirstOrDefault();
+            // Use first currently showing movie as active movie, fallback to coming soon
+            Movie? activeMovie = currentlyShowingMovies.FirstOrDefault() ?? comingSoonMovies.FirstOrDefault();
+            
             ViewBag.People = people;
-            ViewBag.Movies = movies;
+            ViewBag.Movies = movies; // Use currently showing movies for hero section
+            ViewBag.CurrentlyShowingMovies = currentlyShowingMovies; // For "Now Showing" slide
+            ViewBag.ComingSoonMovies = comingSoonMovies; // For "Upcoming Movies" slide
             ViewBag.Promotions = promotions;
 
             return View(activeMovie);
