@@ -185,7 +185,7 @@
                     <div class="card-body p-4">
                         <div class="price-row">
                             <span>Seat Price:</span>
-                            <span class="fw-semibold">@Model.TotalSeatPrice.ToString("N0") VND</span>
+                            <span class="fw-semibold">@Model.Subtotal.ToString("N0") VND</span>
                         </div>
                         @if (Model.TotalFoodPrice > 0)
                         {
@@ -194,9 +194,30 @@
                                 <span class="fw-semibold">@Model.TotalFoodPrice.ToString("N0") VND</span>
                             </div>
                         }
+                        @if (Model.RankDiscount > 0)
+                        {
+                            <div class="price-row discount-row">
+                                <span>Rank Discount:</span>
+                                <span class="fw-semibold text-success">-@Model.RankDiscount.ToString("N0") VND</span>
+                            </div>
+                        }
+                        @if (Model.VoucherAmount > 0)
+                        {
+                            <div class="price-row discount-row">
+                                <span>Voucher:</span>
+                                <span class="fw-semibold text-success">-@Model.VoucherAmount.ToString("N0") VND</span>
+                            </div>
+                        }
+                        @if (Model.UsedScoreValue > 0)
+                        {
+                            <div class="price-row discount-row">
+                                <span>Points Used:</span>
+                                <span class="fw-semibold text-success">-@Model.UsedScoreValue.ToString("N0") VND</span>
+                            </div>
+                        }
                         <hr class="my-3">
                         <div class="price-row total-row">
-                            <span class="fw-bold fs-5">Total Amount:</span>
+                            <span class="fw-bold fs-5">Total Price:</span>
                             <span class="fw-bold fs-4 text-primary">@Model.TotalAmount.ToString("N0") VND</span>
                         </div>
                     </div>
@@ -212,6 +233,10 @@
                         <input type="hidden" asp-for="OrderInfo" />
                         <input type="hidden" asp-for="TotalSeatPrice" />
                         <input type="hidden" asp-for="TotalFoodPrice" />
+                        <input type="hidden" asp-for="Subtotal" />
+                        <input type="hidden" asp-for="RankDiscount" />
+                        <input type="hidden" asp-for="VoucherAmount" />
+                        <input type="hidden" asp-for="UsedScoreValue" />
                         <button type="submit" class="btn btn-success btn-lg rounded-pill py-3 fw-semibold w-100">
                             <i class="fas fa-credit-card me-2"></i>Pay with VNPAY
                         </button>

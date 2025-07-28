@@ -483,7 +483,11 @@ namespace MovieTheater.Controllers
                 OrderInfo = $"Payment for movie ticket {sanitizedMovieName} - {invoice.Seat.Replace(",", " ")}",
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice,
-                TotalSeatPrice = seatAfterDiscounts
+                TotalSeatPrice = seatAfterDiscounts,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
+                VoucherAmount = voucherAmount,
+                UsedScoreValue = usedScoreValue
             };
 
             return View("Payment", viewModel);
