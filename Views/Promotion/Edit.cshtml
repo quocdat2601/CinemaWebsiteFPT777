@@ -155,35 +155,28 @@
 
         // Table columns mapping (update as needed)
         const tableColumns = {
-            Account: ["AccountId", "Address", "DateOfBirth", "Email", "FullName", "Gender", "IdentityCard", "Image", "Password", "PhoneNumber", "RegisterDate", "RoleId", "Status", "Username", "RankId"],
-            Invoice: ["InvoiceId", "AddScore", "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "UseScore", "Seat", "AccountId"],
-            Member: ["MemberId", "Score", "AccountId"],
-            Movie: ["MovieId", "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish", "MovieNameVn", "LargeImage", "SmallImage", "TrailerUrl"],
-            SeatType: ["SeatTypeId", "TypeName", "PricePercent", "ColorHex"],
-            Type: ["TypeId", "TypeName"],
-            Food: ["FoodId", "FoodName", "Price", "Status", "Category"]
+            Account: [ "Address", "DateOfBirth", "Email", "Gender",  "PhoneNumber", "RegisterDate", "RoleId", "Status", "RankId"],
+            Invoice: [ "AddScore", "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "UseScore", "Seat", "AccountId"],
+            Member: [ "Score", "AccountId"],
+            Movie: [ "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish", "MovieNameVn", "LargeImage", "SmallImage", "TrailerUrl"],
+            SeatType: ["TypeName", "PricePercent", "ColorHex"],
+            Type: [ "TypeName"],
+            Food: [ "FoodName", "Price", "Status", "Category"]
         };
 
         const columnTypes = {
             Account: {
-                AccountId: "string",
                 Address: "string",
                 DateOfBirth: "date",
                 Email: "string",
-                FullName: "string",
                 Gender: "string",
-                IdentityCard: "string",
-                Image: "string",
-                Password: "string",
                 PhoneNumber: "string",
                 RegisterDate: "date",
                 RoleId: "number",
                 Status: "number",
-                Username: "string",
                 RankId: "number"
             },
             Invoice: {
-                InvoiceId: "string",
                 AddScore: "number",
                 BookingDate: "date",
                 MovieName: "string",
@@ -196,12 +189,10 @@
                 AccountId: "string"
             },
             Member: {
-                MemberId: "string",
                 Score: "number",
                 AccountId: "string"
             },
             Movie: {
-                MovieId: "string",
                 Actor: "string",
                 CinemaRoomId: "number",
                 Content: "string",
@@ -218,17 +209,14 @@
                 TrailerUrl: "string"
             },
             SeatType: {
-                SeatTypeId: "number",
                 TypeName: "string",
                 PricePercent: "number",
                 ColorHex: "string"
             },
             Type: {
-                TypeId: "number",
                 TypeName: "string"
             },
             Food: {
-                FoodId: "number",
                 FoodName: "string",
                 Price: "number",
                 Status: "number",
