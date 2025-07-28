@@ -1,0 +1,330 @@
+/* BOOKING MODAL STYLES */
+.modern-booking-modal {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+}
+
+.modern-booking-header {
+  background: var(--primary-gradient);
+  border-bottom: none;
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.modern-booking-header .modal-title {
+  color: var(--text-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.modern-btn-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  transition: all 0.3s ease;
+}
+
+.modern-btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.modern-booking-body {
+  padding: var(--spacing-xl);
+}
+
+/* BOOKING STEPS */
+.booking-step {
+  margin-bottom: var(--spacing-lg);
+}
+
+.booking-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.booking-label i {
+  color: var(--text-accent);
+  font-size: var(--font-size-lg);
+}
+
+.modern-select {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  transition: all 0.3s ease;
+}
+
+.modern-select:focus {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.modern-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modern-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: var(--spacing-sm);
+}
+
+/* CONTINUE BUTTON */
+.modern-continue-btn {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--primary-gradient);
+  border: none;
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-continue-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.modern-continue-btn:hover::before {
+  left: 100%;
+}
+
+.modern-continue-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.modern-continue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* TRAILER MODAL */
+.modern-modal {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+}
+
+.modern-modal-header {
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.modern-modal-header .modal-title {
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.modern-modal-body {
+  padding: 0;
+}
+
+.trailer-container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.trailer-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* STEP HIGHLIGHTING & HELPER TEXT */
+.step-active {
+  border: 2px solid #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background: rgba(102, 126, 234, 0.08);
+  transition: all 0.3s ease;
+  transform: scale(1.02);
+}
+
+.step-active:focus {
+  border-color: #4facfe !important;
+  box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.25);
+}
+
+/* Disabled/Inactive steps */
+select:disabled {
+  opacity: 0.5;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+  border-color: #dee2e6;
+}
+
+/* Step labels */
+.form-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.form-label.active-step {
+  color: #667eea;
+  font-weight: 700;
+}
+
+.form-label.inactive-step {
+  color: #6c757d;
+  opacity: 0.7;
+}
+
+.step-helper-text {
+  font-size: 0.9rem;
+  color: #667eea;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  min-height: 1.2em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 0.3s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(102, 126, 234, 0.1);
+  border-left: 3px solid #667eea;
+}
+
+.step-helper-text.error {
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+  border-left-color: #dc3545;
+}
+
+.step-helper-text.success {
+  color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+  border-left-color: #28a745;
+}
+
+/* Container styling for better visual separation */
+.booking-step {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.booking-step.active {
+  background: rgba(102, 126, 234, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.booking-step.inactive {
+  opacity: 0.6;
+  background: #f8f9fa;
+}
+
+/* Continue button states */
+.booking-btn-gradient {
+  transition: all 0.3s ease;
+}
+
+.booking-btn-gradient:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.booking-btn-gradient.ready {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+}
+
+.booking-btn-gradient.ready:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .modern-booking-body {
+    padding: var(--spacing-lg);
+  }
+
+  .modern-booking-header {
+    padding: var(--spacing-md);
+  }
+
+  .modern-booking-header .modal-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .modern-continue-btn {
+    font-size: var(--font-size-base);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-label {
+    font-size: var(--font-size-sm);
+  }
+
+  .modern-select {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
