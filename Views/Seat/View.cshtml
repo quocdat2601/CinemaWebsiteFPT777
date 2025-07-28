@@ -142,24 +142,33 @@
 
                                                 var calculatedPrice = basePrice * versionMulti;
 
-                                                <div class="seat @(isDisabledType ? "disabled" : "") @(isBooked ? "booked" : "") @(seatType?.TypeName?.ToLower())"
-                                                     data-seat-id="@seat.SeatId"
-                                                     data-seat-name="@seat.SeatName"
-                                                     data-seat-type="@seatType?.TypeName"
-                                                     data-seat-price="@calculatedPrice"
-                                                     data-base-price="@(basePrice )"
-                                                     data-version-multi="@versionMulti"
-                                                     data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
-                                                     @(coupleSeatPairs.ContainsKey(seat.SeatId) ? "data-couple-seat=true" : "")
-                                                @(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
-                                                    <div class="seat-inner">
-                                                        <span class="seat-number">@seat.SeatName</span>
-                                                        @if (coupleSeatPairs.ContainsKey(seat.SeatId))
-                                                        {
-                                                            <span class="couple-indicator">❤️</span>
-                                                        }
+                                                if (isDisabledType)
+                                                {
+                                                    // Render placeholder để giữ nguyên vị trí
+                                                    <div class="seat empty"></div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="seat @(isBooked ? "booked" : "") @(seatType?.TypeName?.ToLower())"
+                                                         data-seat-id="@seat.SeatId"
+                                                         data-seat-name="@seat.SeatName"
+                                                         data-seat-type="@seatType?.TypeName"
+                                                         data-seat-price="@calculatedPrice"
+                                                         data-base-price="@(basePrice )"
+                                                         data-version-multi="@versionMulti"
+                                                         data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
+                                                         @(coupleSeatPairs.ContainsKey(seat.SeatId) ? "data-couple-seat=true" : "")
+                                                    @(isBooked ? "" : "onclick=selectSeat(this)")>
+                                                        <div class="seat-inner">
+                                                            <span class="seat-number">@seat.SeatName</span>
+                                                            @if (coupleSeatPairs.ContainsKey(seat.SeatId))
+                                                            {
+                                                                <span class="couple-indicator">❤️</span>
+                                                            }
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                }
+                                                // Nếu là ghế Disabled thì không render gì cả
                                             }
 
                                             else

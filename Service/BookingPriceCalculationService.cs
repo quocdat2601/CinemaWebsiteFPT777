@@ -84,7 +84,7 @@ namespace MovieTheater.Service
                 UseScore = usedScore,
                 UseScoreValue = usedScoreValue,
                 TotalFoodPrice = totalFoodPrice,
-                TotalPrice = totalPrice, // Đã sửa: tổng cuối cùng đúng logic
+                TotalPrice = totalAfterVoucher, // Đã sửa: tổng cuối cùng đúng logic
                 AddScore = addScore,
                 SeatTotalAfterDiscounts = seatTotalAfterRankAndScore,
                 SeatDetails = seats,
