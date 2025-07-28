@@ -88,6 +88,11 @@ namespace MovieTheater.Service
         private bool IsPromotionEligibleNew(Promotion promotion, PromotionCheckContext context)
         {
             if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) return true;
+            
+            // Debug log để theo dõi
+            Console.WriteLine($"[PromotionService] Checking promotion: {promotion.Title}");
+            Console.WriteLine($"[PromotionService] Context - SeatTypeNames: [{string.Join(", ", context.SelectedSeatTypeNames)}]");
+            
             foreach (var condition in promotion.PromotionConditions)
             {
                 switch (condition.TargetField?.ToLower())
@@ -101,6 +106,56 @@ namespace MovieTheater.Service
                             case "<=": if (!(context.SeatCount <= seatTarget)) return false; break;
                             case "<": if (!(context.SeatCount < seatTarget)) return false; break;
                             case "!=": if (!(context.SeatCount != seatTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "seattypeid":
+                        // Kiểm tra SeatTypeId của các ghế đã chọn
+                        if (!int.TryParse(condition.TargetValue, out int seatTypeTarget)) return false;
+                        var selectedSeatTypes = context.SelectedSeatTypeIds ?? new List<int>();
+                        if (!selectedSeatTypes.Any()) return false;
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": 
+                                if (!selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
+                            case "!=": 
+                                if (selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "typename":
+                        // Kiểm tra TypeName của các ghế đã chọn
+                        var selectedTypeNames = context.SelectedSeatTypeNames ?? new List<string>();
+                        if (!selectedTypeNames.Any()) return false;
+                        
+                        Console.WriteLine($"[PromotionService] Checking TypeName condition: {condition.TargetValue} vs [{string.Join(", ", selectedTypeNames)}]");
+                        
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": 
+                                var isMatch = selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase));
+                                Console.WriteLine($"[PromotionService] TypeName match result: {isMatch}");
+                                if (!isMatch) return false; break;
+                            case "!=": 
+                                var isNotMatch = selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase));
+                                Console.WriteLine($"[PromotionService] TypeName not match result: {isNotMatch}");
+                                if (isNotMatch) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "pricepercent":
+                        // Kiểm tra PricePercent của các ghế đã chọn
+                        var selectedPricePercents = context.SelectedSeatTypePricePercents ?? new List<decimal>();
+                        if (!selectedPricePercents.Any()) return false;
+                        if (!decimal.TryParse(condition.TargetValue, out decimal priceTarget)) return false;
+                        switch (condition.Operator)
+                        {
+                            case ">=": if (!selectedPricePercents.Any(pp => pp >= priceTarget)) return false; break;
+                            case ">": if (!selectedPricePercents.Any(pp => pp > priceTarget)) return false; break;
+                            case "<=": if (!selectedPricePercents.Any(pp => pp <= priceTarget)) return false; break;
+                            case "<": if (!selectedPricePercents.Any(pp => pp < priceTarget)) return false; break;
+                            case "=": case "==": if (!selectedPricePercents.Any(pp => pp == priceTarget)) return false; break;
+                            case "!=": if (!selectedPricePercents.Any(pp => pp != priceTarget)) return false; break;
                             default: return false;
                         }
                         break;
@@ -275,6 +330,10 @@ namespace MovieTheater.Service
         public string MovieId { get; set; }
         public string MovieName { get; set; }
         public DateTime ShowDate { get; set; }
+        // Thêm các trường cho SeatType
+        public List<int> SelectedSeatTypeIds { get; set; } = new List<int>();
+        public List<string> SelectedSeatTypeNames { get; set; } = new List<string>();
+        public List<decimal> SelectedSeatTypePricePercents { get; set; } = new List<decimal>();
         // Thêm các trường khác nếu cần
     }
 }

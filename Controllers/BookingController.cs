@@ -42,6 +42,7 @@ namespace MovieTheater.Controllers
         public string ShowTime { get; set; }
         public string MemberId { get; set; }
         public string AccountId { get; set; }
+        public List<int> SelectedSeatIds { get; set; } = new List<int>();
     }
 
     public class BookingController : Controller
@@ -247,6 +248,18 @@ namespace MovieTheater.Controllers
                 MovieName = movie.MovieNameEnglish,
                 ShowDate = showDate.ToDateTime(TimeOnly.MinValue)
             };
+
+            // Thêm thông tin SeatType cho promotion context
+            if (selectedSeatIds != null)
+            {
+                var selectedSeats = _context.Seats
+                    .Include(s => s.SeatType)
+                    .Where(s => selectedSeatIds.Contains(s.SeatId))
+                    .ToList();
+                context.SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList();
+                context.SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+                context.SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList();
+            }
             var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(context);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
 
@@ -490,7 +503,7 @@ namespace MovieTheater.Controllers
                         voucherAmount = voucher.Value;
                     }
                 }
-                TempData["VoucherAmount"] = voucherAmount;
+                TempData["VoucherAmount"] = voucherAmount.ToString();
                 return RedirectToAction("Failed");
             }
         }
@@ -795,14 +808,25 @@ namespace MovieTheater.Controllers
         {
             try
             {
-                // Sử dụng method hiện có để lấy promotion hợp lệ
+                // Lấy thông tin ghế đã chọn từ request
+                var selectedSeatIds = request.SelectedSeatIds ?? new List<int>();
+                
+                // Lấy thông tin SeatType từ các ghế đã chọn
+                var selectedSeats = _context.Seats
+                    .Include(s => s.SeatType)
+                    .Where(s => selectedSeatIds.Contains(s.SeatId))
+                    .ToList();
+
                 var promotionContext = new PromotionCheckContext
                 {
                     MemberId = request.MemberId,
-                    SeatCount = 1, // Giả sử 1 ghế để kiểm tra
+                    SeatCount = selectedSeatIds.Count,
                     MovieId = request.MovieId,
                     MovieName = "", // Sẽ được lấy từ movie service
-                    ShowDate = DateTime.Parse(request.ShowDate)
+                    ShowDate = DateTime.Parse(request.ShowDate),
+                    SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList(),
+                    SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList(),
+                    SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList()
                 };
 
                 // Lấy tất cả promotion và kiểm tra từng cái
@@ -815,10 +839,13 @@ namespace MovieTheater.Controllers
                     var context = new PromotionCheckContext
                     {
                         MemberId = request.MemberId,
-                        SeatCount = 1,
+                        SeatCount = selectedSeatIds.Count,
                         MovieId = request.MovieId,
                         MovieName = "",
-                        ShowDate = DateTime.Parse(request.ShowDate)
+                        ShowDate = DateTime.Parse(request.ShowDate),
+                        SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList(),
+                        SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList(),
+                        SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList()
                     };
 
                     // Sử dụng logic từ PromotionService để kiểm tra
@@ -868,6 +895,49 @@ namespace MovieTheater.Controllers
                             case "<=": if (!(context.SeatCount <= seatTarget)) return false; break;
                             case "<": if (!(context.SeatCount < seatTarget)) return false; break;
                             case "!=": if (!(context.SeatCount != seatTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "seattypeid":
+                        // Kiểm tra SeatTypeId của các ghế đã chọn
+                        if (!int.TryParse(condition.TargetValue, out int seatTypeTarget)) return false;
+                        var selectedSeatTypes = context.SelectedSeatTypeIds ?? new List<int>();
+                        if (!selectedSeatTypes.Any()) return false;
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": 
+                                if (!selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
+                            case "!=": 
+                                if (selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "typename":
+                        // Kiểm tra TypeName của các ghế đã chọn
+                        var selectedTypeNames = context.SelectedSeatTypeNames ?? new List<string>();
+                        if (!selectedTypeNames.Any()) return false;
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": 
+                                if (!selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
+                            case "!=": 
+                                if (selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "pricepercent":
+                        // Kiểm tra PricePercent của các ghế đã chọn
+                        var selectedPricePercents = context.SelectedSeatTypePricePercents ?? new List<decimal>();
+                        if (!selectedPricePercents.Any()) return false;
+                        if (!decimal.TryParse(condition.TargetValue, out decimal priceTarget)) return false;
+                        switch (condition.Operator)
+                        {
+                            case ">=": if (!selectedPricePercents.Any(pp => pp >= priceTarget)) return false; break;
+                            case ">": if (!selectedPricePercents.Any(pp => pp > priceTarget)) return false; break;
+                            case "<=": if (!selectedPricePercents.Any(pp => pp <= priceTarget)) return false; break;
+                            case "<": if (!selectedPricePercents.Any(pp => pp < priceTarget)) return false; break;
+                            case "=": case "==": if (!selectedPricePercents.Any(pp => pp == priceTarget)) return false; break;
+                            case "!=": if (!selectedPricePercents.Any(pp => pp != priceTarget)) return false; break;
                             default: return false;
                         }
                         break;
