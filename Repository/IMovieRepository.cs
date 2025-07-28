@@ -38,6 +38,10 @@ namespace MovieTheater.Repository
         List<Models.Version> GetAllVersions();
         Models.Version? GetVersionById(int versionId);
         
-
+        // New methods for categorizing movies
+        List<Movie> GetCurrentlyShowingMovies();
+        List<Movie> GetComingSoonMovies();
+        List<Movie> GetCurrentlyShowingMoviesWithDetails();
+        List<Movie> GetComingSoonMoviesWithDetails();
     }
 }
