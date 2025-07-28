@@ -1,7 +1,7 @@
 ﻿@model MovieTheater.ViewModels.BookingSuccessViewModel
 @{
     ViewBag.Title = "Booking Successful";
-    ViewBag.CurrentStep = 5;
+    ViewBag.CurrentStep = 4;
     var booking = Model.BookingDetails;
     var seatDetails = booking.SelectedSeats ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
     var selectedFoods = Model.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();

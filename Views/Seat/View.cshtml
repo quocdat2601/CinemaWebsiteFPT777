@@ -1,7 +1,7 @@
 ﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
 
 @{
-    ViewBag.CurrentStep = 3;
+    ViewBag.CurrentStep = 2;
 }
 @Html.Partial("_BookingProgress")
 
@@ -386,11 +386,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="text-center mt-4">
-				<button id="continueToFoodBtn" class="btn btn-primary" style="display:none;">
-					Continue <span class="material-icons" style="vertical-align:middle;">arrow_forward</span>
-				</button>
-			</div>
+
 
 			<!-- FOOD & DRINK SECTION -->
 			<div class="food-selection-section" id="foodSelectionArea" style="display:none;">
@@ -425,7 +421,7 @@
 		<!-- FIXED SIDEBAR -->
 		<div class="col-lg-4 col-md-12">
 			<div class="fixed-sidebar">
-				<div id="selectionSummary">
+				
 					<div class="summary-block">
 						<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
 							<span class="summary-value">@Model.CinemaRoomName</span>
@@ -460,8 +456,8 @@
 							}
 						</div>
 					</div>
-				</div>
-			</div>
+				
+			</iv>
 		</div>
 	</div>
 </div> <!-- Đóng mainBookingArea -->
@@ -687,33 +683,49 @@
 
 		document.getElementById('bookButton').addEventListener('click', function () {
 			if (this.disabled || selectedSeats.size === 0) return;
-			const selectedSeatIds = Array.from(selectedSeats);
-			const data = {
-				movieId: '@movieId',
-				showDate: '@date.ToString("yyyy-MM-dd")',
-				showTime: '@time',
-				selectedSeatIds: selectedSeatIds,
-				movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
-			};
-			const params = new URLSearchParams();
-			for (const key in data) {
-				if (Array.isArray(data[key])) {
-					data[key].forEach(item => params.append(key, item));
-				} else {
-					params.append(key, data[key]);
+			
+			// Kiểm tra xem đang ở phần chọn ghế hay chọn đồ ăn
+			const seatSelectionArea = document.getElementById('seatSelectionArea');
+			const foodSelectionArea = document.getElementById('foodSelectionArea');
+			
+			if (seatSelectionArea.style.display !== 'none') {
+				// Đang ở phần chọn ghế, chuyển sang phần chọn đồ ăn
+				seatSelectionArea.style.display = 'none';
+				foodSelectionArea.style.display = '';
+				updateProgressBar();
+				foodSelectionArea.scrollIntoView({ behavior: 'smooth' });
+				// Thay đổi text của nút
+				this.innerHTML = 'Continue to Payment <span class="continue-arrow">&#8594;</span>';
+			} else {
+				// Đang ở phần chọn đồ ăn, chuyển sang thanh toán
+				const selectedSeatIds = Array.from(selectedSeats);
+				const data = {
+					movieId: '@movieId',
+					showDate: '@date.ToString("yyyy-MM-dd")',
+					showTime: '@time',
+					selectedSeatIds: selectedSeatIds,
+					movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
+				};
+				const params = new URLSearchParams();
+				for (const key in data) {
+					if (Array.isArray(data[key])) {
+						data[key].forEach(item => params.append(key, item));
+					} else {
+						params.append(key, data[key]);
+					}
 				}
-			}
-			// Gửi foodId và quantity
-			for (const foodId in selectedFoods) {
-				if (selectedFoods[foodId] > 0) {
-					params.append('foodIds', foodId);
-					params.append('foodQtys', selectedFoods[foodId]);
+				// Gửi foodId và quantity
+				for (const foodId in selectedFoods) {
+					if (selectedFoods[foodId] > 0) {
+						params.append('foodIds', foodId);
+						params.append('foodQtys', selectedFoods[foodId]);
+					}
 				}
+				const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+				window.location.href = isAdminSell
+					? `/Booking/ConfirmTicketForAdmin?${params.toString()}`
+					: `/Booking/Information?${params.toString()}`;
 			}
-			const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
-			window.location.href = isAdminSell
-				? `/Booking/ConfirmTicketForAdmin?${params.toString()}`
-				: `/Booking/Information?${params.toString()}`;
 		});
 
 		// SỬA LỖI: Chỉ gán sự kiện nếu tồn tại retryBtn
@@ -726,19 +738,20 @@
 		}
 
 		function updateContinueButtonState() {
-			const btn = document.getElementById('continueToFoodBtn');
+			const btn = document.getElementById('bookButton');
 			if (!btn) return;
-			btn.style.display = (selectedSeats.size > 0 && document.getElementById('seatSelectionArea').style.display !== 'none') ? '' : 'none';
+			
+			const seatSelectionArea = document.getElementById('seatSelectionArea');
+			const foodSelectionArea = document.getElementById('foodSelectionArea');
+			
+			if (seatSelectionArea.style.display !== 'none') {
+				// Đang ở phần chọn ghế
+				btn.innerHTML = 'Continue to Food <span class="continue-arrow">&#8594;</span>';
+			} else {
+				// Đang ở phần chọn đồ ăn
+				btn.innerHTML = 'Continue to Payment <span class="continue-arrow">&#8594;</span>';
+			}
 		}
-
-		// Khi bấm Continue, ẩn ghế, hiện food
-		document.getElementById('continueToFoodBtn').addEventListener('click', function() {
-			document.getElementById('seatSelectionArea').style.display = 'none';
-			document.getElementById('foodSelectionArea').style.display = '';
-			this.style.display = 'none'; // Ẩn nút Continue khi đã sang phần food
-			updateProgressBar();
-			document.getElementById('foodSelectionArea').scrollIntoView({ behavior: 'smooth' });
-		});
 
 		// Đảm bảo nút quay lại chọn ghế hoạt động
 		document.addEventListener('DOMContentLoaded', function () {
