@@ -4,6 +4,7 @@ namespace MovieTheater.ViewModels
     {
         // Today's summary
         public decimal RevenueToday { get; set; }
+        public int TotalBookings { get; set; }
         public int BookingsToday { get; set; }
         public int TicketsSoldToday { get; set; }
 
@@ -12,6 +13,7 @@ namespace MovieTheater.ViewModels
         public List<decimal> RevenueTrendValues { get; set; }
         public List<DateTime> BookingTrendDates { get; set; }
         public List<int> BookingTrendValues { get; set; }
+        public List<decimal> VoucherTrendValues { get; set; }
 
         // Top 5 by tickets sold
         public List<(string MovieName, int TicketsSold)> TopMovies { get; set; }
@@ -27,8 +29,9 @@ namespace MovieTheater.ViewModels
 
         public decimal OccupancyRateToday { get; set; }    // from 0 to 100
         public decimal GrossRevenue { get; set; }
-        public decimal TotalRefund { get; set; }
         public decimal NetRevenue { get; set; }
+        public decimal TotalVouchersIssued { get; set; }  // Total vouchers issued (all time)
+        public decimal VouchersToday { get; set; }  // Today's vouchers issued
 
         // Food analytics for dashboard food stat tab
         public FoodAnalyticsViewModel FoodAnalytics { get; set; }
@@ -71,11 +74,8 @@ namespace MovieTheater.ViewModels
     {
         // KPI cards
         public decimal GrossRevenue   { get; set; }
-    public decimal TotalRefund    { get; set; }
-    public decimal NetRevenue     { get; set; }
     public decimal GrossRevenueToday { get; set; }
-    public decimal NetRevenueToday { get; set; }
-    public decimal TotalRefundToday { get; set; }
+    public int TotalOrders { get; set; }
     public int OrdersToday { get; set; }
     public int QuantitySoldToday { get; set; }
     public decimal AvgOrderValueToday { get; set; }
@@ -87,7 +87,7 @@ namespace MovieTheater.ViewModels
     public decimal SevenDayAverageItemsPerOrder { get; set; }
 
     // Percentage changes
-    public decimal RevenueChangePercentage => SevenDayAverageRevenue > 0 ? ((NetRevenueToday - SevenDayAverageRevenue) / SevenDayAverageRevenue) * 100 : 0;
+    public decimal RevenueChangePercentage => SevenDayAverageRevenue > 0 ? ((GrossRevenueToday - SevenDayAverageRevenue) / SevenDayAverageRevenue) * 100 : 0;
     public decimal OrdersChangePercentage => SevenDayAverageOrders > 0 ? (((decimal)OrdersToday - SevenDayAverageOrders) / SevenDayAverageOrders) * 100 : 0;
     public decimal ItemsPerOrderChangePercentage => SevenDayAverageItemsPerOrder > 0 ? ((ItemsPerOrderToday - SevenDayAverageItemsPerOrder) / SevenDayAverageItemsPerOrder) * 100 : 0;
         public decimal FoodRevenue { get; set; }

@@ -287,17 +287,18 @@ namespace MovieTheater.Controllers
         {
             var today = DateTime.Today;
             var allInvoices = _invoiceService.GetAll().Where(i => i.Status == InvoiceStatus.Completed).ToList();
-            var allRefunds = allInvoices.Where(i => i.Cancel).ToList();
-            var grossRevenue = allInvoices.Sum(i => i.TotalMoney ?? 0m);
-            var totalRefund = allRefunds.Sum(i => i.TotalMoney ?? 0m);
-            var netRevenue = grossRevenue - totalRefund;
+            var grossRevenue = allInvoices.Where(i => !i.Cancel).Sum(i => i.TotalMoney ?? 0m);
+            var totalVouchersIssued = allInvoices.Where(i => i.Cancel).Sum(i => i.TotalMoney ?? 0m);
+            var totalBookings = allInvoices.Where(i => !i.Cancel).Count();
 
             var todayInv = allInvoices.Where(i => i.BookingDate?.Date == today).ToList();
 
             // 1) Today's summary
-            var revenueToday = todayInv.Sum(i => i.TotalMoney ?? 0m);
-            var bookingsToday = todayInv.Count;
-            var ticketsSoldToday = todayInv.Sum(i => i.Seat?.Split(',').Length ?? 0);
+            var revenueToday = todayInv.Where(i => !i.Cancel).Sum(i => i.TotalMoney ?? 0m);
+            var bookingsToday = todayInv.Where(i => !i.Cancel).Count();
+            var ticketsSoldToday = todayInv.Where(i => !i.Cancel).Sum(i => i.Seat?.Split(',').Length ?? 0);
+            var vouchersToday = todayInv.Where(i => i.Cancel).Sum(i => i.TotalMoney ?? 0m);
+            var netRevenue = grossRevenue - totalVouchersIssued;
 
             // 2) Occupancy 
             var allSeats = _seatService.GetAllSeatsAsync().Result;
@@ -313,16 +314,23 @@ namespace MovieTheater.Controllers
                            .ToList();
             var revTrend = last7
                 .Select(d => allInvoices
-                    .Where(inv => inv.BookingDate?.Date == d)
+                    .Where(inv => inv.BookingDate?.Date == d && !inv.Cancel)
                     .Sum(inv => inv.TotalMoney ?? 0m))
                 .ToList();
             var bookTrend = last7
                 .Select(d => allInvoices
-                    .Count(inv => inv.BookingDate?.Date == d))
+                    .Where(inv => inv.BookingDate?.Date == d && !inv.Cancel)
+                    .Count())
+                .ToList();
+            var voucherTrend = last7
+                .Select(d => allInvoices
+                    .Where(inv => inv.BookingDate?.Date == d && inv.Cancel)
+                    .Sum(inv => inv.TotalMoney ?? 0m))
                 .ToList();
 
             // 4) Top 5 movies & members
             var topMovies = allInvoices
+                .Where(i => !i.Cancel)
                 .GroupBy(i => i.MovieShow.Movie.MovieNameEnglish)
                 .OrderByDescending(g => g.Sum(inv => inv.Seat?.Split(',').Length ?? 0))
                 .Take(5)
@@ -330,7 +338,7 @@ namespace MovieTheater.Controllers
                 .ToList();
 
             var topMembers = allInvoices
-                .Where(i => i.Account != null && i.Account.RoleId == 3)
+                .Where(i => i.Account != null && i.Account.RoleId == 3 && !i.Cancel)
                 .GroupBy(i => i.Account.FullName)
                 .OrderByDescending(g => g.Count())
                 .Take(5)
@@ -339,6 +347,7 @@ namespace MovieTheater.Controllers
 
             // 5) Recent bookings 
             var recentBookings = allInvoices
+                .Where(i => !i.Cancel)
                 .OrderByDescending(i => i.BookingDate)
                 .Take(10)
                 .Select(i => new RecentBookingInfo
@@ -447,10 +456,10 @@ namespace MovieTheater.Controllers
             // 5. RevenueByDayDates, RevenueByDayValues, OrdersByDayValues (last 7 days)
             var last7Days = Enumerable.Range(0, 7).Select(i => today.AddDays(-i)).Reverse().ToList();
             var revenueByDayValues = last7Days
-                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day).Sum(fi => fi.Price * fi.Quantity))
+                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day && !fi.Invoice.Cancel).Sum(fi => fi.Price * fi.Quantity))
                 .ToList();
             var ordersByDayValues = last7Days
-                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day).Select(fi => fi.InvoiceId).Distinct().Count())
+                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day && !fi.Invoice.Cancel).Select(fi => fi.InvoiceId).Distinct().Count())
                 .ToList();
 
             // 6. TopFoodItems: all food items with revenue and order count
@@ -474,7 +483,7 @@ namespace MovieTheater.Controllers
 
             // 8. SalesByHour: number of food orders per hour (0-23)
             var salesByHour = Enumerable.Range(0, 24)
-                .Select(h => validFoodInvoices.Count(fi => fi.Invoice.BookingDate.HasValue && fi.Invoice.BookingDate.Value.Hour == h))
+                .Select(h => validFoodInvoices.Count(fi => fi.Invoice.BookingDate.HasValue && fi.Invoice.BookingDate.Value.Hour == h && !fi.Invoice.Cancel))
                 .ToList();
 
             // 1. All food invoices on completed orders (whether cancelled or not)
@@ -485,21 +494,12 @@ namespace MovieTheater.Controllers
 
             // 2. Split into valid sales vs cancelled sales
             var validFoodSales = allFoodInvoices.Where(fi => !fi.Invoice.Cancel);
-            var cancelledFoodSales = allFoodInvoices.Where(fi => fi.Invoice.Cancel);
 
-            // 3. Compute gross & refund amounts
-            var foodGrossRevenue = validFoodSales.Sum(fi => fi.Price * fi.Quantity)
-                                 + cancelledFoodSales.Sum(fi => fi.Price * fi.Quantity);
-
-            var foodTotalRefund = cancelledFoodSales.Sum(fi => fi.Price * fi.Quantity);
-
-            // 4. Net Food Revenue
-            var foodNetRevenue = foodGrossRevenue - foodTotalRefund;
+            // 3. Compute gross revenue only (no refunds for food)
+            var foodGrossRevenue = validFoodSales.Sum(fi => fi.Price * fi.Quantity);
 
             var todayFoodInvoices = allFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == today).ToList();
-            var todayFoodGross = todayFoodInvoices.Sum(fi => fi.Price * fi.Quantity);
-            var todayFoodRefund = todayFoodInvoices.Where(fi => fi.Invoice.Cancel).Sum(fi => fi.Price * fi.Quantity);
-            var todayFoodNet = todayFoodGross - todayFoodRefund;
+            var todayFoodGross = todayFoodInvoices.Where(fi => !fi.Invoice.Cancel).Sum(fi => fi.Price * fi.Quantity);
 
             var todayValidFoodInvoices = todayFoodInvoices.Where(fi => !fi.Invoice.Cancel).ToList();
             var todayFoodRevenue = todayValidFoodInvoices.Sum(fi => fi.Price * fi.Quantity);
@@ -514,7 +514,7 @@ namespace MovieTheater.Controllers
             var sevenDayAverageOrders = sevenDayTotalOrders / 7;
 
             var sevenDayTotalQuantity = last7Days
-                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day).Sum(fi => fi.Quantity))
+                .Select(day => validFoodInvoices.Where(fi => fi.Invoice.BookingDate?.Date == day && !fi.Invoice.Cancel).Sum(fi => fi.Quantity))
                 .Sum();
             var sevenDayAverageItemsPerOrder = sevenDayTotalOrders > 0 ? (decimal)sevenDayTotalQuantity / sevenDayTotalOrders : 0;
 
@@ -522,6 +522,7 @@ namespace MovieTheater.Controllers
             return new AdminDashboardViewModel
             {
                 RevenueToday = revenueToday,
+                TotalBookings = totalBookings,
                 BookingsToday = bookingsToday,
                 TicketsSoldToday = ticketsSoldToday,
                 OccupancyRateToday = occupancyRate,
@@ -529,6 +530,7 @@ namespace MovieTheater.Controllers
                 RevenueTrendValues = revTrend,
                 BookingTrendDates = last7,
                 BookingTrendValues = bookTrend,
+                VoucherTrendValues = voucherTrend,
                 TopMovies = topMovies,
                 TopMembers = topMembers,
                 RecentBookings = recentBookings,
@@ -539,16 +541,14 @@ namespace MovieTheater.Controllers
                 },
                 RecentMembers = recentMembers,
                 GrossRevenue = grossRevenue,
-                TotalRefund = totalRefund,
                 NetRevenue = netRevenue,
+                TotalVouchersIssued = totalVouchersIssued,
+                VouchersToday = vouchersToday,
                 FoodAnalytics = new FoodAnalyticsViewModel
                 {
                     GrossRevenue = foodGrossRevenue,
-                    TotalRefund = foodTotalRefund,
-                    NetRevenue = foodNetRevenue,
                     GrossRevenueToday = todayFoodGross,
-                    NetRevenueToday = todayFoodNet,
-                    TotalRefundToday = todayFoodRefund,
+                    TotalOrders = foodOrders,
                     OrdersToday = todayFoodOrders,
                     QuantitySoldToday = todayQuantitySold,
                     AvgOrderValueToday = todayAvgOrderValue,
