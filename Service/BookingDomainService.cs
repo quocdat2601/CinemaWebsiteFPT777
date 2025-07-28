@@ -105,15 +105,24 @@ namespace MovieTheater.Service
                 MovieName = movie?.MovieNameEnglish,
                 ShowDate = showDate.ToDateTime(TimeOnly.MinValue)
             };
+
+            // Thêm thông tin SeatType cho promotion context
+            if (selectedSeatIds != null)
+            {
+                var selectedSeats = await GetSeatsByIdsAsync(selectedSeatIds);
+                promotionContext.SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList();
+                promotionContext.SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+                promotionContext.SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList();
+            }
             var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(promotionContext);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
 
             var seats = new List<SeatDetailViewModel>();
-            foreach (var id in selectedSeatIds)
+            var loadedSeats = await GetSeatsByIdsAsync(selectedSeatIds);
+            foreach (var seat in loadedSeats)
             {
-                var seat = _seatService.GetSeatById(id);
                 if (seat == null) continue;
-                var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
+                var seatType = seat.SeatType; // Sử dụng SeatType đã được Include
                 var price = seatType?.PricePercent ?? 0;
                 // Apply version multiplier if available
                 if (movieShow.Version != null)
@@ -538,21 +547,25 @@ namespace MovieTheater.Service
             var seatTypes = await _seatService.GetSeatTypesAsync();
             var seats = new List<SeatDetailViewModel>();
             // --- PROMOTION LOGIC UPDATE START ---
+            // Load thông tin SeatType cho promotion context
+            var selectedSeats = await GetSeatsByIdsAsync(selectedSeatIds);
             var promotionContext = new PromotionCheckContext
             {
                 MemberId = memberId, // <-- truyền memberId mới
                 SeatCount = selectedSeatIds?.Count ?? 0,
                 MovieId = movie?.MovieId,
                 MovieName = movie?.MovieNameEnglish,
-                ShowDate = movieShow.ShowDate.ToDateTime(TimeOnly.MinValue)
+                ShowDate = movieShow.ShowDate.ToDateTime(TimeOnly.MinValue),
+                SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList(),
+                SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList(),
+                SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList()
             };
             var bestPromotion = _promotionService.GetBestEligiblePromotionForBooking(promotionContext);
             decimal promotionDiscountPercent = bestPromotion?.DiscountLevel ?? 0;
-            foreach (var id in selectedSeatIds)
+            foreach (var seat in selectedSeats)
             {
-                var seat = _seatService.GetSeatById(id);
                 if (seat == null) continue;
-                var seatType = seatTypes.FirstOrDefault(t => t.SeatTypeId == seat.SeatTypeId);
+                var seatType = seat.SeatType; // Sử dụng SeatType đã được Include
                 var price = seatType?.PricePercent ?? 0;
                 // Apply version multiplier if available
                 if (movieShow.Version != null)

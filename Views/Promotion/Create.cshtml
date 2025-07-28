@@ -42,15 +42,15 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
-                                            <label asp-for="TargetField" class="control-label">Target Table</label>
+                                            <label asp-for="TargetField" class="control-label"> Promotion type</label>
                                             <select asp-for="TargetField" class="form-control" id="TargetField">
                                                 <option value="">-- Select Table --</option>
                                                 <option value="Account">Account</option>
-                                                <option value="Invoice">Invoice</option>
+                                                <option value="Invoice">booking</option>
                                                 <option value="Member">Member</option>
                                                 <option value="Movie">Movie</option>
-                                                <option value="Seat">Seat</option>
-                                                <option value="Type">Type</option>
+                                                <option value="SeatType">SeatType</option>
+                                                <option value="Type">MovieType</option>
                                                 <option value="Food">Food</option>
                                             </select>
                                             <span asp-validation-for="TargetField" class="text-danger"></span>
@@ -146,7 +146,7 @@
             Invoice: [ "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "Seat"],
             Member: ["MemberId", "Score", "AccountId"],
             Movie: ["MovieId", "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish"],
-            Seat: ["CinemaRoomId", "SeatColumn", "SeatRow", "SeatStatusId", "SeatTypeId", "SeatName"],
+            SeatType: ["SeatTypeId", "TypeName", "PricePercent", "ColorHex"],
             Type: ["TypeId", "TypeName"],
             Food: ["FoodId", "FoodName", "Price", "Status", "Category"]
         };
@@ -205,14 +205,11 @@
                 SmallImage: "string",
                 TrailerUrl: "string"
             },
-            Seat: {
-                SeatId: "number",
-                CinemaRoomId: "number",
-                SeatColumn: "string",
-                SeatRow: "number",
-                SeatStatusId: "number",
+            SeatType: {
                 SeatTypeId: "number",
-                SeatName: "string"
+                TypeName: "string",
+                PricePercent: "number",
+                ColorHex: "string"
             },
             Type: {
                 TypeId: "number",

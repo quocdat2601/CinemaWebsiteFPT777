@@ -925,7 +925,8 @@
                     ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                     ShowTime: '@Model.BookingDetails.ShowTime',
                     MemberId: $('#memberId').val(),
-                    AccountId: $('#accountId').val()
+                    AccountId: $('#accountId').val(),
+                    SelectedSeatIds: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats.Select(s => s.SeatId)))
                 };
 
                 $.ajax({
