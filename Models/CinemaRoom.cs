@@ -15,9 +15,9 @@ public partial class CinemaRoom
 
     public int? VersionId { get; set; }
 
-    public int? SeatQuantity { get; set; }
-
     public int? StatusId { get; set; }
+
+    public int? SeatQuantity { get; set; }
 
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
