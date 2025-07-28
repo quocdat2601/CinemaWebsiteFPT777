@@ -56,19 +56,23 @@ namespace MovieTheater.Service
                     promotionDiscountPercent = Math.Round((discount / original) * 100);
                 }
             }
-            // Final seat total after all discounts
-            decimal seatTotalAfterDiscounts = promoSubtotal - rankDiscount - usedScoreValue - voucher;
-            if (seatTotalAfterDiscounts < 0) seatTotalAfterDiscounts = 0;
-            // Add food for display only
-            decimal totalPrice = seatTotalAfterDiscounts + totalFoodPrice;
-            // AddScore is based only on seatTotalAfterDiscounts
-            // New logic: apply voucher to (seat + food) after rank discount and used score
-            decimal seatAndFoodTotal = promoSubtotal - rankDiscount - usedScoreValue + totalFoodPrice;
+            
+            // SỬA: Tính toán đúng total price
+            // Seat total after rank discount and used score
+            decimal seatTotalAfterRankAndScore = promoSubtotal - rankDiscount - usedScoreValue;
+            if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
+            
+            // Add food price
+            decimal seatAndFoodTotal = seatTotalAfterRankAndScore + totalFoodPrice;
+            
+            // Apply voucher to total (seat + food)
             decimal totalAfterVoucher = seatAndFoodTotal - voucher;
             if (totalAfterVoucher < 0) totalAfterVoucher = 0;
+            
             // AddScore is based only on seat portion after discounts
             decimal earningRate = user?.Rank?.PointEarningPercentage ?? 1;
             int addScore = (int)Math.Floor((promoSubtotal - rankDiscount - usedScoreValue) * earningRate / 100 / 1000);
+            
             return new BookingPriceResult
             {
                 Subtotal = promoSubtotal,
@@ -82,7 +86,7 @@ namespace MovieTheater.Service
                 TotalFoodPrice = totalFoodPrice,
                 TotalPrice = totalAfterVoucher,
                 AddScore = addScore,
-                SeatTotalAfterDiscounts = promoSubtotal - rankDiscount - usedScoreValue,
+                SeatTotalAfterDiscounts = seatTotalAfterRankAndScore,
                 SeatDetails = seats,
                 FoodDetails = foodDetails
             };

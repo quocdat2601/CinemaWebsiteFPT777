@@ -25,6 +25,7 @@ namespace MovieTheater.Controllers
         private readonly IRankService _rankService;
         private readonly IVersionRepository _versionRepository;
         private readonly IPersonRepository _personRepository;
+        private readonly MovieTheaterContext _context;
         public AdminController(
             IMovieService movieService,
             IEmployeeService employeeService,
@@ -54,6 +55,7 @@ namespace MovieTheater.Controllers
             _rankService = rankService;
             _versionRepository = versionRepository;
             _personRepository = personRepository;
+            _context = context;
         }
 
         // GET: AdminController

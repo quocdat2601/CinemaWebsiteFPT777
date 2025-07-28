@@ -289,7 +289,6 @@
             <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Create QR Code</button>
         </div>
         <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
-        <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
     </div>
 </div>
 
@@ -520,8 +519,15 @@
                 $('#memberScore').val(member.score);
                 $('#accountId').val(member.account.accountId || '');
                 selectedAccountId = member.account.accountId;
-                $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
-                $('#promotionDiscountPercent').val(member.account.promotionDiscountPercent || 0);
+                
+                // SỬA: Lấy rank discount từ API thay vì từ member object
+                $.getJSON('/Booking/GetMemberDiscount', { memberId: member.memberId }, function (data) {
+                    $('#rankDiscountPercent').val(data.discountPercent || 0);
+                    currentDiscountPercent = data.discountPercent || 0;
+                    currentEarningRate = data.earningRate || 0;
+                    updatePriceAll();
+                });
+                
                 $('#memberDetails').show();
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
@@ -661,13 +667,17 @@
 
             // Track current earning rate and discount percent
             var currentEarningRate = 0;
-            var currentDiscountPercent = 0;
+            var currentDiscountPercent = parseInt('@Model.BookingDetails.RankDiscountPercent') || 0; // SỬA: Lấy từ model ban đầu
             let selectedVoucher = null;
             let selectedPromotion = null;
             function updatePriceAll() {
                 var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
                 // Áp dụng rank benefit trước
                 var totalFoodPrice = @Model.TotalFoodPrice;
+                
+                // Debug log
+                console.log('Original Total:', originalTotal);
+                console.log('Total Food Price:', totalFoodPrice);
                 
                 // Áp dụng rank benefit trước (chỉ cho seat, không cho food)
                 var discountPercent = currentDiscountPercent || 0;
@@ -678,19 +688,30 @@
                 var afterRank = originalTotal - discountAmount;
                 if (afterRank < 0) afterRank = 0;
 
-                // Áp dụng promotion discount (chỉ cho seat, không cho food)
-                var promotionDiscountPercent = selectedPromotion ? selectedPromotion.value : 0;
-                var promotionDiscountAmount = 0;
-                if (afterRank > 0) {
-                    promotionDiscountAmount = Math.round(afterRank * (promotionDiscountPercent / 100));
-                }
-                var afterPromotion = afterRank - promotionDiscountAmount;
-                if (afterPromotion < 0) afterPromotion = 0;
+                // Debug log
+                console.log('Rank Discount Percent:', discountPercent);
+                console.log('Rank Discount Amount:', discountAmount);
+                console.log('After Rank Discount:', afterRank);
+
+                // SỬA: Không áp dụng promotion discount thêm lần nữa vì đã được áp dụng từ server
+                // var promotionDiscountPercent = selectedPromotion ? selectedPromotion.value : 0;
+                // var promotionDiscountAmount = 0;
+                // if (afterRank > 0) {
+                //     promotionDiscountAmount = Math.round(afterRank * (promotionDiscountPercent / 100));
+                // }
+                // var afterPromotion = afterRank - promotionDiscountAmount;
+                // if (afterPromotion < 0) afterPromotion = 0;
+                var afterPromotion = afterRank; // SỬA: Bỏ qua promotion discount vì đã được áp dụng
 
                 // Sau đó mới áp dụng voucher (chỉ cho seat, không cho food)
                 var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
                 var afterVoucher = afterPromotion - voucherAmount;
                 if (afterVoucher < 0) afterVoucher = 0;
+
+                // Debug log
+                console.log('Voucher Amount:', voucherAmount);
+                console.log('After Voucher:', afterVoucher);
+                console.log('Selected Voucher:', selectedVoucher);
 
                 // Điểm (chỉ cho seat, không cho food)
                 var useScore = parseInt($('#useScore').val()) || 0;
@@ -699,12 +720,30 @@
                 var finalSeatPrice = afterVoucher - savings;
                 if (finalSeatPrice < 0) finalSeatPrice = 0;
                 
+                // Debug log
+                console.log('Use Score:', useScore);
+                console.log('Savings:', savings);
+                console.log('Final Seat Price:', finalSeatPrice);
+                
                 // Tổng cuối cùng = seat price + food price
                 var finalTotal = finalSeatPrice + totalFoodPrice;
 
+                // Debug log
+                console.log('Final Total:', finalTotal);
+                console.log('Expected calculation:');
+                console.log('  Original Total:', originalTotal);
+                console.log('  Rank Discount:', discountAmount);
+                console.log('  After Rank:', afterRank);
+                console.log('  Voucher Amount:', voucherAmount);
+                console.log('  After Voucher:', afterVoucher);
+                console.log('  Use Score Value:', savings);
+                console.log('  Final Seat Price:', finalSeatPrice);
+                console.log('  Food Price:', totalFoodPrice);
+                console.log('  Final Total:', finalTotal);
+
                 // Update hiển thị giá
                 var seatOnlyTotal = originalTotal;
-                if (voucherAmount > 0 || discountAmount > 0 || promotionDiscountAmount > 0 || useScore > 0) {
+                if (voucherAmount > 0 || discountAmount > 0 || useScore > 0) { // SỬA: Bỏ promotionDiscountAmount
                     $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
                     $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalSeatPrice.toLocaleString() + ' VND');
                     seatOnlyTotal = finalSeatPrice;
@@ -766,7 +805,7 @@
                 else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
                 $('#pointValidation').text(validationMsg);
                 // At the end of updatePriceAll, set the hidden input value:
-                $('#promotionDiscountPercent').val(discountPercent);
+                $('#rankDiscountPercent').val(discountPercent); // SỬA: Set rank discount percent thay vì promotion
             }
 
             function onMemberSelected(memberId) {
@@ -821,6 +860,16 @@
                 selectedAccountId = $('#accountId').val();
                 // Enable nút chọn voucher
                 $('#openVoucherModalBtn').prop('disabled', false);
+                // SỬA: Cập nhật rank discount từ server nếu đã có member
+                var memberId = $('#memberId').val();
+                if (memberId) {
+                    $.getJSON('/Booking/GetMemberDiscount', { memberId: memberId }, function (data) {
+                        $('#rankDiscountPercent').val(data.discountPercent || 0);
+                        currentDiscountPercent = data.discountPercent || 0;
+                        currentEarningRate = data.earningRate || 0;
+                        updatePriceAll();
+                    });
+                }
                 // Fetch promotions
                 fetchEligiblePromotions();
             }

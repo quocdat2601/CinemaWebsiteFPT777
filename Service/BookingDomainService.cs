@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MovieTheater.Service
 {
@@ -22,6 +23,7 @@ namespace MovieTheater.Service
         private readonly MovieTheaterContext _context;
         private readonly IBookingPriceCalculationService _priceCalculationService;
         private readonly IVoucherService _voucherService;
+        private readonly IHubContext<MovieTheater.Hubs.SeatHub> _seatHubContext;
 
         public BookingDomainService(
             IBookingService bookingService,
@@ -33,8 +35,8 @@ namespace MovieTheater.Service
             IFoodService foodService,
             MovieTheaterContext context,
             IBookingPriceCalculationService priceCalculationService,
-            IVoucherService voucherService
-        )
+            IVoucherService voucherService,
+            IHubContext<MovieTheater.Hubs.SeatHub> seatHubContext)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -46,6 +48,7 @@ namespace MovieTheater.Service
             _context = context;
             _priceCalculationService = priceCalculationService;
             _voucherService = voucherService;
+            _seatHubContext = seatHubContext;
         }
 
         private async Task<List<Seat>> GetSeatsByIdsAsync(List<int> seatIds)
@@ -537,6 +540,18 @@ namespace MovieTheater.Service
             var cinemaRoom = movieShow.CinemaRoom;
             var seatTypes = await _seatService.GetSeatTypesAsync();
             var seats = new List<SeatDetailViewModel>();
+            
+            // Tính rank discount percent nếu có member
+            decimal rankDiscountPercent = 0;
+            if (!string.IsNullOrEmpty(memberId))
+            {
+                var member = _context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.MemberId == memberId);
+                if (member?.Account?.Rank != null)
+                {
+                    rankDiscountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                }
+            }
+            
             // --- PROMOTION LOGIC UPDATE START ---
             var promotionContext = new PromotionCheckContext
             {
@@ -627,7 +642,8 @@ namespace MovieTheater.Service
                 MovieShowId = movieShowId,
                 VersionName = movieShow.Version.VersionName,
                 VersionId = movieShow.VersionId, // <-- Set VersionId here
-                PromotionDiscountPercent = promotionDiscountPercent
+                PromotionDiscountPercent = promotionDiscountPercent,
+                RankDiscountPercent = rankDiscountPercent // SỬA: Thêm rank discount percent
             };
             var viewModel = new ConfirmTicketAdminViewModel
             {
@@ -701,13 +717,6 @@ namespace MovieTheater.Service
                         adminFoods.Add(food);
                 }
             }
-            decimal seatSubtotal = seats.Sum(s => s.SeatType?.PricePercent ?? 0);
-            decimal rankDiscountPercent = user?.Rank?.DiscountPercentage ?? 0;
-            decimal rankDiscount = seatSubtotal * (rankDiscountPercent / 100m);
-            if (movieShow != null)
-            {
-                var promotion = _promotionService.GetBestPromotionForShowDate(movieShow.ShowDate);
-            }
             int usedScore = model.UsedScore;
             if (usedScore < 0) usedScore = 0;
             var seatViewModels = model.BookingDetails.SelectedSeats;
@@ -769,15 +778,15 @@ namespace MovieTheater.Service
                 RankDiscountPercentage = isGuest ? 0 : priceResult.RankDiscountPercent
             };
             await _bookingService.SaveInvoiceAsync(invoice);
-            // Add ScheduleSeat records for each seat (admin flow fix)
+            // Add ScheduleSeat records for each seat (admin flow fix) - SỬA: Thêm SeatStatusId = 2
             foreach (var seat in seats)
             {
                 var scheduleSeat = new ScheduleSeat
                 {
                     InvoiceId = invoice.InvoiceId,
                     SeatId = seat.SeatId,
-                    MovieShowId = model.MovieShowId
-                    // KHÔNG set SeatStatusId ở đây
+                    MovieShowId = model.MovieShowId,
+                    SeatStatusId = 2 // SỬA: Set trạng thái booked
                 };
                 _context.ScheduleSeats.Add(scheduleSeat);
             }
@@ -816,15 +825,16 @@ namespace MovieTheater.Service
                 }
                 await _context.SaveChangesAsync();
             }
-            // Update or add ScheduleSeat records for each seat
+            // Update or add ScheduleSeat records for each seat - SỬA: Thêm SeatStatusId = 2
             foreach (var seatVm in seatViewModels)
             {
                 var existing = _context.ScheduleSeats
                     .FirstOrDefault(ss => ss.SeatId == seatVm.SeatId && ss.MovieShowId == model.BookingDetails.MovieShowId);
                 if (existing != null)
                 {
-                    // KHÔNG set SeatStatusId ở đây
+                    // SỬA: Set SeatStatusId = 2 cho trạng thái booked
                     existing.InvoiceId = invoice.InvoiceId;
+                    existing.SeatStatusId = 2; // Set trạng thái booked
                     _context.ScheduleSeats.Update(existing);
                 }
                 else
@@ -833,13 +843,26 @@ namespace MovieTheater.Service
                     {
                         InvoiceId = invoice.InvoiceId,
                         SeatId = seatVm.SeatId,
-                        MovieShowId = model.BookingDetails.MovieShowId
-                        // KHÔNG set SeatStatusId ở đây
+                        MovieShowId = model.BookingDetails.MovieShowId,
+                        SeatStatusId = 2 // SỬA: Set trạng thái booked
                     };
                     _context.ScheduleSeats.Add(scheduleSeat);
                 }
             }
             await _context.SaveChangesAsync();
+            
+            // SỬA: Thêm SignalR để thông báo cập nhật trạng thái ghế real-time
+            if (_seatHubContext != null)
+            {
+                foreach (var seatVm in seatViewModels)
+                {
+                    if (seatVm.SeatId.HasValue)
+                    {
+                        await _seatHubContext.Clients.Group(model.MovieShowId.ToString()).SendAsync("SeatStatusChanged", seatVm.SeatId.Value, 2);
+                    }
+                }
+            }
+            
             // Do NOT release hold here. Hold should only be released on payment success, seat deselect, or timeout.
             // foreach (var seatVm in seatViewModels)
             // {
