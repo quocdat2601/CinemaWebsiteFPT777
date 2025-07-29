@@ -1,68 +1,31 @@
+/* ===== ESSENTIAL GLOBAL FUNCTIONALITY ===== */
 $(document).ready(() => {
     console.log('app.js loaded');
+    
+    // Hamburger menu toggle
     $('#hamburger-menu').click(() => {
         $('#hamburger-menu').toggleClass('active')
         $('.nav-menu').toggleClass('active')
     })
 
+    // Set body padding for fixed navbar
     $('body').css('padding-top', $('.nav-wrapper').innerHeight())
 
+    // Update padding on resize
     window.addEventListener('resize', () => {
         $('body').css('padding-top', $('.nav-wrapper').innerHeight())
     })
 
-    // set owl carousel cho các phần khác ngoài hero section
-    let navText = ["<i class='bx bx-chevron-left'></i>", "<i class='bx bx-chevron-right'></i>"]
-
-    $('#top-movies-slide').owlCarousel({
-        items: 2,
-        dots: false,
-        loop: true,
-        autoplay: true,
-        autoplayHoverPause: true,
-        margin: 15,
-        responsive: {
-            500: {
-                items: 3
-            },
-            1280: {
-                items: 4
-            },
-            1600: {
-                items: 6
-            }
-        }
-    })
-
-    $('.movies-slide').owlCarousel({
-        items: 2,
-        dots: false,
-        nav: true,
-        navText: navText,
-        margin: 15,
-        responsive: {
-            500: {
-                items: 2
-            },
-            1280: {
-                items: 4
-            },
-            1600: {
-                items: 6
-            }
-        }
-    })
-
-    // Hiệu ứng ripple cho nút .btn-hover
+    // Ripple effect for .btn-hover buttons
     $(document).on('click', '.btn-hover', function(e) {
         const btn = $(this);
-        // Xóa ripple cũ nếu có
+        // Remove old ripple if exists
         btn.find('.ripple').remove();
-        // Tính vị trí click
+        // Calculate click position
         const offset = btn.offset();
         const x = e.pageX - offset.left;
         const y = e.pageY - offset.top;
-        // Tạo ripple
+        // Create ripple
         const ripple = $('<span class="ripple"></span>');
         ripple.css({
             left: x + 'px',
@@ -71,117 +34,62 @@ $(document).ready(() => {
             height: btn.outerWidth()
         });
         btn.append(ripple);
-        // Xóa ripple sau khi animation xong
+        // Remove ripple after animation
         setTimeout(() => ripple.remove(), 500);
     });
 });
 
-// Khởi tạo Swiper cho slide 2 (Now Showing), slide 3 (Coming Soon) và slide 4 (Promotion)
+/* ===== GLOBAL NAVBAR FUNCTIONALITY ===== */
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof Swiper !== 'undefined') {
-        // Swiper cho Now Showing
-        new Swiper('.nowshowing-swiper', {
-            slidesPerView: 4,
-            slidesPerGroup: 4,
-            spaceBetween: 16,
-            loop: true,
-            autoplay: false,
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            breakpoints: {
-                480: {
-                    slidesPerView: 1,
-                    slidesPerGroup: 1,
-                    spaceBetween: 10,
-                },
-                640: {
-                    slidesPerView: 2,
-                    slidesPerGroup: 2,
-                    spaceBetween: 16,
-                },
-                900: {
-                    slidesPerView: 3,
-                    slidesPerGroup: 3,
-                    spaceBetween: 18,
-                },
-                1200: {
-                    slidesPerView: 4,
-                    slidesPerGroup: 4,
-                    spaceBetween: 20,
-                },
+    // Update navbar style based on scroll position
+    function updateNavbarStyle() {
+        const navbar = document.querySelector('.app-navbar');
+        const heroSection = document.querySelector('.hero-section');
+        
+        if (navbar && heroSection) {
+            const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+            const scrollTop = window.pageYOffset;
+            
+            if (scrollTop < heroBottom) {
+                navbar.classList.add('hero-transparent');
+            } else {
+                navbar.classList.remove('hero-transparent');
             }
-        });
-
-        // Swiper cho Coming Soon
-        new Swiper('.comingsoon-swiper', {
-            slidesPerView: 4,
-            slidesPerGroup: 4,
-            spaceBetween: 16,
-            loop: true,
-            autoplay: false,
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            breakpoints: {
-                480: {
-                    slidesPerView: 1,
-                    slidesPerGroup: 1,
-                    spaceBetween: 10,
-                },
-                640: {
-                    slidesPerView: 2,
-                    slidesPerGroup: 2,
-                    spaceBetween: 16,
-                },
-                900: {
-                    slidesPerView: 3,
-                    slidesPerGroup: 3,
-                    spaceBetween: 18,
-                },
-                1200: {
-                    slidesPerView: 4,
-                    slidesPerGroup: 4,
-                    spaceBetween: 20,
-                },
-            }
-        });
-
-        // Swiper cho Promotion
-        new Swiper('.promotion-swiper', {
-            slidesPerView: 4,
-            slidesPerGroup: 4,
-            spaceBetween: 16,
-            loop: true,
-            autoplay: false,
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            breakpoints: {
-                480: {
-                    slidesPerView: 1,
-                    slidesPerGroup: 1,
-                    spaceBetween: 10,
-                },
-                640: {
-                    slidesPerView: 2,
-                    slidesPerGroup: 2,
-                    spaceBetween: 16,
-                },
-                900: {
-                    slidesPerView: 3,
-                    slidesPerGroup: 3,
-                    spaceBetween: 18,
-                },
-                1200: {
-                    slidesPerView: 4,
-                    slidesPerGroup: 4,
-                    spaceBetween: 20,
-                },
-            }
-        });
+        }
     }
+
+    // Set active navigation items
+    function setActiveNavItems() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        const logo = document.querySelector('.navbar-brand');
+        
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+        
+        // Highlight logo if on home page
+        if (currentPath === '/' || currentPath === '/Home' || currentPath === '/Home/Index') {
+            logo?.classList.add('home-active');
+        } else {
+            logo?.classList.remove('home-active');
+        }
+    }
+
+    // Initialize navbar functionality
+    updateNavbarStyle();
+    setActiveNavItems();
+    
+    // Update on scroll
+    window.addEventListener('scroll', updateNavbarStyle);
+    
+    // Update on page load
+    window.addEventListener('load', () => {
+        updateNavbarStyle();
+        setActiveNavItems();
+    });
 });
