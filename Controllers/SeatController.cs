@@ -230,6 +230,9 @@ namespace MovieTheater.Controllers
             string genre = movie.Types != null && movie.Types.Any() ? string.Join(", ", movie.Types.Select(t => t.TypeName)) : string.Empty;
             // Lấy poster
             string poster = movie.SmallImage;
+            // Lấy đạo diễn và diễn viên
+            string movieDirector = movie.People != null ? string.Join(", ", movie.People.Where(p => p.IsDirector == true).Select(p => p.Name)) : string.Empty;
+            string movieActor = movie.People != null ? string.Join(", ", movie.People.Where(p => p.IsDirector == false).Select(p => p.Name)) : string.Empty;
 
             var viewModel = new SeatSelectionViewModel
             {
@@ -250,7 +253,9 @@ namespace MovieTheater.Controllers
                 MovieContent = movie.Content,
                 MovieGenre = genre,
                 MovieFromDate = movie.FromDate,
-                MovieDuration = movie.Duration
+                MovieDuration = movie.Duration,
+                MovieDirector = movieDirector,
+                MovieActor = movieActor
             };
 
             return View("View", viewModel);

@@ -8,873 +8,1612 @@
 
 @Html.Partial("_BookingProgress")
 
-<div class="min-vh-100 bg-gradient-to-br from-slate-50 to-blue-50 py-4">
-    <div class="1">
-        <!-- Header Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex align-items-center justify-content-between bg-white p-4" style="border-radius: 1.5rem;">
-                    <div style="padding-left: 950px;">
-                        <h1 class="h3 fw-bold text-dark mb-1">🎬 Confirm Your Booking</h1>
-                        <p class="text-muted mb-0">Review your selection and complete your purchase</p>
-                    </div>
-                    <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })" 
-                       class="btn btn-outline-secondary rounded-pill px-4">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Seats
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <!-- Cột 1: Selected Seats -->
-            <div class="col-lg-3">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-gradient-info text-white rounded-top-4 py-3">
-                        <h5 class="mb-0 fw-semibold">🪑 Selected Seats</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="border-0 py-3 ps-4">Seat</th>
-                                        <th class="border-0 py-3">Type</th>
-                                        <th class="border-0 py-3 pe-4">Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var seat in Model.SelectedSeats)
-                                    {
-                                        <tr>
-                                            <td class="py-3 ps-4">
-                                                <span class="badge bg-primary fs-6">@seat.SeatName</span>
-                                            </td>
-                                            <td class="py-3">
-                                                <span class="text-muted">@seat.SeatType</span>
-                                            </td>
-                                            <td class="py-3 pe-4">
-                                                @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
-                                                {
-                                                    <div class="price-container">
-                                                        <span class="original-price">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                                        <span class="discounted-price">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
-                                                        @if (!string.IsNullOrEmpty(seat.PromotionName))
-                                                        {
-                                                            <span class="badge bg-success ms-2">@seat.PromotionName</span>
-                                                        }
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <span class="fw-semibold text-success">@seat.Price.ToString("N0") VND</span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <td colspan="3" class="py-3 ps-4 fw-semibold">Seats Total:</td>
-                                        <td class="py-3 pe-4 fw-bold text-success">@Model.Subtotal.ToString("N0") VND</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cột 2: Food & Beverages -->
-            <div class="col-lg-3">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-gradient-warning text-dark rounded-top-4 py-3">
-                        <h5 class="mb-0 fw-semibold">🍿 Food & Drinks</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        @if (Model.SelectedFoods != null && Model.SelectedFoods.Count > 0)
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="border-0 py-3 ps-4">Item</th>
-                                            <th class="border-0 py-3">Quantity</th>
-                                            <th class="border-0 py-3">Unit Price</th>
-                                            <th class="border-0 py-3 pe-4">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var food in Model.SelectedFoods)
-                                        {
-                                            <tr>
-                                                <td class="py-3 ps-4">
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="@food.Image" alt="@food.Name" 
-                                                             class="rounded-3 me-3 food-image" />
-                                                        <div>
-                                                            <div class="fw-semibold">@food.Name</div>
-                                                            @if (!string.IsNullOrEmpty(food.PromotionName))
-                                                            {
-                                                                <span class="badge bg-success small">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="py-3">
-                                                    <span class="badge bg-secondary">@food.Quantity</span>
-                                                </td>
-                                                <td class="py-3">
-                                                    @if (food.PromotionDiscount > 0 && food.OriginalPrice > food.Price)
-                                                    {
-                                                        <div class="price-container">
-                                                            <span class="original-price small">@food.OriginalPrice.ToString("N0") VND</span>
-                                                            <span class="discounted-price">@food.Price.ToString("N0") VND</span>
-                                                        </div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="fw-semibold text-success">@food.Price.ToString("N0") VND</span>
-                                                    }
-                                                </td>
-                                                <td class="py-3 pe-4">
-                                                    <span class="fw-bold">@((food.Price * food.Quantity).ToString("N0")) VND</span>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot class="table-light">
-                                        <tr>
-                                            <td colspan="3" class="py-3 ps-4 fw-semibold">Food & Drinks Total:</td>
-                                            <td class="py-3 pe-4 fw-bold text-success">@Model.TotalFoodPrice.ToString("N0") VND</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-5">
-                                <i class="fas fa-utensils fa-3x text-muted mb-3"></i>
-                                <p class="text-muted mb-0">No foods selected</p>
-                                <small class="text-muted">You can add food & beverages during your booking</small>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cột 3: Movie & Show Details + Your Information -->
-            <div class="col-lg-3">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-gradient-primary text-white rounded-top-4 py-3">
-                        <h5 class="mb-0 fw-semibold">🎭 Movie & Show Details</h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <span class="info-label">Movie</span>
-                                    <span class="info-value">@Model.MovieName</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <span class="info-label">Screen</span>
-                                    <span class="info-value">@Model.CinemaRoomName</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <span class="info-label">Version</span>
-                                    <span class="info-value">@Model.VersionName</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <span class="info-label">Date & Time</span>
-                                    <span class="info-value">@Model.ShowDate.ToString("MMM dd, yyyy") at @Model.ShowTime</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
-                        <h5 class="mb-0 fw-semibold">👤 Your Information</h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="info-item">
-                                    <span class="info-label">Full Name</span>
-                                    <span class="info-value">@Model.FullName</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="info-item">
-                                    <span class="info-label">Email</span>
-                                    <span class="info-value">@Model.Email</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="info-item">
-                                    <span class="info-label">Identity Card</span>
-                                    <span class="info-value">@Model.IdentityCard</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="info-item">
-                                    <span class="info-label">Phone</span>
-                                    <span class="info-value">@Model.PhoneNumber</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="info-item">
-                                    <span class="info-label">Available Points</span>
-                                    <span class="info-value">
-                                        <span id="currentScore" class="badge bg-warning text-dark fs-6">@Model.CurrentScore pts</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cột 4: Discount, Price, Confirm (giữ nguyên) -->
-            <div class="col-lg-3">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-gradient-dark text-white rounded-top-4 py-3">
-                        <h5 class="mb-0 fw-semibold">💰 Discounts & Points</h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <!-- Points Usage -->
-                        <div class="mb-4">
-                            <label for="useScore" class="form-label fw-semibold">
-                                <i class="fas fa-star text-warning me-2"></i>Use Points
-                            </label>
-                            <div class="input-group">
-                                <input asp-for="UseScore" type="number" class="form-control form-control-lg" 
-                                       id="useScore" min="0" value="0" placeholder="0" />
-                                <span class="input-group-text">pts</span>
-                            </div>
-                            <div class="form-text">
-                                <small class="text-muted">
-                                    1 point = 1,000 VND | Max: <span id="maxUsablePoints" class="fw-semibold">(calculating...)</span>
-                                </small>
-                            </div>
-                            <div id="pointsEarnedPreview" class="text-success small mt-1"></div>
-                            <div id="pointValidation" class="text-danger small mt-1"></div>
-                            <div id="pointSavings" class="text-success small mt-1"></div>
-                        </div>
-                        <!-- Voucher Selection -->
-                        <div class="mb-3">
-                            <button type="button" id="openVoucherModalBtn" 
-                                    class="btn btn-outline-primary btn-lg w-100 rounded-pill">
-                                <i class="fas fa-ticket-alt me-2"></i>Select Voucher
-                            </button>
-                            <div id="selectedVoucherInfo" class="mt-3"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card border-0 shadow-lg rounded-4 mb-4 price-summary-card">
-                    <div class="card-header bg-gradient-primary text-white rounded-top-4 py-3">
-                        <h5 class="mb-0 fw-semibold">📊 Price Summary</h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="price-breakdown">
-                            <div class="price-row">
-                                <span>Seat Price:</span>
-                                <span id="originalTotal">@seatPrice.ToString("N0") VND</span>
-                            </div>
-                            @if (Model.TotalFoodPrice > 0)
-                            {
-                                <div class="price-row">
-                                    <span>Food & Beverages:</span>
-                                    <span id="foodTotal">@Model.TotalFoodPrice.ToString("N0") VND</span>
-                                </div>
-                            }
-                            <div id="rankDiscountRow" class="price-row discount-row" style="display:none;">
-                                <span>Rank Discount:</span>
-                                <span id="rankDiscountDisplay" class="text-success"></span>
-                            </div>
-                            <div id="voucherDiscountRow" class="price-row discount-row" style="display:none;">
-                                <span>Voucher Discount:</span>
-                                <span id="voucherDiscountDisplay" class="text-success"></span>
-                            </div>
-                            <div id="promotionDiscountRow" class="price-row discount-row" style="display:none;">
-                                <span>Promotion Discount:</span>
-                                <span id="promotionDiscountDisplay" class="text-success"></span>
-                            </div>
-                            <div id="pointsUsedRow" class="price-row discount-row" style="display:none;">
-                                <span>Points Used:</span>
-                                <span id="pointsUsedDisplay" class="text-success"></span>
-                            </div>
-                            <hr class="my-3">
-                            <div class="price-row total-row">
-                                <span class="fw-bold fs-5">Total Price:</span>
-                                <span id="totalPriceDisplay" class="fw-bold fs-4 text-primary">@Model.TotalPrice.ToString("N0") VND</span>
-                            </div>
-                            <div class="d-grid gap-2 mb-4">
-                                <form asp-action="Confirm" method="post" id="confirmForm">
-                                    @Html.HiddenFor(m => m.MovieId)
-                                    @Html.HiddenFor(m => m.MovieName)
-                                    @Html.HiddenFor(m => m.CinemaRoomName)
-                                    @Html.HiddenFor(m => m.ShowDate)
-                                    @Html.HiddenFor(m => m.ShowTime)
-                                    @Html.HiddenFor(m => m.TotalPrice)
-                                    @Html.HiddenFor(m => m.FullName)
-                                    @Html.HiddenFor(m => m.Email)
-                                    @Html.HiddenFor(m => m.IdentityCard)
-                                    @Html.HiddenFor(m => m.PhoneNumber)
-                                    @Html.HiddenFor(m => m.CurrentScore)
-                                    @Html.HiddenFor(m => m.MovieShowId)
-                                    @Html.HiddenFor(m => m.Subtotal)
-                                    @Html.HiddenFor(m => m.RankDiscount)
-                                    @Html.HiddenFor(m => m.RankDiscountPercent)
-                                    @Html.HiddenFor(m => m.PromotionDiscountPercent)
-                                    @Html.HiddenFor(m => m.AddScore)
-                                    @Html.HiddenFor(m => m.TotalFoodPrice)
-                                    @Html.HiddenFor(m => m.EarningRate)
-                                    <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
-                                    <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
-                                    <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
-                                    <input type="hidden" name="VoucherAmount" id="hiddenVoucherAmount" value="@Model.VoucherAmount" />
-                                    <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
-                                    @for (int i = 0; i < Model.SelectedSeats.Count; i++)
-                                    {
-                                        <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
-                                        <input type="hidden" name="SelectedSeats[@i].SeatType" value="@Model.SelectedSeats[i].SeatType" />
-                                        <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
-                                        <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
-                                    }
-                                    @for (int i = 0; i < Model.SelectedFoods.Count; i++)
-                                    {
-                                        <input type="hidden" name="SelectedFoods[@i].FoodId" value="@Model.SelectedFoods[i].FoodId" />
-                                        <input type="hidden" name="SelectedFoods[@i].Name" value="@Model.SelectedFoods[i].Name" />
-                                        <input type="hidden" name="SelectedFoods[@i].Price" value="@Model.SelectedFoods[i].Price" />
-                                        <input type="hidden" name="SelectedFoods[@i].Quantity" value="@Model.SelectedFoods[i].Quantity" />
-                                        <input type="hidden" name="SelectedFoods[@i].Image" value="@Model.SelectedFoods[i].Image" />
-                                        <input type="hidden" name="SelectedFoods[@i].Description" value="@Model.SelectedFoods[i].Description" />
-                                        <input type="hidden" name="SelectedFoods[@i].Category" value="@Model.SelectedFoods[i].Category" />
-                                        <input type="hidden" name="SelectedFoods[@i].Status" value="@Model.SelectedFoods[i].Status" />
-                                        <input type="hidden" name="SelectedFoods[@i].CreatedDate" value="@Model.SelectedFoods[i].CreatedDate" />
-                                        <input type="hidden" name="SelectedFoods[@i].UpdatedDate" value="@Model.SelectedFoods[i].UpdatedDate" />
-                                        <input type="hidden" name="SelectedFoods[@i].PromotionDiscount" value="@Model.SelectedFoods[i].PromotionDiscount" />
-                                    }
-                                    <button id="confirmBtn" type="submit" class="btn btn-success btn-lg rounded-pill py-3 fw-semibold">
-                                        <i class="fas fa-check-circle me-2"></i>Confirm Booking
-                                    </button>
-                                    <button type="button" class="btn btn-outline-success rounded-pill" onclick="testSuccess()">
-                                        <i class="fas fa-flask me-2"></i>Test Success
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Voucher Selection Modal -->
-<div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-gradient-primary text-white rounded-top-4 py-3">
-                <h5 class="modal-title fw-semibold" id="voucherModalLabel">
-                    <i class="fas fa-ticket-alt me-2"></i>My Vouchers
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="row g-3" id="voucherListContainer">
-                    <!-- Voucher cards will load here -->
-                </div>
-                <div class="text-center mt-4">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="clearVoucherBtn">
-                        <i class="fas fa-times me-2"></i>Clear Selection
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    /* Custom Gradients */
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .bg-gradient-success {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    }
-    
-    .bg-gradient-info {
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    }
-    
-    .bg-gradient-warning {
-        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    }
-    
-    .bg-gradient-dark {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    /* Info Items */
-    .info-item {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    
-    .info-label {
-        font-size: 0.875rem;
-        color: #6b7280;
-        font-weight: 500;
-    }
-    
-    .info-value {
-        font-weight: 600;
-        color: #1f2937;
-        font-size: 1rem;
-    }
-
-    /* Price Styling */
-    .original-price {
-        text-decoration: line-through;
-        color: #9ca3af;
-        font-size: 0.875rem;
-    }
-    
-    .discounted-price {
-        color: #059669;
-        font-weight: 600;
-        margin-left: 0.5rem;
-    }
-
-    /* Food Image */
-    .food-image {
-        width: 48px;
-        height: 48px;
-        object-fit: cover;
-    }
-
-    /* Price Summary */
-    .price-summary-card {
-        position: sticky;
-        top: 2rem;
-    }
-    
-    .price-breakdown {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    
-    .price-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.95rem;
-    }
-    
-    .price-row.total-row {
-        padding-top: 0.5rem;
-        border-top: 2px solid #e5e7eb;
-    }
-    
-    .discount-row {
-        color: #059669;
-        font-weight: 500;
-    }
-
-    /* Voucher Cards */
-    .voucher-card {
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid #e5e7eb;
-        border-radius: 1rem;
-        overflow: hidden;
-    }
-    
-    .voucher-card:hover {
-        border-color: #3b82f6;
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
-    }
-    
-    .voucher-card.selected {
-        border-color: #10b981;
-        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
-        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
-    }
-
-    /* Selected Voucher Info */
-    .selected-voucher-display {
-        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
-        border: 2px solid #10b981;
-        border-radius: 0.75rem;
-        padding: 1rem;
-        position: relative;
-    }
-    
-    .remove-voucher-btn {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: #fff;
-        border: none;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: all 0.2s;
-        color: #dc2626;
-        z-index: 2;
-    }
-    
-    .remove-voucher-btn:hover {
-        background: #fef2f2;
-        color: #991b1b;
-        transform: scale(1.1);
-    }
-
-    /* Buttons */
-    .btn {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .btn:hover {
-        transform: translateY(-1px);
-    }
-    
-    .btn-lg {
-        font-size: 1.1rem;
-        padding: 0.75rem 1.5rem;
-    }
-
-    /* Cards */
-    .card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
-    }
-
-    /* Disabled State */
-    button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none !important;
-    }
-
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .price-summary-card {
-            position: static;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Booking - CinemaMax</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cinema-dark: #0a0a0a;
+            --cinema-darker: #050505;
+            --cinema-gold: #ffd700;
+            --cinema-gold-dark: #b8860b;
+            --cinema-red: #dc2626;
+            --cinema-silver: #c0c0c0;
+            --cinema-blue: #1e40af;
+            --cinema-green: #059669;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
-        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--cinema-darker) 0%, var(--cinema-dark) 50%, #1a1a1a 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Cinema Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(220, 38, 38, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Header Section */
+        .cinema-header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .cinema-title {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .cinema-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .back-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--cinema-gold);
+            color: var(--cinema-gold);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content Container */
+        .booking-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Glass Card Effect */
+        .glass-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .glass-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            color: var(--cinema-dark);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        /* Booking Details Grid */
+        .booking-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .booking-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .booking-row.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        /* Seats and Food Lists */
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .item-row {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .item-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 215, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .seat-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .seat-badge {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            color: var(--cinema-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .seat-type {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .price-info {
+            text-align: right;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .current-price {
+            color: var(--cinema-green);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .promotion-tag {
+            background: var(--cinema-green);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        /* Food Items */
+        .food-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .food-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            object-fit: cover;
+            border: 2px solid var(--glass-border);
+        }
+
+        .food-details {
+            flex: 1;
+        }
+
+        .food-name {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .food-quantity {
+            background: var(--cinema-silver);
+            color: var(--cinema-dark);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
         .info-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .points-badge {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            color: var(--cinema-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* Payment Section */
+        .payment-section {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Points and Voucher Controls */
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-label {
+            color: var(--text-light);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            color: var(--text-light);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--cinema-gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+            color: var(--text-light);
+        }
+
+        .input-group-text {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid var(--glass-border);
+            border-left: none;
+            color: var(--cinema-gold);
+            font-weight: 600;
+        }
+
+        .voucher-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 0.75rem 1.5rem;
+            border-radius: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .voucher-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--cinema-gold);
+            color: var(--cinema-gold);
+        }
+
+        /* Price Breakdown */
+        .price-breakdown {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .price-row:last-child {
+            border-bottom: none;
+        }
+
+        .price-row.total {
+            border-top: 2px solid var(--cinema-gold);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .price-label {
+            color: var(--text-muted);
+        }
+
+        .price-value {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .discount-value {
+            color: var(--cinema-green);
+            font-weight: 600;
+        }
+
+        .total-value {
+            color: var(--cinema-gold);
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        /* Buttons */
+        .cinema-btn {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            border: none;
+            color: var(--cinema-dark);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
             margin-bottom: 1rem;
         }
-    }
 
-    /* Loading Animation */
-    .loading-spinner {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // Use the correct seat price from Razor
-        var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var pointValue = 1000;
-        let voucherModalInstance = null;
-        let selectedVoucher = null;
-        let selectedPromotion = null;
-
-        $('#openVoucherModalBtn').click(function () {
-            if (!voucherModalInstance) {
-                voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
-            }
-            loadVouchers();
-            voucherModalInstance.show();
-        });
-
-        $('#clearVoucherBtn').click(function () {
-            selectedVoucher = null;
-            $('#selectedVoucherInfo').html('');
-            $('.voucher-card').removeClass('selected');
-            updatePriceFlow();
-            if (voucherModalInstance) voucherModalInstance.hide();
-        });
-
-        // Load vouchers via API
-        function loadVouchers() {
-            $('#voucherListContainer').html('<div class="col-12 text-center"><div class="loading-spinner"></div><p class="mt-2">Loading vouchers...</p></div>');
-            
-            $.ajax({
-                url: '/Voucher/GetAvailableVouchers',
-                method: 'GET',
-                success: function (data) {
-                    let html = '';
-                    if (data.length === 0) {
-                        html = '<div class="col-12 text-center"><div class="py-4"><i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i><p class="text-muted">No available vouchers found.</p></div></div>';
-                    } else {
-                        data.forEach(v => {
-                            html += `
-                            <div class="col-md-6 mb-3">
-                              <div class="card voucher-card h-100" data-id="${v.id}" data-value="${v.value}">
-                                <div class="card-body text-center p-3">
-                                  <div class="voucher-icon mb-2">
-                                    <i class="fas fa-ticket-alt fa-2x text-primary"></i>
-                                  </div>
-                                  <h6 class="card-title fw-bold text-primary mb-2">${v.code}</h6>
-                                  <p class="card-text mb-1">
-                                    <span class="badge bg-success fs-6">${v.value.toLocaleString()} VND</span>
-                                  </p>
-                                  <p class="card-text small text-muted">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    Expires: ${v.expirationDate}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>`;
-                        });
-                    }
-                    $('#voucherListContainer').html(html);
-                    
-                    $('.voucher-card').click(function () {
-                        $('.voucher-card').removeClass('selected');
-                        $(this).addClass('selected');
-                        selectedVoucher = {
-                            id: $(this).data('id'),
-                            value: $(this).data('value')
-                        };
-                        renderSelectedVoucherInfo();
-                        updatePriceFlow();
-                        if (voucherModalInstance) voucherModalInstance.hide();
-                    });
-                },
-                error: function() {
-                    $('#voucherListContainer').html('<div class="col-12 text-center"><div class="py-4"><i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i><p class="text-danger">Error loading vouchers. Please try again.</p></div></div>');
-                }
-            });
+        .cinema-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            color: var(--cinema-dark);
         }
 
-        function renderSelectedVoucherInfo() {
-            if (selectedVoucher) {
-                $('#selectedVoucherInfo').html(`
-                    <div class="selected-voucher-display">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-ticket-alt text-success me-2"></i>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">Selected Voucher</div>
-                                <div class="small text-muted">${selectedVoucher.id}</div>
-                                <div class="fw-bold text-success">${selectedVoucher.value.toLocaleString()} VND</div>
+        .cinema-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .test-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            background: var(--cinema-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            color: var(--cinema-dark);
+            border-radius: 20px 20px 0 0;
+            border-bottom: none;
+        }
+
+        .modal-title {
+            font-weight: 700;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-body {
+            background: var(--cinema-dark);
+            color: var(--text-light);
+        }
+
+        /* Voucher Cards */
+        .voucher-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .voucher-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--cinema-gold);
+            transform: translateY(-5px);
+        }
+
+        .voucher-card.selected {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--cinema-gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .voucher-icon {
+            font-size: 2rem;
+            color: var(--cinema-gold);
+            margin-bottom: 1rem;
+        }
+
+        .voucher-code {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .voucher-value {
+            background: var(--cinema-green);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .voucher-expiry {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Selected Voucher Display */
+        .selected-voucher {
+            background: rgba(5, 150, 105, 0.1);
+            border: 1px solid var(--cinema-green);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            position: relative;
+            width: 100%;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+        }
+
+        .remove-voucher {
+            background: var(--cinema-red);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .remove-voucher:hover {
+            background: #b91c1c;
+            transform: scale(1.1);
+        }
+
+        .voucher-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 1rem;
+        }
+
+        /* Totals Section */
+        .totals-row {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .total-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .total-amount {
+            color: var(--cinema-gold);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        /* Messages */
+        .message {
+            padding: 0.75rem;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .message.success {
+            background: rgba(5, 150, 105, 0.1);
+            border: 1px solid var(--cinema-green);
+            color: var(--cinema-green);
+        }
+
+        .message.error {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid var(--cinema-red);
+            color: var(--cinema-red);
+        }
+
+        /* Force Dark Theme - Override Light Mode */
+        body[data-bs-theme="light"],
+        body:not(.dark-mode) {
+            background: linear-gradient(135deg, var(--cinema-darker) 0%, var(--cinema-dark) 50%, #1a1a1a 100%) !important;
+            color: var(--text-light) !important;
+        }
+        
+        /* Override any Bootstrap light theme styles */
+        body[data-bs-theme="light"] *,
+        body:not(.dark-mode) * {
+            color: inherit !important;
+        }
+
+        body[data-bs-theme="light"] .cinema-header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
+            border-bottom: 1px solid var(--glass-border) !important;
+        }
+
+        body[data-bs-theme="light"] .cinema-title {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        body[data-bs-theme="light"] .cinema-subtitle {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .glass-section {
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .section-title {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .info-label {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .info-value {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .control-label {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .form-control {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .form-control:focus {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: var(--cinema-gold) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .price-label {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .price-value {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .modal-content {
+            background: var(--cinema-dark) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .modal-body {
+            background: var(--cinema-dark) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .voucher-card {
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .voucher-card:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: var(--cinema-gold) !important;
+        }
+
+        body[data-bs-theme="light"] .voucher-code {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .voucher-expiry {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .empty-state {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .message.success {
+            background: rgba(5, 150, 105, 0.1) !important;
+            border: 1px solid var(--cinema-green) !important;
+            color: var(--cinema-green) !important;
+        }
+
+        body[data-bs-theme="light"] .message.error {
+            background: rgba(220, 38, 38, 0.1) !important;
+            border: 1px solid var(--cinema-red) !important;
+            color: var(--cinema-red) !important;
+        }
+        
+        /* Additional overrides for light mode */
+        body[data-bs-theme="light"] .booking-container,
+        body:not(.dark-mode) .booking-container {
+            background: transparent !important;
+        }
+        
+        body[data-bs-theme="light"] .item-row,
+        body:not(.dark-mode) .item-row {
+            background: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            color: var(--text-light) !important;
+        }
+        
+        body[data-bs-theme="light"] .item-row:hover,
+        body:not(.dark-mode) .item-row:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(255, 215, 0, 0.3) !important;
+        }
+        
+        body[data-bs-theme="light"] .price-breakdown,
+        body:not(.dark-mode) .price-breakdown {
+            background: rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        body[data-bs-theme="light"] .price-row,
+        body:not(.dark-mode) .price-row {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        body[data-bs-theme="light"] .totals-row,
+        body:not(.dark-mode) .totals-row {
+            background: rgba(255, 255, 255, 0.03) !important;
+        }
+        
+        body[data-bs-theme="light"] .current-points-display,
+        body:not(.dark-mode) .current-points-display {
+            background: rgba(255, 215, 0, 0.1) !important;
+            border: 1px solid rgba(255, 215, 0, 0.3) !important;
+        }
+        
+        body[data-bs-theme="light"] .selected-voucher,
+        body:not(.dark-mode) .selected-voucher {
+            background: rgba(5, 150, 105, 0.1) !important;
+            border: 1px solid var(--cinema-green) !important;
+        }
+        
+        /* Override any potential Bootstrap container styles */
+        body[data-bs-theme="light"] .container,
+        body[data-bs-theme="light"] .container-fluid,
+        body:not(.dark-mode) .container,
+        body:not(.dark-mode) .container-fluid {
+            background: transparent !important;
+        }
+        
+        /* Force all text to be light colored */
+        body[data-bs-theme="light"] h1,
+        body[data-bs-theme="light"] h2,
+        body[data-bs-theme="light"] h3,
+        body[data-bs-theme="light"] h4,
+        body[data-bs-theme="light"] h5,
+        body[data-bs-theme="light"] h6,
+        body[data-bs-theme="light"] p,
+        body[data-bs-theme="light"] span,
+        body[data-bs-theme="light"] div,
+        body:not(.dark-mode) h1,
+        body:not(.dark-mode) h2,
+        body:not(.dark-mode) h3,
+        body:not(.dark-mode) h4,
+        body:not(.dark-mode) h5,
+        body:not(.dark-mode) h6,
+        body:not(.dark-mode) p,
+        body:not(.dark-mode) span,
+        body:not(.dark-mode) div {
+            color: var(--text-light) !important;
+        }
+        
+        /* Exception for specific elements that should keep their colors */
+        body[data-bs-theme="light"] .cinema-title,
+        body:not(.dark-mode) .cinema-title {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+        
+        body[data-bs-theme="light"] .points-badge,
+        body:not(.dark-mode) .points-badge {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%) !important;
+            color: var(--cinema-dark) !important;
+        }
+        
+        body[data-bs-theme="light"] .current-price,
+        body:not(.dark-mode) .current-price {
+            color: var(--cinema-green) !important;
+        }
+        
+        body[data-bs-theme="light"] .total-value,
+        body:not(.dark-mode) .total-value {
+            color: var(--cinema-gold) !important;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 1200px) {
+            .booking-row {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .payment-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .cinema-title {
+                font-size: 2rem;
+            }
+            
+            .booking-container {
+                padding: 0 1rem;
+            }
+            
+            .glass-section {
+                padding: 1.5rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .section-title {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-top: 2px solid var(--cinema-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Header -->
+    <div class="cinema-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1">
+                    <h1 class="cinema-title">🎬 Confirm Your Booking</h1>
+                    <p class="cinema-subtitle">Review your selection and complete your purchase</p>
+                </div>
+                <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })" 
+                   class="back-btn">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Seats
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="booking-container">
+        <!-- Booking Details Grid -->
+        <div class="booking-grid">
+            <!-- Row 1: Movie Info & Customer Info -->
+            <div class="booking-row">
+                <!-- Movie & Show Details -->
+                <div class="glass-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-film"></i>
+                        </div>
+                        <h3 class="section-title">Movie & Show Details</h3>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Movie</div>
+                            <div class="info-value">@Model.MovieName</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Screen</div>
+                            <div class="info-value">@Model.CinemaRoomName</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Version</div>
+                            <div class="info-value">@Model.VersionName</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Date & Time</div>
+                            <div class="info-value">@Model.ShowDate.ToString("MMM dd, yyyy") at @Model.ShowTime</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Information -->
+                <div class="glass-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="section-title">Customer Information</h3>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Full Name</div>
+                            <div class="info-value">@Model.FullName</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">@Model.Email</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Phone</div>
+                            <div class="info-value">@Model.PhoneNumber</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">ID Card</div>
+                            <div class="info-value">@Model.IdentityCard</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Available Points</div>
+                            <div class="info-value">
+                                <span id="currentScore" class="points-badge">@Model.CurrentScore pts</span>
                             </div>
                         </div>
-                        <button type="button" class="remove-voucher-btn" title="Remove voucher">
-                            <i class="fas fa-times"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Seats & Food -->
+            <div class="booking-row">
+                <!-- Selected Seats -->
+                <div class="glass-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-couch"></i>
+                        </div>
+                        <h3 class="section-title">Selected Seats</h3>
+                    </div>
+                    
+                    <div class="item-list">
+                        @foreach (var seat in Model.SelectedSeats)
+                        {
+                            <div class="item-row">
+                                <div class="seat-info">
+                                    <div>
+                                        <div class="seat-badge">@seat.SeatName</div>
+                                        <div class="seat-type mt-1">@seat.SeatType</div>
+                                    </div>
+                                    <div class="price-info">
+                                        @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                        {
+                                            <div class="original-price">@seat.OriginalPrice.Value.ToString("N0") VND</div>
+                                            <div class="current-price">@seat.PriceAfterPromotion.Value.ToString("N0") VND</div>
+                                            @if (!string.IsNullOrEmpty(seat.PromotionName))
+                                            {
+                                                <div class="promotion-tag">@seat.PromotionName</div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="current-price">@seat.Price.ToString("N0") VND</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="totals-row">
+                        <div class="total-label">Seats Total</div>
+                        <div class="total-amount">@Model.Subtotal.ToString("N0") VND</div>
+                    </div>
+                </div>
+
+                <!-- Food & Beverages -->
+                <div class="glass-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <h3 class="section-title">Food & Drinks</h3>
+                    </div>
+                    
+                    @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
+                    {
+                        <div class="item-list">
+                            @foreach (var food in Model.SelectedFoods)
+                            {
+                                <div class="item-row">
+                                    <div class="food-item">
+                                        <img src="@food.Image" alt="@food.Name" class="food-image" />
+                                        <div class="food-details">
+                                            <div class="food-name">@food.Name</div>
+                                            <div class="d-flex align-items-center gap-2 mt-1">
+                                                <span class="food-quantity">Qty: @food.Quantity</span>
+                                                @if (!string.IsNullOrEmpty(food.PromotionName))
+                                                {
+                                                    <span class="promotion-tag">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="price-info">
+                                            @if (food.PromotionDiscount > 0 && food.OriginalPrice > food.Price)
+                                            {
+                                                <div class="original-price">@food.OriginalPrice.ToString("N0") VND</div>
+                                                <div class="current-price">@food.Price.ToString("N0") VND</div>
+                                            }
+                                            else
+                                            {
+                                                <div class="current-price">@food.Price.ToString("N0") VND</div>
+                                            }
+                                            <div class="mt-1" style="color: var(--cinema-gold); font-weight: 600;">
+                                                Total: @((food.Price * food.Quantity).ToString("N0")) VND
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="totals-row">
+                            <div class="total-label">Food & Drinks Total</div>
+                            <div class="total-amount">@Model.TotalFoodPrice.ToString("N0") VND</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fas fa-utensils"></i>
+                            <p>No food items selected</p>
+                            <small>Add snacks to enhance your movie experience</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Section -->
+        <div class="payment-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h3 class="section-title">Payment & Confirmation</h3>
+            </div>
+
+            <div class="payment-grid">
+                <!-- Left: Points & Vouchers -->
+                <div>
+                    <!-- Points Usage -->
+                    <div class="control-group">
+                        <label class="control-label">
+                            <i class="fas fa-star text-warning"></i>
+                            Use Points
+                        </label>
+                        <div class="current-points-display mb-3">
+                            <div class="d-flex align-items-center justify-content-between p-3" style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 15px;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-star text-warning me-2" style="font-size: 1.2rem;"></i>
+                                    <span class="text-light fw-semibold">Your Current Points:</span>
+                                </div>
+                                <div class="points-badge" style="font-size: 1.1rem;">
+                                    <span id="displayCurrentScore">@Model.CurrentScore</span> pts
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input asp-for="UseScore" type="number" class="form-control" 
+                                   id="useScore" min="0" value="0" placeholder="0" />
+                            <span class="input-group-text">pts</span>
+                        </div>
+                        <div class="form-text text-white mt-2">
+                            1 point = 1,000 VND | Min: 20 pts | Max: <span id="maxUsablePoints" class="fw-semibold">(calculating...)</span>
+                        </div>
+                        <div id="pointsEarnedPreview" class="message success" style="display: none;"></div>
+                        <div id="pointValidation" class="message error" style="display: none;"></div>
+                        <div id="pointSavings" class="message success" style="display: none;"></div>
+                    </div>
+
+                    <!-- Voucher Selection -->
+                    <div class="control-group">
+                        <label class="control-label">
+                            <i class="fas fa-ticket-alt"></i>
+                            Select Voucher
+                        </label>
+                        <button type="button" id="openVoucherModalBtn" class="voucher-btn">
+                            <i class="fas fa-ticket-alt me-2"></i>Choose Voucher
+                        </button>
+                        <div id="selectedVoucherInfo"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Price Breakdown -->
+                <div>
+                    <div class="price-breakdown">
+                        <div class="price-row">
+                            <span class="price-label">Seat Price:</span>
+                            <span class="price-value" id="originalTotal">@seatPrice.ToString("N0") VND</span>
+                        </div>
+                        @if (Model.TotalFoodPrice > 0)
+                        {
+                            <div class="price-row">
+                                <span class="price-label">Food & Beverages:</span>
+                                <span class="price-value" id="foodTotal">@Model.TotalFoodPrice.ToString("N0") VND</span>
+                            </div>
+                        }
+                        <div id="rankDiscountRow" class="price-row" style="display:none;">
+                            <span class="price-label">Rank Discount:</span>
+                            <span class="discount-value" id="rankDiscountDisplay"></span>
+                        </div>
+                        <div id="voucherDiscountRow" class="price-row" style="display:none;">
+                            <span class="price-label">Voucher Discount:</span>
+                            <span class="discount-value" id="voucherDiscountDisplay"></span>
+                        </div>
+                        <div id="promotionDiscountRow" class="price-row" style="display:none;">
+                            <span class="price-label">Promotion Discount:</span>
+                            <span class="discount-value" id="promotionDiscountDisplay"></span>
+                        </div>
+                        <div id="pointsUsedRow" class="price-row" style="display:none;">
+                            <span class="price-label">Points Used:</span>
+                            <span class="discount-value" id="pointsUsedDisplay"></span>
+                        </div>
+                        
+                        <div class="price-row total">
+                            <span class="price-label">Total Price:</span>
+                            <span class="total-value" id="totalPriceDisplay">@Model.TotalPrice.ToString("N0") VND</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <form asp-action="Confirm" method="post" id="confirmForm" class="mt-4">
+                @Html.HiddenFor(m => m.MovieId)
+                @Html.HiddenFor(m => m.MovieName)
+                @Html.HiddenFor(m => m.CinemaRoomName)
+                @Html.HiddenFor(m => m.ShowDate)
+                @Html.HiddenFor(m => m.ShowTime)
+                @Html.HiddenFor(m => m.TotalPrice)
+                @Html.HiddenFor(m => m.FullName)
+                @Html.HiddenFor(m => m.Email)
+                @Html.HiddenFor(m => m.IdentityCard)
+                @Html.HiddenFor(m => m.PhoneNumber)
+                @Html.HiddenFor(m => m.CurrentScore)
+                @Html.HiddenFor(m => m.MovieShowId)
+                @Html.HiddenFor(m => m.Subtotal)
+                @Html.HiddenFor(m => m.RankDiscount)
+                @Html.HiddenFor(m => m.RankDiscountPercent)
+                @Html.HiddenFor(m => m.PromotionDiscountPercent)
+                @Html.HiddenFor(m => m.AddScore)
+                @Html.HiddenFor(m => m.TotalFoodPrice)
+                @Html.HiddenFor(m => m.EarningRate)
+                
+                <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
+                <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
+                <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
+                <input type="hidden" name="VoucherAmount" id="hiddenVoucherAmount" value="@Model.VoucherAmount" />
+                <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
+                
+                @for (int i = 0; i < Model.SelectedSeats.Count; i++)
+                {
+                    <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
+                    <input type="hidden" name="SelectedSeats[@i].SeatType" value="@Model.SelectedSeats[i].SeatType" />
+                    <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
+                    <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
+                }
+                
+                @for (int i = 0; i < Model.SelectedFoods.Count; i++)
+                {
+                    <input type="hidden" name="SelectedFoods[@i].FoodId" value="@Model.SelectedFoods[i].FoodId" />
+                    <input type="hidden" name="SelectedFoods[@i].Name" value="@Model.SelectedFoods[i].Name" />
+                    <input type="hidden" name="SelectedFoods[@i].Price" value="@Model.SelectedFoods[i].Price" />
+                    <input type="hidden" name="SelectedFoods[@i].Quantity" value="@Model.SelectedFoods[i].Quantity" />
+                    <input type="hidden" name="SelectedFoods[@i].Image" value="@Model.SelectedFoods[i].Image" />
+                    <input type="hidden" name="SelectedFoods[@i].Description" value="@Model.SelectedFoods[i].Description" />
+                    <input type="hidden" name="SelectedFoods[@i].Category" value="@Model.SelectedFoods[i].Category" />
+                    <input type="hidden" name="SelectedFoods[@i].Status" value="@Model.SelectedFoods[i].Status" />
+                    <input type="hidden" name="SelectedFoods[@i].CreatedDate" value="@Model.SelectedFoods[i].CreatedDate" />
+                    <input type="hidden" name="SelectedFoods[@i].UpdatedDate" value="@Model.SelectedFoods[i].UpdatedDate" />
+                    <input type="hidden" name="SelectedFoods[@i].PromotionDiscount" value="@Model.SelectedFoods[i].PromotionDiscount" />
+                }
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <button id="confirmBtn" type="submit" class="cinema-btn">
+                            <i class="fas fa-check-circle me-2"></i>Confirm Booking
                         </button>
                     </div>
-                `);
-                
-                $('.remove-voucher-btn').off('click').on('click', function () {
-                    selectedVoucher = null;
-                    $('#selectedVoucherInfo').html('');
-                    $('.voucher-card').removeClass('selected');
-                    updatePriceFlow();
-                });
-            } else {
-                $('#selectedVoucherInfo').html('');
-            }
-        }
+                    <div class="col-md-4">
+                        <button type="button" class="test-btn" onclick="testSuccess()">
+                            <i class="fas fa-flask me-2"></i>Test Success
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        function updateMaxUsablePoints(discountedTotal) {
-            var maxPoints = Math.floor((discountedTotal * 0.9) / pointValue);
-            maxPoints = Math.min(maxPoints, currentScore);
-            $('#maxUsablePoints').text(maxPoints + ' pts');
-            $('#useScore').attr('max', maxPoints);
-            return maxPoints;
-        }
+    <!-- Voucher Selection Modal -->
+    <div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="voucherModalLabel">
+                        <i class="fas fa-ticket-alt me-2"></i>My Vouchers
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3" id="voucherListContainer">
+                        <!-- Voucher cards will load here -->
+                    </div>
+                    <div class="text-center mt-4">
+                        <button type="button" class="test-btn" id="clearVoucherBtn">
+                            <i class="fas fa-times me-2"></i>Clear Selection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function updatePriceFlow() {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize variables
             var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var pointValue = 1000;
+            let voucherModalInstance = null;
+            let selectedVoucher = null;
+            let selectedPromotion = null;
 
-            // Rank discount is applied to subtotal (after promotion)
-            var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var rankDiscountAmount = Math.round(subtotal * (rankDiscountPercent / 100));
-            var afterRank = subtotal - rankDiscountAmount;
-            if (afterRank < 0) afterRank = 0;
+            // Voucher modal handlers
+            $('#openVoucherModalBtn').click(function () {
+                if (!voucherModalInstance) {
+                    voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
+                }
+                loadVouchers();
+                voucherModalInstance.show();
+            });
 
-            var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
-            var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
-            var afterPromo = afterRank - promoDiscountAmount;
-            if (afterPromo < 0) afterPromo = 0;
+            $('#clearVoucherBtn').click(function () {
+                selectedVoucher = null;
+                $('#selectedVoucherInfo').html('');
+                $('.voucher-card').removeClass('selected');
+                updatePriceFlow();
+                if (voucherModalInstance) voucherModalInstance.hide();
+            });
 
-            // Voucher chỉ áp dụng cho seat
-            var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-            var afterVoucher = afterPromo - voucherAmount;
-            if (afterVoucher < 0) afterVoucher = 0;
-
-            // Points chỉ áp dụng cho seat
-            var useScore = parseInt($('#useScore').val()) || 0;
-            var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
-            var valid = true;
-            var validationMsg = '';
-            var pointsValue = useScore * pointValue;
-
-            if (useScore > maxUsablePoints) {   
-                useScore = maxUsablePoints;
-                $('#useScore').val(useScore);
+            // Load vouchers function
+            function loadVouchers() {
+                $('#voucherListContainer').html('<div class="col-12 text-center"><div class="loading-spinner"></div><p class="mt-2">Loading vouchers...</p></div>');
+                
+                $.ajax({
+                    url: '/Voucher/GetAvailableVouchers',
+                    method: 'GET',
+                    success: function (data) {
+                        let html = '';
+                        if (data.length === 0) {
+                            html = '<div class="col-12"><div class="empty-state"><i class="fas fa-ticket-alt"></i><p>No available vouchers found.</p></div></div>';
+                        } else {
+                            data.forEach(v => {
+                                html += `
+                                <div class="col-md-6 mb-3">
+                                  <div class="voucher-card" data-id="${v.id}" data-value="${v.value}">
+                                    <div class="voucher-icon">
+                                      <i class="fas fa-ticket-alt"></i>
+                                    </div>
+                                    <div class="voucher-code">${v.code}</div>
+                                    <div class="voucher-value">${v.value.toLocaleString()} VND</div>
+                                    <div class="voucher-expiry">
+                                      <i class="fas fa-calendar-alt me-1"></i>
+                                      Expires: ${v.expirationDate}
+                                    </div>
+                                  </div>
+                                </div>`;
+                            });
+                        }
+                        $('#voucherListContainer').html(html);
+                        
+                        $('.voucher-card').click(function () {
+                            $('.voucher-card').removeClass('selected');
+                            $(this).addClass('selected');
+                            selectedVoucher = {
+                                id: $(this).data('id'),
+                                value: $(this).data('value')
+                            };
+                            renderSelectedVoucherInfo();
+                            updatePriceFlow();
+                            if (voucherModalInstance) voucherModalInstance.hide();
+                        });
+                    },
+                    error: function() {
+                        $('#voucherListContainer').html('<div class="col-12"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p class="text-danger">Error loading vouchers. Please try again.</p></div></div>');
+                    }
+                });
             }
 
-            if (useScore < 0) useScore = 0;
-
-            if (useScore > 0 && pointsValue > afterVoucher) {
-                useScore = Math.floor(afterVoucher / pointValue);
-                $('#useScore').val(useScore);
+            function renderSelectedVoucherInfo() {
+                if (selectedVoucher) {
+                    $('#selectedVoucherInfo').html(`
+                        <div class="selected-voucher">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="voucher-icon-large me-3">
+                                    <i class="fas fa-ticket-alt text-success" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold text-light mb-1" style="font-size: 1.1rem;">Selected Voucher</div>
+                                    <div class="voucher-code-display mb-2" style="font-size: 1.2rem; font-weight: 600; color: var(--cinema-gold);">${selectedVoucher.id}</div>
+                                    <div class="voucher-value-display" style="font-size: 1.3rem; font-weight: 700; color: var(--cinema-green);">${selectedVoucher.value.toLocaleString()} VND</div>
+                                </div>
+                            </div>
+                            <div class="voucher-actions">
+                                <button type="button" class="remove-voucher" title="Remove voucher">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                    
+                    $('.remove-voucher').off('click').on('click', function () {
+                        selectedVoucher = null;
+                        $('#selectedVoucherInfo').html('');
+                        $('.voucher-card').removeClass('selected');
+                        updatePriceFlow();
+                    });
+                } else {
+                    $('#selectedVoucherInfo').html('');
+                }
             }
 
-            pointsValue = useScore * pointValue;
-            var seatFinal = afterVoucher - pointsValue;
-            if (seatFinal < 0) seatFinal = 0;
-
-            // Tổng cuối cùng = seatFinal + food
-            var finalTotal = seatFinal + parseInt(foodPrices);
-
-            // Update UI
-            $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
-            $('#totalPriceDisplay').html(`<strong>${finalTotal.toLocaleString()} VND</strong>`);
-
-            // Cập nhật input ẩn tổng tiền để gửi sang payment
-            $("#TotalPrice").val(finalTotal);
-
-            // Rank discount row
-            if (rankDiscountPercent > 0) {
-                $('#rankDiscountRow').show();
-                $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${rankDiscountPercent}%)`);
-            } else {
-                $('#rankDiscountRow').hide();
+            function updateMaxUsablePoints(discountedTotal) {
+                var maxPoints = Math.floor((discountedTotal * 0.9) / pointValue);
+                maxPoints = Math.min(maxPoints, currentScore);
+                
+                // Minimum points validation - must be at least 20 points
+                var minPoints = 20;
+                if (maxPoints < minPoints) {
+                    maxPoints = 0; // Cannot use points if max is less than minimum
+                }
+                
+                $('#maxUsablePoints').text(maxPoints + ' pts');
+                $('#useScore').attr('max', maxPoints);
+                $('#useScore').attr('min', maxPoints > 0 ? minPoints : 0);
+                return maxPoints;
             }
 
-            // Voucher discount row
-            if (voucherAmount > 0) {
-                $('#voucherDiscountRow').show();
-                $('#voucherDiscountDisplay').text(`-${voucherAmount.toLocaleString()} VND`);
-            } else {
-                $('#voucherDiscountRow').hide();
+            function updatePriceFlow() {
+                var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                
+                // Calculate discounts
+                var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var rankDiscountAmount = Math.round(subtotal * (rankDiscountPercent / 100));
+                var afterRank = subtotal - rankDiscountAmount;
+                if (afterRank < 0) afterRank = 0;
+
+                var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
+                var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
+                var afterPromo = afterRank - promoDiscountAmount;
+                if (afterPromo < 0) afterPromo = 0;
+
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterPromo - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
+                var valid = true;
+
+                // Validate minimum points requirement
+                if (useScore > 0 && useScore < 20) {
+                    useScore = 0;
+                    $('#useScore').val(0);
+                    $('#pointValidation').html('<i class="fas fa-exclamation-triangle me-1"></i>Minimum points required: 20 points').show();
+                    valid = false;
+                }
+
+                if (useScore > maxUsablePoints) {
+                    useScore = maxUsablePoints;
+                    $('#useScore').val(useScore);
+                }
+
+                if (useScore < 0) useScore = 0;
+
+                var pointsValue = useScore * pointValue;
+                if (useScore > 0 && pointsValue > afterVoucher) {
+                    useScore = Math.floor(afterVoucher / pointValue);
+                    $('#useScore').val(useScore);
+                }
+
+                pointsValue = useScore * pointValue;
+                var seatFinal = afterVoucher - pointsValue;
+                if (seatFinal < 0) seatFinal = 0;
+
+                var finalTotal = seatFinal + parseInt(foodPrices);
+
+                // Update UI
+                $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
+                $('#totalPriceDisplay').text(finalTotal.toLocaleString() + ' VND');
+
+                // Show/hide discount rows
+                if (rankDiscountPercent > 0) {
+                    $('#rankDiscountRow').show();
+                    $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${rankDiscountPercent}%)`);
+                } else {
+                    $('#rankDiscountRow').hide();
+                }
+
+                if (voucherAmount > 0) {
+                    $('#voucherDiscountRow').show();
+                    $('#voucherDiscountDisplay').text(`-${voucherAmount.toLocaleString()} VND`);
+                } else {
+                    $('#voucherDiscountRow').hide();
+                }
+
+                if (promotionPercent > 0) {
+                    $('#promotionDiscountRow').show();
+                    $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
+                } else {
+                    $('#promotionDiscountRow').hide();
+                }
+
+                if (useScore > 0 && valid) {
+                    $('#pointsUsedRow').show();
+                    $('#pointsUsedDisplay').text(`-${(useScore * pointValue).toLocaleString()} VND`);
+                } else {
+                    $('#pointsUsedRow').hide();
+                }
+
+                // Points earning preview
+                var pointsToEarn = 0;
+                if (valid) {
+                    pointsToEarn = Math.round(seatFinal * earningRate / 100 / pointValue);
+                }
+                
+                if (pointsToEarn > 0) {
+                    $('#pointsEarnedPreview').html(`<i class="fas fa-star text-warning me-1"></i>You will earn <strong>${pointsToEarn}</strong> point${pointsToEarn === 1 ? '' : 's'} from this transaction`).show();
+                } else {
+                    $('#pointsEarnedPreview').hide();
+                }
+
+                // Savings display
+                if (valid && useScore > 0) {
+                    var savings = useScore * pointValue;
+                    $('#pointSavings').html(`<i class="fas fa-piggy-bank me-1"></i>Using <strong>${useScore}</strong> points saves you <strong>${savings.toLocaleString()} VND</strong>`).show();
+                } else {
+                    $('#pointSavings').hide();
+                }
+
+                // Update hidden fields
+                $('#confirmBtn').prop('disabled', !valid);
+                $('#hiddenUseScore').val(valid ? useScore : 0);
+                $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
+                $('#hiddenVoucherAmount').val(selectedVoucher ? selectedVoucher.value : 0);
+                $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
             }
 
-            // Promotion discount row (placeholder)
-            if (promotionPercent > 0) {
-                $('#promotionDiscountRow').show();
-                $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
-            } else {
-                $('#promotionDiscountRow').hide();
-            }
+            $('#useScore').on('input', function () {
+                var max = parseInt($(this).attr('max')) || 0;
+                var min = parseInt($(this).attr('min')) || 0;
+                var val = parseInt($(this).val()) || 0;
+                
+                // Validate minimum points (20 points)
+                if (val > 0 && val < 20) {
+                    $('#pointValidation').html('<i class="fas fa-exclamation-triangle me-1"></i>Minimum points required: 20 points').show();
+                    $('#confirmBtn').prop('disabled', true);
+                    return;
+                } else {
+                    $('#pointValidation').hide();
+                }
+                
+                // Validate maximum points
+                if (val > max) {
+                    $(this).val(max);
+                    val = max;
+                }
+                
+                // Clear validation if value is valid
+                if (val === 0 || (val >= 20 && val <= max)) {
+                    $('#pointValidation').hide();
+                    $('#confirmBtn').prop('disabled', false);
+                }
+                
+                updatePriceFlow();
+            });
 
-            // Points used row
-            const pointsUsedRow = document.getElementById('pointsUsedRow');
-            const pointsUsedDisplay = document.getElementById('pointsUsedDisplay');
-            if (useScore > 0 && valid) {
-                pointsUsedDisplay.textContent = `-${(useScore * pointValue).toLocaleString()} VND`;
-                pointsUsedRow.style.display = '';
-            } else {
-                pointsUsedRow.style.display = 'none';
-            }
+            $('#confirmBtn').on('click', function(e) {
+                $(this).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...').prop('disabled', true);
+                updatePriceFlow();
+            });
 
-            // Point earning preview
-            var pointsToEarn = 0;
-            if (valid) {
-                pointsToEarn = Math.round(seatFinal * earningRate / 100 / pointValue);
-            }
-            $('#pointsEarnedPreview').html(`<i class="fas fa-star text-warning me-1"></i>You will earn <strong>${pointsToEarn}</strong> point${pointsToEarn === 1 ? '' : 's'} from this transaction`).addClass('text-success').show();
-
-            // Savings
-            if (valid && useScore > 0) {
-                var savings = useScore * pointValue;
-                $('#pointSavings').html(`<i class="fas fa-piggy-bank text-success me-1"></i>Using <strong>${useScore}</strong> points saves you <strong>${savings.toLocaleString()} VND</strong>`);
-            } else {
-                $('#pointSavings').text('');
-            }
-
-            // Validation
-            $('#pointValidation').text(validationMsg);
-            $('#confirmBtn').prop('disabled', !valid);
-            $('#hiddenUseScore').val(valid ? useScore : 0);
-            $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
-            $('#hiddenVoucherAmount').val(selectedVoucher ? selectedVoucher.value : 0);
-            $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
-        }
-
-        $('#useScore').on('input', function () {
-            var max = parseInt($(this).attr('max')) || 0;
-            var val = parseInt($(this).val()) || 0;
-            if (val > max) {
-                $(this).val(max);
-            }
+            // Initialize
             updatePriceFlow();
         });
 
-        // Initial state
-        updatePriceFlow();
-
-        // Add this to log voucher amount before form submission
-        $('#confirmBtn').on('click', function(e) {
-            // Show loading state
-            $(this).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...').prop('disabled', true);
+        function testSuccess() {
+            var useScoreInput = document.getElementById('useScore');
+            var hiddenUseScore = document.getElementById('hiddenUseScore');
+            var isTestSuccess = document.getElementById('isTestSuccess');
             
-            // Ensure price flow is updated before submit
-            updatePriceFlow();
-            console.log('VoucherAmount before submit:', $('#hiddenVoucherAmount').val());
-        });
-    });
-
-    function testSuccess() {
-        var useScoreInput = document.getElementById('useScore');
-        var hiddenUseScore = document.getElementById('hiddenUseScore');
-        var isTestSuccess = document.getElementById('isTestSuccess');
-
-        if (useScoreInput && hiddenUseScore) {
-            hiddenUseScore.value = useScoreInput.value || 0;
+            if (useScoreInput && hiddenUseScore) {
+                hiddenUseScore.value = useScoreInput.value || 0;
+            }
+            
+            if (isTestSuccess) {
+                isTestSuccess.value = "true";
+            }
+            
+            document.querySelector('form[method="post"]').submit();
         }
-
-        if (isTestSuccess) {
-            isTestSuccess.value = "true";
-        }
-
-        document.querySelector('form[method="post"]').submit();
-    }
-</script>
+    </script>
+</body>
+</html>
