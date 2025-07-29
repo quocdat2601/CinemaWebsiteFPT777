@@ -44,16 +44,24 @@ namespace MovieTheater.Service
             try
             {
                 _repository.Update(cinemaRoom);
+                _repository.Save().Wait(); // Ensure changes are saved to database
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                // Log the exception for debugging
+                Console.WriteLine($"Error updating cinema room: {ex.Message}");
                 return false;
             }
         }
-        public bool Active(CinemaRoom cinemaRoom)
+        public bool Enable(CinemaRoom cinemaRoom)
         {
-            _repository.Active(cinemaRoom);
+            _repository.Enable(cinemaRoom);
+            return true;
+        }
+        public bool Disable(CinemaRoom cinemaRoom)
+        {
+            _repository.Disable(cinemaRoom);
             return true;
         }
 

@@ -1,0 +1,448 @@
+﻿@model MovieTheater.Models.CinemaRoom
+
+@{
+    string currentDateTimeMin = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+    // currentTodayMin is not used in this specific form, but kept for context if needed elsewhere.
+    // string currentTodayMin = DateTime.Today.ToString("yyyy-MM-dd");
+
+    // Prepare existing values for pre-population, formatting DateTime? for datetime-local
+    string existingDisableReason = Model.DisableReason ?? ""; // Use null-coalescing for string
+    string existingStartDate = Model.UnavailableStartDate.HasValue
+                               ? Model.UnavailableStartDate.Value.ToString("yyyy-MM-ddTHH:mm")
+                               : "";
+    string existingEndDate = Model.UnavailableEndDate.HasValue
+                             ? Model.UnavailableEndDate.Value.ToString("yyyy-MM-ddTHH:mm")
+                             : "";
+}
+<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="ShowroomMg" class="btn btn-secondary mb-2 mt-2 ml-4">
+    &larr; Return
+</a>
+<div class="text-center">
+    <h3>Disable @Model.CinemaRoomName</h3>
+</div>
+<form asp-action="Disable" asp-controller="Cinema" method="post" id="disableRoomForm">
+    <input type="hidden" id="movieShowIdsToDelete" name="movieShowIdsToDelete" value="" />
+    <div class="row">
+        <div class="container mt-3 mb-1 col-md-3">
+            <input type="hidden" id="cinemaRoomId" name="cinemaRoomId" value="@Model.CinemaRoomId" />
+
+            <div class="mb-4">
+                <label class="form-label booking-label">Reason</label>
+                <input type="text" id="disableReason" name="disableReason" class="form-control" required
+                       value="@existingDisableReason" /> <!-- ADDED value attribute -->
+                <span asp-validation-for="DisableReason" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label booking-label">Start Date</label>
+                <input type="datetime-local" id="unavailableStartDate" name="unavailableStartDate" class="form-control mt-2"
+                       min="@currentDateTimeMin"
+                       value="@existingStartDate" /> <!-- ADDED value attribute -->
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label booking-label">End Date</label>
+                <input type="datetime-local" id="unavailableEndDate" name="unavailableEndDate" class="form-control" required
+                       min="@currentDateTimeMin"
+                       value="@existingEndDate" /> <!-- ADDED value attribute -->
+            </div>
+        </div>
+
+        <div class="container mt-3 mb-1 col-md-4">
+            <div class="text-center">
+                <label>Overridden Movie Shows</label>
+            </div>
+            <div id="conflictedShows" style="margin-left: 10px"></div>
+        </div>
+
+        <div class="container mt-3 mb-1 col-md-4">
+            <div class="text-center">
+                <label>All Movie Shows</label>
+            </div>
+            <div id="movieShowsByDate" style="margin-left: 10px"></div>
+        </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center gap-2 mt-4">
+        <button type="button" id="disableRoomBtn" class="btn booking-btn-gradient mt-4" style="width: 300px">
+            <span>Disable This Room</span> <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+</form>
+
+<div class="modal fade" id="booksModal" tabindex="-1" aria-labelledby="booksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="booksModalLabel">Booked Tickets</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="booksModalBody">
+                <!-- Invoice list will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmDisableModal" tabindex="-1" aria-labelledby="confirmDisableModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDisableModalLabel">Confirm Disable Room</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Some movie shows have tickets. Proceed to refund those and delete movie shows with no ticket?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDisableBtn">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="noBookDisableModal" tabindex="-1" aria-labelledby="noBookDisableModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="noBookDisableModalLabel">Confirm Disable Room</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Disabling this room will prevent the following show(s) from being booked:
+                <ul id="noBookShowList" class="mt-2"></ul>
+                Are you sure you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmNoBookDisableBtn">Yes, Disable Room</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function() {
+            var cinemaRoomId = '@Model.CinemaRoomId';
+            var detailedShows = [];
+            var conflictedShows = [];
+
+            // Load detailed movie shows
+            $.get('/Cinema/GetDetailedMovieShowsByCinemaRoom', { cinemaRoomId: cinemaRoomId }, function(data) {
+                detailedShows = data;
+                renderAllMovieShows();
+                checkForConflicts();
+            }).fail(function() {
+                $('#movieShowsByDate').html('<div class="text-danger">Error loading movie shows.</div>');
+            });
+
+            // Load basic movie shows (existing functionality)
+            $.get('/Cinema/GetMovieShowsByCinemaRoomGrouped', { cinemaRoomId: cinemaRoomId }, function(data) {
+                var container = $('#movieShowsByDate');
+                if (!data || data.length === 0) {
+                    container.html('<div class="text-muted">No shows found for this room.</div>');
+                    return;
+                }
+                var html = '';
+                data.forEach(function(group) {
+                    html += '<div class="mb-2">';
+                    html += '<strong>' + group.date + '</strong><br/>';
+                    group.times.forEach(function(time) {
+                        html += '<span class="badge bg-primary me-1">' + time + '</span>';
+                    });
+                    html += '</div>';
+                });
+                container.html(html);
+            }).fail(function() {
+                $('#movieShowsByDate').html('<div class="text-danger">Error loading movie shows.</div>');
+            });
+
+            function renderAllMovieShows() {
+                var container = $('#movieShowsByDate');
+                if (!detailedShows || detailedShows.length === 0) {
+                    container.html('<div class="text-muted">No shows found for this room.</div>');
+                    return;
+                }
+
+                // Group by date
+                var groupedByDate = {};
+                detailedShows.forEach(function(show) {
+                    if (!groupedByDate[show.showDate]) {
+                        groupedByDate[show.showDate] = [];
+                    }
+                    groupedByDate[show.showDate].push(show);
+                });
+
+                var html = '';
+                // Sort dates properly by converting dd/MM/yyyy to Date objects
+                var sortedDates = Object.keys(groupedByDate).sort(function(a, b) {
+                    var dateA = new Date(a.split('/').reverse().join('-'));
+                    var dateB = new Date(b.split('/').reverse().join('-'));
+                    return dateA - dateB;
+                });
+
+                sortedDates.forEach(function(date) {
+                    html += '<div class="mb-3 p-2 border rounded">';
+                    html += '<strong class="text-primary">' + date + '</strong><br/>';
+                    groupedByDate[date].forEach(function(show) {
+                        var endTime = '';
+                        if (show.startTime && show.duration) {
+                            var startTime = new Date('2000-01-01T' + show.scheduleTime);
+                            var endTimeDate = new Date(startTime.getTime() + show.duration * 60000);
+                            endTime = ' ~ ' + endTimeDate.getHours().toString().padStart(2, '0') + ':' +
+                                     endTimeDate.getMinutes().toString().padStart(2, '0');
+                        }
+                        html += '<div class="mt-1">';
+                        html += '<span class="badge bg-info me-1">' + show.scheduleTime + endTime + '</span>';
+                        html += '<small class="text-muted">' + show.movieName + '</small>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                });
+                container.html(html);
+            }
+
+            function checkForConflicts() {
+                var startDateStr = $('#unavailableStartDate').val();
+                var endDateStr = $('#unavailableEndDate').val();
+
+                if (!startDateStr || !endDateStr) {
+                    $('#conflictedShows').html('<div class="text-muted">Select start and end dates to see conflicts.</div>');
+                    return;
+                }
+
+                var startDate = new Date(startDateStr);
+                var endDate = new Date(endDateStr);
+
+                if (endDate <= startDate) {
+                    $('#conflictedShows').html('<div class="text-danger">End date must be after start date.</div>');
+                    return;
+                }
+
+                // Find conflicting shows
+                var conflicts = [];
+                detailedShows.forEach(function(show) {
+                    // Parse the show date (format: dd/MM/yyyy)
+                    var dateParts = show.showDate.split('/');
+                    var showDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]); // year, month-1, day
+                    showDate.setHours(0, 0, 0, 0);
+
+                    // Check if the show date falls within the unavailable period
+                    var unavailableStartDate = new Date(startDate);
+                    unavailableStartDate.setHours(0, 0, 0, 0);
+                    var unavailableEndDate = new Date(endDate);
+                    unavailableEndDate.setHours(0, 0, 0, 0);
+
+                    if (showDate >= unavailableStartDate && showDate <= unavailableEndDate) {
+                        // Show date is within unavailable period, check time conflicts
+                        if (show.scheduleTime && show.scheduleTime !== 'N/A') {
+                            var timeParts = show.scheduleTime.split(':');
+                            var showStartTime = new Date(showDate);
+                            showStartTime.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), 0, 0);
+
+                            var showEndTime = new Date(showStartTime.getTime() + show.duration * 60000);
+
+                            // Check if show overlaps with unavailable period
+                            if (showStartTime < endDate && showEndTime > startDate) {
+                                conflicts.push(show);
+                            }
+                        }
+                    }
+                });
+
+                renderConflicts(conflicts);
+            }
+
+            function renderConflicts(conflicts) {
+                var container = $('#conflictedShows');
+
+                if (conflicts.length === 0) {
+                    container.html('<div class="text-success">No conflicts found for the selected period. You can disable this room.</div>');
+                    return;
+                }
+
+                // Group conflicts by date
+                var groupedConflicts = {};
+                conflicts.forEach(function(show) {
+                    if (!groupedConflicts[show.showDate]) {
+                        groupedConflicts[show.showDate] = [];
+                    }
+                    groupedConflicts[show.showDate].push(show);
+                });
+
+                var html = '';
+                // Sort dates properly by converting dd/MM/yyyy to Date objects
+                var sortedDates = Object.keys(groupedConflicts).sort(function(a, b) {
+                    var dateA = new Date(a.split('/').reverse().join('-'));
+                    var dateB = new Date(b.split('/').reverse().join('-'));
+                    return dateA - dateB;
+                });
+
+                sortedDates.forEach(function(date) {
+                    html += '<div class="mb-3 p-2 border rounded">';
+                    html += '<strong class="text-danger">' + date + '</strong><br/>';
+                    groupedConflicts[date].forEach(function(show) {
+                        var endTime = '';
+                        if (show.startTime && show.duration) {
+                            var startTime = new Date('2000-01-01T' + show.scheduleTime);
+                            var endTimeDate = new Date(startTime.getTime() + show.duration * 60000);
+                            endTime = ' ~ ' + endTimeDate.getHours().toString().padStart(2, '0') + ':' +
+                                     endTimeDate.getMinutes().toString().padStart(2, '0');
+                        }
+                        html += '<div class="mt-1">';
+                        html += '<span class="badge bg-danger me-1">' + show.scheduleTime + endTime + '</span>';
+                        html += '<small class="text-muted">' + show.movieName + '</small>';
+                        if (show.bookingCount > 0) {
+                            html += ' <button type="button" class="btn btn-sm btn-warning ms-2 view-books-btn" data-movieshowid="' + show.movieShowId + '" data-accountid="' + show.accountId + '">View Books</button>';
+                        } else {
+                            html += ' <span class="badge bg-secondary ms-2" data-movieshowid="' + show.movieShowId + '">No Book</span>';                        }
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                });
+
+                container.html(html);
+            }
+
+            // Client-side date validation for better UX
+            $('#unavailableStartDate, #unavailableEndDate').on('change', function() {
+                var startDateStr = $('#unavailableStartDate').val();
+                var endDateStr = $('#unavailableEndDate').val();
+
+                if (startDateStr && endDateStr) {
+                    var startDate = new Date(startDateStr);
+                    var endDate = new Date(endDateStr);
+
+                    if (endDate <= startDate) {
+                        alert('End Date must be after Start Date.');
+                        $('#unavailableEndDate').val(''); // Clear end date if invalid
+                    } else {
+                        // Check for conflicts when both dates are valid
+                        checkForConflicts();
+                    }
+                }
+            });
+
+            $(document).on('click', '.view-books-btn', function(e) {
+                e.preventDefault(); // Prevent form submission
+                var movieShowId = $(this).data('movieshowid');
+                var accountId = $(this).data('accountid'); // Get accountId from data attribute
+                $.get('/Cinema/GetInvoicesByMovieShow', { movieShowId: movieShowId }, function(data) {
+                    var html = '<ul class="list-group">';
+                    if (data.length === 0) {
+                        html += '<li class="list-group-item">No bookings found.</li>';
+                    } else {
+                        data.forEach(function(inv) {
+                            html += '<li class="list-group-item">';
+                            html += 'Ticket ID: ' + inv.invoiceId + ' | Account: ' + (inv.accountName || inv.accountId) + ' | Seats: ' + inv.seat;
+                            html += '</li>';
+                        });
+                    }
+                    html += '</ul>';
+                    $('#booksModalBody').html(html);
+                    $('#booksModal').modal('show');
+                });
+            });
+
+            function getDisableForm() {
+                return $('#disableRoomForm');
+            }
+            var confirmInProgress = false;
+
+            // Only show modal when the button is clicked
+            $('#disableRoomBtn').on('click', function(e) {
+                e.preventDefault();
+                var noBookShows = [];
+                $('#conflictedShows .badge.bg-secondary').each(function() {
+                    var parent = $(this).closest('.mt-1');
+                    var showText = parent.text().trim();
+                    noBookShows.push(showText);
+                });
+                if (noBookShows.length > 0) {
+                    // Populate the modal list
+                    var listHtml = '';
+                    noBookShows.forEach(function(show) {
+                        listHtml += '<li>' + show + '</li>';
+                    });
+                    $('#noBookShowList').html(listHtml);
+                    $('#noBookDisableModal').modal('show');
+                    return;
+                }
+                // Check for bookings
+                var movieShowInvoices = [];
+                $('#conflictedShows .view-books-btn').each(function() {
+                    var id = $(this).data('movieshowid');
+                    var accountId = $(this).data('accountid');
+                    if (id && accountId) movieShowInvoices.push({ movieShowId: id, accountId: accountId });
+                });
+                if (movieShowInvoices.length === 0) {
+                    confirmInProgress = true;
+                    var form = getDisableForm();
+                    form.off('submit');
+                    if (form.length > 0 && form[0]) {
+                        form[0].submit();
+                    } else {
+                        alert('Form not found. Please reload the page and try again.');
+                    }
+                    return;
+                }
+                $('#confirmDisableModal').modal('show');
+            });
+
+            // Prevent form submit by Enter key or other means
+            $(document).on('submit', 'form[action="/Cinema/Disable"]', function(e) {
+                if (!confirmInProgress) {
+                    e.preventDefault();
+                    return false;
+                }
+                confirmInProgress = false; // reset for next time
+                return true;
+            });
+
+            $('#confirmDisableBtn').on('click', function() {
+                var movieShowInvoices = [];
+                
+                // Collect IDs of shows with no bookings
+                $('#conflictedShows .badge.bg-secondary').each(function(index) {
+                    var id = $(this).data('movieshowid');
+                    if (id) {
+                        movieShowInvoices.push({ movieShowId: id });
+                    }
+                });
+                
+                let refundPromises = movieShowInvoices.map(function(item) {
+                    return $.post('/Cinema/RefundByMovieShow', { movieShowId: item.movieShowId });
+                });
+
+                Promise.all(refundPromises).then(function(results) {
+                    confirmInProgress = true;
+                    $('#confirmDisableModal').modal('hide');
+                    var form = getDisableForm();
+                    form.off('submit'); // Detach handler
+                    if (form.length > 0 && form[0]) {
+                        form[0].submit();   // Native submit
+                    } else {
+                        alert('Form not found. Please reload the page and try again.');
+                    }
+                });
+            });
+
+            $('#confirmNoBookDisableBtn').on('click', function() {
+                confirmInProgress = true;
+                $('#noBookDisableModal').modal('hide');
+                var form = getDisableForm();
+                form.off('submit');
+                if (form.length > 0 && form[0]) {
+                    form[0].submit();
+                } else {
+                    alert('Form not found. Please reload the page and try again.');
+                }
+            });
+        });
+    </script>
+}

@@ -145,9 +145,9 @@ CREATE TABLE Cinema_Room (
     Seat_Length INT,
 	Version_ID INT,
     Status_ID INT DEFAULT 1,
-    Disable_Reason NVARCHAR(500) NULL;
-    Unavailable_Start_Date DATETIME NULL;
-    Unavailable_End_Date DATETIME NULL;   
+    Disable_Reason NVARCHAR(500) NULL,
+    Unavailable_Start_Date DATETIME NULL,
+    Unavailable_End_Date DATETIME NULL, 
     FOREIGN KEY (Status_ID) REFERENCES Status(Status_ID),
 	FOREIGN KEY (Version_ID) REFERENCES Version(Version_ID)
 );

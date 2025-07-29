@@ -428,33 +428,40 @@
             }
 
             // Fetch movie shows for this specific movie
-            fetch(`/Movie/GetMovieShows?movieId=${movieId}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
+            fetch(`/Movie/GetMovieShows?movieId=${movieId}`)
                 .then(response => {
-                    if (!response.ok) throw new Error('Failed to load movie shows');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
                     return response.json();
                 })
-                .then(shows => {
-                    console.log('Movie shows loaded for movie ID:', movieId, shows);
-                    // Cache the results
-                    window.movieShowsCache.set(movieId, shows);
-                    window.currentMovieShows = shows;
+                .then(data => {
+                    console.log('Received movie shows data:', data);
+                    
+                    // Filter shows for this specific movie and exclude disabled rooms
+                    const filteredShows = data.filter(show => 
+                        show.movieId == movieId && show.CinemaRoomStatus !== 3
+                    );
+                    
+                    console.log('Filtered shows for movie', movieId, ':', filteredShows);
+                    
+                    // Cache the filtered results for this movie
+                    window.movieShowsCache.set(movieId, filteredShows);
+                    window.currentMovieShows = filteredShows;
+                    
+                    if (filteredShows.length === 0) {
+                        alert('No available showtimes for this movie at the moment.');
+                        return;
+                    }
+                    
                     window.populateDateDropdown();
                     window.showBookingModal();
                 })
                 .catch(error => {
                     console.error('Error loading movie shows:', error);
-                    // Show error state
-                    const dateSelect = document.getElementById('dateSelect');
-                    if (dateSelect) {
-                        dateSelect.innerHTML = '<option value="">Error loading dates</option>';
-                        dateSelect.disabled = true;
-                    }
+                    alert('Error loading movie shows. Please try again.');
                 });
-        }
+        };
 
         window.populateDateDropdown = function () {
             const dateSelect = document.getElementById('dateSelect');
@@ -466,7 +473,12 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0); // normalize time
 
-            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+            // Convert ShowDate (DateOnly) to string format and get unique dates
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => {
+                // Convert DateOnly to yyyy-MM-dd format
+                const date = new Date(show.ShowDate);
+                return date.toISOString().split('T')[0]; // yyyy-MM-dd format
+            }))];
 
             uniqueDates.forEach(dateStr => {
                 const showDate = new Date(dateStr);
@@ -496,12 +508,22 @@
             document.getElementById('timeSelect').innerHTML = '<option value="">— Select Time —</option>';
             document.getElementById('timeSelect').disabled = true;
             if (!date) return;
-            const filtered = window.currentMovieShows.filter(show => show.showDate === date);
+            
+            // Convert selected date back to DateOnly format for comparison
+            const selectedDate = new Date(date);
+            const selectedDateOnly = selectedDate.toISOString().split('T')[0];
+            
+            // Filter shows for the selected date
+            const filtered = window.currentMovieShows.filter(show => {
+                const showDateOnly = new Date(show.ShowDate).toISOString().split('T')[0];
+                return showDateOnly === selectedDateOnly;
+            });
+            
             // Use a Map to ensure unique versionId-versionName pairs
             const versionMap = new Map();
             filtered.forEach(show => {
-                if (show.versionId && show.versionName && !versionMap.has(show.versionId)) {
-                    versionMap.set(show.versionId, show.versionName);
+                if (show.VersionId && show.VersionName && !versionMap.has(show.VersionId)) {
+                    versionMap.set(show.VersionId, show.VersionName);
                 }
             });
             versionMap.forEach((name, id) => {
@@ -521,16 +543,26 @@
             timeSelect.innerHTML = '<option value="">— Select Time —</option>';
             timeSelect.disabled = true;
             if (!date || !versionId) return;
-            const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
+            
+            // Convert selected date back to DateOnly format for comparison
+            const selectedDate = new Date(date);
+            const selectedDateOnly = selectedDate.toISOString().split('T')[0];
+            
+            // Filter shows for the selected date and version
+            const filtered = window.currentMovieShows.filter(show => {
+                const showDateOnly = new Date(show.ShowDate).toISOString().split('T')[0];
+                return showDateOnly === selectedDateOnly && String(show.VersionId) === String(versionId);
+            });
+            
             // Use a Set to ensure unique times
             const timeSet = new Set();
             filtered.forEach(show => {
-                if (show.scheduleTime && !timeSet.has(show.scheduleTime)) {
+                if (show.ScheduleTime && !timeSet.has(show.ScheduleTime)) {
                     const option = document.createElement('option');
-                    option.value = show.scheduleTime;
-                    option.textContent = show.scheduleTime;
+                    option.value = show.ScheduleTime;
+                    option.textContent = show.ScheduleTime;
                     timeSelect.appendChild(option);
-                    timeSet.add(show.scheduleTime);
+                    timeSet.add(show.ScheduleTime);
                 }
             });
             timeSelect.disabled = false;

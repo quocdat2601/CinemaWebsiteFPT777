@@ -577,7 +577,8 @@ namespace MovieTheater.Controllers
                     ms.ShowDate,
                     ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
                     VersionName = ms.Version?.VersionName,
-                    VersionId = ms.VersionId
+                    VersionId = ms.VersionId,
+                    CinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1 // Include room status
                 }).ToList();
             return Json(movieShows);
         }
@@ -613,6 +614,7 @@ namespace MovieTheater.Controllers
                     scheduleTime = ms.Schedule?.ScheduleTime.HasValue == true ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null,
                     ms.CinemaRoomId,
                     cinemaRoomName = ms.CinemaRoom?.CinemaRoomName,
+                    cinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1, // Include room status
                     ms.VersionId,
                     versionName = ms.Version?.VersionName
                 }).ToList();

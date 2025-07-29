@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace MovieTheater.Repository
 {
@@ -381,6 +383,14 @@ namespace MovieTheater.Repository
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.CinemaRoom)
                 .Include(ms => ms.Version)
+                .Include(ms => ms.Invoices)
+                .ToList();
+        }
+
+        public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId)
+        {
+            return _context.Invoices
+                .Where(i => i.MovieShowId == movieShowId && !i.Cancel)
                 .ToList();
         }
 

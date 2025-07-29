@@ -158,7 +158,7 @@ namespace MovieTheater.Service
                     _logger.LogWarning("AddMovieShow: Schedule is not available for Movie {MovieId}, Room {CinemaRoomId}, Date {ShowDate}, Schedule {ScheduleId}", movieShow.MovieId, movieShow.CinemaRoomId, movieShow.ShowDate, movieShow.ScheduleId);
                     return false;
                 }
-                
+
                 _movieRepository.AddMovieShow(movieShow);
                 _movieRepository.Save();
                 return true;
@@ -178,7 +178,7 @@ namespace MovieTheater.Service
                 foreach (var show in movieShows)
                 {
                     var movie = _movieRepository.GetById(show.MovieId);
-                    if (movie == null || movie.Duration == null) 
+                    if (movie == null || movie.Duration == null)
                     {
                         _logger.LogWarning("AddMovieShows: Movie not found or has no duration for movie ID {MovieId}", show.MovieId);
                         return false;
@@ -186,7 +186,7 @@ namespace MovieTheater.Service
 
                     if (!IsScheduleAvailable(show.ShowDate, show.ScheduleId, show.CinemaRoomId, movie.Duration.Value))
                     {
-                         _logger.LogWarning("AddMovieShows: Schedule is not available for Movie {MovieId}, Room {CinemaRoomId}, Date {ShowDate}, Schedule {ScheduleId}", show.MovieId, show.CinemaRoomId, show.ShowDate, show.ScheduleId);
+                        _logger.LogWarning("AddMovieShows: Schedule is not available for Movie {MovieId}, Room {CinemaRoomId}, Date {ShowDate}, Schedule {ScheduleId}", show.MovieId, show.CinemaRoomId, show.ShowDate, show.ScheduleId);
                         return false;
                     }
                 }
@@ -294,6 +294,10 @@ namespace MovieTheater.Service
         public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId)
         {
             return _movieRepository.GetMovieShowByCinemaRoomId(cinemaRoomId);
+        }
+        public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId)
+        {
+            return _movieRepository.GetInvoicesByMovieShow(movieShowId);
         }
     }
 }

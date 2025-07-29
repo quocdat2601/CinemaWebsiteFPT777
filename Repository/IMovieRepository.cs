@@ -38,5 +38,6 @@ namespace MovieTheater.Repository
         List<Models.Version> GetAllVersions();
         Models.Version? GetVersionById(int versionId);
         public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId);
+        public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId);
     }
 }

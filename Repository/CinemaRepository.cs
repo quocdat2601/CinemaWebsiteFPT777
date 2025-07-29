@@ -117,27 +117,39 @@ namespace MovieTheater.Repository
             }
         }
 
-        public async Task Active(CinemaRoom cinemaRoom)
+        public async Task Enable(CinemaRoom cinemaRoom)
         {
             var existingCinema = _context.CinemaRooms
                            .Include(c => c.Seats)
                            .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
             try
             {
-                if (existingCinema.StatusId == 3)
-                {
-                    existingCinema.StatusId = 1;
-                    existingCinema.UnavailableEndDate = null;
-                    existingCinema.UnavailableStartDate = null;
-                    existingCinema.DisableReason = null;
-                }
-                else
-                {
-                    existingCinema.UnavailableEndDate = cinemaRoom.UnavailableEndDate;
-                    existingCinema.UnavailableStartDate = cinemaRoom.UnavailableStartDate;
-                    existingCinema.DisableReason = cinemaRoom.DisableReason;
-                    existingCinema.StatusId = 3;
-                }
+
+                existingCinema.StatusId = 1;
+                existingCinema.UnavailableEndDate = null;
+                existingCinema.UnavailableStartDate = null;
+                existingCinema.DisableReason = null;
+
+                await Save();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error activating cinema room: {ex.Message}", ex);
+            }
+        }
+
+        public async Task Disable(CinemaRoom cinemaRoom)
+        {
+            var existingCinema = _context.CinemaRooms
+                           .Include(c => c.Seats)
+                           .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
+            try
+            {
+                existingCinema.UnavailableEndDate = cinemaRoom.UnavailableEndDate;
+                existingCinema.UnavailableStartDate = cinemaRoom.UnavailableStartDate;
+                existingCinema.DisableReason = cinemaRoom.DisableReason;
+                existingCinema.StatusId = 3;
+
                 await Save();
             }
             catch (Exception ex)

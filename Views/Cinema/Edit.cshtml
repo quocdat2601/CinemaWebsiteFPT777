@@ -5,11 +5,11 @@
 <div class="card-header">
     <h3 class="text-center">Edit Showroom</h3>
 </div>
+<form asp-action="Edit" asp-controller="Cinema" method="post">
 
-<div class="row">
-    <div class="col-md-2"></div>
-    <div class="container mt-3 mb-1 col-md-3">
-        <form asp-action="Edit" asp-controller="Cinema" method="post">
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="container mt-3 mb-1 col-md-3">
             <input type="hidden" asp-for="CinemaRoomId" />
 
             <div class="mb-3">
@@ -43,29 +43,29 @@
                     }
                 </div>
             </div>
-        </form>
-    </div>
-
-    <div class="container mt-3 mb-1 col-md-4">
-        <div class="text-center">
-            <label>Movie Shows</label>
         </div>
-        <div id="movieShowsByDate" style="margin-left: 10px"></div>
+
+        <div class="container mt-3 mb-1 col-md-4">
+            <div class="text-center">
+                <label>Movie Shows</label>
+            </div>
+            <div id="movieShowsByDate" style="margin-left: 10px"></div>
+        </div>
+        <div class="col-md-2"></div>
+
     </div>
-    <div class="col-md-2"></div>
 
-</div>
-
-<div class="col-12 d-flex justify-content-center gap-2 mt-4">
-    <div class="alert alert-warning mb-3" role="alert" style="width: 800px">
-        Changing seat width or length will regenerate the layout. Please reconsider before making changes.
+    <div class="col-12 d-flex justify-content-center gap-2 mt-4">
+        <div class="alert alert-warning mb-3" role="alert" style="width: 800px">
+            Changing seat width or length will regenerate the layout. Please reconsider before making changes.
+        </div>
     </div>
-</div>
 
-<div class="col-12 d-flex justify-content-center gap-2">
-    <button type="submit" class="btn btn-primary" form="editShowroomForm">Update Showroom</button>
-    <a asp-action="MainPage" asp-controller="Admin" asp-route-tab="ShowroomMg" class="btn btn-secondary">Cancel</a>
-</div>
+    <div class="col-12 d-flex justify-content-center gap-2">
+        <button type="submit" class="btn btn-primary">Update Showroom</button>
+        <a asp-action="MainPage" asp-controller="Admin" asp-route-tab="ShowroomMg" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
 
 @section Scripts {
     @{
