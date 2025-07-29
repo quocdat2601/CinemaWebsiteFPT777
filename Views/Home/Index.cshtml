@@ -108,7 +108,7 @@
                 </div>
             </div>
 
-            <button type="button" class="book-now-btn" data-bs-toggle="modal" data-bs-target="#addBookingModal" onclick="openBookingModalFromHero()">
+            <button type="button" class="book-now-btn" id="hero-book-now-btn" aria-label="Book tickets for current movie">
                 <span>Book Now</span>
             </button>
         </div>
@@ -191,7 +191,7 @@
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
                                 <div class="hover-overlay"></div>
-                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster">
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge">HD</div>
                             </div>
 
@@ -230,13 +230,14 @@
                                 </div>
 
                                 <div class="movie-actions-container">
-                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl" aria-label="Watch trailer for @movie.MovieNameEnglish">
                                         <i class="fas fa-play"></i>
                                         <span class="btn-text">Trailer</span>
                                     </button>
                                     <button class="action-btn action-btn-primary"
                                             data-movie-id="@movie.MovieId"
-                                            data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))">
+                                            data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))"
+                                            aria-label="Book tickets for @movie.MovieNameEnglish">
                                         <i class="fas fa-ticket-alt"></i>
                                         <span class="btn-text">Book</span>
                                     </button>
@@ -273,7 +274,7 @@
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
                                 <div class="hover-overlay"></div>
-                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster">
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge coming-soon-badge">Soon</div>
                             </div>
 
@@ -312,7 +313,7 @@
                                 </div>
 
                                 <div class="movie-actions-container">
-                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl" aria-label="Watch trailer for @movie.MovieNameEnglish">
                                         <i class="fas fa-play"></i>
                                         <span class="btn-text">Trailer</span>
                                     </button>
@@ -394,7 +395,7 @@
     </div>
 </section>
 <!-- Modal for Trailer -->
-<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="background:#181a20;">
             <div class="modal-header border-0">
@@ -408,50 +409,36 @@
     </div>
 </div>
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
-    <script src="/js/app.js"></script>
-    <script src="/js/hero-section.js"></script>
-    <!-- Removed unused JS files -->
-    <script src="/js/promotions.js"></script>
-    <script src="/js/booking-modal.js"></script>
-    <script src="/js/trailer-modal.js"></script>
-    <script src="~/js/movie-sections.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js" defer></script>
+    <script src="/js/app.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/hero-section.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/promotions.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/trailer-modal.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="~/js/movie-sections.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/home-page.js?v=@DateTime.Now.Ticks" defer></script>
+    
+
 
     <script>
+        // Disable console.log in production and development for cleaner console
+        console.log = function() {};
+        console.warn = function() {};
+        console.info = function() {};
+        // Keep console.error for actual error handling
+        
         // Global variables
         window.movieShowsCache = new Map(); // Cache for movie shows
         window.currentMovieShows = [];
-        window.availableDates = new Set();
-
-
-
-        // Initialize all functions before DOMContentLoaded
-        window.initializeBooking = function() {
-            // Initialize modal event listeners
-            const bookingModal = document.getElementById('addBookingModal');
-            if (bookingModal) {
-                bookingModal.addEventListener('shown.bs.modal', function () {
-                    // Focus on date select when modal opens
-                    const dateSelect = document.getElementById('dateSelect');
-                    if (dateSelect) {
-                        dateSelect.focus();
-                    }
-                });
-            }
-        };
 
 
 
         // Function to open booking modal for selected movie
         window.openBookingModal = function(movieId, movieName) {
-            console.log('Opening booking modal for movie ID:', movieId);
-
             // Set the movie ID in the hidden input
             const movieIdInput = document.getElementById('movieId');
             if (movieIdInput) {
                 movieIdInput.value = movieId;
-                console.log('Movie ID set in input:', movieIdInput.value);
             }
 
             // Update modal title with movie name
@@ -490,11 +477,8 @@
 
         // Function to load movie shows for a specific movie
         window.loadMovieShowsForMovie = function(movieId, movieName) {
-            console.log('Loading movie shows for movie ID:', movieId);
-
             // Check if we already have this movie's shows cached
             if (window.movieShowsCache.has(movieId)) {
-                console.log('Using cached movie shows for movie ID:', movieId);
                 window.currentMovieShows = window.movieShowsCache.get(movieId);
                 window.populateDateDropdown();
                 window.showBookingModal();
@@ -512,7 +496,6 @@
                     return response.json();
                 })
                 .then(shows => {
-                    console.log('Movie shows loaded for movie ID:', movieId, shows);
                     // Cache the results
                     window.movieShowsCache.set(movieId, shows);
                     window.currentMovieShows = shows;
@@ -526,6 +509,15 @@
                     if (dateSelect) {
                         dateSelect.innerHTML = '<option value="">Error loading dates</option>';
                         dateSelect.disabled = true;
+                    }
+                    
+                    // Show user-friendly error message
+                    const modalBody = document.querySelector('#addBookingModal .modal-body');
+                    if (modalBody) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'alert alert-danger mt-3';
+                        errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Unable to load showtimes. Please try again later.';
+                        modalBody.appendChild(errorDiv);
                     }
                 });
         }
@@ -629,9 +621,52 @@
 
         // Function to show the booking modal
         window.showBookingModal = function() {
-            const bookingModal = new bootstrap.Modal(document.getElementById('addBookingModal'));
-            bookingModal.show();
+            const modalElement = document.getElementById('addBookingModal');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                const bookingModal = new bootstrap.Modal(modalElement);
+                bookingModal.show();
+                
+                // Focus management for accessibility
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.focus();
+                    }
+                });
+            }
         }
+
+        // Function to populate date dropdown
+        window.populateDateDropdown = function () {
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
+            dateSelect.disabled = true;
+
+            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // normalize time
+
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+
+            uniqueDates.forEach(dateStr => {
+                const showDate = new Date(dateStr);
+                showDate.setHours(0, 0, 0, 0); // normalize show date
+
+                if (showDate >= today) {
+                    const [year, month, day] = dateStr.split('-');
+                    const displayDate = `${day}/${month}/${year}`;
+                    const option = document.createElement('option');
+                    option.value = dateStr;
+                    option.textContent = displayDate;
+                    dateSelect.appendChild(option);
+                }
+            });
+
+            if (dateSelect.options.length > 1) {
+                dateSelect.disabled = false;
+            }
+        };
 
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function () {
@@ -660,16 +695,29 @@
                 });
             });
 
+            // Hero Book Now button event listeners
+            document.querySelectorAll('.book-now-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    // Get current active slide data
+                    const activeSlide = document.querySelector('.hero-swiper .swiper-slide.swiper-slide-active');
+                    if (activeSlide) {
+                        const movieId = activeSlide.getAttribute('data-movie-id');
+                        const movieName = activeSlide.getAttribute('data-movie-name');
+                        if (movieId && movieName) {
+                            window.openBookingModal(movieId, movieName);
+                        }
+                    }
+                });
+            });
+
             document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function () {
                 trailerFrame.src = '';
             });
-
-            window.initializeBooking();
         });
     </script>
 }
 
-<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
