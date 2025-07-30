@@ -93,15 +93,18 @@ namespace MovieTheater.Controllers
             ViewBag.SeatTypes = _seatTypeService.GetAll();
             ViewBag.CoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
 
-            if (cinemaRoom == null)
-                return NotFound();
+            if (!cinemaRoom.SeatLength.HasValue || !cinemaRoom.SeatWidth.HasValue || cinemaRoom.SeatLength.Value == 0 || cinemaRoom.SeatWidth.Value == 0)
+            {
+                TempData["ErrorMessage"] = "Add seat length and seat width before viewing seat";
+                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+            }
 
             var viewModel = new ShowroomEditViewModel
             {
                 CinemaRoomId = cinemaId,
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
-                SeatWidth = (int)cinemaRoom.SeatWidth,
-                SeatLength = (int)cinemaRoom.SeatLength,
+                SeatWidth = cinemaRoom.SeatWidth ?? 0,
+                SeatLength = cinemaRoom.SeatLength ?? 0,
                 Seats = seats
             };
 
@@ -152,67 +155,13 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Xem ghế theo phim
-        /// </summary>
-        /// <remarks>url: /Seat/ViewByMovie/{movieId} (GET)</remarks>
-        [HttpGet("Seat/ViewByMovie/{movieId}")]
-        public async Task<IActionResult> ViewByMovie(string movieId)
-        {
-            var movie = _movieService.GetById(movieId);
-            if (movie == null || !movie.CinemaRoomId.HasValue)
-            {
-                return NotFound();
-            }
-
-            var cinemaRoom = _cinemaService.GetById(movie.CinemaRoomId.Value);
-            if (cinemaRoom == null)
-            {
-                return NotFound();
-            }
-
-            var seats = await _seatService.GetSeatsByRoomIdAsync(movie.CinemaRoomId.Value);
-            var seatTypes = _seatTypeService.GetAll().ToList();
-            ViewBag.MovieId = movieId;
-
-            // Lấy movie show mới nhất cho phòng này
-            var movieShows = _movieService.GetMovieShow().Where(ms => ms.CinemaRoomId == cinemaRoom.CinemaRoomId).ToList();
-            var latestMovieShow = movieShows.OrderByDescending(ms => ms.MovieShowId).FirstOrDefault();
-            List<int> bookedSeats = new List<int>();
-            if (latestMovieShow != null)
-            {
-                var scheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(latestMovieShow.MovieShowId);
-                bookedSeats = scheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
-            }
-            ViewBag.BookedSeats = bookedSeats;
-
-            // Lấy danh sách food/drink/combo đang active
-            var foods = await _foodService.GetAllAsync(null, null, true);
-            ViewBag.Foods = foods.Foods;
-
-            var viewModel = new SeatSelectionViewModel
-            {
-                MovieId = movieId,
-                MovieName = movie.MovieNameEnglish,
-                CinemaRoomId = movie.CinemaRoomId.Value,
-                CinemaRoomName = cinemaRoom.CinemaRoomName,
-                VersionName = cinemaRoom.Version?.VersionName ?? "N/A",
-                SeatLength = cinemaRoom.SeatLength ?? 0,
-                SeatWidth = cinemaRoom.SeatWidth ?? 0,
-                Seats = seats,
-                SeatTypes = seatTypes
-            };
-
-            return View("View", viewModel);
-        }
-
-        /// <summary>
         /// Chọn ghế cho suất chiếu
         /// </summary>
         /// <remarks>url: /Seat/Select (GET)</remarks>
         [HttpGet]
         [Route("Seat/Select")]
         public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId)
-        {            
+        {
             var movie = _movieService.GetById(movieId);
             if (movie == null)
             {
@@ -229,9 +178,9 @@ namespace MovieTheater.Controllers
             var movieShows = _movieService.GetMovieShows(movieId);
 
             // Get the specific movie show for this date, time, and version
-            var movieShow = movieShows.FirstOrDefault(ms => 
-                ms.ShowDate == DateOnly.FromDateTime(parsedDate) && 
-                ms.Schedule?.ScheduleTime.HasValue == true && 
+            var movieShow = movieShows.FirstOrDefault(ms =>
+                ms.ShowDate == DateOnly.FromDateTime(parsedDate) &&
+                ms.Schedule?.ScheduleTime.HasValue == true &&
                 ms.Schedule.ScheduleTime.Value.ToString("HH:mm") == time &&
                 (!versionId.HasValue || ms.VersionId == versionId.Value));
 
@@ -255,15 +204,32 @@ namespace MovieTheater.Controllers
             var bookedScheduleSeats = await _scheduleSeatRepository.GetScheduleSeatsByMovieShowAsync(movieShow.MovieShowId);
             var bookedSeats = bookedScheduleSeats.Where(s => s.SeatStatusId == 2 && s.SeatId.HasValue).Select(s => s.SeatId.Value).ToList();
 
-            // Log để debug
-            _logger.LogInformation($"MovieShowId: {movieShow.MovieShowId}, Total ScheduleSeats: {bookedScheduleSeats.Count()}, Booked Seats: {string.Join(", ", bookedSeats)}");
-
             ViewBag.BookedSeats = bookedSeats;
             ViewBag.MovieShow = movieShow;
+            // Fetch couple seats for this cinema room
+            var allCoupleSeats = await _coupleSeatService.GetAllCoupleSeatsAsync();
+            var roomSeatIds = seats.Select(s => s.SeatId).ToHashSet();
+            var coupleSeatsForRoom = allCoupleSeats.Where(cs => roomSeatIds.Contains(cs.FirstSeatId) && roomSeatIds.Contains(cs.SecondSeatId)).ToList();
+            ViewBag.CoupleSeats = coupleSeatsForRoom;
+            var coupleSeatPairs = new Dictionary<int, int>();
+            if (ViewBag.CoupleSeats != null)
+            {
+                foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
+                {
+                    coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
+                    coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
+                }
+            }
+            ViewBag.CoupleSeatPairs = coupleSeatPairs;
 
             // Lấy danh sách food/drink/combo đang active
             var foods = await _foodService.GetAllAsync(null, null, true);
             ViewBag.Foods = foods.Foods;
+
+            // Lấy thể loại (genre) dạng chuỗi
+            string genre = movie.Types != null && movie.Types.Any() ? string.Join(", ", movie.Types.Select(t => t.TypeName)) : string.Empty;
+            // Lấy poster
+            string poster = movie.SmallImage;
 
             var viewModel = new SeatSelectionViewModel
             {
@@ -278,7 +244,13 @@ namespace MovieTheater.Controllers
                 SeatLength = cinemaRoom.SeatLength ?? 0,
                 SeatWidth = cinemaRoom.SeatWidth ?? 0,
                 Seats = seats,
-                SeatTypes = seatTypes
+                SeatTypes = seatTypes,
+                // Bổ sung thông tin phim
+                MoviePoster = poster,
+                MovieContent = movie.Content,
+                MovieGenre = genre,
+                MovieFromDate = movie.FromDate,
+                MovieDuration = movie.Duration
             };
 
             return View("View", viewModel);
@@ -349,6 +321,43 @@ namespace MovieTheater.Controllers
             {
                 return View();
             }
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <remarks>url: /Seat/DeleteCoupleSeat (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCoupleSeat([FromBody] SeatIdsRequest request)
+        {
+            if (request.SeatIds == null || request.SeatIds.Count != 2)
+                return BadRequest("Exactly two seat IDs required.");
+
+            await _seatService.DeleteCoupleSeatBySeatIdsAsync(request.SeatIds[0], request.SeatIds[1]);
+            return Ok();
+        }
+
+        /// <summary>
+        /// Tạo ghế đôi theo lô
+        /// </summary>
+        /// <remarks>url: /Seat/CreateCoupleSeatsBatch (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeat> coupleSeats)
+        {
+            if (coupleSeats == null || coupleSeats.Count == 0)
+                return BadRequest("No couple seat pairs provided.");
+
+            foreach (var pair in coupleSeats)
+            {
+                await _coupleSeatService.CreateCoupleSeatAsync(pair.FirstSeatId, pair.SecondSeatId);
+            }
+            return Ok();
+        }
+
+        public class SeatIdsRequest
+        {
+            public List<int> SeatIds { get; set; }
         }
     }
 }

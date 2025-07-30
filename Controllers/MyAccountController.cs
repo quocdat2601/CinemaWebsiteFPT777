@@ -145,6 +145,12 @@ namespace MovieTheater.Controllers
             var success = _service.Update(user.AccountId, registerModel);
             if (success)
             {
+                // Refresh user claims after update
+                var updatedUser = _service.GetById(user.AccountId);
+                if (updatedUser != null)
+                {
+                    await _service.SignInUserAsync(HttpContext, updatedUser);
+                }
                 TempData["ToastMessage"] = "Profile image updated successfully!";
             }
             else
@@ -195,6 +201,12 @@ namespace MovieTheater.Controllers
             var success = _service.Update(user.AccountId, registerModel);
             if (success)
             {
+                // Refresh user claims after update
+                var updatedUser = _service.GetById(user.AccountId);
+                if (updatedUser != null)
+                {
+                    await _service.SignInUserAsync(HttpContext, updatedUser);
+                }
                 TempData["ToastMessage"] = "Profile updated successfully!";
             }
             else

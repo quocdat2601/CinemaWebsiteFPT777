@@ -34,7 +34,8 @@ namespace MovieTheater.Service
                 new Claim(JwtRegisteredClaimNames.Sub, account.AccountId),
                 new Claim(ClaimTypes.Name, account.Username),
                 new Claim(ClaimTypes.Role, roleName),
-                new Claim("Status", account.Status.ToString())
+                new Claim("Status", account.Status.ToString()),
+                new Claim("Image", account.Image ?? "/image/profile.jpg")
             };
 
             var token = new JwtSecurityToken(

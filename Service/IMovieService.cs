@@ -1,4 +1,4 @@
-﻿using MovieTheater.Models;
+using MovieTheater.Models;
 
 namespace MovieTheater.Service
 {
@@ -22,6 +22,7 @@ namespace MovieTheater.Service
         public List<Models.Type> GetAllTypes();
         public List<Schedule> GetAllSchedules();
         public bool DeleteAllMovieShows(string movieId);
+        public bool DeleteMovieShows(int movieShowId);
         public Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);
         public List<DateOnly> GetShowDates(string movieId);
         public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);
@@ -30,5 +31,11 @@ namespace MovieTheater.Service
         public List<MovieShow> GetMovieShowsByMovieId(string movieId);
         public List<Models.Version> GetAllVersions();
         public Models.Version? GetVersionById(int versionId);
+        
+        // New methods for categorizing movies
+        public List<Movie> GetCurrentlyShowingMovies();
+        public List<Movie> GetComingSoonMovies();
+        public List<Movie> GetCurrentlyShowingMoviesWithDetails();
+        public List<Movie> GetComingSoonMoviesWithDetails();
     }
 }

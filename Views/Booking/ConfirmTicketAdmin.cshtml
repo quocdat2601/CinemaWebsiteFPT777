@@ -109,7 +109,7 @@
 
 <div class="container mt-4">
     <div class="text-start p-3">
-        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
+        <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, versionId = Model.BookingDetails.VersionId, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
     <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
     <div class="card shadow p-4">
@@ -166,9 +166,10 @@
                 }
             </tbody>
         </table>
+
         <div class="text-end mb-2">
             <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
-                @Model.BookingDetails.SelectedSeats.Sum(s => s.Price).ToString("N0") VND
+                Total Price: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) VND
             </span>
             <span id="discountedTotal" style="display:none;"></span>
             <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
@@ -193,16 +194,35 @@
                     @foreach (var food in Model.SelectedFoods)
                     {
                         <tr>
-                            <td>@food.Name</td>
+                            <td>@food.Name
+                                @if (!string.IsNullOrEmpty(food.PromotionName))
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                }
+                            </td>
                             <td>@food.Quantity</td>
-                            <td>@food.Price.ToString("N0") VND</td>
+                            <td>
+                                @if (food.PromotionDiscount > 0)
+                                {
+                                    <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                    <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                }
+                            </td>
                             <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
+                        <td colspan="3" class="text-end"><strong>Total Food (before discount):</strong></td>
+                        <td><strong>@Model.SelectedFoods.Sum(f => f.OriginalPrice * f.Quantity).ToString("N0") VND</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total Food (after discount):</strong></td>
                         <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
                     </tr>
                 </tfoot>
@@ -211,9 +231,21 @@
         <hr />
         <!-- Member selection UI -->
         <div class="mb-3">
-            <label class="soft-label"><strong>Select Member: *</strong></label>
+            <label class="soft-label"><strong>Customer Type:</strong></label>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="customerType" id="memberCustomer" value="member" checked>
+                <label class="btn btn-outline-primary" for="memberCustomer">Member</label>
+                
+                <input type="radio" class="btn-check" name="customerType" id="guestCustomer" value="guest">
+                <label class="btn btn-outline-secondary" for="guestCustomer">Guest</label>
+            </div>
+        </div>
+        
+        <div id="memberSelectionSection">
+            <label class="soft-label"><strong>Select Member:</strong></label>
             <button type="button" id="openMemberModalBtn" class="btn btn-primary">Select Member</button>
         </div>
+        
         <div id="memberDetails" style="@(string.IsNullOrEmpty(Model.MemberId) ? "display:none;" : "")">
             <hr />
             <div class="section-title">Member Information</div>
@@ -241,6 +273,8 @@
                     <button type="button" id="openVoucherModalBtn" class="btn btn-primary">Select Voucher</button>
                     <div id="selectedVoucherInfo" class="mt-2 text-success position-relative"></div>
                     <input type="hidden" id="selectedVoucherId" />
+                    <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
+                    <input type="hidden" id="selectedPromotionId" />
                 </div>
             </div>
             <div class="mb-3 mt-3">
@@ -251,10 +285,10 @@
             </div>
         </div>
         <div class="text-center mt-4">
-            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg" disabled>Confirm Ticket Booking</button>
+            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg me-2" disabled>Confirm Ticket Booking</button>
+            <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Create QR Code</button>
         </div>
         <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
-        <input type="hidden" id="voucherAmountHidden" name="VoucherAmount" value="@Model.VoucherAmount" />
     </div>
 </div>
 
@@ -314,31 +348,75 @@
   </div>
 </div>
 
-<!-- Promotion Picker Modal -->
-<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="promotionModalLabel">All Promotions</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <!-- Promotions will be loaded here by JS as cards -->
-        </div>
-        <div class="row mt-2">
-          <div class="col-12 text-center">
-            <button type="button" class="btn btn-outline-secondary" id="clearPromotionBtn">Clear Promotion</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 @section Scripts {
     <script>
         $(document).ready(function () {
+            console.log('Document ready - initializing guest functionality');
+            
+            // Test guest section visibility
+            $('input[name="customerType"]').change(function() {
+                console.log('Customer type changed to:', $(this).val());
+            });
+            // Customer type selection
+            $('input[name="customerType"]').change(function() {
+                const customerType = $(this).val();
+                if (customerType === 'member') {
+                    $('#memberSelectionSection').show();
+                    $('#guestInfoSection').hide();
+                    $('#guestName').prop('disabled', true);
+                    $('#guestPhone').prop('disabled', true);
+                    $('#memberDetails').hide();
+                    // Clear guest info
+                    $('#guestName').val('');
+                    $('#guestPhone').val('');
+                    $('#guestValidationMessage').hide();
+                    
+                    // SỬA: Reset rank discount khi chuyển sang Member (sẽ được set lại khi chọn member)
+                    currentDiscountPercent = 0;
+                    currentEarningRate = 0;
+                    $('#rankDiscountPercent').val(0);
+                    $('#discountInfo').html('Rank discount: 0% (-0 VND)');
+                } else {
+                    $('#memberSelectionSection').hide();
+                    $('#guestInfoSection').show();
+                    $('#guestName').val('').prop('disabled', false);
+                    $('#guestPhone').val('').prop('disabled', false);
+                    $('#memberDetails').hide();
+                    // Clear member info
+                    $('#memberId').val('');
+                    $('#memberFullName').val('');
+                    $('#memberIdentityCard').val('');
+                    $('#memberPhoneNumber').val('');
+                    $('#memberScore').val('');
+                    $('#accountId').val('');
+                    
+                    // SỬA: Reset rank discount khi chuyển sang Guest
+                    currentDiscountPercent = 0;
+                    currentEarningRate = 0;
+                    $('#rankDiscountPercent').val(0);
+                    selectedAccountId = null;
+                    selectedVoucher = null;
+                    $('#selectedVoucherInfo').text('');
+                    $('#selectedVoucherId').val('');
+                    $('#voucherAmountHidden').val('0');
+                    $('#useScore').val(0);
+                    
+                    // Disable voucher button for guest
+                    $('#openVoucherModalBtn').prop('disabled', true);
+                    
+                    // Reset buttons for guest
+                    $('#confirmTicketAdminBtn').prop('disabled', true);
+                    $('#createQRCodeBtn').prop('disabled', true);
+                    
+                    // Update price calculation
+                    updatePriceAll();
+                    
+                    // SỬA: Ẩn rank discount info cho guest
+                    $('#discountInfo').html('');
+                }
+                updateConfirmButtonState();
+            });
+
             // Open modal using Bootstrap 5 API
             let memberModalInstance = null;
             let selectedAccountId = null;
@@ -388,28 +466,77 @@
                 // Attach select event
                 $('.select-member-btn').off('click').on('click', function () {
                     const member = JSON.parse($(this).attr('data-member'));
-                    fillMemberInfo(member);
+                    
+                    // Reload page với member đã chọn
+                    const request = {
+                        MovieShowId: @Model.MovieShowId,
+                        SelectedSeatIds: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats.Select(s => s.SeatId))),
+                        FoodIds: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods.Select(f => f.FoodId))),
+                        FoodQtys: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods.Select(f => f.Quantity))),
+                        MemberId: member.memberId
+                    };
+                    
+                    // Cập nhật selectedAccountId trước khi reload
+                    selectedAccountId = member.account.accountId;
+                    
+                    $.ajax({
+                        url: '@Url.Action("ReloadWithMember", "Booking")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(request),
+                        success: function (response) {
+                            if (response.success) {
+                                window.location.href = response.redirectUrl;
+                            } else {
+                                alert('Error: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("AJAX Error:", error);
+                            alert('Error reloading page with member');
+                        }
+                    });
+                    
                     if (memberModalInstance) memberModalInstance.hide();
                 });
             }
 
             let memberSelected = false;
+            let guestSelected = false;
             function updateConfirmButtonState() {
-                // Check if a member is selected
-                memberSelected = !!$('#memberId').val();
-                // Validate score
-                var used = parseInt($('#useScore').val()) || 0;
-                var maxPoints = updateMaxUsablePoints();
-                var validScore = true;
-                if (used === 0) {
-                    validScore = true;
-                } else if (used < 20) {
-                    validScore = false;
-                } else if (used > maxPoints) {
-                    validScore = false;
+                const customerType = $('input[name="customerType"]:checked').val();
+                
+                if (customerType === 'member') {
+                    // Check if a member is selected
+                    memberSelected = !!$('#memberId').val();
+                    // Validate score
+                    var used = parseInt($('#useScore').val()) || 0;
+                    var maxPoints = updateMaxUsablePoints();
+                    var validScore = true;
+                    if (used === 0) {
+                        validScore = true;
+                    } else if (used < 20) {
+                        validScore = false;
+                    } else if (used > maxPoints) {
+                        validScore = false;
+                    }
+                    // Enable only if member is selected and score is valid
+                    $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
+                    $('#createQRCodeBtn').prop('disabled', true); // Disable QR for members
+                } else {
+                    // Guest customer - KHÔNG cần validate tên/sđt
+                    $('#confirmTicketAdminBtn').prop('disabled', false);
+                    $('#createQRCodeBtn').prop('disabled', false);
+                    
+                    // Debug info
+                    console.log('Guest validation:', {
+                        guestName: $('#guestName').val(),
+                        guestPhone: $('#guestPhone').val(),
+                        guestNameLength: $('#guestName').val().length,
+                        guestPhoneLength: $('#guestPhone').val().length,
+                        guestSelected: guestSelected
+                    });
                 }
-                // Enable only if both member is selected and score is valid
-                $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
             }
 
             function fillMemberInfo(member) {
@@ -420,8 +547,23 @@
                 $('#memberScore').val(member.score);
                 $('#accountId').val(member.account.accountId || '');
                 selectedAccountId = member.account.accountId;
-                $('#rankDiscountPercent').val(member.account.rankDiscountPercent || 0);
-                $('#promotionDiscountPercent').val(member.account.promotionDiscountPercent || 0);
+                
+                // SỬA: Lấy rank discount từ API thay vì từ member object
+                $.getJSON('/Booking/GetMemberDiscount', { memberId: member.memberId }, function (data) {
+                    $('#rankDiscountPercent').val(data.discountPercent || 0);
+                    currentDiscountPercent = data.discountPercent || 0;
+                    currentEarningRate = data.earningRate || 0;
+                    updatePriceAll();
+                    
+                    // SỬA: Hiển thị rank discount info khi chọn member
+                    var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                    if (data.discountPercent > 0) {
+                        $('#discountInfo').html(`Rank discount: ${data.discountPercent}% (-${Math.round(originalTotal * (data.discountPercent / 100)).toLocaleString()} VND)`);
+                    } else {
+                        $('#discountInfo').html('Rank discount: 0% (-0 VND)');
+                    }
+                });
+                
                 $('#memberDetails').show();
                 updateMaxUsablePoints();
                 onMemberSelected(member.memberId);
@@ -430,13 +572,45 @@
                 selectedVoucher = null;
                 $('#selectedVoucherInfo').text('');
                 $('#selectedVoucherId').val('');
+                $('#voucherAmountHidden').val('0');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
+                 fetchEligiblePromotions(); // Call this function when member is selected
                 updateConfirmButtonState(); // <-- update button state
             }
 
             // Confirm Ticket Admin Button Click
             $('#confirmTicketAdminBtn').click(function () {
+                const customerType = $('input[name="customerType"]:checked').val();
+                
+                // SỬA: Tính toán giá cuối cùng từ JavaScript
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                var totalFoodPrice = @Model.TotalFoodPrice;
+                var discountPercent = currentDiscountPercent || 0;
+                var discountAmount = 0;
+                
+                // Tính rank discount
+                if (customerType === 'member' && originalTotal > 0) {
+                    discountAmount = Math.round(originalTotal * (discountPercent / 100));
+                }
+                var afterRank = originalTotal - discountAmount;
+                if (afterRank < 0) afterRank = 0;
+                
+                // Tính voucher amount
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterRank - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+                
+                // Tính điểm sử dụng
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var pointValue = 1000;
+                var savings = useScore * pointValue;
+                var finalSeatPrice = afterVoucher - savings;
+                if (finalSeatPrice < 0) finalSeatPrice = 0;
+                
+                // Tổng cuối cùng
+                var finalTotal = finalSeatPrice + totalFoodPrice;
+                
                 var model = {
                     BookingDetails: {
                         MovieId: '@Model.BookingDetails.MovieId',
@@ -445,21 +619,23 @@
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
-                        TotalPrice: @Model.BookingDetails.TotalPrice,
-                        PricePerTicket: @Model.BookingDetails.PricePerTicket,
+                        TotalPrice: finalTotal, // SỬA: Gửi giá cuối cùng
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         MovieShowId: @Model.MovieShowId,
-                        PromotionDiscountPercent: Number(window.serverPromotionDiscountPercent) || 0,
+                        PromotionDiscountPercent: discountPercent, // SỬA: Gửi discount hiện tại
                     },
-                    MemberIdInput: $('#memberInput').val(),
-                    MemberId: $('#memberId').val(),
-                    MemberFullName: $('#memberFullName').val(),
-                    MemberIdentityCard: $('#memberIdentityCard').val(),
-                    MemberPhoneNumber: $('#memberPhoneNumber').val(),
-                    MemberScore: parseInt($('#memberScore').val()) || 0,
-                    UsedScore: parseInt($('#useScore').val()) || 0,
-                    SelectedVoucherId: $('#selectedVoucherId').val(),
-                    AccountId: $('#accountId').val(),
-                    RankDiscountPercent: parseFloat($('#rankDiscountPercent').val()) || 0,
+                    CustomerType: customerType,
+                    MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
+                    MemberId: customerType === 'member' ? $('#memberId').val() : '',
+                    MemberFullName: customerType === 'member' ? $('#memberFullName').val() : $('#guestName').val(),
+                    MemberIdentityCard: customerType === 'member' ? $('#memberIdentityCard').val() : '',
+                    MemberPhoneNumber: customerType === 'member' ? $('#memberPhoneNumber').val() : $('#guestPhone').val(),
+                    MemberScore: customerType === 'member' ? (parseInt($('#memberScore').val()) || 0) : 0,
+                    UsedScore: customerType === 'member' ? (parseInt($('#useScore').val()) || 0) : 0,
+                    SelectedVoucherId: customerType === 'member' ? $('#selectedVoucherId').val() : '',
+                    VoucherAmount: customerType === 'member' ? (parseInt($('#voucherAmountHidden').val()) || 0) : 0,
+                    AccountId: customerType === 'member' ? $('#accountId').val() : '',
+                    RankDiscountPercent: customerType === 'member' ? (parseFloat($('#rankDiscountPercent').val()) || 0) : 0,
                     MovieShowId: @Model.MovieShowId,
                     SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
                     TotalFoodPrice: @Model.TotalFoodPrice
@@ -485,10 +661,89 @@
                 });
             });
 
+            // Create QR Code button for Guest
+            $('#createQRCodeBtn').click(function () {
+                const customerType = $('input[name="customerType"]:checked').val();
+                
+                // SỬA: Tính toán giá cuối cùng từ JavaScript (tương tự như Confirm button)
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                var totalFoodPrice = @Model.TotalFoodPrice;
+                var discountPercent = currentDiscountPercent || 0;
+                var discountAmount = 0;
+                
+                // Tính rank discount
+                if (customerType === 'member' && originalTotal > 0) {
+                    discountAmount = Math.round(originalTotal * (discountPercent / 100));
+                }
+                var afterRank = originalTotal - discountAmount;
+                if (afterRank < 0) afterRank = 0;
+                
+                // Tính voucher amount
+                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
+                var afterVoucher = afterRank - voucherAmount;
+                if (afterVoucher < 0) afterVoucher = 0;
+                
+                // Tính điểm sử dụng
+                var useScore = parseInt($('#useScore').val()) || 0;
+                var pointValue = 1000;
+                var savings = useScore * pointValue;
+                var finalSeatPrice = afterVoucher - savings;
+                if (finalSeatPrice < 0) finalSeatPrice = 0;
+                
+                // Tổng cuối cùng
+                var finalTotal = finalSeatPrice + totalFoodPrice;
+                
+                var model = {
+                    BookingDetails: {
+                        MovieId: '@Model.BookingDetails.MovieId',
+                        MovieName: '@Model.BookingDetails.MovieName',
+                        CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
+                        ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
+                        ShowTime: '@Model.BookingDetails.ShowTime',
+                        SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
+                        TotalPrice: finalTotal, // SỬA: Gửi giá cuối cùng
+                        PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        MovieShowId: @Model.MovieShowId,
+                        PromotionDiscountPercent: discountPercent, // SỬA: Gửi discount hiện tại
+                    },
+                    CustomerType: customerType,
+                    MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
+                    MemberId: customerType === 'member' ? $('#memberId').val() : '',
+                    MemberFullName: customerType === 'member' ? $('#memberFullName').val() : $('#guestName').val(),
+                    MemberIdentityCard: customerType === 'member' ? $('#memberIdentityCard').val() : '',
+                    MemberPhoneNumber: customerType === 'member' ? $('#memberPhoneNumber').val() : $('#guestPhone').val(),
+                    MemberScore: customerType === 'member' ? (parseInt($('#memberScore').val()) || 0) : 0,
+                    UsedScore: customerType === 'member' ? (parseInt($('#useScore').val()) || 0) : 0,
+                    SelectedVoucherId: customerType === 'member' ? $('#selectedVoucherId').val() : '',
+                    VoucherAmount: customerType === 'member' ? (parseInt($('#voucherAmountHidden').val()) || 0) : 0,
+                    AccountId: customerType === 'member' ? $('#accountId').val() : '',
+                    RankDiscountPercent: customerType === 'member' ? (parseFloat($('#rankDiscountPercent').val()) || 0) : 0,
+                    MovieShowId: @Model.MovieShowId,
+                    SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
+                    TotalFoodPrice: @Model.TotalFoodPrice
+                };
+
+                // Submit form để redirect đến QR code page
+                var form = $('<form>', {
+                    'method': 'POST',
+                    'action': '@Url.Action("CreateQRCode", "QRPayment")'
+                });
+                
+                // Thêm input hidden cho model data
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'modelData',
+                    'value': JSON.stringify(model)
+                }));
+                
+                $('body').append(form);
+                form.submit();
+            });
+
             // Remove ticketsToConvert logic, add useScore logic
             function updateMaxUsablePoints() {
                 // This should be calculated from backend, but for now, estimate:
-                var totalPrice = @Model.BookingDetails.TotalPrice;
+                var totalPrice = @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 var memberScore = parseInt($('#memberScore').val()) || 0;
                 var maxPoints = Math.floor((totalPrice * 0.9) / 1000);
                 maxPoints = Math.min(maxPoints, memberScore);
@@ -504,25 +759,54 @@
 
             // Track current earning rate and discount percent
             var currentEarningRate = 0;
-            var currentDiscountPercent = 0;
+            var currentDiscountPercent = parseInt('@Model.BookingDetails.RankDiscountPercent') || 0; // SỬA: Lấy từ model ban đầu
             let selectedVoucher = null;
+            let selectedPromotion = null;
             function updatePriceAll() {
-                var originalTotal = parseInt('@Model.BookingDetails.SelectedSeats.Sum(s => s.Price)');
+                var originalTotal = parseInt('@Model.BookingDetails.TotalPrice');
+                // Áp dụng rank benefit trước
                 var totalFoodPrice = @Model.TotalFoodPrice;
+                
+                // Debug log
+                console.log('Original Total:', originalTotal);
+                console.log('Total Food Price:', totalFoodPrice);
                 
                 // Áp dụng rank benefit trước (chỉ cho seat, không cho food)
                 var discountPercent = currentDiscountPercent || 0;
                 var discountAmount = 0;
-                if (originalTotal > 0) {
+                
+                // SỬA: Chỉ tính rank discount cho member
+                var customerType = $('input[name="customerType"]:checked').val();
+                if (customerType === 'member' && originalTotal > 0) {
                     discountAmount = Math.round(originalTotal * (discountPercent / 100));
                 }
                 var afterRank = originalTotal - discountAmount;
                 if (afterRank < 0) afterRank = 0;
 
+                // Debug log
+                console.log('Rank Discount Percent:', discountPercent);
+                console.log('Rank Discount Amount:', discountAmount);
+                console.log('After Rank Discount:', afterRank);
+
+                // SỬA: Không áp dụng promotion discount thêm lần nữa vì đã được áp dụng từ server
+                // var promotionDiscountPercent = selectedPromotion ? selectedPromotion.value : 0;
+                // var promotionDiscountAmount = 0;
+                // if (afterRank > 0) {
+                //     promotionDiscountAmount = Math.round(afterRank * (promotionDiscountPercent / 100));
+                // }
+                // var afterPromotion = afterRank - promotionDiscountAmount;
+                // if (afterPromotion < 0) afterPromotion = 0;
+                var afterPromotion = afterRank; // SỬA: Bỏ qua promotion discount vì đã được áp dụng
+
                 // Sau đó mới áp dụng voucher (chỉ cho seat, không cho food)
                 var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-                var afterVoucher = afterRank - voucherAmount;
+                var afterVoucher = afterPromotion - voucherAmount;
                 if (afterVoucher < 0) afterVoucher = 0;
+
+                // Debug log
+                console.log('Voucher Amount:', voucherAmount);
+                console.log('After Voucher:', afterVoucher);
+                console.log('Selected Voucher:', selectedVoucher);
 
                 // Điểm (chỉ cho seat, không cho food)
                 var useScore = parseInt($('#useScore').val()) || 0;
@@ -531,12 +815,30 @@
                 var finalSeatPrice = afterVoucher - savings;
                 if (finalSeatPrice < 0) finalSeatPrice = 0;
                 
+                // Debug log
+                console.log('Use Score:', useScore);
+                console.log('Savings:', savings);
+                console.log('Final Seat Price:', finalSeatPrice);
+                
                 // Tổng cuối cùng = seat price + food price
                 var finalTotal = finalSeatPrice + totalFoodPrice;
 
+                // Debug log
+                console.log('Final Total:', finalTotal);
+                console.log('Expected calculation:');
+                console.log('  Original Total:', originalTotal);
+                console.log('  Rank Discount:', discountAmount);
+                console.log('  After Rank:', afterRank);
+                console.log('  Voucher Amount:', voucherAmount);
+                console.log('  After Voucher:', afterVoucher);
+                console.log('  Use Score Value:', savings);
+                console.log('  Final Seat Price:', finalSeatPrice);
+                console.log('  Food Price:', totalFoodPrice);
+                console.log('  Final Total:', finalTotal);
+
                 // Update hiển thị giá
                 var seatOnlyTotal = originalTotal;
-                if (voucherAmount > 0 || discountAmount > 0 || useScore > 0) {
+                if (voucherAmount > 0 || discountAmount > 0 || useScore > 0) { // SỬA: Bỏ promotionDiscountAmount
                     $('#originalTotal').css({'text-decoration':'line-through','color':'#888','font-size':'1.1em'}).text(originalTotal.toLocaleString() + ' VND');
                     $('#discountedTotal').show().css({'font-size':'1.3em','font-weight':'bold','color':'#1a7f37'}).text(finalSeatPrice.toLocaleString() + ' VND');
                     seatOnlyTotal = finalSeatPrice;
@@ -561,11 +863,19 @@
 
                 // Hiển thị voucher
                 let discountInfoHtml = '';
-                // Hiển thị rank discount
-                discountInfoHtml +=
-                    discountPercent > 0 && originalTotal > 0
-                    ? `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`
-                    : 'Rank discount: 0% (-0 VND)';
+                // Hiển thị rank discount - chỉ hiển thị cho member
+                var customerType = $('input[name="customerType"]:checked').val();
+                if (customerType === 'member' && discountPercent > 0 && originalTotal > 0) {
+                    discountInfoHtml += `Rank discount: ${discountPercent}% (-${discountAmount.toLocaleString()} VND)`;
+                } else {
+                    // SỬA: Ẩn rank discount info cho guest
+                    if (customerType === 'guest') {
+                        discountInfoHtml += ''; // Không hiển thị rank discount cho guest
+                    } else {
+                        discountInfoHtml += 'Rank discount: 0% (-0 VND)';
+                    }
+                }
+                
                 if (voucherAmount > 0) {
                     discountInfoHtml += `<div class='text-success'>Voucher: -${voucherAmount.toLocaleString()} VND</div>`;
                 }
@@ -597,7 +907,7 @@
                 else if (useScore > maxUsablePoints) { validationMsg = `You can use up to ${maxUsablePoints} points for this order.`; valid = false; }
                 $('#pointValidation').text(validationMsg);
                 // At the end of updatePriceAll, set the hidden input value:
-                $('#promotionDiscountPercent').val(discountPercent);
+                $('#rankDiscountPercent').val(discountPercent); // SỬA: Set rank discount percent thay vì promotion
             }
 
             function onMemberSelected(memberId) {
@@ -607,9 +917,71 @@
                     updatePriceAll();
                 });
             }
+            // Guest info validation
+            $('#guestName, #guestPhone').on('input', function() {
+                console.log('Guest input changed:', $(this).attr('id'), 'value:', $(this).val());
+                updateConfirmButtonState();
+                validateGuestInfo();
+            });
+            
+            // Also trigger on blur to ensure validation
+            $('#guestName, #guestPhone').on('blur', function() {
+                updateConfirmButtonState();
+                validateGuestInfo();
+            });
+            
+            function validateGuestInfo() {
+                var guestName = $('#guestName').val().trim();
+                var guestPhone = $('#guestPhone').val().trim();
+                var message = '';
+                
+                if (guestName.length === 0 && guestPhone.length === 0) {
+                    message = '';
+                } else if (guestName.length === 0) {
+                    message = 'Please enter guest name.';
+                } else if (guestPhone.length === 0) {
+                    message = 'Please enter phone number.';
+                } else if (guestPhone.length < 10) {
+                    message = 'Phone number must be at least 10 digits.';
+                }
+                
+                if (message.length > 0) {
+                    $('#guestValidationMessage').text(message).show();
+                } else {
+                    $('#guestValidationMessage').hide();
+                }
+            }
+
             // On page load, show initial state
             updatePriceAll();
             updateConfirmButtonState(); // <-- update button state
+            
+            // Nếu đã có member được chọn
+            if ($('#memberId').val()) {
+                // Cập nhật selectedAccountId
+                selectedAccountId = $('#accountId').val();
+                // Enable nút chọn voucher
+                $('#openVoucherModalBtn').prop('disabled', false);
+                // SỬA: Cập nhật rank discount từ server nếu đã có member
+                var memberId = $('#memberId').val();
+                if (memberId) {
+                    $.getJSON('/Booking/GetMemberDiscount', { memberId: memberId }, function (data) {
+                        $('#rankDiscountPercent').val(data.discountPercent || 0);
+                        currentDiscountPercent = data.discountPercent || 0;
+                        currentEarningRate = data.earningRate || 0;
+                        updatePriceAll();
+                    });
+                }
+                // Fetch promotions
+                fetchEligiblePromotions();
+            } else {
+                // SỬA: Reset rank discount nếu không có member (Guest)
+                currentDiscountPercent = 0;
+                currentEarningRate = 0;
+                $('#rankDiscountPercent').val(0);
+                $('#openVoucherModalBtn').prop('disabled', true);
+                updatePriceAll();
+            }
 
             // VOUCHER PICKER LOGIC
             let voucherModalInstance = null;
@@ -628,6 +1000,7 @@
                 selectedVoucher = null;
                 $('#selectedVoucherInfo').text('');
                 $('#selectedVoucherId').val('');
+                $('#voucherAmountHidden').val('0');
                 $('.voucher-card').removeClass('selected');
                 updatePriceAll();
                 if (voucherModalInstance) voucherModalInstance.hide();
@@ -665,6 +1038,7 @@
                             };
                             renderSelectedVoucherInfo();
                             $('#selectedVoucherId').val(selectedVoucher.id);
+                            $('#voucherAmountHidden').val(selectedVoucher.value);
                             updatePriceAll();
                             if (voucherModalInstance) voucherModalInstance.hide();
                         });
@@ -692,6 +1066,7 @@
                         selectedVoucher = null;
                         $('#selectedVoucherInfo').text('');
                         $('#selectedVoucherId').val('');
+                        $('#voucherAmountHidden').val('0');
                         $('.voucher-card').removeClass('selected');
                         updatePriceAll();
                     });
@@ -699,6 +1074,57 @@
                     $('#selectedVoucherInfo').text('');
                 }
             }
+
+            // Thêm hàm fetchEligiblePromotions và renderPromotionList vào section Scripts
+            // Gọi fetchEligiblePromotions mỗi khi chọn member, ghế, ngày chiếu
+            function fetchEligiblePromotions() {
+                var model = {
+                    MovieId: '@Model.BookingDetails.MovieId',
+                    ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
+                    ShowTime: '@Model.BookingDetails.ShowTime',
+                    MemberId: $('#memberId').val(),
+                    AccountId: $('#accountId').val(),
+                    SelectedSeatIds: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats.Select(s => s.SeatId)))
+                };
+
+                $.ajax({
+                    url: '@Url.Action("GetEligiblePromotions", "Booking")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (response) {
+                        if (response.success) {
+                            renderPromotionList(response.eligiblePromotions);
+                        } else {
+                            $('#promotionListContainer').html('<div class="col-12 text-center"><p class="text-muted">No eligible promotions found.</p></div>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error fetching promotions:", error);
+                        $('#promotionListContainer').html('<div class="col-12 text-center"><p class="text-danger">Error fetching promotions.</p></div>');
+                    }
+                });
+            }
+
+            function renderPromotionList(promotions) {
+                if (promotions.length > 0) {
+                    // Tự động chọn promotion có discount cao nhất
+                    const bestPromotion = promotions.reduce((best, current) => 
+                        (current.value > best.value) ? current : best
+                    );
+                    
+                    selectedPromotion = {
+                        id: bestPromotion.id,
+                        name: bestPromotion.name,
+                        type: bestPromotion.type,
+                        value: bestPromotion.value
+                    };
+                    $('#selectedPromotionId').val(selectedPromotion.id);
+                    updatePriceAll();
+                }
+            }
+
+            // Removed renderSelectedPromotionInfo function as it's no longer needed
         });
     </script>
 } 

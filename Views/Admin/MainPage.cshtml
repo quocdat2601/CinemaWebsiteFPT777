@@ -12,14 +12,16 @@
                 <a class="nav-link admin-tab active" data-tab="Dashboard" href="javascript:void(0)">Dashboard</a>
                 <a class="nav-link admin-tab" data-tab="MemberMg" href="javascript:void(0)">Member Management</a>
                 <a class="nav-link admin-tab" data-tab="EmployeeMg" href="javascript:void(0)">Employee Management</a>
+                <a class="nav-link admin-tab" data-tab="CastMg" href="javascript:void(0)">Cast/Director Management</a>
                 <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
                 <a class="nav-link admin-tab" data-tab="ShowroomMg" href="javascript:void(0)">Showroom Management</a>
+                <a class="nav-link admin-tab" data-tab="VersionMg" href="javascript:void(0)">Version Management</a>
                 <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
                 <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
                 <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
                 <a class="nav-link admin-tab" data-tab="VoucherMg" href="javascript:void(0)">Voucher Management</a>
                 <a class="nav-link admin-tab" data-tab="RankMg" href="javascript:void(0)">Rank Management</a>
-                <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;">
+                <a class="nav-link admin-tab" data-tab="QRCode" href="javascript:void(0)" style="background-color: #28a745; color: white;">
                     <i class="fas fa-qrcode me-2"></i>QR Scanner
                 </a>
             </ul>
@@ -32,21 +34,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function loadTab(tabName, keyword = '', status = '', expiry = '') {
+    function loadTab(tabName, params = {}) {
         $('.admin-tab').removeClass('active');
         $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
-        const params = new URLSearchParams({ tab: tabName });
-        if (keyword && keyword.trim()) params.append('keyword', keyword);
-        // Chỉ truyền statusFilter và expiryFilter cho VoucherMg
-        if (tabName === 'VoucherMg') {
-            if (status) params.append('statusFilter', status);
-            if (expiry) params.append('expiryFilter', expiry);
-        } else {
-            if (status) params.append('statusFilter', status);
-            if (expiry) params.append('categoryFilter', expiry); // giữ nguyên cho FoodMg nếu có
+        const urlParams = new URLSearchParams({ tab: tabName });
+        for (const key in params) {
+            if (params[key]) urlParams.append(key, params[key]);
         }
-        $('#tabContent').load(`/Admin/LoadTab?${params.toString()}`, function(response, status) {
+        $('#tabContent').load(`/Admin/LoadTab?${urlParams.toString()}`, function(response, status) {
             if (status === 'error') {
                 $('#tabContent').html('<div class="alert alert-danger">Failed to load content</div>');
             } else {
@@ -76,6 +72,7 @@
                         if (el) {
                             const model = JSON.parse(el.textContent);
                             window.initDashboardCharts(model);
+                            showTab('movie');
                         }
                         break;
                 }
@@ -145,6 +142,65 @@
             loadTab(tabName);
         });
     });
+
+    // Delegated event for edit button
+    $(document).on('click', '.edit-version-btn', function () {
+        var id = $(this).data('id');
+        $.get('/Version/Get/' + id, function (version) {
+            // Set the form fields with the fetched values
+            $('#inlineEditVersionId').val(version.versionId);
+            $('#inlineEditVersionName').val(version.versionName);
+            $('#inlineEditMulti').val(version.multi);
+            // Calculate and update prices immediately
+            updateSeatTypePrices(version.multi);
+            // Show the edit area
+            $('#inlineEditArea').slideDown();
+            // Scroll to the edit area
+            $('html, body').animate({ scrollTop: $('#inlineEditArea').offset().top - 80 }, 400);
+        });
+    });
+
+    // Delegated event for cancel button
+    $(document).on('click', '#cancelInlineEdit', function () {
+        $('#inlineEditArea').slideUp();
+    });
+
+    // Delegated event for form submit
+    $(document).on('submit', '#inlineEditVersionForm', function (e) {
+        e.preventDefault();
+        var data = {
+            VersionId: $('#inlineEditVersionId').val(),
+            VersionName: $('#inlineEditVersionName').val(),
+            Multi: parseFloat($('#inlineEditMulti').val())
+        };
+        $.ajax({
+            url: '/Version/Edit',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.success) {
+                    loadTab('VersionMg');
+                } else {
+                    alert(res.error || 'Failed to update version.');
+                }
+            }
+        });
+    });
+
+    // Delegated event for multiplier input
+    $(document).on('input', '#inlineEditMulti', function () {
+        var multi = parseFloat($(this).val()) || 1;
+        updateSeatTypePrices(multi);
+    });
+
+    function updateSeatTypePrices(multi) {
+        $('#seatTypePriceTable tr').each(function () {
+            var base = parseFloat($(this).attr('data-base-price')) || 0;
+            var price = Math.round(base * multi);
+            $(this).find('.calculated-price').text(price.toLocaleString('en-US'));
+        });
+    }
 </script>
 
 <partial name="_ToastMessages" />

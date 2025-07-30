@@ -222,12 +222,6 @@ footer.footer .container {
     color: var(--header-title-color);
 }
 
-.movie-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--space-3);
-}
-
 .movie-card {
     background-color: var(--card-bg);
     border-radius: var(--border-radius);
@@ -357,16 +351,6 @@ body.dark-mode .movie-card:hover {
         transform: translateY(0);
     }
 }
-
-/*@media (max-width: 480px) {
-    .movie-grid {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    }
-    .movie-title {
-        font-size: 1rem;
-        height: 2.6rem;
-    }
-}*/
 
 .pager-container {
     text-align: center;
@@ -507,10 +491,28 @@ body.dark-mode .filter-tag.active {
     transition: all var(--transition-speed) ease;
 }
 
+/* Override for hero-transparent class */
+.app-navbar.hero-transparent {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
 body.dark-mode .app-navbar {
     background: rgba(22, 33, 62, 0.8);
     border-bottom: 1px solid rgba(99, 102, 241, 0.2);
     box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1);
+}
+
+/* Override for hero-transparent class in dark mode */
+body.dark-mode .app-navbar.hero-transparent {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
 }
 
 .app-navbar .navbar-brand,
@@ -626,7 +628,6 @@ body {
     display: flex;
     flex-direction: column;
     color: var(--text-color);
-    background-color: var(--light-bg);
     transition: background-color var(--transition-speed);
 }
 
@@ -634,6 +635,12 @@ body {
     background: linear-gradient(135deg, var(--primary-color), #34495e);
     padding: 1rem 0;
     box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+/* Override for hero-transparent class */
+.app-navbar.hero-transparent {
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .navbar-brand {
@@ -702,8 +709,8 @@ body {
 
 main {
     flex: 1 0 auto;
-    padding-bottom: 12rem;
-    padding-top: 5.5rem; /* 5.5rem ~ 88px, đảm bảo không bị che bởi header fixed */
+    padding-bottom: 0;
+    padding-top: 0; /* 5.5rem ~ 88px, đảm bảo không bị che bởi header fixed */
 }
 
 /* Footer Styles */
@@ -753,7 +760,6 @@ main {
 #account-sidebar {
     background-color: var(--container-bg) !important;
     padding: 1.5rem 1rem;
-    border-radius: var(--border-radius);
     box-shadow: var(--shadow);
 }
 
@@ -841,7 +847,7 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 
 /* Home Page Slideshow Styles */
 body {
-    background: #f8f9fa;
+    background: white;
 }
 
 .section-title {
@@ -1319,150 +1325,7 @@ body.dark-mode .pagination .page-link:disabled, body.dark-mode .pagination .disa
     height: 4px;
 }
 
-/* --- TICKET BOOKING MODERN STYLE --- */
-.booking-card-modern {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    padding: 0 !important;
-}
-body.dark-mode .booking-card-modern {
-    background: rgba(22,33,62,0.92);
-    box-shadow: 0 8px 32px rgba(99,102,241,0.13), 0 1.5px 8px rgba(139,92,246,0.08);
-    border: 1.5px solid rgba(99,102,241,0.13);
-}
-.booking-title {
-    font-weight: 700;
-    color: var(--primary-color);
-    letter-spacing: 1px;
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-body.dark-mode .booking-title {
-    color: #fff;
-}
-.booking-label {
-    font-weight: 600;
-    font-size: 1.08rem;
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.booking-label .label-icon {
-    font-size: 1.2em;
-    margin-right: 0.3em;
-}
-body.dark-mode .booking-label {
-    color: #fff;
-}
-.booking-select {
-    border-radius: 12px;
-    border: 1.5px solid #e0e0e0;
-    background: #f8f9fa;
-    font-size: 1.08rem;
-    font-weight: 500;
-    color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(99,102,241,0.04);
-    padding: 0.7rem 1.1rem;
-    margin-top: 0.2rem;
-    transition: border 0.18s, box-shadow 0.18s;
-}
-.booking-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
-    outline: none;
-}
-body.dark-mode .booking-select {
-    background: #23234a;
-    color: #fff;
-    border: 1.5px solid #6366f1;
-}
-.booking-btn-gradient {
-    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-    color: #fff;
-    font-weight: 700;
-    font-size: 1.08rem;
-    border: none;
-    border-radius: 999px;
-    padding: 0.75rem 2.1rem;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.10);
-    transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-.booking-btn-gradient:hover, .booking-btn-gradient:focus {
-    background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
-    color: #fff;
-    transform: translateY(-1px) scale(1.03);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
-}
-/* Stepper progress bar */
-.stepper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    gap: 0.5rem;
-}
-.step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 0.98rem;
-    color: #b0b0b0;
-    font-weight: 500;
-    flex: 1 1 0;
-    position: relative;
-}
-.step .step-icon {
-    font-size: 1.3em;
-    margin-bottom: 0.2em;
-    background: #f3f4f6;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 0.2em auto;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.07);
-}
-.step.active {
-    color: var(--primary-color);
-    font-weight: 700;
-}
-.step.active .step-icon {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
-}
-body.dark-mode .step .step-icon {
-    background: #23234a;
-    color: #fff;
-}
-body.dark-mode .step.active .step-icon {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: #fff;
-}
-@media (max-width: 600px) {
-    .booking-card-modern {
-        padding: 1.2rem 0.5rem 1.2rem 0.5rem;
-        border-radius: 16px;
-    }
-    .stepper {
-        gap: 0.2rem;
-        font-size: 0.92rem;
-    }
-    .booking-title {
-        font-size: 1.1rem;
-    }
-}
-/* --- END TICKET BOOKING MODERN STYLE --- */
+
 
 /* --- CUSTOM BACKGROUND FOR TICKET BOOKING PAGE --- */
 .booking-bg-custom {
@@ -1637,5 +1500,97 @@ body.dark-mode .booking-select:focus, body.dark-mode .booking-select:hover {
     letter-spacing: 0.01em;
 }
 /* --- END TINH CHỈNH FORM BOOKING --- */
+
+
+
+.footer {
+    background: #10131a;
+    color: #fff;
+    font-size: 1rem;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.footer .container-fluid {
+    max-width: 100vw !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.footer .footer-link {
+    color: #b0b0b0;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.footer .footer-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+.footer-underline {
+    width: 120px;
+    height: 7px;
+    background: linear-gradient(90deg, #b6ff5c 0%, #4be600 100%);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.footer .social-link {
+    color: #b0b0b0;
+    transition: color 0.2s;
+}
+.footer .social-link:hover {
+    color: #4be600;
+}
+.footer-bottom {
+    border-top: 1px solid #222;
+    margin-top: 10px;
+    padding-top: 10px;
+    font-size: 0.95rem;
+}
+.footer-bottom-row {
+    padding-left: 32px;
+    padding-right: 32px;
+    background: transparent;
+}
+.footer-company-info {
+    color: #fff;
+    line-height: 1.6;
+}
+@media (max-width: 768px) {
+    .footer-bottom-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    .footer-bottom-row img {
+        margin-bottom: 10px;
+    }
+}
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column !important;
+        gap: 2rem;
+    }
+    .footer-bottom {
+        flex-direction: column !important;
+        text-align: center;
+    }
+}
+body.dark-mode .footer {
+    background: #181c2a;
+    color: #e2e8f0;
+}
+body.dark-mode .footer .footer-link {
+    color: #94a3b8;
+}
+body.dark-mode .footer .footer-link:hover {
+    color: #fff;
+}
+body.dark-mode .footer .social-link {
+    color: #94a3b8;
+}
+body.dark-mode .footer .social-link:hover {
+    color: #b6ff5c;
+}
 
 

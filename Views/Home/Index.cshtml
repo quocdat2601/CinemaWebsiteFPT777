@@ -1,117 +1,1011 @@
-﻿@{
+@using System.Web
+@model MovieTheater.Models.Movie
+@{
     ViewData["Title"] = "Home";
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
+    var currentlyShowingMovies = ViewBag.CurrentlyShowingMovies as IEnumerable<MovieTheater.Models.Movie>;
+    var comingSoonMovies = ViewBag.ComingSoonMovies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
+    // Force view recompilation - ensure proper data handling
+    var people = ViewBag.People as IEnumerable<MovieTheater.Models.Person> ?? new List<MovieTheater.Models.Person>();
+    var actorNames = people.Where(p => p != null && p.IsDirector == false).Select(p => p.Name ?? "").ToList();
+    var directorNames = people.Where(p => p != null && p.IsDirector == true).Select(p => p.Name ?? "").ToList();
+    var movieList = currentlyShowingMovies?.ToList() ?? new List<MovieTheater.Models.Movie>();
+    var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
 }
-<link rel="stylesheet" href="~/css/home-page.css" asp-append-version="true" />
+<!-- GOOGLE FONTS -->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
+<!-- OWL CAROUSEL -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" />
+<!-- SWIPER CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+<!-- BOX ICONS -->
+<link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+<!-- APP CSS -->
+<link rel="stylesheet" href="~/css/grid.css" />
+<link rel="stylesheet" href="~/css/app.css" />
+<link rel="stylesheet" href="~/css/modern-base.css" />
 
+<!-- HERO SECTION CSS -->
+<link rel="stylesheet" href="~/css/hero-section.css" />
+<link rel="stylesheet" href="~/css/movie-section.css" />
+<link rel="stylesheet" href="~/css/promotions.css" />
+<link rel="stylesheet" href="~/css/booking-modal.css" />
 
-<div class="container-xl py-4">
-    <!-- Slideshow banner -->
-    <div class="slideshow-container">
-        <ul id="home_big_banner" class="slideshow"
-            data-cycle-fx="fade"
-            data-cycle-timeout="5000"
-            data-cycle-slides="> li"
-            data-cycle-pager=".home_big_banner_pager"
-            data-cycle-pager-template="<span class='pager-bullet'></span>"
-            data-cycle-prev=".home_big_banner_prev"
-            data-cycle-next=".home_big_banner_next"
-            data-cycle-swipe="true"
-            data-cycle-swipe-fx="fade">
-            <li class="slide-item">
-                <a href="">
-                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h_1_-min_6.jpg" alt="Banner 1" />
-                </a>
-            </li>
-            <li class="slide-item">
-                <a href="">
-                    <img src="https://iguov8nhvyobj.vcdn.cloud/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980wx448h-duoidayho.jpg" alt="Banner 2" />
-                </a>
-            </li>
-            <li class="slide-item">
-                <a href="">
-                    <img src="https://i.ytimg.com/vi/8Yj61CP1Sic/maxresdefault.jpg" alt="Banner 3" />
-                </a>
-            </li>
-            <li class="slide-item">
-                <a href="">
-                    <img src="https://www.bhdstar.vn/wp-content/uploads/2024/08/referenceSchemeHeadOfficeallowPlaceHoldertrueheight360ldapp.png" alt="Banner 4" />
-                </a>
-            </li>
-        </ul>
-        <button type="button" class="slideshow-prev home_big_banner_prev" aria-label="Previous slide">&#10094;</button>
-        <button type="button" class="slideshow-next home_big_banner_next" aria-label="Next slide">&#10095;</button>
-        <div class="home_big_banner_pager pager-container"></div>
-    </div>
-
-    <div class="mb-5"></div>
-
-    <h2 class="section-title">MOVIE</h2>
-    <!-- Hero Section OUTSIDE container -->
-<div class="hero-section">
-    <div class="hero-bg" id="hero-bg" style="background-image: url('@Url.Content(movies.FirstOrDefault()?.LargeImage)');"></div>
-    <div class="hero-content row no-gutters">
-        <div class="col-md-7 hero-info" id="hero-info">
-
-            <h1 class="movie-title">@movies.FirstOrDefault()?.MovieNameEnglish</h1>
-            <div class="movie-meta">
-                <span class="movie-duration">@movies.FirstOrDefault()?.Duration</span>
-                <span class="movie-director">@movies.FirstOrDefault()?.Director</span>
-                <span class="movie-actor">@movies.FirstOrDefault()?.Actor</span>
-            </div>
-            <p class="movie-desc">@movies.FirstOrDefault()?.Content</p>
-            <div class="movie-actions">
-                <a href="Movie/Detail/@movies.FirstOrDefault()?.MovieId" class="btn btn-danger">Book</a>
-            </div>
-        </div>
-        <div class="col-md-5 d-flex align-items-center justify-content-end">
-            <div class="movie-slider-glass">
-                <div class="swiper movie-swiper">
-                    <div class="swiper-wrapper">
-                        @foreach (var movie in movies)
-                        {
-                            <div class="swiper-slide" 
-                                 data-large="@movie.LargeImage"
-                                 data-title="@movie.MovieNameEnglish"
-                                 data-duration="@movie.Duration"
-                                 data-director="@movie.Director"
-                                 data-actor="@movie.Actor"
-                                 data-desc="@movie.Content">
-                                <img src="@movie.SmallImage" class="slider-img" alt="@movie.MovieNameEnglish">
-                            </div>
-                        }
-                    </div>
-                    <div class="swiper-pagination movie-pagination"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container-xl py-4">
-    <!-- Promotion Slider -->
-    <h2 class="section-title">PROMOTION</h2>
-    <div class="swiper promo-swiper mb-5">
-        <div class="swiper-wrapper">
-            @foreach (var promo in promotions)
+<!-- ===== HERO SECTION PLACEHOLDER ===== -->
+<!-- HERO SECTION (dùng SwiperJS) -->
+<section class="hero-section">
+    <!-- Background image -->
+    <div class="hero-bg" id="hero-bg">
+        <div class="hero-bg-track">
+            @if (movieList.Count > 0)
             {
-                <div class="swiper-slide">
-                    <div class="card promo-card h-100 shadow-sm">
-                        <img src="@promo.Image" class="card-img-top" alt="Promotion">
-                        <div class="card-body text-center">
-                            <p class="card-text">@promo.Detail</p>
-                        </div>
-                    </div>
-                </div>
+                // Clone cuối vào đầu (thêm 2 clone để hoàn thiện loop)
+                var lastMovie = movieList[movieList.Count - 1];
+                <img class="hero-bg-img" src="@lastMovie.LargeImage" alt="@lastMovie.MovieNameEnglish" data-index="-2" />
+                <img class="hero-bg-img" src="@lastMovie.LargeImage" alt="@lastMovie.MovieNameEnglish" data-index="-1" />
+            }
+            @for (int i = 0; i < movieList.Count; i++)
+            {
+                var movie = movieList[i];
+                <img class="hero-bg-img" src="@movie.LargeImage" alt="@movie.MovieNameEnglish" data-index="@i" />
+            }
+            @if (movieList.Count > 0)
+            {
+                // Clone đầu vào cuối (thêm 2 clone để hoàn thiện loop)
+                var firstMovie = movieList[0];
+                <img class="hero-bg-img" src="@firstMovie.LargeImage" alt="@firstMovie.MovieNameEnglish" data-index="@movieList.Count" />
+                <img class="hero-bg-img" src="@firstMovie.LargeImage" alt="@firstMovie.MovieNameEnglish" data-index="@(movieList.Count + 1)" />
             }
         </div>
-        <div class="swiper-pagination promo-pagination"></div>
-        <div class="swiper-button-next promo-next"></div>
-        <div class="swiper-button-prev promo-prev"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="hero-content">
+        <div class="hero-info" id="hero-info">
+            @if (!string.IsNullOrEmpty(Model?.LogoImage))
+            {
+                <img class="hero-movie-logo" src="@Model.LogoImage" alt="@Model.MovieNameEnglish Logo">
+            }
+            else
+            {
+                <h2 class="hero-title">@Model?.MovieNameEnglish</h2>
+            }
+
+            <div class="hero-meta">
+                <span><i class="bx bxs-time"></i> @Model?.Duration'</span>
+                <span>
+                    @if (Model?.Versions != null && Model.Versions.Any())
+                    {
+                        @(string.Join(", ", Model.Versions.Select(v => v.VersionName)))
+                    }
+                    else
+                    {
+                        <span>HD</span>
+                    }
+                </span>
+            </div>
+
+            <div class="hero-desc">
+                @Model?.Content
+            </div>
+
+            <div class="hero-extra-info">
+                <div>
+                    <b>Starring: </b> @(string.Join(", ", actorNames))
+                </div>
+                <div>
+                    <b>This show is:</b>
+                    @if (Model?.Types != null && Model.Types.Any())
+                    {
+                        @(string.Join(", ", Model.Types.Select(t => t.TypeName)))
+                    }
+                </div>
+                <div>
+                    <b>Directed by: </b>
+                    @(string.Join(", ", directorNames))
+                </div>
+            </div>
+
+            <button type="button" class="book-now-btn" id="hero-book-now-btn" aria-label="Book tickets for current movie">
+                <span>Book Now</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation buttons -->
+    <button id="hero-prev" class="hero-nav-btn hero-prev" style="background:none; border:none; box-shadow:none; width:auto; height:auto; left:2vw;">
+        <i class="bx bx-chevron-left" style="font-size:3.5rem;color:#fff;"></i>
+    </button>
+    <button id="hero-next" class="hero-nav-btn hero-next" style="background:none; border:none; box-shadow:none; width:auto; height:auto; right:2vw;">
+        <i class="bx bx-chevron-right" style="font-size:3.5rem;color:#fff;"></i>
+    </button>
+    <!-- Side bar navigation invisible -->
+    <div class="hero-nav-side hero-nav-side-left" style="position:absolute;top:0;left:0;width:8vw;height:100%;background:transparent;z-index:30;cursor:pointer;"></div>
+    <div class="hero-nav-side hero-nav-side-right" style="position:absolute;top:0;right:0;width:8vw;height:100%;background:transparent;z-index:30;cursor:pointer;"></div>
+
+    <!-- Movie carousel (SwiperJS) -->
+    <div class="hero-carousel-container">
+        <div class="hero-carousel">
+            <div class="swiper hero-swiper">
+                <div class="swiper-wrapper">
+                    @{
+                        var activeId = Model?.MovieId;
+                    }
+                    @for (int i = 0; i < movieList.Count; i++)
+                    {
+                        var movie = movieList[i];
+                        var isActive = movie.MovieId == activeId;
+                        <div class="swiper-slide @(isActive ? "active" : "")"
+                             data-movie-id="@movie.MovieId"
+                             data-movie-name="@movie.MovieNameEnglish"
+                             data-movie-duration="@movie.Duration"
+                             data-movie-versions="@(string.Join(", ", movie.Versions?.Select(v => v.VersionName) ?? Enumerable.Empty<string>()))"
+                             data-movie-content="@movie.Content"
+                             data-movie-actor="@(string.Join(", ", movie.People?.Where(p => p.IsDirector == false).Select(p => p.Name) ?? Enumerable.Empty<string>()))"
+                             data-movie-types="@(string.Join(", ", movie.Types?.Select(t => t.TypeName) ?? Enumerable.Empty<string>()))"
+                             data-movie-director="@(string.Join(", ", movie.People?.Where(p => p.IsDirector == true).Select(p => p.Name) ?? Enumerable.Empty<string>()))"
+                             data-movie-largeimage="@movie.LargeImage"
+                             data-movie-trailerurl="@movie.TrailerUrl"
+                             data-movie-logoimage="@movie.LogoImage">
+                            <div class="carousel-img-rect">
+                                <img src="@movie.LargeImage" alt="@movie.MovieNameEnglish">
+                                @if (!string.IsNullOrEmpty(movie.LogoImage))
+                                {
+                                    <div class="carousel-logo-wrapper">
+                                        <img class="carousel-logo" src="@movie.LogoImage" alt="@movie.MovieNameEnglish Logo">
+                                    </div>
+                                }
+                            </div>
+                            <div class="hero-carousel-title">@movie.MovieNameEnglish</div>
+                        </div>
+                    }
+                </div>
+                <!-- Đã xóa navigation Swiper ở đây -->
+            </div>
+        </div>
+        <div class="hero-progress">
+            <div class="hero-progress-bar" id="hero-progress-bar"></div>
+        </div>
+    </div>
+</section>
+<!-- ===== END HERO SECTION PLACEHOLDER ===== -->
+
+<!-- NOW SHOWING SECTION -->
+<section class="now-showing-section" id="nowShowingSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient">
+            <span class="title-text">NOW SHOWING</span>
+            <div class="title-underline"></div>
+        </h2>
+        <div class="section-subtitle">Discover the latest blockbusters in theaters now</div>
+    </div>
+
+    <div class="container keep-stable">
+        <div class="swiper nowshowing-swiper">
+            <div class="swiper-wrapper">
+                @foreach (var movie in currentlyShowingMovies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                {
+                    <div class="swiper-slide">
+                        <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
+                            <div class="movie-poster-container">
+                                <div class="hover-overlay"></div>
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
+                                <div class="movie-rating-badge">HD</div>
+                            </div>
+
+                            <div class="movie-content">
+                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+
+                                <div class="movie-meta">
+                                    <div class="meta-item">
+                                        <i class="bx bxs-time"></i>
+                                        <span>@movie.Duration min</span>
+                                    </div>
+                                    <div class="meta-divider">•</div>
+                                    <div class="meta-item">
+                                        <i class="bx bxs-video"></i>
+                                        <span>
+                                            @if (movie.Versions?.Any() == true)
+                                            {
+                                                @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
+                                            }
+                                            else
+                                            {
+                                                <span>HD</span>
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="movie-genres">
+                                    @if (movie.Types?.Any() == true)
+                                    {
+                                        @foreach (var type in movie.Types.Take(3))
+                                        {
+                                            <span class="genre-badge">@type.TypeName</span>
+                                        }
+                                    }
+                                </div>
+
+                                <div class="movie-actions-container">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl" aria-label="Watch trailer for @movie.MovieNameEnglish">
+                                        <i class="fas fa-play"></i>
+                                        <span class="btn-text">Trailer</span>
+                                    </button>
+                                    <button class="action-btn action-btn-primary"
+                                            data-movie-id="@movie.MovieId"
+                                            data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))"
+                                            data-movie-logo="@movie.LogoImage"
+                                            aria-label="Book tickets for @movie.MovieNameEnglish">
+                                        <i class="fas fa-ticket-alt"></i>
+                                        <span class="btn-text">Book</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Navigation -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</section>
+
+<!-- COMING SOON SECTION -->
+<section class="coming-soon-section" id="comingSoonSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient coming-soon-title">
+            <span class="title-text">COMING SOON</span>
+            <div class="title-underline coming-soon-underline"></div>
+        </h2>
+        <div class="section-subtitle">Get ready for upcoming blockbusters</div>
+    </div>
+
+    <div class="container keep-stable">
+        <div class="swiper comingsoon-swiper">
+            <div class="swiper-wrapper">
+                @foreach (var movie in comingSoonMovies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                {
+                    <div class="swiper-slide">
+                        <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
+                            <div class="movie-poster-container">
+                                <div class="hover-overlay"></div>
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
+                                <div class="movie-rating-badge coming-soon-badge">Soon</div>
+                            </div>
+
+                            <div class="movie-content">
+                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+
+                                <div class="movie-meta">
+                                    <div class="meta-item">
+                                        <i class="bx bxs-time"></i>
+                                        <span>@movie.Duration min</span>
+                                    </div>
+                                    <div class="meta-divider">•</div>
+                                    <div class="meta-item">
+                                        <i class="bx bxs-video"></i>
+                                        <span>
+                                            @if (movie.Versions?.Any() == true)
+                                            {
+                                                @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
+                                            }
+                                            else
+                                            {
+                                                <span>HD</span>
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="movie-genres">
+                                    @if (movie.Types?.Any() == true)
+                                    {
+                                        @foreach (var type in movie.Types.Take(3))
+                                        {
+                                            <span class="genre-badge">@type.TypeName</span>
+                                        }
+                                    }
+                                </div>
+
+                                <div class="movie-actions-container">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl" aria-label="Watch trailer for @movie.MovieNameEnglish">
+                                        <i class="fas fa-play"></i>
+                                        <span class="btn-text">Trailer</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Navigation -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 4: PROMOTIONS SECTION -->
+<section class="promotions-section" id="promotionsSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient promotions-title">
+            <span class="title-text">SPECIAL OFFERS</span>
+            <div class="title-underline promotions-underline"></div>
+        </h2>
+        <div class="section-subtitle">Don't miss out on our exclusive deals and promotions</div>
+    </div>
+    
+    <div class="promotions-container">
+        <div class="promotions-wrapper">
+            <div class="swiper promotions-swiper-modern">
+                <div class="swiper-wrapper">
+                    @foreach (var promo in promotions ?? Enumerable.Empty<MovieTheater.Models.Promotion>())
+                    {
+                        <div class="swiper-slide">
+                            <div class="promotion-card" data-promo-id="@promo.PromotionId">
+                                <div class="promotion-image">
+                                    <img src="@promo.Image" alt="@promo.Title" loading="lazy">
+                                    <div class="promotion-overlay">
+                                        <div class="overlay-content">
+                                            <div class="promotion-badge">
+                                                <i class="fas fa-gift"></i>
+                                                <span>Special Offer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="discount-badge">
+                                        <span>50% OFF</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="promotion-content">
+                                    <h3 class="promotion-title">@promo.Title</h3>
+                                    <p class="promotion-description">@promo.Detail</p>
+                                    
+                                    <div class="promotion-actions">
+                                        <button class="btn-learn-more"
+                                            data-image="@promo.Image"
+                                            data-title="@promo.Title"
+                                            data-discount="@promo.DiscountLevel%"
+                                            data-detail="@promo.Detail"
+                                            data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Learn More</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <!-- Navigation -->
+                <div class="swiper-button-next modern-nav-btn promotions-nav"></div>
+                <div class="swiper-button-prev modern-nav-btn promotions-nav"></div>
+            </div>
+        </div>
+        
+        <div class="section-view-more">
+            <a href="@Url.Action("List", "Promotion")" class="btn-view-more promotions-view-more">
+                <span>View All Promotions</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+<!-- Modal for Trailer -->
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background:#181a20;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="trailerModalLabel">Movie Trailer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height:450px;">
+                <iframe id="trailerFrame" width="100%" height="100%" src="" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js" defer></script>
+    <script src="/js/app.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/hero-section.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/promotions.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/trailer-modal.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="~/js/movie-sections.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/home-page.js?v=@DateTime.Now.Ticks" defer></script>
+    
+
+
+    <script>
+        // Disable console.log in production and development for cleaner console
+        console.log = function() {};
+        console.warn = function() {};
+        console.info = function() {};
+        // Keep console.error for actual error handling
+        
+        // Global variables
+        window.movieShowsCache = new Map(); // Cache for movie shows
+        window.currentMovieShows = [];
+
+
+
+        // Function to open booking modal for selected movie
+        window.openBookingModal = function(movieId, movieName, movieLogo) {
+            // Set the movie ID in the hidden input
+            const movieIdInput = document.getElementById('movieId');
+            if (movieIdInput) {
+                movieIdInput.value = movieId;
+            }
+
+            // Update the movie name in the summary
+            const movieNameElem = document.getElementById('summaryMovieName');
+            if (movieNameElem && movieName) {
+                movieNameElem.textContent = movieName;
+            }
+
+            // Update the movie logo
+            const movieLogoElem = document.getElementById('selectedMovieLogo');
+            if (movieLogoElem && movieLogo) {
+                movieLogoElem.src = movieLogo;
+                movieLogoElem.style.display = 'block';
+            } else if (movieLogoElem) {
+                movieLogoElem.style.display = 'none';
+            }
+
+            // Reset form selections
+            const dateSelect = document.getElementById('dateSelect');
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+
+            if (dateSelect) {
+                dateSelect.innerHTML = '<option value="">Loading dates...</option>';
+                dateSelect.disabled = true;
+            }
+            if (versionSelect) {
+                versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+                versionSelect.disabled = true;
+            }
+            if (timeSelect) {
+                timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+                timeSelect.disabled = true;
+            }
+
+            // Reset summary
+            resetBookingSummary();
+
+            // Load movie shows for this specific movie
+            window.loadMovieShowsForMovie(movieId, movieName);
+        };
+
+        // Function to load movie shows for a specific movie
+        window.loadMovieShowsForMovie = function(movieId, movieName) {
+            // Check if we already have this movie's shows cached
+            if (window.movieShowsCache.has(movieId)) {
+                window.currentMovieShows = window.movieShowsCache.get(movieId);
+                window.populateDateDropdown();
+                window.showBookingModal();
+                return;
+            }
+
+            // Fetch movie shows for this specific movie
+            fetch(`/Movie/GetMovieShows?movieId=${movieId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load movie shows');
+                    return response.json();
+                })
+                .then(shows => {
+                    // Cache the results
+                    window.movieShowsCache.set(movieId, shows);
+                    window.currentMovieShows = shows;
+                    window.populateDateDropdown();
+                    window.showBookingModal();
+                })
+                .catch(error => {
+                    console.error('Error loading movie shows:', error);
+                    // Show error state
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.innerHTML = '<option value="">Error loading dates</option>';
+                        dateSelect.disabled = true;
+                    }
+                    
+                    // Show user-friendly error message
+                    const modalBody = document.querySelector('#addBookingModal .modal-body');
+                    if (modalBody) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'alert alert-danger mt-3';
+                        errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Unable to load showtimes. Please try again later.';
+                        modalBody.appendChild(errorDiv);
+                    }
+                });
+        }
+
+        window.populateDateDropdown = function () {
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
+            dateSelect.disabled = true;
+
+            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // normalize time
+
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+
+            uniqueDates.forEach(dateStr => {
+                const showDate = new Date(dateStr);
+                showDate.setHours(0, 0, 0, 0); // normalize show date
+
+                if (showDate >= today) {
+                    const [year, month, day] = dateStr.split('-');
+                    const displayDate = `${day}/${month}/${year}`;
+                    const option = document.createElement('option');
+                    option.value = dateStr;
+                    option.textContent = displayDate;
+                    dateSelect.appendChild(option);
+                }
+            });
+
+            if (dateSelect.options.length > 1) {
+                dateSelect.disabled = false;
+            }
+            
+            // Reset step status when loading new movie
+            resetModalState();
+        };
+
+        // Populate version dropdown
+        window.updateVersions = function() {
+            const date = document.getElementById('dateSelect').value;
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            
+            versionSelect.innerHTML = '<option value="">— Select Version —</option>';
+            versionSelect.disabled = true;
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+            
+            if (!date) return;
+            
+            const filtered = window.currentMovieShows.filter(show => show.showDate === date);
+            // Use a Map to ensure unique versionId-versionName pairs
+            const versionMap = new Map();
+            filtered.forEach(show => {
+                if (show.versionId && show.versionName && !versionMap.has(show.versionId)) {
+                    versionMap.set(show.versionId, show.versionName);
+                }
+            });
+            
+            versionMap.forEach((name, id) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                versionSelect.appendChild(option);
+            });
+            
+            versionSelect.disabled = false;
+            
+            // Update step status
+            updateStepStatus(1, true);
+            updateStepStatus(2, false);
+            updateStepStatus(3, false);
+            
+            // Update booking summary - reset version and time
+            updateBookingSummary();
+        }
+
+        // Populate time dropdown
+        window.updateTimes = function() {
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const timeSelect = document.getElementById('timeSelect');
+            
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+            
+            if (!date || !versionId) return;
+            
+            const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
+            // Use a Set to ensure unique times
+            const timeSet = new Set();
+            filtered.forEach(show => {
+                if (show.scheduleTime && !timeSet.has(show.scheduleTime)) {
+                    const option = document.createElement('option');
+                    option.value = show.scheduleTime;
+                    option.textContent = show.scheduleTime;
+                    timeSelect.appendChild(option);
+                    timeSet.add(show.scheduleTime);
+                }
+            });
+            
+            timeSelect.disabled = false;
+            
+            // Update step status
+            updateStepStatus(2, true);
+            updateStepStatus(3, false);
+            
+            // Update booking summary - reset time
+            updateBookingSummary();
+        }
+
+        window.continueToSeats = function() {
+            const movieId = document.getElementById('movieId').value;
+            const date = document.getElementById('dateSelect').value;
+            const versionId = document.getElementById('versionSelect').value;
+            const time = document.getElementById('timeSelect').value;
+
+            if (!movieId || !date || !versionId || !time) {
+                // Show error message in modal instead of alert
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'step-helper error';
+                errorMessage.textContent = 'Please complete all selections before continuing';
+                
+                // Remove any existing error messages
+                const existingError = document.querySelector('.step-helper.error');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // Add error message after the button
+                const bookBtn = document.getElementById('bookBtn');
+                bookBtn.parentNode.insertBefore(errorMessage, bookBtn.nextSibling);
+                
+                // Remove error message after 3 seconds
+                setTimeout(() => {
+                    if (errorMessage.parentNode) {
+                        errorMessage.remove();
+                    }
+                }, 3000);
+                
+                return;
+            }
+
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            // Show loading state
+            const bookBtn = document.getElementById('bookBtn');
+            const originalText = bookBtn.innerHTML;
+            bookBtn.innerHTML = '<span>Loading...</span> <i class="fas fa-spinner fa-spin"></i>';
+            bookBtn.disabled = true;
+
+            // Redirect to seat selection
+            window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${encodeURIComponent(versionId)}&time=${encodeURIComponent(time)}`;
+        }
+
+        // Function to show the booking modal
+        window.showBookingModal = function() {
+            const modalElement = document.getElementById('addBookingModal');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                const bookingModal = new bootstrap.Modal(modalElement);
+                bookingModal.show();
+                
+                // Reset modal state
+                resetModalState();
+                
+                // Focus management for accessibility
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.focus();
+                    }
+                });
+            }
+        }
+
+        // Function to reset modal state
+        function resetModalState() {
+            // Reset all steps
+            updateStepStatus(1, false);
+            updateStepStatus(2, false);
+            updateStepStatus(3, false);
+            
+            // Set first step as active
+            updateStepStatus(1, true);
+        }
+
+        // Function to update step status
+        function updateStepStatus(stepNumber, isActive) {
+            const stepElement = document.querySelector(`.booking-step[data-step="${stepNumber}"]`);
+            
+            if (stepElement) {
+                stepElement.classList.remove('active', 'completed');
+                if (isActive) {
+                    stepElement.classList.add('active');
+                } else if (stepNumber < getCurrentStep()) {
+                    stepElement.classList.add('completed');
+                }
+            }
+        }
+
+        // Function to get current step
+        function getCurrentStep() {
+            const dateSelect = document.getElementById('dateSelect');
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            
+            if (dateSelect.value && versionSelect.value && timeSelect.value) {
+                return 4; // All steps completed
+            } else if (dateSelect.value && versionSelect.value) {
+                return 3;
+            } else if (dateSelect.value) {
+                return 2;
+            } else {
+                return 1;
+            }
+        }
+
+        // Function to reset booking summary
+        function resetBookingSummary() {
+            document.getElementById('summaryDate').textContent = '-';
+            document.getElementById('summaryVersion').textContent = '-';
+            document.getElementById('summaryTime').textContent = '-';
+        }
+
+        // Function to update booking summary
+        function updateBookingSummary() {
+            const dateSelect = document.getElementById('dateSelect');
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+
+            if (dateSelect.value) {
+                const [year, month, day] = dateSelect.value.split('-');
+                document.getElementById('summaryDate').textContent = `${day}/${month}/${year}`;
+            } else {
+                document.getElementById('summaryDate').textContent = '-';
+            }
+
+            if (versionSelect.value) {
+                const selectedOption = versionSelect.options[versionSelect.selectedIndex];
+                document.getElementById('summaryVersion').textContent = selectedOption.textContent;
+            } else {
+                document.getElementById('summaryVersion').textContent = '-';
+            }
+
+            if (timeSelect.value) {
+                document.getElementById('summaryTime').textContent = timeSelect.value;
+            } else {
+                document.getElementById('summaryTime').textContent = '-';
+            }
+        }
+
+        // Function to populate date dropdown
+        window.populateDateDropdown = function () {
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
+            dateSelect.disabled = true;
+
+            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // normalize time
+
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+
+            uniqueDates.forEach(dateStr => {
+                const showDate = new Date(dateStr);
+                showDate.setHours(0, 0, 0, 0); // normalize show date
+
+                if (showDate >= today) {
+                    const [year, month, day] = dateStr.split('-');
+                    const displayDate = `${day}/${month}/${year}`;
+                    const option = document.createElement('option');
+                    option.value = dateStr;
+                    option.textContent = displayDate;
+                    dateSelect.appendChild(option);
+                }
+            });
+
+            if (dateSelect.options.length > 1) {
+                dateSelect.disabled = false;
+            }
+        };
+
+        // Initialize everything when DOM is ready
+        document.addEventListener('DOMContentLoaded', function () {
+            var trailerModal = new bootstrap.Modal(document.getElementById('trailerModal'));
+            var trailerFrame = document.getElementById('trailerFrame');
+
+            // Trailer button event listeners
+            document.querySelectorAll('.watch-trailer-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const trailerUrl = this.getAttribute('data-trailer-url');
+                    if (trailerUrl) {
+                        trailerFrame.src = trailerUrl;
+                        trailerModal.show();
+                    }
+                });
+            });
+
+            // Book movie button event listeners
+            document.querySelectorAll('.book-movie-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const movieId = this.getAttribute('data-movie-id');
+                    const movieName = this.getAttribute('data-movie-name');
+                    const movieLogo = this.getAttribute('data-movie-logo');
+                    if (movieId && movieName) {
+                        window.openBookingModal(movieId, movieName, movieLogo);
+                    }
+                });
+            });
+
+            // Hero Book Now button event listeners
+            document.querySelectorAll('.book-now-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    // Get current active slide data
+                    const activeSlide = document.querySelector('.hero-swiper .swiper-slide.swiper-slide-active');
+                    if (activeSlide) {
+                        const movieId = activeSlide.getAttribute('data-movie-id');
+                        const movieName = activeSlide.getAttribute('data-movie-name');
+                        const movieLogo = activeSlide.getAttribute('data-movie-logoimage');
+                        if (movieId && movieName) {
+                            window.openBookingModal(movieId, movieName, movieLogo);
+                        }
+                    }
+                });
+            });
+
+            document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function () {
+                trailerFrame.src = '';
+            });
+
+            // Add event listener for time select
+            const timeSelect = document.getElementById('timeSelect');
+            if (timeSelect) {
+                timeSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        updateStepStatus(3, true);
+                        updateBookingSummary();
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Book Your Tickets</h3>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm" novalidate>
+                    <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
+                    
+                    <div class="booking-form-container">
+                        <!-- Booking Steps -->
+                        <div class="booking-steps-container">
+                            <div class="booking-step active" data-step="1">
+                                <label for="dateSelect" class="booking-label">
+                                    <span class="label-icon">🗓️</span> 
+                                    <strong>Select Date</strong>
+                                </label>
+                                <select id="dateSelect" class="booking-select" onchange="updateVersions()">
+                                    <option value="">— Select Date —</option>
+                                    <!-- Dates will be populated by JavaScript -->
+                                </select>
+                                <div class="step-helper">Choose the date you want to watch the movie</div>
+                            </div>
+                            
+                            <div class="booking-step" data-step="2">
+                                <label for="versionSelect" class="booking-label">
+                                    <span class="label-icon">🎞️</span> 
+                                    <strong>Select Version</strong>
+                                </label>
+                                <select id="versionSelect" class="booking-select" disabled onchange="updateTimes()">
+                                    <option value="">— Select Version —</option>
+                                </select>
+                                <div class="step-helper">Choose your preferred movie version (2D, 3D, etc.)</div>
+                            </div>
+                            
+                            <div class="booking-step" data-step="3">
+                                <label for="timeSelect" class="booking-label">
+                                    <span class="label-icon">⏰</span> 
+                                    <strong>Select Time</strong>
+                                </label>
+                                <select id="timeSelect" class="booking-select" disabled>
+                                    <option value="">— Select Time —</option>
+                                </select>
+                                <div class="step-helper">Choose your preferred showtime</div>
+                            </div>
+                            
+                            <button type="button" id="bookBtn" class="booking-btn-gradient" onclick="continueToSeats()">
+                                <span>Continue to Seat Selection</span> 
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Booking Summary -->
+                        <div class="booking-summary-container">
+                            <div class="movie-logo-container">
+                                <img id="selectedMovieLogo" class="movie-logo" src="" alt="Movie Logo" style="display: none;">
+                            </div>
+                            
+                            <h4 class="booking-summary-title">Booking Summary</h4>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Movie:</span>
+                                <span class="booking-summary-value" id="summaryMovieName">-</span>
+                            </div>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Date:</span>
+                                <span class="booking-summary-value" id="summaryDate">-</span>
+                            </div>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Version:</span>
+                                <span class="booking-summary-value" id="summaryVersion">-</span>
+                            </div>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Time:</span>
+                                <span class="booking-summary-value" id="summaryTime">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
-@section Scripts {
-    <script src="~/js/home-page.js"></script>
+<!-- Promotion Modal (Reusable) -->
+<div class="promotion-modal-overlay hidden" id="promotionModalOverlay">
+  <div class="promotion-modal">
+    <button class="promotion-modal-close" id="promotionModalClose" aria-label="Close">&times;</button>
+    <img class="promotion-modal-image" id="promotionModalImage" src="" alt="Promotion Image" />
+    <div class="promotion-modal-content">
+      <div class="promotion-modal-title" id="promotionModalTitle">Tên khuyến mãi</div>
+      <div class="promotion-modal-discount" id="promotionModalDiscount">Giảm giá 50%</div>
+      <div class="promotion-modal-detail" id="promotionModalDetail">Mô tả chi tiết khuyến mãi...</div>
+      <div class="promotion-modal-time" id="promotionModalTime">01/06/2024 - 30/06/2024</div>
+    </div>
+  </div>
+</div>
+<script>
+// Hàm mở popup với dữ liệu động
+function openPromotionModal({ image, title, discount, detail, time }) {
+  document.getElementById('promotionModalImage').src = image;
+  document.getElementById('promotionModalTitle').textContent = title;
+  document.getElementById('promotionModalDiscount').textContent = discount;
+  document.getElementById('promotionModalDetail').textContent = detail;
+  document.getElementById('promotionModalTime').textContent = time;
+  document.getElementById('promotionModalOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
 }
+function closePromotionModal() {
+  document.getElementById('promotionModalOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.getElementById('promotionModalClose').onclick = closePromotionModal;
+document.getElementById('promotionModalOverlay').onclick = function(e) {
+  if (e.target === this) closePromotionModal();
+};
+document.querySelectorAll('.btn-learn-more').forEach(btn => {
+  btn.addEventListener('click', function() {
+    openPromotionModal({
+      image: btn.dataset.image || '',
+      title: btn.dataset.title || '',
+      discount: btn.dataset.discount || '',
+      detail: btn.dataset.detail || '',
+      time: btn.dataset.time || ''
+    });
+  });
+});
+</script>

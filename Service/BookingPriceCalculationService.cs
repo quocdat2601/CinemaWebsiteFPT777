@@ -28,6 +28,7 @@ namespace MovieTheater.Service
             var foodDetails = new List<FoodViewModel>();
             if (foods != null)
             {
+                // Giả sử không có promotion, truyền OriginalPrice = Price
                 foreach (var food in foods)
                 {
                     foodDetails.Add(new FoodViewModel
@@ -35,33 +36,57 @@ namespace MovieTheater.Service
                         FoodId = food.FoodId,
                         Name = food.Name,
                         Price = food.Price,
+                        OriginalPrice = food.Price,
+                        PromotionDiscount = 0,
+                        PromotionName = null,
                         Quantity = 1 // or set from elsewhere
                     });
                     totalFoodPrice += food.Price;
                 }
             }
-            // Final seat total after all discounts
-            decimal seatTotalAfterDiscounts = promoSubtotal - rankDiscount - usedScoreValue - voucher;
-            if (seatTotalAfterDiscounts < 0) seatTotalAfterDiscounts = 0;
-            // Add food for display only
-            decimal totalPrice = seatTotalAfterDiscounts + totalFoodPrice;
-            // AddScore is based only on seatTotalAfterDiscounts
+            
+            // SỬA: Lấy promotion discount percent từ seat data đã được tính toán chính xác
+            decimal promotionDiscountPercent = 0;
+            if (seats != null && seats.Count > 0)
+            {
+                // Lấy promotion discount percent từ seat đầu tiên có promotion
+                var seatWithPromotion = seats.FirstOrDefault(s => s.PromotionDiscount.HasValue && s.PromotionDiscount.Value > 0);
+                if (seatWithPromotion != null && seatWithPromotion.OriginalPrice.HasValue && seatWithPromotion.OriginalPrice.Value > 0)
+                {
+                    promotionDiscountPercent = Math.Round((seatWithPromotion.PromotionDiscount.Value / seatWithPromotion.OriginalPrice.Value) * 100);
+                }
+            }
+            
+            // SỬA: Tính toán đúng total price
+            // Seat total after rank discount and used score
+            decimal seatTotalAfterRankAndScore = promoSubtotal - rankDiscount - usedScoreValue;
+            if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
+            
+            // Add food price
+            decimal seatAndFoodTotal = seatTotalAfterRankAndScore + totalFoodPrice;
+            
+            // Apply voucher to total (seat + food)
+            decimal totalAfterVoucher = seatAndFoodTotal - voucher;
+            if (totalAfterVoucher < 0) totalAfterVoucher = 0;
+            
+            // AddScore is based only on seat portion after discounts
             decimal earningRate = user?.Rank?.PointEarningPercentage ?? 1;
-            int addScore = (int)Math.Floor(seatTotalAfterDiscounts * earningRate / 100 / 1000);
+            int addScore = (int)Math.Floor((promoSubtotal - rankDiscount - usedScoreValue) * earningRate / 100 / 1000);
+            
             return new BookingPriceResult
             {
                 Subtotal = promoSubtotal,
                 RankDiscountPercent = rankDiscountPercent,
                 RankDiscount = rankDiscount,
-                PromotionDiscountPercent = 0, // for display only, not used in math
-                PromotionDiscount = 0,
+                PromotionDiscountPercent = promotionDiscountPercent, // set đúng discount percent
+                PromotionDiscount = promotionDiscountPercent,
                 VoucherAmount = voucher,
                 UseScore = usedScore,
                 UseScoreValue = usedScoreValue,
                 TotalFoodPrice = totalFoodPrice,
-                TotalPrice = totalPrice,
+                TotalPrice = totalAfterVoucher, // Đã sửa: tổng cuối cùng đúng logic
                 AddScore = addScore,
-                SeatTotalAfterDiscounts = seatTotalAfterDiscounts,
+                SeatTotalAfterDiscounts = seatTotalAfterRankAndScore,
                 SeatDetails = seats,
                 FoodDetails = foodDetails
             };

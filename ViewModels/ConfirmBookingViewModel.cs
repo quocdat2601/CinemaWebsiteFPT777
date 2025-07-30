@@ -12,6 +12,7 @@ namespace MovieTheater.ViewModels
         public DateOnly ShowDate { get; set; }
         public string ShowTime { get; set; }
         public InvoiceStatus? Status { get; set; }
+        public bool Cancel { get; set; }
 
         // Ghế đã chọn
         public List<SeatDetailViewModel> SelectedSeats { get; set; }
@@ -32,6 +33,7 @@ namespace MovieTheater.ViewModels
         public int ScoreUsed { get; set; }
 
         public int MovieShowId { get; set; }
+        public int? VersionId { get; set; }
 
         public int AddScore { get; set; }
 
@@ -43,6 +45,8 @@ namespace MovieTheater.ViewModels
         public decimal VoucherAmount { get; set; }
         public string SelectedPromotionId { get; set; }
         public decimal PromotionDiscountPercent { get; set; }
+
+        public decimal OriginalTotal { get; set; }
 
         // --- Food đã chọn ---
         public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();

@@ -12,8 +12,8 @@ namespace MovieTheater.ViewModels
         public decimal Subtotal { get; set; }
         public decimal RankDiscount { get; set; }
         public decimal UsedScoreValue { get; set; }
-        public decimal FoodTotal { get; set; }
-        public List<FoodViewModel> SelectedFoods { get; set; }
+        public List<FoodViewModel> FoodDetails { get; set; } // List of foods for this ticket
+        public decimal TotalFoodPrice { get; set; } // Total price of food
         public decimal TotalAmount { get; set; }
         public decimal PromotionDiscountPercent { get; set; }
 

@@ -177,16 +177,16 @@
             @if (Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table id="voucher-table" class="table table-hover">
                         <thead class="table-light">
                             <tr>
                                 <th>Image</th>
-                                <th>Voucher ID</th>
+                                <th class="sortable" data-sort="voucherid">Voucher ID <span id="sortIconVoucherId"></span></th>
                                 <th>Code</th>
-                                <th>Account ID</th>
-                                <th>Value</th>
-                                <th>Created Date</th>
-                                <th>Expiry Date</th>
+                                <th class="sortable" data-sort="account">Account ID <span id="sortIconAccount"></span></th>
+                                <th class="sortable" data-sort="value">Value <span id="sortIconValue"></span></th>
+                                <th class="sortable" data-sort="created">Created Date <span id="sortIconCreated"></span></th>
+                                <th class="sortable" data-sort="expiry">Expiry Date <span id="sortIconExpiry"></span></th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -359,40 +359,13 @@
 
 <partial name="_ToastMessages" />
 
-<style>
-    .font-monospace {
-        font-family: 'Courier New', monospace;
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-styles.css" />
+}
 
-    .voucher-image:hover {
-        transform: scale(1.1);
-        transition: transform 0.2s ease-in-out;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-
-    .card {
-        border: none;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-
-    .btn-group .btn {
-        border-radius: 0.375rem;
-    }
-
-        .btn-group .btn:not(:last-child) {
-            margin-right: 0.25rem;
-        }
-
-    .badge {
-        font-size: 0.75em;
-    }
-</style>
-
-<script>
-    $(document).ready(function() {
+@section Scripts {
+    <script src="~/js/admin-sorting.js"></script>
+    <script>
         // Image modal functionality
         $('#imageModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);
@@ -404,18 +377,10 @@
         });
 
         // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
-
-    function searchVouchers() {
-        const keyword = document.getElementById('searchKeyword').value;
-        const status = document.getElementById('statusFilter').value;
-        const expiry = document.getElementById('expiryFilter').value;
-        loadTab('VoucherMg', keyword, status, expiry);
-    }
 
     // Voucher details function
     function viewVoucherDetails(voucherId) {
@@ -498,4 +463,4 @@
             `);
         });
     }
-</script> 
+</script> }

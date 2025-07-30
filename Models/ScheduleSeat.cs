@@ -15,9 +15,7 @@ public partial class ScheduleSeat
 
     public int? SeatStatusId { get; set; }
 
-    public DateTime? HoldUntil { get; set; }
-
-    public string? HoldBy { get; set; }
+    public decimal? BookedPrice { get; set; }
 
     public virtual Invoice? Invoice { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using MovieTheater.Models;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
@@ -250,6 +250,21 @@ namespace MovieTheater.Service
                 return false;
             }
         }
+        public bool DeleteMovieShows(int movieShowId)
+        {
+            try
+            {
+                _movieRepository.DeleteMovieShow(movieShowId);
+                _movieRepository.Save();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting movie shows:", movieShowId);
+                return false;
+            }
+        }
+
 
         public async Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId)
         {
@@ -274,6 +289,59 @@ namespace MovieTheater.Service
         public Models.Version? GetVersionById(int versionId)
         {
             return _movieRepository.GetVersionById(versionId);
+        }
+
+        // New methods for categorizing movies
+        public List<Movie> GetCurrentlyShowingMovies()
+        {
+            try
+            {
+                return _movieRepository.GetCurrentlyShowingMovies();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting currently showing movies");
+                return new List<Movie>();
+            }
+        }
+
+        public List<Movie> GetComingSoonMovies()
+        {
+            try
+            {
+                return _movieRepository.GetComingSoonMovies();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting coming soon movies");
+                return new List<Movie>();
+            }
+        }
+
+        public List<Movie> GetCurrentlyShowingMoviesWithDetails()
+        {
+            try
+            {
+                return _movieRepository.GetCurrentlyShowingMoviesWithDetails();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting currently showing movies with details");
+                return new List<Movie>();
+            }
+        }
+
+        public List<Movie> GetComingSoonMoviesWithDetails()
+        {
+            try
+            {
+                return _movieRepository.GetComingSoonMoviesWithDetails();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting coming soon movies with details");
+                return new List<Movie>();
+            }
         }
     }
 }

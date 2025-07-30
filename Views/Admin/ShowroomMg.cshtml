@@ -1,153 +1,96 @@
 ﻿@model IEnumerable<CinemaRoom>
 @using MovieTheater.Models
 
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+    }
+
+        .nav-tabs .nav-link.active {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+        }
+</style>
+
 <div class="text-center">
-	<h2>
-		Showroom List
-	</h2>
+    <h2>
+        Showroom List
+    </h2>
 </div>
 
 <div class="text-center mb-2">
-	<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addShowroomModal">
-		Create a Showroom
-	</button>
-	<button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSeatTypeModal">
-		Show Seat Types
-	</button>
+    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addShowroomModal">
+        Create a Showroom
+    </button>
 </div>
 
-<table class="table table-bordered table-striped">
-	<thead class="table-dark">
-		<tr class="text-center">
-			<th>ID</th>
-			<th>Name</th>
-			<th>Version</th>
-			<th>Seat Quantity</th>
-			<th style="width: 300px;">Actions</th>
-		</tr>
-	</thead>
-	<tbody>
-		@foreach (var cinema in Model)
-		{
-			<tr>
-				<td class="text-center">@cinema.CinemaRoomId</td>
-				<td>@cinema.CinemaRoomName</td>
-				<td>@cinema.Version.VersionName</td>
-				<td class="text-center">@(@cinema.SeatQuantity)</td>
+<ul class="nav nav-tabs mb-3" id="showroomTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-dark" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">Active</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark" id="hidden-tab" data-bs-toggle="tab" data-bs-target="#hidden" type="button" role="tab">Hidden</button>
+    </li>
+</ul>
 
-				<td>
-					<div class="d-flex align-items-center gap-2 justify-content-center">
-						<a href="@Url.Action("Edit", "Cinema", new { id = cinema.CinemaRoomId })" class="btn btn-sm btn-primary">Edit Showroom</a>
-						<a href="@Url.Action("Edit", "Seat", new { id = cinema.CinemaRoomId })" class="btn btn-sm btn-primary">Edit Seat</a>
+<div class="tab-content" id="showroomTabsContent">
+    <!-- Active Tab -->
+    <div class="tab-pane fade show active" id="active" role="tabpanel">
+        @Html.Partial("_CinemaRoomTable", ViewBag.ActiveRooms as List<CinemaRoom>)
+    </div>
 
-						<form asp-action="Delete" asp-controller="Cinema" method="post" onsubmit="return confirm('Are you sure you want to delete this showroom?');">
-							<input type="hidden" name="id" value="@cinema.CinemaRoomId" />
-							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
-						</form>
-					</div>
-				</td>
-
-			</tr>
-		}
-	</tbody>
-</table>
+    <!-- Hidden Tab -->
+    <div class="tab-pane fade" id="hidden" role="tabpanel">
+        @Html.Partial("_CinemaRoomTable", ViewBag.HiddenRooms as List<CinemaRoom>)
+    </div>
+</div>
 
 <div class="modal fade" id="addShowroomModal" tabindex="-1" aria-labelledby="addShowroomModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-			<form asp-action="Create" asp-controller="Cinema" method="post">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Create" asp-controller="Cinema" method="post">
 
-				<div class="modal-header">
-					<h5 class="modal-title w-100 text-center" id="addShowroomModalLabel">Add New Showroom</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
+                <div class="modal-header">
+                    <h5 class="modal-title w-100 text-center" id="addShowroomModalLabel">Add New Showroom</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
-				<div class="modal-body">
-					<div class="mb-3">
-						<label for="CinemaRoomName" class="form-label">Showroom Name</label>
-						<input id="CinemaRoomName" name="CinemaRoomName" class="form-control" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="CinemaRoomName" class="form-label">Showroom Name</label>
+                        <input id="CinemaRoomName" name="CinemaRoomName" class="form-control" />
 
-					</div>
-					<div class="mb-3">
-						<label for="SeatWidth" class="form-label">Seat Width</label>
-						<input type="number" name="SeatWidth" class="form-control" />
-					</div>
-					<div class="mb-3">
-						<label for="SeatLength" class="form-label">Seat Length</label>
-						<input type="number" name="SeatLength" class="form-control" />
-					</div>
-					<div class="mb-3">
-						<label class="form-label">Room Version</label>
-						<div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="SeatWidth" class="form-label">Seat Width</label>
+                        <input type="number" name="SeatWidth" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="SeatLength" class="form-label">Seat Length</label>
+                        <input type="number" name="SeatLength" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Room Version</label>
+                        <div>
                             @foreach (var version in ViewBag.Versions as List<MovieTheater.Models.Version>)
                             {
-								<div class="form-check form-check-inline">
-									<input class="form-check-input" type="radio" name="VersionId" id="version_@version.VersionId" value="@version.VersionId" required />
-									<label class="form-check-label" for="version_@version.VersionId">@version.VersionName</label>
-								</div>
-							}
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer justify-content-center">
-					@* <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> *@
-					<button type="submit" class="btn btn-primary text-center">Add Showroom</button>
-				</div>
-			</form>
-		</div>
-	</div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="VersionId" id="version_@version.VersionId" value="@version.VersionId" required />
+                                    <label class="form-check-label" for="version_@version.VersionId">@version.VersionName</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="submit" class="btn btn-primary text-center">Add Showroom</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
-@{
-	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
-}
-
-<div class="modal fade" id="editSeatTypeModal" tabindex="-1" aria-labelledby="editSeatTypeModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 30vw;">
-		<div class="modal-content">
-			<form asp-action="Edit" asp-controller="SeatType" method="post">
-
-				<div class="modal-header">
-					<h5 class="modal-title w-100 text-center" id="editSeatTypeModalLabel">Edit Seat Type</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-
-				<div class="modal-body">
-					<table class="table table-bordered">
-						<thead>
-							<tr>
-								<th>Type Name</th>
-								<th>Price</th>
-								<th>Color</th>
-							</tr>
-						</thead>
-						<tbody>
-							@for (int i = 0; i < seatTypes.Count; i++)
-							{
-								<tr>
-									<td>
-										@seatTypes[i].TypeName
-										<input type="hidden" name="[@i].SeatTypeId" value="@seatTypes[i].SeatTypeId" />
-										<input type="hidden" name="[@i].TypeName" value="@seatTypes[i].TypeName" />
-									</td>
-									<td>
-										<input type="number" step="0.01" min="0" name="[@i].PricePercent" value="@seatTypes[i].PricePercent" class="form-control" required />
-									</td>
-									<td>
-										<input type="color" name="[@i].ColorHex" value="@seatTypes[i].ColorHex" class="form-control form-control-color" />
-									</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-
-				<div class="modal-footer justify-content-center">
-					<button type="submit" class="btn btn-primary">Save Changes</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
 
 <partial name="_ToastMessages" />

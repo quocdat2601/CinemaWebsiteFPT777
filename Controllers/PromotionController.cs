@@ -34,20 +34,6 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Xem chi tiết khuyến mãi
-        /// </summary>
-        /// <remarks>url: /Promotion/Details (GET)</remarks>
-        public ActionResult Details(int id)
-        {
-            var promotion = _promotionService.GetById(id);
-            if (promotion == null)
-            {
-                return NotFound();
-            }
-            return View(promotion);
-        }
-
-        /// <summary>
         /// Trang quản lý khuyến mãi
         /// </summary>
         /// <remarks>url: /Promotion/Index (GET)</remarks>
@@ -96,6 +82,35 @@ namespace MovieTheater.Controllers
                         EndTime = viewModel.EndTime,
                         IsActive = viewModel.IsActive
                     };
+
+                    // Add PromotionCondition for TargetField if provided
+                    if (!string.IsNullOrEmpty(viewModel.TargetField) && !string.IsNullOrEmpty(viewModel.TargetFieldColumn))
+                    {
+                        string? targetValueString = null;
+                        if (!string.IsNullOrEmpty(viewModel.TargetValue))
+                        {
+                            // Check if the selected column is a date type
+                            var dateColumns = new[] { "DateOfBirth", "RegisterDate", "BookingDate", "ScheduleShow", "FromDate", "ToDate", "EndTime", "StartTime", "ShowDate1" };
+                            if (dateColumns.Contains(viewModel.TargetFieldColumn))
+                            {
+                                // Use the string as entered (already formatted in JS)
+                                targetValueString = viewModel.TargetValue;
+                            }
+                            else
+                            {
+                                targetValueString = viewModel.TargetValue;
+                            }
+                        }
+                        var promotionCondition = new PromotionCondition
+                        {
+                            TargetEntity = viewModel.TargetField,
+                            TargetField = viewModel.TargetFieldColumn,
+                            Operator = viewModel.Operator,
+                            TargetValue = targetValueString,
+                            PromotionId = nextId
+                        };
+                        promotion.PromotionConditions.Add(promotionCondition);
+                    }
 
                     if (imageFile != null && imageFile.Length > 0)
                     {
@@ -182,8 +197,26 @@ namespace MovieTheater.Controllers
                 StartTime = promotion.StartTime ?? DateTime.Now,
                 EndTime = promotion.EndTime ?? DateTime.Now.AddDays(30),
                 Image = promotion.Image,
-                IsActive = promotion.IsActive
+                IsActive = promotion.IsActive,
+                Conditions = promotion.PromotionConditions.Select(pc => new PromotionConditionEditViewModel
+                {
+                    ConditionId = pc.ConditionId,
+                    TargetEntity = pc.TargetEntity,
+                    TargetField = pc.TargetField,
+                    Operator = pc.Operator,
+                    TargetValue = pc.TargetValue
+                }).ToList()
             };
+
+            // Map first PromotionCondition if exists (for editing fields)
+            var condition = promotion.PromotionConditions.FirstOrDefault();
+            if (condition != null)
+            {
+                viewModel.TargetField = condition.TargetEntity;
+                viewModel.TargetFieldColumn = condition.TargetField;
+                viewModel.Operator = condition.Operator;
+                viewModel.TargetValue = condition.TargetValue;
+            }
 
             return View(viewModel);
         }
@@ -275,6 +308,41 @@ namespace MovieTheater.Controllers
                         }
 
                         promotion.Image = "/images/promotions/" + uniqueFileName;
+                    }
+
+                    // Update or add PromotionCondition
+                    var dateColumns = new[] { "DateOfBirth", "RegisterDate", "BookingDate", "ScheduleShow", "FromDate", "ToDate", "EndTime", "StartTime", "ShowDate1" };
+                    string? targetValueString = null;
+                    if (!string.IsNullOrEmpty(viewModel.TargetValue))
+                    {
+                        if (dateColumns.Contains(viewModel.TargetFieldColumn))
+                        {
+                            targetValueString = viewModel.TargetValue;
+                        }
+                        else
+                        {
+                            targetValueString = viewModel.TargetValue;
+                        }
+                    }
+                    var condition = promotion.PromotionConditions.FirstOrDefault();
+                    if (condition != null)
+                    {
+                        condition.TargetEntity = viewModel.TargetField;
+                        condition.TargetField = viewModel.TargetFieldColumn;
+                        condition.Operator = viewModel.Operator;
+                        condition.TargetValue = targetValueString;
+                    }
+                    else if (!string.IsNullOrEmpty(viewModel.TargetField) && !string.IsNullOrEmpty(viewModel.TargetFieldColumn))
+                    {
+                        var newCondition = new PromotionCondition
+                        {
+                            TargetEntity = viewModel.TargetField,
+                            TargetField = viewModel.TargetFieldColumn,
+                            Operator = viewModel.Operator,
+                            TargetValue = targetValueString,
+                            PromotionId = promotion.PromotionId
+                        };
+                        promotion.PromotionConditions.Add(newCondition);
                     }
 
                     _promotionService.Update(promotion);

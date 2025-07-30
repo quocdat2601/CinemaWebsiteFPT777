@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using MovieTheater.Models;
+
 namespace MovieTheater.ViewModels
 {
     public class ConfirmTicketAdminViewModel
@@ -5,7 +8,8 @@ namespace MovieTheater.ViewModels
         // Booking details similar to ConfirmBookingViewModel
         public ConfirmBookingViewModel BookingDetails { get; set; }
 
-        // Member details for admin confirmation
+        // Customer type and details for admin confirmation
+        public string CustomerType { get; set; } = "member"; // "member" or "guest"
         public string MemberAccountId { get; set; }
         public string MemberIdInput { get; set; } // For input by admin
         public string MemberId { get; set; } // Displayed if member found
@@ -40,5 +44,7 @@ namespace MovieTheater.ViewModels
         // Food information
         public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();
         public decimal TotalFoodPrice { get; set; }
+        public List<Promotion> EligibleFoodPromotions { get; set; } = new List<Promotion>();
+        public decimal TotalFoodDiscount { get; set; }
     }
 }

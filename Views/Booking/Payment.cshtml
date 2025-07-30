@@ -2,154 +2,228 @@
 
 @{
     ViewData["Title"] = "Payment";
+    ViewBag.CurrentStep = 4;
 }
+@Html.Partial("_BookingProgress")
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/payment.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .bg-gradient-dark {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .info-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1rem;
+        }
+        .badge {
+            border-radius: 0.5rem;
+            padding: 0.4em 0.8em;
+            font-size: 0.95em;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .btn-lg {
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+        }
+        .rounded-pill {
+            border-radius: 50rem!important;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+        .price-row.total-row {
+            padding-top: 0.5rem;
+            border-top: 2px solid #e5e7eb;
+        }
+        .discount-row {
+            color: #059669;
+            font-weight: 500;
+        }
+        .fw-semibold { font-weight: 600; }
+        .fw-bold { font-weight: 700; }
+        .fs-4 { font-size: 2rem; }
+        .fs-5 { font-size: 1.25rem; }
+        .fs-6 { font-size: 1rem; }
+    </style>
 }
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="text-center">Payment Information</h3>
+<div class="min-vh-100 bg-gradient-to-br from-slate-50 to-blue-50 py-4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between bg-white rounded-4 shadow-sm p-4">
+                    <div>
+                        <h1 class="h3 fw-bold text-dark mb-1">💳 Payment</h1>
+                        <p class="text-muted mb-0">Review your order and complete your payment</p>
+                    </div>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </a>
                 </div>
-                <div class="card-body">
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger">
-                            @TempData["ErrorMessage"]
+            </div>
+        </div>
+        <div class="row g-4">
+            <!-- Left: Movie Info -->
+            <div class="col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-gradient-primary text-white rounded-top-4 py-3">
+                        <h5 class="mb-0 fw-semibold">🎬 Movie Info</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="info-item mb-3">
+                            <span class="info-label">Invoice ID</span>
+                            <span class="info-value"><span class="badge bg-secondary">@Model.InvoiceId</span></span>
                         </div>
-                    }
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Invoice ID:</strong>
+                        <div class="info-item mb-3">
+                            <span class="info-label">Movie</span>
+                            <span class="info-value">@Model.MovieName</span>
                         </div>
-                        <div class="col-md-8">
-                            @Model.InvoiceId
+                        <div class="info-item mb-3">
+                            <span class="info-label">Show Date</span>
+                            <span class="info-value">@Model.ShowDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="info-item mb-3">
+                            <span class="info-label">Show Time</span>
+                            <span class="info-value">@Model.ShowTime</span>
+                        </div>
+                        <div class="info-item mb-3">
+                            <span class="info-label">Seats</span>
+                            <span class="info-value"><span class="badge bg-primary">@Model.Seats</span></span>
                         </div>
                     </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Movie:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.MovieName
-                        </div>
+                </div>
+            </div>
+            <!-- Center: Food & Drinks -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-gradient-warning text-dark rounded-top-4 py-3">
+                        <h5 class="mb-0 fw-semibold">🍿 Food & Beverages</h5>
                     </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Show Date:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.ShowDate.ToString("dd/MM/yyyy")
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Show Time:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.ShowTime
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Seats:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            @Model.Seats
-                        </div>
-                    </div>
-
-                    @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
-                    {
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Food & Drinks:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <table class="table table-sm">
-                                    <thead>
+                    <div class="card-body p-0">
+                        @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Qty</th>
-                                            <th>Price</th>
-                                            <th>Total</th>
+                                            <th class="border-0 py-3 ps-4">Item</th>
+                                            <th class="border-0 py-3">Qty</th>
+                                            <th class="border-0 py-3">Price</th>
+                                            <th class="border-0 py-3 pe-4">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach (var food in Model.SelectedFoods)
                                         {
                                             <tr>
-                                                <td>@food.Name</td>
-                                                <td>@food.Quantity</td>
-                                                <td>@food.Price.ToString("N0") VND</td>
-                                                <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                                <td class="py-3 ps-4">
+                                                    <span class="fw-semibold">@food.Name</span>
+                                                </td>
+                                                <td class="py-3">
+                                                    <span class="badge bg-secondary">@food.Quantity</span>
+                                                </td>
+                                                <td class="py-3">
+                                                    <span class="fw-semibold text-success">@food.Price.ToString("N0") VND</span>
+                                                </td>
+                                                <td class="py-3 pe-4">
+                                                    <span class="fw-bold">@((food.Price * food.Quantity).ToString("N0")) VND</span>
+                                                </td>
                                             </tr>
                                         }
                                     </tbody>
-                                    <tfoot>
+                                    <tfoot class="table-light">
                                         <tr>
-                                            <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
-                                            <td><strong>@Model.TotalFoodPrice.ToString("N0") VND</strong></td>
+                                            <td colspan="3" class="py-3 ps-4 fw-semibold">Food & Beverages Total:</td>
+                                            <td class="py-3 pe-4 fw-bold text-success">@Model.TotalFoodPrice.ToString("N0") VND</td>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">No food items selected</div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <!-- Right: Price Summary & Payment -->
+            <div class="col-lg-3">
+                <div class="card border-0 shadow-lg rounded-4 mb-4 price-summary-card">
+                    <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
+                        <h5 class="mb-0 fw-semibold">📊 Price Summary</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="price-row">
+                            <span>Seat Price:</span>
+                            <span class="fw-semibold">@Model.Subtotal.ToString("N0") VND</span>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Food & Drinks:</strong>
+                        @if (Model.TotalFoodPrice > 0)
+                        {
+                            <div class="price-row">
+                                <span>Food & Beverages:</span>
+                                <span class="fw-semibold">@Model.TotalFoodPrice.ToString("N0") VND</span>
                             </div>
-                            <div class="col-md-8 text-danger">
-                                No food selected.
+                        }
+                        @if (Model.RankDiscount > 0)
+                        {
+                            <div class="price-row discount-row">
+                                <span>Rank Discount:</span>
+                                <span class="fw-semibold text-success">-@Model.RankDiscount.ToString("N0") VND</span>
                             </div>
-                        </div>
-                    }
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Seat Price:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            <span class="text-success">@Model.TotalSeatPrice.ToString("N0") VND</span>
+                        }
+                        @if (Model.VoucherAmount > 0)
+                        {
+                            <div class="price-row discount-row">
+                                <span>Voucher:</span>
+                                <span class="fw-semibold text-success">-@Model.VoucherAmount.ToString("N0") VND</span>
+                            </div>
+                        }
+                        @if (Model.UsedScoreValue > 0)
+                        {
+                            <div class="price-row discount-row">
+                                <span>Points Used:</span>
+                                <span class="fw-semibold text-success">-@Model.UsedScoreValue.ToString("N0") VND</span>
+                            </div>
+                        }
+                        <hr class="my-3">
+                        <div class="price-row total-row">
+                            <span class="fw-bold fs-5">Total Price:</span>
+                            <span class="fw-bold fs-4 text-primary">@Model.TotalAmount.ToString("N0") VND</span>
                         </div>
                     </div>
-
-                    @if (Model.TotalFoodPrice > 0)
-                    {
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Food & Drinks Price:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <span class="text-info">@Model.TotalFoodPrice.ToString("N0") VND</span>
-                            </div>
-                        </div>
-                    }
-
-                    <hr class="my-3" />
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Total Amount:</strong>
-                        </div>
-                        <div class="col-md-8">
-                            <strong class="text-primary fs-4 fw-bold">@Model.TotalAmount.ToString("N0") VND</strong>
-                        </div>
-                    </div>
-
-                    <form asp-action="ProcessPayment" method="post">
+                </div>
+                <div class="d-grid gap-2 mb-4">
+                    <form asp-action="ProcessPayment" method="post" style="text-align:center;">
                         <input type="hidden" asp-for="InvoiceId" />
                         <input type="hidden" asp-for="MovieName" />
                         <input type="hidden" asp-for="ShowDate" />
@@ -159,15 +233,48 @@
                         <input type="hidden" asp-for="OrderInfo" />
                         <input type="hidden" asp-for="TotalSeatPrice" />
                         <input type="hidden" asp-for="TotalFoodPrice" />
-
-                        <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                Pay with VNPAY
-                            </button>
-                        </div>
+                        <input type="hidden" asp-for="Subtotal" />
+                        <input type="hidden" asp-for="RankDiscount" />
+                        <input type="hidden" asp-for="VoucherAmount" />
+                        <input type="hidden" asp-for="UsedScoreValue" />
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill py-3 fw-semibold w-100">
+                            <i class="fas fa-credit-card me-2"></i>Pay with VNPAY
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const paymentForm = document.querySelector('.payment-form');
+            const paymentBtn = document.querySelector('.cinema-payment-btn');
+            paymentForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                // Show loading state
+                paymentBtn.classList.add('loading');
+                paymentBtn.disabled = true;
+                const btnContent = paymentBtn.querySelector('.btn-content');
+                const originalContent = btnContent.innerHTML;
+                btnContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                // Simulate processing (remove this in production)
+                setTimeout(() => {
+                    btnContent.innerHTML = '<i class="fas fa-check"></i> Payment Successful!';
+                    paymentBtn.classList.remove('loading');
+                    paymentBtn.classList.add('success');
+                    // Reset after success animation
+                    setTimeout(() => {
+                        btnContent.innerHTML = originalContent;
+                        paymentBtn.classList.remove('success');
+                        paymentBtn.disabled = false;
+                        // In real implementation, redirect or submit form here
+                        // this.submit();
+                    }, 2000);
+                }, 2000);
+            });
+        });
+    </script>
+}

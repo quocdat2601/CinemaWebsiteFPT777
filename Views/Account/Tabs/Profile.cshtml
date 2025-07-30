@@ -335,7 +335,10 @@
         let currentPage = 1;
         const pageSize = 6;
         function renderHistoryCards(historyData) {
-            historyDataCache = historyData || [];
+            // Lọc chỉ lấy booking đã complete
+            historyDataCache = (historyData || []).filter(function(booking) {
+                return booking.status === 1;
+            });
             renderHistoryPage(currentPage);
             renderHistoryPagination();
         }
@@ -352,8 +355,29 @@
                     var showTime = booking.movieShow && booking.movieShow.schedule && booking.movieShow.schedule.scheduleTime ? booking.movieShow.schedule.scheduleTime.substring(0, 5) : 'N/A';
                     var seats = booking.seat || '';
                     var seatCount = seats ? seats.split(',').length : 0;
-                    var totalMoney = booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A';
-                    var statusBadge = booking.status === 1 ? '<span class="badge bg-success">Booked</span>' : '<span class="badge bg-danger">Canceled</span>';
+                    var statusBadge = (booking.status === 1 && booking.cancel === false) ? '<span class="badge bg-success">Booked</span>' : (booking.status === 1 && booking.cancel === true) ? '<span class="badge bg-danger">Canceled</span>' : '<span class="badge bg-secondary">Not Paid</span>';
+                    var totalMoney = booking.totalMoney === 0 ? '0 VND' : (booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A');
+                    var totalAmountHtml = `<span id="booking-total-${booking.invoiceId}" class="booking-total-amount">${totalMoney}</span>`;
+                    if (booking.status === 1 && booking.invoiceId) {
+                        $.ajax({
+                            url: '/api/foodinvoice/gettotalfoodprice',
+                            type: 'GET',
+                            data: { invoiceId: booking.invoiceId },
+                            success: function(foodRes) {
+                                var foodPrice = (typeof foodRes === 'number') ? foodRes : (foodRes.totalFoodPrice || 0);
+                                var seatPrice = booking.totalMoney || 0;
+                                var total = seatPrice + (foodPrice || 0);
+                                var totalText = new Intl.NumberFormat('en-US').format(total) + ' VND';
+                                if (total === 0) totalText = '0 VND';
+                                $("#booking-total-" + booking.invoiceId)
+                                    .text(totalText)
+                                    .addClass('booking-total-amount-highlight');
+                            },
+                            error: function() {
+                                $("#booking-total-" + booking.invoiceId).text(totalMoney);
+                            }
+                        });
+                    }
                     html += `<div class="booking-card">
                         <div class="booking-card-row booking-card-row-top">
                             <div class="booking-card-title">${movieName}</div>
@@ -363,7 +387,7 @@
                                 <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="/Ticket/Details/${booking.invoiceId}"><i class="fas fa-info-circle me-2"></i>Detail</a></li>
-                                    ${booking.status === 1 ? `<li><form action="/Ticket/Cancel" method="post" class="d-inline" onsubmit="return confirm('Do you want to cancel ticket ?');"><input type="hidden" name="id" value="${booking.invoiceId}" /><input type="hidden" name="returnUrl" value="/MyAccount/MainPage?tab=Profile" /><button type="submit" class="dropdown-item"><i class="fas fa-times me-2"></i>Cancel Ticket</button></form></li>` : ''}
+                                    ${booking.status === 1 && booking.cancel === false ? `<li><form action="/Ticket/Cancel" method="post" class="d-inline" onsubmit="return confirm('Do you want to cancel ticket ?');"><input type="hidden" name="id" value="${booking.invoiceId}" /><input type="hidden" name="returnUrl" value="/MyAccount/MainPage?tab=Profile" /><button type="submit" class="dropdown-item"><i class="fas fa-times me-2"></i>Cancel Ticket</button></form></li>` : ''}
                                 </ul>
                             </div>
                         </div>
@@ -371,7 +395,7 @@
                             <div class="booking-card-seats"><i class=\"fas fa-chair\"></i> ${seatCount} seat(s): ${seats}</div>
                         </div>
                         <div class="booking-card-row booking-card-row-bottom">
-                            <div class="booking-card-amount"><i class=\"fas fa-money-bill-wave\"></i> ${totalMoney}</div>
+                            <div class="booking-card-amount"><i class=\"fas fa-money-bill-wave\"></i> ${totalAmountHtml}</div>
                             <div class="booking-card-status">${statusBadge}</div>
                         </div>
                     </div>`;
@@ -492,3 +516,6 @@ function setProfileBannerTextColor() {
 // Call the function directly, since this is a partial view
 setProfileBannerTextColor();
 </script>
+@section Styles {
+    <link rel="stylesheet" href="~/css/profile-styles.css" />
+}
