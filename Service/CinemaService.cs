@@ -54,15 +54,32 @@ namespace MovieTheater.Service
                 return false;
             }
         }
-        public bool Enable(CinemaRoom cinemaRoom)
+        public async Task<bool> Enable(CinemaRoom cinemaRoom)
         {
-            _repository.Enable(cinemaRoom);
-            return true;
+            try
+            {
+                await _repository.Enable(cinemaRoom);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enabling cinema room: {ex.Message}");
+                return false;
+            }
         }
-        public bool Disable(CinemaRoom cinemaRoom)
+        
+        public async Task<bool> Disable(CinemaRoom cinemaRoom)
         {
-            _repository.Disable(cinemaRoom);
-            return true;
+            try
+            {
+                await _repository.Disable(cinemaRoom);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error disabling cinema room: {ex.Message}");
+                return false;
+            }
         }
 
         public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId){

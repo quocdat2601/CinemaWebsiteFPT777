@@ -19,6 +19,13 @@
 </a>
 <div class="text-center">
     <h3>Disable @Model.CinemaRoomName</h3>
+    @if (Model.UnavailableEndDate.HasValue)
+    {
+        <div class="alert alert-info" id="autoEnableCountdown">
+            <i class="fas fa-clock me-2"></i>
+            Room will be automatically enabled in: <span id="countdownTimer"></span>
+        </div>
+    }
 </div>
 <form asp-action="Disable" asp-controller="Cinema" method="post" id="disableRoomForm">
     <input type="hidden" id="movieShowIdsToDelete" name="movieShowIdsToDelete" value="" />
@@ -454,6 +461,53 @@
                 } else {
                     alert('Form not found. Please reload the page and try again.');
                 }
+            });
+
+            // Countdown timer for auto-enable
+            function updateCountdown() {
+                var endDate = new Date('@Model.UnavailableEndDate?.ToString("yyyy-MM-ddTHH:mm:ss")');
+                var now = new Date();
+                var timeLeft = endDate - now;
+
+                if (timeLeft <= 0) {
+                    $('#countdownTimer').text('Room will be enabled automatically soon...');
+                    $('#autoEnableCountdown').removeClass('alert-info').addClass('alert-warning');
+                    return;
+                }
+
+                var hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                var minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                var seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+                var countdownText = '';
+                if (hours > 0) countdownText += hours + 'h ';
+                if (minutes > 0) countdownText += minutes + 'm ';
+                countdownText += seconds + 's';
+
+                $('#countdownTimer').text(countdownText);
+            }
+
+            // Update countdown every second
+            if ($('#countdownTimer').length > 0) {
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+            }
+
+            // SignalR connection for room auto-enable notifications
+            var cinemaConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/cinemahub")
+                .build();
+
+            cinemaConnection.on("RoomAutoEnabled", function (cinemaRoomId, roomName) {
+                if (cinemaRoomId == @Model.CinemaRoomId) {
+                    // Show success message and redirect
+                    alert(`Room "${roomName}" has been automatically enabled!`);
+                    window.location.href = '/Admin/MainPage?tab=ShowroomMg';
+                }
+            });
+
+            cinemaConnection.start().catch(function (err) {
+                console.error("CinemaHub connection failed: " + err.toString());
             });
         });
     </script>

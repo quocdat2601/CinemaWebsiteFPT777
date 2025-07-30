@@ -301,7 +301,7 @@
                                                 @food.Name
                                                 @if (!string.IsNullOrEmpty(food.PromotionName))
                                             {
-                                                <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                                <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount?.ToString("N0")% off)</span>
                                                 }
                                             </td>
                                             <td>@food.Quantity</td>
@@ -309,7 +309,7 @@
                                                 @if (food.PromotionDiscount > 0 && food.OriginalPrice > food.Price)
                                                 {
                                                     <span style="white-space: nowrap;">
-                                                        <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                                        <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice?.ToString("N0") VND</span>
                                                         <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
                                                     </span>
                                                 }

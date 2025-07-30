@@ -122,9 +122,14 @@ namespace MovieTheater.Repository
             var existingCinema = _context.CinemaRooms
                            .Include(c => c.Seats)
                            .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
+            
+            if (existingCinema == null)
+            {
+                throw new KeyNotFoundException($"Cinema room with ID {cinemaRoom.CinemaRoomId} not found.");
+            }
+            
             try
             {
-
                 existingCinema.StatusId = 1;
                 existingCinema.UnavailableEndDate = null;
                 existingCinema.UnavailableStartDate = null;
@@ -143,6 +148,12 @@ namespace MovieTheater.Repository
             var existingCinema = _context.CinemaRooms
                            .Include(c => c.Seats)
                            .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
+            
+            if (existingCinema == null)
+            {
+                throw new KeyNotFoundException($"Cinema room with ID {cinemaRoom.CinemaRoomId} not found.");
+            }
+            
             try
             {
                 existingCinema.UnavailableEndDate = cinemaRoom.UnavailableEndDate;

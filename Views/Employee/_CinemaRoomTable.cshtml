@@ -1,0 +1,99 @@
+﻿@model IEnumerable<MovieTheater.Models.CinemaRoom>
+
+@{
+    // Retrieve the list of column headers
+    var columnHeaders = ViewData["ColumnHeaders"] as List<string>;
+    // Retrieve the table type to determine data rendering
+    var tableType = ViewData["TableType"] as string;
+}
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr class="text-center">
+            @if (columnHeaders != null)
+            {
+                // Loop through the provided column headers
+                foreach (var header in columnHeaders)
+                {
+                    <th @(header == "Actions" || header == "Hidden Actions" ? "style=width:300px;" : "")>@header</th>
+                }
+            }
+            else
+            {
+                // Fallback if no headers are provided (shouldn't happen with the current setup)
+                <th>ID</th>
+                <th>Name</th>
+                <th>Version</th>
+                <th>Seat Quantity</th>
+                <th style="width: 300px;">Actions</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var cinema in Model)
+        {
+            <tr>
+                @if (tableType == "Active")
+                {
+                    <td class="text-center">@cinema.CinemaRoomId</td>
+                    <td class="text-center">@cinema.CinemaRoomName</td>
+                    <td class="text-center">@cinema.Version?.VersionName</td>
+                    <td class="text-center">@cinema.SeatQuantity</td>
+                }
+                else if (tableType == "Hidden")
+                {
+                    <td class="text-center">@cinema.CinemaRoomId</td>
+                    <td class="text-center">@cinema.CinemaRoomName</td>
+                    <td class="text-center">@cinema.DisableReason</td>
+                    <td class="text-center">@cinema.UnavailableStartDate?.ToString("yyyy-MM-dd")</td>
+                    <td class="text-center">@cinema.UnavailableEndDate?.ToString("yyyy-MM-dd")</td>
+           @* Format date as needed *@
+                }
+
+                @* Always render the actions column, but its content will differ based on tableType *@
+                <td>
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        @if (tableType == "Active")
+                        {
+                            <a href="@Url.Action("Edit", "Cinema", new { id = cinema.CinemaRoomId })" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            @if (cinema.SeatQuantity != null)
+                            {
+                                <a href="@Url.Action("Edit", "Seat", new { id = cinema.CinemaRoomId })" class="btn btn-sm btn-primary">Edit Seat</a>
+                            }
+                            <form asp-action="Disable" asp-controller="Cinema" method="get">
+                                <input type="hidden" name="id" value="@cinema.CinemaRoomId" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    Disable
+                                </button>
+                            </form>
+                        }
+                        else if (tableType == "Hidden")
+                        {
+                            <form asp-action="Disable" asp-controller="Cinema" method="get">
+                                <input type="hidden" name="id" value="@cinema.CinemaRoomId" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </form>
+                            <form asp-action="Enable" asp-controller="Cinema" method="post" onsubmit="return confirm('Are you sure you want to enable this showroom?');">
+                                <input type="hidden" name="CinemaRoomId" value="@cinema.CinemaRoomId" />
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    Enable
+                                </button>
+                            </form>
+
+                            <form asp-action="Delete" asp-controller="Cinema" method="post" onsubmit="return confirm('Are you sure you want to PERMANENTLY delete this showroom?');">
+                                <input type="hidden" name="id" value="@cinema.CinemaRoomId" />
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

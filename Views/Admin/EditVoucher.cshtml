@@ -1,8 +1,26 @@
+@using System.Security.Claims
 @model MovieTheater.Models.Voucher
+
 @{
     ViewData["Title"] = "Edit Voucher";
     bool isEditable = (Model.IsUsed != true && Model.ExpiryDate > DateTime.Now);
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 }
+
+@if (userRole == "Admin")
+{
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="VoucherMg" class="btn btn-secondary">
+        &larr; Return
+    </a>
+}
+else
+{
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="VoucherMg" class="btn btn-secondary">
+        &larr; Return
+    </a>
+}
+
+
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -53,7 +71,6 @@
                                 <input type="file" name="imageFile" class="form-control" accept="image/*" />
                             </div>
                             <button type="submit" class="btn btn-success">Save Changes</button>
-                            <a href="/Admin/MainPage?tab=VoucherMg" class="btn btn-secondary ms-2">Cancel</a>
                         </form>
                     }
                 </div>
@@ -61,6 +78,7 @@
         </div>
     </div>
 </div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-} 
+}

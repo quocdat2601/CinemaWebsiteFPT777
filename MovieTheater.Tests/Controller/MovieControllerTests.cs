@@ -324,7 +324,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_InvalidModel_ReturnsView()
+        public async Task Edit_Post_InvalidModel_ReturnsView()
         {
             // Arrange
             var model = new MovieDetailViewModel { MovieId = "1" };
@@ -332,14 +332,14 @@ namespace MovieTheater.Tests.Controller
             ctrl.ModelState.AddModelError("x", "err");
             _movieService.Setup(s => s.GetAllTypes()).Returns(new List<ModelType>());
             // Act
-            var result = ctrl.Edit("1", model) as ViewResult;
+            var result = await ctrl.Edit("1", model) as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
         }
 
         [Fact]
-        public void Edit_Post_InvalidDate_ReturnsViewWithError()
+        public async Task Edit_Post_InvalidDate_ReturnsViewWithError()
         {
             // Arrange
             var existingMovie = new Movie { MovieId = "1", Duration = 90 };
@@ -352,10 +352,7 @@ namespace MovieTheater.Tests.Controller
                 LargeImage = "test.jpg",
                 SmallImage = "test.jpg",
                 MovieNameEnglish = "Test",
-                MovieNameVn = "Test",
-                Actor = "Test",
                 MovieProductionCompany = "Test",
-                Director = "Test",
                 Content = "Test",
                 TrailerUrl = "https://example.com",
                 // Always seed all four lists non-null:
@@ -372,7 +369,7 @@ namespace MovieTheater.Tests.Controller
                 new DefaultHttpContext(), Mock.Of<ITempDataProvider>()
             );
             // Act
-            var result = ctrl.Edit("1", model) as ViewResult;
+            var result = await ctrl.Edit("1", model) as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
@@ -393,7 +390,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_DurationConflict_ReturnsViewWithError()
+        public async Task Edit_Post_DurationConflict_ReturnsViewWithError()
         {
             // Arrange
             var existingMovie = new Movie { MovieId = "1", Duration = 100 };
@@ -406,10 +403,7 @@ namespace MovieTheater.Tests.Controller
                 LargeImage = "test.jpg",
                 SmallImage = "test.jpg",
                 MovieNameEnglish = "Test",
-                MovieNameVn = "Test",
-                Actor = "Test",
                 MovieProductionCompany = "Test",
-                Director = "Test",
                 Content = "Test",
                 TrailerUrl = "https://example.com",
                 // Always seed all four lists non-null:
@@ -437,7 +431,7 @@ namespace MovieTheater.Tests.Controller
                 new DefaultHttpContext(), Mock.Of<ITempDataProvider>()
             );
             // Act
-            var result = ctrl.Edit("1", model) as ViewResult;
+            var result = await ctrl.Edit("1", model) as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
@@ -445,7 +439,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_UpdateSuccess_AdminRole_RedirectsToAdmin()
+        public async Task Edit_Post_UpdateSuccess_AdminRole_RedirectsToAdmin()
         {
             // Arrange
             var claims = new List<Claim> { new Claim(ClaimTypes.Role, "Admin") };
@@ -464,7 +458,7 @@ namespace MovieTheater.Tests.Controller
                 new Microsoft.AspNetCore.Http.DefaultHttpContext(),
                 Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
             // Act
-            var result = ctrl.Edit("1", model) as RedirectToActionResult;
+            var result = await ctrl.Edit("1", model) as RedirectToActionResult;
             // Assert
             Assert.NotNull(result);
             Assert.Equal("MainPage", result.ActionName);
@@ -472,7 +466,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_UpdateSuccess_EmployeeRole_RedirectsToEmployee()
+        public async Task Edit_Post_UpdateSuccess_EmployeeRole_RedirectsToEmployee()
         {
             // Arrange
             var claims = new List<Claim> { new Claim(ClaimTypes.Role, "Employee") };
@@ -491,7 +485,7 @@ namespace MovieTheater.Tests.Controller
                 new Microsoft.AspNetCore.Http.DefaultHttpContext(),
                 Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
             // Act
-            var result = ctrl.Edit("1", model) as RedirectToActionResult;
+            var result = await ctrl.Edit("1", model) as RedirectToActionResult;
             // Assert
             Assert.NotNull(result);
             Assert.Equal("MainPage", result.ActionName);
@@ -499,7 +493,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_UpdateFail_ReturnsViewWithError()
+        public async Task Edit_Post_UpdateFail_ReturnsViewWithError()
         {
             // Arrange
             var model = new MovieDetailViewModel { MovieId = "1", Duration = 100, FromDate = DateOnly.FromDateTime(System.DateTime.Today), ToDate = DateOnly.FromDateTime(System.DateTime.Today.AddDays(1)), SelectedTypeIds = new List<int>(), SelectedVersionIds = new List<int>() };
@@ -513,7 +507,7 @@ namespace MovieTheater.Tests.Controller
                 new Microsoft.AspNetCore.Http.DefaultHttpContext(),
                 Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
             // Act
-            var result = ctrl.Edit("1", model) as ViewResult;
+            var result = await ctrl.Edit("1", model) as ViewResult;
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);

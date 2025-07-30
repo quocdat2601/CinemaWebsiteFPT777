@@ -1,49 +1,161 @@
 ﻿@model IEnumerable<Movie>
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+        text-shadow: none !important;
+    }
 
+        .nav-tabs .nav-link.active {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+            color: black !important;
+            text-shadow: none !important;
+        }
+</style>
 <div class="text-center mb-2">
-	<h2>Movie List</h2>
+    <h2>Movie List</h2>
 </div>
 
-<div class="text-center mb-2">
-	<a asp-controller="Movie" asp-action="Create" class="btn btn-sm btn-primary">Create a Movie</a>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <a asp-controller="Movie" asp-action="Create" class="btn btn-sm btn-primary">
+        Create a Movie
+    </a>
+
+    <div class="input-group" style="width: 400px;">
+        <input type="text" id="searchBox" maxlength="50"
+               class="form-control" placeholder="🔍 Search by movies..." />
+    </div>
 </div>
 
-<table class="table table-bordered table-striped">
-	<thead class="table-dark">
-		<tr class="text-center">
-			<th>ID</th>
-			<th>Name</th>
-			<th>Release Date</th>
-			<th>Production Company</th>
-			<th>Running Time</th>
-			<th>Version</th>
-			<th style="width: 150px;">Actions</th>
-		</tr>
-	</thead>
-	<tbody>
-		@foreach (var movie in Model)
-		{
-			<tr>
-				<td class="text-center">@movie.MovieId</td>
-				<td>@movie.MovieNameEnglish</td>
-				<td class="text-center">@movie.FromDate</td>
-				<td class="text-center">@movie.MovieProductionCompany</td>
-				<td class="text-center">@movie.Duration</td>
+<ul class="nav nav-tabs mb-3" id="movieTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-dark" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing" type="button" role="tab">Ongoing Movies</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark" id="old-tab" data-bs-toggle="tab" data-bs-target="#old" type="button" role="tab">Old Movies</button>
+    </li>
+</ul>
 
-				<td>
-					<div class="d-flex align-items-center gap-2">
-						<a href="@Url.Action("Edit", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-primary">Edit</a>
-
-						<form asp-action="Delete" asp-controller="Movie" method="post" onsubmit="return confirm('Are you sure you want to delete this movie?');">
-							<input type="hidden" name="id" value="@movie.MovieId" />
-							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
-						</form>
-					</div>
-				</td>
-
-			</tr>
-		}
-	</tbody>
-</table>
+<div class="tab-content" id="movieTabsContent">
+    <div class="tab-pane fade show active" id="ongoing" role="tabpanel">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr class="text-center">
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Production Company</th>
+                    <th>Duration</th>
+                    <th>Version</th>
+                    <th style="width: 210px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var movie in Model)
+                {
+                    var isPast = movie.ToDate.HasValue && movie.ToDate.Value < DateOnly.FromDateTime(DateTime.Today);
+                    if (!isPast)
+                    {
+                        <tr>
+                            <td class="text-center">@movie.MovieId</td>
+                            <td>@movie.MovieNameEnglish</td>
+                            <td class="text-center">@movie.FromDate ~ @movie.ToDate</td>
+                            <td class="text-center">@movie.MovieProductionCompany</td>
+                            <td class="text-center">@movie.Duration</td>
+                            <td class="text-center">
+                                @if (movie.Versions != null && movie.Versions.Any())
+                                {
+                                    @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="@Url.Action("Edit", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="@Url.Action("Delete", "Movie", new { id = movie.MovieId })" method="post" onsubmit="return confirm('Are you sure you want to delete this movie?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    <a href="@Url.Action("MovieShow", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-outline-info">Edit Show</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="tab-pane fade" id="old" role="tabpanel">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr class="text-center">
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Production Company</th>
+                    <th>Duration</th>
+                    <th>Version</th>
+                    <th style="width: 210px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var movie in Model)
+                {
+                    var isPast = movie.ToDate.HasValue && movie.ToDate.Value < DateOnly.FromDateTime(DateTime.Today);
+                    if (isPast)
+                    {
+                        <tr>
+                            <td class="text-center">@movie.MovieId</td>
+                            <td>@movie.MovieNameEnglish</td>
+                            <td class="text-center">@movie.FromDate ~ @movie.ToDate</td>
+                            <td class="text-center">@movie.MovieProductionCompany</td>
+                            <td class="text-center">@movie.Duration</td>
+                            <td class="text-center">
+                                @if (movie.Versions != null && movie.Versions.Any())
+                                {
+                                    @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="@Url.Action("Edit", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="@Url.Action("Delete", "Movie", new { id = movie.MovieId })" method="post" onsubmit="return confirm('Are you sure you want to delete this movie?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    <a href="@Url.Action("ViewShow", "Movie", new { id = movie.MovieId })" class="btn btn-sm btn-outline-secondary">View Show</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <partial name="_ToastMessages" />
+
+<script>
+    document.getElementById("searchBox").addEventListener("input", function () {
+        const filter = this.value.toLowerCase();
+        // Only filter visible tab
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (!activeTab) return;
+        const rows = activeTab.querySelectorAll("tbody tr");
+        rows.forEach(row => {
+            const nameCell = row.cells[1]; // second column: movie name
+            const nameText = nameCell.textContent.toLowerCase();
+            row.style.display = nameText.includes(filter) ? "" : "none";
+        });
+    });
+</script>

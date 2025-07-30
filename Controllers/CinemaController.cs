@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AspNetCoreGeneratedDocument;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Service;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
-using AspNetCoreGeneratedDocument;
+using System.Data;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -18,7 +20,10 @@ namespace MovieTheater.Controllers
             _movieService = movieService;
             _ticketService = ticketService;
         }
-
+        private string GetUserRole()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        }
         // GET: CinemaController
         [HttpGet]
         public ActionResult Index()
@@ -37,6 +42,7 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(CinemaRoom cinemaRoom, int VersionId)
         {
+            string role = GetUserRole();
             if (!ModelState.IsValid)
             {
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
@@ -44,7 +50,10 @@ namespace MovieTheater.Controllers
             cinemaRoom.VersionId = VersionId;
             _cinemaService.Add(cinemaRoom);
             TempData["ToastMessage"] = "Showroom created successfully!";
-            return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+            if (role == "Admin")
+                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+            else
+                return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
         }
 
 
@@ -68,6 +77,7 @@ namespace MovieTheater.Controllers
         {
             try
             {
+                string role = GetUserRole();
                 if (!ModelState.IsValid)
                 {
                     var versions = _movieService.GetAllVersions();
@@ -99,7 +109,10 @@ namespace MovieTheater.Controllers
                 }
                 
                 TempData["ToastMessage"] = "Showroom updated successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
             catch (Exception ex)
             {
@@ -116,13 +129,17 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, IFormCollection collection)
         {
+            string role = GetUserRole();
             try
             {
                 var cinema = _cinemaService.GetById(id);
                 if (cinema == null)
                 {
                     TempData["ToastMessage"] = "Showroom not found.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
                 }
 
                 bool success = await _cinemaService.DeleteAsync(id);
@@ -130,16 +147,25 @@ namespace MovieTheater.Controllers
                 if (!success)
                 {
                     TempData["ErrorMessage"] = "Failed to delete showroom.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
                 }
 
                 TempData["ToastMessage"] = "Showroom deleted successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
             catch (Exception ex)
             {
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
         }
 
@@ -161,6 +187,7 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Disable(CinemaRoom cinemaRoom, string removedShowIds)
         {
+            string role = GetUserRole();
             try
             {
                 // 1. Get all conflicted shows that will be affected by the disable period
@@ -209,12 +236,14 @@ namespace MovieTheater.Controllers
                 }
                 
                 // 4. Disable the room
-                bool disableSuccess = _cinemaService.Disable(cinemaRoom);
-                _cinemaService.SaveAsync();
+                bool disableSuccess = await _cinemaService.Disable(cinemaRoom);
                 if (!disableSuccess)
                 {
                     TempData["ErrorMessage"] = "Failed to update showroom status.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
                 }
                 
                 // 5. Feedback
@@ -240,13 +269,19 @@ namespace MovieTheater.Controllers
                 {
                     TempData["ToastMessage"] = "Showroom disabled successfully!";
                 }
-                
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"An error occurred while disabling the showroom: {ex.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
         }
 
@@ -291,24 +326,33 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Enable(CinemaRoom cinemaRoom)
+        public async Task<IActionResult> Enable(CinemaRoom cinemaRoom)
         {
+            string role = GetUserRole();
             try
             {
-                bool success = _cinemaService.Enable(cinemaRoom);
-                _cinemaService.SaveAsync();
+                bool success = await _cinemaService.Enable(cinemaRoom);
                 if (!success)
                 {
                     TempData["ErrorMessage"] = "Failed to update showroom status.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
                 }
                 TempData["ToastMessage"] = "Showroom enabled successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"An error occurred while activating the showroom: {ex.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
             }
         }
 
@@ -324,8 +368,10 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetMovieShowsByCinemaRoomGrouped(int cinemaRoomId)
         {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
             var shows = _movieService.GetMovieShow()
-                .Where(ms => ms.CinemaRoomId == cinemaRoomId)
+                .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate >= today)
                 .GroupBy(ms => ms.ShowDate)
                 .OrderBy(g => g.Key)
                 .Select(g => new {
@@ -338,8 +384,10 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetDetailedMovieShowsByCinemaRoom(int cinemaRoomId)
         {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
             var shows = _movieService.GetMovieShow()
-                .Where(ms => ms.CinemaRoomId == cinemaRoomId)
+                .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate >= today)
                 .Select(ms => new {
                     movieShowId = ms.MovieShowId,
                     movieId = ms.MovieId,
