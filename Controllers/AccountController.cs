@@ -215,7 +215,13 @@ namespace MovieTheater.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Please fill all required fields!";
+                // Collect all validation errors
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                
+                TempData["ErrorMessage"] = string.Join(", ", errors);
                 return RedirectToAction("Login");
             }
 

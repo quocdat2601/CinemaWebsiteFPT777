@@ -106,6 +106,8 @@ namespace MovieTheater.Service
                 NextRankName = nextRank?.RankName,
                 NextRankDiscountPercentage = nextRank?.DiscountPercentage ?? 0m,
                 NextRankPointEarningPercentage = nextRank?.PointEarningPercentage ?? 0m,
+                ColorGradient = currentRank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)",
+                IconClass = currentRank.IconClass ?? "fa-crown",
                 AllRanks = allRanks.Select(r => new RankDisplayInfo
                 {
                     RankId = r.RankId,

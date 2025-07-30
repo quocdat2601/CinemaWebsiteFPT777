@@ -271,7 +271,7 @@ class PromotionsManager {
       })
     }
 
-    console.log(`Promotion ${action}:`, promoId)
+    
   }
 
   // Public methods
