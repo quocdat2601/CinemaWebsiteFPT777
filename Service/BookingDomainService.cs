@@ -1001,6 +1001,7 @@ namespace MovieTheater.Service
                 InvoiceId = invoice.InvoiceId,
                 ScoreUsed = invoice.UseScore ?? 0,
                 Status = invoice.Status ?? InvoiceStatus.Incomplete, // Ensure status is set from DB
+                Cancel = invoice.Cancel, // Set Cancel from invoice
                 AddScore = invoice.AddScore ?? 0
             };
             // Food

@@ -12,6 +12,7 @@ namespace MovieTheater.ViewModels
         public DateOnly ShowDate { get; set; }
         public string ShowTime { get; set; }
         public InvoiceStatus? Status { get; set; }
+        public bool Cancel { get; set; }
 
         // Ghế đã chọn
         public List<SeatDetailViewModel> SelectedSeats { get; set; }
