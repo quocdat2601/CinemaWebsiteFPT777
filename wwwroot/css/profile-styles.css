@@ -1,0 +1,350 @@
+/* Profile Styles - Extracted from Profile.cshtml */
+
+.booking-total-amount-highlight {
+    color: #1769fa !important;
+    font-weight: bold;
+    font-size: 1.15em;
+}
+
+/* Profile banner styles */
+.profile-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: 1;
+}
+
+.profile-banner-content {
+    position: relative;
+    z-index: 2;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-info {
+    margin-left: 1rem;
+}
+
+.profile-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.profile-email {
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+/* Profile tabs */
+.profile-tabs {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.profile-tab-nav {
+    border-bottom: 1px solid #e9ecef;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
+}
+
+.profile-tab-nav li {
+    flex: 1;
+}
+
+.profile-tab-nav a {
+    display: block;
+    padding: 1rem;
+    text-decoration: none;
+    color: #6c757d;
+    text-align: center;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.profile-tab-nav a:hover {
+    color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.profile-tab-nav a.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.profile-tab-content {
+    padding: 2rem;
+}
+
+/* Profile history cards */
+.profile-history-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.profile-history-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.profile-history-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-history-title {
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.profile-history-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.profile-history-status.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.profile-history-status.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.profile-history-status.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.profile-history-body {
+    padding: 1rem;
+}
+
+.profile-history-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.profile-history-label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.profile-history-value {
+    color: #333;
+}
+
+.profile-history-total {
+    font-weight: 600;
+    color: #007bff;
+    font-size: 1.1rem;
+}
+
+/* Profile filters */
+.profile-history-filter {
+    margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    color: #6c757d;
+    border-radius: 6px;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    background: #f8f9fa;
+    color: #007bff;
+}
+
+.filter-btn.active {
+    background: #007bff;
+    color: #fff;
+    border-color: #007bff;
+}
+
+/* Pagination */
+.profile-history-pagination {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.profile-history-pagination .page-link {
+    color: #007bff;
+    border: 1px solid #dee2e6;
+    margin: 0 0.125rem;
+}
+
+.profile-history-pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+.profile-history-pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+/* Dark mode support */
+body.dark-mode .profile-banner {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+}
+
+body.dark-mode .profile-tabs {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+body.dark-mode .profile-tab-nav {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .profile-tab-nav a {
+    color: #ccc;
+}
+
+body.dark-mode .profile-tab-nav a:hover {
+    color: #007bff;
+    background-color: #1a1a1a;
+}
+
+body.dark-mode .profile-tab-nav a.active {
+    color: #007bff;
+    background-color: #1a1a1a;
+}
+
+body.dark-mode .profile-history-card {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+body.dark-mode .profile-history-header {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .profile-history-title {
+    color: #fff;
+}
+
+body.dark-mode .profile-history-label {
+    color: #ccc;
+}
+
+body.dark-mode .profile-history-value {
+    color: #fff;
+}
+
+body.dark-mode .filter-btn {
+    background: #2d2d2d;
+    color: #ccc;
+    border-color: #444;
+}
+
+body.dark-mode .filter-btn:hover {
+    background: #1a1a1a;
+    color: #007bff;
+}
+
+body.dark-mode .filter-btn.active {
+    background: #007bff;
+    color: #fff;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .profile-banner {
+        padding: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .profile-name {
+        font-size: 1.25rem;
+    }
+    
+    .profile-tab-nav {
+        flex-direction: column;
+    }
+    
+    .profile-tab-nav a {
+        text-align: left;
+        border-bottom: 1px solid #e9ecef;
+        border-right: none;
+    }
+    
+    .profile-history-info {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-banner {
+        padding: 1rem;
+    }
+    
+    .profile-avatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .profile-name {
+        font-size: 1.1rem;
+    }
+    
+    .profile-tab-content {
+        padding: 1rem;
+    }
+    
+    .filter-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+} 

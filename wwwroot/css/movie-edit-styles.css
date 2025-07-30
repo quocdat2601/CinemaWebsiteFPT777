@@ -1,0 +1,281 @@
+/* Movie Edit Styles - Extracted from Movie/Edit.cshtml */
+
+.director-card, .actor-card {
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.selection-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.selection-overlay i {
+    color: white;
+    font-size: 2rem;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+}
+
+.card.selected .selection-overlay {
+    opacity: 1;
+}
+
+.card.selected .selection-overlay i {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.card:not(.selected):hover .selection-overlay {
+    opacity: 0.3;
+}
+
+.card:not(.selected):hover .selection-overlay i {
+    opacity: 0.7;
+    transform: scale(0.8);
+}
+
+.modal-xl .card-img-top {
+    height: 150px !important;
+    object-fit: cover;
+}
+
+.modal-xl .row {
+    margin: -8px;
+}
+
+.modal-xl .col-md-3 {
+    padding: 8px;
+}
+
+.card-body {
+    padding: 0.75rem;
+}
+
+.card-title {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Movie form styles */
+.movie-form-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.movie-form-title {
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 0.5rem;
+}
+
+.movie-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.movie-form-label {
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 0.5rem;
+}
+
+.movie-form-control {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.75rem;
+    transition: border-color 0.3s ease;
+}
+
+.movie-form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.movie-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.movie-image-preview {
+    max-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.movie-selection-badge {
+    background: #007bff;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    margin: 0.25rem;
+    display: inline-block;
+}
+
+.movie-selection-badge .close {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.movie-selection-badge .close:hover {
+    opacity: 1;
+}
+
+.movie-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.movie-modal-title {
+    font-weight: 600;
+}
+
+.movie-modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.movie-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.movie-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.movie-card.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.movie-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.movie-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.movie-btn-secondary {
+    background: #6c757d;
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.movie-btn-secondary:hover {
+    background: #5a6268;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Dark mode support */
+body.dark-mode .movie-form-container {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+body.dark-mode .movie-form-title {
+    color: #fff;
+    border-bottom-color: #007bff;
+}
+
+body.dark-mode .movie-form-label {
+    color: #ccc;
+}
+
+body.dark-mode .movie-form-control {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #fff;
+}
+
+body.dark-mode .movie-form-control:focus {
+    border-color: #007bff;
+    background: #1a1a1a;
+}
+
+body.dark-mode .movie-card {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+body.dark-mode .movie-modal-header {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .movie-form-container {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .movie-form-title {
+        font-size: 1.25rem;
+    }
+    
+    .movie-image-preview {
+        max-width: 150px;
+    }
+    
+    .modal-xl .card-img-top {
+        height: 120px !important;
+    }
+    
+    .card-body {
+        padding: 0.5rem;
+    }
+    
+    .card-title {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .movie-form-container {
+        padding: 1rem;
+    }
+    
+    .movie-btn-primary,
+    .movie-btn-secondary {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .movie-selection-badge {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.6rem;
+    }
+} 

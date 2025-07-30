@@ -42,337 +42,311 @@
     decimal runningTotal = seatAndFoodTotal - (Model.VoucherAmount ?? 0m);
     if (runningTotal < 0) runningTotal = 0;
 }
-<style>
-    .ticket-success-header {
-        background: #e3fcec;
-        border-radius: 12px 12px 0 0;
-        padding: 32px 0 16px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        text-align: left;
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
-    .ticket-success-header h2 {
-        font-weight: bold;
-        margin-bottom: 0;
-        text-align: left;
-    }
-    .status-badge {
-        display: inline-block;
-        padding: 0.35em 1.2em;
-        font-size: 1rem;
-        font-weight: 600;
-        border-radius: 1.2em;
-        color: #fff;
-        margin-left: 1rem;
-    }
-    .status-completed {
-        background-color: #28a745;
-    }
-    .status-cancelled {
-        background-color: #dc3545;
-    }
-    .ticket-info-label {
-        font-weight: 500;
-        color: #333;
-        margin-bottom: 0.1rem;
-        font-size: 0.98rem;
-        margin-right: 0.5rem;
-    }
-    .ticket-info-value {
-        background: #f8f9fa;
-        border: none;
-        border-bottom: 1px solid #e0e0e0;
-        border-radius: 0;
-        padding: 0.2rem 0.5rem;
-        font-size: 1rem;
-        color: #222;
-        opacity: 1;
-        cursor: not-allowed;
-        box-shadow: none;
-        min-width: 80px;
-        margin-right: 1.5rem;
-        margin-bottom: 0.2rem;
-    }
-    .ticket-card {
-        max-width: 700px;
-        margin: 0 auto;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    .btn-ticket-back {
-        background: #007bff;
-        color: #fff;
-        font-weight: 500;
-        border-radius: 6px;
-        padding: 0.6rem 2.2rem;
-        font-size: 1.1rem;
-        margin-top: 1.5rem;
-    }
-    .btn-ticket-back:hover {
-        background: #0056b3;
-        color: #fff;
-    }
-    .ticket-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        margin-bottom: 0.3rem;
-    }
-    .ticket-row .ticket-info-label {
-        min-width: 90px;
-    }
-    .ticket-row .ticket-info-value {
-        flex: 1 1 120px;
-        min-width: 80px;
-        margin-right: 2rem;
-    }
-    .ticket-section-title {
-        margin-top: 1.2rem;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-    .ticket-total-row {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    .ticket-total-label {
-        font-weight: 600;
-        margin-right: 0.5rem;
-    }
-    .ticket-total-value {
-        font-weight: 600;
-        font-size: 1.1rem;
-        color: #007bff;
-    }
-    .qr-code-container {
-        background: #fff;
-        border-radius: 12px;
-        padding: 18px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    @@media (max-width: 991px) {
-        .row.mt-4.align-items-start .col-lg-8, .row.mt-4.align-items-start .col-lg-4 {
-            max-width: 100%;
-            flex: 0 0 100%;
-        }
-        .qr-code-container { margin-top: 20px; }
-    }
-</style>
-<div class="container mt-4 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="ticket-card card shadow p-0 w-100" style="max-width: 1000px;">
-        <div class="ticket-success-header">
-            <h2 class="mb-0">Ticket Information</h2>
-            <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "status-completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "status-cancelled" : "status-secondary")">
-                @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Canceled" : "Not Paid")
-            </span>
-        </div>
-        <div class="p-4">
-            <div class="row align-items-stretch">
-                <div class="col-lg-8 col-12 mb-3 mb-lg-0 border-end" style="border-color: #e0e0e0 !important;">
-                    <div class="ticket-section-title">Movie & Show Info</div>
-                    <div class="ticket-row">
-                        <label class="ticket-info-label">Movie Name</label>
-                        <input type="text" class="ticket-info-value" value="@movieName" readonly />
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/ticket-styles.css" />
+}
+
+<div class="ticket-page-container">
+    <div class="ticket-page-wrapper">
+        <!-- Header -->
+        <div class="ticket-header">
+            <div class="ticket-header-content">
+                <div class="ticket-header-left">
+                    <div class="ticket-header-icon">
+                        <i class="fas fa-film ticket-icon"></i>
                     </div>
-                    <div class="ticket-row">
-                        <label class="ticket-info-label">Date</label>
-                        <input type="text" class="ticket-info-value" value="@showDate" readonly />
-                        <label class="ticket-info-label">Screen</label>
-                        <input type="text" class="ticket-info-value" value="@screen" readonly />
-                    </div>
-                    <div class="ticket-row">
-                        <label class="ticket-info-label">Ticket ID</label>
-                        <input type="text" class="ticket-info-value" value="@ticketId" readonly />
-                        <label class="ticket-info-label">Version</label>
-                        <input type="text" class="ticket-info-value" value="@version" readonly />
-                    </div>
-                    <div class="ticket-row">
-                        <label class="ticket-info-label">Booking Time</label>
-                        <input type="text" class="ticket-info-value" value="@(DateTime.Parse(bookingDate).ToString("dd/MM/yyyy HH:mm"))" readonly />
-                        <label class="ticket-info-label">Time</label>
-                        <input type="text" class="ticket-info-value" value="@showTime" readonly />
-                    </div>
-                    
-                    <div class="ticket-section-title">Seat(s)</div>
-                    <table class="table table-bordered mb-2">
-                        <thead>
-                            <tr>
-                                <th>Seat</th>
-                                <th>Type</th>
-                                <th>Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (seatDetails != null && seatDetails.Any())
-                            {
-                                foreach (var seat in seatDetails)
-                                {
-                                    <tr>
-                                        <td>@seat.SeatName</td>
-                                        <td>@seat.SeatType</td>
-                                        <td>
-                                            @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
-                                            {
-                                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                                <span style="color: #1a7f37; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
-                                            }
-                                            else if (seat.OriginalPrice.HasValue)
-                                            {
-                                                <span style="color: #1a7f37; font-weight: bold;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
-                                            }
-                                            else
-                                            {
-                                                <span style="color: #1a7f37; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            else if (!string.IsNullOrEmpty(seatString))
-                            {
-                                <tr>
-                                    <td colspan="3">@seatString</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                    
-                    @if (foodDetails.Any())
-                    {
-                        <div class="ticket-section-title">Food & Drinks</div>
-                        <table class="table table-bordered mb-2">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Qty</th>
-                                    <th>Price</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var food in foodDetails)
-                                {
-                                    <tr>
-                                        <td>@food.Name</td>
-                                        <td>@food.Quantity</td>
-                                        <td>
-                                            @if (food.OriginalPrice > food.Price)
-                                            {
-                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
-                                                <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
-                                            }
-                                            else
-                                            {
-                                                <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
-                                            }
-                                        </td>
-                                        <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
-                                    </tr>
-                                }
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>Total Food:</strong></td>
-                                    <td><strong>@totalFoodPrice.ToString("N0") VND</strong></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    }
-                    
-                    @if (subtotal > 0)
-                    {
-                        <div class="ticket-section-title">Price Breakdown</div>
-                        <table class="table table-borderless mb-2">
-                            <tbody>
-                                <tr>
-                                    <td style="white-space: nowrap;">Seat Price</td>
-                                    <td class="text-end" style="white-space: nowrap;">@subtotal.ToString("N0") VND</td>
-                                </tr>
-                                @if (rankDiscount > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Rank Discount (@rankDiscountPercent.ToString("0.##")%)</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
-                                    </tr>
-                                }
-                                @if (useScore > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Points Used</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@useScore (@usedScoreValue.ToString("N0") VND)</td>
-                                    </tr>
-                                }
-                                @if (totalFoodPrice > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">+ Food & Drinks</td>
-                                        <td class="text-end" style="white-space: nowrap;">+@totalFoodPrice.ToString("N0") VND</td>
-                                    </tr>
-                                }
-                                @if ((Model.VoucherAmount ?? 0m) > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap;">- Voucher</td>
-                                        <td class="text-end" style="white-space: nowrap;">-@((Model.VoucherAmount ?? 0m).ToString("N0")) VND</td>
-                                    </tr>
-                                }
-                                <tr style="border-top: 1px solid #dee2e6;">
-                                    <td class="ticket-total-label">Total Amount</td>
-                                    <td class="ticket-total-value text-end">@runningTotal.ToString("N0") VND</td>
-                                </tr>
-                                @if (addScore > 0)
-                                {
-                                    <tr>
-                                        <td style="white-space: nowrap; color: #28a745;">+ Points Earned</td>
-                                        <td class="text-end" style="white-space: nowrap; color: #28a745;">+@addScore (@addedScoreValue.ToString("N0") VND)</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    <div class="text-center mt-4">
-                        <a href="/MyAccount/MainPage?tab=Profile" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 180px;">
-                            <i class="fas fa-arrow-left me-1"></i> Back to Profile
-                        </a>
-                        @if (Model.Booking.Status == MovieTheater.Models.InvoiceStatus.Completed && !Model.Booking.Cancel)
-                        {
-                            <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.Booking.InvoiceId"
-                                  method="post" class="d-inline"
-                                  onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
-                                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                                <button type="submit" class="btn btn-outline-danger fw-bold px-4" style="min-width: 180px;">
-                                    <i class="fas fa-times me-1"></i> Cancel Ticket
-                                </button>
-                            </form>
-                        }
+                    <div class="ticket-header-text">
+                        <h1>Ticket Information</h1>
+                        <p>Booking ID: @ticketId</p>
                     </div>
                 </div>
-                <div class="col-lg-4 col-12 d-flex flex-column align-items-center justify-content-center">
-                    <div class="card border-success w-100 h-100">
-                        <div class="card-header bg-success text-white text-center">
-                            <h6 class="mb-0">🛡️ QR Code for Ticket Info</h6>
-                        </div>
-                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                            <div class="qr-code-container mb-2">
-                                <canvas id="qrcode-staff"></canvas>
+                <span class="ticket-status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "ticket-status-completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "ticket-status-cancelled" : "ticket-status-secondary")">
+                    @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Canceled" : "Not Paid")
+                </span>
+            </div>
+        </div>
+
+        <div class="ticket-grid">
+            <!-- Main Content -->
+            <div class="ticket-main-content">
+                <!-- Movie Information -->
+                <div class="ticket-card-modern">
+                    <div class="ticket-card-header">
+                        <h5 class="ticket-card-title">
+                            <i class="fas fa-film ticket-icon"></i>
+                            <span>Movie & Show Details</span>
+                        </h5>
+                    </div>
+                    <div class="ticket-card-body">
+                        <div class="ticket-info-grid">
+                            <div class="ticket-info-item">
+                                <i class="fas fa-film ticket-info-icon"></i>
+                                <div class="ticket-info-content">
+                                    <p>Movie</p>
+                                    <p>@movieName</p>
+                                </div>
                             </div>
-                            <p class="text-muted small mb-2 text-center">Scan this QR code to quickly access this ticket information</p>
-                            <button id="downloadQRStaff" class="btn btn-outline-success btn-sm download-btn">
-                                <i class="fas fa-download me-1"></i> Download QR
-                            </button>
+                            <div class="ticket-info-item">
+                                <i class="fas fa-calendar ticket-info-icon"></i>
+                                <div class="ticket-info-content">
+                                    <p>Date</p>
+                                    <p>@showDate</p>
+                                </div>
+                            </div>
+                            <div class="ticket-info-item">
+                                <i class="fas fa-clock ticket-info-icon"></i>
+                                <div class="ticket-info-content">
+                                    <p>Time</p>
+                                    <p>@showTime</p>
+                                </div>
+                            </div>
+                            <div class="ticket-info-item">
+                                <i class="fas fa-map-marker-alt ticket-info-icon"></i>
+                                <div class="ticket-info-content">
+                                    <p>Screen</p>
+                                    <p>@screen</p>
+                                </div>
+                            </div>
+                            <div class="ticket-info-item">
+                                <i class="fas fa-star ticket-info-icon"></i>
+                                <div class="ticket-info-content">
+                                    <p>Version</p>
+                                    <p>@version</p>
+                                </div>
+                            </div>
+                            <div class="ticket-info-item">
+                                <i class="fas fa-calendar ticket-info-icon"></i>
+                                <div class="ticket-info-content">
+                                    <p>Booking Time</p>
+                                    <p>@(DateTime.Parse(bookingDate).ToString("dd/MM/yyyy HH:mm"))</p>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Seats -->
+                <div class="ticket-card-modern">
+                    <div class="ticket-card-header">
+                        <h5 class="ticket-card-title">
+                            <i class="fas fa-users ticket-icon"></i>
+                            <span>Seat Information</span>
+                        </h5>
+                    </div>
+                    <div class="ticket-card-body">
+                        <div class="ticket-table-container">
+                            <table class="ticket-table">
+                                <thead>
+                                    <tr>
+                                        <th>Seat</th>
+                                        <th>Type</th>
+                                        <th>Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (seatDetails != null && seatDetails.Any())
+                                    {
+                                        foreach (var seat in seatDetails)
+                                        {
+                                            <tr>
+                                                <td>@seat.SeatName</td>
+                                                <td>
+                                                    <span class="ticket-badge ticket-badge-outline">@seat.SeatType</span>
+                                                </td>
+                                                <td>
+                                                    @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
+                                                    {
+                                                        <div class="ticket-price-item">
+                                                            <span class="ticket-price-discount">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                            <span class="ticket-price-value">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                                        </div>
+                                                    }
+                                                    else if (seat.OriginalPrice.HasValue)
+                                                    {
+                                                        <span class="ticket-price-value">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="ticket-price-value">@seat.Price.ToString("N0") VND</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else if (!string.IsNullOrEmpty(seatString))
+                                    {
+                                        <tr>
+                                            <td colspan="3">@seatString</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food & Drinks -->
+                @if (foodDetails.Any())
+                {
+                    <div class="ticket-card-modern">
+                        <div class="ticket-card-header">
+                            <h5 class="ticket-card-title">
+                                <i class="fas fa-shopping-cart ticket-icon"></i>
+                                <span>Food & Drinks</span>
+                            </h5>
+                        </div>
+                        <div class="ticket-card-body">
+                            <div class="ticket-table-container">
+                                <table class="ticket-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var food in foodDetails)
+                                        {
+                                            <tr>
+                                                <td>@food.Name</td>
+                                                <td>@food.Quantity</td>
+                                                <td>
+                                                    @if (food.OriginalPrice > food.Price)
+                                                    {
+                                                        <div class="ticket-price-item">
+                                                            <span class="ticket-price-discount">@food.OriginalPrice.ToString("N0") VND</span>
+                                                            <span class="ticket-price-value">@food.Price.ToString("N0") VND</span>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="ticket-price-value">@food.Price.ToString("N0") VND</span>
+                                                    }
+                                                </td>
+                                                <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="3">Food Total:</td>
+                                            <td><strong>@totalFoodPrice.ToString("N0") VND</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Price Breakdown -->
+                @if (subtotal > 0)
+                {
+                    <div class="ticket-card-modern">
+                        <div class="ticket-card-header">
+                            <h5 class="ticket-card-title">
+                                <i class="fas fa-gift ticket-icon"></i>
+                                <span>Price Breakdown</span>
+                            </h5>
+                        </div>
+                        <div class="ticket-card-body">
+                            <div class="ticket-price-breakdown">
+                                <div class="ticket-price-item">
+                                    <span class="ticket-price-label">Seat Price</span>
+                                    <span class="ticket-price-value">@subtotal.ToString("N0") VND</span>
+                                </div>
+
+                                @if (rankDiscount > 0)
+                                {
+                                    <div class="ticket-price-item">
+                                        <span class="ticket-price-label">- Rank Discount (@rankDiscountPercent.ToString("0.##")%)</span>
+                                        <span class="ticket-price-discount">-@rankDiscount.ToString("N0") VND</span>
+                                    </div>
+                                }
+
+                                @if (useScore > 0)
+                                {
+                                    <div class="ticket-price-item">
+                                        <span class="ticket-price-label">- Points Used</span>
+                                        <span class="ticket-price-discount">-@useScore (@usedScoreValue.ToString("N0") VND)</span>
+                                    </div>
+                                }
+
+                                @if (totalFoodPrice > 0)
+                                {
+                                    <div class="ticket-price-item">
+                                        <span class="ticket-price-label">+ Food & Drinks</span>
+                                        <span class="ticket-price-addition">+@totalFoodPrice.ToString("N0") VND</span>
+                                    </div>
+                                }
+
+                                @if ((Model.VoucherAmount ?? 0m) > 0)
+                                {
+                                    <div class="ticket-price-item">
+                                        <span class="ticket-price-label">- Voucher</span>
+                                        <span class="ticket-price-discount">-@((Model.VoucherAmount ?? 0m).ToString("N0")) VND</span>
+                                    </div>
+                                }
+
+                                <div class="ticket-price-divider"></div>
+
+                                <div class="ticket-total-section">
+                                    <span class="ticket-total-label">Total Amount</span>
+                                    <span class="ticket-total-value">@runningTotal.ToString("N0") VND</span>
+                                </div>
+
+                                @if (addScore > 0)
+                                {
+                                    <div class="ticket-points-earned">
+                                        <span class="ticket-points-label">+ Points Earned</span>
+                                        <span class="ticket-points-value">+@addScore (@addedScoreValue.ToString("N0") VND)</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Action Buttons -->
+                <div class="ticket-btn-group">
+                    <a href="/MyAccount/MainPage?tab=Profile" class="ticket-btn ticket-btn-primary ticket-btn-full">
+                        <i class="fas fa-arrow-left"></i> Back to Profile
+                    </a>
+                    @if (Model.Booking.Status == MovieTheater.Models.InvoiceStatus.Completed && !Model.Booking.Cancel)
+                    {
+                        <form asp-controller="Ticket" asp-action="Cancel" asp-route-id="@Model.Booking.InvoiceId"
+                              method="post" class="d-inline"
+                              onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                            <button type="submit" class="ticket-btn ticket-btn-outline-danger ticket-btn-full">
+                                <i class="fas fa-times"></i> Cancel Ticket
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="ticket-qr-section">
+                <div class="ticket-qr-card">
+                    <div class="ticket-qr-header">
+                        <h5 class="ticket-qr-title">
+                            <i class="fas fa-qrcode ticket-icon"></i>
+                            <span>QR Code</span>
+                        </h5>
+                        <p class="ticket-qr-subtitle">Scan for ticket information</p>
+                    </div>
+                    <div class="ticket-qr-body">
+                        <div class="ticket-qr-container">
+                            <canvas id="qrcode-staff"></canvas>
+                        </div>
+                        <button id="downloadQRStaff" class="ticket-btn ticket-btn-success ticket-btn-full">
+                            <i class="fas fa-download"></i> Download QR Code
+                        </button>
+                        <p class="ticket-qr-description">Present this QR code at the cinema for quick entry</p>
                     </div>
                 </div>
             </div>
