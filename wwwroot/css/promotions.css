@@ -341,3 +341,113 @@
 .promotion-card:hover::after {
   opacity: 0.3;
 }
+
+/* PROMOTION POPUP (REUSABLE MODAL) */
+.promotion-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+.promotion-modal-overlay.hidden {
+  display: none;
+}
+.promotion-modal {
+  background: #fff;
+  /* Nếu muốn hỗ trợ dark mode, có thể dùng: background: var(--bg-card, #fff); */
+  border-radius: var(--border-radius-lg, 16px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  max-width: 420px;
+  width: 90vw;
+  padding: 0;
+  overflow: hidden;
+  animation: modalShow 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+  position: relative;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid #e0e0e0;
+}
+@keyframes modalShow {
+  from { transform: translateY(40px) scale(0.95); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.promotion-modal-image {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  display: block;
+}
+.promotion-modal-content {
+  padding: var(--spacing-lg, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.promotion-modal-title {
+  font-size: var(--font-size-xl, 1.5rem);
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.25em;
+  text-align: center;
+}
+.promotion-modal-discount {
+  background: var(--danger-gradient, linear-gradient(90deg,#ff5858,#f09819));
+  color: #fff;
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+}
+.promotion-modal-detail {
+  color: #222;
+  font-size: var(--font-size-base, 1rem);
+  line-height: 1.6;
+  font-weight: 600;
+}
+.promotion-modal-time {
+  color: #222;
+  font-size: var(--font-size-sm, 0.95rem);
+  margin-top: 0.5em;
+  font-weight: 600;
+}
+.promotion-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  z-index: 10001;
+  transition: color 0.2s;
+}
+.promotion-modal-close:hover {
+  color: var(--danger, #e53935);
+}
+@media (max-width: 600px) {
+  .promotion-modal {
+    max-width: 98vw;
+    padding: 0;
+  }
+  .promotion-modal-content {
+    padding: var(--spacing-md, 12px);
+  }
+  .promotion-modal-title {
+    font-size: var(--font-size-lg, 1.1rem);
+  }
+}
