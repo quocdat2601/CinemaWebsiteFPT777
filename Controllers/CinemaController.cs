@@ -159,19 +159,88 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Cinema/Disable")]
         [ValidateAntiForgeryToken]
-        public IActionResult Disable(CinemaRoom cinemaRoom)
+        public async Task<IActionResult> Disable(CinemaRoom cinemaRoom, string removedShowIds)
         {
             try
             {
-                // Just disable the room, don't delete anything
-                bool success = _cinemaService.Disable(cinemaRoom);
+                // 1. Get all conflicted shows that will be affected by the disable period
+                var conflictedShows = GetConflictedShows(cinemaRoom);
+                
+                // 2. Automatically refund any invoices in conflicted shows
+                var refundedShows = new List<string>();
+                foreach (var show in conflictedShows)
+                {
+                    var invoices = _movieService.GetInvoicesByMovieShow(show.MovieShowId)
+                        .Where(i => !i.Cancel) // Only refund active invoices
+                        .ToList();
+                    
+                    if (invoices.Any())
+                    {
+                        foreach (var invoice in invoices)
+                        {
+                            var (refundSuccess, refundMessages) = await _ticketService.CancelTicketByAdminAsync(invoice.InvoiceId);
+                            if (refundSuccess)
+                            {
+                                refundedShows.Add($"Show {show.MovieShowId} - {invoice.InvoiceId}");
+                            }
+                        }
+                    }
+                }
+
+                // 3. Delete removed shows with no bookings
+                var deletedShows = new List<int>();
+                var undeletableShows = new List<int>();
+                if (!string.IsNullOrEmpty(removedShowIds))
+                {
+                    var ids = removedShowIds.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)).Select(int.Parse).ToList();
+                    foreach (var id in ids)
+                    {
+                        var show = _movieService.GetMovieShowById(id);
+                        if (show != null && (show.Invoices == null || !show.Invoices.Any(i => !i.Cancel)))
+                        {
+                            _movieService.DeleteMovieShows(id);
+                            deletedShows.Add(id);
+                        }
+                        else
+                        {
+                            undeletableShows.Add(id);
+                        }
+                    }
+                }
+                
+                // 4. Disable the room
+                bool disableSuccess = _cinemaService.Disable(cinemaRoom);
                 _cinemaService.SaveAsync();
-                if (!success)
+                if (!disableSuccess)
                 {
                     TempData["ErrorMessage"] = "Failed to update showroom status.";
                     return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
                 }
-                TempData["ToastMessage"] = "Showroom disabled successfully!";
+                
+                // 5. Feedback
+                var feedbackMessages = new List<string>();
+                if (refundedShows.Count > 0)
+                {
+                    feedbackMessages.Add($"Refunded {refundedShows.Count} ticket(s) from conflicted shows.");
+                }
+                if (undeletableShows.Count > 0)
+                {
+                    feedbackMessages.Add($"Some shows could not be deleted because they have bookings.");
+                }
+                if (deletedShows.Count > 0)
+                {
+                    feedbackMessages.Add($"Deleted {deletedShows.Count} show(s) with no bookings.");
+                }
+                
+                if (feedbackMessages.Any())
+                {
+                    TempData["ToastMessage"] = string.Join(" ", feedbackMessages);
+                }
+                else
+                {
+                    TempData["ToastMessage"] = "Showroom disabled successfully!";
+                }
+                
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
             catch (Exception ex)
@@ -179,6 +248,45 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = $"An error occurred while disabling the showroom: {ex.Message}";
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
             }
+        }
+
+        private List<MovieShow> GetConflictedShows(CinemaRoom cinemaRoom)
+        {
+            if (!cinemaRoom.UnavailableStartDate.HasValue || !cinemaRoom.UnavailableEndDate.HasValue)
+                return new List<MovieShow>();
+
+            var startDate = cinemaRoom.UnavailableStartDate.Value;
+            var endDate = cinemaRoom.UnavailableEndDate.Value;
+            
+            var allShows = _movieService.GetMovieShow()
+                .Where(ms => ms.CinemaRoomId == cinemaRoom.CinemaRoomId)
+                .ToList();
+
+            var conflictedShows = new List<MovieShow>();
+            
+            foreach (var show in allShows)
+            {
+                // Convert DateOnly to DateTime for comparison
+                var showDate = show.ShowDate.ToDateTime(TimeOnly.MinValue);
+                
+                // Check if show date falls within unavailable period
+                if (showDate.Date >= startDate.Date && showDate.Date <= endDate.Date)
+                {
+                    // Check if show time overlaps with unavailable period
+                    if (show.Schedule?.ScheduleTime.HasValue == true)
+                    {
+                        var showStartTime = showDate.Date.Add(show.Schedule.ScheduleTime.Value.ToTimeSpan());
+                        var showEndTime = showStartTime.AddMinutes(show.Movie?.Duration ?? 0);
+                        
+                        if (showStartTime < endDate && showEndTime > startDate)
+                        {
+                            conflictedShows.Add(show);
+                        }
+                    }
+                }
+            }
+            
+            return conflictedShows;
         }
 
         [HttpPost]
@@ -242,7 +350,7 @@ namespace MovieTheater.Controllers
                     versionName = ms.Version?.VersionName ?? "N/A",
                     startTime = ms.Schedule?.ScheduleTime,
                     endTime = ms.Schedule?.ScheduleTime?.AddMinutes(ms.Movie?.Duration ?? 0),
-                    bookingCount = ms.Invoices.Count(i => !i.Cancel)
+                    bookingCount = ms.Invoices.Count()
                 })
                 .OrderBy(s => s.showDate)
                 .ThenBy(s => s.scheduleTime)
@@ -259,7 +367,9 @@ namespace MovieTheater.Controllers
                     invoiceId = i.InvoiceId,
                     accountId = i.AccountId,
                     accountName = i.Account != null ? i.Account.FullName : null,
-                    seat = i.Seat
+                    seat = i.Seat,
+                    status = i.Cancel ? "Cancelled" : "Active",
+                    totalMoney = i.TotalMoney
                 }).ToList();
             return Json(invoices);
         }
@@ -270,6 +380,7 @@ namespace MovieTheater.Controllers
         {
             // Get all non-cancelled invoices for this show
             var invoices = _movieService.GetInvoicesByMovieShow(movieShowId)
+                .Where(i => !i.Cancel) // Only not-cancelled invoices
                 .Select(i => i.InvoiceId)
                 .ToList();
 

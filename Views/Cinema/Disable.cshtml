@@ -22,6 +22,7 @@
 </div>
 <form asp-action="Disable" asp-controller="Cinema" method="post" id="disableRoomForm">
     <input type="hidden" id="movieShowIdsToDelete" name="movieShowIdsToDelete" value="" />
+    <input type="hidden" id="removedShowIds" name="removedShowIds" value="" />
     <div class="row">
         <div class="container mt-3 mb-1 col-md-3">
             <input type="hidden" id="cinemaRoomId" name="cinemaRoomId" value="@Model.CinemaRoomId" />
@@ -300,7 +301,9 @@
                         if (show.bookingCount > 0) {
                             html += ' <button type="button" class="btn btn-sm btn-warning ms-2 view-books-btn" data-movieshowid="' + show.movieShowId + '" data-accountid="' + show.accountId + '">View Books</button>';
                         } else {
-                            html += ' <span class="badge bg-secondary ms-2" data-movieshowid="' + show.movieShowId + '">No Book</span>';                        }
+                            html += ' <span class="badge bg-secondary ms-2" data-movieshowid="' + show.movieShowId + '">No Book</span>';
+                            html += ' <button type="button" class="btn btn-outline-danger btn-sm ms-2 remove-show-btn" data-movieshowid="' + show.movieShowId + '">Remove</button>';
+                        }
                         html += '</div>';
                     });
                     html += '</div>';
@@ -338,8 +341,14 @@
                         html += '<li class="list-group-item">No bookings found.</li>';
                     } else {
                         data.forEach(function(inv) {
+                            var statusClass = inv.status === 'Cancelled' ? 'text-danger' : 'text-success';
+                            var statusIcon = inv.status === 'Cancelled' ? '<i class="fas fa-times-circle"></i>' : '<i class="fas fa-check-circle"></i>';
                             html += '<li class="list-group-item">';
                             html += 'Ticket ID: ' + inv.invoiceId + ' | Account: ' + (inv.accountName || inv.accountId) + ' | Seats: ' + inv.seat;
+                            html += ' <span class="' + statusClass + '">' + statusIcon + ' ' + inv.status + '</span>';
+                            if (inv.status === 'Cancelled' && inv.totalMoney > 0) {
+                                html += ' <small class="text-muted">(Refund voucher created)</small>';
+                            }
                             html += '</li>';
                         });
                     }
@@ -347,6 +356,25 @@
                     $('#booksModalBody').html(html);
                     $('#booksModal').modal('show');
                 });
+            });
+
+            // Remove show from conflictedShows UI
+            $(document).on('click', '.remove-show-btn', function(e) {
+                e.preventDefault();
+                var movieShowId = $(this).data('movieshowid');
+                // Remove from detailedShows array
+                detailedShows = detailedShows.filter(function(show) {
+                    return show.movieShowId != movieShowId;
+                });
+                // Track removed show IDs
+                var removedIds = $('#removedShowIds').val();
+                var removedArr = removedIds ? removedIds.split(',').filter(Boolean) : [];
+                if (!removedArr.includes(String(movieShowId))) {
+                    removedArr.push(String(movieShowId));
+                }
+                $('#removedShowIds').val(removedArr.join(','));
+                // Re-check for conflicts and re-render
+                checkForConflicts();
             });
 
             function getDisableForm() {
@@ -405,31 +433,15 @@
             });
 
             $('#confirmDisableBtn').on('click', function() {
-                var movieShowInvoices = [];
-                
-                // Collect IDs of shows with no bookings
-                $('#conflictedShows .badge.bg-secondary').each(function(index) {
-                    var id = $(this).data('movieshowid');
-                    if (id) {
-                        movieShowInvoices.push({ movieShowId: id });
-                    }
-                });
-                
-                let refundPromises = movieShowInvoices.map(function(item) {
-                    return $.post('/Cinema/RefundByMovieShow', { movieShowId: item.movieShowId });
-                });
-
-                Promise.all(refundPromises).then(function(results) {
-                    confirmInProgress = true;
-                    $('#confirmDisableModal').modal('hide');
-                    var form = getDisableForm();
-                    form.off('submit'); // Detach handler
-                    if (form.length > 0 && form[0]) {
-                        form[0].submit();   // Native submit
-                    } else {
-                        alert('Form not found. Please reload the page and try again.');
-                    }
-                });
+                confirmInProgress = true;
+                $('#confirmDisableModal').modal('hide');
+                var form = getDisableForm();
+                form.off('submit'); // Detach handler
+                if (form.length > 0 && form[0]) {
+                    form[0].submit();   // Native submit
+                } else {
+                    alert('Form not found. Please reload the page and try again.');
+                }
             });
 
             $('#confirmNoBookDisableBtn').on('click', function() {

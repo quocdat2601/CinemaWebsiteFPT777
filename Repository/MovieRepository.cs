@@ -390,7 +390,7 @@ namespace MovieTheater.Repository
         public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId)
         {
             return _context.Invoices
-                .Where(i => i.MovieShowId == movieShowId && !i.Cancel)
+                .Where(i => i.MovieShowId == movieShowId)
                 .ToList();
         }
 
