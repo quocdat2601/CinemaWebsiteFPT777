@@ -370,7 +370,12 @@
                                     <p class="promotion-description">@promo.Detail</p>
                                     
                                     <div class="promotion-actions">
-                                        <button class="btn-learn-more">
+                                        <button class="btn-learn-more"
+                                            data-image="@promo.Image"
+                                            data-title="@promo.Title"
+                                            data-discount="@promo.DiscountLevel%"
+                                            data-detail="@promo.Detail"
+                                            data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
                                             <i class="fas fa-info-circle"></i>
                                             <span>Learn More</span>
                                         </button>
@@ -959,3 +964,48 @@
         </div>
     </div>
 </div>
+
+<!-- Promotion Modal (Reusable) -->
+<div class="promotion-modal-overlay hidden" id="promotionModalOverlay">
+  <div class="promotion-modal">
+    <button class="promotion-modal-close" id="promotionModalClose" aria-label="Close">&times;</button>
+    <img class="promotion-modal-image" id="promotionModalImage" src="" alt="Promotion Image" />
+    <div class="promotion-modal-content">
+      <div class="promotion-modal-title" id="promotionModalTitle">Tên khuyến mãi</div>
+      <div class="promotion-modal-discount" id="promotionModalDiscount">Giảm giá 50%</div>
+      <div class="promotion-modal-detail" id="promotionModalDetail">Mô tả chi tiết khuyến mãi...</div>
+      <div class="promotion-modal-time" id="promotionModalTime">01/06/2024 - 30/06/2024</div>
+    </div>
+  </div>
+</div>
+<script>
+// Hàm mở popup với dữ liệu động
+function openPromotionModal({ image, title, discount, detail, time }) {
+  document.getElementById('promotionModalImage').src = image;
+  document.getElementById('promotionModalTitle').textContent = title;
+  document.getElementById('promotionModalDiscount').textContent = discount;
+  document.getElementById('promotionModalDetail').textContent = detail;
+  document.getElementById('promotionModalTime').textContent = time;
+  document.getElementById('promotionModalOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closePromotionModal() {
+  document.getElementById('promotionModalOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.getElementById('promotionModalClose').onclick = closePromotionModal;
+document.getElementById('promotionModalOverlay').onclick = function(e) {
+  if (e.target === this) closePromotionModal();
+};
+document.querySelectorAll('.btn-learn-more').forEach(btn => {
+  btn.addEventListener('click', function() {
+    openPromotionModal({
+      image: btn.dataset.image || '',
+      title: btn.dataset.title || '',
+      discount: btn.dataset.discount || '',
+      detail: btn.dataset.detail || '',
+      time: btn.dataset.time || ''
+    });
+  });
+});
+</script>
