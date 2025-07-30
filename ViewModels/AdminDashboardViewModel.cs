@@ -28,10 +28,13 @@ namespace MovieTheater.ViewModels
         public List<RecentMemberInfo> RecentMembers { get; set; }
 
         public decimal OccupancyRateToday { get; set; }    // from 0 to 100
-        public decimal GrossRevenue { get; set; }
-        public decimal NetRevenue { get; set; }
-        public decimal TotalVouchersIssued { get; set; }  // Total vouchers issued (all time)
-        public decimal VouchersToday { get; set; }  // Today's vouchers issued
+        
+        // Movie Analytics - Three Bucket Pattern
+        public decimal GrossRevenue { get; set; }           // Gross revenue (valid + cancelled)
+        public decimal NetRevenue { get; set; }             // Net revenue (gross - vouchers)
+        public decimal TotalVouchersIssued { get; set; }    // Total vouchers issued (all time)
+        public decimal VouchersToday { get; set; }          // Today's vouchers issued
+        public decimal NetRevenueToday { get; set; }        // Today's net revenue
 
         // Food analytics for dashboard food stat tab
         public FoodAnalyticsViewModel FoodAnalytics { get; set; }

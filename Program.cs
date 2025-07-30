@@ -131,6 +131,7 @@ namespace MovieTheater
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddScoped<IVersionRepository, VersionRepository>();
             builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+            builder.Services.AddScoped<IDashboardService, DashboardService>();
 
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")

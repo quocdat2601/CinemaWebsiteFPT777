@@ -33,13 +33,26 @@
         </div>
     </div>
 
+    <div class="dashboard-range-switch mb-3">
+        <form method="get" asp-action="MainPage" class="d-inline">
+            <input type="hidden" name="tab" value="Dashboard" />
+            <input type="hidden" name="range" value="weekly" />
+            <button type="submit" class="btn @(ViewData["DashboardRange"] as string == "weekly" ? "btn-primary" : "btn-outline-primary")">Weekly</button>
+        </form>
+        <form method="get" asp-action="MainPage" class="d-inline ms-2">
+            <input type="hidden" name="tab" value="Dashboard" />
+            <input type="hidden" name="range" value="monthly" />
+            <button type="submit" class="btn @(ViewData["DashboardRange"] as string == "monthly" ? "btn-primary" : "btn-outline-primary")">Monthly</button>
+        </form>
+    </div>
+
     <div id="movie-dashboard">
         <!-- Row 1: Core KPIs (4 cards in one row) -->
         <div class="row mb-4">
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-gradient-primary h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-cash-coin"></i> Gross Revenue</h5>
+                        <h5><i class="bi bi-cash-coin"></i> Gross Ticket Sales</h5>
                         <p class="display-6">@Model.GrossRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
                         <p class="small-stat">
                             Today: @Model.RevenueToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ
@@ -61,10 +74,10 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-gradient-success h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-currency-dollar"></i> Net Revenue</h5>
+                        <h5><i class="bi bi-currency-dollar"></i> Net Ticket Revenue</h5>
                         <p class="display-6">@Model.NetRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
                         <p class="small-stat">
-                            Today: @((Model.RevenueToday - (Model.MovieAnalytics?.RecentCancellations?.Where(c => c.ActivityDate.Date == DateTime.Today)?.Sum(c => c.TotalAmount) ?? 0m)).ToString("#,##0", new System.Globalization.CultureInfo("vi-VN"))) đ
+                            Today: @Model.NetRevenueToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ
                         </p>
                     </div>
                 </div>
@@ -72,7 +85,7 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-warning h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-calendar-check"></i> Bookings</h5>
+                        <h5><i class="bi bi-calendar-check"></i> Total Bookings</h5>
                         <p class="display-6">@Model.TotalBookings</p>
                         <p class="small-stat">
                             Today: @Model.BookingsToday
@@ -87,7 +100,7 @@
             <div class="col-md-8">
                 <div class="card shadow h-100">
                     <div class="card-body p-3">
-                        <h5><i class="bi bi-bar-chart-line"></i> Revenue, Vouchers & Bookings (Last 7 days)</h5>
+                        <h5><i class="bi bi-bar-chart-line"></i> Revenue, Vouchers & Bookings (Last @(ViewData["DashboardRange"] as string == "monthly" ? "30" : "7") days)</h5>
                         <canvas id="movieComboChart" class="dashboard-chart-canvas"></canvas>
                     </div>
                 </div>
@@ -272,7 +285,7 @@
             <div class="col-md-8">
                 <div class="card shadow h-100">
                     <div class="card-body">
-                        <h5><i class="bi bi-bar-chart-line"></i> Revenue & Orders (Last 7 days)</h5>
+                        <h5><i class="bi bi-bar-chart-line"></i> Revenue & Orders (Last @(ViewData["DashboardRange"] as string == "monthly" ? "30" : "7") days)</h5>
                         <canvas id="foodComboChart" class="dashboard-chart-canvas"></canvas>
                     </div>
                 </div>
@@ -428,7 +441,7 @@
             const topMoviesData = data.TopMovies || [];
             const topMembersData = data.TopMembers || [];
 
-            // Combined chart for movie stats
+            // Combined chart for movie stats - Three Bucket Pattern
             const comboCanvas = document.getElementById('movieComboChart');
             if (comboCanvas && revenueLabels.length && bookingLabels.length) {
                 window.movieComboChartObj = createResponsiveChart(comboCanvas, {
@@ -442,7 +455,7 @@
                         datasets: [
                             {
                                 type: 'bar',
-                                label: 'Gross Revenue',
+                                label: 'Gross Seat Revenue',
                                 data: revenueData,
                                 backgroundColor: '#FFD700',
                                 yAxisID: 'y',
@@ -458,7 +471,7 @@
                             },
                             {
                                 type: 'bar',
-                                label: 'Net Revenue',
+                                label: 'Net Seat Revenue',
                                 data: revenueData.map((rev, i) => rev - (voucherData[i] || 0)),
                                 backgroundColor: '#28a745',
                                 yAxisID: 'y',
