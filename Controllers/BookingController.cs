@@ -402,9 +402,87 @@ namespace MovieTheater.Controllers
 
             var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            decimal totalSeatPrice = (invoice.TotalMoney ?? 0) - totalFoodPrice;
-            if (totalSeatPrice < 0) totalSeatPrice = 0; 
-            decimal totalAmount = totalSeatPrice + totalFoodPrice;
+
+            // Lấy promotion discount percent từ invoice
+            int promotionDiscount = 0;
+            if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+            {
+                try
+                {
+                    var promoObj = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                    promotionDiscount = (int)(promoObj.seat ?? 0);
+                }
+                catch { promotionDiscount = 0; }
+            }
+
+            // Lấy version multiplier
+            decimal versionMulti = 1;
+            if (invoice.MovieShow?.Version != null)
+            {
+                versionMulti = (decimal)invoice.MovieShow.Version.Multi;
+            }
+
+            // Tính lại giá seat sau giảm (rank, voucher, points, promotion, version)
+            var scheduleSeats = invoice.ScheduleSeats?.ToList() ?? new List<ScheduleSeat>();
+            decimal subtotal = 0;
+            if (scheduleSeats.Count == 0 && !string.IsNullOrEmpty(invoice.SeatIds))
+            {
+                var seatIds = invoice.SeatIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(id => int.Parse(id.Trim()))
+                    .ToList();
+                foreach (var seatId in seatIds)
+                {
+                    var seat = _seatService.GetSeatById(seatId);
+                    if (seat != null && seat.SeatTypeId.HasValue)
+                    {
+                        var seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
+                        decimal basePrice = (seatType?.PricePercent ?? 0) * versionMulti;
+                        if (promotionDiscount > 0)
+                        {
+                            decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
+                            basePrice -= discount;
+                        }
+                        subtotal += basePrice;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var ss in scheduleSeats)
+                {
+                    if (ss.SeatId.HasValue)
+                    {
+                        var seat = _seatService.GetSeatById(ss.SeatId.Value);
+                        if (seat != null && seat.SeatTypeId.HasValue)
+                        {
+                            var seatType = _seatTypeService.GetById(seat.SeatTypeId.Value);
+                            decimal basePrice = (seatType?.PricePercent ?? 0) * versionMulti;
+                            if (promotionDiscount > 0)
+                            {
+                                decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
+                                basePrice -= discount;
+                            }
+                            subtotal += basePrice;
+                        }
+                    }
+                }
+            }
+            decimal rankDiscountPercent = invoice.RankDiscountPercentage ?? 0;
+            decimal rankDiscount = subtotal * (rankDiscountPercent / 100m);
+            decimal voucherAmount = 0;
+            if (!string.IsNullOrEmpty(invoice.VoucherId))
+            {
+                var voucher = _voucherService.GetById(invoice.VoucherId);
+                if (voucher != null)
+                {
+                    voucherAmount = voucher.Value;
+                }
+            }
+            int usedScore = invoice.UseScore ?? 0;
+            decimal usedScoreValue = usedScore * 1000;
+            decimal seatAfterDiscounts = subtotal - rankDiscount - voucherAmount - usedScoreValue;
+            if (seatAfterDiscounts < 0) seatAfterDiscounts = 0;
+            decimal totalAmount = seatAfterDiscounts + totalFoodPrice;
 
             var sanitizedMovieName = Regex.Replace(invoice.MovieShow.Movie.MovieNameEnglish, @"[^a-zA-Z0-9\s]", "");
             var viewModel = new PaymentViewModel
@@ -418,7 +496,11 @@ namespace MovieTheater.Controllers
                 OrderInfo = $"Payment for movie ticket {sanitizedMovieName} - {invoice.Seat.Replace(",", " ")}",
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice,
-                TotalSeatPrice = totalSeatPrice
+                TotalSeatPrice = seatAfterDiscounts,
+                Subtotal = subtotal,
+                RankDiscount = rankDiscount,
+                VoucherAmount = voucherAmount,
+                UsedScoreValue = usedScoreValue
             };
 
             return View("Payment", viewModel);

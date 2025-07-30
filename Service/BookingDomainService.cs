@@ -302,7 +302,12 @@ namespace MovieTheater.Service
             string promotionDiscountJson = JsonConvert.SerializeObject(promotionDiscountObj);
             // Tính lại tổng food sau giảm
             decimal totalFoodDiscounted = model.SelectedFoods?.Sum(f => f.Price * f.Quantity) ?? 0;
-            decimal finalTotalPrice = priceResult.SeatTotalAfterDiscounts + totalFoodDiscounted;
+            // SỬA: Tính TotalMoney theo đúng logic như trang Success và Details
+            decimal seatSubtotal = priceResult.Subtotal;
+            decimal seatAfterRank = seatSubtotal - priceResult.RankDiscount;
+            decimal seatAfterPoints = seatAfterRank - priceResult.UseScoreValue;
+            decimal seatAndFoodTotal = seatAfterPoints + totalFoodDiscounted;
+            decimal finalTotalPrice = seatAndFoodTotal - model.VoucherAmount;
             if (finalTotalPrice < 0) finalTotalPrice = 0;
             var invoice = new Invoice
             {
@@ -492,9 +497,13 @@ namespace MovieTheater.Service
             int addScore = invoice.AddScore ?? 0;
             decimal addScoreValue = addScore * 1000;
             decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
-            decimal totalPrice = subtotal - rankDiscount - voucherAmount - usedScoreValue;
-            if (totalPrice < 0) totalPrice = 0;
-            decimal grandTotal = totalPrice + totalFoodPrice;
+            // SỬA: Tính toán theo đúng logic như trang Success và Details
+            decimal seatSubtotal = subtotal;
+            decimal seatAfterRank = seatSubtotal - rankDiscount;
+            decimal seatAfterPoints = seatAfterRank - usedScoreValue;
+            decimal seatAndFoodTotal = seatAfterPoints + totalFoodPrice;
+            decimal grandTotal = seatAndFoodTotal - voucherAmount;
+            if (grandTotal < 0) grandTotal = 0;
 
             var bookingDetails = new ConfirmBookingViewModel
             {

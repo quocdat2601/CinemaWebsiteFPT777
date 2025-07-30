@@ -727,3 +727,24 @@ body::before {
     background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
     color: #fff;
 }
+
+.voucher-section {
+    background: linear-gradient(135deg, #fffbe6 0%, #ffe082 100%);
+    border: 1px solid #ffd54f;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #b28704;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.08);
+}
+.promotion-badge {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ffb199 100%);
+    color: #fff;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    display: inline-block;
+}
