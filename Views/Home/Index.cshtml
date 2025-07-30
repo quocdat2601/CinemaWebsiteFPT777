@@ -107,6 +107,10 @@
                     @(string.Join(", ", directorNames))
                 </div>
             </div>
+
+            <button type="button" class="book-now-btn" id="hero-book-now-btn" aria-label="Book tickets for current movie">
+                <span>Book Now</span>
+            </button>
         </div>
     </div>
 
@@ -187,7 +191,7 @@
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
                                 <div class="hover-overlay"></div>
-                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster">
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge">HD</div>
                             </div>
 
@@ -226,13 +230,15 @@
                                 </div>
 
                                 <div class="movie-actions-container">
-                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl" aria-label="Watch trailer for @movie.MovieNameEnglish">
                                         <i class="fas fa-play"></i>
                                         <span class="btn-text">Trailer</span>
                                     </button>
                                     <button class="action-btn action-btn-primary"
                                             data-movie-id="@movie.MovieId"
-                                            data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))">
+                                            data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))"
+                                            data-movie-logo="@movie.LogoImage"
+                                            aria-label="Book tickets for @movie.MovieNameEnglish">
                                         <i class="fas fa-ticket-alt"></i>
                                         <span class="btn-text">Book</span>
                                     </button>
@@ -269,7 +275,7 @@
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
                                 <div class="hover-overlay"></div>
-                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster">
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge coming-soon-badge">Soon</div>
                             </div>
 
@@ -308,7 +314,7 @@
                                 </div>
 
                                 <div class="movie-actions-container">
-                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl" aria-label="Watch trailer for @movie.MovieNameEnglish">
                                         <i class="fas fa-play"></i>
                                         <span class="btn-text">Trailer</span>
                                     </button>
@@ -364,7 +370,12 @@
                                     <p class="promotion-description">@promo.Detail</p>
                                     
                                     <div class="promotion-actions">
-                                        <button class="btn-learn-more">
+                                        <button class="btn-learn-more"
+                                            data-image="@promo.Image"
+                                            data-title="@promo.Title"
+                                            data-discount="@promo.DiscountLevel%"
+                                            data-detail="@promo.Detail"
+                                            data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
                                             <i class="fas fa-info-circle"></i>
                                             <span>Learn More</span>
                                         </button>
@@ -390,7 +401,7 @@
     </div>
 </section>
 <!-- Modal for Trailer -->
-<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="background:#181a20;">
             <div class="modal-header border-0">
@@ -404,62 +415,51 @@
     </div>
 </div>
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
-    <script src="/js/app.js"></script>
-    <script src="/js/hero-section.js"></script>
-    <!-- Removed unused JS files -->
-    <script src="/js/promotions.js"></script>
-    <script src="/js/booking-modal.js"></script>
-    <script src="/js/trailer-modal.js"></script>
-    <script src="~/js/movie-sections.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js" defer></script>
+    <script src="/js/app.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/hero-section.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/promotions.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/trailer-modal.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="~/js/movie-sections.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/home-page.js?v=@DateTime.Now.Ticks" defer></script>
+    
+
 
     <script>
+        // Disable console.log in production and development for cleaner console
+        console.log = function() {};
+        console.warn = function() {};
+        console.info = function() {};
+        // Keep console.error for actual error handling
+        
         // Global variables
         window.movieShowsCache = new Map(); // Cache for movie shows
         window.currentMovieShows = [];
-        window.availableDates = new Set();
-
-
-
-        // Initialize all functions before DOMContentLoaded
-        window.initializeBooking = function() {
-            // Initialize modal event listeners
-            const bookingModal = document.getElementById('addBookingModal');
-            if (bookingModal) {
-                bookingModal.addEventListener('shown.bs.modal', function () {
-                    // Focus on date select when modal opens
-                    const dateSelect = document.getElementById('dateSelect');
-                    if (dateSelect) {
-                        dateSelect.focus();
-                    }
-                });
-            }
-        };
 
 
 
         // Function to open booking modal for selected movie
-        window.openBookingModal = function(movieId, movieName) {
-            console.log('Opening booking modal for movie ID:', movieId);
-
+        window.openBookingModal = function(movieId, movieName, movieLogo) {
             // Set the movie ID in the hidden input
             const movieIdInput = document.getElementById('movieId');
             if (movieIdInput) {
                 movieIdInput.value = movieId;
-                console.log('Movie ID set in input:', movieIdInput.value);
             }
 
-            // Update modal title with movie name
-            const modalTitle = document.getElementById('addBookingModalLabel');
-            if (modalTitle && movieName) {
-                modalTitle.innerHTML = `<i class="fas fa-ticket-alt me-2"></i>Book Tickets for "${movieName}"`;
-            }
-
-            // Update the movie name in the modal body
-            const movieNameElem = document.getElementById('selectedMovieName');
+            // Update the movie name in the summary
+            const movieNameElem = document.getElementById('summaryMovieName');
             if (movieNameElem && movieName) {
                 movieNameElem.textContent = movieName;
+            }
+
+            // Update the movie logo
+            const movieLogoElem = document.getElementById('selectedMovieLogo');
+            if (movieLogoElem && movieLogo) {
+                movieLogoElem.src = movieLogo;
+                movieLogoElem.style.display = 'block';
+            } else if (movieLogoElem) {
+                movieLogoElem.style.display = 'none';
             }
 
             // Reset form selections
@@ -480,17 +480,17 @@
                 timeSelect.disabled = true;
             }
 
+            // Reset summary
+            resetBookingSummary();
+
             // Load movie shows for this specific movie
             window.loadMovieShowsForMovie(movieId, movieName);
         };
 
         // Function to load movie shows for a specific movie
         window.loadMovieShowsForMovie = function(movieId, movieName) {
-            console.log('Loading movie shows for movie ID:', movieId);
-
             // Check if we already have this movie's shows cached
             if (window.movieShowsCache.has(movieId)) {
-                console.log('Using cached movie shows for movie ID:', movieId);
                 window.currentMovieShows = window.movieShowsCache.get(movieId);
                 window.populateDateDropdown();
                 window.showBookingModal();
@@ -505,31 +505,30 @@
                     }
                     return response.json();
                 })
-                .then(data => {
-                    console.log('Received movie shows data:', data);
-                    
-                    // Filter shows for this specific movie and exclude disabled rooms
-                    const filteredShows = data.filter(show => 
-                        show.movieId == movieId && show.CinemaRoomStatus !== 3
-                    );
-                    
-                    console.log('Filtered shows for movie', movieId, ':', filteredShows);
-                    
-                    // Cache the filtered results for this movie
-                    window.movieShowsCache.set(movieId, filteredShows);
-                    window.currentMovieShows = filteredShows;
-                    
-                    if (filteredShows.length === 0) {
-                        alert('No available showtimes for this movie at the moment.');
-                        return;
-                    }
-                    
+                .then(shows => {
+                    // Cache the results
+                    window.movieShowsCache.set(movieId, shows);
+                    window.currentMovieShows = shows;
                     window.populateDateDropdown();
                     window.showBookingModal();
                 })
                 .catch(error => {
                     console.error('Error loading movie shows:', error);
-                    alert('Error loading movie shows. Please try again.');
+                    // Show error state
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.innerHTML = '<option value="">Error loading dates</option>';
+                        dateSelect.disabled = true;
+                    }
+                    
+                    // Show user-friendly error message
+                    const modalBody = document.querySelector('#addBookingModal .modal-body');
+                    if (modalBody) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'alert alert-danger mt-3';
+                        errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Unable to load showtimes. Please try again later.';
+                        modalBody.appendChild(errorDiv);
+                    }
                 });
         };
 
@@ -567,28 +566,25 @@
             if (dateSelect.options.length > 1) {
                 dateSelect.disabled = false;
             }
+            
+            // Reset step status when loading new movie
+            resetModalState();
         };
 
         // Populate version dropdown
         window.updateVersions = function() {
             const date = document.getElementById('dateSelect').value;
             const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            
             versionSelect.innerHTML = '<option value="">— Select Version —</option>';
             versionSelect.disabled = true;
-            document.getElementById('timeSelect').innerHTML = '<option value="">— Select Time —</option>';
-            document.getElementById('timeSelect').disabled = true;
+            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
+            timeSelect.disabled = true;
+            
             if (!date) return;
             
-            // Convert selected date back to DateOnly format for comparison
-            const selectedDate = new Date(date);
-            const selectedDateOnly = selectedDate.toISOString().split('T')[0];
-            
-            // Filter shows for the selected date
-            const filtered = window.currentMovieShows.filter(show => {
-                const showDateOnly = new Date(show.ShowDate).toISOString().split('T')[0];
-                return showDateOnly === selectedDateOnly;
-            });
-            
+            const filtered = window.currentMovieShows.filter(show => show.showDate === date);
             // Use a Map to ensure unique versionId-versionName pairs
             const versionMap = new Map();
             filtered.forEach(show => {
@@ -596,13 +592,23 @@
                     versionMap.set(show.VersionId, show.VersionName);
                 }
             });
+            
             versionMap.forEach((name, id) => {
                 const option = document.createElement('option');
                 option.value = id;
                 option.textContent = name;
                 versionSelect.appendChild(option);
             });
+            
             versionSelect.disabled = false;
+            
+            // Update step status
+            updateStepStatus(1, true);
+            updateStepStatus(2, false);
+            updateStepStatus(3, false);
+            
+            // Update booking summary
+            updateBookingSummary();
         }
 
         // Populate time dropdown
@@ -610,20 +616,13 @@
             const date = document.getElementById('dateSelect').value;
             const versionId = document.getElementById('versionSelect').value;
             const timeSelect = document.getElementById('timeSelect');
+            
             timeSelect.innerHTML = '<option value="">— Select Time —</option>';
             timeSelect.disabled = true;
+            
             if (!date || !versionId) return;
             
-            // Convert selected date back to DateOnly format for comparison
-            const selectedDate = new Date(date);
-            const selectedDateOnly = selectedDate.toISOString().split('T')[0];
-            
-            // Filter shows for the selected date and version
-            const filtered = window.currentMovieShows.filter(show => {
-                const showDateOnly = new Date(show.ShowDate).toISOString().split('T')[0];
-                return showDateOnly === selectedDateOnly && String(show.VersionId) === String(versionId);
-            });
-            
+            const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
             // Use a Set to ensure unique times
             const timeSet = new Set();
             filtered.forEach(show => {
@@ -635,7 +634,15 @@
                     timeSet.add(show.ScheduleTime);
                 }
             });
+            
             timeSelect.disabled = false;
+            
+            // Update step status
+            updateStepStatus(2, true);
+            updateStepStatus(3, false);
+            
+            // Update booking summary
+            updateBookingSummary();
         }
 
         window.continueToSeats = function() {
@@ -645,21 +652,193 @@
             const time = document.getElementById('timeSelect').value;
 
             if (!movieId || !date || !versionId || !time) {
-                alert('Please select all options');
+                // Show error message in modal instead of alert
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'step-helper error';
+                errorMessage.textContent = 'Please complete all selections before continuing';
+                
+                // Remove any existing error messages
+                const existingError = document.querySelector('.step-helper.error');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // Add error message after the button
+                const bookBtn = document.getElementById('bookBtn');
+                bookBtn.parentNode.insertBefore(errorMessage, bookBtn.nextSibling);
+                
+                // Remove error message after 3 seconds
+                setTimeout(() => {
+                    if (errorMessage.parentNode) {
+                        errorMessage.remove();
+                    }
+                }, 3000);
+                
                 return;
             }
 
             const [year, month, day] = date.split('-');
             const formattedDate = `${day}/${month}/${year}`;
 
+            // Show loading state
+            const bookBtn = document.getElementById('bookBtn');
+            const originalText = bookBtn.innerHTML;
+            bookBtn.innerHTML = '<span>Loading...</span> <i class="fas fa-spinner fa-spin"></i>';
+            bookBtn.disabled = true;
+
+            // Redirect to seat selection
             window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${encodeURIComponent(versionId)}&time=${encodeURIComponent(time)}`;
         }
 
         // Function to show the booking modal
         window.showBookingModal = function() {
-            const bookingModal = new bootstrap.Modal(document.getElementById('addBookingModal'));
-            bookingModal.show();
+            const modalElement = document.getElementById('addBookingModal');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                const bookingModal = new bootstrap.Modal(modalElement);
+                bookingModal.show();
+                
+                // Reset modal state
+                resetModalState();
+                
+                // Focus management for accessibility
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    const dateSelect = document.getElementById('dateSelect');
+                    if (dateSelect) {
+                        dateSelect.focus();
+                    }
+                });
+            }
         }
+
+        // Function to reset modal state
+        function resetModalState() {
+            // Reset all steps
+            updateStepStatus(1, false);
+            updateStepStatus(2, false);
+            updateStepStatus(3, false);
+            
+            // Set first step as active
+            updateStepStatus(1, true);
+            
+            // Reset progress indicator
+            updateProgressIndicator(1);
+        }
+
+        // Function to update step status
+        function updateStepStatus(stepNumber, isActive) {
+            const stepElement = document.querySelector(`.booking-step[data-step="${stepNumber}"]`);
+            const progressStep = document.querySelector(`.progress-step[data-step="${stepNumber}"]`);
+            
+            if (stepElement) {
+                stepElement.classList.remove('active', 'completed');
+                if (isActive) {
+                    stepElement.classList.add('active');
+                } else if (stepNumber < getCurrentStep()) {
+                    stepElement.classList.add('completed');
+                }
+            }
+            
+            if (progressStep) {
+                progressStep.classList.remove('active', 'completed');
+                if (isActive) {
+                    progressStep.classList.add('active');
+                } else if (stepNumber < getCurrentStep()) {
+                    progressStep.classList.add('completed');
+                }
+            }
+        }
+
+        // Function to get current step
+        function getCurrentStep() {
+            const dateSelect = document.getElementById('dateSelect');
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            
+            if (dateSelect.value && versionSelect.value && timeSelect.value) {
+                return 4; // All steps completed
+            } else if (dateSelect.value && versionSelect.value) {
+                return 3;
+            } else if (dateSelect.value) {
+                return 2;
+            } else {
+                return 1;
+            }
+        }
+
+        // Function to update progress indicator
+        function updateProgressIndicator(currentStep) {
+            const progressSteps = document.querySelectorAll('.progress-step');
+            progressSteps.forEach((step, index) => {
+                const stepNumber = index + 1;
+                step.classList.remove('active', 'completed');
+                
+                if (stepNumber === currentStep) {
+                    step.classList.add('active');
+                } else if (stepNumber < currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+        }
+
+        // Function to reset booking summary
+        function resetBookingSummary() {
+            document.getElementById('summaryDate').textContent = '-';
+            document.getElementById('summaryVersion').textContent = '-';
+            document.getElementById('summaryTime').textContent = '-';
+        }
+
+        // Function to update booking summary
+        function updateBookingSummary() {
+            const dateSelect = document.getElementById('dateSelect');
+            const versionSelect = document.getElementById('versionSelect');
+            const timeSelect = document.getElementById('timeSelect');
+
+            if (dateSelect.value) {
+                const [year, month, day] = dateSelect.value.split('-');
+                document.getElementById('summaryDate').textContent = `${day}/${month}/${year}`;
+            }
+
+            if (versionSelect.value) {
+                const selectedOption = versionSelect.options[versionSelect.selectedIndex];
+                document.getElementById('summaryVersion').textContent = selectedOption.textContent;
+            }
+
+            if (timeSelect.value) {
+                document.getElementById('summaryTime').textContent = timeSelect.value;
+            }
+        }
+
+        // Function to populate date dropdown
+        window.populateDateDropdown = function () {
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
+            dateSelect.disabled = true;
+
+            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // normalize time
+
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+
+            uniqueDates.forEach(dateStr => {
+                const showDate = new Date(dateStr);
+                showDate.setHours(0, 0, 0, 0); // normalize show date
+
+                if (showDate >= today) {
+                    const [year, month, day] = dateStr.split('-');
+                    const displayDate = `${day}/${month}/${year}`;
+                    const option = document.createElement('option');
+                    option.value = dateStr;
+                    option.textContent = displayDate;
+                    dateSelect.appendChild(option);
+                }
+            });
+
+            if (dateSelect.options.length > 1) {
+                dateSelect.disabled = false;
+            }
+        };
 
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function () {
@@ -682,8 +861,25 @@
                 btn.addEventListener('click', function() {
                     const movieId = this.getAttribute('data-movie-id');
                     const movieName = this.getAttribute('data-movie-name');
+                    const movieLogo = this.getAttribute('data-movie-logo');
                     if (movieId && movieName) {
-                        window.openBookingModal(movieId, movieName);
+                        window.openBookingModal(movieId, movieName, movieLogo);
+                    }
+                });
+            });
+
+            // Hero Book Now button event listeners
+            document.querySelectorAll('.book-now-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    // Get current active slide data
+                    const activeSlide = document.querySelector('.hero-swiper .swiper-slide.swiper-slide-active');
+                    if (activeSlide) {
+                        const movieId = activeSlide.getAttribute('data-movie-id');
+                        const movieName = activeSlide.getAttribute('data-movie-name');
+                        const movieLogo = activeSlide.getAttribute('data-movie-logoimage');
+                        if (movieId && movieName) {
+                            window.openBookingModal(movieId, movieName, movieLogo);
+                        }
                     }
                 });
             });
@@ -692,44 +888,157 @@
                 trailerFrame.src = '';
             });
 
-            window.initializeBooking();
+            // Add event listener for time select
+            const timeSelect = document.getElementById('timeSelect');
+            if (timeSelect) {
+                timeSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        updateStepStatus(3, true);
+                        updateProgressIndicator(4); // All steps completed
+                        updateBookingSummary();
+                    }
+                });
+            }
         });
     </script>
 }
 
-<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="text-center me-2" style="color: black; font-weight: bold" id="selectedMovieName"></h3>
+                <h3>Book Your Tickets</h3>
             </div>
             <div class="modal-body">
                 <form id="bookingForm" novalidate>
                     <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
-                    <div class="mb-4 booking-step">
-                        <label for="dateSelect" class="form-label booking-label"><span class="label-icon">🗓️</span> <strong>Date</strong></label>
-                        <select id="dateSelect" class="form-select booking-select" onchange="updateVersions()">
-                            <option value="">— Select Date —</option>
-                            <!-- Dates will be populated by JavaScript -->
-                        </select>
+                    
+                    <!-- Progress Indicator -->
+                    <div class="booking-progress">
+                        <div class="progress-step active" data-step="1"></div>
+                        <div class="progress-step" data-step="2"></div>
+                        <div class="progress-step" data-step="3"></div>
                     </div>
-                    <div class="mb-4 booking-step">
-                        <label for="versionSelect" class="form-label booking-label"><span class="label-icon">🎞️</span> <strong>Version</strong></label>
-                        <select id="versionSelect" class="form-select booking-select" disabled onchange="updateTimes()">
-                            <option value="">— Select Version —</option>
-                        </select>
+                    
+                    <div class="booking-form-container">
+                        <!-- Booking Steps -->
+                        <div class="booking-steps-container">
+                            <div class="booking-step active" data-step="1">
+                                <label for="dateSelect" class="booking-label">
+                                    <span class="label-icon">🗓️</span> 
+                                    <strong>Select Date</strong>
+                                </label>
+                                <select id="dateSelect" class="booking-select" onchange="updateVersions()">
+                                    <option value="">— Select Date —</option>
+                                    <!-- Dates will be populated by JavaScript -->
+                                </select>
+                                <div class="step-helper">Choose the date you want to watch the movie</div>
+                            </div>
+                            
+                            <div class="booking-step" data-step="2">
+                                <label for="versionSelect" class="booking-label">
+                                    <span class="label-icon">🎞️</span> 
+                                    <strong>Select Version</strong>
+                                </label>
+                                <select id="versionSelect" class="booking-select" disabled onchange="updateTimes()">
+                                    <option value="">— Select Version —</option>
+                                </select>
+                                <div class="step-helper">Choose your preferred movie version (2D, 3D, etc.)</div>
+                            </div>
+                            
+                            <div class="booking-step" data-step="3">
+                                <label for="timeSelect" class="booking-label">
+                                    <span class="label-icon">⏰</span> 
+                                    <strong>Select Time</strong>
+                                </label>
+                                <select id="timeSelect" class="booking-select" disabled>
+                                    <option value="">— Select Time —</option>
+                                </select>
+                                <div class="step-helper">Choose your preferred showtime</div>
+                            </div>
+                            
+                            <button type="button" id="bookBtn" class="booking-btn-gradient" onclick="continueToSeats()">
+                                <span>Continue to Seat Selection</span> 
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Booking Summary -->
+                        <div class="booking-summary-container">
+                            <div class="movie-logo-container">
+                                <img id="selectedMovieLogo" class="movie-logo" src="" alt="Movie Logo" style="display: none;">
+                            </div>
+                            
+                            <h4 class="booking-summary-title">Booking Summary</h4>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Movie:</span>
+                                <span class="booking-summary-value" id="summaryMovieName">-</span>
+                            </div>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Date:</span>
+                                <span class="booking-summary-value" id="summaryDate">-</span>
+                            </div>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Version:</span>
+                                <span class="booking-summary-value" id="summaryVersion">-</span>
+                            </div>
+                            
+                            <div class="booking-summary-item">
+                                <span class="booking-summary-label">Time:</span>
+                                <span class="booking-summary-value" id="summaryTime">-</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-4 booking-step">
-                        <label for="timeSelect" class="form-label booking-label"><span class="label-icon">⏰</span> <strong>Time</strong></label>
-                        <select id="timeSelect" class="form-select booking-select" disabled>
-                            <option value="">— Select Time —</option>
-                        </select>
-                    </div>
-                    <button type="button" id="bookBtn" class="btn booking-btn-gradient w-100 mt-2" onclick="continueToSeats()">
-                        <span>Continue to Seat Selection</span> <i class="fas fa-arrow-right ms-2"></i>
-                    </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Promotion Modal (Reusable) -->
+<div class="promotion-modal-overlay hidden" id="promotionModalOverlay">
+  <div class="promotion-modal">
+    <button class="promotion-modal-close" id="promotionModalClose" aria-label="Close">&times;</button>
+    <img class="promotion-modal-image" id="promotionModalImage" src="" alt="Promotion Image" />
+    <div class="promotion-modal-content">
+      <div class="promotion-modal-title" id="promotionModalTitle">Tên khuyến mãi</div>
+      <div class="promotion-modal-discount" id="promotionModalDiscount">Giảm giá 50%</div>
+      <div class="promotion-modal-detail" id="promotionModalDetail">Mô tả chi tiết khuyến mãi...</div>
+      <div class="promotion-modal-time" id="promotionModalTime">01/06/2024 - 30/06/2024</div>
+    </div>
+  </div>
+</div>
+<script>
+// Hàm mở popup với dữ liệu động
+function openPromotionModal({ image, title, discount, detail, time }) {
+  document.getElementById('promotionModalImage').src = image;
+  document.getElementById('promotionModalTitle').textContent = title;
+  document.getElementById('promotionModalDiscount').textContent = discount;
+  document.getElementById('promotionModalDetail').textContent = detail;
+  document.getElementById('promotionModalTime').textContent = time;
+  document.getElementById('promotionModalOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closePromotionModal() {
+  document.getElementById('promotionModalOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.getElementById('promotionModalClose').onclick = closePromotionModal;
+document.getElementById('promotionModalOverlay').onclick = function(e) {
+  if (e.target === this) closePromotionModal();
+};
+document.querySelectorAll('.btn-learn-more').forEach(btn => {
+  btn.addEventListener('click', function() {
+    openPromotionModal({
+      image: btn.dataset.image || '',
+      title: btn.dataset.title || '',
+      discount: btn.dataset.discount || '',
+      detail: btn.dataset.detail || '',
+      time: btn.dataset.time || ''
+    });
+  });
+});
+</script>

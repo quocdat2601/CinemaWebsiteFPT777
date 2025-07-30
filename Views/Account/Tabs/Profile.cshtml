@@ -1,525 +1,746 @@
 ﻿@model MovieTheater.ViewModels.ProfilePageViewModel
 @{
-    ViewData["Title"] = "My Profile";
+    ViewData["Title"] = "Profile";
     var profile = Model.Profile;
     var rank = Model.RankInfo;
-    var highestRank = Model.AllRanks?.OrderByDescending(r => r.RequiredPointsForCurrentRank).FirstOrDefault();
-    bool isMaxRank = (highestRank != null && rank.CurrentRankId == highestRank.CurrentRankId);
-    var currentRankDisplay = Model.AllRanks?.FirstOrDefault(r => r.CurrentRankId == rank.CurrentRankId);
-    var bannerGradient = currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
-    var defaultPoster = Url.Content("~/image/default-movie-poster.jpg");
+    var isMaxRank = Model.AllRanks?.OrderByDescending(r => r.RequiredPointsForCurrentRank).FirstOrDefault()?.CurrentRankId == rank.CurrentRankId;
+    var progressPercentage = isMaxRank ? 100 : Math.Max(0, Math.Min(100, (double)(rank.TotalPoints - rank.RequiredPointsForCurrentRank) / (rank.RequiredPointsForNextRank - rank.RequiredPointsForCurrentRank) * 100));
 }
+
 <link rel="stylesheet" href="~/css/profile-page.css" asp-append-version="true" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<div class="profile-main-container">
-    <div class="profile-2col-container">
-        <div class="profile-2col-left">
-            <div class="mt-0 mb-4" style="text-align:center;">
-                <h3 class="mb-4" style="font-weight:700;color:#1769fa;"><i class="fas fa-user me-2"></i>Profile Information</h3>
-            </div>
-            <div class="profile-modern-card">
-                <form asp-controller="MyAccount" asp-action="EditProfile" method="post" enctype="multipart/form-data" id="profileForm" class="profile-form-modern mt-3">
-                    <div class="profile-banner-modern" id="profileBanner" style="background: @(currentRankDisplay?.ColorGradient ?? rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)"); display: flex; flex-direction: column; align-items: stretch; padding: 2rem 1.5rem 2.5rem 1.5rem;">
-                        <div class="profile-top-row d-flex flex-row align-items-start w-100" style="gap: 0.5rem;">
-                            <div class="profile-banner-avatar-col d-flex flex-column align-items-center position-relative" style="flex:0 0 110px;">
-                                <label for="profileImageInput" style="cursor: pointer; position: relative; display: block;">
-                                    <img id="profileImagePreview" class="profile-avatar-modern profile-avatar-glow" src="@(Model.Profile.Image ?? "/image/profile.jpg")?t=@DateTime.Now.Ticks" alt="Profile Image" />
-                                    <span class="avatar-camera-overlay"><i class="fas fa-camera"></i></span>
-                                </label>
-                                <input type="file" id="profileImageInput" name="Profile.ImageFile" class="d-none" accept="image/*" />
-                                <div id="avatarBtns" class="avatar-upload-btns mt-2 d-flex justify-content-center" style="gap:0.3rem;">
-                                    <button type="button" id="cancelAvatarBtn" class="avatar-btn avatar-btn-outline avatar-btn-xsmall">Cancel</button>
-                                    <button type="submit" id="updateImageBtn" name="action" value="updateImage" class="avatar-btn avatar-btn-primary avatar-btn-xsmall">Update</button>
-                                </div>
-                            </div>
-                            <div class="profile-info-name-badge d-flex flex-column align-items-center justify-content-start flex-grow-1" style="min-width: 120px; max-width: 220px; gap:0.15rem;">
-                                <div class="profile-info-name mb-0" style="font-size:1.5rem; font-weight:700;">@Model.Profile.FullName</div>
-                                <span class="rank-badge d-inline-flex align-items-center mb-0">
-                                    <i class="@(currentRankDisplay?.IconClass ?? rank.IconClass ?? "fa-crown")" style="color: #fff; font-size: 1rem; margin-right: 0.5rem;"></i>
-                                    <span>@rank.CurrentRankName</span>
-                                </span>
-                            </div>
-                            <div class="profile-points-row d-flex flex-row gap-1 align-items-start ms-2" style="min-width: 100px;">
-                                <div class="profile-point-card">
-                                    <div class="profile-point-icon"><i class="fas fa-star"></i></div>
-                                    <div class="profile-point-value">@Model.RankInfo.CurrentScore</div>
-                                    <div class="profile-point-label">Current</div>
-                                </div>
-                                <div class="profile-point-card">
-                                    <div class="profile-point-icon"><i class="fas fa-trophy"></i></div>
-                                    <div class="profile-point-value">@Model.RankInfo.TotalPoints</div>
-                                    <div class="profile-point-label">Total</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="profile-progress-modern w-100" style="max-width: 100%; margin-top: 0.8rem;">
-                            @if (!isMaxRank)
-                            {
-                                var profilePrevRankPoints = rank.RequiredPointsForCurrentRank;
-                                var profileNextRankPoints = rank.RequiredPointsForNextRank;
-                                var profilePointsForThisTier = profileNextRankPoints - profilePrevRankPoints;
-                                var profileUserProgressInTier = rank.TotalPoints - profilePrevRankPoints;
-                                var profileProgressPercentage = (profilePointsForThisTier > 0) ? Math.Max(0, Math.Min(100, (double)profileUserProgressInTier / profilePointsForThisTier * 100)) : (rank.TotalPoints >= profileNextRankPoints ? 100 : 0);
-                                <div class="progress" style="height: 20px; border-radius: 999px;">
-                                    <div class="progress-bar d-flex justify-content-end align-items-center" role="progressbar" style="width: @(profileProgressPercentage.ToString("0.##"))%;">
-                                        <span class="progress-bar-percent no-banner-color" style="font-size:0.98rem; font-weight:600; margin-right:0.5rem;">@profileProgressPercentage.ToString("0")%</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mt-3 w-100" style="max-width: 100%;">
-                                    <span class="profile-next-rank-info" style="font-size:1.01rem; color:#f3f3f3; opacity:0.85;">Next: <b>@rank.NextRankName</b> &mdash; <b>@(profileNextRankPoints - rank.TotalPoints)</b> points needed</span>
-                                    <a href="#" class="profile-view-details-link ms-2" data-bs-toggle="modal" data-bs-target="#rankDetailsModal" style="background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color:#fff; font-weight:600; border-radius:999px; padding:0.3rem 1.2rem 0.3rem 1.1rem; box-shadow:0 1px 4px rgba(0,0,0,0.08);"><span>View Details</span> <i class="fas fa-chevron-right"></i></a>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="progress" style="height: 20px; border-radius: 999px;">
-                                    <div class="progress-bar text-center" role="progressbar" style="width: 100%; align-content:center">Max</div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mt-3 w-100" style="max-width: 100%;">
-                                    <span class="profile-next-rank-info" style="font-size:1.01rem; color:#f3f3f3; opacity:0.85;"><i class="fas fa-crown"></i> Max Rank Achieved!</span>
-                                    <a href="#" class="profile-view-details-link ms-2" data-bs-toggle="modal" data-bs-target="#rankDetailsModal" style="background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color:#fff; font-weight:600; border-radius:999px; padding:0.3rem 1.2rem 0.3rem 1.1rem; box-shadow:0 1px 4px rgba(0,0,0,0.08);"><span>View Details</span> <i class="fas fa-chevron-right"></i></a>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label for="Profile_FullName" class="profile-label">Full Name</label>
-                        <div class="profile-data">
-                            <input asp-for="Profile.FullName" class="form-control" placeholder="Enter Full Name" />
-                            <span asp-validation-for="Profile.FullName" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label for="Profile_DateOfBirth" class="profile-label">Date of Birth</label>
-                        <div class="profile-data">
-                            <input asp-for="Profile.DateOfBirth" type="date" class="form-control" />
-                            <span asp-validation-for="Profile.DateOfBirth" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label class="profile-label">Gender</label>
-                        <div class="profile-data d-flex align-items-center">
-                            <div class="form-check form-check-inline gender-radio">
-                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="male" id="gender-male" />
-                                <label class="form-check-label" for="gender-male">Male</label>
-                            </div>
-                            <div class="form-check form-check-inline gender-radio">
-                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="female" id="gender-female" />
-                                <label class="form-check-label" for="gender-female">Female</label>
-                            </div>
-                            <div class="form-check form-check-inline gender-radio">
-                                <input class="form-check-input" type="radio" asp-for="Profile.Gender" value="unknown" id="gender-unknown" />
-                                <label class="form-check-label" for="gender-unknown">Other</label>
-                            </div>
-                            <span asp-validation-for="Profile.Gender" class="text-danger ms-2"></span>
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label for="Profile_IdentityCard" class="profile-label">Identity Number</label>
-                        <div class="profile-data">
-                            <input asp-for="Profile.IdentityCard" class="form-control" placeholder="Enter Indentity Number" />
-                            <span asp-validation-for="Profile.IdentityCard" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label for="Profile_Email" class="profile-label">Email</label>
-                        <div class="profile-data">
-                            <input asp-for="Profile.Email" class="form-control" readonly placeholder="Your Email" />
-                            <span asp-validation-for="Profile.Email" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label for="Profile_Address" class="profile-label">Address</label>
-                        <div class="profile-data">
-                            <input asp-for="Profile.Address" class="form-control" placeholder="Enter address" />
-                            <span asp-validation-for="Profile.Address" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="form-group profile-form-row">
-                        <label for="Profile_PhoneNumber" class="profile-label">Phone Number</label>
-                        <div class="profile-data">
-                            <input asp-for="Profile.PhoneNumber" class="form-control" placeholder="Enter Phone Number" />
-                            <span asp-validation-for="Profile.PhoneNumber" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        @if (!profile.IsGoogleAccount)
-                        {
-                            <a href="@Url.Action("ChangePassword", "MyAccount")" class="btn btn-secondary px-4 py-2 rounded">Change Password</a>
-                        }
-                        <button type="submit" name="action" value="editProfile" class="btn btn-primary px-4 py-2 rounded">Update</button>
-                    </div>
+
+<div class="cinema-app">
+    <!-- Theater Header -->
+    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");">
+        <div class="screen-glow"></div>
+        <div class="profile-spotlight">
+            <div class="avatar-theater">
+                <div class="spotlight-ring"></div>
+                <img src="@(profile.Image ?? "/image/profile.jpg")" alt="Profile" id="profileAvatar" class="avatar-image">
+                <label for="avatarUpload" class="camera-action">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </label>
+                <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm" style="display: none;">
+                    <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" hidden>
                 </form>
             </div>
-            <partial name="_ToastMessages" />
-        </div>
-        <div class="profile-2col-right">
-            <div class="mt-0 mb-4" style="text-align:center;">
-                <h3 class="mb-4" style="font-weight:700;color:#1769fa;"><i class="fas fa-history me-2"></i>Booking History</h3>
-                <div class="profile-history-filter mb-3 d-flex justify-content-center gap-2">
-                    <button class="btn btn-outline-primary filter-btn active" data-status="all">All</button>
-                    <button class="btn btn-outline-success filter-btn" data-status="booked">Booked</button>
-                    <button class="btn btn-outline-danger filter-btn" data-status="canceled">Canceled</button>
-                </div>
-                <div id="profileHistoryCards">
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-3">Loading booking history...</p>
-                    </div>
-                </div>
-                <nav id="profileHistoryPagination" class="mt-3"></nav>
-            </div>
-        </div>
-    </div>
-    </div>
-<!-- Rank Details Modal -->
-<div class="modal fade" id="rankDetailsModal" tabindex="-1" aria-labelledby="rankDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="rankDetailsModalLabel">Rank Tiers & Benefits</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0">
-                @if (Model.AllRanks != null && Model.AllRanks.Any())
-                {
-                    var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
-                    var currentUserScore = Model.RankInfo.TotalPoints;
-                    var currentUserRankId = Model.RankInfo.CurrentRankId;
 
-                    <div id="rankCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <ol class="carousel-indicators">
-                            @for (int i = 0; i < sortedRanks.Count; i++)
-                            {
-                                var rankDetail = sortedRanks[i];
-                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
-                                <li data-bs-target="#rankCarousel" data-bs-slide-to="@i" class="@activeClass"></li>
-                            }
-                        </ol>
-                        <div class="carousel-inner">
-                            @for (int i = 0; i < sortedRanks.Count; i++)
-                            {
-                                var rankDetail = sortedRanks[i];
-                                var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
-                                var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
-                                var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
-                                var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
-                                var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
-                                var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
-                                var pointsForThisTier = targetRankPoints - prevRankPoints;
-                                double progressPercentage;
-                                if (currentUserScore >= targetRankPoints)
-                                {
-                                    progressPercentage = 100;
-                                }
-                                else if (currentUserScore < prevRankPoints)
-                                {
-                                    progressPercentage = 0;
-                                }
-                                else
-                                {
-                                    var progressRaw = currentUserScore - prevRankPoints;
-                                    progressPercentage = (pointsForThisTier > 0)
-                                    ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
-                                    : 100;
-                                }
-                                <div class="carousel-item @activeClass">
-                                    <div class="rank-card" style="--rank-gradient: @rankGradient;">
-                                        <div class="rank-card-header">
-                                            <i class="@rankIcon" style="color: #333; font-size: 1.25rem; background: #fff; border-radius: 50%; padding: 0.25rem; border: 1px solid #e0e0e0;"></i>
-                                            <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
-                                            <span class="rank-status">@rankStatus</span>
-                                        </div>
-                                        <div class="rank-card-body">
-                                            <div class="rank-progress-wrapper">
-                                                <div class="progress">
-                                                    <div class="progress-bar" role="progressbar"
-                                                         style="width: @progressPercentage.ToString("0.##")%; --progress-width: @progressPercentage.ToString("0.##")%;">
-                                                    </div>
-                                                </div>
-                                                <div class="rank-points">
-                                                    <span>@prevRankPoints.ToString("N0") pts</span>
-                                                    <span>@targetRankPoints.ToString("N0") pts</span>
-                                                </div>
-                                            </div>
-                                            <div class="benefits-section">
-                                                <div class="benefits-header">
-                                                    <i class="fas fa-gift"></i>
-                                                    <span>Benefits:</span>
-                                                </div>
-                                                <div class="benefits-divider"></div>
-                                                <div class="benefits-content">
-                                                    <div class="benefit-item">
-                                                        <i class="fas fa-ticket-alt"></i>
-                                                        <div class="benefit-text">
-                                                            <span class="benefit-label">Discount on Tickets</span>
-                                                            <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="benefit-item">
-                                                        <i class="fas fa-coins"></i>
-                                                        <div class="benefit-text">
-                                                            <span class="benefit-label">Point Earning Rate</span>
-                                                            <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="auto-upgrade">
-                                                <i class="fas fa-sync-alt"></i>
-                                                Auto-upgrade at @targetRankPoints.ToString("N0") pts
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#rankCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#rankCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
+                         <div class="profile-marquee">
+                 <h1 class="name-display">@profile.FullName</h1>
+                 <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
+                     <span class="tier-icon">
+                         @if (!string.IsNullOrEmpty(rank.IconClass))
+                         {
+                             <i class="@rank.IconClass"></i>
+                         }
+                         else
+                         {
+                             <span>★</span>
+                         }
+                     </span>
+                     <span class="tier-name">@rank.CurrentRankName Member</span>
+                     <span class="tier-info-icon">ℹ️</span>
+            </div>
+        </div>
+
+            <div class="cinema-stats">
+                <div class="stat-reel">
+                    <div class="stat-frame">
+                        <div class="stat-number">@rank.CurrentScore</div>
+                        <div class="stat-label">Current Points</div>
                     </div>
+                    <div class="stat-frame">
+                        <div class="stat-number">@rank.TotalPoints</div>
+                        <div class="stat-label">Total Points</div>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Theater -->
+        <div class="progress-theater">
+            <div class="film-strip">
+                <div class="film-progress" style="width: @(progressPercentage)%; background: @(rank.ColorGradient ?? "linear-gradient(90deg, var(--cinema-gold), var(--cinema-accent))");"></div>
+                <div class="film-holes">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="progress-info">
+                @if (isMaxRank)
+                {
+                    <span class="progress-text">🎬 VIP Member - Maximum Level Achieved</span>
                 }
                 else
                 {
-                    <div class="text-center">No rank information available.</div>
+                    <span class="progress-text">@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
                 }
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Theater Content -->
+    <div class="theater-main">
+        <!-- Left Wing - Profile Form -->
+        <div class="theater-wing left-wing">
+            <div class="wing-header">
+                <h2>🎭 Personal Details</h2>
+                <div class="header-line"></div>
+            </div>
+
+            <form asp-controller="MyAccount" asp-action="EditProfile" method="post" class="cinema-form">
+                <div class="form-row">
+                    <div class="input-cinema">
+                    <input asp-for="Profile.FullName" placeholder=" " required>
+                    <label asp-for="Profile.FullName">Full Name</label>
+                        <div class="input-glow"></div>
+                    </div>
+
+                    <div class="input-cinema">
+                        <input asp-for="Profile.DateOfBirth" type="date" placeholder=" ">
+                        <label asp-for="Profile.DateOfBirth">Date of Birth</label>
+                        <div class="input-glow"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-cinema">
+                        <input asp-for="Profile.Email" placeholder=" " readonly>
+                        <label asp-for="Profile.Email">Email Address</label>
+                        <div class="input-glow"></div>
+                    </div>
+
+                    <div class="input-cinema">
+                        <input asp-for="Profile.PhoneNumber" placeholder=" ">
+                        <label asp-for="Profile.PhoneNumber">Phone Number</label>
+                        <div class="input-glow"></div>
+                    </div>
+                </div>
+
+                <div class="gender-selector">
+                    <span class="selector-label">Gender</span>
+                    <div class="gender-options">
+                        <label class="gender-option">
+                            <input type="radio" asp-for="Profile.Gender" value="male">
+                            <span class="option-button">Male</span>
+                        </label>
+                        <label class="gender-option">
+                            <input type="radio" asp-for="Profile.Gender" value="female">
+                            <span class="option-button">Female</span>
+                        </label>
+                        <label class="gender-option">
+                            <input type="radio" asp-for="Profile.Gender" value="other">
+                            <span class="option-button">Other</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="input-cinema full-width">
+                    <input asp-for="Profile.Address" placeholder=" ">
+                    <label asp-for="Profile.Address">Address</label>
+                    <div class="input-glow"></div>
+                </div>
+
+                <div class="input-cinema full-width">
+                    <input asp-for="Profile.IdentityCard" placeholder=" ">
+                    <label asp-for="Profile.IdentityCard">Identity Number</label>
+                    <div class="input-glow"></div>
+                </div>
+
+                <div class="form-actions">
+                    @if (!profile.IsGoogleAccount)
+                    {
+                        <a href="@Url.Action("ChangePassword", "MyAccount")" class="cinema-btn secondary">🔐 Change Password</a>
+                    }
+                    <button type="submit" class="cinema-btn primary">💾 Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right Wing - Booking History -->
+        <div class="theater-wing right-wing">
+            <div class="wing-header">
+                <h2>🎟️ Booking History</h2>
+                <div class="header-line"></div>
+                </div>
+
+            <div class="ticket-filters">
+                <button class="filter-ticket active" data-filter="all">All Tickets</button>
+                <button class="filter-ticket" data-filter="booked">Active</button>
+                <button class="filter-ticket" data-filter="canceled">Canceled</button>
+            </div>
+
+            <div class="tickets-showcase" id="ticketsShowcase">
+                <div class="loading-reel">
+                    <div class="film-loading"></div>
+                    <p>Loading your cinema history...</p>
+                </div>
             </div>
         </div>
     </div>
 </div>
-<script>
-    function initProfileAvatarUpload() {
-        const imageInput = document.getElementById('profileImageInput');
-        const imagePreview = document.getElementById('profileImagePreview');
-        const avatarBtns = document.getElementById('avatarBtns');
-        const cancelBtn = document.getElementById('cancelAvatarBtn');
-        const updateImageBtn = document.getElementById('updateImageBtn');
-        const profileForm = document.getElementById('profileForm');
-        const originalSrc = imagePreview ? imagePreview.src : '';
-        if (!imageInput || !imagePreview) return;
-        imageInput.addEventListener('change', function(event) {
-            if (event.target.files && event.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    if (avatarBtns) avatarBtns.classList.add('is-visible');
-                }
-                reader.readAsDataURL(event.target.files[0]);
-            }
-        });
-        if (cancelBtn && avatarBtns) {
-            cancelBtn.addEventListener('click', function() {
-                imagePreview.src = originalSrc;
-                imageInput.value = '';
-                avatarBtns.classList.remove('is-visible');
-            });
-        }
-        // Đổi action form khi bấm nút Update ảnh
-        if (updateImageBtn && profileForm) {
-            updateImageBtn.addEventListener('click', function(e) {
-                profileForm.action = '/MyAccount/UpdateImage';
-            });
-        }
-    }
-    initProfileAvatarUpload();
-    // Booking History Cards AJAX
-    $(function() {
-        let historyDataCache = [];
-        let currentPage = 1;
-        const pageSize = 6;
-        function renderHistoryCards(historyData) {
-            // Lọc chỉ lấy booking đã complete
-            historyDataCache = (historyData || []).filter(function(booking) {
-                return booking.status === 1;
-            });
-            renderHistoryPage(currentPage);
-            renderHistoryPagination();
-        }
-        function renderHistoryPage(page) {
-            let html = '';
-            const start = (page - 1) * pageSize;
-            const end = start + pageSize;
-            const pageData = historyDataCache.slice(start, end);
-            if (pageData.length > 0) {
-                html += '<div class="booking-card-list">';
-                pageData.forEach(function(booking) {
-                    var movieName = booking.movieShow && booking.movieShow.movie ? booking.movieShow.movie.movieNameEnglish : 'N/A';
-                    var showDate = booking.movieShow && booking.movieShow.showDate ? new Date(booking.movieShow.showDate).toLocaleDateString('en-GB') : 'N/A';
-                    var showTime = booking.movieShow && booking.movieShow.schedule && booking.movieShow.schedule.scheduleTime ? booking.movieShow.schedule.scheduleTime.substring(0, 5) : 'N/A';
-                    var seats = booking.seat || '';
-                    var seatCount = seats ? seats.split(',').length : 0;
-                    var statusBadge = (booking.status === 1 && booking.cancel === false) ? '<span class="badge bg-success">Booked</span>' : (booking.status === 1 && booking.cancel === true) ? '<span class="badge bg-danger">Canceled</span>' : '<span class="badge bg-secondary">Not Paid</span>';
-                    var totalMoney = booking.totalMoney === 0 ? '0 VND' : (booking.totalMoney ? new Intl.NumberFormat('en-US').format(booking.totalMoney) + ' VND' : 'N/A');
-                    var totalAmountHtml = `<span id="booking-total-${booking.invoiceId}" class="booking-total-amount">${totalMoney}</span>`;
-                    if (booking.status === 1 && booking.invoiceId) {
-                        $.ajax({
-                            url: '/api/foodinvoice/gettotalfoodprice',
-                            type: 'GET',
-                            data: { invoiceId: booking.invoiceId },
-                            success: function(foodRes) {
-                                var foodPrice = (typeof foodRes === 'number') ? foodRes : (foodRes.totalFoodPrice || 0);
-                                var seatPrice = booking.totalMoney || 0;
-                                var total = seatPrice + (foodPrice || 0);
-                                var totalText = new Intl.NumberFormat('en-US').format(total) + ' VND';
-                                if (total === 0) totalText = '0 VND';
-                                $("#booking-total-" + booking.invoiceId)
-                                    .text(totalText)
-                                    .addClass('booking-total-amount-highlight');
-                            },
-                            error: function() {
-                                $("#booking-total-" + booking.invoiceId).text(totalMoney);
-                            }
-                        });
-                    }
-                    html += `<div class="booking-card">
-                        <div class="booking-card-row booking-card-row-top">
-                            <div class="booking-card-title">${movieName}</div>
-                            <div class="booking-card-date" style="flex:1.5 1 0%;min-width:90px;max-width:160px;"><i class=\"fas fa-calendar-alt\"></i> ${showDate}</div>
-                            <div class="booking-card-time"><i class=\"fas fa-clock\"></i> ${showTime}</div>
-                            <div class="booking-card-actions dropdown">
-                                <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="/Ticket/Details/${booking.invoiceId}"><i class="fas fa-info-circle me-2"></i>Detail</a></li>
-                                    ${booking.status === 1 && booking.cancel === false ? `<li><form action="/Ticket/Cancel" method="post" class="d-inline" onsubmit="return confirm('Do you want to cancel ticket ?');"><input type="hidden" name="id" value="${booking.invoiceId}" /><input type="hidden" name="returnUrl" value="/MyAccount/MainPage?tab=Profile" /><button type="submit" class="dropdown-item"><i class="fas fa-times me-2"></i>Cancel Ticket</button></form></li>` : ''}
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="booking-card-row booking-card-row-seats">
-                            <div class="booking-card-seats"><i class=\"fas fa-chair\"></i> ${seatCount} seat(s): ${seats}</div>
-                        </div>
-                        <div class="booking-card-row booking-card-row-bottom">
-                            <div class="booking-card-amount"><i class=\"fas fa-money-bill-wave\"></i> ${totalAmountHtml}</div>
-                            <div class="booking-card-status">${statusBadge}</div>
-                        </div>
-                    </div>`;
-                });
-                html += '</div>';
-            } else {
-                html += '<div class="alert alert-info text-center"><i class="fas fa-info-circle me-2"></i>Không có vé nào.</div>';
-            }
-            $('#profileHistoryCards').html(html);
-        }
-        function renderHistoryPagination() {
-            const totalPages = Math.ceil(historyDataCache.length / pageSize);
-            if (totalPages <= 1) {
-                $('#profileHistoryPagination').html('');
-                return;
-            }
-            let html = '<ul class="pagination justify-content-center">';
-            html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
 
-            if (totalPages <= 5) {
-                for (let i = 1; i <= totalPages; i++) {
-                    html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-                }
-            } else {
-                html += `<li class="page-item${currentPage === 1 ? ' active' : ''}"><a class="page-link" href="#" data-page="1">1</a></li>`;
-                if (currentPage > 3) {
-                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                }
-                let start = Math.max(2, currentPage - 1);
-                let end = Math.min(totalPages - 1, currentPage + 1);
-                for (let i = start; i <= end; i++) {
-                    if (i === 1 || i === totalPages) continue;
-                    html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-                }
-                if (currentPage < totalPages - 2) {
-                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                }
-                html += `<li class="page-item${currentPage === totalPages ? ' active' : ''}"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
-            }
-            html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
-            html += '</ul>';
-            $('#profileHistoryPagination').html(html);
-            $('#profileHistoryPagination .page-link').off('click').on('click', function (e) {
-                e.preventDefault();
-                const page = parseInt($(this).data('page'));
-                if (!isNaN(page) && page >= 1 && page <= totalPages && page !== currentPage) {
-                    currentPage = page;
-                    renderHistoryPage(currentPage);
-                    renderHistoryPagination();
-                }
-            });
+<script>
+    // Avatar Upload with Cinema Effect
+    document.getElementById('avatarUpload').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                showAvatarEditModal(e.target.result);
+            };
+            reader.readAsDataURL(file);
         }
-        let currentStatus = "all";
-        function loadHistory(status = "all") {
-            currentStatus = status;
-            $('#profileHistoryCards').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-3">Loading booking history...</p></div>');
-            $.ajax({
-                url: '/Ticket/HistoryPartial',
-                type: 'GET',
-                data: { status: status },
-                success: function (response) {
-                    if (response.success) {
-                        currentPage = 1;
-                        renderHistoryCards(response.data);
-                    } else {
-                        $('#profileHistoryCards').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ' + response.message + '</div>');
+    });
+
+    // Avatar Edit Modal Functions
+    let currentZoom = 1;
+    let currentRotation = 0;
+    let originalImageData = null;
+
+    function showAvatarEditModal(imageSrc) {
+        originalImageData = imageSrc;
+        currentZoom = 1;
+        currentRotation = 0;
+        
+        const modal = document.getElementById('avatarEditModal');
+        const imagePreview = document.getElementById('avatarImagePreview');
+        const zoomSlider = document.getElementById('zoomSlider');
+        
+        imagePreview.src = imageSrc;
+        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+        zoomSlider.value = 50; // Reset zoom slider to middle
+        
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeAvatarModal() {
+        const modal = document.getElementById('avatarEditModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function updateZoom(value) {
+        currentZoom = 0.5 + (value / 100) * 1.5; // Range from 0.5 to 2.0
+        const imagePreview = document.getElementById('avatarImagePreview');
+        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+    }
+
+    function zoomIn() {
+        const zoomSlider = document.getElementById('zoomSlider');
+        const newValue = Math.min(100, parseInt(zoomSlider.value) + 10);
+        zoomSlider.value = newValue;
+        updateZoom(newValue);
+    }
+
+    function zoomOut() {
+        const zoomSlider = document.getElementById('zoomSlider');
+        const newValue = Math.max(0, parseInt(zoomSlider.value) - 10);
+        zoomSlider.value = newValue;
+        updateZoom(newValue);
+    }
+
+    function rotateImage() {
+        currentRotation += 90;
+        const imagePreview = document.getElementById('avatarImagePreview');
+        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+    }
+
+    function resetAvatar() {
+        currentZoom = 1;
+        currentRotation = 0;
+        const imagePreview = document.getElementById('avatarImagePreview');
+        const zoomSlider = document.getElementById('zoomSlider');
+        
+        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+        zoomSlider.value = 50;
+    }
+
+    function applyAvatar() {
+        const imagePreview = document.getElementById('avatarImagePreview');
+        const avatar = document.getElementById('profileAvatar');
+        
+        // Create a canvas to apply transformations
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const size = 200; // Avatar size
+        
+        canvas.width = size;
+        canvas.height = size;
+        
+        // Create a temporary image to get the transformed result
+        const tempImg = new Image();
+        tempImg.onload = function() {
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Apply transformations
+            ctx.save();
+            ctx.translate(size/2, size/2);
+            ctx.rotate(currentRotation * Math.PI / 180);
+            ctx.scale(currentZoom, currentZoom);
+            
+            // Draw the image centered
+            const imgSize = Math.min(tempImg.width, tempImg.height);
+            const offsetX = (tempImg.width - imgSize) / 2;
+            const offsetY = (tempImg.height - imgSize) / 2;
+            
+            ctx.drawImage(tempImg, offsetX, offsetY, imgSize, imgSize, -size/2, -size/2, size, size);
+            ctx.restore();
+            
+            // Convert to blob and update form
+            canvas.toBlob(function(blob) {
+                const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                
+                const fileInput = document.getElementById('avatarUpload');
+                fileInput.files = dataTransfer.files;
+                
+                // Update avatar preview with animation
+                avatar.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    avatar.src = URL.createObjectURL(blob);
+                    avatar.style.transform = 'scale(1)';
+                }, 200);
+                
+                // Submit form
+                setTimeout(() => {
+                    const avatarForm = document.getElementById('avatarForm');
+                    if (avatarForm) {
+                        avatarForm.submit();
                     }
-                },
-                error: function () {
-                    $('#profileHistoryCards').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error loading data.</div>');
-                }
-            });
-        }
-        loadHistory();
-        $('.profile-history-filter').on('click', '.filter-btn', function () {
-            $('.filter-btn').removeClass('active');
-            $(this).addClass('active');
-            const status = $(this).data('status');
-            loadHistory(status);
+                }, 500);
+                
+                closeAvatarModal();
+            }, 'image/jpeg', 0.9);
+        };
+        tempImg.src = originalImageData;
+    }
+
+    // Filter Tickets
+    document.querySelectorAll('.filter-ticket').forEach(filter => {
+        filter.addEventListener('click', function () {
+            document.querySelectorAll('.filter-ticket').forEach(f => f.classList.remove('active'));
+            this.classList.add('active');
+            loadTickets(this.dataset.filter, 1);
         });
     });
-</script>
-<script>
-function hexToRgb(hex) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) {
-        hex = hex.split('').map(x => x + x).join('');
+
+    // Pagination variables
+    let currentPage = 1;
+    const itemsPerPage = 5;
+    let allTickets = [];
+    let currentFilter = 'all';
+
+    // Load Tickets Function
+    function loadTickets(filter, page = 1) {
+        const showcase = document.getElementById('ticketsShowcase');
+        currentFilter = filter;
+        currentPage = page;
+        
+        showcase.innerHTML = '<div class="loading-reel"><div class="film-loading"></div><p>Loading tickets...</p></div>';
+
+        // Map filter values to API status
+        const statusMap = {
+            'all': 'all',
+            'booked': 'booked',
+            'canceled': 'canceled'
+        };
+
+        fetch(`/Ticket/HistoryPartial?status=${statusMap[filter]}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data && data.data.length > 0) {
+                    allTickets = data.data;
+                    renderTickets();
+                } else {
+                    showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">🎬</div><p>No tickets found</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading tickets:', error);
+                showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">❌</div><p>Error loading tickets</p></div>';
+            });
     }
-    var bigint = parseInt(hex, 16);
-    var r = (bigint >> 16) & 255;
-    var g = (bigint >> 8) & 255;
-    var b = bigint & 255;
-    return [r, g, b];
-}
-function getFirstColorFromGradient(gradient) {
-    // Match hex colors in the gradient string
-    var match = gradient.match(/#([0-9a-fA-F]{3,6})/g);
-    if (match && match.length > 0) {
-        return match[0];
+
+    // Render tickets with pagination
+    function renderTickets() {
+        const showcase = document.getElementById('ticketsShowcase');
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentTickets = allTickets.slice(startIndex, endIndex);
+
+        if (currentTickets.length === 0) {
+            showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">🎬</div><p>No tickets found</p></div>';
+                return;
+            }
+
+        const ticketsHtml = currentTickets.map(ticket => {
+            const movieName = ticket.movieShow?.movie?.movieNameEnglish || 'Unknown Movie';
+            const showDate = ticket.movieShow?.showDate ? new Date(ticket.movieShow.showDate).toLocaleDateString('en-GB') : 'N/A';
+            const showTime = ticket.movieShow?.schedule?.scheduleTime || 'N/A';
+            const seats = ticket.seat || 'N/A';
+            const status = ticket.cancel ? 'canceled' : 'booked';
+            const amount = ticket.totalMoney ? new Intl.NumberFormat('en-US').format(ticket.totalMoney) + ' VND' : 'N/A';
+            const invoiceId = ticket.invoiceId || ticket.id;
+            // Get movie poster with fallback logic
+            let moviePoster = ticket.movieShow?.movie?.image;
+            console.log('Movie poster path:', moviePoster, 'for movie:', movieName);
+            if (!moviePoster || moviePoster === '') {
+                // Fallback to a real movie poster based on movie name
+                const movieNameLower = movieName.toLowerCase();
+                if (movieNameLower.includes('oppenheimer') || movieNameLower.includes('open')) {
+                    moviePoster = '/image/open.jpg';
+                } else if (movieNameLower.includes('barbie')) {
+                    moviePoster = '/image/barbie.jpg';
+                } else if (movieNameLower.includes('batman')) {
+                    moviePoster = '/image/batman.jpg';
+                } else if (movieNameLower.includes('spider')) {
+                    moviePoster = '/image/spider.jpg';
+                } else if (movieNameLower.includes('dune')) {
+                    moviePoster = '/image/dune.jpg';
+                } else if (movieNameLower.includes('parasite')) {
+                    moviePoster = '/image/parasite.jpg';
+                } else if (movieNameLower.includes('everything')) {
+                    moviePoster = '/image/everything.jpg';
+                } else if (movieNameLower.includes('topgun') || movieNameLower.includes('top gun')) {
+                    moviePoster = '/image/topgun.jpg';
+                } else {
+                    moviePoster = '/image/default-movie.png';
+                }
+                console.log('Using fallback poster:', moviePoster);
+            }
+
+            return `
+                <div class="movie-ticket ${status}">
+                    <div class="ticket-stub">
+                        <img src="${moviePoster}" alt="${movieName}" class="movie-poster" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
+                             onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                        <div class="movie-poster-placeholder">🎬</div>
+                    </div>
+                    <div class="ticket-main">
+                        <div class="ticket-header">
+                            <h3 class="movie-title">${movieName}</h3>
+                            <span class="ticket-status ${status}">${status === 'booked' ? '✓' : '✗'}</span>
+                        </div>
+                        <div class="ticket-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">📅</span>
+                                <span>${showDate}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span>${showTime}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🪑</span>
+                                <span>${seats}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">💰</span>
+                                <span>${amount}</span>
+                            </div>
+                        </div>
+                        <div class="ticket-actions">
+                            <a href="/Ticket/Details/${invoiceId}" class="cinema-btn secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                                🎫 View Details
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ticket-perforation"></div>
+                </div>
+            `;
+        }).join('');
+
+        // Add pagination
+        const totalPages = Math.ceil(allTickets.length / itemsPerPage);
+        const paginationHtml = renderPagination(totalPages);
+
+        showcase.innerHTML = ticketsHtml + paginationHtml;
     }
-    return null;
-}
-function setProfileBannerTextColor() {
-    const banner = document.getElementById('profileBanner');
-    if (banner) {
-        // Get the inline style attribute directly
-        const styleAttr = banner.getAttribute('style') || '';
-        const colorHex = getFirstColorFromGradient(styleAttr);
-        if (colorHex) {
-            const [r, g, b] = hexToRgb(colorHex);
-            const yiq = ((r*299)+(g*587)+(b*114))/1000;
-            const textColor = yiq >= 128 ? 'black' : 'white';
-            banner.style.setProperty('color', textColor, 'important');
-            banner.querySelectorAll('*:not(.no-banner-color)').forEach(el => el.style.setProperty('color', textColor, 'important'));
+
+    // Render pagination controls
+    function renderPagination(totalPages) {
+        if (totalPages <= 1) return '';
+
+        let paginationHtml = '<div class="ticket-pagination">';
+
+        // Previous button
+        if (currentPage > 1) {
+            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${currentPage - 1})">← Previous</button>`;
         }
+
+        // Page numbers with smart display
+        const maxVisiblePages = 5;
+        let startPage = 1;
+        let endPage = totalPages;
+
+        if (totalPages > maxVisiblePages) {
+            if (currentPage <= 3) {
+                endPage = maxVisiblePages;
+            } else if (currentPage >= totalPages - 2) {
+                startPage = totalPages - maxVisiblePages + 1;
+            } else {
+                startPage = currentPage - 2;
+                endPage = currentPage + 2;
+            }
+        }
+
+        // Add first page and ellipsis if needed
+        if (startPage > 1) {
+            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', 1)">1</button>`;
+            if (startPage > 2) {
+                paginationHtml += `<span class="pagination-ellipsis">...</span>`;
+            }
+        }
+
+        // Page numbers
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                paginationHtml += `<button class="cinema-btn primary" disabled>${i}</button>`;
+            } else {
+                paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${i})">${i}</button>`;
+            }
+        }
+
+        // Add last page and ellipsis if needed
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationHtml += `<span class="pagination-ellipsis">...</span>`;
+            }
+            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${totalPages})">${totalPages}</button>`;
+        }
+
+        // Next button
+        if (currentPage < totalPages) {
+            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${currentPage + 1})">Next →</button>`;
+        }
+
+        paginationHtml += '</div>';
+        return paginationHtml;
     }
-}
-// Call the function directly, since this is a partial view
-setProfileBannerTextColor();
+
+    // Initialize
+    loadTickets('all');
+
+    // Add some cinema ambiance
+    document.addEventListener('DOMContentLoaded', function () {
+        // Spotlight animation
+        const spotlight = document.querySelector('.spotlight-ring');
+        if (spotlight) {
+            setInterval(() => {
+                spotlight.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    spotlight.style.transform = 'scale(1)';
+                }, 1000);
+            }, 3000);
+        }
+    });
+
+    // Rank Details Modal Functions
+    let currentRankSlide = 0;
+    const totalRankSlides = @(Model.AllRanks?.Count ?? 0);
+
+    function showRankDetails() {
+        const modal = document.getElementById('rankDetailsModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeRankDetails() {
+        const modal = document.getElementById('rankDetailsModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function showRankSlide(slideIndex) {
+        const slides = document.querySelectorAll('.rank-slide');
+        const indicators = document.querySelectorAll('.rank-indicator');
+        
+        slides.forEach(slide => slide.classList.remove('active'));
+        indicators.forEach(indicator => indicator.classList.remove('active'));
+        
+        slides[slideIndex].classList.add('active');
+        indicators[slideIndex].classList.add('active');
+        currentRankSlide = slideIndex;
+    }
+
+    function nextRankSlide() {
+        const nextSlide = (currentRankSlide + 1) % totalRankSlides;
+        showRankSlide(nextSlide);
+    }
+
+    function prevRankSlide() {
+        const prevSlide = (currentRankSlide - 1 + totalRankSlides) % totalRankSlides;
+        showRankSlide(prevSlide);
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        const rankModal = document.getElementById('rankDetailsModal');
+        const avatarModal = document.getElementById('avatarEditModal');
+        if (e.target === rankModal) {
+            closeRankDetails();
+        }
+        if (e.target === avatarModal) {
+            closeAvatarModal();
+        }
+    });
 </script>
-<style>
-.booking-total-amount-highlight {
-    color: #1769fa !important;
-    font-weight: bold;
-    font-size: 1.15em;
-}
-</style>
+
+<!-- Avatar Edit Modal -->
+<div class="avatar-edit-modal" id="avatarEditModal">
+    <div class="avatar-edit-content">
+        <div class="avatar-edit-header">
+            <h3>Edit Image</h3>
+            <button class="avatar-edit-close" onclick="closeAvatarModal()">×</button>
+        </div>
+        <div class="avatar-edit-body">
+            <div class="avatar-preview-container">
+                <div class="avatar-preview-frame">
+                    <img id="avatarImagePreview" class="avatar-preview-image" alt="Avatar Preview">
+                </div>
+            </div>
+            <div class="avatar-controls">
+                <div class="zoom-control">
+                    <div class="zoom-icons">
+                        <span class="zoom-icon">🖼️</span>
+                        <span class="zoom-icon">🖼️</span>
+                    </div>
+                    <input type="range" id="zoomSlider" min="0" max="100" value="50" oninput="updateZoom(this.value)" class="zoom-slider">
+                </div>
+                <div class="rotate-control">
+                    <button class="rotate-btn" onclick="rotateImage()">
+                        <span class="rotate-icon">🔄</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="avatar-edit-actions">
+            <button class="avatar-btn secondary" onclick="resetAvatar()">Reset</button>
+            <button class="avatar-btn secondary" onclick="closeAvatarModal()">Cancel</button>
+            <button class="avatar-btn primary" onclick="applyAvatar()">Apply</button>
+        </div>
+    </div>
+</div>
+
+<!-- Rank Details Modal -->
+<div class="rank-modal" id="rankDetailsModal">
+    <div class="rank-modal-content">
+        <div class="rank-modal-header">
+            <h3>🎭 Rank Tiers & Benefits</h3>
+            <button class="rank-modal-close" onclick="closeRankDetails()">×</button>
+        </div>
+        <div class="rank-modal-body">
+            @if (Model.AllRanks != null && Model.AllRanks.Any())
+            {
+                var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
+                var currentUserScore = Model.RankInfo.TotalPoints;
+                var currentUserRankId = Model.RankInfo.CurrentRankId;
+
+                <div class="rank-carousel" id="rankCarousel">
+                    <div class="rank-indicators">
+                        @for (int i = 0; i < sortedRanks.Count; i++)
+                        {
+                            var rankDetail = sortedRanks[i];
+                            var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                            <button class="rank-indicator @activeClass" onclick="showRankSlide(@i)"></button>
+                        }
+                    </div>
+                    <div class="rank-slides">
+                        @for (int i = 0; i < sortedRanks.Count; i++)
+                        {
+                            var rankDetail = sortedRanks[i];
+                            var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
+                            var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
+                            var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
+                            var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                            var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
+                            var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
+                            var pointsForThisTier = targetRankPoints - prevRankPoints;
+                            double rankProgressPercentage;
+                            if (currentUserScore >= targetRankPoints)
+                            {
+                                rankProgressPercentage = 100;
+                            }
+                            else if (currentUserScore < prevRankPoints)
+                            {
+                                rankProgressPercentage = 0;
+                            }
+                            else
+                            {
+                                var progressRaw = currentUserScore - prevRankPoints;
+                                rankProgressPercentage = (pointsForThisTier > 0)
+                                ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
+                                : 100;
+                            }
+                            <div class="rank-slide @activeClass" data-slide="@i">
+                                <div class="rank-card" style="--rank-gradient: @rankGradient; border-color: @(rankDetail.ColorGradient != null ? "transparent" : "var(--cinema-border)");">
+                                                                            <div class="rank-card-header">
+                                            <div class="rank-icon-wrapper" style="background: @rankGradient;">
+                                                <i class="@rankIcon"></i>
+                                            </div>
+                                        <div class="rank-info">
+                                            <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
+                                            <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")">@rankStatus</span>
+                                        </div>
+                                    </div>
+                                    <div class="rank-card-body">
+                                        <div class="rank-progress-wrapper">
+                                            <div class="rank-progress">
+                                                <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
+                                            </div>
+                                            <div class="rank-points">
+                                                <span>@prevRankPoints.ToString("N0") pts</span>
+                                                <span>@targetRankPoints.ToString("N0") pts</span>
+                                            </div>
+                                        </div>
+                                        <div class="benefits-section">
+                                            <div class="benefits-header">
+                                                <span class="benefits-icon">🎁</span>
+                                                <span>Benefits:</span>
+                                            </div>
+                                            <div class="benefits-content">
+                                                <div class="benefit-item">
+                                                    <span class="benefit-icon">🎫</span>
+                                                    <div class="benefit-text">
+                                                        <span class="benefit-label">Discount on Tickets</span>
+                                                        <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                                    </div>
+                                                </div>
+                                                <div class="benefit-item">
+                                                    <span class="benefit-icon">💰</span>
+                                                    <div class="benefit-text">
+                                                        <span class="benefit-label">Point Earning Rate</span>
+                                                        <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="auto-upgrade">
+                                            <span class="upgrade-icon">⚡</span>
+                                            Auto-upgrade at @targetRankPoints.ToString("N0") pts
+                    </div>
+                </div>
+                    </div>
+                    </div>
+                        }
+                    </div>
+                    <div class="rank-navigation">
+                        <button class="rank-nav-btn" onclick="prevRankSlide()">←</button>
+                        <button class="rank-nav-btn" onclick="nextRankSlide()">→</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="no-ranks">No rank information available.</div>
+            }
+        </div>
+    </div>
+</div>

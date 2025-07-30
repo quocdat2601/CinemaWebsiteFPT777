@@ -1,6 +1,5 @@
 // TRAILER MODAL JAVASCRIPT
-// Import Bootstrap and gtag if they are not already imported
-import { Modal } from "bootstrap"
+// Use global Bootstrap Modal if available
 window.gtag =
   window.gtag ||
   (() => {
@@ -66,8 +65,10 @@ class TrailerModalManager {
     this.updateModalTitle()
 
     // Show modal
-    const bsModal = new Modal(this.modal)
-    bsModal.show()
+    if (typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(this.modal)
+      bsModal.show()
+    }
 
     // Track trailer view
     this.trackTrailerView(trailerUrl)
@@ -76,9 +77,11 @@ class TrailerModalManager {
   closeTrailer() {
     if (!this.modal) return
 
-    const bsModal = Modal.getInstance(this.modal)
-    if (bsModal) {
-      bsModal.hide()
+    if (typeof bootstrap !== 'undefined') {
+      const bsModal = bootstrap.Modal.getInstance(this.modal)
+      if (bsModal) {
+        bsModal.hide()
+      }
     }
   }
 
@@ -100,52 +103,39 @@ class TrailerModalManager {
     }
 
     // Vimeo URL patterns
-    const vimeoPattern = /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)/
-    const vimeoMatch = url.match(vimeoPattern)
-    if (vimeoMatch) {
-      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`
+    const vimeoPatterns = [
+      /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/([0-9]+)/,
+      /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/groups\/[^\/]+\/videos\/([0-9]+)/,
+    ]
+
+    for (const pattern of vimeoPatterns) {
+      const match = url.match(pattern)
+      if (match) {
+        return `https://player.vimeo.com/video/${match[1]}?autoplay=1&title=0&byline=0&portrait=0`
+      }
     }
 
-    // Return original URL if no pattern matches
+    // Return original URL if no patterns match
     return url
   }
 
   updateModalTitle() {
     const modalTitle = this.modal.querySelector(".modal-title")
     if (modalTitle) {
-      // Try to get movie title from context
-      const activeCard = document.querySelector(".modern-movie-card:hover, .coming-soon-card:hover")
-      if (activeCard) {
-        const movieTitle = activeCard.querySelector(".movie-title")?.textContent
-        if (movieTitle) {
-          modalTitle.innerHTML = `<i class="fas fa-play-circle"></i> ${movieTitle} - Trailer`
-          return
-        }
-      }
-
-      // Default title
-      modalTitle.innerHTML = '<i class="fas fa-play-circle"></i> Movie Trailer'
+      modalTitle.textContent = "Movie Trailer"
     }
   }
 
   onModalShown() {
-    // Add modal entrance animation
-    const modalContent = this.modal.querySelector(".modal-content")
-    if (modalContent) {
-      modalContent.style.transform = "scale(0.9)"
-      modalContent.style.opacity = "0"
-      setTimeout(() => {
-        modalContent.style.transform = "scale(1)"
-        modalContent.style.opacity = "1"
-        modalContent.style.transition = "all 0.3s ease"
-      }, 50)
-    }
-
-    // Pause any playing videos on the page
+    // Pause any background videos or carousels
     this.pausePageVideos()
-
-    // Pause carousel autoplay
     this.pauseCarousels()
+
+    // Focus management for accessibility
+    const closeBtn = this.modal.querySelector(".btn-close")
+    if (closeBtn) {
+      closeBtn.focus()
+    }
   }
 
   onModalHidden() {
@@ -154,73 +144,56 @@ class TrailerModalManager {
       this.iframe.src = ""
     }
 
-    // Resume carousel autoplay
+    // Resume carousels
     this.resumeCarousels()
   }
 
   pausePageVideos() {
-    // Pause any HTML5 videos
-    document.querySelectorAll("video").forEach((video) => {
+    // Pause any HTML5 videos on the page
+    const videos = document.querySelectorAll("video")
+    videos.forEach(video => {
       if (!video.paused) {
         video.pause()
-        video.setAttribute("data-was-playing", "true")
       }
     })
   }
 
   pauseCarousels() {
-    // Pause Swiper autoplay
-    if (window.nowShowingManager) {
-      window.nowShowingManager.pauseAutoplay()
-    }
-    if (window.comingSoonManager) {
-      window.comingSoonManager.pauseAutoplay()
-    }
-    if (window.promotionsManager) {
-      window.promotionsManager.pauseAutoplay()
-    }
+    // Pause any autoplay carousels
+    const swipers = document.querySelectorAll(".swiper")
+    swipers.forEach(swiper => {
+      if (swiper.swiper && swiper.swiper.autoplay) {
+        swiper.swiper.autoplay.stop()
+      }
+    })
   }
 
   resumeCarousels() {
-    // Resume Swiper autoplay
-    setTimeout(() => {
-      if (window.nowShowingManager) {
-        window.nowShowingManager.resumeAutoplay()
+    // Resume autoplay carousels
+    const swipers = document.querySelectorAll(".swiper")
+    swipers.forEach(swiper => {
+      if (swiper.swiper && swiper.swiper.autoplay) {
+        swiper.swiper.autoplay.start()
       }
-      if (window.comingSoonManager) {
-        window.comingSoonManager.resumeAutoplay()
-      }
-      if (window.promotionsManager) {
-        window.promotionsManager.resumeAutoplay()
-      }
-    }, 500)
+    })
   }
 
   trackTrailerView(trailerUrl) {
-    // Analytics tracking
-    if (typeof window.gtag !== "undefined") {
+    // Track trailer view with Google Analytics if available
+    if (typeof window.gtag === "function") {
       window.gtag("event", "trailer_view", {
-        trailer_url: trailerUrl,
+        event_category: "engagement",
+        event_label: trailerUrl,
       })
     }
-
-    console.log("Trailer viewed:", trailerUrl)
   }
 
-  // Public methods
   isOpen() {
     return this.modal && this.modal.classList.contains("show")
   }
 
   getCurrentTrailerUrl() {
-    return this.iframe ? this.iframe.src : null
-  }
-}
-
-// Global function for backward compatibility
-window.openTrailer = (trailerUrl) => {
-  if (window.trailerModalManager) {
-    window.trailerModalManager.openTrailer(trailerUrl)
+    return this.iframe ? this.iframe.src : ""
   }
 }
 
@@ -232,4 +205,4 @@ document.addEventListener("DOMContentLoaded", () => {
 // Export for module systems
 if (typeof module !== "undefined" && module.exports) {
   module.exports = TrailerModalManager
-}
+} 
