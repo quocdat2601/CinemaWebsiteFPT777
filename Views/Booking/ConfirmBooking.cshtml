@@ -1094,14 +1094,14 @@
                                                 <span class="food-quantity">Qty: @food.Quantity</span>
                                                 @if (!string.IsNullOrEmpty(food.PromotionName))
                                                 {
-                                                    <span class="promotion-tag">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                                    <span class="promotion-tag">@food.PromotionName (@food.PromotionDiscount?.ToString("N0")% off)</span>
                                                 }
                                             </div>
                                         </div>
                                         <div class="price-info">
                                             @if (food.PromotionDiscount > 0 && food.OriginalPrice > food.Price)
                                             {
-                                                <div class="original-price">@food.OriginalPrice.ToString("N0") VND</div>
+                                                <div class="original-price">@food.OriginalPrice?.ToString("N0") VND</div>
                                                 <div class="current-price">@food.Price.ToString("N0") VND</div>
                                             }
                                             else

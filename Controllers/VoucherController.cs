@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.SignalR;
-using MovieTheater.Hubs;
+using System.Data;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -13,12 +15,13 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _voucherService = voucherService;
             _webHostEnvironment = webHostEnvironment;
-            _dashboardHubContext = dashboardHubContext;
+            _dashboardHubContext = dashboardHubContext;            
         }
 
         /// <summary>
@@ -197,7 +200,10 @@ namespace MovieTheater.Controllers
             _voucherService.Delete(id);
             await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
             TempData["ToastMessage"] = "Voucher deleted successfully.";
-            return Redirect("/Admin/MainPage?tab=VoucherMg");
+            if (role == "Admin")
+                return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+            else
+                return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
         }
 
         /// <summary>
@@ -219,11 +225,13 @@ namespace MovieTheater.Controllers
             var now = DateTime.Now;
             var isExpired = voucher.ExpiryDate <= now;
             var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
-
             if (isUsed || isExpired)
             {
                 TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
             }
 
             var viewModel = new VoucherViewModel
@@ -250,7 +258,6 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> AdminEdit(VoucherViewModel viewModel, IFormFile? imageFile)
         {
             if (!ModelState.IsValid) return View(viewModel);
-
             try
             {
                 var voucher = _voucherService.GetById(viewModel.VoucherId);
@@ -268,7 +275,10 @@ namespace MovieTheater.Controllers
                 if (isUsed || isExpired)
                 {
                     TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
-                    return Redirect("/Admin/MainPage?tab=VoucherMg");
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
                 }
 
                 voucher.AccountId = viewModel.AccountId;
@@ -310,7 +320,10 @@ namespace MovieTheater.Controllers
                 _voucherService.Update(voucher);
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 TempData["ToastMessage"] = "Voucher updated successfully.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
             }
             catch (Exception ex)
             {
@@ -385,7 +398,10 @@ namespace MovieTheater.Controllers
                     _voucherService.Add(voucher);
                     await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                     TempData["ToastMessage"] = "Voucher created successfully!";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
                 }
                 catch (Exception ex)
                 {

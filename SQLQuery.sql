@@ -50,6 +50,7 @@ CREATE TABLE Account (
 CREATE TABLE Employee (
     Employee_ID VARCHAR(10) PRIMARY KEY,
     Account_ID VARCHAR(10),
+    Status BIT NOT NULL DEFAULT 1,
     CONSTRAINT FK_Employee_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
 );
 
@@ -145,6 +146,9 @@ CREATE TABLE Cinema_Room (
     Seat_Length INT,
 	Version_ID INT,
     Status_ID INT DEFAULT 1,
+    Disable_Reason NVARCHAR(500) NULL,
+    Unavailable_Start_Date DATETIME NULL,
+    Unavailable_End_Date DATETIME NULL, 
     FOREIGN KEY (Status_ID) REFERENCES Status(Status_ID),
 	FOREIGN KEY (Version_ID) REFERENCES Version(Version_ID)
 );
@@ -219,6 +223,8 @@ CREATE TABLE Invoice (
     CancelDate DATETIME NULL,              -- ngày hủy, cho phép null
     CancelBy NVARCHAR(50) NULL,            -- người thực hiện hủy, cho phép null
 	RankDiscountPercentage DECIMAL(5,2) NULL,
+    Employee_ID VARCHAR(10) NULL,
+    FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID),
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
 	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
 	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)

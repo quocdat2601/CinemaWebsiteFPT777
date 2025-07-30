@@ -3,7 +3,8 @@
 @{
 	ViewData["Title"] = "Create Employee";
 	var formAction = Url.Action("Create", "Employee");
-
+	DateOnly todayDateOnly = DateOnly.FromDateTime(DateTime.Today);
+	string maxDateFormatted = todayDateOnly.ToString("yyyy-MM-dd");
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
@@ -64,7 +65,7 @@
 
 					<div class="form-group mb-3">
 						<strong>Date of Birth</strong>
-						<input type="date" class="form-control" asp-for="DateOfBirth"/>
+						<input type="date" class="form-control" asp-for="DateOfBirth" max="@maxDateFormatted"/>
 						<span asp-validation-for="DateOfBirth" class="text-danger"></span>
 					</div>
 

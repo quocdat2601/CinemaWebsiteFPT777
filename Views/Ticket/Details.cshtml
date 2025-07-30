@@ -14,6 +14,7 @@
     var seatString = invoice.Seat;
     var addScore = invoice.AddScore ?? 0;
     var useScore = invoice.UseScore ?? 0;
+    var reason = invoice.MovieShow.CinemaRoom.DisableReason;
     var bookingDate = invoice.BookingDate?.ToString("yyyy-MM-dd HH:mm");
     var seatDetails = Model.SeatDetails ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
     var foodDetails = Model.FoodDetails ?? new List<MovieTheater.ViewModels.FoodViewModel>();
@@ -178,6 +179,14 @@
             </span>
         </div>
         <div class="p-4">
+            @if (reason != null)
+            {
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <div class="alert alert-warning mb-3" role="alert" style="width: 1000px">
+                        Unfortunately, your ticket has been canceled because of an emergency: <strong>@reason</strong>. We had to make this decision to prioritize your safety and overall experience. Please know that a voucher for the full ticket amount has been sent to your inventory. We deeply regret any inconvenience this may cause.
+                    </div>
+                </div>
+            }
             <div class="row align-items-stretch">
                 <div class="col-lg-8 col-12 mb-3 mb-lg-0 border-end" style="border-color: #e0e0e0 !important;">
                     <div class="ticket-section-title">Movie & Show Info</div>
@@ -270,7 +279,7 @@
                                         <td>
                                             @if (food.OriginalPrice > food.Price)
                                             {
-                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice?.ToString("N0") VND</span>
                                                 <span style="color: #1a7f37; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
                                             }
                                             else

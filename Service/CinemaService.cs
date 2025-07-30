@@ -39,21 +39,47 @@ namespace MovieTheater.Service
             await _repository.Save();
         }
 
-        public bool Update(int id, CinemaRoom cinemaRoom)
+        public bool Update(CinemaRoom cinemaRoom)
         {
             try
             {
                 _repository.Update(cinemaRoom);
+                _repository.Save().Wait(); // Ensure changes are saved to database
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                // Log the exception for debugging
+                Console.WriteLine($"Error updating cinema room: {ex.Message}");
                 return false;
             }
         }
-        public async Task Active(int id)
+        public async Task<bool> Enable(CinemaRoom cinemaRoom)
         {
-            await _repository.Active(id);
+            try
+            {
+                await _repository.Enable(cinemaRoom);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enabling cinema room: {ex.Message}");
+                return false;
+            }
+        }
+        
+        public async Task<bool> Disable(CinemaRoom cinemaRoom)
+        {
+            try
+            {
+                await _repository.Disable(cinemaRoom);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error disabling cinema room: {ex.Message}");
+                return false;
+            }
         }
 
         public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId){

@@ -1,9 +1,23 @@
 @model MovieTheater.ViewModels.PersonFormModel
+@using System.Security.Claims
 
+@{
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
 <link rel="stylesheet" href="/css/cast.css">
-<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="CastMg" class="btn btn-secondary mb-2 mt-2 ml-4">
-    &larr; Return
-</a>
+
+@if (userRole == "Admin")
+{
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="CastMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
+        &larr; Return
+    </a>
+}
+else
+{
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="CastMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
+        &larr; Return
+    </a>
+}
 <h2>Create Cast</h2>
 
 @if (TempData["ValidationErrors"] != null)

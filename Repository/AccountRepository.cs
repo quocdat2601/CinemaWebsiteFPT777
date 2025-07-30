@@ -51,6 +51,7 @@ namespace MovieTheater.Repository
         public Account? GetById(string id)
         {
             return _context.Accounts
+                .Include(e => e.Employees)
                 .Include(a => a.Members)
                 .Include(a => a.Rank)
                 .FirstOrDefault(a => a.AccountId == id);

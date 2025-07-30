@@ -19,6 +19,12 @@ public partial class CinemaRoom
 
     public int? SeatQuantity { get; set; }
 
+    public string? DisableReason { get; set; }
+
+    public DateTime? UnavailableStartDate { get; set; }
+
+    public DateTime? UnavailableEndDate { get; set; }
+
     public virtual ICollection<MovieShow> MovieShows { get; set; } = new List<MovieShow>();
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();

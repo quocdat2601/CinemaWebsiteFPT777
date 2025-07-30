@@ -1,16 +1,29 @@
+@using System.Security.Claims
 @model MovieTheater.ViewModels.RegisterViewModel
 
 @{
 	ViewData["Title"] = "Edit Member";
+	var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
+
+@if (userRole == "Admin")
+{
+	<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="VoucherMg" class="btn btn-secondary">
+		&larr; Return
+	</a>
+}
+else
+{
+	<a asp-controller="Employee" asp-action="MainPage" asp-route-tab="VoucherMg" class="btn btn-secondary">
+		&larr; Return
+	</a>
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" /> <!-- Assuming movieedit.css is relevant for form styling -->
 
 <div class="signup-wrapper">
 	<div class="signup-card">
-		<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary">
-			&larr; Return to Member List
-		</a>
+		
 		<h2 class="signup-title">Edit Member</h2>
 		<!-- Use AccountId from the model for the route parameter in the form tag helper -->
 		<form asp-controller="Admin" asp-action="Edit" method="post" enctype="multipart/form-data">

@@ -33,6 +33,11 @@ namespace MovieTheater.Service
             return result;
         }
 
+        public void ToggleStatus(string employeeId)
+        {
+            _repository.ToggleStatus(employeeId);
+            _repository.Save();
+        }
 
         public bool Update(string id, RegisterViewModel model)
         {

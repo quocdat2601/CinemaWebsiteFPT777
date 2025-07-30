@@ -17,19 +17,21 @@ namespace MovieTheater.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly IJwtService _jwtService;
         private readonly IMemberRepository _memberRepository;
+        private readonly IEmployeeService _employeeService;
 
         public AccountController(
             IAccountService service,
             ILogger<AccountController> logger,
             IAccountRepository accountRepository,
             IMemberRepository memberRepository,
-            IJwtService jwtService)
+            IJwtService jwtService, IEmployeeService employeeService)
         {
             _service = service;
             _logger = logger;
             _accountRepository = accountRepository;
             _memberRepository = memberRepository;
             _jwtService = jwtService;
+            _employeeService = employeeService;
         }
 
         [HttpGet]
@@ -258,7 +260,17 @@ namespace MovieTheater.Controllers
             }
             else if (user.RoleId == 2)
             {
-                return RedirectToAction("MainPage", "Employee");
+                var account = _accountRepository.GetById(user.AccountId);
+                var employee = account?.Employees
+                    .FirstOrDefault(e => e.AccountId == account.AccountId);
+                if (employee.Status.Equals(1))
+                {
+                    return RedirectToAction("MainPage", "Employee");
+                } else
+                {
+                    TempData["ErrorMessage"] = "Account has been locked!";
+                    return RedirectToAction("Login");
+                }
             }
             else
             {

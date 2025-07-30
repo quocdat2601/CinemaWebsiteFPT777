@@ -1,78 +1,257 @@
 ﻿@{
-    ViewData["Title"] = "Employee Main Page";
+    ViewData["Title"] = "Main Page";
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 min-vh-100 border-end" id="account-sidebar">
-            <ul class="nav flex-column nav-pills" id="employeeTabs">
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "MemberMg" ? "active" : "text-dark")" data-tab="MemberMg" href="#">Member Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "MovieMg" ? "active" : "text-dark")" data-tab="MovieMg" href="#">Movie Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "ShowroomMg" ? "active" : "text-dark")" data-tab="ShowroomMg" href="#">Showroom Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "ScheduleMg" ? "active" : "text-dark")" data-tab="ScheduleMg" href="#">Schedule Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "BookingMg" ? "active" : "text-dark")" data-tab="BookingMg" href="#">Booking Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;" target="_self">
-                        <i class="fas fa-qrcode me-2"></i>QR Scanner
-                    </a>
-                </li>
+            <ul class="nav flex-column nav-pills" id="adminTabs">
+                <a class="nav-link admin-tab" data-tab="CastMg" href="javascript:void(0)">Cast/Director Management</a>
+                <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
+                <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
+                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
+                <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
+                <a class="nav-link admin-tab" data-tab="QRCode" href="javascript:void(0)" style="background-color: #28a745; color: white;">
+                    <i class="fas fa-qrcode me-2"></i>QR Scanner
+                </a>
             </ul>
         </div>
-
-        <!-- Tab Content -->
         <div class="col-md-9 col-lg-10 p-4">
-            <div id="tabContent">
-                Loading...
-            </div>
+            <div id="tabContent"></div>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function loadTab(tabName, keyword = '') {
-        // Show loading
-        $('#tabContent').html('Loading...');
+    function loadTab(tabName, params = {}) {
+        $('.admin-tab').removeClass('active');
+        $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
-        // Update active tab
-        $('#employeeTabs .nav-link').removeClass('active');
-        $(`#employeeTabs .nav-link[data-tab="${tabName}"]`).addClass('active');
-
-        let url = `/Employee/LoadTab?tab=${tabName}`;
-        if (keyword) {
-            url += `&keyword=${encodeURIComponent(keyword)}`;
+        const urlParams = new URLSearchParams({ tab: tabName });
+        for (const key in params) {
+            if (params[key]) urlParams.append(key, params[key]);
         }
-        $('#tabContent').load(url);
+        $('#tabContent').load(`/Admin/LoadTab?${urlParams.toString()}`, function(response, status) {
+            if (status === 'error') {
+                $('#tabContent').html('<div class="alert alert-danger">Failed to load content</div>');
+            } else {
+                // Trigger appropriate event based on the loaded tab
+                switch(tabName) {
+                    case 'BookingMg':
+                        $(document).trigger('bookingTabLoaded');
+                        break;
+                    case 'Dashboard':
+                        // Khởi tạo SignalR cho dashboard
+                        if (window.dashboardConnection) {
+                            window.dashboardConnection.stop();
+                        }
+                        window.dashboardConnection = new signalR.HubConnectionBuilder()
+                            .withUrl("/dashboardhub")
+                            .build();
+
+                        window.dashboardConnection.on("DashboardUpdated", function () {
+                            loadTab('Dashboard'); // reload lại tab dashboard
+                        });
+
+                        window.dashboardConnection.start().catch(function (err) {
+                            return console.error(err.toString());
+                        });
+
+                        const el = document.getElementById('dashboard-data');
+                        if (el) {
+                            const model = JSON.parse(el.textContent);
+                            window.initDashboardCharts(model);
+                            showTab('movie');
+                        }
+                        break;
+                }
+            }
+        });
     }
 
-    $(document).ready(function () {
-        // Handle tab clicks
-        $('#employeeTabs .nav-link').click(function (e) {
-            // Nếu là QR Scanner thì không ngăn chặn mặc định
-            if ($(this).text().includes('QR Scanner')) return;
-            e.preventDefault();
-            loadTab($(this).data('tab'));
-        });
+    window.initDashboardCharts = function(model) {
+        const revCtx = document.getElementById('revenueChart')?.getContext('2d');
+        if (revCtx && model.revenueDates) {
+            new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: model.revenueDates,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: model.revenueValues,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+        const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
+        if (bookCtx && model.bookingDates) {
+            new Chart(bookCtx, {
+                type: 'line',
+                data: {
+                    labels: model.bookingDates,
+                    datasets: [{
+                        label: 'Bookings',
+                        data: model.bookingValues,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+    };
 
-        // Load initial tab
-        var tabToLoad = '@ViewData["ActiveTab"]' || 'MovieMg';
-        loadTab(tabToLoad);
-    });
+    function searchEmployees() {
+        const keyword = document.getElementById('searchKeyword')?.value ?? '';
+        loadTab('EmployeeMg', keyword);
+    }
 
     function searchBooking() {
         const keyword = document.getElementById('searchKeyword')?.value ?? '';
         loadTab('BookingMg', keyword);
     }
+
+    function searchFood() {
+        const keyword = document.getElementById('searchKeyword').value;
+        const category = document.getElementById('categoryFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        loadTab('FoodMg', keyword, category, status);
+    }
+
+    // Initialize the page
+    $(document).ready(function () {
+        var tabToLoad = '@ViewData["ActiveTab"]';
+        loadTab(tabToLoad);
+
+        // Add click handlers for admin tabs
+        $('.admin-tab').on('click', function(e) {
+            e.preventDefault();
+            const tabName = $(this).data('tab');
+            loadTab(tabName);
+        });
+
+        // Initialize SignalR for cinema room notifications
+        if (window.cinemaConnection) {
+            window.cinemaConnection.stop();
+        }
+        window.cinemaConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/cinemahub")
+            .build();
+
+        // Handle room auto-enabled notifications
+        window.cinemaConnection.on("RoomAutoEnabled", function (cinemaRoomId, roomName) {
+            // Show notification
+            showToast(`Room "${roomName}" has been automatically enabled!`, 'success');
+            
+            // If currently on ShowroomMg tab, refresh it
+            if ($('.admin-tab.active').data('tab') === 'ShowroomMg') {
+                loadTab('ShowroomMg');
+            }
+        });
+
+        // Handle admin notifications
+        window.cinemaConnection.on("AdminNotification", function (message, roomName) {
+            showToast(message, 'info');
+        });
+
+        window.cinemaConnection.start().catch(function (err) {
+            console.error("CinemaHub connection failed: " + err.toString());
+        });
+    });
+
+    // Helper function to show toast notifications
+    function showToast(message, type = 'info') {
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        const toastContainer = $('#toast-container');
+        if (toastContainer.length === 0) {
+            $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+        }
+        
+        $('#toast-container').append(toastHtml);
+        const toastElement = $('#toast-container .toast').last();
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toastElement.remove();
+        }, 5000);
+    }
+
+    // Delegated event for edit button
+    $(document).on('click', '.edit-version-btn', function () {
+        var id = $(this).data('id');
+        $.get('/Version/Get/' + id, function (version) {
+            // Set the form fields with the fetched values
+            $('#inlineEditVersionId').val(version.versionId);
+            $('#inlineEditVersionName').val(version.versionName);
+            $('#inlineEditMulti').val(version.multi);
+            // Calculate and update prices immediately
+            updateSeatTypePrices(version.multi);
+            // Show the edit area
+            $('#inlineEditArea').slideDown();
+            // Scroll to the edit area
+            $('html, body').animate({ scrollTop: $('#inlineEditArea').offset().top - 80 }, 400);
+        });
+    });
+
+    // Delegated event for cancel button
+    $(document).on('click', '#cancelInlineEdit', function () {
+        $('#inlineEditArea').slideUp();
+    });
+
+    // Delegated event for form submit
+    $(document).on('submit', '#inlineEditVersionForm', function (e) {
+        e.preventDefault();
+        var data = {
+            VersionId: $('#inlineEditVersionId').val(),
+            VersionName: $('#inlineEditVersionName').val(),
+            Multi: parseFloat($('#inlineEditMulti').val())
+        };
+        $.ajax({
+            url: '/Version/Edit',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.success) {
+                    loadTab('VersionMg');
+                } else {
+                    alert(res.error || 'Failed to update version.');
+                }
+            }
+        });
+    });
+
+    // Delegated event for multiplier input
+    $(document).on('input', '#inlineEditMulti', function () {
+        var multi = parseFloat($(this).val()) || 1;
+        updateSeatTypePrices(multi);
+    });
+
+    function updateSeatTypePrices(multi) {
+        $('#seatTypePriceTable tr').each(function () {
+            var base = parseFloat($(this).attr('data-base-price')) || 0;
+            var price = Math.round(base * multi);
+            $(this).find('.calculated-price').text(price.toLocaleString('en-US'));
+        });
+    }
 </script>
 
+<partial name="_ToastMessages" />
 
