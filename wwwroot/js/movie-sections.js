@@ -3,17 +3,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Check if Swiper is available
     const Swiper = window.Swiper // Declare Swiper variable
     if (typeof Swiper === "undefined") {
-        console.warn("Swiper library not found. Please include Swiper.js")
+    
         return
     }
 
     // Check if gtag is available
-    const gtag = window.gtag // Declare gtag variable
-    if (typeof gtag !== "undefined") {
-        console.log("Google Analytics is available")
-    } else {
-        console.warn("Google Analytics is not available")
-    }
+          const gtag = window.gtag // Declare gtag variable
+      if (typeof gtag !== "undefined") {
+      
+      }
 
     // Common Swiper configuration
     const swiperConfig = {
@@ -83,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Events
         on: {
             init: () => {
-                console.log("Swiper initialized")
+            
                 // Add loading state removal
                 setTimeout(() => {
                     document.querySelectorAll(".movie-card-enhanced.loading").forEach((card) => {
@@ -93,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             slideChange: function () {
                 // Optional: Add analytics tracking here
-                console.log("Slide changed to:", this.activeIndex)
+        
             },
             resize: function () {
                 this.update()
@@ -109,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
             autoplay: false, // Tắt autoplay
         })
 
-        console.log("Now Showing Swiper initialized successfully")
+
     } catch (error) {
         console.error("Error initializing Now Showing Swiper:", error)
     }
@@ -122,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
             autoplay: false, // Tắt autoplay
         })
 
-        console.log("Coming Soon Swiper initialized successfully")
+
     } catch (error) {
         console.error("Error initializing Coming Soon Swiper:", error)
     }
@@ -209,7 +207,7 @@ function handleBookingClick(movieId, movieName, button) {
     button.disabled = true
 
     try {
-        console.log("Opening booking modal for:", movieName, "ID:", movieId)
+
 
         // Call the global booking modal function
         if (typeof window.openBookingModal === 'function') {
@@ -437,7 +435,7 @@ function logPerformance() {
         window.addEventListener("load", () => {
             setTimeout(() => {
                 const perfData = performance.getEntriesByType("navigation")[0]
-                console.log("Page load time:", perfData.loadEventEnd - perfData.loadEventStart, "ms")
+        
             }, 0)
         })
     }

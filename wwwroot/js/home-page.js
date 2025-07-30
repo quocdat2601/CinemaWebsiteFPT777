@@ -63,7 +63,7 @@ function updateHeroContentByIndex(index) {
     const heroInfo = document.getElementById('hero-info');
     const heroBg = document.getElementById('hero-bg');
 
-    console.log('updateHeroContentByIndex', {index, slide, heroInfo});
+
 
     if (slide && heroInfo) {
         heroBg.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
@@ -99,7 +99,7 @@ movieSwiper.on('slideChangeTransitionEnd', function () {
 document.querySelectorAll('.movie-swiper .swiper-slide').forEach((slide) => {
     slide.addEventListener('click', function () {
         const realIndex = parseInt(this.dataset.swiperSlideIndex);
-        console.log('Clicked slide realIndex:', realIndex);
+    
         movieSwiper.slideToLoop(realIndex);
     });
 });

@@ -1,6 +1,5 @@
 /* ===== ESSENTIAL GLOBAL FUNCTIONALITY ===== */
 $(document).ready(() => {
-    console.log('app.js loaded');
     
     // Hamburger menu toggle
     $('#hamburger-menu').click(() => {
