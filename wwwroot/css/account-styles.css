@@ -1,0 +1,65 @@
+/* Account Management Styles */
+
+/* Sidebar Styles */
+.modern-sidebar-static {
+    transition: width 0.3s ease;
+}
+
+.modern-sidebar-static.collapsed {
+    width: 80px !important;
+}
+
+.hamburger-btn-static {
+    background: #007bff;
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1001;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: #333;
+    text-decoration: none;
+    border-radius: 8px;
+    margin: 4px 8px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-link:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+.sidebar-link.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.sidebar-link .material-icons {
+    margin-right: 12px;
+    font-size: 20px;
+}
+
+/* Collapsed sidebar styles */
+.collapsed .sidebar-link span:not(.material-icons) {
+    display: none;
+}
+
+.collapsed .sidebar-link .material-icons {
+    margin-right: 0;
+}
+
+.collapsed .sidebar-link {
+    justify-content: center;
+    padding: 12px;
+} 

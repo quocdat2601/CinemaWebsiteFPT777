@@ -201,55 +201,10 @@
 
 <partial name="_ToastMessages" />
 
-<script>
-(function() {
-    let currentSortFood = { by: '', dir: 'asc', param: '' };
-
-    $(document).on('click', '#food-table .sortable', function() {
-        const sortBy = $(this).data('sort');
-        if (currentSortFood.by === sortBy) {
-            currentSortFood.dir = currentSortFood.dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSortFood.by = sortBy;
-            currentSortFood.dir = 'asc';
-        }
-        let sortParam = '';
-        if (sortBy === 'name') sortParam = currentSortFood.dir === 'asc' ? 'name_az' : 'name_za';
-        if (sortBy === 'category') sortParam = currentSortFood.dir === 'asc' ? 'category_az' : 'category_za';
-        if (sortBy === 'price') sortParam = currentSortFood.dir === 'asc' ? 'price_asc' : 'price_desc';
-        if (sortBy === 'created') sortParam = currentSortFood.dir === 'asc' ? 'created_asc' : 'created_desc';
-        currentSortFood.param = sortParam;
-        searchFood();
-        updateSortIconsFood();
-    });
-
-    window.searchFood = function() {
-        const keyword = document.getElementById('searchKeyword').value;
-        const category = document.getElementById('categoryFilter').value;
-        const status = document.getElementById('statusFilter').value;
-        loadTab('FoodMg', { keyword, categoryFilter: category, statusFilter: status, sortBy: currentSortFood.param });
-    }
-
-    function updateSortIconsFood() {
-        $('#sortIconName, #sortIconCategory, #sortIconPrice, #sortIconCreated').html('');
-        if (currentSortFood.by === 'name') {
-            $('#sortIconName').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortFood.by === 'category') {
-            $('#sortIconCategory').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortFood.by === 'price') {
-            $('#sortIconPrice').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortFood.by === 'created') {
-            $('#sortIconCreated').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
-        }
-    }
-})();
-</script>
-<style>
-.sortable {
-    cursor: pointer;
-    user-select: none;
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-styles.css" />
 }
-</style> 
+
+@section Scripts {
+    <script src="~/js/admin-sorting.js"></script>
+} 

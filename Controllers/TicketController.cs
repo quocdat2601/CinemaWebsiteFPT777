@@ -13,23 +13,23 @@ namespace MovieTheater.Controllers
             _ticketService = ticketService;
         }
 
-        [HttpGet]
-        public IActionResult History()
-        {
-            // Redirect /Ticket/History to /Ticket/Index
-            return RedirectToAction("Index");
-        }
+        //[HttpGet]
+        //public IActionResult History()
+        //{
+        //    // Redirect /Ticket/History to /Ticket/Index
+        //    return RedirectToAction("Index");
+        //}
 
-        [HttpGet]
-        public async Task<IActionResult> Index()
-        {
-            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(accountId))
-                return RedirectToAction("Login", "Account");
+        //[HttpGet]
+        //public async Task<IActionResult> Index()
+        //{
+        //    var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(accountId))
+        //        return RedirectToAction("Login", "Account");
 
-            var bookings = await _ticketService.GetUserTicketsAsync(accountId);
-            return View(bookings);
-        }
+        //    var bookings = await _ticketService.GetUserTicketsAsync(accountId);
+        //    return View(bookings);
+        //}
 
         [HttpGet]
         public async Task<IActionResult> Booked()
