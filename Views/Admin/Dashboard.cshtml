@@ -33,18 +33,7 @@
         </div>
     </div>
 
-    <div class="dashboard-range-switch mb-3">
-        <form method="get" asp-action="MainPage" class="d-inline">
-            <input type="hidden" name="tab" value="Dashboard" />
-            <input type="hidden" name="range" value="weekly" />
-            <button type="submit" class="btn @(ViewData["DashboardRange"] as string == "weekly" ? "btn-primary" : "btn-outline-primary")">Weekly</button>
-        </form>
-        <form method="get" asp-action="MainPage" class="d-inline ms-2">
-            <input type="hidden" name="tab" value="Dashboard" />
-            <input type="hidden" name="range" value="monthly" />
-            <button type="submit" class="btn @(ViewData["DashboardRange"] as string == "monthly" ? "btn-primary" : "btn-outline-primary")">Monthly</button>
-        </form>
-    </div>
+
 
     <div id="movie-dashboard">
         <!-- Row 1: Core KPIs (4 cards in one row) -->
@@ -52,7 +41,7 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-gradient-primary h-100 shadow">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-cash-coin"></i> Gross Ticket Sales</h5>
+                        <h5><i class="bi bi-cash-coin"></i> Gross Ticket Revenue</h5>
                         <p class="display-6">@Model.GrossRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ</p>
                         <p class="small-stat">
                             Today: @Model.RevenueToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ
@@ -100,7 +89,7 @@
             <div class="col-md-8">
                 <div class="card shadow h-100">
                     <div class="card-body p-3">
-                        <h5><i class="bi bi-bar-chart-line"></i> Revenue, Vouchers & Bookings (Last @(ViewData["DashboardRange"] as string == "monthly" ? "30" : "7") days)</h5>
+                        <h5><i class="bi bi-bar-chart-line"></i> Bookings & Revenue </h5>
                         <canvas id="movieComboChart" class="dashboard-chart-canvas"></canvas>
                     </div>
                 </div>
@@ -251,22 +240,52 @@
         <!-- 1) KPI Cards Row (Food Stats) -->
         <div class="row mb-4 align-items-stretch">
             <!-- 1) Gross Revenue -->
-            <div class="col-lg-6 col-md-6 mb-3">
+            <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-gradient-primary shadow h-100">
                     <div class="card-body text-center">
-                        <h5><i class="bi bi-cash-coin"></i> Gross Revenue</h5>
+                        <h5><i class="bi bi-cash-coin"></i> Gross Food Revenue</h5>
                         <p class="display-6">
-                            @Model.FoodAnalytics.GrossRevenue.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
+                            @Model.FoodAnalytics.GrossRevenue.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ
                         </p>
                         <p class="small-stat">
-                            Today: @Model.FoodAnalytics.GrossRevenueToday.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
+                            Today: @Model.FoodAnalytics.GrossRevenueToday.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN")) đ
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- 2) Orders -->
-            <div class="col-lg-6 col-md-6 mb-3">
+            <!-- 2) Vouchers Issued -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card text-white bg-gradient-danger h-100 shadow">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-ticket-perforated"></i> Vouchers Issued</h5>
+                        <p class="display-6">
+                            @Model.FoodAnalytics.VouchersIssued.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
+                        </p>
+                        <p class="small-stat">
+                            Today: @Model.FoodAnalytics.VouchersToday.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3) Net Revenue -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card text-white bg-gradient-success h-100 shadow">
+                    <div class="card-body text-center">
+                        <h5><i class="bi bi-currency-dollar"></i> Net Revenue</h5>
+                        <p class="display-6">
+                            @Model.FoodAnalytics.NetRevenue.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
+                        </p>
+                        <p class="small-stat">
+                            Today: @Model.FoodAnalytics.NetRevenueToday.ToString("N0", CultureInfo.GetCultureInfo("en-US")) đ
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4) Orders -->
+            <div class="col-lg-3 col-md-6 mb-3">
                 <div class="card text-white bg-warning h-100 shadow">
                     <div class="card-body text-center">
                         <h5><i class="bi bi-receipt"></i> Orders</h5>
@@ -285,7 +304,7 @@
             <div class="col-md-8">
                 <div class="card shadow h-100">
                     <div class="card-body">
-                        <h5><i class="bi bi-bar-chart-line"></i> Revenue & Orders (Last @(ViewData["DashboardRange"] as string == "monthly" ? "30" : "7") days)</h5>
+                        <h5><i class="bi bi-bar-chart-line"></i> Orders & Revenue </h5>
                         <canvas id="foodComboChart" class="dashboard-chart-canvas"></canvas>
                     </div>
                 </div>
@@ -371,703 +390,4 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script>
-        // Reusable Chart.js initialization function
-        function createResponsiveChart(canvas, config) {
-            if (!canvas) return null;
-            // Always destroy previous chart if present
-            if (canvas.chartInstance) canvas.chartInstance.destroy();
-            config.options = config.options || {};
-            config.options.responsive = true;
-            config.options.maintainAspectRatio = false;
-            const chart = new Chart(canvas, config);
-            canvas.chartInstance = chart;
-            return chart;
-        }
-
-        // Load dashboard data from hidden element
-        function getDashboardData() {
-            const el = document.getElementById('dashboard-data');
-            if (!el) return null;
-            try {
-                return JSON.parse(el.textContent);
-            } catch (e) {
-                console.error('Failed to parse dashboard data:', e);
-                return null;
-            }
-        }
-
-        // Tab switching logic
-        function showTab(tab) {
-            const movieTab = document.getElementById('tab-movie');
-            const foodTab = document.getElementById('tab-food');
-            const movieDash = document.getElementById('movie-dashboard');
-            const foodDash = document.getElementById('food-dashboard');
-            const downloadBtn = document.getElementById('download-charts-btn');
-
-            if (tab === 'movie') {
-                movieTab.classList.add('active');
-                foodTab.classList.remove('active');
-                movieDash.style.display = '';
-                foodDash.style.display = 'none';
-                downloadBtn.onclick = downloadMovieCharts;
-                const data = getDashboardData();
-                if (data) window.initMovieCharts(data);
-            } else {
-                foodTab.classList.add('active');
-                movieTab.classList.remove('active');
-                foodDash.style.display = '';
-                movieDash.style.display = 'none';
-                downloadBtn.onclick = downloadFoodCharts;
-                const data = getDashboardData();
-                if (data) {
-                    window.foodAnalyticsData = data.FoodAnalytics;
-                    window.initFoodCharts();
-                    setTimeout(() => {
-                        renderFoodItemsByCategoryBar();
-                        renderTopBottomStackedBar();
-                    }, 0);
-                }
-            }
-        }
-
-        // Chart.js initialization for movie stats
-        window.initMovieCharts = function(data) {
-            const revenueLabels = data.RevenueTrendDates || [];
-            const revenueData = data.RevenueTrendValues || [];
-            const bookingLabels = data.BookingTrendDates || [];
-            const bookingData = data.BookingTrendValues || [];
-            const voucherData = data.VoucherTrendValues || [];
-            const topMoviesData = data.TopMovies || [];
-            const topMembersData = data.TopMembers || [];
-
-            // Combined chart for movie stats - Three Bucket Pattern
-            const comboCanvas = document.getElementById('movieComboChart');
-            if (comboCanvas && revenueLabels.length && bookingLabels.length) {
-                window.movieComboChartObj = createResponsiveChart(comboCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: revenueLabels.map(d => {
-                            // Format date as MM-dd
-                            const date = new Date(d);
-                            return (date.getMonth()+1).toString().padStart(2,'0') + '-' + date.getDate().toString().padStart(2,'0');
-                        }),
-                        datasets: [
-                            {
-                                type: 'bar',
-                                label: 'Gross Seat Revenue',
-                                data: revenueData,
-                                backgroundColor: '#FFD700',
-                                yAxisID: 'y',
-                                order: 4
-                            },
-                            {
-                                type: 'bar',
-                                label: 'Vouchers Issued',
-                                data: voucherData,
-                                backgroundColor: '#dc3545',
-                                yAxisID: 'y',
-                                order: 3
-                            },
-                            {
-                                type: 'bar',
-                                label: 'Net Seat Revenue',
-                                data: revenueData.map((rev, i) => rev - (voucherData[i] || 0)),
-                                backgroundColor: '#28a745',
-                                yAxisID: 'y',
-                                order: 2
-                            },
-                            {
-                                type: 'line',
-                                label: 'Valid Bookings',
-                                data: bookingData,
-                                borderColor: '#007bff',
-                                backgroundColor: 'transparent',
-                                fill: false,
-                                yAxisID: 'y1',
-                                tension: 0.3,
-                                pointRadius: 4,
-                                pointBackgroundColor: '#007bff',
-                                order: 1
-                            }
-                        ]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { position: 'top' },
-                            title: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                min: 0,
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return Number.isInteger(value) ? value.toLocaleString() : '';
-                                    },
-                                    stepSize: 1
-                                },
-                                title: { display: true, text: 'Revenue (đ)' }
-                            },
-                            y1: {
-                                type: 'linear',
-                                display: true,
-                                position: 'right',
-                                min: 0,
-                                beginAtZero: true,
-                                grid: { drawOnChartArea: false },
-                                title: { display: true, text: 'Bookings' },
-                                ticks: {
-                                    callback: function(value) {
-                                        return Number.isInteger(value) ? value : '';
-                                    },
-                                    stepSize: 1
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            const topMoviesCanvas = document.getElementById('topMoviesChart');
-            if (topMoviesCanvas && topMoviesData.length) {
-                createResponsiveChart(topMoviesCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: topMoviesData.map(m => m.Item1),
-                        datasets: [{
-                            label: 'Tickets Sold',
-                            data: topMoviesData.map(m => m.Item2),
-                            backgroundColor: '#007bff',
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false }
-                        }
-                    }
-                });
-            }
-
-            const topMembersCanvas = document.getElementById('topMembersChart');
-            if (topMembersCanvas && topMembersData.length) {
-                createResponsiveChart(topMembersCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: topMembersData.map(m => m.Item1),
-                        datasets: [{
-                            label: 'Bookings',
-                            data: topMembersData.map(m => m.Item2),
-                            backgroundColor: '#28a745',
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false }
-                        }
-                    }
-                });
-            }
-        }
-        // Remove mock data and use real data for Top vs Bottom 5 Items
-        window.foodAnalyticsData = @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics ?? new MovieTheater.ViewModels.FoodAnalyticsViewModel()));
-        function groupTopBottomByType(topFoodItems) {
-            // Group by type: { Food: [...], Drink: [...], Combo: [...] }
-            const typeMap = { Food: [], Drink: [], Combo: [] };
-            (topFoodItems || []).forEach(item => {
-                // Assume food type is in item.FoodName or add a property if available
-                // For demo, assign by keyword (customize as needed)
-                let type = 'Food';
-                const name = item.FoodName.toLowerCase();
-                if (name.includes('combo')) type = 'Combo';
-                else if (name.includes('water') || name.includes('juice') || name.includes('tea') || name.includes('soda')) type = 'Drink';
-                typeMap[type].push(item);
-            });
-            // Sort by quantity
-            Object.keys(typeMap).forEach(type => {
-                typeMap[type].sort((a, b) => b.Quantity - a.Quantity);
-            });
-            // Top 5 and bottom 5 for each type
-            const top5 = Object.keys(typeMap).map(type => typeMap[type].slice(0, 5));
-            const bot5 = Object.keys(typeMap).map(type => typeMap[type].slice(-5));
-            return { top5, bot5 };
-        }
-        function renderTopBottomStackedBar() {
-            const topFoodItems = window.foodAnalyticsData.TopFoodItems || [];
-            const { top5, bot5 } = groupTopBottomByType(topFoodItems);
-            const foodTypes = ['Food', 'Drink', 'Combo'];
-            const datasets = [];
-            // Top 5
-            foodTypes.forEach((type, idx) => {
-                (top5[idx] || []).forEach(item => {
-                    const data = [0, 0, 0];
-                    data[idx] = item.Quantity;
-                    datasets.push({
-                        label: `★ ${item.FoodName}`,
-                        data,
-                        stack: 'TopBottom',
-                        backgroundColor: 'rgba(40,167,69,0.8)'
-                    });
-                });
-            });
-            // Bottom 5
-            foodTypes.forEach((type, idx) => {
-                (bot5[idx] || []).forEach(item => {
-                    const data = [0, 0, 0];
-                    data[idx] = item.Quantity;
-                    datasets.push({
-                        label: `☆ ${item.FoodName}`,
-                        data,
-                        stack: 'TopBottom',
-                        backgroundColor: 'rgba(40,167,69,0.3)'
-                    });
-                });
-            });
-            const stackedBarCanvas = document.getElementById('topBottomStackedBar');
-            if (stackedBarCanvas) {
-                window.topBottomStackedBarObj = createResponsiveChart(stackedBarCanvas, {
-                    type: 'bar',
-                    data: { labels: foodTypes, datasets },
-                    options:{
-                        responsive:true,
-                        plugins:{ legend:{ position:'bottom' } },
-                        scales:{
-                            x: { stacked:true },
-                            y: {
-                                stacked:true,
-                                ticks:{
-                                    callback: value => value + '%'
-                                }
-                            }
-                        }
-                    },
-                    plugins: [{
-                        // Convert raw counts to 100%-stacked percentages
-                        id: 'normalizeTo100',
-                        beforeInit(chart) {
-                            const totalPerType = foodTypes.map((_, i) =>
-                                datasets.reduce((sum, ds) => sum + Number(ds.data[i]), 0)
-                            );
-                            chart.data.datasets.forEach(ds => {
-                                ds.data = ds.data.map((v,i) =>
-                                    totalPerType[i] === 0 ? 0 : (v / totalPerType[i] * 100).toFixed(1)
-                                );
-                            });
-                        }
-                    }]
-                });
-            }
-        }
-        function renderFoodItemsByCategoryBar() {
-            const items = window.foodAnalyticsData.TopFoodItems || [];
-            const categories = ["food", "drink", "combo"];
-            // Define color palettes for each category
-            const categoryPalettes = {
-                food:   ["#8B4513", "#A0522D", "#D2691E", "#CD853F", "#DEB887", "#B87333"], // browns
-                drink:  ["#FF8C00", "#FFA500", "#FFB347", "#FFD580", "#FF7F50", "#FF9933"], // oranges
-                combo:  ["#FFD700", "#FFFACD", "#FFE066", "#FFEC8B", "#F9E79F", "#F7DC6F"]  // yellows
-            };
-            // Group food items by category
-            const itemsByCategory = {};
-            categories.forEach(cat => {
-                itemsByCategory[cat] = items.filter(x => x.Category === cat);
-            });
-            // Assign colors
-            const colorMap = {};
-            categories.forEach(cat => {
-                const palette = categoryPalettes[cat];
-                itemsByCategory[cat].forEach((item, idx) => {
-                    colorMap[item.FoodName] = palette[idx % palette.length];
-                });
-            });
-            // Calculate total revenue per category
-            const totals = {};
-            categories.forEach(cat => {
-                totals[cat] = itemsByCategory[cat].reduce((sum, x) => sum + x.Revenue, 0);
-            });
-            // Build datasets: one per food item
-            const foodNames = items.map(x => x.FoodName);
-            const datasets = foodNames.map(food => {
-                const foodItem = items.find(x => x.FoodName === food);
-                return {
-                    label: food,
-                    data: categories.map(cat => {
-                        if (foodItem && foodItem.Category === cat) {
-                            return totals[cat] ? (foodItem.Revenue / totals[cat]) * 100 : 0;
-                        }
-                        return 0;
-                    }),
-                    backgroundColor: colorMap[food]
-                };
-            });
-            const foodItemsByCategoryBarCanvas = document.getElementById('foodItemsByCategoryBar');
-            if (foodItemsByCategoryBarCanvas && foodItemsByCategoryBarCanvas.offsetParent !== null) {
-                window.foodItemsByCategoryBarChart = createResponsiveChart(foodItemsByCategoryBarCanvas, {
-                    type: 'bar',
-                    data: { labels: categories, datasets },
-                    options: {
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            datalabels: {
-                                display: true,
-                                color: '#fff',
-                                font: { weight: 'bold' },
-                                formatter: value => value > 0 ? value.toFixed(2) + '%' : ''
-                            }
-                        },
-                        scales: {
-                            x: { stacked: true },
-                            y: {
-                                stacked: true,
-                                max: 100,
-                                beginAtZero: true,
-                                ticks: { callback: v => v + '%' }
-                            }
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        }
-        function initSparklines(revenueData, ordersData) {
-            const itemsPerOrderData = ordersData.map((orders, index) => {
-                const revenue = revenueData[index];
-                return orders > 0 ? revenue / orders : 0;
-            });
-
-            const sparklineOptions = {
-                type: 'line',
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false }
-                    },
-                    elements: {
-                        point: { radius: 0 }
-                    },
-                    layout: {
-                        padding: 0
-                    }
-                }
-            };
-
-            createResponsiveChart(document.getElementById('revenue-sparkline'), {
-                ...sparklineOptions,
-                data: {
-                    labels: Array(revenueData.length).fill(''),
-                    datasets: [{
-                        data: revenueData,
-                        borderColor: '#28a745',
-                        borderWidth: 2,
-                        fill: false
-                    }]
-                }
-            });
-
-            createResponsiveChart(document.getElementById('orders-sparkline'), {
-                ...sparklineOptions,
-                data: {
-                    labels: Array(ordersData.length).fill(''),
-                    datasets: [{
-                        data: ordersData,
-                        borderColor: '#007bff',
-                        borderWidth: 2,
-                        fill: false
-                    }]
-                }
-            });
-
-            createResponsiveChart(document.getElementById('items-sparkline'), {
-                ...sparklineOptions,
-                data: {
-                    labels: Array(itemsPerOrderData.length).fill(''),
-                    datasets: [{
-                        data: itemsPerOrderData,
-                        borderColor: '#ffc107',
-                        borderWidth: 2,
-                        fill: false
-                    }]
-                }
-            });
-        }
-
-        window.initFoodCharts = function() {
-            const data = {
-                revenueByDayLabels: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.RevenueByDayDates?.Select(d => d.ToString("MM-dd")) ?? new List<string>())),
-                revenueByDay: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.RevenueByDayValues ?? new List<decimal>())),
-                ordersByDay: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.OrdersByDayValues ?? new List<int>())),
-                topFoodLabels: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.TopFoodItems?.Select(x => x.FoodName) ?? new List<string>())),
-                topFoodData: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.TopFoodItems?.Select(x => x.Quantity) ?? new List<int>())),
-                categoryLabels: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.SalesByCategory?.Select(x => x.Category) ?? new List<string>())),
-                categoryData: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.SalesByCategory?.Select(x => x.Revenue) ?? new List<decimal>())),
-                salesByHour: @Html.Raw(JsonConvert.SerializeObject(Model.FoodAnalytics?.SalesByHour ?? new List<int>()))
-            };
-            const comboCanvas = document.getElementById('foodComboChart');
-            if (comboCanvas) {
-                window.foodComboChartObj = createResponsiveChart(comboCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: data.revenueByDayLabels,
-                        datasets: [
-                            {
-                                type: 'bar',
-                                label: 'Revenue',
-                                data: data.revenueByDay,
-                                backgroundColor: '#FFD700',
-                                yAxisID: 'y',
-                                order: 2
-                            },
-                            {
-                                type: 'line',
-                                label: 'Orders',
-                                data: data.ordersByDay,
-                                borderColor: '#007bff',
-                                backgroundColor: 'transparent',
-                                fill: false,
-                                yAxisID: 'y1',
-                                tension: 0.3,
-                                pointRadius: 4,
-                                pointBackgroundColor: '#007bff',
-                                order: 1
-                            }
-                        ]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { position: 'top' },
-                            title: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                min: 0,
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return Number.isInteger(value) ? value.toLocaleString() : '';
-                                    },
-                                    stepSize: 1
-                                },
-                                title: { display: true, text: 'Revenue (đ)' }
-                            },
-                            y1: {
-                                type: 'linear',
-                                display: true,
-                                position: 'right',
-                                min: 0,
-                                beginAtZero: true,
-                                grid: { drawOnChartArea: false },
-                                title: { display: true, text: 'Orders' },
-                                ticks: {
-                                    callback: function(value) {
-                                        return Number.isInteger(value) ? value : '';
-                                    },
-                                    stepSize: 1
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-            const pieCanvas = document.getElementById('foodCategoryPie');
-            if (pieCanvas) {
-                window.foodCategoryPieObj = createResponsiveChart(pieCanvas, {
-                    type: 'pie',
-                    data: {
-                        labels: data.categoryLabels,
-                        datasets: [{
-                            data: data.categoryData,
-                            backgroundColor: ['#FFD700', '#007bff', '#28a745', '#ffc107', '#dc3545'],
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            title: { display: false },
-                            datalabels: {
-                                color: '#222',
-                                font: { weight: 'bold', size: 16 },
-                                formatter: (value, context) => {
-                                    const dataArr = context.chart.data.datasets[0].data;
-                                    const total = dataArr.reduce((a, b) => a + b, 0);
-                                    if (!total) return '';
-                                    const pct = Math.round((value / total) * 100);
-                                    return pct + '%';
-                                }
-                            }
-                        },
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-            const topFoodCanvas = document.getElementById('topFoodBar');
-            if (topFoodCanvas) {
-                window.topFoodBarObj = createResponsiveChart(topFoodCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: data.topFoodLabels,
-                        datasets: [{
-                            label: 'Quantity Sold',
-                            data: data.topFoodData,
-                            backgroundColor: '#FFD700',
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { display: false },
-                            title: { display: false }
-                        }
-                    }
-                });
-            }
-            const hourCanvas = document.getElementById('foodHourHeatmap');
-            if (hourCanvas) {
-                window.foodHourHeatmapObj = createResponsiveChart(hourCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: Array.from({length: 24}, (_, i) => i + ':00'),
-                        datasets: [{
-                            label: 'Quantity Sold',
-                            data: data.salesByHour,
-                            backgroundColor: '#007bff',
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { display: false },
-                            title: { display: false }
-                        },
-                        scales: {
-                            x: { title: { display: true, text: 'Hour of Day' } },
-                            y: { title: { display: true, text: 'Quantity Sold' } }
-                        }
-                    }
-                });
-            }
-            renderTopBottomStackedBar();
-            initSparklines(data.revenueByDay, data.ordersByDay);
-            // renderFoodItemsByCategoryBar(); // This line is now handled by showTab
-        };
-        function switchTab(tab) {
-            // Remove active class from all buttons
-            document.querySelectorAll('.btn-group .btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Add active class to clicked button
-            document.getElementById(tab + '-btn').classList.add('active');
-
-            // Hide all tab panes
-            document.querySelectorAll('.tab-pane').forEach(pane => {
-                pane.classList.remove('show', 'active');
-            });
-
-            // Show selected tab pane
-            const selectedPane = document.getElementById(tab + '-list');
-            selectedPane.classList.add('show', 'active');
-        }
-
-    function switchMovieTab(tab) {
-        document.querySelectorAll('#movie-dashboard .btn-group .btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.getElementById(tab + '-btn').classList.add('active');
-
-        document.querySelectorAll('#movie-dashboard .tab-pane').forEach(pane => {
-            pane.classList.remove('show', 'active');
-        });
-        document.getElementById(tab + '-list').classList.add('show', 'active');
-    }
-
-    // On page load, default to movie tab and initialize charts
-    document.addEventListener('DOMContentLoaded', function() {
-        showTab('movie');
-        // Initialize the movie activity tab as well
-        switchMovieTab('booked');
-    });
-
-
-
-        function downloadFoodCharts() {
-            const zip = new JSZip();
-            const charts = [
-                { id: 'foodComboChart', name: 'revenue_orders_trend.png' },
-                { id: 'foodCategoryPie', name: 'sales_by_category.png' },
-                { id: 'foodItemsByCategoryBar', name: 'food_items_by_category.png' },
-                { id: 'foodHourHeatmap', name: 'sales_by_hour.png' }
-            ];
-
-            const promises = charts.map(chartInfo => {
-                const canvas = document.getElementById(chartInfo.id);
-                if (canvas && canvas.chartInstance) {
-                    return new Promise(resolve => {
-                        canvas.toBlob(blob => {
-                            zip.file(chartInfo.name, blob);
-                            resolve();
-                        });
-                    });
-                }
-                return Promise.resolve();
-            });
-
-            Promise.all(promises).then(() => {
-                zip.generateAsync({ type: "blob" }).then(content => {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(content);
-                    link.download = 'food_charts.zip';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-            });
-        }
-
-        function downloadMovieCharts() {
-            const zip = new JSZip();
-            const charts = [
-                { id: 'movieComboChart', name: 'revenue_vouchers_bookings_trend.png' },
-                { id: 'topMoviesChart', name: 'top_movies.png' },
-                { id: 'topMembersChart', name: 'top_members.png' }
-            ];
-
-            const promises = charts.map(chartInfo => {
-                const canvas = document.getElementById(chartInfo.id);
-                if (canvas && canvas.chartInstance) {
-                    return new Promise(resolve => {
-                        canvas.toBlob(blob => {
-                            zip.file(chartInfo.name, blob);
-                            resolve();
-                        });
-                    });
-                }
-                return Promise.resolve();
-            });
-
-            Promise.all(promises).then(() => {
-                zip.generateAsync({ type: "blob" }).then(content => {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(content);
-                    link.download = 'movie_charts.zip';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-            });
-        }
-</script>
-
+<script src="~/js/dashboard.js" asp-append-version="true"></script>
