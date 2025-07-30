@@ -180,6 +180,12 @@
                                 </tr>
                             }
                         </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">Seat Total:</td>
+                                <td>@subtotal.ToString("N0") VND</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -244,10 +250,13 @@
                     </div>
                     <div class="card-content-modern">
                         <div class="price-breakdown">
+                            <!-- Seat Price (after promotion) -->
                             <div class="price-row">
                                 <span class="price-label">Seat Price</span>
                                 <span class="price-value">@subtotal.ToString("N0") VND</span>
                             </div>
+                            
+                            <!-- Rank Discount -->
                             @if (rankDiscount > 0)
                             {
                                 <div class="price-row">
@@ -255,6 +264,8 @@
                                     <span class="price-value discount">-@rankDiscount.ToString("N0") VND</span>
                                 </div>
                             }
+                            
+                            <!-- Points Used -->
                             @if (useScore > 0)
                             {
                                 <div class="price-row">
@@ -262,6 +273,14 @@
                                     <span class="price-value discount">-@useScore (@usedScoreValue.ToString("N0") VND)</span>
                                 </div>
                             }
+                            
+                            <!-- Seat Total (after all seat discounts) -->
+                            <div class="price-row">
+                                <span class="price-label">Seat Total</span>
+                                <span class="price-value">@seatTotalAfterRankAndScore.ToString("N0") VND</span>
+                            </div>
+                            
+                            <!-- Food & Drinks -->
                             @if (totalFoodPrice > 0)
                             {
                                 <div class="price-row">
@@ -269,6 +288,8 @@
                                     <span class="price-value addition">+@totalFoodPrice.ToString("N0") VND</span>
                                 </div>
                             }
+                            
+                            <!-- Voucher -->
                             @if ((Model.VoucherAmount ?? 0m) > 0)
                             {
                                 <div class="price-row">
@@ -276,10 +297,14 @@
                                     <span class="price-value discount">-@((Model.VoucherAmount ?? 0m).ToString("N0")) VND</span>
                                 </div>
                             }
+                            
+                            <!-- Total Amount -->
                             <div class="price-row total-row">
                                 <span class="price-label">Total Amount</span>
                                 <span class="price-value total">@runningTotal.ToString("N0") VND</span>
                             </div>
+                            
+                            <!-- Points Earned -->
                             @if (addScore > 0)
                             {
                                 <div class="price-row">
