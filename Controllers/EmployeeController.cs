@@ -4,6 +4,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Data;
 namespace MovieTheater.Controllers
 {
     public class EmployeeController : Controller
@@ -299,7 +300,8 @@ namespace MovieTheater.Controllers
                 Address = employee.Account.Address,
                 PhoneNumber = employee.Account.PhoneNumber,
                 Image = employee.Account.Image,
-                AccountId = employee.AccountId
+                AccountId = employee.AccountId,
+                Status = employee.Status
             };
 
             return View(viewModel);
@@ -308,7 +310,7 @@ namespace MovieTheater.Controllers
         // POST: EmployeeController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditAsync(string id, EmployeeEditViewModel model)
+        public ActionResult EditAsync(string id, EmployeeEditViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -320,6 +322,10 @@ namespace MovieTheater.Controllers
             {
                 TempData["ErrorMessage"] = "Employee not found.";
                 return View(model);
+            }
+            if (employee.Status != model.Status)
+            {
+                _service.ToggleStatus(employee.EmployeeId);
             }
 
             if (!string.IsNullOrEmpty(model.Password))
@@ -353,7 +359,7 @@ namespace MovieTheater.Controllers
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        await model.ImageFile.CopyToAsync(stream);
+                        model.ImageFile.CopyToAsync(stream);
                     }
                     model.Image = "/image/" + uniqueFileName;
                 }
@@ -449,6 +455,41 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
                 return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public IActionResult ToggleStatus(string id)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(id))
+                {
+                    TempData["ErrorMessage"] = "Invalid employee ID.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                var employee = _service.GetById(id);
+                if (employee == null)
+                {
+                    TempData["ErrorMessage"] = "Employee not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                _service.ToggleStatus(id);
+                TempData["ToastMessage"] = "Employee status updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+            }
+            catch (ArgumentException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
+            }
+            return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
         }
     }
 }

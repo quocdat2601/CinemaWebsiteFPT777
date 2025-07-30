@@ -240,6 +240,7 @@ public partial class MovieTheaterContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("Account_ID");
+            entity.Property(e => e.Status).HasDefaultValue(true);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Employees)
                 .HasForeignKey(d => d.AccountId)
@@ -319,6 +320,10 @@ public partial class MovieTheaterContext : DbContext
             entity.Property(e => e.BookingDate).HasColumnType("datetime");
             entity.Property(e => e.CancelBy).HasMaxLength(50);
             entity.Property(e => e.CancelDate).HasColumnType("datetime");
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("Employee_ID");
             entity.Property(e => e.MovieShowId).HasColumnName("Movie_Show_Id");
             entity.Property(e => e.PromotionDiscount)
                 .HasMaxLength(1000)
@@ -341,6 +346,10 @@ public partial class MovieTheaterContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.AccountId)
                 .HasConstraintName("FK_Invoice_Account");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.EmployeeId)
+                .HasConstraintName("FK_Invoice_Employee");
 
             entity.HasOne(d => d.MovieShow).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.MovieShowId)

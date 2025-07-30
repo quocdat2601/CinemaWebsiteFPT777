@@ -210,7 +210,14 @@
 <div class="container mt-4">
     <div class="ticket-card card shadow p-0">
         <div class="ticket-success-header">
-            <h2 class="mb-0">Ticket Information</h2>
+            @if (Model.EmployeeId != null)
+            {
+                <h2 class="mb-0">Ticket Information (Employee)</h2>
+            }
+            else
+            {
+                <h2 class="mb-0">Ticket Information</h2>
+            }
             <span class="status-badge @(status == "Completed" ? "status-completed" : "status-cancelled")">
                 @status
             </span>
@@ -398,6 +405,22 @@
                         <label for="memberPhone" class="ticket-info-label">Phone</label>
                         <input type="text" id="memberPhone" class="ticket-info-value" value="@memberPhone" readonly />
                     </div>
+                    @if (Model.EmployeeId != null)
+                    {
+                        <div class="ticket-section-title">Employee Information</div>
+                        <div class="ticket-row">
+                            <label for="employeeId" class="ticket-info-label">Employee ID</label>
+                            <input type="text" class="ticket-info-value" value="@Model.EmployeeId" readonly />
+                            <label for="employeeName" class="ticket-info-label">Name</label>
+                            <input type="text" class="ticket-info-value" value="@Model.EmployeeName" readonly />
+                        </div>
+                        <div class="ticket-row">
+                            <label for="employeePhone" class="ticket-info-label">Phone</label>
+                            <input type="text" class="ticket-info-value" value="@Model.EmployeePhone" readonly />
+                            <label for="employeeDob" class="ticket-info-label">Date of Birth</label>
+                            <input type="text" class="ticket-info-value" value="@(Model.DateofBirth?.ToString("dd/MM/yyyy"))" readonly />
+                        </div>
+                    }
                     <div class="text-center mt-4">
                         <a href="@Model.ReturnUrl" class="btn btn-primary fw-bold px-4 me-3" style="min-width: 220px;">
                             <i class="fas fa-arrow-left me-1"></i> Back to Booking Management

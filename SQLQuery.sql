@@ -50,6 +50,7 @@ CREATE TABLE Account (
 CREATE TABLE Employee (
     Employee_ID VARCHAR(10) PRIMARY KEY,
     Account_ID VARCHAR(10),
+    Status BIT NOT NULL DEFAULT 1,
     CONSTRAINT FK_Employee_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID)
 );
 
@@ -222,6 +223,8 @@ CREATE TABLE Invoice (
     CancelDate DATETIME NULL,              -- ngày hủy, cho phép null
     CancelBy NVARCHAR(50) NULL,            -- người thực hiện hủy, cho phép null
 	RankDiscountPercentage DECIMAL(5,2) NULL,
+    Employee_ID VARCHAR(10) NULL,
+    FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID),
     CONSTRAINT FK_Invoice_Account FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
 	FOREIGN KEY (Movie_Show_ID) REFERENCES Movie_Show(Movie_Show_ID),
 	FOREIGN KEY (Voucher_ID) REFERENCES Voucher(Voucher_ID)

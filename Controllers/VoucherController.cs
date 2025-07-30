@@ -188,7 +188,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Voucher/AdminDelete (POST)</remarks>
         [HttpPost]
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminDelete(string id, string returnUrl)
         {
             var voucher = _voucherService.GetById(id);
@@ -211,7 +211,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Voucher/AdminEdit (GET)</remarks>
         [HttpGet]
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public IActionResult AdminEdit(string id)
         {
             var voucher = _voucherService.GetById(id);
@@ -254,7 +254,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Voucher/AdminEdit (POST)</remarks>
         [HttpPost]
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminEdit(VoucherViewModel viewModel, IFormFile? imageFile)
         {
             if (!ModelState.IsValid) return View(viewModel);
@@ -337,7 +337,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Voucher/AdminCreate (GET)</remarks>
         [HttpGet]
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public IActionResult AdminCreate()
         {
             return View(new VoucherViewModel
@@ -354,7 +354,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Voucher/AdminCreate (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminCreate(VoucherViewModel viewModel, IFormFile? imageFile)
         {
             if (ModelState.IsValid)
@@ -417,7 +417,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Voucher/GetAllMembers (GET)</remarks>
         [HttpGet]
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public IActionResult GetAllMembers()
         {
             var members = _voucherService.GetAllMembers()

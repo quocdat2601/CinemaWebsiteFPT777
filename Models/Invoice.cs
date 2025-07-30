@@ -41,7 +41,11 @@ public partial class Invoice
 
     public decimal? RankDiscountPercentage { get; set; }
 
+    public string? EmployeeId { get; set; }
+
     public virtual Account? Account { get; set; }
+
+    public virtual Employee? Employee { get; set; }
 
     public virtual ICollection<FoodInvoice> FoodInvoices { get; set; } = new List<FoodInvoice>();
 

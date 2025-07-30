@@ -15,36 +15,52 @@
         <a href="@Url.Action("InitiateTicketSellingForMember", "Booking", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Sell Ticket
         </a>
-</div>
+    </div>
 
     <!-- Search and Filter Section -->
     <div class="card mb-4">
         <div class="card-body">
-            <form id="bookingSearchForm" class="row g-3" onsubmit="searchBookings(); return false;">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" id="searchKeyword" name="keyword"
-                           placeholder="Search by Booking ID, Account ID, Phone, Identity Card..." value="@ViewBag.Keyword">
+            <form id="bookingSearchForm" onsubmit="searchBookings(); return false;">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="searchKeyword" name="keyword"
+                               placeholder="Search by Booking ID, Account ID, Phone, Identity Card..." value="@ViewBag.Keyword">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter" name="statusFilter">
+                            <option value="" selected>All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="notpaid">Not Paid</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="#" onclick="resetFilters(); return false;" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </a>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="statusFilter" name="statusFilter">
-                        <option value="" selected>All Status</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="notpaid">Not Paid</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <!-- Đã có sort bằng tiêu đề, không cần dropdown sortBy nữa -->
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <a href="#" onclick="loadTab('BookingMg'); return false;" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-arrow-clockwise"></i> Reset
-                    </a>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                                                 <div class="form-check form-check-inline">
+                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="allBookings" value="all" @(ViewBag.CurrentBookingTypeFilter == "all" || string.IsNullOrEmpty(ViewBag.CurrentBookingTypeFilter) ? "checked" : "")>
+                             <label class="form-check-label" for="allBookings">All Bookings</label>
+                         </div>
+                         <div class="form-check form-check-inline">
+                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="normalBookings" value="normal" @(ViewBag.CurrentBookingTypeFilter == "normal" ? "checked" : "")>
+                             <label class="form-check-label" for="normalBookings">Normal Bookings</label>
+                         </div>
+                         <div class="form-check form-check-inline">
+                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="employeeBookings" value="employee" @(ViewBag.CurrentBookingTypeFilter == "employee" ? "checked" : "")>
+                             <label class="form-check-label" for="employeeBookings">Employee Bookings</label>
+                         </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -131,18 +147,18 @@
                                 <th class="text-end sortable" data-sort="time">Schedule Time <span id="sortIconTime"></span></th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-            @foreach (var Invoice in Model)
-            {   
-                var account = AccountService.GetById(Invoice.AccountId);
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Invoice in Model)
+                            {
+                                var account = AccountService.GetById(Invoice.AccountId);
                                 var statusBadge = Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !Invoice.Cancel ?
-                                    "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
-                                    Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
-                                    "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
-                                    "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
-                <tr class="text-center booking-row">
+                                "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
+                                Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
+                                "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
+                                "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
+                                <tr class="text-center booking-row">
                                     <td class="text-center">@Invoice.InvoiceId</td>
                                     <td class="text-start">@(Invoice.MovieShow.Movie.MovieNameEnglish ?? "N/A")</td>
                                     <td class="text-center">@Invoice.AccountId</td>
@@ -151,14 +167,14 @@
                                     <td class="text-end">@(Invoice.MovieShow.Schedule.ScheduleTime.ToString())</td>
                                     <td class="text-center">@Html.Raw(statusBadge)</td>
                                     <td class="text-center">
-                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
-                            <i class="fas fa-info-circle"></i> Details
-                        </a>
-                    </td>
-                </tr>
-        }
-    </tbody>
-</table>
+                                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                                            <i class="fas fa-info-circle"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
             else
@@ -177,104 +193,172 @@
     .font-monospace {
         font-family: 'Courier New', monospace;
     }
+
     .table-hover tbody tr:hover {
         background-color: rgba(0, 123, 255, 0.05);
     }
+
     .card {
         border: none;
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
+
     .btn-group .btn {
         border-radius: 0.375rem;
     }
-    .btn-group .btn:not(:last-child) {
-        margin-right: 0.25rem;
-    }
+
+        .btn-group .btn:not(:last-child) {
+            margin-right: 0.25rem;
+        }
+
     .badge {
         font-size: 0.75em;
     }
+
     .sortable {
-    cursor: pointer;
-    user-select: none;
-}
+        cursor: pointer;
+        user-select: none;
+    }
 </style>
 
 <script>
-let currentSort = { by: '', dir: 'asc', param: '' };
+    let currentSort = { by: '', dir: 'asc', param: '' };
 
-$(document).on('click', '#booking-table .sortable', function() {
-    const sortBy = $(this).data('sort');
-    if (currentSort.by === sortBy) {
-        currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
-    } else {
-        currentSort.by = sortBy;
-        currentSort.dir = 'asc';
-    }
-    let sortParam = '';
-    if (sortBy === 'id') sortParam = currentSort.dir === 'asc' ? 'id_asc' : 'id_desc';
-    if (sortBy === 'movie') sortParam = currentSort.dir === 'asc' ? 'movie_az' : 'movie_za';
-    if (sortBy === 'account') sortParam = currentSort.dir === 'asc' ? 'account_az' : 'account_za';
-    if (sortBy === 'identity') sortParam = currentSort.dir === 'asc' ? 'identity_az' : 'identity_za';
-    if (sortBy === 'phone') sortParam = currentSort.dir === 'asc' ? 'phone_az' : 'phone_za';
-    if (sortBy === 'time') sortParam = currentSort.dir === 'asc' ? 'time_asc' : 'time_desc';
-    currentSort.param = sortParam;
-    saveSortState();
-    searchBookings();
-    updateSortIcons();
-});
+    // Initialize radio button state on page load
+    $(document).ready(function() {
+        restoreRadioButtonState();
+    });
 
-function searchBookings() {
-    const keyword = document.getElementById('searchKeyword').value;
-    const status = document.getElementById('statusFilter').value;
-    loadTab('BookingMg', { keyword, statusFilter: status, sortBy: currentSort.param });
-}
+    $(document).on('click', '#booking-table .sortable', function() {
+        const sortBy = $(this).data('sort');
+        if (currentSort.by === sortBy) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.by = sortBy;
+            currentSort.dir = 'asc';
+        }
+        let sortParam = '';
+        if (sortBy === 'id') sortParam = currentSort.dir === 'asc' ? 'id_asc' : 'id_desc';
+        if (sortBy === 'movie') sortParam = currentSort.dir === 'asc' ? 'movie_az' : 'movie_za';
+        if (sortBy === 'account') sortParam = currentSort.dir === 'asc' ? 'account_az' : 'account_za';
+        if (sortBy === 'identity') sortParam = currentSort.dir === 'asc' ? 'identity_az' : 'identity_za';
+        if (sortBy === 'phone') sortParam = currentSort.dir === 'asc' ? 'phone_az' : 'phone_za';
+        if (sortBy === 'time') sortParam = currentSort.dir === 'asc' ? 'time_asc' : 'time_desc';
+        currentSort.param = sortParam;
+        saveSortState();
+        searchBookings();
+        updateSortIcons();
+    });
 
-function updateSortIcons() {
-    $('#sortIconId, #sortIconMovie, #sortIconAccount, #sortIconIdentity, #sortIconPhone, #sortIconTime').html('');
-    if (currentSort.by === 'id') {
-        $('#sortIconId').html(currentSort.dir === 'asc' ? '▲' : '▼');
-    }
-    if (currentSort.by === 'movie') {
-        $('#sortIconMovie').html(currentSort.dir === 'asc' ? '▲' : '▼');
-    }
-    if (currentSort.by === 'account') {
-        $('#sortIconAccount').html(currentSort.dir === 'asc' ? '▲' : '▼');
-    }
-    if (currentSort.by === 'identity') {
-        $('#sortIconIdentity').html(currentSort.dir === 'asc' ? '▲' : '▼');
-    }
-    if (currentSort.by === 'phone') {
-        $('#sortIconPhone').html(currentSort.dir === 'asc' ? '▲' : '▼');
-    }
-    if (currentSort.by === 'time') {
-        $('#sortIconTime').html(currentSort.dir === 'asc' ? '▲' : '▼');
-    }
-}
+    function searchBookings() {
+        const keyword = document.getElementById('searchKeyword').value;
+        const status = document.getElementById('statusFilter').value;
 
-// Lưu trạng thái sort vào localStorage mỗi lần sort
-function saveSortState() {
-    localStorage.setItem('bookingSort', JSON.stringify(currentSort));
-}
-// Đọc lại trạng thái sort khi load tab
-function restoreSortState() {
-    const saved = localStorage.getItem('bookingSort');
-    if (saved) {
-        const s = JSON.parse(saved);
-        if (s && s.by) {
-            currentSort.by = s.by;
-            currentSort.dir = s.dir;
-            currentSort.param = s.param;
-            updateSortIcons();
+        // Get booking type from localStorage if available, otherwise from DOM
+        let bookingType = localStorage.getItem('bookingTypeFilter');
+        if (!bookingType) {
+            bookingType = document.querySelector('input[name="bookingTypeFilter"]:checked').value;
+        }
+
+        loadTab('BookingMg', { keyword, statusFilter: status, bookingTypeFilter: bookingType, sortBy: currentSort.param });
     }
-    }
-}
-// Gọi lại khi tab BookingMg được load
-$(document).on('tabContentLoaded', function(e, tabName) {
-    if (tabName === 'BookingMg') {
-        restoreSortState();
-        if (currentSort.param) {
-            searchBookings();
+
+    // Add event handler for radio button changes
+    $(document).on('change', 'input[name="bookingTypeFilter"]', function() {
+        const selectedValue = $(this).val();
+        // Save the selected value before reloading
+        localStorage.setItem('bookingTypeFilter', selectedValue);
+        searchBookings();
+    });
+
+    // Add event handler for search input changes
+    $(document).on('input', '#searchKeyword', function() {
+        searchBookings();
+    });
+
+    // Add event handler for status filter changes
+    $(document).on('change', '#statusFilter', function() {
+        searchBookings();
+    });
+
+    function updateSortIcons() {
+        $('#sortIconId, #sortIconMovie, #sortIconAccount, #sortIconIdentity, #sortIconPhone, #sortIconTime').html('');
+        if (currentSort.by === 'id') {
+            $('#sortIconId').html(currentSort.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSort.by === 'movie') {
+            $('#sortIconMovie').html(currentSort.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSort.by === 'account') {
+            $('#sortIconAccount').html(currentSort.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSort.by === 'identity') {
+            $('#sortIconIdentity').html(currentSort.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSort.by === 'phone') {
+            $('#sortIconPhone').html(currentSort.dir === 'asc' ? '▲' : '▼');
+        }
+        if (currentSort.by === 'time') {
+            $('#sortIconTime').html(currentSort.dir === 'asc' ? '▲' : '▼');
         }
     }
+
+    // Lưu trạng thái sort vào localStorage mỗi lần sort
+    function saveSortState() {
+        localStorage.setItem('bookingSort', JSON.stringify(currentSort));
+    }
+    // Đọc lại trạng thái sort khi load tab
+    function restoreSortState() {
+        const saved = localStorage.getItem('bookingSort');
+        if (saved) {
+            const s = JSON.parse(saved);
+            if (s && s.by) {
+                currentSort.by = s.by;
+                currentSort.dir = s.dir;
+                currentSort.param = s.param;
+                updateSortIcons();
+        }
+        }
+    }
+    // Gọi lại khi tab BookingMg được load
+    $(document).on('tabContentLoaded', function(e, tabName) {
+        if (tabName === 'BookingMg') {
+            restoreSortState();
+            // Use a longer delay to ensure content is fully rendered
+            setTimeout(function() {
+                restoreRadioButtonState();
+            }, 200);
+            if (currentSort.param) {
+                searchBookings();
+            }
+        }
     });
+
+    // Function to restore radio button state
+    function restoreRadioButtonState() {
+        const savedFilter = localStorage.getItem('bookingTypeFilter');
+        if (savedFilter) {
+            // Uncheck all radio buttons first
+            $('input[name="bookingTypeFilter"]').prop('checked', false);
+            // Check the saved one
+            $(`input[name="bookingTypeFilter"][value="${savedFilter}"]`).prop('checked', true);
+        } else {
+            // If no saved filter, default to "all"
+            $('input[name="bookingTypeFilter"]').prop('checked', false);
+            $('input[name="bookingTypeFilter"][value="all"]').prop('checked', true);
+        }
+    }
+
+    // Function to reset all filters
+    function resetFilters() {
+        // Clear localStorage
+        localStorage.removeItem('bookingSort');
+        localStorage.removeItem('bookingTypeFilter');
+
+        // Reset current sort state
+        currentSort = { by: '', dir: 'asc', param: '' };
+
+        // Load tab with default "all" filter
+        loadTab('BookingMg', { bookingTypeFilter: 'all' });
+    }
 </script>

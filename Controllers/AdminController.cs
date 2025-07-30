@@ -71,7 +71,7 @@ namespace MovieTheater.Controllers
         }
 
 
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null)
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string bookingTypeFilter = null)
         {
             switch (tab)
             {
@@ -149,6 +149,19 @@ namespace MovieTheater.Controllers
                         else if (statusFilter == "notpaid")
                             invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
                     }
+
+                    // Bổ sung filter booking type (all vs normal vs employee)
+                    if (!string.IsNullOrEmpty(bookingTypeFilter))
+                    {
+                        if (bookingTypeFilter == "normal")
+                            invoices = invoices.Where(i => i.EmployeeId == null).ToList();
+                        else if (bookingTypeFilter == "employee")
+                            invoices = invoices.Where(i => i.EmployeeId != null).ToList();
+                        // If bookingTypeFilter is "all" or any other value, don't filter (show all)
+                    }
+                    
+                    // Set the current booking type filter for the view
+                    ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
 
                     // Bổ sung sort
                     var sortBy = Request.Query["sortBy"].ToString();
@@ -323,7 +336,7 @@ namespace MovieTheater.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Edit(string id)
         {
             var account = _accountService.GetById(id); // Use AccountService to get the Account by AccountId
@@ -352,7 +365,7 @@ namespace MovieTheater.Controllers
             return View("EditMember", viewModel);
         }
 
-        [Authorize(Roles = "Admin, Employee")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(string id, RegisterViewModel model)
@@ -689,7 +702,7 @@ namespace MovieTheater.Controllers
             };
         }
 
-        [Authorize(Roles = "Admin,Employee")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public IActionResult ShowtimeMg(string date)
         {

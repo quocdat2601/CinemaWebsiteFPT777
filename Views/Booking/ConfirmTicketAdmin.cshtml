@@ -1,6 +1,6 @@
 ﻿@using Newtonsoft.Json
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
-
+@using System.Security.Claims
 <script>
     window.serverPromotionDiscountPercent = @Model.BookingDetails.PromotionDiscountPercent;
 </script>
@@ -8,6 +8,7 @@
 @{
     ViewBag.Title = "Confirm Ticket Information (Admin)";
     Layout = "_Layout";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 }
 
 <style>
@@ -111,7 +112,14 @@
     <div class="text-start p-3">
         <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, versionId = Model.BookingDetails.VersionId, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
-    <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
+    @if (userRole == "Admin")
+    {
+        <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
+    }
+    else
+    {
+        <h2 class="text-center mb-4">Confirm Ticket Information (Employee)</h2>
+    }
     <div class="card shadow p-4">
         <div class="section-title">Movie & Show Info</div>
         <div class="ticket-row">

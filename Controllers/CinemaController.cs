@@ -20,10 +20,8 @@ namespace MovieTheater.Controllers
             _movieService = movieService;
             _ticketService = ticketService;
         }
-        private string GetUserRole()
-        {
-            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-        }
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+
         // GET: CinemaController
         [HttpGet]
         public ActionResult Index()
@@ -42,7 +40,6 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(CinemaRoom cinemaRoom, int VersionId)
         {
-            string role = GetUserRole();
             if (!ModelState.IsValid)
             {
                 return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
@@ -77,7 +74,6 @@ namespace MovieTheater.Controllers
         {
             try
             {
-                string role = GetUserRole();
                 if (!ModelState.IsValid)
                 {
                     var versions = _movieService.GetAllVersions();
@@ -129,7 +125,6 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, IFormCollection collection)
         {
-            string role = GetUserRole();
             try
             {
                 var cinema = _cinemaService.GetById(id);
@@ -187,7 +182,6 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Disable(CinemaRoom cinemaRoom, string removedShowIds)
         {
-            string role = GetUserRole();
             try
             {
                 // 1. Get all conflicted shows that will be affected by the disable period
@@ -328,7 +322,6 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Enable(CinemaRoom cinemaRoom)
         {
-            string role = GetUserRole();
             try
             {
                 bool success = await _cinemaService.Enable(cinemaRoom);

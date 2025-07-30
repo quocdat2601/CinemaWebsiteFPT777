@@ -30,14 +30,7 @@ namespace MovieTheater.Controllers
             _webHostEnvironment = webHostEnvironment;
             _personRepository = personRepository;
         }
-
-        /// <summary>
-        /// Lấy role người dùng hiện tại từ JWT Claims.
-        /// </summary>
-        private string GetUserRole()
-        {
-            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-        }
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         /// <summary>
         /// [GET] api/movie/movielist
@@ -254,7 +247,6 @@ namespace MovieTheater.Controllers
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 else
@@ -492,7 +484,6 @@ namespace MovieTheater.Controllers
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 else
@@ -514,7 +505,6 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {
-            string role = GetUserRole();
             try
             {
                 if (string.IsNullOrEmpty(id))
