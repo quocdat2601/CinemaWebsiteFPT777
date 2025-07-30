@@ -529,5 +529,58 @@ namespace MovieTheater.Repository
             .OrderBy(d => d)
             .ToList();
         }
+
+        // New methods for categorizing movies
+        public List<Movie> GetCurrentlyShowingMovies()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
+            // Get movies that have at least one MovieShow with ShowDate >= today
+            return _context.Movies
+                .Where(m => m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Distinct()
+                .ToList();
+        }
+
+        public List<Movie> GetComingSoonMovies()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
+            // Get movies that have no MovieShow with ShowDate >= today
+            return _context.Movies
+                .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Distinct()
+                .ToList();
+        }
+
+        public List<Movie> GetCurrentlyShowingMoviesWithDetails()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
+            // Get movies with all related data that have at least one MovieShow with ShowDate >= today
+            return _context.Movies
+                .Include(m => m.MovieShows)
+                .Include(m => m.People)
+                .Include(m => m.Types)
+                .Include(m => m.Versions)
+                .Where(m => m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Distinct()
+                .ToList();
+        }
+
+        public List<Movie> GetComingSoonMoviesWithDetails()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
+            // Get movies with all related data that have no MovieShow with ShowDate >= today
+            return _context.Movies
+                .Include(m => m.MovieShows)
+                .Include(m => m.People)
+                .Include(m => m.Types)
+                .Include(m => m.Versions)
+                .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Distinct()
+                .ToList();
+        }
     }
 }

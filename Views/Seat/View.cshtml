@@ -1,845 +1,882 @@
 ﻿@model MovieTheater.ViewModels.SeatSelectionViewModel
-
 @{
-    ViewBag.CurrentStep = 3;
+    ViewBag.CurrentStep = 2;
 }
+
 @Html.Partial("_BookingProgress")
 
-<style>
-    .login-modal-overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(30, 41, 59, 0.45);
-        z-index: 1050;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(1.5px);
-    }
-    .login-modal-modern {
-        border-radius: 18px;
-        box-shadow: 0 8px 32px rgba(30,41,59,0.16), 0 1.5px 8px rgba(56,189,248,0.08);
-        border: none;
-        background: #fff;
-        padding: 0;
-        max-width: 320px;
-        width: 100%;
-    }
-    .login-modal-modern .modal-header {
-        border-bottom: none;
-        background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
-        color: #fff;
-        border-radius: 18px 18px 0 0;
-        padding: 1.2rem 1.2rem 0.7rem 1.2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-    }
-    .login-modal-modern .modal-header .login-icon-bg {
-        background: #fff;
-        border-radius: 50%;
-        width: 54px;
-        height: 54px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 0.5rem;
-        box-shadow: 0 1px 6px rgba(56,189,248,0.10);
-    }
-    .login-modal-modern .modal-header .login-icon {
-        font-size: 2.1rem;
-        color: #2563eb;
-    }
-    .login-modal-modern .modal-header .user-icon {
-        font-size: 1.3rem;
-        color: #60a5fa;
-        margin-left: 0.2rem;
-    }
-    .login-modal-modern .modal-title {
-        font-size: 1.08rem;
-        font-weight: 700;
-        letter-spacing: 0.01em;
-        margin-bottom: 0.1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-    }
-    .login-modal-modern .modal-body {
-        padding: 1.1rem 1.2rem 0.7rem 1.2rem;
-        text-align: center;
-    }
-    .login-modal-modern .modal-body p {
-        font-size: 0.99rem;
-        color: #334155;
-        margin-bottom: 0;
-        line-height: 1.5;
-    }
-    .login-modal-modern .modal-footer {
-        border-top: none;
-        padding: 0.7rem 1.2rem 1.2rem 1.2rem;
-        display: flex;
-        justify-content: center;
-    }
-    .login-modal-modern .btn-login-modern {
-        background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
-        color: #fff;
-        font-weight: 700;
-        font-size: 1.01rem;
-        border: none;
-        border-radius: 999px;
-        padding: 0.65rem 2.1rem;
-        box-shadow: 0 2px 8px rgba(56,189,248,0.10);
-        transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .login-modal-modern .btn-login-modern:hover {
-        background: linear-gradient(90deg, #1e40af 0%, #0ea5e9 100%);
-        color: #fff;
-        transform: translateY(-1px) scale(1.03);
-        box-shadow: 0 4px 16px rgba(56,189,248,0.13);
-    }
-    .fixed-sidebar {
-        max-height: 420px;
-        overflow-y: auto;
-        margin: 0 auto;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(30,41,59,0.07);
-        background: #fff;
-    }
-</style>
+<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 @{
-	var movieId = Model.MovieId;
-	var date = Model.ShowDate;
-	var time = Model.ShowTime;
-	var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
-	var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
-	var seatTypes = Model.SeatTypes;
-	var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
-	var movieShowId = Model.MovieShowId.ToString();
+    var movieId = Model.MovieId;
 
-	var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
-	string returnLink = isAdminSell
-		? Url.Action("Select", "Showtime", new { area = "Admin" })
-		: Url.Action("TicketBooking", "Booking");
+    var date = Model.ShowDate;
 
-	var coupleSeatPairs = new Dictionary<int, int>();
-	if (ViewBag.CoupleSeats != null)
-	{
-		foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
-		{
-			coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
-			coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
-		}
-	}
+    var time = Model.ShowTime;
 
+    var bookedSeats = ViewBag.BookedSeats as List<int> ?? new List<int>();
+
+    var returnUrl = Model.ReturnUrl ?? (movieId != null ? $"/Movie/Detail/{movieId}" : "/Admin");
+
+    var seatTypes = Model.SeatTypes;
+
+    var movieShow = ViewBag.MovieShow as MovieTheater.Models.MovieShow;
+
+    var movieShowId = Model.MovieShowId.ToString();
+
+    var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
+
+    string returnLink = isAdminSell
+
+        ? Url.Action("Select", "Showtime", new { area = "Admin" })
+
+        : Url.Action("TicketBooking", "Booking");
+
+    var coupleSeatPairs = new Dictionary<int, int>();
+
+    if (ViewBag.CoupleSeats != null)
+
+    {
+
+        foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
+
+        {
+
+            coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
+
+            coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
+
+        }
+
+    }
 
     var isAuthenticated = User.Identity.IsAuthenticated;
-    // Tự động thu nhỏ sơ đồ ghế nếu số lượng ghế lớn
+
     bool isCompactSeatMap = Model.SeatWidth > 9 || Model.SeatLength > 9;
 }
-<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
 
-
-<div class="container mt-4 seat-view-page" @(isAuthenticated ? "" : "style='display:none;'")>
-    <div class="text-start p-3">
-        <a href="@returnLink" class="btn btn-secondary">&larr; Return</a>
+<div class="cinema-container" @(isAuthenticated ? "" : "style='display:none;'")>
+    <!-- Header Section -->
+    <div class="cinema-header">
+        <div class="header-content">
+            <a href="@returnLink" class="back-btn">
+                <span class="material-icons">arrow_back</span>
+                <span>Back</span>
+            </a>
+            <h1 class="page-title">Select Your Seats</h1>
+        </div>
     </div>
-    <h2 class="text-center mb-4">SELECT SEATS</h2>
-    <!-- Movie Info Block -->
-    <div class="row mb-4">
-        <div class="col-md-3 text-center">
+
+    <!-- Movie Info Card -->
+    <div class="movie-info-card">
+        <div class="movie-poster1">
             @if (!string.IsNullOrEmpty(Model.MoviePoster))
             {
-                <img src="@Model.MoviePoster" alt="@Model.MovieName" class="movie-poster" style="width: 180px; border-radius: 10px; box-shadow: 0 2px 12px #b6c6e322; margin-bottom: 10px;" />
+                <img src="@Model.MoviePoster" alt="@Model.MovieName" />
             }
         </div>
-        <div class="col-md-9">
-            <h3 style="color: #6bcf3c; font-weight: bold;">@Model.MovieName</h3>
-            <div class="mb-2" style="color: #555;">@Model.MovieContent</div>
-            <div><b>Director:</b> @Model.MovieDirector</div>
-            <div><b>Actors:</b> @Model.MovieActor</div>
-            <div><b>Genre:</b> @Model.MovieGenre</div>
-            <div><b>Movie Start:</b> @(Model.MovieFromDate?.ToString("dd/MM/yyyy") ?? "-")</div>
-            <div><b>Duration:</b> @(Model.MovieDuration ?? 0) Minutes</div>
-        </div>
-    </div>
-<div id="mainBookingArea">
-	
-
-	<div class="row">
-		<!-- MAIN CONTENT AREA -->
-		<div class="col-lg-8 col-md-12">
-			
-
-			<!-- SEAT SELECTION SECTION -->
-			<div class="seat-selection-section">
-				<div class="seat-layout-container" id="seatLayoutArea">
-					<div class="screen-label text-center mb-4">Screen</div>
-
-					<div class="seat-layout-bordered-area border p-3 mb-4">
-						<div class="seat-container @(isCompactSeatMap ? "seat-map-compact" : "")">
-							<table class="table table-bordered text-center">
-								<tbody>
-									@for (int row = 1; row <= Model.SeatLength; row++)
-									{
-										<tr>
-											@for (int col = 1; col <= Model.SeatWidth; col++)
-											{
-												var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
-												if (seat != null)
-												{
-													var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
-													bool isDisabledType = seatType?.TypeName == "Disabled";
-													bool isBooked = bookedSeats.Contains(seat.SeatId);
-													var seatStyle = isDisabledType ? "border: none; background-color: transparent" : isBooked ? "border-color: #2baf4a;" : $"border-color: {seatType?.ColorHex ?? "#FFFFFF"};";
-													var tdClass = isDisabledType ? "disabled-seat" : isBooked ? "booked-seat" : "";
-
-
-											var versionMulti = ViewBag.MovieShow?.Version?.Multi ?? 1m;
-											var basePrice = seatType?.PricePercent ?? 0;
-											var calculatedPrice = basePrice * versionMulti;
-
-											<td style="@seatStyle; color: @(seat.SeatType?.ColorHex ?? "#ffffff"); border-width: 5px; border-radius: 20px"
-												data-seat-id="@seat.SeatId"
-												data-seat-name="@seat.SeatName"
-												data-seat-type="@seatType?.TypeName"
-												data-seat-price="@calculatedPrice"
-												data-base-price="@basePrice"
-												data-version-multi="@versionMulti"
-												data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
-												class="@tdClass"
-												@(isDisabledType || isBooked ? "disabled" : "")
-												@(isDisabledType || isBooked ? "" : "onclick=selectSeat(this)")>
-												<span class="material-icons">
-													@(isDisabledType ? "" : seat.SeatName)
-												</span>
-											</td>
-
-												}
-											}
-										</tr>
-									}
-								</tbody>
-							</table>
-						</div>
-					</div>
-
-					<div class="d-flex flex-wrap gap-4 mb-4 justify-content-center">
-						@foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
-						{
-							<div class="d-flex align-items-center me-3">
-								<span style="display: inline-block; width: 20px; height: 20px; background-color: @(type.ColorHex ?? "#FFFFFF"); margin-right: 5px; border-radius: 3px;"></span>
-								<span>@type.TypeName</span>
-							</div>
-						}
-						<div class="d-flex align-items-center me-3">
-							<span style="display: inline-block; width: 20px; height: 20px; background-color: #c3e6cb; margin-right: 5px; border-radius: 3px;"></span>
-							<span>Selected</span>
-						</div>
-						<div class="d-flex align-items-center me-3">
-							<span style="display: inline-block; width: 20px; height: 20px; background-color: #19692c; margin-right: 5px; border-radius: 3px;"></span>
-							<span>Booked</span>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- FOOD & DRINK SECTION -->
-			<div class="food-selection-section" id="foodSelectionArea" style="display:none;">
-				<h2 class="text-center mb-4" style="font-family: 'Bebas Neue', cursive; font-size:2.2rem;">POP CORN AND COKE</h2>
-				<div class="row justify-content-center">
-					@if (ViewBag.Foods != null)
-					{
-						foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
-						{
-							<div class="col-md-3 col-6 mb-4 d-flex flex-column align-items-center">
-								<img src="@food.Image" alt="@food.Name" style="width:120px; height:120px; object-fit:cover; border-radius:12px;"/>
-								<div class="fw-bold mt-2">@food.Name</div>
-								<div class="text-muted small">@food.Description</div>
-								<div class="fw-bold mb-2">@food.Price.ToString("N0") VND</div>
-								<div class="input-group" style="width:110px;">
-									<button class="btn btn-outline-secondary btn-food-minus" type="button" data-food-id="@food.FoodId">-</button>
-									<input type="text" class="form-control text-center food-qty" data-food-id="@food.FoodId" value="0" readonly style="background:#e9ecef;"/>
-									<button class="btn btn-outline-secondary btn-food-plus" type="button" data-food-id="@food.FoodId">+</button>
-								</div>
-							</div>
-						}
-					}
-				</div>
-			</div>
-		</div>
-
-		<!-- FIXED SIDEBAR -->
-		<div class="col-lg-4 col-md-12">
-			<div class="fixed-sidebar">
-				<div id="selectionSummary">
-					<div class="summary-block">
-						<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
-							<span class="summary-value">@Model.CinemaRoomName</span>
-							<span style="color:#4caf50; font-weight:600;">@date.ToString("yyyy-MM-dd")</span>
-							<span style="color:#1976d2; font-weight:600;">@time</span>
-						</div>
-					</div>
-					<div class="summary-info">
-						<div class="summary-movie">@Model.MovieName</div>
-					</div>
-					<div class="summary-seat" id="summarySeatBlock">
-						<div id="noSeatAlert" class="summary-alert" style="display:none;">You have not selected any seats. Please select a seat 😉</div>
-						<div id="seatInfo" style="display:none;">
-							<p><span class="summary-label">Seats:</span> <span id="selectedSeatNames"></span></p>
-							<p><span class="summary-label">Total Seats:</span> <span id="totalPrice"></span> VND</p>
-							<p><span class="summary-label">Total Foods:</span> <span id="totalFoodPrice">0</span> VND</p>
-							<div>
-								<span class="summary-label">Food Selected:</span>
-								<ul id="selectedFoodList" style="margin-bottom:0; padding-left:18px;">
-									<span style="color:#aaa;">(None)</span>
-								</ul>
-							</div>
-							<p><span class="summary-label">Total:</span> <span id="grandTotal">0</span> VND</p>
-							<p id="countdownTimer" class="text-danger fw-bold"></p>
-							@if (!string.IsNullOrEmpty(time))
-							{
-								<div class="text-center mt-3">
-									<button id="bookButton" class="btn btn-primary" style="font-weight:bold; font-size:large" disabled>Continue</button>
-								</div>
-							}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div> <!-- Đóng mainBookingArea -->
-
-@if (!isAuthenticated)
-{
-    <div class="login-modal-overlay">
-        <div class="modal-content login-modal-modern">
-            <div class="modal-header">
-                <div class="login-icon-bg">
-                    <span class="login-icon material-icons">login</span>
+        <div class="movie-details">
+            <h2 class="movie-title">@Model.MovieName</h2>
+            <p class="movie-description">@Model.MovieContent</p>
+            <div class="movie-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Director:</span>
+                    <span class="meta-value">@Model.MovieDirector</span>
                 </div>
-                <span class="modal-title">
-                    Login Required
-                    <span class="user-icon material-icons">person</span>
-                </span>
-            </div>
-            <div class="modal-body">
-                <p>
-                    Please <b>log in</b> to select seats and book tickets.<br>
-                    <span style="color:#2563eb;font-weight:500;">Sign in to continue.</span>
-                </p>
-            </div>
-            <div class="modal-footer">
-                <a href="@Url.Action("Login", "Account")" class="btn btn-login-modern">
-                    <span class="material-icons">login</span> Go to Login
-                </a>
+                <div class="meta-item">
+                    <span class="meta-label">Starring:</span>
+                    <span class="meta-value">@Model.MovieActor</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Genre:</span>
+                    <span class="meta-value">@Model.MovieGenre</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Duration:</span>
+                    <span class="meta-value">@(Model.MovieDuration ?? 0) min</span>
+                </div>
+               
             </div>
         </div>
     </div>
-    <script>
-        document.body.classList.add('modal-open');
-    </script>
-}
 
-<!-- Modal cảnh báo account đang được sử dụng (English) -->
-<div id="accountInUseModal" class="modal" tabindex="-1"
-     style="display:none; background:rgba(30,41,59,0.45); position:fixed; top:0; left:0; right:0; bottom:0; z-index:2000; align-items:center; justify-content:center;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 370px;">
-        <div class="modal-content" style="border-radius: 18px; box-shadow: 0 8px 32px rgba(30,41,59,0.16), 0 1.5px 8px rgba(56,189,248,0.08);">
-            <div class="modal-header"
-                 style="background: linear-gradient(90deg, #f87171 0%, #fbbf24 100%); color: #fff; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; align-items: center;">
-                <span class="material-icons"
-                      style="font-size: 2.5rem; background: #fff; color: #f87171; border-radius: 50%; padding: 10px; margin-bottom: 0.5rem; box-shadow: 0 1px 6px rgba(251,191,36,0.10);">warning</span>
-                <h5 class="modal-title" style="font-weight:700;">Account In Use</h5>
+    <!-- Main Content -->
+    <div class="main-content" id="mainBookingArea">
+        <div class="content-wrapper">
+            <!-- Seat Selection Area -->
+            <div class="seat-area">
+                <div class="seat-selection-section" id="seatSelectionArea">
+                    <!-- Screen -->
+                    <div class="screen-container">
+                        <div class="screen">
+                            <span>SCREEN</span>
+                        </div>
+                    </div>
+
+                    <!-- Seat Map -->
+                    <div class="seat-map-container @(isCompactSeatMap ? "compact" : "")">
+                        <div class="seat-grid">
+                            @for (int row = 1; row <= Model.SeatLength; row++)
+
+                            {
+                                <div class="seat-row" data-row="@row">
+                                    <div class="row-label">@((char)('A' + row - 1))</div>
+                                    <div class="seats">
+                                        @for (int col = 1; col <= Model.SeatWidth; col++)
+
+                                        {
+
+                                            var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+
+                                            if (seat != null)
+
+                                            {
+
+                                                var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+
+                                                bool isDisabledType = seatType?.TypeName == "Disabled";
+
+                                                bool isBooked = bookedSeats.Contains(seat.SeatId);
+
+                                                var versionMulti = ViewBag.MovieShow?.Version?.Multi ?? 1m;
+
+                                                // PricePercent is the actual price in thousands (e.g., 40 = 40,000 VND)
+                                                var basePrice = seatType?.PricePercent ?? 0;
+
+                                                var calculatedPrice = basePrice * versionMulti;
+
+                                                if (isDisabledType)
+                                                {
+                                                    // Render placeholder để giữ nguyên vị trí
+                                                    <div class="seat empty"></div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="seat @(isBooked ? "booked" : "")"
+                                                         data-seat-id="@seat.SeatId"
+                                                         data-seat-name="@seat.SeatName"
+                                                         data-seat-type="@seatType?.TypeName"
+                                                         data-seat-price="@calculatedPrice"
+                                                         data-base-price="@(basePrice )"
+                                                         data-version-multi="@versionMulti"
+                                                         data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
+                                                         style="background-color:@(seatType?.ColorHex ?? "#cccbc8")"
+                                                         @(coupleSeatPairs.ContainsKey(seat.SeatId) ? "data-couple-seat=true" : "")
+                                                         @(isBooked ? "" : "onclick=selectSeat(this)")>
+                                                        <div class="seat-inner">
+                                                            <span class="seat-number">@seat.SeatName</span>
+                                                            @if (coupleSeatPairs.ContainsKey(seat.SeatId))
+                                                            {
+                                                                <span class="couple-indicator">❤️</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                                // Nếu là ghế Disabled thì không render gì cả
+                                            }
+
+                                            else
+
+                                            {
+                                                <div class="seat empty"></div>
+                                            }
+
+                                        }
+                                    </div>
+                                    <div class="row-label">@((char)('A' + row - 1))</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Seat Legend -->
+                    <div class="seat-legend">
+                        @foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+
+                        {
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: @(type.ColorHex ?? "#FFFFFF")"></div>
+                                <span>@type.TypeName</span>
+                            </div>
+                        }
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #10b981"></div>
+                            <span>Selected</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #cccbc8; filter: brightness(0.3) saturate(0.5); position: relative;">
+                                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #dc2626; font-weight: bold; font-size: 0.8rem; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);">✗</span>
+                            </div>
+                            <span>Booked</span>
+                        </div>
+                       
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f59e42"></div>
+                            <span>Being Held</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food Selection Area -->
+                <div class="food-selection-section" id="foodSelectionArea" style="display:none;">
+                    <div class="section-header">
+                        <h2>Choose Your Snacks</h2>
+                        <button id="backToSeatBtn" class="back-to-seat-btn">
+                            <span class="material-icons">arrow_back</span>
+                            Back to Seats
+                        </button>
+                    </div>
+
+                    <div class="food-grid">
+                        @if (ViewBag.Foods != null)
+
+                        {
+
+                            foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
+
+                            {
+                                <div class="food-item" data-food-id="@food.FoodId">
+                                    <div class="food-image">
+                                        <img src="@food.Image" alt="@food.Name" />
+                                    </div>
+                                    <div class="food-info">
+                                        <h3 class="food-name">@food.Name</h3>
+                                        <p class="food-description">@food.Description</p>
+                                        <div class="food-price">@food.Price.ToString("N0") VND</div>
+                                        <div class="quantity-control">
+                                            <button class="qty-btn minus" data-food-id="@food.FoodId">-</button>
+                                            <input type="text" class="qty-input" data-food-id="@food.FoodId" value="0" readonly />
+                                            <button class="qty-btn plus" data-food-id="@food.FoodId">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                        }
+                    </div>
+                </div>
             </div>
-            <div class="modal-body" style="text-align:center;">
-                <p style="font-size:1.08rem; color:#374151;">
-                    This account is <b>currently being used to book tickets</b> for this showtime on another device or browser.<br>
-                    Please complete the transaction there or try again later.
-                </p>
-            </div>
-            <div class="modal-btn-group">
-                <a asp-controller="Home" asp-action="Index"
-                   class="btn btn-primary fw-bold"
-                   style="">
-                    <i class="fas fa-home me-1"></i> Home
-                </a>
-                <a asp-controller="Booking" asp-action="TicketBooking"
-                   class="btn btn-outline-primary fw-bold"
-                   style="">
-                    <i class="fas fa-plus me-1"></i> Book Again
-                </a>
+
+            <!-- Booking Summary Sidebar -->
+            <div class="booking-sidebar">
+                <div class="sidebar-content">
+                    <!-- Show Info -->
+                    <div class="show-info">
+                        <div class="cinema-room">@Model.CinemaRoomName</div>
+                        <div class="show-datetime">
+                            <span class="show-date">@date.ToString("MMM dd, yyyy")</span>
+                            <span class="show-time">@time</span>
+                        </div>
+                    </div>
+
+                    <!-- Movie Title -->
+                    <div class="sidebar-movie-title">@Model.MovieName</div>
+
+                    <!-- Booking Summary -->
+                    <div class="booking-summary" id="summarySeatBlock">
+                        <div id="noSeatAlert" class="no-seat-alert">
+                            <span class="material-icons">event_seat</span>
+                            <p>Please select your seats</p>
+                        </div>
+
+                        <div id="seatInfo" class="seat-info" style="display:none;">
+                            <div class="summary-item">
+                                <span class="label">Seats:</span>
+                                <span class="value" id="selectedSeatNames"></span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">Seat Total:</span>
+                                <span class="value"><span id="totalPrice">0</span> VND</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">Food Total:</span>
+                                <span class="value"><span id="totalFoodPrice">0</span> VND</span>
+                            </div>
+                            <div class="food-list">
+                                <span class="label">Selected Food:</span>
+                                <ul id="selectedFoodList">
+                                    <li class="no-food">No food selected</li>
+                                </ul>
+                            </div>
+                            <div class="total-amount">
+                                <span class="label">Total:</span>
+                                <span class="amount" id="grandTotal">0 VND</span>
+                            </div>
+                            <div id="countdownTimer" class="countdown"></div>
+                        </div>
+                    </div>
+
+                    <!-- Continue Button -->
+                    @if (!string.IsNullOrEmpty(time))
+
+                    {
+                        <button id="bookButton" class="continue-btn" disabled>
+                            <span class="btn-text">Continue</span>
+                            <span class="material-icons">arrow_forward</span>
+                        </button>
+                    }
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-#accountInUseModal .modal-btn-group {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 14px;
-    margin: 1.2rem 0 1.1rem 0;
+<!-- Login Modal (if not authenticated) -->
+@if (!isAuthenticated)
+
+{
+    <div class="login-modal-overlay">
+        <div class="login-modal">
+            <div class="modal-icon">
+                <span class="material-icons">login</span>
+            </div>
+            <h3>Login Required</h3>
+            <p>Please log in to select seats and book tickets.</p>
+            <a href="@Url.Action("Login", "Account")" class="login-btn">
+                <span class="material-icons">login</span>
+                Go to Login
+            </a>
+        </div>
+    </div>
 }
-#accountInUseModal .modal-btn-group a {
-    min-width: 130px;
-    max-width: 170px;
-    height: 42px;
-    font-size: 1rem;
-    border-radius: 9px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: box-shadow 0.15s, transform 0.13s;
-    box-shadow: 0 1px 6px rgba(56,189,248,0.07);
-    padding: 0 14px;
-    white-space: nowrap;
-    word-break: keep-all;
-    line-height: 1.13;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-}
-#accountInUseModal .modal-btn-group a.btn-primary:hover {
-    background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
-    color: #fff;
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 4px 16px rgba(56,189,248,0.13);
-}
-#accountInUseModal .modal-btn-group a.btn-outline-primary:hover {
-    background: #e3f0ff;
-    color: #2563eb;
-    border-color: #2563eb;
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 4px 16px rgba(56,189,248,0.10);
-}
-</style>
+
+<!-- Account In Use Modal -->
+<div id="accountInUseModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-icon warning">
+            <span class="material-icons">warning</span>
+        </div>
+        <h3>Account In Use</h3>
+        <p>This account is currently being used to book tickets for this showtime on another device.</p>
+        <div class="modal-actions">
+            <a href="@Url.Action("Index", "Home")" class="btn secondary">
+                <span class="material-icons">home</span>
+                Home
+            </a>
+            <a href="@Url.Action("TicketBooking", "Booking")" class="btn primary">
+                <span class="material-icons">refresh</span>
+                Try Again
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Timeout Modal -->
+<div id="timeoutModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content timeout-modal">
+        <div class="modal-icon timeout">
+            <span class="material-icons">timer_off</span>
+        </div>
+        <h3>Time Expired</h3>
+        <p>Your seat selection time has expired. Please select your seats again.</p>
+        <div class="modal-actions">
+            <a href="https://localhost:7201/Booking/TicketBooking" class="btn primary">
+                <span class="material-icons">refresh</span>
+                Return to Booking
+            </a>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-	<script>
-		let selectedSeats = new Set();
-		let countdownTimer = null;
-		let secondsLeft = 10; // 10 seconds for testing
-		const MAX_SEATS = 8; // Giới hạn tối đa 8 ghế
+    <script>
+        // JavaScript code remains the same as your original implementation
+        // Just update the CSS selectors to match the new structure
 
-		// FOOD SELECTION
-		let selectedFoods = {}; // { foodId: quantity }
-		let foodPrices = {};
-		@if (ViewBag.Foods != null)
-		{
-			foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
-			{
-				<text>foodPrices[@food.FoodId] = @food.Price;</text>
-			}
-		}
+        let selectedSeats = new Set();
+        let countdownTimer = null;
+        let secondsLeft = 60;
+        const MAX_SEATS = 8;
+        let selectedFoods = {};
+        let foodPrices = {};
+        let seatHubConnection = null;
+        let currentSeatTotal = 0; // Store raw seat total for calculations
+        
+        // Couple seats mapping
+        const coupleSeatPairs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
 
-		function resetSeatSelectionUI() {
-			// Remove selected seats from UI
-			document.querySelectorAll('.selected-seat').forEach(td => td.classList.remove('selected-seat'));
-			selectedSeats.clear();
-			sessionStorage.removeItem('selectedSeats');
-			localStorage.removeItem('selectedSeats');
-			// Defensive: Remove .selected-seat from all booked seats
-			document.querySelectorAll('.booked-seat').forEach(td => td.classList.remove('selected-seat'));
-			// Remove selected foods
-			selectedFoods = {};
-			document.querySelectorAll('.food-qty').forEach(input => input.value = 0);
-			// Ensure total food price is 0
-			document.getElementById('totalFoodPrice').textContent = '0';
-			document.getElementById('grandTotal').textContent = '0';
-			// Ensure UI is updated
-			updateSelectionSummary();
-			updateBookButtonState();
-			updateFoodTotal();
-			console.log('resetSeatSelectionUI called');
-		}
+        @if (ViewBag.Foods != null)
 
-		function startCountdown() {
-			const timerEl = document.getElementById("countdownTimer");
-			if (countdownTimer) clearInterval(countdownTimer);
-			secondsLeft = 60; // reset lại thời gian mỗi lần bắt đầu
-			countdownTimer = setInterval(() => {
-				if (secondsLeft <= 0) {
-					clearInterval(countdownTimer);
-					// Ẩn toàn bộ UI chọn ghế, food, sidebar
-					document.getElementById('mainBookingArea').style.display = 'none';
-					// Ẩn nút Continue nếu còn sót
-					var bookBtn = document.getElementById('bookButton');
-					if (bookBtn) bookBtn.style.display = 'none';
-					// Hiện thông báo hết thời gian ở giữa trang
-					document.getElementById('timeoutMessage').style.display = 'flex';
-					// Clear data ghế và đồ ăn
-					resetSeatSelectionUI();
-					// Gọi SignalR trả ghế nếu có ghế đang giữ
-					if (selectedSeats.size > 0) {
-						connection.invoke("ReleaseSeats", parseInt('@movieShowId'), Array.from(selectedSeats).map(Number));
-					}
-					// Debug log
-					console.log('Countdown ended: UI cleared, timeout message shown');
-				} else {
-					const min = Math.floor(secondsLeft / 60);
-					const sec = secondsLeft % 60;
-					timerEl.textContent = `⏳ Time left: ${min}:${sec.toString().padStart(2, '0')}`;
-					secondsLeft--;
-				}
-			}, 1000);
-		}
+        {
 
-		function updateBookButtonState() {
-			document.getElementById('bookButton').disabled = (selectedSeats.size === 0);
-		}
+            foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
 
-		function updateSelectionSummary() {
-			const selectedSeatNames = document.getElementById('selectedSeatNames');
-			const totalPrice = document.getElementById('totalPrice');
-			const seatInfo = document.getElementById('seatInfo');
-			const noSeatAlert = document.getElementById('noSeatAlert');
+            {
+                <text>foodPrices[@food.FoodId] = @food.Price;</text>
+            }
 
-			if (selectedSeats.size > 0) {
-				let total = 0;
-				let seatNames = [];
-				document.querySelectorAll('.selected-seat').forEach(td => {
-					const seatName = td.getAttribute('data-seat-name');
-					const calculatedPrice = parseFloat(td.getAttribute('data-seat-price')) || 0;
-					seatNames.push(seatName);
-					total += calculatedPrice;
-				});
-				selectedSeatNames.textContent = seatNames.join(', ');
-				totalPrice.textContent = total.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-				seatInfo.style.display = 'block';
-				noSeatAlert.style.display = 'none';
-				updateFoodTotal(); // cập nhật tổng cộng khi chọn ghế
-			} else {
-				selectedSeatNames.textContent = '';
-				totalPrice.textContent = '';
-				seatInfo.style.display = 'none';
-				noSeatAlert.style.display = 'block';
-				updateFoodTotal();
-			}
-			
-			// Cập nhật progress bar
-			updateProgressBar();
-		}
+        }
 
-		document.getElementById('bookButton').addEventListener('click', function () {
-			if (this.disabled || selectedSeats.size === 0) return;
-			const selectedSeatIds = Array.from(selectedSeats);
-			const data = {
-				movieId: '@movieId',
-				showDate: '@date.ToString("yyyy-MM-dd")',
-				showTime: '@time',
-				selectedSeatIds: selectedSeatIds,
-				movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
-			};
-			const params = new URLSearchParams();
-			for (const key in data) {
-				if (Array.isArray(data[key])) {
-					data[key].forEach(item => params.append(key, item));
-				} else {
-					params.append(key, data[key]);
-				}
-			}
-			// Gửi foodId và quantity
-			for (const foodId in selectedFoods) {
-				if (selectedFoods[foodId] > 0) {
-					params.append('foodIds', foodId);
-					params.append('foodQtys', selectedFoods[foodId]);
-				}
-			}
-			const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
-			window.location.href = isAdminSell
-				? `/Booking/ConfirmTicketForAdmin?${params.toString()}`
-				: `/Booking/Information?${params.toString()}`;
-		});
+        // Initialize SignalR connection for real-time seat selection
+        function initializeSignalR() {
+            seatHubConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/seathub")
+                .withAutomaticReconnect()
+                .build();
 
-		// SỬA LỖI: Chỉ gán sự kiện nếu tồn tại retryBtn
-		var retryBtn = document.getElementById('retryBtn');
-		if (retryBtn) {
-			retryBtn.addEventListener('click', function(e) {
-				e.preventDefault();
-				window.location.href = '@returnLink';
-			});
-		}
+            seatHubConnection.on("SeatSelected", function (seatId) {
+                const seatElement = document.querySelector(`[data-seat-id="${seatId}"]`);
+                if (seatElement && !seatElement.classList.contains('selected')) {
+                    seatElement.classList.add('being-held');
+                }
+            });
 
-		document.addEventListener('DOMContentLoaded', function () {
-			console.log('DOMContentLoaded fired');
-			resetSeatSelectionUI(); // <-- Clear selected seats on every page load
-			// Food plus
-			document.querySelectorAll('.btn-food-plus').forEach(btn => {
-				btn.addEventListener('click', function() {
-					const foodId = this.getAttribute('data-food-id');
-					let qtyInput = document.querySelector(`.food-qty[data-food-id='${foodId}']`);
-					let qty = parseInt(qtyInput.value) || 0;
-					qty++;
-					qtyInput.value = qty;
-					selectedFoods[foodId] = qty;
-					updateFoodTotal();
-				});
-			});
-			// Food minus
-			document.querySelectorAll('.btn-food-minus').forEach(btn => {
-				btn.addEventListener('click', function() {
-					const foodId = this.getAttribute('data-food-id');
-					let qtyInput = document.querySelector(`.food-qty[data-food-id='${foodId}']`);
-					let qty = parseInt(qtyInput.value) || 0;
-					if (qty > 0) qty--;
-					qtyInput.value = qty;
-					if (qty === 0) delete selectedFoods[foodId];
-					else selectedFoods[foodId] = qty;
-					updateFoodTotal();
-				});
-			});
-			
-			// Initialize
-			updateBookButtonState();
-			updateSelectionSummary();
-			updateFoodTotal();
-			updateProgressBar();
-		});
+            seatHubConnection.on("SeatDeselected", function (seatId) {
+                const seatElement = document.querySelector(`[data-seat-id="${seatId}"]`);
+                if (seatElement) {
+                    seatElement.classList.remove('being-held');
+                }
+            });
 
-		function updateProgressBar() {
-			const page = document.querySelector('.seat-view-page');
-			const hasSeats = selectedSeats.size > 0;
-			const hasFood = Object.keys(selectedFoods).length > 0;
-			
-			// Xóa tất cả progress classes
-			page.classList.remove('progress-33', 'progress-66', 'progress-100');
-			
-			// Cập nhật progress dựa trên trạng thái
-			if (hasSeats && hasFood) {
-				page.classList.add('progress-100');
-			} else if (hasSeats) {
-				page.classList.add('progress-66');
-			} else {
-				page.classList.add('progress-33');
-			}
-		}
+            seatHubConnection.on("SeatStatusChanged", function (seatId, newStatusId) {
+                console.log("SeatStatusChanged", seatId, newStatusId);
+                const seatElement = document.querySelector(`[data-seat-id="${seatId}"]`);
+                if (!seatElement) return;
+                
+                if (newStatusId === 2) { // 2 = Booked
+                    seatElement.classList.add("booked");
+                    seatElement.classList.remove("selected", "being-held");
+                    seatElement.setAttribute("disabled", "disabled");
+                    // Keep the original seat type color from database, CSS will handle the darkening
+                    seatElement.style.backgroundColor = seatElement.getAttribute("data-seat-color") || "#cccbc8";
+                    selectedSeats.delete(String(seatId));
+                } else {
+                    seatElement.classList.remove("booked");
+                    seatElement.removeAttribute("disabled");
+                    // Set lại màu gốc loại ghế
+                    const color = seatElement.getAttribute("data-seat-color") || "#cccbc8";
+                    seatElement.style.backgroundColor = color;
+                    // Remove from selectedSeats and UI
+                    selectedSeats.delete(String(seatId));
+                    seatElement.classList.remove("selected");
+                }
+                updateSelectionSummary();
+                updateBookButtonState();
+                updateFoodSectionVisibility();
+            });
 
-		function updateFoodTotal() {
-			let totalFood = 0;
-			let foodListHtml = '';
-			let hasFood = false;
-			for (let foodId in selectedFoods) {
-				if (selectedFoods[foodId] > 0) {
-					totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
-					// Lấy tên món từ DOM (nếu có)
-					let foodNameEl = document.querySelector(`.btn-food-plus[data-food-id='${foodId}']`);
-					let foodName = foodNameEl ? foodNameEl.closest('.col-md-3').querySelector('.fw-bold.mt-2').textContent : 'Food';
-					foodListHtml += `<li>${foodName} x${selectedFoods[foodId]}</li>`;
-					hasFood = true;
-				}
-			}
-			document.getElementById('totalFoodPrice').textContent = totalFood.toLocaleString();
-			// Cập nhật danh sách food đã chọn
-			document.getElementById('selectedFoodList').innerHTML = hasFood ? foodListHtml : '<span style="color:#aaa;">(None)</span>';
-			// Cộng với tổng tiền ghế
-			let seatTotal = parseInt(document.getElementById('totalPrice').textContent.replace(/,/g, '')) || 0;
-			document.getElementById('grandTotal').textContent = (seatTotal + totalFood).toLocaleString();
-			// Cập nhật progress bar khi thay đổi đồ ăn
-			updateProgressBar();
-		}
+            seatHubConnection.on("AccountInUse", function () {
+                // Hiển thị modal, disable UI chọn ghế
+                document.getElementById('accountInUseModal').style.display = 'flex';
+                document.getElementById('seatSelectionArea').style.pointerEvents = 'none';
+                document.getElementById('seatSelectionArea').style.opacity = '0.4';
+                document.getElementById('summarySeatBlock').style.opacity = '0.4';
+                var bookBtn = document.getElementById('bookButton');
+                if (bookBtn) bookBtn.disabled = true;
+            });
 
-		function updateFoodSectionVisibility() {
-    if (selectedSeats.size > 0) {
-        document.getElementById('foodSelectionArea').style.display = '';
-    } else {
-        document.getElementById('foodSelectionArea').style.display = 'none';
-    }
-}
+            // Nhận 2 danh sách: ghế của mình (heldByMe), ghế của người khác (heldByOthers)
+            seatHubConnection.on("HeldSeats", function (heldByMe, heldByOthers) {
+                // Reset trạng thái
+                document.querySelectorAll('.selected').forEach(seat => {
+                    seat.classList.remove("selected");
+                });
+                document.querySelectorAll('.being-held').forEach(seat => {
+                    seat.classList.remove("being-held");
+                    seat.removeAttribute("title");
+                });
+                selectedSeats.clear();
+                
+                // Đánh dấu ghế của chính mình
+                heldByMe.forEach(seatId => {
+                    const seat = document.querySelector(`[data-seat-id='${seatId}']`);
+                    if (seat) {
+                        seat.classList.add("selected");
+                        selectedSeats.add(String(seatId));
+                    }
+                });
+                
+                // Đánh dấu ghế của người khác
+                heldByOthers.forEach(seatId => {
+                    const seat = document.querySelector(`[data-seat-id='${seatId}']`);
+                    if (seat && !seat.classList.contains("selected")) {
+                        seat.classList.add("being-held");
+                        seat.setAttribute("title", "Ghế đang được người khác giữ");
+                    }
+                });
+                
+                updateSelectionSummary();
+                updateBookButtonState();
+                updateFoodSectionVisibility();
+            });
 
-		function selectSeat(clickedTd) {
-			const seatId = String(clickedTd.getAttribute('data-seat-id'));
-			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+            seatHubConnection.on("SeatsReleased", function (seatIds) {
+                seatIds.forEach(seatId => {
+                    const seat = document.querySelector(`[data-seat-id='${seatId}']`);
+                    seat?.classList.remove("being-held");
+                    seat?.removeAttribute("title");
+                });
+            });
 
-			// Kiểm tra nếu ghế đã được chọn thì cho phép bỏ chọn
-			if (selectedSeats.has(seatId)) {
-				clickedTd.classList.remove('selected-seat');
-				selectedSeats.delete(seatId);
-				connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
-			} else {
-				// Kiểm tra giới hạn số ghế trước khi chọn thêm
-				if (selectedSeats.size >= MAX_SEATS) {
-					alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
-					return;
-				}
-				clickedTd.classList.add('selected-seat');
-				selectedSeats.add(seatId);
-				connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
-				if (selectedSeats.size === 1) startCountdown();
-			}
-			updateSelectionSummary();
-			updateBookButtonState();
-			updateFoodSectionVisibility();
-		}
-	</script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-	<script>
-		const connection = new signalR.HubConnectionBuilder()
-			.withUrl("/seathub")
-			.build();
+            seatHubConnection.start()
+                .then(function () {
+                    console.log("SignalR Connected");
+                    // Join the showtime group
+                    const movieShowId = '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)';
+                    if (movieShowId && movieShowId !== '0') {
+                        seatHubConnection.invoke("JoinShowtime", parseInt(movieShowId));
+                    }
+                })
+                .catch(function (err) {
+                    console.error("SignalR Connection Error: ", err);
+                });
+        }
 
-		connection.on("SeatSelected", (seatId) => {
-			const td = document.querySelector(`[data-seat-id='${seatId}']`);
-			if (td && !td.classList.contains("selected-seat")) {
-				td.classList.add("being-held");
-				td.setAttribute("title", "Ghế đang được người khác giữ");
-			}
-		});
+        // Your existing JavaScript functions here...
+        // (keeping the same logic but updating selectors)
 
-		connection.on("SeatDeselected", (seatId) => {
-			const td = document.querySelector(`[data-seat-id='${seatId}']`);
-			td?.classList.remove("being-held");
-			td?.removeAttribute("title");
-		});
+        function selectSeat(seatElement) {
+            const seatId = String(seatElement.getAttribute('data-seat-id'));
+            if (seatElement.classList.contains('disabled') ||
+                seatElement.classList.contains('being-held') ||
+                seatElement.classList.contains('booked')) return;
 
-		connection.on("SeatsReleased", (seatIds) => {
-			seatIds.forEach(seatId => {
-				const td = document.querySelector(`[data-seat-id='${seatId}']`);
-				td?.classList.remove("being-held");
-				td?.removeAttribute("title");
-			});
-		});
+            const movieShowId = '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)';
+            
+            // Couple seat auto-select logic
+            if (coupleSeatPairs && coupleSeatPairs[seatId]) {
+                const otherSeatId = coupleSeatPairs[seatId].toString();
+                const otherSeatElement = document.querySelector(`[data-seat-id='${otherSeatId}']`);
+                const isSelected = seatElement.classList.contains('selected');
 
-		connection.on("SeatStatusChanged", (seatId, newStatusId) => {
-			console.log("SeatStatusChanged", seatId, newStatusId);
-			const td = document.querySelector(`[data-seat-id='${seatId}']`);
-			if (!td) return;
-			if (newStatusId === 2) { // 2 = Booked
-				td.classList.add("booked-seat");
-				td.classList.remove("selected-seat", "being-held");
-				td.setAttribute("disabled", "disabled");
-				td.style.backgroundColor = "#19692c";
-				selectedSeats.delete(String(seatId));
-			} else {
-				td.classList.remove("booked-seat");
-				td.removeAttribute("disabled");
-				// Set lại màu gốc loại ghế
-				const color = td.getAttribute("data-seat-color") || "#cccbc8";
-				td.style.backgroundColor = color;
-				// Remove from selectedSeats and UI
-				selectedSeats.delete(String(seatId));
-				td.classList.remove("selected-seat");
-			}
-			updateSelectionSummary();
-			updateBookButtonState();
-			updateFoodSectionVisibility();
-		});
+                if (isSelected) {
+                    // Deselect both seats
+                    seatElement.classList.remove('selected');
+                    selectedSeats.delete(seatId);
+                    if (otherSeatElement) {
+                        otherSeatElement.classList.remove('selected');
+                        selectedSeats.delete(otherSeatId);
+                    }
+                    
+                    // Notify server about deselection
+                    if (seatHubConnection && seatHubConnection.state === signalR.HubConnectionState.Connected) {
+                        seatHubConnection.invoke("DeselectSeat", parseInt(movieShowId), parseInt(seatId));
+                        if (otherSeatElement) seatHubConnection.invoke("DeselectSeat", parseInt(movieShowId), parseInt(otherSeatId));
+                    }
+                } else {
+                    // Check seat limit for couple seats (need 2 seats)
+                    if (selectedSeats.size + 2 > MAX_SEATS) {
+                        alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+                        return;
+                    }
+                    
+                    // Select both seats
+                    seatElement.classList.add('selected');
+                    selectedSeats.add(seatId);
+                    if (otherSeatElement && !otherSeatElement.classList.contains('disabled') && 
+                        !otherSeatElement.classList.contains('being-held') && 
+                        !otherSeatElement.classList.contains('booked')) {
+                        otherSeatElement.classList.add('selected');
+                        selectedSeats.add(otherSeatId);
+                    } else {
+                        alert('Ghế cặp không khả dụng. Không thể chọn couple seat.');
+                        seatElement.classList.remove('selected');
+                        selectedSeats.delete(seatId);
+                        return;
+                    }
+                    
+                    // Notify server about both selections
+                    if (seatHubConnection && seatHubConnection.state === signalR.HubConnectionState.Connected) {
+                        seatHubConnection.invoke("SelectSeat", parseInt(movieShowId), parseInt(seatId));
+                        if (otherSeatElement) seatHubConnection.invoke("SelectSeat", parseInt(movieShowId), parseInt(otherSeatId));
+                    }
+                    
+                    if (selectedSeats.size === 2) startCountdown();
+                }
+                updateSelectionSummary();
+                updateBookButtonState();
+                updateFoodSectionVisibility();
+            } else {
+                // Normal seat logic
+                if (selectedSeats.has(seatId)) {
+                    seatElement.classList.remove('selected');
+                    selectedSeats.delete(seatId);
+                    
+                    // Notify server about deselection
+                    if (seatHubConnection && seatHubConnection.state === signalR.HubConnectionState.Connected) {
+                        seatHubConnection.invoke("DeselectSeat", parseInt(movieShowId), parseInt(seatId));
+                    }
+                } else {
+                    if (selectedSeats.size >= MAX_SEATS) {
+                        alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
+                        return;
+                    }
+                    seatElement.classList.add('selected');
+                    selectedSeats.add(seatId);
+                    
+                    // Notify server about selection
+                    if (seatHubConnection && seatHubConnection.state === signalR.HubConnectionState.Connected) {
+                        seatHubConnection.invoke("SelectSeat", parseInt(movieShowId), parseInt(seatId));
+                    }
+                    
+                    if (selectedSeats.size === 1) startCountdown();
+                }
+                updateSelectionSummary();
+                updateBookButtonState();
+                updateFoodSectionVisibility();
+            }
+            
+            // Stop countdown if no seats are selected
+            if (selectedSeats.size === 0 && countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+                const timerEl = document.getElementById("countdownTimer");
+                if (timerEl) {
+                    timerEl.textContent = '';
+                }
+            }
+        }
 
-		// Nhận 2 danh sách: ghế của mình (heldByMe), ghế của người khác (heldByOthers)
-		connection.on("HeldSeats", (heldByMe, heldByOthers) => {
-			// Reset trạng thái
-			document.querySelectorAll('.selected-seat').forEach(td => {
-				td.classList.remove("selected-seat");
-			});
-			document.querySelectorAll('.being-held').forEach(td => {
-				td.classList.remove("being-held");
-				td.removeAttribute("title");
-			});
-			selectedSeats.clear();
-			// Đánh dấu ghế của chính mình
-			heldByMe.forEach(seatId => {
-				const td = document.querySelector(`[data-seat-id='${seatId}']`);
-				if (td) {
-					td.classList.add("selected-seat");
-					selectedSeats.add(String(seatId));
-				}
-			});
-			// Đánh dấu ghế của người khác
-			heldByOthers.forEach(seatId => {
-				const td = document.querySelector(`[data-seat-id='${seatId}']`);
-				if (td && !td.classList.contains("selected-seat")) {
-					td.classList.add("being-held");
-					td.setAttribute("title", "Ghế đang được người khác giữ");
-				}
-			});
-			updateSelectionSummary();
-			updateBookButtonState();
-			updateFoodSectionVisibility();
-		});
+        function updateSelectionSummary() {
+            const selectedSeatNames = document.getElementById('selectedSeatNames');
+            const totalPrice = document.getElementById('totalPrice');
+            const seatInfo = document.getElementById('seatInfo');
+            const noSeatAlert = document.getElementById('noSeatAlert');
 
-		connection.on("AccountInUse", () => {
-			// Hiển thị modal, disable UI chọn ghế
-			document.getElementById('accountInUseModal').style.display = 'flex';
-			document.getElementById('seatLayoutArea').style.pointerEvents = 'none';
-			document.getElementById('seatLayoutArea').style.opacity = '0.4';
-			document.getElementById('selectionSummary').style.opacity = '0.4';
-			var bookBtn = document.getElementById('bookButton');
-			if (bookBtn) bookBtn.disabled = true;
-		});
+            if (selectedSeats.size > 0) {
+                let total = 0;
+                let seatNames = [];
+                document.querySelectorAll('.seat.selected').forEach(seat => {
+                    const seatName = seat.getAttribute('data-seat-name');
+                    const calculatedPrice = parseFloat(seat.getAttribute('data-seat-price')) || 0;
+                    seatNames.push(seatName);
+                    total += calculatedPrice;
+                });
 
-		connection.start().then(() => {
-			connection.invoke("JoinShowtime", parseInt('@movieShowId'));
-		});
+                selectedSeatNames.textContent = seatNames.join(', ');
+                currentSeatTotal = total; // Store raw value
+                totalPrice.textContent = total.toLocaleString();
+                seatInfo.style.display = 'block';
+                noSeatAlert.style.display = 'none';
+            } else {
+                currentSeatTotal = 0; // Reset when no seats selected
+                seatInfo.style.display = 'none';
+                noSeatAlert.style.display = 'block';
+            }
+            updateFoodTotal();
+        }
 
-		// Map: seatId -> paired seatId
-		const coupleSeatMap = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
+        function updateBookButtonState() {
+            document.getElementById('bookButton').disabled = (selectedSeats.size === 0);
+        }
 
-		function selectSeat(clickedTd) {
-			const seatId = String(clickedTd.getAttribute('data-seat-id'));
-			if (clickedTd.hasAttribute('disabled') || clickedTd.classList.contains("being-held") || clickedTd.classList.contains("booked-seat")) return;
+        function updateFoodSectionVisibility() {
+            const foodSection = document.getElementById('foodSelectionArea');
+            const seatSection = document.getElementById('seatSelectionArea');
+            const bookButton = document.getElementById('bookButton');
+            const btnText = bookButton.querySelector('.btn-text');
+            
+            if (selectedSeats.size > 0) {
+                // Show food section if seats are selected
+                if (seatSection.style.display !== 'none') {
+                    // We're in seat selection mode, button should say "Continue"
+                    btnText.textContent = 'Continue';
+                } else {
+                    // We're in food selection mode, button should say "Continue to Payment"
+                    btnText.textContent = 'Continue to Payment';
+                }
+            } else {
+                // No seats selected, hide food section
+                foodSection.style.display = 'none';
+                seatSection.style.display = 'block';
+                btnText.textContent = 'Continue';
+            }
+        }
 
-			// Couple seat auto-select logic
-			if (coupleSeatMap && coupleSeatMap[seatId]) {
-				const otherSeatId = coupleSeatMap[seatId].toString();
-				const otherTd = document.querySelector(`td[data-seat-id='${otherSeatId}']`);
-				const isSelected = clickedTd.classList.contains('selected-seat');
+        function startCountdown() {
+            const timerEl = document.getElementById("countdownTimer");
+            if (countdownTimer) clearInterval(countdownTimer);
+            secondsLeft = 60;
 
-				if (isSelected) {
-					clickedTd.classList.remove('selected-seat');
-					selectedSeats.delete(seatId);
-					if (otherTd) {
-						otherTd.classList.remove('selected-seat');
-						selectedSeats.delete(otherSeatId);
-					}
-					connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
-					if (otherTd) connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(otherSeatId));
-				} else {
-					// Check seat limit
-					if (selectedSeats.size + 2 > MAX_SEATS) {
-						alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
-						return;
-					}
-					clickedTd.classList.add('selected-seat');
-					selectedSeats.add(seatId);
-					if (otherTd) {
-						otherTd.classList.add('selected-seat');
-						selectedSeats.add(otherSeatId);
-					}
-					connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
-					if (otherTd) connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(otherSeatId));
-					if (selectedSeats.size === 2) startCountdown();
-				}
-				updateSelectionSummary();
-				updateBookButtonState();
-				updateFoodSectionVisibility(); // <-- Ensure food section updates for couple seats
-			} else {
-				// Normal seat logic
-				if (selectedSeats.has(seatId)) {
-					clickedTd.classList.remove('selected-seat');
-					selectedSeats.delete(seatId);
-					connection.invoke("DeselectSeat", parseInt('@movieShowId'), parseInt(seatId));
-				} else {
-					if (selectedSeats.size >= MAX_SEATS) {
-						alert('Bạn đã chọn tối đa ' + MAX_SEATS + ' ghế. Vui lòng bỏ chọn một ghế khác trước khi chọn ghế mới.');
-						return;
-					}
-					clickedTd.classList.add('selected-seat');
-					selectedSeats.add(seatId);
-					connection.invoke("SelectSeat", parseInt('@movieShowId'), parseInt(seatId));
-					if (selectedSeats.size === 1) startCountdown();
-				}
-				updateSelectionSummary();
-				updateBookButtonState();
-				updateFoodSectionVisibility(); // <-- Ensure food section updates for normal seats
-			}
-		}
-	</script>
+            countdownTimer = setInterval(() => {
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    
+                    // Notify server to release all held seats
+                    const movieShowId = '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)';
+                    if (seatHubConnection && seatHubConnection.state === signalR.HubConnectionState.Connected) {
+                        selectedSeats.forEach(seatId => {
+                            seatHubConnection.invoke("DeselectSeat", parseInt(movieShowId), parseInt(seatId));
+                        });
+                    }
+                    
+                    // Clear all selected seats
+                    selectedSeats.clear();
+                    document.querySelectorAll('.seat.selected').forEach(seat => {
+                        seat.classList.remove('selected');
+                    });
+                    
+                    // Update UI
+                    updateSelectionSummary();
+                    updateBookButtonState();
+                    
+                    // Show full-screen timeout modal
+                    const timeoutModal = document.getElementById('timeoutModal');
+                    if (timeoutModal) {
+                        timeoutModal.style.display = 'flex';
+                        // Disable the main content
+                        document.getElementById('mainBookingArea').style.pointerEvents = 'none';
+                        document.getElementById('mainBookingArea').style.opacity = '0.4';
+                    }
+                } else {
+                    const min = Math.floor(secondsLeft / 60);
+                    const sec = secondsLeft % 60;
+                    timerEl.textContent = `Time left: ${min}:${sec.toString().padStart(2, '0')}`;
+                    
+                    // Add urgent class when time is running low (less than 10 seconds)
+                    if (secondsLeft <= 10) {
+                        timerEl.classList.add('urgent');
+                    } else {
+                        timerEl.classList.remove('urgent');
+                    }
+                    
+                    secondsLeft--;
+                }
+            }, 1000);
+        }
+
+        function updateFoodTotal() {
+            let totalFood = 0;
+            let foodListHtml = '';
+            let hasFood = false;
+
+            for (let foodId in selectedFoods) {
+                if (selectedFoods[foodId] > 0) {
+                    totalFood += (foodPrices[foodId] || 0) * selectedFoods[foodId];
+                    hasFood = true;
+                }
+            }
+
+            document.getElementById('totalFoodPrice').textContent = totalFood.toLocaleString();
+
+            // Update the selected food list
+            const selectedFoodList = document.getElementById('selectedFoodList');
+            console.log('Selected foods:', selectedFoods, 'Has food:', hasFood);
+            if (hasFood) {
+                foodListHtml = '';
+                for (let foodId in selectedFoods) {
+                    if (selectedFoods[foodId] > 0) {
+                        // Get food name from the food item element
+                        const foodItem = document.querySelector(`.food-item[data-food-id="${foodId}"]`);
+                        const foodName = foodItem ? foodItem.querySelector('.food-name').textContent : `Food ${foodId}`;
+                        foodListHtml += `<li>${foodName} x${selectedFoods[foodId]}</li>`;
+                        console.log('Adding food to list:', foodName, 'x', selectedFoods[foodId]);
+                    }
+                }
+                selectedFoodList.innerHTML = foodListHtml;
+            } else {
+                selectedFoodList.innerHTML = '<li class="no-food">No food selected</li>';
+            }
+
+            // Use the stored raw seat total for accurate calculation
+            let grandTotal = currentSeatTotal + totalFood;
+            document.getElementById('grandTotal').textContent = grandTotal.toLocaleString() + ' VND';
+        }
+
+        function setSeatColorByStatus(seatElement) {
+            if (seatElement.classList.contains('booked')) {
+                // Keep the original seat type color from database, CSS will handle the darkening
+                seatElement.style.backgroundColor = seatElement.getAttribute('data-seat-color') || '#cccbc8';
+            } else if (seatElement.classList.contains('selected')) {
+                seatElement.style.backgroundColor = '#10b981';
+            } else if (seatElement.classList.contains('being-held')) {
+                seatElement.style.backgroundColor = '#f59e42';
+            } else {
+                // Mặc định lấy màu loại ghế từ data-seat-color
+                seatElement.style.backgroundColor = seatElement.getAttribute('data-seat-color') || '#cccbc8';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize SignalR connection
+            initializeSignalR();
+
+            // Food quantity controls
+            document.querySelectorAll('.qty-btn.plus').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const foodId = this.getAttribute('data-food-id');
+                    let qtyInput = document.querySelector(`.qty-input[data-food-id='${foodId}']`);
+                    let qty = parseInt(qtyInput.value) || 0;
+                    qty++;
+                    qtyInput.value = qty;
+                    selectedFoods[foodId] = qty;
+                    console.log('Food selected:', foodId, 'Quantity:', qty);
+                    updateFoodTotal();
+                });
+            });
+
+            document.querySelectorAll('.qty-btn.minus').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const foodId = this.getAttribute('data-food-id');
+                    let qtyInput = document.querySelector(`.qty-input[data-food-id='${foodId}']`);
+                    let qty = parseInt(qtyInput.value) || 0;
+                    if (qty > 0) qty--;
+                    qtyInput.value = qty;
+                    if (qty === 0) delete selectedFoods[foodId];
+                    else selectedFoods[foodId] = qty;
+                    console.log('Food deselected:', foodId, 'Quantity:', qty);
+                    updateFoodTotal();
+                });
+            });
+
+            // Back to seat button
+            document.getElementById('backToSeatBtn')?.addEventListener('click', function () {
+                document.getElementById('foodSelectionArea').style.display = 'none';
+                document.getElementById('seatSelectionArea').style.display = 'block';
+            });
+
+            // Continue button
+            document.getElementById('bookButton').addEventListener('click', function () {
+                if (this.disabled || selectedSeats.size === 0) return;
+
+                const seatSelectionArea = document.getElementById('seatSelectionArea');
+                const foodSelectionArea = document.getElementById('foodSelectionArea');
+
+                if (seatSelectionArea.style.display !== 'none') {
+                    // Go to food selection
+                    seatSelectionArea.style.display = 'none';
+                    foodSelectionArea.style.display = 'block';
+                    this.querySelector('.btn-text').textContent = 'Continue to Payment';
+                } else {
+                    // Go to payment
+                    const selectedSeatIds = Array.from(selectedSeats);
+                    const data = {
+                        movieId: '@movieId',
+                        showDate: '@date.ToString("yyyy-MM-dd")',
+                        showTime: '@time',
+                        selectedSeatIds: selectedSeatIds,
+                        movieShowId: '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)'
+                    };
+
+                    const params = new URLSearchParams();
+                    for (const key in data) {
+                        if (Array.isArray(data[key])) {
+                            data[key].forEach(item => params.append(key, item));
+                        } else {
+                            params.append(key, data[key]);
+                        }
+                    }
+
+                    for (const foodId in selectedFoods) {
+                        if (selectedFoods[foodId] > 0) {
+                            params.append('foodIds', foodId);
+                            params.append('foodQtys', selectedFoods[foodId]);
+                        }
+                    }
+
+                    const isAdminSell = "@Context.Request.Query["isAdminSell"]" === "true";
+                    window.location.href = isAdminSell
+                        ? `/Booking/ConfirmTicketForAdmin?${params.toString()}`
+                        : `/Booking/Information?${params.toString()}`;
+                }
+            });
+
+            updateBookButtonState();
+            updateSelectionSummary();
+            updateFoodTotal();
+        });
+    </script>
 }

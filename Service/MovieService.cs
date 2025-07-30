@@ -291,6 +291,59 @@ namespace MovieTheater.Service
             return _movieRepository.GetVersionById(versionId);
         }
 
+        // New methods for categorizing movies
+        public List<Movie> GetCurrentlyShowingMovies()
+        {
+            try
+            {
+                return _movieRepository.GetCurrentlyShowingMovies();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting currently showing movies");
+                return new List<Movie>();
+            }
+        }
+
+        public List<Movie> GetComingSoonMovies()
+        {
+            try
+            {
+                return _movieRepository.GetComingSoonMovies();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting coming soon movies");
+                return new List<Movie>();
+            }
+        }
+
+        public List<Movie> GetCurrentlyShowingMoviesWithDetails()
+        {
+            try
+            {
+                return _movieRepository.GetCurrentlyShowingMoviesWithDetails();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting currently showing movies with details");
+                return new List<Movie>();
+            }
+        }
+
+        public List<Movie> GetComingSoonMoviesWithDetails()
+        {
+            try
+            {
+                return _movieRepository.GetComingSoonMoviesWithDetails();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting coming soon movies with details");
+                return new List<Movie>();
+            }
+        }
+
         public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId)
         {
             return _movieRepository.GetMovieShowByCinemaRoomId(cinemaRoomId);

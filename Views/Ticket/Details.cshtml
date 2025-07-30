@@ -35,10 +35,11 @@
     {
         rankDiscount = subtotal * (rankDiscountPercent / 100m);
     }
-    decimal runningTotal = subtotal + totalFoodPrice;
-    if (rankDiscount > 0) runningTotal -= rankDiscount;
-    if (Model.VoucherAmount > 0) runningTotal -= Model.VoucherAmount ?? 0;
-    if (useScore > 0) runningTotal -= usedScoreValue;
+    // SỬA: Tính toán đúng logic như BookingPriceCalculationService
+    decimal seatTotalAfterRankAndScore = subtotal - rankDiscount - usedScoreValue;
+    if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
+    decimal seatAndFoodTotal = seatTotalAfterRankAndScore + totalFoodPrice;
+    decimal runningTotal = seatAndFoodTotal - (Model.VoucherAmount ?? 0m);
     if (runningTotal < 0) runningTotal = 0;
 }
 <style>
@@ -306,10 +307,6 @@
                                         <td class="text-end" style="white-space: nowrap;">-@rankDiscount.ToString("N0") VND</td>
                                     </tr>
                                 }
-                                <tr>
-                                    <td style="white-space: nowrap;">- Voucher</td>
-                                    <td class="text-end" style="white-space: nowrap;">-@((Model.VoucherAmount ?? 0).ToString("N0")) VND</td>
-                                </tr>
                                 @if (useScore > 0)
                                 {
                                     <tr>
@@ -320,8 +317,15 @@
                                 @if (totalFoodPrice > 0)
                                 {
                                     <tr>
-                                        <td style="white-space: nowrap;">Food & Drinks</td>
-                                        <td class="text-end" style="white-space: nowrap;">@totalFoodPrice.ToString("N0") VND</td>
+                                        <td style="white-space: nowrap;">+ Food & Drinks</td>
+                                        <td class="text-end" style="white-space: nowrap;">+@totalFoodPrice.ToString("N0") VND</td>
+                                    </tr>
+                                }
+                                @if ((Model.VoucherAmount ?? 0m) > 0)
+                                {
+                                    <tr>
+                                        <td style="white-space: nowrap;">- Voucher</td>
+                                        <td class="text-end" style="white-space: nowrap;">-@((Model.VoucherAmount ?? 0m).ToString("N0")) VND</td>
                                     </tr>
                                 }
                                 <tr style="border-top: 1px solid #dee2e6;">

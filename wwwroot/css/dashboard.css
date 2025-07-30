@@ -1,4 +1,62 @@
-﻿/* Dashboard KPI Cards */
+﻿/* --- Print Styles --- */
+@media print {
+    body, html { background: #fff !important; color: #000 !important; }
+    .dashboard-tabs, .dashboard-actions, .nav, .navbar, .btn, .dashboard-tab, .dashboard-tab.active { display: none !important; }
+    #food-dashboard, #movie-dashboard { display: block !important; }
+    .dashboard-card, .dashboard-grid, .table { background: #fff !important; color: #000 !important; }
+    .dashboard-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.bg-gradient-danger {
+    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.bg-gradient-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.card.shadow {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+    border-radius: 0.75rem !important;
+    border: 2px solid #d0d0d0 !important;
+}
+.dashboard-tab {
+    color: #FFD700;
+    background: #222;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.2s;
+    cursor: pointer;
+    border: none;
+}
+.dashboard-tab.active, .dashboard-tab:hover {
+    background: #FFD700;
+    color: #222;
+}
+.dashboard-chart-placeholder {
+    height: 180px;
+    background: #333;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+/* Merge .dashboard-card styles with existing if needed, avoid duplication */
+
+/* Dashboard KPI Cards */
 .dashboard-card {
     display: flex;
     align-items: center;
@@ -47,6 +105,158 @@ canvas {
     border-radius: 0.5rem;
     padding: 1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Fix chart height for dashboard charts */
+.dashboard-chart-canvas {
+    height: 300px !important;
+    max-height: 300px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Remove card look for food stat charts */
+.dashboard-card canvas.dashboard-chart-canvas {
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.08);
+  border-radius: 16px;
+  background: #fff;
+  padding: 1.5rem;
+  margin-bottom: 0;
+}
+
+body.dark-mode .dashboard-card canvas.dashboard-chart-canvas {
+  background: #181c2f;
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.30), 0 1.5px 4px 0 rgba(0,0,0,0.18);
+}
+
+/* Food stats cards - match movie stats styling */
+.dashboard-card:not(.kpi-card) { 
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important; 
+  background: #fff; 
+  border: 2px solid #d0d0d0; 
+  border-radius: 0.75rem;
+  padding: 1.5rem; 
+}
+
+/* Dashboard action buttons: visible in both modes */
+.dashboard-actions .btn {
+  border: 2px solid #FFD700;
+  color: #222;
+  background: #fff;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+body.dark-mode .dashboard-actions .btn {
+  border: 2px solid #FFD700;
+  color: #FFD700;
+  background: #181c2f;
+}
+.dashboard-actions .btn-warning {
+  color: #fff;
+  background: #FFD700;
+  border: 2px solid #FFD700;
+}
+.dashboard-actions .btn-warning:hover {
+  background: #e6c200;
+  color: #fff;
+}
+
+/* Button hover/click/active effects */
+.dashboard-actions .btn {
+  transition: box-shadow 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+.dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
+  box-shadow: 0 2px 8px 0 rgba(255,215,0,0.15);
+  background: #ffe066;
+  color: #222;
+  transform: translateY(-2px) scale(1.04);
+  border-color: #FFD700;
+}
+body.dark-mode .dashboard-actions .btn:hover, body.dark-mode .dashboard-actions .btn:focus {
+  background: #2a2d3e;
+  color: #FFD700;
+}
+.dashboard-actions .btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px 0 rgba(255,215,0,0.10);
+}
+
+/* KPI Table for daily breakdown */
+.dashboard-kpi-table {
+  width: 100%;
+  font-size: 0.98rem;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+body.dark-mode .dashboard-kpi-table {
+  background: #181c2f;
+  color: #FFD700;
+}
+.dashboard-kpi-table th, .dashboard-kpi-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+}
+.dashboard-kpi-table th {
+  background: #ffe066;
+  color: #222;
+  font-weight: 700;
+}
+body.dark-mode .dashboard-kpi-table th {
+  background: #22223b;
+  color: #FFD700;
+}
+.dashboard-kpi-table tr:nth-child(even) {
+  background: #f8f9fa;
+}
+body.dark-mode .dashboard-kpi-table tr:nth-child(even) {
+  background: #23243a;
+}
+
+/* Scrollable recent list */
+.dashboard-recent-list {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.recent-list-item {
+  background: transparent;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: none;
+  border: none;
+}
+body.light-mode .recent-list-item {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+body.dark-mode .dashboard-recent-list {
+  background: #181c2f;
+}
+.dashboard-recent-list::-webkit-scrollbar {
+  width: 8px;
+  background: #eee;
+  border-radius: 8px;
+}
+.dashboard-recent-list::-webkit-scrollbar-thumb {
+  background: #FFD700;
+  border-radius: 8px;
+}
+body.dark-mode .dashboard-recent-list::-webkit-scrollbar {
+  background: #23243a;
+}
+body.dark-mode .dashboard-recent-list::-webkit-scrollbar-thumb {
+  background: #FFD700;
 }
 
 /* Top lists and new members */
@@ -148,4 +358,371 @@ canvas {
     top: 0;
     background-color: #f8f9fa;
     z-index: 1;
+}
+
+/* KPI summary row for selected day */
+.dashboard-kpi-summary {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+  gap: 2rem;
+  font-size: 1.05rem;
+}
+body.dark-mode .dashboard-kpi-summary {
+  background: #181c2f;
+  color: #FFD700;
+}
+@media (max-width: 900px) {
+  .dashboard-kpi-summary { flex-direction: column; gap: 0.5rem; }
+}
+
+/* Card style for recent list items */
+.recent-list-item {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.07);
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.recent-list-item:hover {
+  box-shadow: 0 4px 16px 0 rgba(255,215,0,0.13);
+  transform: translateY(-2px) scale(1.02);
+}
+body.dark-mode .recent-list-item {
+  background: #23243a;
+  color: #FFD700;
+}
+
+/* === KPI Cards Row Wrapper === */
+.dashboard-kpi-cards {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* === Individual KPI Card === */
+.kpi-card {
+  border-radius: 0.75rem;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  background: #23233a;
+  color: #fff;
+  text-align: center;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kpi-card .kpi-label,
+.kpi-card .kpi-value,
+.kpi-card .kpi-date,
+.kpi-card h5,
+.kpi-card .display-6 {
+  color: #fff;
+}
+
+.kpi-comparison {
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.kpi-comparison.positive {
+  color: #28a745;
+}
+
+.kpi-comparison.negative {
+  color: #dc3545;
+}
+
+.sparkline {
+  width: 100%;
+  height: 50px;
+  margin-top: 10px;
+}
+body.light-mode .kpi-card {
+  background: #fff !important;
+  color: #222 !important;
+  border: 2px solid #d0d0d0 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+}
+body.light-mode .kpi-card .kpi-label,
+body.light-mode .kpi-card .kpi-value,
+body.light-mode .kpi-card .kpi-date,
+body.light-mode .kpi-card h5,
+body.light-mode .kpi-card .display-6,
+body.light-mode .kpi-card * {
+  color: #222 !important;
+}
+
+/* Chart containers - match movie stats styling */
+.dashboard-chart-container {
+  background: #fff !important;
+  border: 2px solid #d0d0d0 !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+body.light-mode .dashboard-chart-container, .light-mode .dashboard-chart-container {
+  background: #fff !important;
+  border: 2px solid #d0d0d0 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+}
+body.light-mode .kpi-card, .light-mode .kpi-card,
+body.light-mode .card.kpi-card, .light-mode .card.kpi-card {
+  background: transparent !important;
+  color: #222 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+body.light-mode .kpi-card .kpi-label,
+body.light-mode .kpi-card .kpi-value,
+body.light-mode .kpi-card .kpi-date,
+.light-mode .kpi-card .kpi-label,
+.light-mode .kpi-card .kpi-value,
+.light-mode .kpi-card .kpi-date,
+body.light-mode .card .card-body,
+body.light-mode .card .card-body h5,
+body.light-mode .card .card-body .display-6 {
+  color: #222 !important;
+}
+
+.dashboard-chart-container h5 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.dashboard-chart-container canvas,
+.dashboard-chart-container .dashboard-chart-canvas {
+  max-width: 100%;
+  max-height: 350px;
+  width: 100% !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+
+#food-dashboard .card.shadow.h-100 {
+  border-radius: 0.75rem;
+  border: 2px solid #d0d0d0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+  background: #fff;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.tab-buttons .btn {
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tab-buttons .btn:not(.active) {
+    background-color: transparent;
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+.tab-buttons .btn:not(.active):hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Remove nav-pills styles that might affect the sidebar */
+.nav-pills .nav-link {
+    color: #0d6efd;
+    background-color: white;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+[data-bs-theme="dark"] .nav-pills .nav-link {
+    background-color: transparent;
+    color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-group {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.btn-group .btn {
+    border: none;
+    padding: 8px 24px;
+    border-radius: 6px !important;
+    margin: 0 2px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-group .btn:not(.active) {
+    background-color: transparent;
+    color: #6c757d;
+}
+
+.btn-group .btn:not(.active):hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .btn-group {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-bs-theme="dark"] .btn-group .btn:not(.active) {
+    color: #adb5bd;
+}
+
+/* Tab content styles */
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.show.active {
+    display: block;
+}
+
+.dashboard-recent-list {
+    overflow-y: auto;
+}
+
+/* Remove border-end class styles */
+.border-end {
+    border-right: none !important;
+}
+
+/* Remove any min-height constraints */
+.min-vh-100 {
+    min-height: auto !important;
+}
+
+.small-stat {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: -0.5rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #007bff, #6610f2);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.bg-gradient-danger {
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* Additional Dashboard Styles - Moved from inline styles */
+body, html {
+    overflow-x: hidden;
+}
+
+#food-dashboard {
+    overflow-x: hidden;
+}
+
+.dashboard-recent-list {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    max-height: 288px; /* 4 cards at ~72px each */
+    height: 288px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.recent-list-item {
+    background-color: #1f1f2e;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.recent-list-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.recent-list-item > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recent-list-item .text-warning,
+.recent-list-item .fw-bold {
+    color: #ffd700;
+}
+
+.dashboard-recent-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dashboard-recent-list::-webkit-scrollbar-thumb {
+    background: #ffd700;
+    border-radius: 4px;
+}
+
+.card-body.d-flex {
+    display: flex;
+    flex-direction: column; 
+    height: 100%;
+}
+
+.card-body .nav-pills {
+    flex: 0 0 auto;
+    margin-bottom: 0.75rem;
+    z-index: 10;
+}
+
+/* Override small-stat from previous definition */
+.small-stat {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
 }

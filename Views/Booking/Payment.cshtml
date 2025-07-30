@@ -7,180 +7,717 @@
 @Html.Partial("_BookingProgress")
 
 @section Styles {
-    <link rel="stylesheet" href="~/css//payment.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cinema-dark: #0a0a0a;
+            --cinema-darker: #050505;
+            --cinema-gold: #ffd700;
+            --cinema-gold-dark: #b8860b;
+            --cinema-red: #dc2626;
+            --cinema-silver: #c0c0c0;
+            --cinema-blue: #1e40af;
+            --cinema-green: #059669;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--cinema-darker) 0%, var(--cinema-dark) 50%, #1a1a1a 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Cinema Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(220, 38, 38, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Header Section */
+        .cinema-header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .cinema-title {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .cinema-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .back-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--cinema-gold);
+            color: var(--cinema-gold);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content Container */
+        .payment-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Glass Card Effect */
+        .glass-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .glass-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            color: var(--cinema-dark);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        /* Payment Grid */
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Badges */
+        .badge {
+            border-radius: 0.5rem;
+            padding: 0.4em 0.8em;
+            font-size: 0.95em;
+        }
+
+        .invoice-badge {
+            background: linear-gradient(135deg, var(--cinema-silver) 0%, #6c757d 100%);
+            color: var(--cinema-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .seat-badge {
+            background: linear-gradient(135deg, var(--cinema-blue) 0%, #1e40af 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Food Table */
+        .food-table-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        .cinema-table {
+            width: 100%;
+            margin: 0;
+            background: transparent;
+        }
+
+        .cinema-table th {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 107, 53, 0.2) 100%);
+            color: var(--cinema-gold);
+            font-weight: 600;
+            padding: 1rem;
+            border: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cinema-table td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            vertical-align: middle;
+        }
+
+        .cinema-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .food-name {
+            font-weight: 600;
+            color: var(--cinema-gold);
+        }
+
+        .quantity {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .price, .total {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .total-row td {
+            background: rgba(255, 193, 7, 0.1);
+            font-weight: 700;
+            border-bottom: none;
+            color: var(--cinema-gold);
+        }
+
+        .food-total {
+            font-size: 1.1rem;
+        }
+
+        .no-food-message {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-style: italic;
+            justify-content: center;
+        }
+
+        /* Price Breakdown */
+        .price-breakdown {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .price-row:last-child {
+            border-bottom: none;
+        }
+
+        .price-row.total {
+            border-top: 2px solid var(--cinema-gold);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .price-label {
+            color: var(--text-muted);
+        }
+
+        .price-value {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .discount-value {
+            color: var(--cinema-green);
+            font-weight: 600;
+        }
+
+        .total-value {
+            color: var(--cinema-gold);
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        /* Payment Button */
+        .cinema-btn {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%);
+            border: none;
+            color: var(--cinema-dark);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .cinema-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            color: var(--cinema-dark);
+        }
+
+        .cinema-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Force Dark Theme - Override Light Mode */
+        body[data-bs-theme="light"],
+        body:not(.dark-mode) {
+            background: linear-gradient(135deg, var(--cinema-darker) 0%, var(--cinema-dark) 50%, #1a1a1a 100%) !important;
+            color: var(--text-light) !important;
+        }
+        
+        /* Override any Bootstrap light theme styles */
+        body[data-bs-theme="light"] *,
+        body:not(.dark-mode) * {
+            color: inherit !important;
+        }
+
+        body[data-bs-theme="light"] .cinema-header,
+        body:not(.dark-mode) .cinema-header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
+            border-bottom: 1px solid var(--glass-border) !important;
+        }
+
+        body[data-bs-theme="light"] .cinema-title,
+        body:not(.dark-mode) .cinema-title {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        body[data-bs-theme="light"] .cinema-subtitle,
+        body:not(.dark-mode) .cinema-subtitle {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .glass-section,
+        body:not(.dark-mode) .glass-section {
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .section-title,
+        body:not(.dark-mode) .section-title {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .info-label,
+        body:not(.dark-mode) .info-label {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .info-value,
+        body:not(.dark-mode) .info-value {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .price-label,
+        body:not(.dark-mode) .price-label {
+            color: var(--text-muted) !important;
+        }
+
+        body[data-bs-theme="light"] .price-value,
+        body:not(.dark-mode) .price-value {
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .price-breakdown,
+        body:not(.dark-mode) .price-breakdown {
+            background: rgba(0, 0, 0, 0.3) !important;
+        }
+
+        body[data-bs-theme="light"] .price-row,
+        body:not(.dark-mode) .price-row {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body[data-bs-theme="light"] .discount-value,
+        body:not(.dark-mode) .discount-value {
+            color: var(--cinema-green) !important;
+        }
+
+        body[data-bs-theme="light"] .total-value,
+        body:not(.dark-mode) .total-value {
+            color: var(--cinema-gold) !important;
+        }
+
+        body[data-bs-theme="light"] .modal-content,
+        body:not(.dark-mode) .modal-content {
+            background: var(--cinema-dark) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-bs-theme="light"] .modal-body,
+        body:not(.dark-mode) .modal-body {
+            background: var(--cinema-dark) !important;
+            color: var(--text-light) !important;
+        }
+
+        /* Override any potential Bootstrap container styles */
+        body[data-bs-theme="light"] .container,
+        body[data-bs-theme="light"] .container-fluid,
+        body:not(.dark-mode) .container,
+        body:not(.dark-mode) .container-fluid {
+            background: transparent !important;
+        }
+        
+        /* Force all text to be light colored */
+        body[data-bs-theme="light"] h1,
+        body[data-bs-theme="light"] h2,
+        body[data-bs-theme="light"] h3,
+        body[data-bs-theme="light"] h4,
+        body[data-bs-theme="light"] h5,
+        body[data-bs-theme="light"] h6,
+        body[data-bs-theme="light"] p,
+        body[data-bs-theme="light"] span,
+        body[data-bs-theme="light"] div,
+        body:not(.dark-mode) h1,
+        body:not(.dark-mode) h2,
+        body:not(.dark-mode) h3,
+        body:not(.dark-mode) h4,
+        body:not(.dark-mode) h5,
+        body:not(.dark-mode) h6,
+        body:not(.dark-mode) p,
+        body:not(.dark-mode) span,
+        body:not(.dark-mode) div {
+            color: var(--text-light) !important;
+        }
+        
+        /* Exception for specific elements that should keep their colors */
+        body[data-bs-theme="light"] .cinema-title,
+        body:not(.dark-mode) .cinema-title {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+        
+        body[data-bs-theme="light"] .points-badge,
+        body:not(.dark-mode) .points-badge {
+            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%) !important;
+            color: var(--cinema-dark) !important;
+        }
+        
+        body[data-bs-theme="light"] .current-price,
+        body:not(.dark-mode) .current-price {
+            color: var(--cinema-green) !important;
+        }
+        
+        body[data-bs-theme="light"] .total-value,
+        body:not(.dark-mode) .total-value {
+            color: var(--cinema-gold) !important;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 1200px) {
+            .payment-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .cinema-title {
+                font-size: 2rem;
+            }
+            
+            .payment-container {
+                padding: 0 1rem;
+            }
+            
+            .glass-section {
+                padding: 1.5rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .section-title {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
 }
 
-<div class="cinema-payment-container">
-    <!-- Progress Indicator -->
-    <div class="text-center mb-4">
-        <div class="progress-indicator">
-            <i class="fas fa-check-circle"></i>
-            <span>Step 4 of 4 - Payment</span>
+<!-- Header -->
+<div class="cinema-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1">
+                <h1 class="cinema-title">💳 Payment</h1>
+                <p class="cinema-subtitle">Review your order and complete your payment</p>
+            </div>
+            <a href="javascript:history.back()" class="back-btn">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
         </div>
     </div>
-    <button type="button" class="cinema-payment-btn return-btn-top" onclick="window.history.back()">
-        <i class="fas fa-arrow-left"></i> Return
-    </button>
-    <div class="cinema-ticket-card">
-        <!-- Ticket Header -->
-        <div class="ticket-header">
-            <div class="header-content">
-                <i class="fas fa-ticket-alt ticket-icon"></i>
-                <h3>Cinema Ticket Payment</h3>
+</div>
+
+<div class="payment-container">
+    <!-- Payment Grid -->
+    <div class="payment-grid">
+        <!-- Movie Info -->
+        <div class="glass-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-film"></i>
+                </div>
+                <h3 class="section-title">Movie Info</h3>
             </div>
-            <div class="header-decoration"></div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Invoice ID</div>
+                    <div class="info-value">
+                        <span class="invoice-badge">@Model.InvoiceId</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Movie</div>
+                    <div class="info-value">@Model.MovieName</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Show Date</div>
+                    <div class="info-value">@Model.ShowDate.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Show Time</div>
+                    <div class="info-value">@Model.ShowTime</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Seats</div>
+                    <div class="info-value">
+                        <span class="seat-badge">@Model.Seats</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="ticket-body ticket-body-horizontal">
-            <!-- Error Alert -->
-            @if (TempData["ErrorMessage"] != null)
+
+        <!-- Food & Beverages -->
+        <div class="glass-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h3 class="section-title">Food & Beverages</h3>
+            </div>
+            
+            @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
             {
-                <div class="cinema-alert">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>@TempData["ErrorMessage"]</span>
+                <div class="food-table-container">
+                    <table class="cinema-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var food in Model.SelectedFoods)
+                            {
+                                <tr>
+                                    <td class="food-name">@food.Name</td>
+                                    <td class="quantity">
+                                        <span class="badge bg-secondary">@food.Quantity</span>
+                                    </td>
+                                    <td class="price">
+                                        <span class="fw-semibold text-success">@food.Price.ToString("N0") VND</span>
+                                    </td>
+                                    <td class="total">
+                                        <span class="fw-bold">@((food.Price * food.Quantity).ToString("N0")) VND</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="3" class="fw-semibold">Food & Beverages Total:</td>
+                                <td class="fw-bold text-success food-total">@Model.TotalFoodPrice.ToString("N0") VND</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             }
-            <div class="ticket-left">
-                <!-- Movie Information Section -->
-                <div class="movie-info-section">
-                    <div class="section-header">
-                        <i class="fas fa-film"></i>
-                        <h4>Booking Details</h4>
-                    </div>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">
-                                <i class="fas fa-receipt"></i>
-                                Invoice ID:
-                            </div>
-                            <div class="info-value">
-                                <span class="invoice-badge">@Model.InvoiceId</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">
-                                <i class="fas fa-video"></i>
-                                Movie:
-                            </div>
-                            <div class="info-value movie-title">@Model.MovieName</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">
-                                <i class="fas fa-calendar-alt"></i>
-                                Show Date:
-                            </div>
-                            <div class="info-value">@Model.ShowDate.ToString("dd/MM/yyyy")</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">
-                                <i class="fas fa-clock"></i>
-                                Show Time:
-                            </div>
-                            <div class="info-value">@Model.ShowTime</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">
-                                <i class="fas fa-chair"></i>
-                                Seats:
-                            </div>
-                            <div class="info-value">
-                                <span class="seat-badges">@Model.Seats</span>
-                            </div>
-                        </div>
-                    </div>
+            else
+            {
+                <div class="no-food-message">
+                    <i class="fas fa-utensils"></i>
+                    <span>No food items selected</span>
                 </div>
-            </div>
-            <div class="ticket-center">
-                <!-- Food & Drinks Section -->
-                <div class="food-section">
-                    <div class="section-header">
-                        <i class="fas fa-utensils"></i>
-                        <h4>Food & Drinks</h4>
-                    </div>
-                    @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
-                    {
-                        <div class="food-table-container">
-                            <table class="cinema-table">
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Qty</th>
-                                        <th>Price</th>
-                                        <th>Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var food in Model.SelectedFoods)
-                                    {
-                                        <tr>
-                                            <td class="food-name">@food.Name</td>
-                                            <td class="quantity">@food.Quantity</td>
-                                            <td class="price">@food.Price.ToString("N0") VND</td>
-                                            <td class="total">@((food.Price * food.Quantity).ToString("N0")) VND</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                                <tfoot>
-                                    <tr class="total-row">
-                                        <td colspan="3">Total Food:</td>
-                                        <td class="food-total">@Model.TotalFoodPrice.ToString("N0") VND</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="no-food-message">
-                            <i class="fas fa-info-circle"></i>
-                            <span>No food items selected</span>
-                        </div>
-                    }
-                </div>
-            </div>
-            <div class="ticket-right">
-                <!-- Price Summary Section -->
-                <div class="price-summary-section">
-                    <div class="price-breakdown">
-                        <div class="price-item seat-price">
-                            <div class="price-label">
-                                <i class="fas fa-chair"></i>
-                                Seat Price:
-                            </div>
-                            <div class="price-amount">@Model.TotalSeatPrice.ToString("N0") VND</div>
-                        </div>
-                        @if (Model.TotalFoodPrice > 0)
-                        {
-                            <div class="price-item food-price">
-                                <div class="price-label">
-                                    <i class="fas fa-utensils"></i>
-                                    Food & Drinks:
-                                </div>
-                                <div class="price-amount">@Model.TotalFoodPrice.ToString("N0") VND</div>
-                            </div>
-                        }
-                    </div>
-                    <!-- Decorative Separator -->
-                    <div class="price-separator">
-                        <div class="separator-dots">
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                        </div>
-                    </div>
-                    <!-- Total Amount -->
-                    <div class="total-amount-section">
-                        <div class="total-label">Total Amount</div>
-                        <div class="total-amount">@Model.TotalAmount.ToString("N0") VND</div>
-                    </div>
-                </div>
-            </div>
+            }
         </div>
-        <!-- Payment Form -->
-        <div class="payment-form-section" style="text-align:center; margin-top:2.5rem;">
-            <form asp-action="ProcessPayment" method="post" style="display:inline-block;">
+
+        <!-- Price Summary & Payment -->
+        <div class="glass-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h3 class="section-title">Price Summary</h3>
+            </div>
+            
+            <div class="price-breakdown">
+                <div class="price-row">
+                    <span class="price-label">Seat Price:</span>
+                    <span class="price-value">@Model.Subtotal.ToString("N0") VND</span>
+                </div>
+                @if (Model.TotalFoodPrice > 0)
+                {
+                    <div class="price-row">
+                        <span class="price-label">Food & Beverages:</span>
+                        <span class="price-value">@Model.TotalFoodPrice.ToString("N0") VND</span>
+                    </div>
+                }
+                @if (Model.RankDiscount > 0)
+                {
+                    <div class="price-row">
+                        <span class="price-label">Rank Discount:</span>
+                        <span class="discount-value">-@Model.RankDiscount.ToString("N0") VND</span>
+                    </div>
+                }
+                @if (Model.VoucherAmount > 0)
+                {
+                    <div class="price-row">
+                        <span class="price-label">Voucher:</span>
+                        <span class="discount-value">-@Model.VoucherAmount.ToString("N0") VND</span>
+                    </div>
+                }
+                @if (Model.UsedScoreValue > 0)
+                {
+                    <div class="price-row">
+                        <span class="price-label">Points Used:</span>
+                        <span class="discount-value">-@Model.UsedScoreValue.ToString("N0") VND</span>
+                    </div>
+                }
+                
+                <div class="price-row total">
+                    <span class="price-label">Total Price:</span>
+                    <span class="total-value">@Model.TotalAmount.ToString("N0") VND</span>
+                </div>
+            </div>
+
+            <form asp-action="ProcessPayment" method="post" class="mt-4">
                 <input type="hidden" asp-for="InvoiceId" />
                 <input type="hidden" asp-for="MovieName" />
                 <input type="hidden" asp-for="ShowDate" />
@@ -190,20 +727,16 @@
                 <input type="hidden" asp-for="OrderInfo" />
                 <input type="hidden" asp-for="TotalSeatPrice" />
                 <input type="hidden" asp-for="TotalFoodPrice" />
-                <div class="payment-button-container">
-                    <button type="submit" class="cinema-payment-btn">
-                        <span class="btn-content">
-                            <i class="fas fa-credit-card"></i>
-                            Pay with VNPAY
-                        </span>
-                        <div class="btn-shine"></div>
-                    </button>
-                </div>
+                <input type="hidden" asp-for="Subtotal" />
+                <input type="hidden" asp-for="RankDiscount" />
+                <input type="hidden" asp-for="VoucherAmount" />
+                <input type="hidden" asp-for="UsedScoreValue" />
+                
+                <button type="submit" class="cinema-btn">
+                    <i class="fas fa-credit-card me-2"></i>Pay with VNPAY
+                </button>
             </form>
         </div>
-        <!-- Ticket Perforations -->
-        <div class="ticket-perforations top"></div>
-        <div class="ticket-perforations bottom"></div>
     </div>
 </div>
 

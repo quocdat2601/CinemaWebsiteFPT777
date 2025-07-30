@@ -3,12 +3,14 @@
 @{
     ViewData["Title"] = "Home";
     var movies = ViewBag.Movies as IEnumerable<MovieTheater.Models.Movie>;
+    var currentlyShowingMovies = ViewBag.CurrentlyShowingMovies as IEnumerable<MovieTheater.Models.Movie>;
+    var comingSoonMovies = ViewBag.ComingSoonMovies as IEnumerable<MovieTheater.Models.Movie>;
     var promotions = ViewBag.Promotions as IEnumerable<MovieTheater.Models.Promotion>;
     // Force view recompilation - ensure proper data handling
     var people = ViewBag.People as IEnumerable<MovieTheater.Models.Person> ?? new List<MovieTheater.Models.Person>();
     var actorNames = people.Where(p => p != null && p.IsDirector == false).Select(p => p.Name ?? "").ToList();
     var directorNames = people.Where(p => p != null && p.IsDirector == true).Select(p => p.Name ?? "").ToList();
-    var movieList = movies?.ToList() ?? new List<MovieTheater.Models.Movie>();
+    var movieList = currentlyShowingMovies?.ToList() ?? new List<MovieTheater.Models.Movie>();
     var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
 }
 <!-- GOOGLE FONTS -->
@@ -23,9 +25,13 @@
 <!-- APP CSS -->
 <link rel="stylesheet" href="~/css/grid.css" />
 <link rel="stylesheet" href="~/css/app.css" />
+<link rel="stylesheet" href="~/css/modern-base.css" />
 
 <!-- HERO SECTION CSS -->
 <link rel="stylesheet" href="~/css/hero-section.css" />
+<link rel="stylesheet" href="~/css/movie-section.css" />
+<link rel="stylesheet" href="~/css/promotions.css" />
+<link rel="stylesheet" href="~/css/booking-modal.css" />
 
 <!-- ===== HERO SECTION PLACEHOLDER ===== -->
 <!-- HERO SECTION (dùng SwiperJS) -->
@@ -160,173 +166,227 @@
         </div>
     </div>
 </section>
-
 <!-- ===== END HERO SECTION PLACEHOLDER ===== -->
-<!-- SLIDE 2: NOW SHOWING CAROUSEL (CHUYỂN SANG SWIPER) -->
-<section class="web-movie-slide desktop" style="background:transparent; min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-    <!-- Heading MOVIES hiện đại, nổi bật, căn giữa toàn section -->
-    <div class="modern-movie-heading" style="margin-bottom:0.5rem; margin-top:2.5rem;">
-        <span>MOVIES</span>
+
+<!-- NOW SHOWING SECTION -->
+<section class="now-showing-section" id="nowShowingSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient">
+            <span class="title-text">NOW SHOWING</span>
+            <div class="title-underline"></div>
+        </h2>
+        <div class="section-subtitle">Discover the latest blockbusters in theaters now</div>
     </div>
-    <div class="movie-showing" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-        <div class="container keep-stable" style="width:80%; margin:2.5rem auto; padding:0 10px;">
-            <div class="web-movie-content" style="margin-top:2.2rem;">
-                <div class="web-movie-list">
-                    <!-- Swiper -->
-                    <div class="swiper nowshowing-swiper">
-                        <div class="swiper-wrapper">
-                            @foreach (var movie in movies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
-                            {
-                                <div class="swiper-slide" style="padding:0 10px;">
-                                    <div class="web-movie-box" style="background:#181a20; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,0.13); width:100%; max-width:320px; margin:auto; display:flex; flex-direction:column; align-items:center; padding-bottom:18px;">
-                                        <a class="image" href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" style="display:block; width:100%;">
-                                            <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" style="width:100%; height:450px; object-fit:cover; border-radius:18px 18px 0 0;">
-                                        </a>
-                                        <div class="content" style="width:100%; text-align:center; margin-top:1rem; padding:0 15px;">
-                                            <p class="name" style="font-weight:700; font-size:1.1rem; min-height:48px; color:#fff; margin-bottom:0.5rem; line-height:1.3;">@movie.MovieNameEnglish</p>
-                                            <div style="display:flex; justify-content:center; gap:0.7rem; font-size:0.97rem; color:#bbb; margin-bottom:0.7rem">
-                                                <div><i class="bx bxs-time"></i> @movie.Duration' </div>
-                                                <div>
-                                                    @if (movie.Versions?.Any() == true)
-                                                    {
-                                                        @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
-                                                    }
-                                                    else
-                                                    {
-                                                        <span>HD</span>
-                                                    }
-                                                </div>
-                                                <!-- <div>16+</div> -->
-                                            </div>
-                                            <div style="display:flex; justify-content:center; gap:0.8rem; flex-wrap:nowrap;">
-                                                <a href="#" class="btn btn-outline-light btn-hover watch-trailer-btn" data-trailer-url="@movie.TrailerUrl" style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; border:1.5px solid #ffe066; color:#ffe066; background:transparent; font-weight:600; display:inline-flex; align-items:center; gap:0.3rem; white-space:nowrap; min-width:0;">
-                                                    <i class="fa fa-play-circle"></i> <span>Watch Trailer</span>
-                                                </a>
-                                                <button class="btn btn-warning btn-hover book-movie-btn"
-                                                        data-movie-id="@movie.MovieId"
-                                                        data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))"
-                                                        style="font-size:0.9rem; padding:0.4rem 1.2rem; border-radius:6px; font-weight:700; color:#222; background:#ffe066; border:none; white-space:nowrap; min-width:0;">
-                                                    Book Now
-                                                </button>
-                                            </div>
-                                        </div>
+
+    <div class="container keep-stable">
+        <div class="swiper nowshowing-swiper">
+            <div class="swiper-wrapper">
+                @foreach (var movie in currentlyShowingMovies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                {
+                    <div class="swiper-slide">
+                        <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
+                            <div class="movie-poster-container">
+                                <div class="hover-overlay"></div>
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster">
+                                <div class="movie-rating-badge">HD</div>
+                            </div>
+
+                            <div class="movie-content">
+                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+
+                                <div class="movie-meta">
+                                    <div class="meta-item">
+                                        <i class="bx bxs-time"></i>
+                                        <span>@movie.Duration min</span>
+                                    </div>
+                                    <div class="meta-divider">•</div>
+                                    <div class="meta-item">
+                                        <i class="bx bxs-video"></i>
+                                        <span>
+                                            @if (movie.Versions?.Any() == true)
+                                            {
+                                                @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
+                                            }
+                                            else
+                                            {
+                                                <span>HD</span>
+                                            }
+                                        </span>
                                     </div>
                                 </div>
-                            }
+
+                                <div class="movie-genres">
+                                    @if (movie.Types?.Any() == true)
+                                    {
+                                        @foreach (var type in movie.Types.Take(3))
+                                        {
+                                            <span class="genre-badge">@type.TypeName</span>
+                                        }
+                                    }
+                                </div>
+
+                                <div class="movie-actions-container">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl">
+                                        <i class="fas fa-play"></i>
+                                        <span class="btn-text">Trailer</span>
+                                    </button>
+                                    <button class="action-btn action-btn-primary"
+                                            data-movie-id="@movie.MovieId"
+                                            data-movie-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(movie.MovieNameEnglish))">
+                                        <i class="fas fa-ticket-alt"></i>
+                                        <span class="btn-text">Book</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <!-- Add Navigation -->
-                        <div class="swiper-button-next"></div>
-                        <div class="swiper-button-prev"></div>
                     </div>
-                </div>
+                }
             </div>
-            <div style="text-align:center; margin-top:2.2rem; margin-bottom:2.5rem;">
-                <a href="@Url.Action("MovieList", "Movie")" class="btn btn-outline-warning btn-hover" style="font-size:1.1rem; font-weight:700; border-radius:8px; padding:0.5rem 2.2rem; border:2px solid #ffe066; color:#ffe066; background:transparent;">
-                    <span>View More</span>
-                </a>
-            </div>
+
+            <!-- Navigation -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
         </div>
     </div>
 </section>
-<!-- SLIDE 3: PROMOTION + FOOTER GỘP CHUNG (giữ nguyên) -->
-<section class="slide-section promo-footer-slide" id="slide-promo-footer" style="min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--box-bg);">
-    <div class="container" style="width:85%; max-width:1400px; margin:auto;">
-        <div class="section-header" style="margin-bottom:2rem;">PROMOTION</div>
-        <div class="owl-carousel movies-slide carousel-nav-center" id="promotion-carousel">
-            @foreach (var promo in promotions ?? Enumerable.Empty<MovieTheater.Models.Promotion>())
-            {
-                <div class="movie-item">
-                    <img src="@promo.Image" alt="Promotion">
-                    <div class="movie-item-content">
-                        <div class="movie-item-title">
-                            @promo.Title
-                        </div>
-                        <div class="movie-infos">
-                            <div class="movie-info">
-                                <span>@promo.Detail</span>
+
+<!-- COMING SOON SECTION -->
+<section class="coming-soon-section" id="comingSoonSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient coming-soon-title">
+            <span class="title-text">COMING SOON</span>
+            <div class="title-underline coming-soon-underline"></div>
+        </h2>
+        <div class="section-subtitle">Get ready for upcoming blockbusters</div>
+    </div>
+
+    <div class="container keep-stable">
+        <div class="swiper comingsoon-swiper">
+            <div class="swiper-wrapper">
+                @foreach (var movie in comingSoonMovies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                {
+                    <div class="swiper-slide">
+                        <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
+                            <div class="movie-poster-container">
+                                <div class="hover-overlay"></div>
+                                <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster">
+                                <div class="movie-rating-badge coming-soon-badge">Soon</div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-        <!-- Footer nhỏ gọn phía dưới -->
-        <footer class="section" style="margin-top:3rem;">
-            <div class="container">
-                <div class="row">
-                    <div class="col-4 col-md-6 col-sm-12">
-                        <div class="content">
-                            <a href="#" class="logo">
-                                <span class="movie-logo-icon" style="display:flex;align-items:center;">
-                                    <i class='bx bx-movie-play bx-tada main-color' style="font-size:2rem;"></i>
-                                    <img src="~/image/logo.png" alt="MovieTheater Logo" style="height:40px; width:auto; display:inline-block; vertical-align:middle; margin-left:8px;">
-                                </span>
-                            </a>
-                            <p style="font-size:0.95rem;">
-                                FPT777 Theater - Enjoy your movie time!
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-8 col-md-6 col-sm-12">
-                        <div class="row">
-                            <div class="col-3 col-md-6 col-sm-6">
-                                <div class="content">
-                                    <p>
-                                        <b>FPT777</b>
-                                    </p>
-                                    <ul class="footer-menu">
-                                        <li><a href="#">About us</a></li>
-                                        <li><a href="#">My profile</a></li>
-                                        <li><a href="#">Pricing plans</a></li>
-                                        <li><a href="#">Contacts</a></li>
-                                    </ul>
+
+                            <div class="movie-content">
+                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+
+                                <div class="movie-meta">
+                                    <div class="meta-item">
+                                        <i class="bx bxs-time"></i>
+                                        <span>@movie.Duration min</span>
+                                    </div>
+                                    <div class="meta-divider">•</div>
+                                    <div class="meta-item">
+                                        <i class="bx bxs-video"></i>
+                                        <span>
+                                            @if (movie.Versions?.Any() == true)
+                                            {
+                                                @(string.Join(", ", movie.Versions.Select(v => v.VersionName)))
+                                            }
+                                            else
+                                            {
+                                                <span>HD</span>
+                                            }
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-3 col-md-6 col-sm-6">
-                                <div class="content">
-                                    <p><b>Browse</b></p>
-                                    <ul class="footer-menu">
-                                        <li><a href="#">About us</a></li>
-                                        <li><a href="#">My profile</a></li>
-                                        <li><a href="#">Pricing plans</a></li>
-                                        <li><a href="#">Contacts</a></li>
-                                    </ul>
+
+                                <div class="movie-genres">
+                                    @if (movie.Types?.Any() == true)
+                                    {
+                                        @foreach (var type in movie.Types.Take(3))
+                                        {
+                                            <span class="genre-badge">@type.TypeName</span>
+                                        }
+                                    }
                                 </div>
-                            </div>
-                            <div class="col-3 col-md-6 col-sm-6">
-                                <div class="content">
-                                    <p><b>Help</b></p>
-                                    <ul class="footer-menu">
-                                        <li><a href="#">About us</a></li>
-                                        <li><a href="#">My profile</a></li>
-                                        <li><a href="#">Pricing plans</a></li>
-                                        <li><a href="#">Contacts</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="col-3 col-md-6 col-sm-6">
-                                <div class="content">
-                                    <p><b>Download app</b></p>
-                                    <ul class="footer-menu">
-                                        <li>
-                                            <a href="#">
-                                                <img src="~/images/google-play.png" alt="">
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#">
-                                                <img src="~/images/app-store.png" alt="">
-                                            </a>
-                                        </li>
-                                    </ul>
+
+                                <div class="movie-actions-container">
+                                    <button class="action-btn action-btn-outline" data-trailer-url="@movie.TrailerUrl">
+                                        <i class="fas fa-play"></i>
+                                        <span class="btn-text">Trailer</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
-        </footer>
-        <div class="copyright" style="margin-top:1rem;">Copyright 2024 <a href="#" target="_blank">Team03</a></div>
+
+            <!-- Navigation -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 4: PROMOTIONS SECTION -->
+<section class="promotions-section" id="promotionsSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient promotions-title">
+            <span class="title-text">SPECIAL OFFERS</span>
+            <div class="title-underline promotions-underline"></div>
+        </h2>
+        <div class="section-subtitle">Don't miss out on our exclusive deals and promotions</div>
+    </div>
+    
+    <div class="promotions-container">
+        <div class="promotions-wrapper">
+            <div class="swiper promotions-swiper-modern">
+                <div class="swiper-wrapper">
+                    @foreach (var promo in promotions ?? Enumerable.Empty<MovieTheater.Models.Promotion>())
+                    {
+                        <div class="swiper-slide">
+                            <div class="promotion-card" data-promo-id="@promo.PromotionId">
+                                <div class="promotion-image">
+                                    <img src="@promo.Image" alt="@promo.Title" loading="lazy">
+                                    <div class="promotion-overlay">
+                                        <div class="overlay-content">
+                                            <div class="promotion-badge">
+                                                <i class="fas fa-gift"></i>
+                                                <span>Special Offer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="discount-badge">
+                                        <span>50% OFF</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="promotion-content">
+                                    <h3 class="promotion-title">@promo.Title</h3>
+                                    <p class="promotion-description">@promo.Detail</p>
+                                    
+                                    <div class="promotion-actions">
+                                        <button class="btn-learn-more">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Learn More</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <!-- Navigation -->
+                <div class="swiper-button-next modern-nav-btn promotions-nav"></div>
+                <div class="swiper-button-prev modern-nav-btn promotions-nav"></div>
+            </div>
+        </div>
+        
+        <div class="section-view-more">
+            <a href="@Url.Action("List", "Promotion")" class="btn-view-more promotions-view-more">
+                <span>View All Promotions</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
     </div>
 </section>
 <!-- Modal for Trailer -->
@@ -348,11 +408,19 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
     <script src="/js/app.js"></script>
     <script src="/js/hero-section.js"></script>
+    <!-- Removed unused JS files -->
+    <script src="/js/promotions.js"></script>
+    <script src="/js/booking-modal.js"></script>
+    <script src="/js/trailer-modal.js"></script>
+    <script src="~/js/movie-sections.js"></script>
+
     <script>
         // Global variables
         window.movieShowsCache = new Map(); // Cache for movie shows
         window.currentMovieShows = [];
         window.availableDates = new Set();
+
+
 
         // Initialize all functions before DOMContentLoaded
         window.initializeBooking = function() {
@@ -368,6 +436,8 @@
                 });
             }
         };
+
+
 
         // Function to open booking modal for selected movie
         window.openBookingModal = function(movieId, movieName) {
@@ -636,20 +706,20 @@
             <div class="modal-body">
                 <form id="bookingForm" novalidate>
                     <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
-                    <div class="mb-4">
+                    <div class="mb-4 booking-step">
                         <label for="dateSelect" class="form-label booking-label"><span class="label-icon">🗓️</span> <strong>Date</strong></label>
                         <select id="dateSelect" class="form-select booking-select" onchange="updateVersions()">
                             <option value="">— Select Date —</option>
                             <!-- Dates will be populated by JavaScript -->
                         </select>
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-4 booking-step">
                         <label for="versionSelect" class="form-label booking-label"><span class="label-icon">🎞️</span> <strong>Version</strong></label>
                         <select id="versionSelect" class="form-select booking-select" disabled onchange="updateTimes()">
                             <option value="">— Select Version —</option>
                         </select>
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-4 booking-step">
                         <label for="timeSelect" class="form-label booking-label"><span class="label-icon">⏰</span> <strong>Time</strong></label>
                         <select id="timeSelect" class="form-select booking-select" disabled>
                             <option value="">— Select Time —</option>
