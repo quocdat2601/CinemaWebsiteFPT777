@@ -247,7 +247,11 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Security: Use CDN with integrity check -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" 
+            integrity="sha384-7S287E4o+0O5jVw3J5yItxrhXWW9l7Y9jbGCedjjNf+JvtvcC3ygr32H1vpP6L2X" 
+            crossorigin="anonymous"></script>
+    
     <script>
         $(document).ready(function() {
             let timeLeft = 30 * 60; // 30 minutes in seconds
@@ -304,16 +308,22 @@
                                     $('#statusMessage').html('<i class="fas fa-check-circle"></i> Payment completed successfully!');
                                     
                                     // Hiển thị thông báo thành công
-                                    Swal.fire({
-                                        title: 'Payment Successful!',
-                                        text: 'Your payment has been processed successfully.',
-                                        icon: 'success',
-                                        confirmButtonText: 'OK',
-                                        allowOutsideClick: false
-                                    }).then((result) => {
-                                        // Redirect về booking manager
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            title: 'Payment Successful!',
+                                            text: 'Your payment has been processed successfully.',
+                                            icon: 'success',
+                                            confirmButtonText: 'OK',
+                                            allowOutsideClick: false
+                                        }).then((result) => {
+                                            // Redirect về booking manager
+                                            window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
+                                        });
+                                    } else {
+                                        // Fallback if SweetAlert2 is not available
+                                        alert('Payment Successful! Your payment has been processed successfully.');
                                         window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
-                                    });
+                                    }
                                     
                                     // Dừng auto-polling
                                     clearInterval(autoCheckInterval);

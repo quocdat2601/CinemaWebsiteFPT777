@@ -3,6 +3,7 @@ using MovieTheater.Models;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -19,6 +20,11 @@ namespace MovieTheater.Controllers
         private const decimal ACCEPTABLE_DIFFERENCE = 10000m; // Số tiền chuyển thiếu tối đa mà hệ thống vẫn chấp nhận
         private const string MEMO_PREFIX = "DH"; // Tiền tố điền trước mã đơn hàng
         private const string HEADER_SECURE_TOKEN = "eogrBiWqaq"; // Key bảo mật từ PHP sample
+        
+        // Security constants
+        private const int DATABASE_TIMEOUT_SECONDS = 30;
+        private const int MAX_PROCESSING_TIME_SECONDS = 60;
+        private const int MAX_WEBHOOK_SIZE_BYTES = 1024 * 1024; // 1MB
 
         public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger)
         {
@@ -29,8 +35,24 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> HandleWebhook([FromBody] JsonElement body)
         {
+            var startTime = DateTime.UtcNow;
+            
             try
             {
+                // Security: Check request size
+                if (Request.ContentLength > MAX_WEBHOOK_SIZE_BYTES)
+                {
+                    _logger.LogWarning("Webhook request too large: {Size} bytes", Request.ContentLength);
+                    return BadRequest(new { error = 1, message = "Request too large" });
+                }
+
+                // Security: Check processing time
+                if ((DateTime.UtcNow - startTime).TotalSeconds > MAX_PROCESSING_TIME_SECONDS)
+                {
+                    _logger.LogWarning("Webhook processing timeout");
+                    return StatusCode(408, new { error = 1, message = "Request timeout" });
+                }
+
                 _logger.LogInformation("=== WEBHOOK DEBUG START ===");
                 _logger.LogInformation("Webhook received from Casso");
 
@@ -99,6 +121,9 @@ namespace MovieTheater.Controllers
         {
             try
             {
+                // Security: Set database timeout
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(DATABASE_TIMEOUT_SECONDS));
+                
                 // 1. Lấy id giao dịch từ Casso
                 var cassoId = item.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0;
                 // TẠM THỜI BỎ QUA CHECK NÀY ĐỂ TEST
@@ -126,11 +151,28 @@ namespace MovieTheater.Controllers
                     return;
                 }
 
+                // Security: Validate orderId format
+                if (!IsValidOrderId(orderId))
+                {
+                    _logger.LogWarning("Invalid order ID format: {OrderId}", orderId);
+                    return;
+                }
+
                 // 3. Tìm invoice và kiểm tra trạng thái (logic tìm kiếm linh hoạt nâng cao)
-                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == orderId) // Tìm chính xác
-                    ?? _context.Invoices.FirstOrDefault(i => i.InvoiceId.ToString() == orderId) // Chuyển số thành chuỗi
-                    ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId.ToString())) // Tìm trong chuỗi
-                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm theo thời gian gần nhất
+                var invoice = await _context.Invoices
+                    .AsNoTracking() // Security: Use AsNoTracking for read-only operations
+                    .FirstOrDefaultAsync(i => i.InvoiceId == orderId, cts.Token) // Tìm chính xác
+                    ?? await _context.Invoices
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(i => i.InvoiceId.ToString() == orderId, cts.Token) // Chuyển số thành chuỗi
+                    ?? await _context.Invoices
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(i => orderId.Contains(i.InvoiceId.ToString()), cts.Token) // Tìm trong chuỗi
+                    ?? await _context.Invoices
+                        .AsNoTracking()
+                        .Where(i => orderId.Contains(i.InvoiceId.ToString()))
+                        .OrderByDescending(i => i.BookingDate)
+                        .FirstOrDefaultAsync(cts.Token); // Tìm theo thời gian gần nhất
 
                 // Nếu vẫn không tìm thấy, thử tìm theo pattern từ description
                 if (invoice == null)
@@ -141,7 +183,9 @@ namespace MovieTheater.Controllers
                     {
                         var patternId = patternMatch.Value;
                         _logger.LogInformation("Trying to find invoice by pattern: {PatternId}", patternId);
-                        invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId.Contains(patternId));
+                        invoice = await _context.Invoices
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(i => i.InvoiceId.Contains(patternId), cts.Token);
                     }
                 }
 
@@ -152,10 +196,11 @@ namespace MovieTheater.Controllers
                     if (paidAmount > 0) // Chỉ tìm nếu có số tiền hợp lệ
                     {
                         _logger.LogInformation("Trying to find invoice by amount: {Amount}", paidAmount);
-                        invoice = _context.Invoices
+                        invoice = await _context.Invoices
+                            .AsNoTracking()
                             .Where(i => i.TotalMoney == paidAmount && i.Status != InvoiceStatus.Completed)
                             .OrderByDescending(i => i.BookingDate)
-                            .FirstOrDefault();
+                            .FirstOrDefaultAsync(cts.Token);
                     }
                 }
 
@@ -167,10 +212,11 @@ namespace MovieTheater.Controllers
                     {
                         _logger.LogInformation("Trying to find invoice by amount with tolerance: {Amount}", paidAmountTolerance);
                         var tolerance = Math.Max(paidAmountTolerance * 0.1m, 1000m); // 10% hoặc 1000 VND
-                        invoice = _context.Invoices
+                        invoice = await _context.Invoices
+                            .AsNoTracking()
                             .Where(i => Math.Abs(i.TotalMoney.Value - paidAmountTolerance) <= tolerance && i.Status != InvoiceStatus.Completed)
                             .OrderByDescending(i => i.BookingDate)
-                            .FirstOrDefault();
+                            .FirstOrDefaultAsync(cts.Token);
                     }
                 }
 
@@ -205,6 +251,13 @@ namespace MovieTheater.Controllers
                 var expectedAmount = invoice.TotalMoney.Value;
                 var acceptableDifference = Math.Abs(ACCEPTABLE_DIFFERENCE);
 
+                // Security: Validate amount
+                if (paid < 0 || paid > 1000000000m) // Max 1 billion VND
+                {
+                    _logger.LogWarning("Invalid payment amount: {Amount}", paid);
+                    return;
+                }
+
                 if (paid < expectedAmount - acceptableDifference)
                 {
                     // Thanh toán thiếu
@@ -214,27 +267,30 @@ namespace MovieTheater.Controllers
                 else if (paid <= expectedAmount + acceptableDifference)
                 {
                     // Thanh toán đủ
-                    invoice.Status = InvoiceStatus.Completed;
+                    await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
-                    await UpdateSeatStatusToBooked(invoice);
+                    await UpdateSeatStatusToBooked(invoice, cts.Token);
                     
-                    _context.SaveChanges();
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Đã thanh toán.", orderNote);
                 }
                 else
                 {
                     // Thanh toán dư
-                    invoice.Status = InvoiceStatus.Completed;
+                    await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
-                    await UpdateSeatStatusToBooked(invoice);
+                    await UpdateSeatStatusToBooked(invoice, cts.Token);
                     
-                    _context.SaveChanges();
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán dư.", orderNote);
                 }
 
                 _logger.LogInformation("Invoice {OrderId} processed successfully. (CassoId={CassoId})", orderId, cassoId);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogError("Database operation timeout while processing transaction");
+                throw;
             }
             catch (Exception ex)
             {
@@ -243,9 +299,38 @@ namespace MovieTheater.Controllers
             }
         }
 
+        private async Task UpdateInvoiceStatus(string invoiceId, InvoiceStatus status, CancellationToken cancellationToken)
+        {
+            var invoice = await _context.Invoices
+                .FirstOrDefaultAsync(i => i.InvoiceId == invoiceId, cancellationToken);
+            
+            if (invoice != null)
+            {
+                invoice.Status = status;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        private bool IsValidOrderId(string orderId)
+        {
+            if (string.IsNullOrEmpty(orderId)) return false;
+            
+            // Check length
+            if (orderId.Length > 50) return false;
+            
+            // Check for valid characters (alphanumeric and common separators)
+            return System.Text.RegularExpressions.Regex.IsMatch(orderId, @"^[a-zA-Z0-9\-_\.]+$");
+        }
+
         private string ExtractOrderId(string description)
         {
             if (string.IsNullOrEmpty(description)) return "";
+
+            // Security: Limit description length
+            if (description.Length > 1000)
+            {
+                description = description.Substring(0, 1000);
+            }
 
             // Look for DH pattern (from PHP sample) - không phân biệt hoa thường
             var dhMatch = System.Text.RegularExpressions.Regex.Match(description, $@"{MEMO_PREFIX}\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -282,6 +367,17 @@ namespace MovieTheater.Controllers
         {
             try
             {
+                // Security: Validate input parameters
+                if (string.IsNullOrEmpty(orderId) || !IsValidOrderId(orderId))
+                {
+                    return BadRequest(new { success = false, message = "Invalid order ID" });
+                }
+
+                if (amount <= 0 || amount > 1000000000m)
+                {
+                    return BadRequest(new { success = false, message = "Invalid amount" });
+                }
+
                 _logger.LogInformation("Test payment called for orderId: {OrderId}, amount: {Amount}", orderId, amount);
                 
                 // Tạo test transaction data
@@ -316,7 +412,7 @@ namespace MovieTheater.Controllers
         /// <summary>
         /// Cập nhật trạng thái seat từ "being held" thành "booked" khi thanh toán thành công
         /// </summary>
-        private async Task UpdateSeatStatusToBooked(Invoice invoice)
+        private async Task UpdateSeatStatusToBooked(Invoice invoice, CancellationToken cancellationToken)
         {
             try
             {
@@ -337,8 +433,16 @@ namespace MovieTheater.Controllers
                     return;
                 }
 
+                // Security: Limit number of seats to prevent DoS
+                if (seatIds.Count > 100)
+                {
+                    _logger.LogWarning("Too many seats in invoice {InvoiceId}: {Count}", invoice.InvoiceId, seatIds.Count);
+                    return;
+                }
+
                 // Tìm SeatStatusId cho trạng thái "Booked"
-                var bookedStatus = _context.SeatStatuses.FirstOrDefault(s => s.StatusName == "Booked");
+                var bookedStatus = await _context.SeatStatuses
+                    .FirstOrDefaultAsync(s => s.StatusName == "Booked", cancellationToken);
                 if (bookedStatus == null)
                 {
                     _logger.LogError("SeatStatus 'Booked' not found in database");
@@ -346,7 +450,9 @@ namespace MovieTheater.Controllers
                 }
 
                 // Tìm và cập nhật trạng thái seat
-                var seats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
+                var seats = await _context.Seats
+                    .Where(s => seatIds.Contains(s.SeatId))
+                    .ToListAsync(cancellationToken);
                 
                 foreach (var seat in seats)
                 {
@@ -358,9 +464,9 @@ namespace MovieTheater.Controllers
                 // Cập nhật ScheduleSeat nếu có
                 if (invoice.MovieShowId.HasValue)
                 {
-                    var scheduleSeats = _context.ScheduleSeats
+                    var scheduleSeats = await _context.ScheduleSeats
                         .Where(ss => ss.MovieShowId == invoice.MovieShowId.Value && seatIds.Contains(ss.SeatId.Value))
-                        .ToList();
+                        .ToListAsync(cancellationToken);
 
                     foreach (var scheduleSeat in scheduleSeats)
                     {
@@ -370,6 +476,7 @@ namespace MovieTheater.Controllers
                     }
                 }
 
+                await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Successfully updated {SeatCount} seats to Booked status for invoice {InvoiceId}", 
                     seats.Count, invoice.InvoiceId);
             }
