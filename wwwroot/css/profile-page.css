@@ -700,7 +700,56 @@ body {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--cinema-border);
     border-radius: 12px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.page-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--cinema-border);
+    border-radius: 8px;
+    color: var(--cinema-text);
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.page-btn:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--cinema-gold);
+    color: var(--cinema-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.page-btn.active {
+    background: linear-gradient(135deg, var(--cinema-gold), var(--cinema-accent));
+    border-color: var(--cinema-gold);
+    color: var(--cinema-dark);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+.page-btn.prev-btn,
+.page-btn.next-btn {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.page-dots {
+    padding: 0.5rem 0.25rem;
+    color: var(--cinema-text-dim);
+    font-weight: 500;
+    user-select: none;
 }
 
 .pagination-ellipsis {
@@ -818,17 +867,24 @@ body {
     .ticket-pagination {
         gap: 0.25rem;
         padding: 0.75rem;
+        flex-wrap: nowrap;
+        overflow-x: auto;
     }
 
-    .ticket-pagination .cinema-btn {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.8rem;
+    .page-btn {
         min-width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
     }
 
+    .page-btn.prev-btn,
+    .page-btn.next-btn {
+        font-size: 1rem;
+    }
+
+    .page-dots,
     .pagination-ellipsis {
-        padding: 0.4rem 0.2rem;
-        font-size: 0.8rem;
+        display: none;
     }
 }
 

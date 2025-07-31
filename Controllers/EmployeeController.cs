@@ -48,7 +48,7 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Employee")]
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null)
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null)
         {
             switch (tab)
             {
@@ -87,6 +87,19 @@ namespace MovieTheater.Controllers
                         else if (statusFilter == "notpaid")
                             invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
                     }
+
+                    // Bổ sung filter booking type (all vs normal vs employee)
+                    if (!string.IsNullOrEmpty(bookingTypeFilter))
+                    {
+                        if (bookingTypeFilter == "normal")
+                            invoices = invoices.Where(i => i.EmployeeId == null).ToList();
+                        else if (bookingTypeFilter == "employee")
+                            invoices = invoices.Where(i => i.EmployeeId != null).ToList();
+                        // If bookingTypeFilter is "all" or any other value, don't filter (show all)
+                    }
+
+                    // Set the current booking type filter for the view
+                    ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
 
                     // Bổ sung sort
                     var sortBy = Request.Query["sortBy"].ToString();

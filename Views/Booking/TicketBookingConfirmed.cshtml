@@ -17,7 +17,7 @@
         </div>
         return;
     }
-    
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
     var booking = Model.BookingDetails;
     string movieName = booking?.MovieName ?? TempData["MovieName"] as string;
     string screen = booking?.CinemaRoomName ?? TempData["Screen"] as string;
@@ -30,12 +30,9 @@
     string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
     string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
     string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
+    string bookingManagementUrl;
     // Set the correct fallback URL for Booking Management
-    string bookingManagementUrl = Url.Action("BookingMg", "Admin");
-    string returnUrl = Model?.ReturnUrl ?? bookingManagementUrl;
-    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-    var status = booking?.Status == MovieTheater.Models.InvoiceStatus.Completed && !booking.Cancel ? "Completed" : 
-                 booking?.Status == MovieTheater.Models.InvoiceStatus.Completed && booking.Cancel ? "Canceled" : "Not Paid";
+    var status = booking.Status == InvoiceStatus.Completed ? "Completed" : booking.Status == null ? "Canceled" : "Not Paid";
 
     // Lấy thông tin food từ TempData hoặc Model
     var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
@@ -73,10 +70,20 @@
 
 <!-- Back Button - Completely outside container -->
 <div style="margin-top: 5rem;">
-    <a href="@Model.ReturnUrl" class="btn-modern" style="padding: 0.8rem 1.5rem; font-size: 0.9rem;">
-        <i class="fas fa-arrow-left"></i>
-        Back to Booking Management
-    </a>
+    @if (userRole == "Admin")
+    {
+        <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="BookingMg" class="btn-modern" style="padding: 0.8rem 1.5rem; font-size: 0.9rem;">
+            <i class="fas fa-arrow-left"></i>
+            Back to Booking Management
+        </a>
+    }
+    else
+    {
+        <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="BookingMg" class="btn-modern" style="padding: 0.8rem 1.5rem; font-size: 0.9rem;">
+            <i class="fas fa-arrow-left"></i>
+            Back to Booking Management
+        </a>
+    }
 </div>
 
 <div class="container">
@@ -88,7 +95,13 @@
                     <i class="fas fa-film"></i>
                 </div>
                 <div class="ticket-header-text">
-                    <h1>Ticket Information (Admin)</h1>
+                    @if (Model.EmployeeId != null)
+                    {
+                        <h1>Ticket Information (Employee)</h1>
+                    } else
+                    {
+                     <h1>Ticket Information (Admin)</h1>   
+                    }
                     <p>Booking ID: @ticketId</p>
                 </div>
             </div>
@@ -373,7 +386,48 @@
                     </div>
                 </div>
             </div>
-
+            @if (Model.EmployeeId != null)
+            {
+                <!-- Employee Information Card -->
+                <div class="content-card">
+                    <div class="card-header-modern">
+                    <i class="fas fa-user"></i>
+                    <h3>Employee Information</h3>
+                </div>
+                <div class="card-content-modern">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-id-card"></i>
+                            <div class="info-content">
+                                <div class="info-label">Employee ID</div>
+                                <div class="info-value">@Model.EmployeeId</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <div class="info-content">
+                                <div class="info-label">Phone</div>
+                                <div class="info-value">@Model.EmployeePhone</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-id-badge"></i>
+                            <div class="info-content">
+                                <div class="info-label">Name</div>
+                                <div class="info-value">@Model.EmployeeName</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <div class="info-content">
+                                <div class="info-label">Date of Birth</div>
+                                <div class="info-value">@Model.DateofBirth</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
             <!-- Cancel Button - Bottom of page -->
             @if (booking != null && booking.Status == MovieTheater.Models.InvoiceStatus.Completed && !booking.Cancel)
             {
