@@ -16,20 +16,32 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
         private readonly IJwtService _jwtService;
-        private readonly IMemberRepository _memberRepository;
         private readonly IEmployeeService _employeeService;
+
+        // Constants for string literals
+        private const string LOGIN_ACTION = "Login";
+        private const string ERROR_MESSAGE = "ErrorMessage";
+        private const string FIRST_TIME_LOGIN = "FirstTimeLogin";
+        private const string MAIN_PAGE = "MainPage";
+        private const string TOAST_MESSAGE = "ToastMessage";
+        private const string INDEX_ACTION = "Index";
+        private const string HOME_CONTROLLER = "Home";
+        private const string ADMIN_CONTROLLER = "Admin";
+        private const string EMPLOYEE_CONTROLLER = "Employee";
+        private const string MY_ACCOUNT_CONTROLLER = "MyAccount";
+        private const string PROFILE_TAB = "Profile";
 
         public AccountController(
             IAccountService service,
             ILogger<AccountController> logger,
             IAccountRepository accountRepository,
             IMemberRepository memberRepository,
-            IJwtService jwtService, IEmployeeService employeeService)
+            IJwtService jwtService, 
+            IEmployeeService employeeService)
         {
             _service = service;
             _logger = logger;
             _accountRepository = accountRepository;
-            _memberRepository = memberRepository;
             _jwtService = jwtService;
             _employeeService = employeeService;
         }
@@ -47,7 +59,7 @@ namespace MovieTheater.Controllers
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
             if (!result.Succeeded || result.Principal == null)
-                return RedirectToAction("Login");
+                return RedirectToAction(LOGIN_ACTION);
 
             var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
@@ -58,8 +70,8 @@ namespace MovieTheater.Controllers
 
             if (string.IsNullOrEmpty(email))
             {
-                TempData["ErrorMessage"] = "Google login failed. Email not provided.";
-                return RedirectToAction("Login");
+                TempData[ERROR_MESSAGE] = "Google login failed. Email not provided.";
+                return RedirectToAction(LOGIN_ACTION);
             }
 
             // Refactor: Đẩy logic tạo user/member mới vào service
@@ -72,13 +84,13 @@ namespace MovieTheater.Controllers
             bool missingInfo = _service.HasMissingProfileInfo(user);
             if (missingInfo)
             {
-                TempData["FirstTimeLogin"] = true;
+                TempData[FIRST_TIME_LOGIN] = true;
             }
 
             if (user.Status == 0)
             {
-                TempData["ErrorMessage"] = "Account has been locked!";
-                return RedirectToAction("Login");
+                TempData[ERROR_MESSAGE] = "Account has been locked!";
+                return RedirectToAction(LOGIN_ACTION);
             }
 
             // Refactor: Đẩy logic tạo claims, sign-in vào service
@@ -91,10 +103,10 @@ namespace MovieTheater.Controllers
             }
 
             // Check if it's the first time login and redirect to profile update
-            if (TempData["FirstTimeLogin"] != null && (bool)TempData["FirstTimeLogin"])
+            if (TempData[FIRST_TIME_LOGIN] != null && (bool)TempData[FIRST_TIME_LOGIN])
             {
-                TempData.Remove("FirstTimeLogin");
-                return RedirectToAction("MainPage", "MyAccount", new { tab = "Profile" });
+                TempData.Remove(FIRST_TIME_LOGIN);
+                return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER, new { tab = PROFILE_TAB });
             }
 
             // Generate JWT token for Google login
@@ -109,27 +121,27 @@ namespace MovieTheater.Controllers
                 Expires = DateTime.Now.AddMinutes(60)
             });
 
-            TempData["ToastMessage"] = "Log in successful!";
+            TempData[TOAST_MESSAGE] = "Log in successful!";
 
             // After successful login and before redirecting, add:
             var rankUpMsg = _service.GetAndClearRankUpgradeNotification(user.AccountId);
             if (!string.IsNullOrEmpty(rankUpMsg))
             {
-                TempData["ToastMessage"] += "<br/>" + rankUpMsg;
+                TempData[TOAST_MESSAGE] += "<br/>" + rankUpMsg;
             }
 
             // Direct redirect like normal login
             if (user.RoleId == 1)
             {
-                return RedirectToAction("MainPage", "Admin");
+                return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER);
             }
             else if (user.RoleId == 2)
             {
-                return RedirectToAction("MainPage", "Employee");
+                return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER);
             }
             else
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(INDEX_ACTION, HOME_CONTROLLER);
             }
         }
 
@@ -144,15 +156,15 @@ namespace MovieTheater.Controllers
             await _service.SignOutUserAsync(HttpContext);
             // Remove the JWT token cookie
             Response.Cookies.Delete("JwtToken");
-            TempData["ToastMessage"] = "Log out successful!";
-            return RedirectToAction("Login", "Account");
+            TempData[TOAST_MESSAGE] = "Log out successful!";
+            return RedirectToAction(LOGIN_ACTION, "Account");
         }
 
         public IActionResult Profile()
         {
             if (!User.Identity.IsAuthenticated)
             {
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(LOGIN_ACTION, "Account");
             }
             Response.Cookies.Delete("JwtToken");
             return View();
@@ -171,7 +183,7 @@ namespace MovieTheater.Controllers
                 _logger.LogWarning("Registration failed validation at {Time}. Errors: {Errors}",
                     DateTime.UtcNow, errors);
 
-                TempData["ErrorMessage"] = $"{errors}";
+                TempData[ERROR_MESSAGE] = $"{errors}";
                 return View(model);
             }
 
@@ -184,14 +196,14 @@ namespace MovieTheater.Controllers
                     _logger.LogWarning("Registration failed for username: {Username} at {Time}. Reason: Username already exists",
                         model.Username, DateTime.UtcNow);
 
-                    TempData["ErrorMessage"] = "Registration failed - Username already exists";
+                    TempData[ERROR_MESSAGE] = "Registration failed - Username already exists";
                     return View(model);
                 }
 
                 _logger.LogInformation("New account registered: {Username} at {Time}",
                     model.Username, DateTime.UtcNow);
 
-                TempData["ToastMessage"] = "Sign up successful! Redirecting to log in..";
+                TempData[TOAST_MESSAGE] = "Sign up successful! Redirecting to log in..";
                 return RedirectToAction("Signup");
             }
             catch (Exception ex)
@@ -199,10 +211,10 @@ namespace MovieTheater.Controllers
                 _logger.LogError(ex, "Exception occurred during registration for {Username} at {Time}",
                     model.Username, DateTime.UtcNow);
 
-                TempData["ErrorMessage"] = $"Error during registration: {ex.Message}";
+                TempData[ERROR_MESSAGE] = $"Error during registration: {ex.Message}";
                 if (ex.InnerException != null)
                 {
-                    TempData["ErrorMessage"] += $" Inner error: {ex.InnerException.Message}";
+                    TempData[ERROR_MESSAGE] += $" Inner error: {ex.InnerException.Message}";
                 }
 
                 return View(model);
@@ -221,20 +233,20 @@ namespace MovieTheater.Controllers
                     .Select(e => e.ErrorMessage)
                     .ToList();
                 
-                TempData["ErrorMessage"] = string.Join(", ", errors);
-                return RedirectToAction("Login");
+                TempData[ERROR_MESSAGE] = string.Join(", ", errors);
+                return RedirectToAction(LOGIN_ACTION);
             }
 
             if (!_service.Authenticate(model.Username, model.Password, out var user))
             {
-                TempData["ErrorMessage"] = "Invalid username or password!";
-                return RedirectToAction("Login");
+                TempData[ERROR_MESSAGE] = "Invalid username or password!";
+                return RedirectToAction(LOGIN_ACTION);
             }
 
             if (user.Status == 0)
             {
-                TempData["ErrorMessage"] = "Account has been locked!";
-                return RedirectToAction("Login");
+                TempData[ERROR_MESSAGE] = "Account has been locked!";
+                return RedirectToAction(LOGIN_ACTION);
             }
 
             await _service.SignInUserAsync(HttpContext, user);
@@ -250,11 +262,11 @@ namespace MovieTheater.Controllers
                 Expires = DateTime.Now.AddMinutes(60)
             });
 
-            TempData["ToastMessage"] = "Log in successful!";
+            TempData[TOAST_MESSAGE] = "Log in successful!";
 
             if (user.RoleId == 1)
             {
-                return RedirectToAction("MainPage", "Admin");
+                return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER);
             }
             else if (user.RoleId == 2)
             {
@@ -263,16 +275,16 @@ namespace MovieTheater.Controllers
                     .FirstOrDefault(e => e.AccountId == account.AccountId);
                 if (employee.Status.Equals(1))
                 {
-                    return RedirectToAction("MainPage", "Employee");
+                    return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER);
                 } else
                 {
-                    TempData["ErrorMessage"] = "Account has been locked!";
-                    return RedirectToAction("Login");
+                    TempData[ERROR_MESSAGE] = "Account has been locked!";
+                    return RedirectToAction(LOGIN_ACTION);
                 }
             }
             else
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(INDEX_ACTION, HOME_CONTROLLER);
             }
         }
 
@@ -285,14 +297,14 @@ namespace MovieTheater.Controllers
         public IActionResult History()
         {
             // This action is obsolete since history is now in the profile tab
-            return RedirectToAction("MainPage", "MyAccount");
+            return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER);
         }
 
         [HttpPost]
         public IActionResult History(DateTime fromDate, DateTime toDate, int? status)
         {
             // This action is obsolete since history is now in the profile tab
-            return RedirectToAction("MainPage", "MyAccount");
+            return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER);
         }
     }
 }
