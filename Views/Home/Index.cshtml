@@ -227,7 +227,12 @@
                     <div class="swiper-slide">
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
-                                <div class="hover-overlay"></div>
+                                <div class="hover-overlay">
+                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="detail-btn">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Detail</span>
+                                    </a>
+                                </div>
                                 <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge">HD</div>
                             </div>
@@ -311,7 +316,12 @@
                     <div class="swiper-slide">
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
-                                <div class="hover-overlay"></div>
+                                <div class="hover-overlay">
+                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="detail-btn">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Detail</span>
+                                    </a>
+                                </div>
                                 <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge coming-soon-badge">Soon</div>
                             </div>
