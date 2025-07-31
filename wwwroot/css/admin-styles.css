@@ -1,0 +1,41 @@
+/* Admin Management Styles */
+
+/* Table and Card Styles */
+.font-monospace {
+    font-family: 'Courier New', monospace;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Button Group Styles */
+.btn-group .btn {
+    border-radius: 0.375rem;
+}
+
+.btn-group .btn:not(:last-child) {
+    margin-right: 0.25rem;
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.75em;
+}
+
+/* Sortable Table Headers */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Voucher Image Hover Effect */
+.voucher-image:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease-in-out;
+} 

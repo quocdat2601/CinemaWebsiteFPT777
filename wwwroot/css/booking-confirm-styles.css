@@ -1,0 +1,453 @@
+/* Booking Confirm Styles - Extracted from ConfirmBooking.cshtml */
+
+/* Custom Gradients */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.bg-gradient-dark {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Info Items */
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 1rem;
+}
+
+/* Price Styling */
+.original-price {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+.discounted-price {
+    color: #059669;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+/* Food Image */
+.food-image {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Price Summary */
+.price-summary-card {
+    position: sticky;
+    top: 2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.price-row.total-row {
+    padding-top: 0.5rem;
+    border-top: 2px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.discount-row {
+    color: #059669;
+    font-weight: 500;
+}
+
+/* Voucher Cards */
+.voucher-card {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid #e5e7eb;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: #fff;
+}
+
+.voucher-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+}
+
+.voucher-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.voucher-card.selected::before {
+    content: '✓';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: #667eea;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+/* Seat Selection */
+.seat-selection-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.seat-item {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.seat-item.available {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.seat-item.available:hover {
+    background: #d1d5db;
+    transform: scale(1.05);
+}
+
+.seat-item.selected {
+    background: #667eea;
+    color: white;
+    border-color: #4f46e5;
+}
+
+.seat-item.occupied {
+    background: #ef4444;
+    color: white;
+    cursor: not-allowed;
+}
+
+/* Movie Info */
+.movie-info-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.movie-poster {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.movie-details {
+    padding: 1.5rem;
+}
+
+.movie-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.movie-meta {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+/* Food Selection */
+.food-selection-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.food-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.food-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.food-details {
+    flex: 1;
+}
+
+.food-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.food-price {
+    color: #059669;
+    font-weight: 500;
+}
+
+.food-quantity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quantity-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quantity-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.quantity-display {
+    min-width: 40px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Action Buttons */
+.booking-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-back {
+    background: #6b7280;
+    border: none;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.btn-back:hover {
+    background: #4b5563;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Dark mode support */
+body.dark-mode .info-label {
+    color: #9ca3af;
+}
+
+body.dark-mode .info-value {
+    color: #f3f4f6;
+}
+
+body.dark-mode .price-summary-card {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+body.dark-mode .seat-selection-container {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+body.dark-mode .seat-item.available {
+    background: #374151;
+    color: #f3f4f6;
+}
+
+body.dark-mode .seat-item.available:hover {
+    background: #4b5563;
+}
+
+body.dark-mode .movie-info-card,
+body.dark-mode .food-selection-container {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+body.dark-mode .movie-title {
+    color: #f3f4f6;
+}
+
+body.dark-mode .movie-meta {
+    color: #9ca3af;
+}
+
+body.dark-mode .food-item {
+    border-color: #374151;
+    background: #1a1a1a;
+}
+
+body.dark-mode .food-item:hover {
+    border-color: #667eea;
+}
+
+body.dark-mode .food-name {
+    color: #f3f4f6;
+}
+
+body.dark-mode .quantity-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+}
+
+body.dark-mode .quantity-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .price-summary-card {
+        position: static;
+        margin-top: 1.5rem;
+    }
+    
+    .booking-actions {
+        flex-direction: column;
+    }
+    
+    .seat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+        gap: 0.25rem;
+    }
+    
+    .seat-item {
+        font-size: 0.75rem;
+    }
+    
+    .food-image {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .movie-poster {
+        height: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .movie-details,
+    .food-selection-container,
+    .seat-selection-container {
+        padding: 1rem;
+    }
+    
+    .btn-confirm,
+    .btn-back {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .food-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .food-quantity {
+        justify-content: center;
+    }
+} 

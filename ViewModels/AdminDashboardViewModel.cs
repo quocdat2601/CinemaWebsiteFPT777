@@ -20,31 +20,25 @@ namespace MovieTheater.ViewModels
         // Top 5 members by booking count
         public List<(string MemberName, int Bookings)> TopMembers { get; set; }
 
-        // Recent bookings 
-        public List<RecentBookingInfo> RecentBookings { get; set; }
         public MovieAnalyticsViewModel MovieAnalytics { get; set; }
 
         // Newest 5 members
         public List<RecentMemberInfo> RecentMembers { get; set; }
 
         public decimal OccupancyRateToday { get; set; }    // from 0 to 100
-        public decimal GrossRevenue { get; set; }
-        public decimal NetRevenue { get; set; }
-        public decimal TotalVouchersIssued { get; set; }  // Total vouchers issued (all time)
-        public decimal VouchersToday { get; set; }  // Today's vouchers issued
+        
+        // Movie Analytics - Three Bucket Pattern
+        public decimal GrossRevenue { get; set; }           // Gross revenue (valid + cancelled)
+        public decimal NetRevenue { get; set; }             // Net revenue (gross - vouchers)
+        public decimal TotalVouchersIssued { get; set; }    // Total vouchers issued (all time)
+        public decimal VouchersToday { get; set; }          // Today's vouchers issued
+        public decimal NetRevenueToday { get; set; }        // Today's net revenue
 
         // Food analytics for dashboard food stat tab
         public FoodAnalyticsViewModel FoodAnalytics { get; set; }
     }
 
-    public class RecentBookingInfo
-    {
-        public string InvoiceId { get; set; }
-        public string MemberName { get; set; }
-        public string MovieName { get; set; }
-        public DateTime BookingDate { get; set; }
-        public string Status { get; set; }
-    }
+
 
     public class RecentMovieActivityInfo
     {
@@ -63,42 +57,34 @@ namespace MovieTheater.ViewModels
 
     public class RecentMemberInfo
     {
-        public string MemberId { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
-        public string PhoneNumber { get; set; }
         public DateOnly? JoinDate { get; set; }
     }
 
     public class FoodAnalyticsViewModel
     {
-        // KPI cards
-        public decimal GrossRevenue   { get; set; }
-    public decimal GrossRevenueToday { get; set; }
-    public int TotalOrders { get; set; }
-    public int OrdersToday { get; set; }
-    public int QuantitySoldToday { get; set; }
-    public decimal AvgOrderValueToday { get; set; }
-    public decimal ItemsPerOrderToday => OrdersToday > 0 ? (decimal)QuantitySoldToday / OrdersToday : 0;
+        // KPI cards with voucher support
+        public decimal GrossRevenue { get; set; }
+        public decimal VouchersIssued { get; set; }
+        public decimal NetRevenue { get; set; }
+        public decimal GrossRevenueToday { get; set; }
+        public decimal VouchersToday { get; set; }
+        public decimal NetRevenueToday { get; set; }
+        public int TotalOrders { get; set; }
+        public int OrdersToday { get; set; }
+        public int QuantitySoldToday { get; set; }
+        public decimal AvgOrderValueToday { get; set; }
 
-    // 7-day averages for comparison
-    public decimal SevenDayAverageRevenue { get; set; }
-    public int SevenDayAverageOrders { get; set; }
-    public decimal SevenDayAverageItemsPerOrder { get; set; }
 
-    // Percentage changes
-    public decimal RevenueChangePercentage => SevenDayAverageRevenue > 0 ? ((GrossRevenueToday - SevenDayAverageRevenue) / SevenDayAverageRevenue) * 100 : 0;
-    public decimal OrdersChangePercentage => SevenDayAverageOrders > 0 ? (((decimal)OrdersToday - SevenDayAverageOrders) / SevenDayAverageOrders) * 100 : 0;
-    public decimal ItemsPerOrderChangePercentage => SevenDayAverageItemsPerOrder > 0 ? ((ItemsPerOrderToday - SevenDayAverageItemsPerOrder) / SevenDayAverageItemsPerOrder) * 100 : 0;
-        public decimal FoodRevenue { get; set; }
-        public int Orders { get; set; }
-        public int QuantitySold { get; set; }
-        public decimal AvgOrderValue { get; set; }
-        public decimal FoodRevenueToday { get; set; }
+        
+
 
         // Combo chart: Revenue & Orders by Day
         public List<DateTime> RevenueByDayDates { get; set; }
         public List<decimal> RevenueByDayValues { get; set; }
+        public List<decimal> VoucherTrendValues { get; set; }
+        public List<decimal> NetRevenueByDayValues { get; set; }
         public List<int> OrdersByDayValues { get; set; }
 
         // Top 5 Food Items
@@ -123,7 +109,6 @@ namespace MovieTheater.ViewModels
         public int Quantity { get; set; }
         public string Category { get; set; }
         public decimal Revenue { get; set; }
-        public int OrderCount { get; set; }
     }
 
     public class RecentFoodOrder

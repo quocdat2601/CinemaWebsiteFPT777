@@ -239,17 +239,23 @@ namespace MovieTheater.Service
                 var returnUrl = _config.PayOSReturnUrl;
                 var cancelUrl = _config.PayOSCancelUrl;
 
-                // Lấy orderCode là số nguyên dương từ orderId (ví dụ: INV142 -> 142)
-                int orderCode = 0;
-                if (!string.IsNullOrEmpty(orderId) && orderId.StartsWith("INV"))
-                {
-                    int.TryParse(orderId.Substring(3), out orderCode);
-                }
-                // Nếu không lấy được thì sinh số ngẫu nhiên nhỏ hơn 9007199254740991
-                if (orderCode <= 0 || orderCode > 9007199254740991)
-                {
-                    orderCode = new Random().Next(1, 999999999); // hoặc dùng timestamp
-                }
+                //// Lấy orderCode là số nguyên dương từ orderId (ví dụ: INV142 -> 142)
+                //int orderCode = 0;
+                //if (!string.IsNullOrEmpty(orderId) && orderId.StartsWith("INV"))
+                //{
+                //    int.TryParse(orderId.Substring(3), out orderCode);
+                //}
+                //// Nếu không lấy được thì sinh số ngẫu nhiên nhỏ hơn 9007199254740991
+                //if (orderCode <= 0 || orderCode > 9007199254740991)
+                //{
+                //    orderCode = new Random().Next(1, 999999999); // hoặc dùng timestamp
+                //}
+
+                // Tạo orderCode unique bằng timestamp + random để tránh trùng lặp
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var random = new Random();
+                var randomPart = random.Next(1000, 9999);
+                var orderCode = timestamp * 10000 + randomPart; // Đảm bảo unique
 
                 // Truncate description to max 25 characters for PayOS
                 string shortDescription = orderInfo;
@@ -266,6 +272,7 @@ namespace MovieTheater.Service
                 {
                     client.DefaultRequestHeaders.Add("x-client-id", clientId);
                     client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+                    client.Timeout = TimeSpan.FromSeconds(10);
 
                     var order = new
                     {
@@ -291,12 +298,14 @@ namespace MovieTheater.Service
                         }
                     }
                     _logger.LogError($"PayOS response error (không có qrCode): {responseBody}");
-                    return null;
+                    //return GenerateVietQRCode(amount, orderInfo, orderId);
+                    return null; // Hoặc fallback sang QR khác
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating PayOS QR code");
+                //return GenerateVietQRCode(amount, orderInfo, orderId);
                 return null;
             }
         }

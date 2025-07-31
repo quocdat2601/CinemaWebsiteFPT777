@@ -724,7 +724,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public async Task<IActionResult> TicketBookingConfirmed(string invoiceId)
         {
-            _logger.LogInformation($"TicketBookingConfirmed called with invoiceId: {invoiceId}");
+            //_logger.LogInformation($"TicketBookingConfirmed called with invoiceId: {invoiceId}");
             
             if (string.IsNullOrEmpty(invoiceId))
             {
@@ -733,16 +733,16 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
             }
             
-            _logger.LogInformation($"Building view model for invoiceId: {invoiceId}");
+            //_logger.LogInformation($"Building view model for invoiceId: {invoiceId}");
             var viewModel = await _bookingDomainService.BuildTicketBookingConfirmedViewModelAsync(invoiceId);
             if (viewModel == null)
             {
-                _logger.LogWarning($"View model is null for invoiceId: {invoiceId}");
+                //_logger.LogWarning($"View model is null for invoiceId: {invoiceId}");
                 TempData["ErrorMessage"] = "Không tìm thấy thông tin booking.";
                 return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
             }
             
-            _logger.LogInformation($"Successfully built view model for invoiceId: {invoiceId}");
+            //_logger.LogInformation($"Successfully built view model for invoiceId: {invoiceId}");
             return View("TicketBookingConfirmed", viewModel);
         }
 

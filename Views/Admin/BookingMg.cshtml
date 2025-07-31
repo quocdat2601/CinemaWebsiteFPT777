@@ -2,10 +2,15 @@
 @inject MovieTheater.Service.IAccountService AccountService
 @{
     ViewData["Title"] = "Booking Management";
+
     var now = DateTime.Now;
+
     var totalBookings = Model.Count();
+
     var completed = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && !b.Cancel);
+
     var cancelled = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && b.Cancel);
+
     var notPaid = Model.Count(b => b.Status != MovieTheater.Models.InvoiceStatus.Completed);
 }
 
@@ -151,20 +156,26 @@
                         </thead>
                         <tbody>
                             @foreach (var Invoice in Model)
+
                             {
                                 var account = AccountService.GetById(Invoice.AccountId);
+
                                 var statusBadge = Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !Invoice.Cancel ?
+
                                 "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
+
                                 Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
+
                                 "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
+
                                 "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
                                 <tr class="text-center booking-row">
                                     <td class="text-center">@Invoice.InvoiceId</td>
-                                    <td class="text-start">@(Invoice.MovieShow.Movie.MovieNameEnglish ?? "N/A")</td>
+                                    <td class="text-start">@(Invoice.MovieShow?.Movie?.MovieNameEnglish ?? "N/A")</td>
                                     <td class="text-center">@Invoice.AccountId</td>
                                     <td class="text-end">@(account?.IdentityCard ?? "N/A")</td>
                                     <td class="text-end">@(account?.PhoneNumber ?? "N/A")</td>
-                                    <td class="text-end">@(Invoice.MovieShow.Schedule.ScheduleTime.ToString())</td>
+                                    <td class="text-end">@(Invoice.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A")</td>
                                     <td class="text-center">@Html.Raw(statusBadge)</td>
                                     <td class="text-center">
                                         <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
@@ -189,176 +200,10 @@
     </div>
 </div>
 
-<style>
-    .font-monospace {
-        font-family: 'Courier New', monospace;
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-styles.css" />
+}
 
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-
-    .card {
-        border: none;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-
-    .btn-group .btn {
-        border-radius: 0.375rem;
-    }
-
-        .btn-group .btn:not(:last-child) {
-            margin-right: 0.25rem;
-        }
-
-    .badge {
-        font-size: 0.75em;
-    }
-
-    .sortable {
-        cursor: pointer;
-        user-select: none;
-    }
-</style>
-
-<script>
-    let currentSort = { by: '', dir: 'asc', param: '' };
-
-    // Initialize radio button state on page load
-    $(document).ready(function() {
-        restoreRadioButtonState();
-    });
-
-    $(document).on('click', '#booking-table .sortable', function() {
-        const sortBy = $(this).data('sort');
-        if (currentSort.by === sortBy) {
-            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSort.by = sortBy;
-            currentSort.dir = 'asc';
-        }
-        let sortParam = '';
-        if (sortBy === 'id') sortParam = currentSort.dir === 'asc' ? 'id_asc' : 'id_desc';
-        if (sortBy === 'movie') sortParam = currentSort.dir === 'asc' ? 'movie_az' : 'movie_za';
-        if (sortBy === 'account') sortParam = currentSort.dir === 'asc' ? 'account_az' : 'account_za';
-        if (sortBy === 'identity') sortParam = currentSort.dir === 'asc' ? 'identity_az' : 'identity_za';
-        if (sortBy === 'phone') sortParam = currentSort.dir === 'asc' ? 'phone_az' : 'phone_za';
-        if (sortBy === 'time') sortParam = currentSort.dir === 'asc' ? 'time_asc' : 'time_desc';
-        currentSort.param = sortParam;
-        saveSortState();
-        searchBookings();
-        updateSortIcons();
-    });
-
-    function searchBookings() {
-        const keyword = document.getElementById('searchKeyword').value;
-        const status = document.getElementById('statusFilter').value;
-
-        // Get booking type from localStorage if available, otherwise from DOM
-        let bookingType = localStorage.getItem('bookingTypeFilter');
-        if (!bookingType) {
-            bookingType = document.querySelector('input[name="bookingTypeFilter"]:checked').value;
-        }
-
-        loadTab('BookingMg', { keyword, statusFilter: status, bookingTypeFilter: bookingType, sortBy: currentSort.param });
-    }
-
-    // Add event handler for radio button changes
-    $(document).on('change', 'input[name="bookingTypeFilter"]', function() {
-        const selectedValue = $(this).val();
-        // Save the selected value before reloading
-        localStorage.setItem('bookingTypeFilter', selectedValue);
-        searchBookings();
-    });
-
-    // Add event handler for search input changes
-    $(document).on('input', '#searchKeyword', function() {
-        searchBookings();
-    });
-
-    // Add event handler for status filter changes
-    $(document).on('change', '#statusFilter', function() {
-        searchBookings();
-    });
-
-    function updateSortIcons() {
-        $('#sortIconId, #sortIconMovie, #sortIconAccount, #sortIconIdentity, #sortIconPhone, #sortIconTime').html('');
-        if (currentSort.by === 'id') {
-            $('#sortIconId').html(currentSort.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSort.by === 'movie') {
-            $('#sortIconMovie').html(currentSort.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSort.by === 'account') {
-            $('#sortIconAccount').html(currentSort.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSort.by === 'identity') {
-            $('#sortIconIdentity').html(currentSort.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSort.by === 'phone') {
-            $('#sortIconPhone').html(currentSort.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSort.by === 'time') {
-            $('#sortIconTime').html(currentSort.dir === 'asc' ? '▲' : '▼');
-        }
-    }
-
-    // Lưu trạng thái sort vào localStorage mỗi lần sort
-    function saveSortState() {
-        localStorage.setItem('bookingSort', JSON.stringify(currentSort));
-    }
-    // Đọc lại trạng thái sort khi load tab
-    function restoreSortState() {
-        const saved = localStorage.getItem('bookingSort');
-        if (saved) {
-            const s = JSON.parse(saved);
-            if (s && s.by) {
-                currentSort.by = s.by;
-                currentSort.dir = s.dir;
-                currentSort.param = s.param;
-                updateSortIcons();
-        }
-        }
-    }
-    // Gọi lại khi tab BookingMg được load
-    $(document).on('tabContentLoaded', function(e, tabName) {
-        if (tabName === 'BookingMg') {
-            restoreSortState();
-            // Use a longer delay to ensure content is fully rendered
-            setTimeout(function() {
-                restoreRadioButtonState();
-            }, 200);
-            if (currentSort.param) {
-                searchBookings();
-            }
-        }
-    });
-
-    // Function to restore radio button state
-    function restoreRadioButtonState() {
-        const savedFilter = localStorage.getItem('bookingTypeFilter');
-        if (savedFilter) {
-            // Uncheck all radio buttons first
-            $('input[name="bookingTypeFilter"]').prop('checked', false);
-            // Check the saved one
-            $(`input[name="bookingTypeFilter"][value="${savedFilter}"]`).prop('checked', true);
-        } else {
-            // If no saved filter, default to "all"
-            $('input[name="bookingTypeFilter"]').prop('checked', false);
-            $('input[name="bookingTypeFilter"][value="all"]').prop('checked', true);
-        }
-    }
-
-    // Function to reset all filters
-    function resetFilters() {
-        // Clear localStorage
-        localStorage.removeItem('bookingSort');
-        localStorage.removeItem('bookingTypeFilter');
-
-        // Reset current sort state
-        currentSort = { by: '', dir: 'asc', param: '' };
-
-        // Load tab with default "all" filter
-        loadTab('BookingMg', { bookingTypeFilter: 'all' });
-    }
-</script>
+@section Scripts {
+    <script src="~/js/admin-sorting.js"></script>
+}

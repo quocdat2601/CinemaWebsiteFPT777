@@ -1,0 +1,389 @@
+/* Navbar Styles - Extracted from _Layout.cshtml */
+
+/* Make navbar sticky/fixed at the top */
+.app-navbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid rgba(255, 224, 102, 0.2) !important;
+    transition: all 0.3s ease !important;
+    min-height: 60px !important;
+    padding: 0.5rem 0 !important;
+}
+
+/* Navbar container padding */
+.app-navbar .container-fluid {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+.app-navbar .navbar-brand {
+    font-size: 1.1rem !important;
+}
+
+.app-navbar .navbar-brand img {
+    height: 32px !important;
+    max-height: 32px !important;
+    width: auto !important;
+}
+
+.app-navbar .navbar-brand i {
+    font-size: 1.5rem !important;
+}
+
+.app-navbar .nav-link {
+    font-size: 0.9rem !important;
+    padding: 0.4rem 0.8rem !important;
+    color: #fff !important;
+    position: relative !important;
+    transition: all 0.2s ease !important;
+}
+
+.app-navbar .nav-link:hover {
+    color: #ffe066 !important;
+    transform: translateY(-1px) !important;
+}
+
+.app-navbar .nav-link.active {
+    color: #ffe066 !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #ffe066 !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.app-navbar .btn {
+    font-size: 0.85rem !important;
+    padding: 0.3rem 0.8rem !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.app-navbar .btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.app-navbar .dropdown-toggle img {
+    width: 40px !important;
+    height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+
+/* Add padding to body to prevent content from hiding under navbar */
+body {
+    padding-top: 60px !important;
+}
+
+/* Ensure dropdown menu appears above all other elements */
+.dropdown-menu {
+    z-index: 10000 !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 224, 102, 0.2) !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: auto !important;
+    right: 0 !important;
+    min-width: 200px !important;
+    margin-top: 0.5rem !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    padding: 0.5rem 0 !important;
+}
+
+/* Ensure dropdown toggle works properly */
+.dropdown-toggle::after {
+    display: inline-block !important;
+    margin-left: 0.255em !important;
+    vertical-align: 0.255em !important;
+    content: "" !important;
+    border-top: 0.3em solid !important;
+    border-right: 0.3em solid transparent !important;
+    border-bottom: 0 !important;
+    border-left: 0.3em solid transparent !important;
+}
+
+/* Ensure dropdown items are clickable */
+.dropdown-item {
+    cursor: pointer;
+    color: #fff !important;
+    transition: all 0.2s ease !important;
+    padding: 0.75rem 1rem !important;
+    margin: 0 0.5rem !important;
+    border-radius: 6px !important;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+/* Fix for any potential CSS conflicts from app.css */
+.navbar-nav .dropdown {
+    position: relative !important;
+}
+
+.navbar-nav .dropdown-toggle {
+    position: relative !important;
+}
+
+/* Ensure dropdown positioning for profile menu */
+.navbar-nav .dropdown:last-child .dropdown-menu {
+    left: auto !important;
+    right: 0 !important;
+    transform: none !important;
+}
+
+/* Override any potential reset from app.css */
+.app-navbar * {
+    box-sizing: border-box;
+    transition: all 0.2s ease !important;
+}
+
+.app-navbar .navbar-nav {
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important;
+}
+
+.app-navbar .nav-item {
+    position: relative !important;
+    margin-right: 0.5rem !important;
+}
+
+.app-navbar .nav-item:last-child {
+    margin-right: 0 !important;
+}
+
+/* Ensure navbar brand and links are clickable */
+.navbar-brand {
+    position: relative !important;
+    transition: all 0.2s ease !important;
+    color: #fff !important;
+}
+
+.navbar-brand:hover {
+    color: #ffe066 !important;
+}
+
+/* Fix for mobile navbar */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        z-index: 9998 !important;
+        position: relative !important;
+        background-color: rgba(0, 0, 0, 0.95) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        display: flex !important;
+        background-color: rgba(0, 0, 0, 0.95) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border-top: 1px solid rgba(255, 224, 102, 0.2) !important;
+        margin-top: 0.5rem !important;
+        padding: 1rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .app-navbar .navbar-nav {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .app-navbar .nav-item {
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .app-navbar .nav-link {
+        padding: 0.5rem 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .app-navbar .dropdown-menu {
+        position: static !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin-top: 0.5rem !important;
+        padding-left: 1rem !important;
+    }
+    
+    body {
+        padding-top: 55px !important;
+    }
+}
+
+/* Responsive padding for navbar */
+@media (max-width: 768px) {
+    .app-navbar .container-fluid {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    .app-navbar {
+        min-height: 55px !important;
+        padding: 0.4rem 0 !important;
+    }
+    
+    .app-navbar .navbar-brand {
+        font-size: 1rem !important;
+    }
+    
+    .app-navbar .navbar-brand img {
+        height: 28px !important;
+    }
+    
+    .app-navbar .navbar-brand i {
+        font-size: 1.3rem !important;
+    }
+    
+    .app-navbar .nav-link {
+        font-size: 0.85rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+    
+    .app-navbar .btn {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.6rem !important;
+    }
+    
+    .app-navbar .dropdown-toggle img {
+        width: 36px !important;
+        height: 36px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .app-navbar .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    
+    .app-navbar {
+        min-height: 50px !important;
+        padding: 0.3rem 0 !important;
+    }
+    
+    .app-navbar .navbar-brand {
+        font-size: 0.9rem !important;
+    }
+    
+    .app-navbar .navbar-brand img {
+        height: 24px !important;
+    }
+    
+    .app-navbar .navbar-brand i {
+        font-size: 1.2rem !important;
+    }
+    
+    .app-navbar .nav-link {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .app-navbar .btn {
+        font-size: 0.75rem !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+    
+    .app-navbar .dropdown-toggle img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+}
+
+/* Ensure no element from other pages can cover navbar */
+.hero-section,
+.owl-carousel,
+.swiper-container,
+.slideshow-container {
+    z-index: 1 !important;
+}
+
+/* Fix for any potential overflow issues */
+.app-navbar .container-fluid {
+    overflow: visible !important;
+}
+
+/* Ensure navbar is always on top */
+.app-navbar {
+    z-index: 9999 !important;
+}
+
+/* Fix for any potential display issues */
+.app-navbar .navbar-collapse {
+    display: flex !important;
+}
+
+/* Fix for any potential color issues */
+.app-navbar .navbar-brand,
+.app-navbar .nav-link {
+    color: #fff !important;
+}
+
+.app-navbar .navbar-brand:hover,
+.app-navbar .nav-link:hover {
+    color: #ffe066 !important;
+}
+
+/* Fix for any potential animation issues */
+.app-navbar * {
+    animation: none !important;
+}
+
+/* Ensure proper focus states */
+.app-navbar .nav-link:focus,
+.app-navbar .btn:focus,
+.app-navbar .dropdown-toggle:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+
+
+/* Profile dropdown styles */
+.profile-dropdown-menu {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 224, 102, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem 0;
+    min-width: 200px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.profile-dropdown-item {
+    color: #fff;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin: 0 0.5rem;
+}
+
+.profile-dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+/* Logo animation */
+.movie-logo-icon {
+    animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+} 

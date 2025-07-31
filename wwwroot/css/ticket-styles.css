@@ -1,0 +1,633 @@
+/* FINAL VERSION - Modern React-like Design */
+
+/* Import Google Fonts for better typography */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* Root variables */
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --danger-gradient: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+    --dark-bg: #0a0a0a;
+    --dark-card: rgba(20, 20, 20, 0.98);
+    --dark-card-hover: rgba(35, 35, 35, 0.98);
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --border-color: rgba(255, 255, 255, 0.12);
+    --shadow-primary: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+/* FORCE Global Styles */
+* {
+    box-sizing: border-box !important;
+}
+
+html,
+body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background: radial-gradient(ellipse at center, #1a1a1a 0%, var(--dark-bg) 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh !important;
+    color: var(--text-primary) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* FORCE Container - Modern Grid Layout */
+.container {
+    background: transparent !important;
+    padding: 2rem 1rem !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+}
+
+/* FORCE Main Layout Grid */
+.ticket-layout-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    margin-top: 2rem !important;
+}
+
+@media (min-width: 1024px) {
+    .ticket-layout-grid {
+        grid-template-columns: 2fr 1fr !important;
+        gap: 3rem !important;
+    }
+}
+
+/* FORCE Header Card */
+.ticket-header-card {
+    background: var(--primary-gradient) !important;
+    border-radius: 24px !important;
+    padding: 2.5rem !important;
+    margin-bottom: 2rem !important;
+    box-shadow: var(--shadow-primary) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.ticket-header-card::before {
+    content: "" !important;
+    position: absolute !important;
+    top: -100% !important;
+    left: -100% !important;
+    width: 300% !important;
+    height: 300% !important;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%) !important;
+    animation: shimmer 4s ease-in-out infinite !important;
+}
+
+@keyframes shimmer {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.2);
+    }
+}
+
+.ticket-header-content {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: relative !important;
+    z-index: 5 !important;
+}
+
+.ticket-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+}
+
+.ticket-header-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    padding: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.ticket-header-icon i {
+    font-size: 2rem !important;
+    color: white !important;
+}
+
+.ticket-header-text h1 {
+    color: white !important;
+    font-weight: 800 !important;
+    font-size: 2.5rem !important;
+    margin: 0 !important;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
+    letter-spacing: 1px !important;
+}
+
+.ticket-header-text p {
+    color: rgba(255, 255, 255, 0.8) !important;
+    margin: 0.5rem 0 0 0 !important;
+    font-size: 1.1rem !important;
+}
+
+/* FORCE Status Badge */
+.status-badge {
+    padding: 1rem 2rem !important;
+    border-radius: 50px !important;
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.2px !important;
+    position: relative !important;
+    z-index: 5 !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.status-badge.status-completed {
+    background: var(--success-gradient) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(17, 153, 142, 0.4) !important;
+}
+
+.status-badge.status-cancelled {
+    background: var(--danger-gradient) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(252, 70, 107, 0.4) !important;
+}
+
+.status-badge.status-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4) !important;
+}
+
+.status-badge:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* FORCE Content Cards */
+.content-card {
+    background: var(--dark-card) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--shadow-primary) !important;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+    margin-bottom: 2rem !important;
+}
+
+.content-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* FORCE Card Headers */
+.card-header-modern {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 1.5rem 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+}
+
+.card-header-modern h3 {
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+    font-size: 1.4rem !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.card-header-modern i {
+    font-size: 1.5rem !important;
+    color: #667eea !important;
+}
+
+/* FORCE Card Content */
+.card-content-modern {
+    padding: 2rem !important;
+}
+
+/* FORCE Info Grid */
+.info-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 2rem !important;
+}
+
+.info-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 1.5rem !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+.info-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    transform: translateX(5px) !important;
+}
+
+.info-item i {
+    font-size: 1.2rem !important;
+    color: #a0a0a0 !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+
+.info-content {
+    flex: 1 !important;
+}
+
+.info-label {
+    color: var(--text-muted) !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 0.3rem !important;
+}
+
+.info-value {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+}
+
+/* FORCE Tables */
+.modern-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 1rem 0 !important;
+}
+
+.modern-table thead th {
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    padding: 1.2rem 1rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    font-size: 0.9rem !important;
+    text-align: left !important;
+    border: none !important;
+}
+
+.modern-table tbody td {
+    padding: 1.2rem 1rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    vertical-align: middle !important;
+}
+
+.modern-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.modern-table tfoot td {
+    background: var(--success-gradient) !important;
+    color: white !important;
+    font-weight: 800 !important;
+    font-size: 1.1rem !important;
+    padding: 1.2rem 1rem !important;
+    border: none !important;
+}
+
+/* FORCE Price Breakdown */
+.price-breakdown {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    margin: 1rem 0 !important;
+}
+
+.price-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.8rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.price-row:last-child {
+    border-bottom: none !important;
+}
+
+.price-row.total-row {
+    border-top: 2px solid rgba(255, 255, 255, 0.3) !important;
+    padding-top: 1.5rem !important;
+    margin-top: 1rem !important;
+    font-weight: 800 !important;
+    font-size: 1.2rem !important;
+}
+
+.price-label {
+    color: var(--text-secondary) !important;
+    font-weight: 600 !important;
+}
+
+.price-value {
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+}
+
+.price-value.discount {
+    color: #fc466b !important;
+}
+
+.price-value.addition {
+    color: #38ef7d !important;
+}
+
+.price-value.total {
+    background: var(--success-gradient) !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    font-size: 1.4rem !important;
+}
+
+/* FORCE Buttons */
+.btn-modern {
+    background: var(--primary-gradient) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 1rem 2rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    min-width: 180px !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+}
+
+.btn-modern:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.btn-modern.btn-danger {
+    background: transparent !important;
+    border: 2px solid #fc466b !important;
+    color: #fc466b !important;
+    box-shadow: 0 8px 25px rgba(252, 70, 107, 0.3) !important;
+}
+
+.btn-modern.btn-danger:hover {
+    background: var(--danger-gradient) !important;
+    border-color: transparent !important;
+    color: white !important;
+    box-shadow: 0 15px 40px rgba(252, 70, 107, 0.6) !important;
+}
+
+/* FORCE QR Code Section */
+.qr-section {
+    position: sticky !important;
+    top: 2rem !important;
+    height: fit-content !important;
+    align-self: start !important;
+}
+
+.qr-card {
+    background: var(--dark-card) !important;
+    border: 3px solid #38ef7d !important;
+    border-radius: 20px !important;
+    box-shadow: 0 0 50px rgba(56, 239, 125, 0.4) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+    height: fit-content !important;
+}
+
+.qr-card:hover {
+    box-shadow: 0 0 80px rgba(56, 239, 125, 0.6) !important;
+    transform: translateY(-5px) scale(1.02) !important;
+}
+
+.qr-header {
+    background: var(--success-gradient) !important;
+    padding: 2rem !important;
+    text-align: center !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.qr-header::before {
+    content: "" !important;
+    position: absolute !important;
+    top: -50% !important;
+    right: -50% !important;
+    width: 200% !important;
+    height: 200% !important;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%) !important;
+    animation: pulse 3s ease-in-out infinite !important;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.2);
+    }
+}
+
+.qr-header h3 {
+    color: white !important;
+    font-weight: 800 !important;
+    font-size: 1.3rem !important;
+    margin: 0 !important;
+    position: relative !important;
+    z-index: 5 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+    letter-spacing: 0.8px !important;
+}
+
+.qr-header p {
+    color: rgba(255, 255, 255, 0.8) !important;
+    margin: 0.5rem 0 0 0 !important;
+    font-size: 0.9rem !important;
+    position: relative !important;
+    z-index: 5 !important;
+}
+
+.qr-content {
+    padding: 2rem !important;
+    text-align: center !important;
+}
+
+.qr-code-container {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    margin: 1.5rem 0 !important;
+    box-shadow: inset 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.qr-code-container:hover {
+    transform: scale(1.05) !important;
+    box-shadow: inset 0 8px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-download {
+    background: var(--success-gradient) !important;
+    border: none !important;
+    color: white !important;
+    border-radius: 12px !important;
+    padding: 1rem 2rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 8px 25px rgba(56, 239, 125, 0.4) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+}
+
+.btn-download:hover {
+    transform: translateY(-3px) scale(1.05) !important;
+    box-shadow: 0 12px 35px rgba(56, 239, 125, 0.6) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* FORCE Responsive */
+@media (max-width: 768px) {
+    .ticket-header-content {
+        flex-direction: column !important;
+        gap: 2rem !important;
+        text-align: center !important;
+    }
+
+    .ticket-header-text h1 {
+        font-size: 2rem !important;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .btn-modern {
+        width: 100% !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .qr-section {
+        position: static !important;
+        margin-top: 2rem !important;
+        height: auto !important;
+    }
+
+    .price-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+
+    .price-value {
+        align-self: flex-end !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem 0.5rem !important;
+    }
+
+    .ticket-header-card {
+        padding: 1.5rem !important;
+    }
+
+    .ticket-header-text h1 {
+        font-size: 1.8rem !important;
+    }
+
+    .status-badge {
+        padding: 0.8rem 1.5rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    .card-content-modern {
+        padding: 1.5rem !important;
+    }
+
+    .modern-table thead th,
+    .modern-table tbody td {
+        padding: 1rem 0.8rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    .info-item {
+        padding: 1rem !important;
+    }
+
+    .info-value {
+        font-size: 1rem !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    * {
+        background: white !important;
+        color: black !important;
+    }
+
+    .btn-modern,
+    .btn-download {
+        display: none !important;
+    }
+}
+
+/* Animation for page load */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ticket-header-card,
+.content-card,
+.qr-card {
+    animation: fadeInUp 0.6s ease-out !important;
+}
+
+.content-card:nth-child(1) { animation-delay: 0.1s !important; }
+.content-card:nth-child(2) { animation-delay: 0.2s !important; }
+.content-card:nth-child(3) { animation-delay: 0.3s !important; }
+.content-card:nth-child(4) { animation-delay: 0.4s !important; }
+.content-card:nth-child(5) { animation-delay: 0.5s !important; }
