@@ -359,104 +359,24 @@
 
 <partial name="_ToastMessages" />
 
-<style>
-    .font-monospace {
-        font-family: 'Courier New', monospace;
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-styles.css" />
+}
 
-    .voucher-image:hover {
-        transform: scale(1.1);
-        transition: transform 0.2s ease-in-out;
-    }
+@section Scripts {
+    <script src="~/js/admin-sorting.js"></script>
+    <script>
+        // Image modal functionality
+        $('#imageModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var image = button.data('image');
+            var code = button.data('code');
+            var modal = $(this);
+            modal.find('#modalImage').attr('src', image);
+            modal.find('#modalImageCode').text('Code: ' + code);
+        });
 
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-
-    .card {
-        border: none;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-
-    .btn-group .btn {
-        border-radius: 0.375rem;
-    }
-
-        .btn-group .btn:not(:last-child) {
-            margin-right: 0.25rem;
-        }
-
-    .badge {
-        font-size: 0.75em;
-    }
-
-    .sortable {
-        cursor: pointer;
-        user-select: none;
-    }
-</style>
-
-<script>
-(function() {
-    let currentSortVoucher = { by: '', dir: 'asc', param: '' };
-
-    $(document).on('click', '#voucher-table .sortable', function() {
-        const sortBy = $(this).data('sort');
-        if (currentSortVoucher.by === sortBy) {
-            currentSortVoucher.dir = currentSortVoucher.dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSortVoucher.by = sortBy;
-            currentSortVoucher.dir = 'asc';
-        }
-        let sortParam = '';
-        if (sortBy === 'voucherid') sortParam = currentSortVoucher.dir === 'asc' ? 'voucherid_asc' : 'voucherid_desc';
-        if (sortBy === 'account') sortParam = currentSortVoucher.dir === 'asc' ? 'account_az' : 'account_za';
-        if (sortBy === 'value') sortParam = currentSortVoucher.dir === 'asc' ? 'value_asc' : 'value_desc';
-        if (sortBy === 'created') sortParam = currentSortVoucher.dir === 'asc' ? 'created_asc' : 'created_desc';
-        if (sortBy === 'expiry') sortParam = currentSortVoucher.dir === 'asc' ? 'expiry_asc' : 'expiry_desc';
-        currentSortVoucher.param = sortParam;
-        searchVouchers();
-        updateSortIconsVoucher();
-    });
-
-    window.searchVouchers = function() {
-        const keyword = document.getElementById('searchKeyword').value;
-        const status = document.getElementById('statusFilter').value;
-        const expiry = document.getElementById('expiryFilter').value;
-        loadTab('VoucherMg', { keyword, statusFilter: status, expiryFilter: expiry, sortBy: currentSortVoucher.param });
-    }
-
-    function updateSortIconsVoucher() {
-        $('#sortIconVoucherId, #sortIconAccount, #sortIconValue, #sortIconCreated, #sortIconExpiry').html('');
-        if (currentSortVoucher.by === 'voucherid') {
-            $('#sortIconVoucherId').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortVoucher.by === 'account') {
-            $('#sortIconAccount').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortVoucher.by === 'value') {
-            $('#sortIconValue').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortVoucher.by === 'created') {
-            $('#sortIconCreated').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
-        }
-        if (currentSortVoucher.by === 'expiry') {
-            $('#sortIconExpiry').html(currentSortVoucher.dir === 'asc' ? '▲' : '▼');
-        }
-    }
-})();
-
-    // Image modal functionality
-    $('#imageModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget);
-        var image = button.data('image');
-        var code = button.data('code');
-        var modal = $(this);
-        modal.find('#modalImage').attr('src', image);
-        modal.find('#modalImageCode').text('Code: ' + code);
-    });
-
-    // Initialize tooltips
+        // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -543,4 +463,4 @@
             `);
         });
     }
-</script> 
+</script> }

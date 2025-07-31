@@ -572,7 +572,7 @@
             updateStepStatus(2, false);
             updateStepStatus(3, false);
             
-            // Update booking summary
+            // Update booking summary - reset version and time
             updateBookingSummary();
         }
 
@@ -607,7 +607,7 @@
             updateStepStatus(2, true);
             updateStepStatus(3, false);
             
-            // Update booking summary
+            // Update booking summary - reset time
             updateBookingSummary();
         }
 
@@ -685,15 +685,11 @@
             
             // Set first step as active
             updateStepStatus(1, true);
-            
-            // Reset progress indicator
-            updateProgressIndicator(1);
         }
 
         // Function to update step status
         function updateStepStatus(stepNumber, isActive) {
             const stepElement = document.querySelector(`.booking-step[data-step="${stepNumber}"]`);
-            const progressStep = document.querySelector(`.progress-step[data-step="${stepNumber}"]`);
             
             if (stepElement) {
                 stepElement.classList.remove('active', 'completed');
@@ -701,15 +697,6 @@
                     stepElement.classList.add('active');
                 } else if (stepNumber < getCurrentStep()) {
                     stepElement.classList.add('completed');
-                }
-            }
-            
-            if (progressStep) {
-                progressStep.classList.remove('active', 'completed');
-                if (isActive) {
-                    progressStep.classList.add('active');
-                } else if (stepNumber < getCurrentStep()) {
-                    progressStep.classList.add('completed');
                 }
             }
         }
@@ -731,21 +718,6 @@
             }
         }
 
-        // Function to update progress indicator
-        function updateProgressIndicator(currentStep) {
-            const progressSteps = document.querySelectorAll('.progress-step');
-            progressSteps.forEach((step, index) => {
-                const stepNumber = index + 1;
-                step.classList.remove('active', 'completed');
-                
-                if (stepNumber === currentStep) {
-                    step.classList.add('active');
-                } else if (stepNumber < currentStep) {
-                    step.classList.add('completed');
-                }
-            });
-        }
-
         // Function to reset booking summary
         function resetBookingSummary() {
             document.getElementById('summaryDate').textContent = '-';
@@ -762,15 +734,21 @@
             if (dateSelect.value) {
                 const [year, month, day] = dateSelect.value.split('-');
                 document.getElementById('summaryDate').textContent = `${day}/${month}/${year}`;
+            } else {
+                document.getElementById('summaryDate').textContent = '-';
             }
 
             if (versionSelect.value) {
                 const selectedOption = versionSelect.options[versionSelect.selectedIndex];
                 document.getElementById('summaryVersion').textContent = selectedOption.textContent;
+            } else {
+                document.getElementById('summaryVersion').textContent = '-';
             }
 
             if (timeSelect.value) {
                 document.getElementById('summaryTime').textContent = timeSelect.value;
+            } else {
+                document.getElementById('summaryTime').textContent = '-';
             }
         }
 
@@ -861,7 +839,6 @@
                 timeSelect.addEventListener('change', function() {
                     if (this.value) {
                         updateStepStatus(3, true);
-                        updateProgressIndicator(4); // All steps completed
                         updateBookingSummary();
                     }
                 });
@@ -879,13 +856,6 @@
             <div class="modal-body">
                 <form id="bookingForm" novalidate>
                     <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
-                    
-                    <!-- Progress Indicator -->
-                    <div class="booking-progress">
-                        <div class="progress-step active" data-step="1"></div>
-                        <div class="progress-step" data-step="2"></div>
-                        <div class="progress-step" data-step="3"></div>
-                    </div>
                     
                     <div class="booking-form-container">
                         <!-- Booking Steps -->

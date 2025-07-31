@@ -44,16 +44,16 @@ namespace MovieTheater.Service
                     totalFoodPrice += food.Price;
                 }
             }
-            // Lấy promotion discount percent từ seat đầu tiên (nếu có)
+            
+            // SỬA: Lấy promotion discount percent từ seat data đã được tính toán chính xác
             decimal promotionDiscountPercent = 0;
-            if (seats != null && seats.Count > 0 && seats[0].PromotionName != null && seats[0].PromotionDiscount.HasValue)
+            if (seats != null && seats.Count > 0)
             {
-                // Nếu có promotion, lấy phần trăm discount từ giá gốc và discount
-                var original = seats[0].OriginalPrice ?? 0;
-                var discount = seats[0].PromotionDiscount ?? 0;
-                if (original > 0 && discount > 0)
+                // Lấy promotion discount percent từ seat đầu tiên có promotion
+                var seatWithPromotion = seats.FirstOrDefault(s => s.PromotionDiscount.HasValue && s.PromotionDiscount.Value > 0);
+                if (seatWithPromotion != null && seatWithPromotion.OriginalPrice.HasValue && seatWithPromotion.OriginalPrice.Value > 0)
                 {
-                    promotionDiscountPercent = Math.Round((discount / original) * 100);
+                    promotionDiscountPercent = Math.Round((seatWithPromotion.PromotionDiscount.Value / seatWithPromotion.OriginalPrice.Value) * 100);
                 }
             }
             

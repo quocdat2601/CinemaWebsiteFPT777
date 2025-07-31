@@ -1319,20 +1319,23 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            // Initialize variables
-            var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var pointValue = 1000;
-            let voucherModalInstance = null;
-            let selectedVoucher = null;
-            let selectedPromotion = null;
+@section Styles {
+    <link rel="stylesheet" href="~/css/booking-confirm-styles.css" />
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Use the correct seat price from Razor
+        var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var pointValue = 1000;
+        let voucherModalInstance = null;
+        let selectedVoucher = null;
+        let selectedPromotion = null;
 
             // Voucher modal handlers
             $('#openVoucherModalBtn').click(function () {
