@@ -599,11 +599,12 @@ namespace MovieTheater.Controllers
                 .Select(ms => new {
                     ms.MovieShowId,
                     ms.MovieId,
-                    ms.ShowDate,
+                    showDate = ms.ShowDate.ToString("yyyy-MM-dd"),
                     ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
                     VersionName = ms.Version?.VersionName,
                     VersionId = ms.VersionId,
-                    CinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1 // Include room status
+                    CinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1, // Include room status for backward compatibility
+                    IsAvailable = true // Since GetMovieShowsByMovieId already filters, all returned shows are available
                 }).ToList();
             return Json(movieShows);
         }

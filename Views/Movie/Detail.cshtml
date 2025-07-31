@@ -238,13 +238,8 @@
             // Clear and populate available dates for booking modal
             availableDates.clear();
 
-            // Group shows by date and version, but filter out shows from disabled rooms
+            // Group shows by date and version (API already filters out disabled rooms)
             const groupedShows = shows.reduce((acc, show) => {
-                // Skip shows from disabled rooms (status 3)
-                if (show.cinemaRoomStatus === 3) {
-                    return acc;
-                }
-                
                 const dateKey = show.showDate;
                 
                 // Add date to available dates set for booking modal

@@ -34,7 +34,7 @@
     string bookingManagementUrl = Url.Action("BookingMg", "Admin");
     string returnUrl = Model?.ReturnUrl ?? bookingManagementUrl;
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-    var status = booking?.Status == MovieTheater.Models.InvoiceStatus.Completed ? "Completed" : "Cancelled";
+    var status = booking.Status == InvoiceStatus.Completed ? "Completed" : booking.Status == null ? "Canceled" : "Not Paid";
 
     // Lấy thông tin food từ TempData hoặc Model
     var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
