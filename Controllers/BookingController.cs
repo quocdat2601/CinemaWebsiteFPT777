@@ -530,7 +530,7 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "No seats were selected.";
 
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
                 else
                     return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
             }
