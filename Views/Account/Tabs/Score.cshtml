@@ -150,13 +150,55 @@
                 $('#scorePagination').html('');
                 return;
             }
-            let html = '<ul class="pagination justify-content-center">';
-            html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
-            for (let i = 1; i <= totalPages; i++) {
-                html += `<li class="page-item${currentPage === i ? ' active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            
+            // Calculate visible pages with ellipsis
+            const maxVisiblePages = 7;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+            
+            let html = '<div class="pagination-container">';
+            html += '<ul class="pagination justify-content-center">';
+            
+            // Previous button
+            html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}">`;
+            html += `<a class="page-link" href="#" data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i></a>`;
+            html += '</li>';
+            
+            // First page + ellipsis
+            if (startPage > 1) {
+                html += '<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>';
+                if (startPage > 2) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+            
+            // Visible pages
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<li class="page-item${currentPage === i ? ' active' : ''}">`;
+                html += `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                html += '</li>';
+            }
+            
+            // Last page + ellipsis
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+                html += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+            }
+            
+            // Next button
+            html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}">`;
+            html += `<a class="page-link" href="#" data-page="${currentPage + 1}"><i class="fas fa-chevron-right"></i></a>`;
+            html += '</li>';
+            
             html += '</ul>';
+            html += '</div>';
+            
             $('#scorePagination').html(html);
             $('#scorePagination .page-link').off('click').on('click', function (e) {
                 e.preventDefault();
@@ -188,3 +230,388 @@
         loadScoreHistory('', '', 'all');
     });
 </script>
+
+<style>
+/* Modern Cinema Theme for Score */
+/* Override Bootstrap defaults */
+.table-responsive {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-radius: 15px;
+}
+
+.table-responsive .table {
+    margin-bottom: 0;
+}
+
+/* Force dark theme for all table elements */
+.table,
+.table-responsive,
+.table-responsive .table {
+    background: rgba(255, 255, 255, 0.02) !important;
+    color: #fff !important;
+}
+
+/* Ensure dark background for the entire score section */
+.container,
+.row,
+.col-lg-10 {
+    background: transparent !important;
+}
+
+/* Override any Bootstrap light backgrounds */
+.bg-light {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Ensure text is visible on dark background */
+.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+.card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #fff;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%) !important;
+    color: #000 !important;
+    border-radius: 20px 20px 0 0 !important;
+    border: none;
+    padding: 1.5rem;
+}
+
+.card-header h2 {
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(244, 208, 63, 0.1) 100%);
+    border: 2px solid #d4af37;
+    color: #d4af37;
+    border-radius: 25px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+}
+
+.alert-info .fas {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.bg-light {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: #fff;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #d4af37;
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-label {
+    color: #d4af37;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.btn-group .btn {
+    border-radius: 8px;
+    margin: 0 2px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary {
+    border-color: #d4af37;
+    color: #d4af37;
+    background: transparent;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-check:checked + .btn-outline-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    border-color: #d4af37;
+    color: #000;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.table {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-radius: 15px;
+    overflow: hidden;
+    color: #fff !important;
+}
+
+.table-dark {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%) !important;
+    color: #000 !important;
+}
+
+.table-dark th {
+    border: none !important;
+    padding: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%) !important;
+    color: #000 !important;
+}
+
+.table tbody {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.table tbody tr:hover {
+    background: rgba(212, 175, 55, 0.1) !important;
+    transform: scale(1.01);
+}
+
+.table tbody td {
+    padding: 1rem;
+    border: none !important;
+    color: #fff !important;
+    background: transparent !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(even) {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%) !important;
+}
+
+.pagination-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.page-item {
+    margin: 0;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    min-width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.page-link:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #d4af37;
+    color: #d4af37;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    border-color: #d4af37;
+    color: #000;
+    font-weight: 700;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+.page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-item.disabled .page-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Ellipsis styling */
+.page-item.disabled .page-link:not(.page-link[data-page]) {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    min-width: auto;
+    height: auto;
+}
+
+.page-item.disabled .page-link:not(.page-link[data-page]):hover {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    transform: none;
+    box-shadow: none;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(253, 126, 20, 0.1) 100%);
+    border: 2px solid #dc3545;
+    color: #dc3545;
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.fa-3x {
+    color: #d4af37;
+}
+
+/* Responsive */
+@@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin: 2px 0;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .pagination {
+        gap: 0.25rem;
+    }
+    
+    .page-link {
+        padding: 0.5rem 0.75rem;
+        min-width: 40px;
+        height: 40px;
+        font-size: 0.85rem;
+    }
+    
+    .page-item.disabled .page-link:not(.page-link[data-page]) {
+        padding: 0.25rem;
+        font-size: 1rem;
+    }
+}
+
+@@media (max-width: 480px) {
+    .pagination {
+        gap: 0.2rem;
+    }
+    
+    .page-link {
+        padding: 0.4rem 0.6rem;
+        min-width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
+    }
+    
+    .page-item.disabled .page-link:not(.page-link[data-page]) {
+        padding: 0.2rem;
+        font-size: 0.9rem;
+    }
+}
+</style>

@@ -227,53 +227,225 @@
 </div>
 
 <style>
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+/* Modern Cinema Theme for Voucher */
+/* Override Bootstrap defaults for dark theme */
+.container {
+    background: transparent;
+}
+
+.row {
+    background: transparent;
+}
+
+.col, .col-lg-10 {
+    background: transparent;
+}
+.display-4 {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.text-primary {
+    color: #d4af37 !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-secondary {
+    color: #6c757d !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #fff;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.card-img-top {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.card-body {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+.card-title {
+    color: #d4af37;
+    font-weight: 600;
+}
+
+.font-monospace {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%) !important;
+}
+
+.bg-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+}
+
+.badge {
+    border-radius: 15px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%) !important;
+    color: #000 !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: #fff !important;
+}
+
+.badge.bg-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: #fff !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%) !important;
+    color: #fff !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
+    color: #000 !important;
+}
+
+.fs-5 {
+    font-size: 1.25rem !important;
+}
+
+.fs-6 {
+    font-size: 1rem !important;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(244, 208, 63, 0.1) 100%);
+    border: 2px solid #d4af37;
+    color: #d4af37;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+}
+
+.alert-info .fas {
+    font-size: 2rem;
+    margin-right: 1rem;
+}
+
+.alert-heading {
+    color: #d4af37;
+    font-weight: 700;
+}
+
+.btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    border-color: #6c757d;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+}
+
+.border-warning {
+    border: 3px solid #ffc107 !important;
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+}
+
+.opacity-75 {
+    opacity: 0.7;
+}
+
+.opacity-75:hover {
+    opacity: 1;
+}
+
+.fa-4x {
+    font-size: 3rem;
+}
+
+.fa-3x {
+    font-size: 2rem;
+}
+
+/* Hover effects for cards */
+.card:hover .badge {
+    transform: scale(1.05);
+}
+
+.card:hover .font-monospace {
+    color: #f4d03f;
+}
+
+/* Responsive */
+@@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
     }
     
-    .card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-    }
-    
-    .font-monospace {
-        font-family: 'Courier New', monospace;
-    }
-    
-    .opacity-75 {
-        opacity: 0.75;
-    }
-    
-    .border-warning {
-        border: 2px solid #ffc107 !important;
-    }
-    
-    .text-warning {
-        color: #ffc107 !important;
+    .card-body {
+        padding: 1rem;
     }
     
     .badge {
-        border-radius: 8px;
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
     }
     
-    .card-img-top {
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
+    .fs-5 {
+        font-size: 1.1rem !important;
     }
     
-    .alert {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    .fs-6 {
+        font-size: 0.9rem !important;
     }
-    
-    .btn-outline-secondary:hover {
-        background-color: #6c757d;
-        border-color: #6c757d;
-        color: white;
-    }
+}
 </style>
