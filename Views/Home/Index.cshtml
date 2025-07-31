@@ -570,47 +570,10 @@
                 });
         };
 
-        window.populateDateDropdown = function () {
-            const dateSelect = document.getElementById('dateSelect');
-            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
-            dateSelect.disabled = true;
 
-            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // normalize time
-
-            // Convert ShowDate (DateOnly) to string format and get unique dates
-            const uniqueDates = [...new Set(window.currentMovieShows.map(show => {
-                // Convert DateOnly to yyyy-MM-dd format
-                const date = new Date(show.ShowDate);
-                return date.toISOString().split('T')[0]; // yyyy-MM-dd format
-            }))];
-
-            uniqueDates.forEach(dateStr => {
-                const showDate = new Date(dateStr);
-                showDate.setHours(0, 0, 0, 0); // normalize show date
-
-                if (showDate >= today) {
-                    const [year, month, day] = dateStr.split('-');
-                    const displayDate = `${day}/${month}/${year}`;
-                    const option = document.createElement('option');
-                    option.value = dateStr;
-                    option.textContent = displayDate;
-                    dateSelect.appendChild(option);
-                }
-            });
-
-            if (dateSelect.options.length > 1) {
-                dateSelect.disabled = false;
-            }
-            
-            // Reset step status when loading new movie
-            resetModalState();
-        };
 
         // Populate version dropdown
-        window.updateVersions = function() {
+        function updateVersions() {
             const date = document.getElementById('dateSelect').value;
             const versionSelect = document.getElementById('versionSelect');
             const timeSelect = document.getElementById('timeSelect');
@@ -622,12 +585,14 @@
             
             if (!date) return;
             
+            // Since the API already filters shows, all returned shows are available
             const filtered = window.currentMovieShows.filter(show => show.showDate === date);
+            
             // Use a Map to ensure unique versionId-versionName pairs
             const versionMap = new Map();
             filtered.forEach(show => {
-                if (show.VersionId && show.VersionName && !versionMap.has(show.VersionId)) {
-                    versionMap.set(show.VersionId, show.VersionName);
+                if (show.versionId && show.versionName && !versionMap.has(show.versionId)) {
+                    versionMap.set(show.versionId, show.versionName);
                 }
             });
             
@@ -650,7 +615,7 @@
         }
 
         // Populate time dropdown
-        window.updateTimes = function() {
+        function updateTimes() {
             const date = document.getElementById('dateSelect').value;
             const versionId = document.getElementById('versionSelect').value;
             const timeSelect = document.getElementById('timeSelect');
@@ -660,16 +625,17 @@
             
             if (!date || !versionId) return;
             
+            // Since the API already filters shows, all returned shows are available
             const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
             // Use a Set to ensure unique times
             const timeSet = new Set();
             filtered.forEach(show => {
-                if (show.ScheduleTime && !timeSet.has(show.ScheduleTime)) {
+                if (show.scheduleTime && !timeSet.has(show.scheduleTime)) {
                     const option = document.createElement('option');
-                    option.value = show.ScheduleTime;
-                    option.textContent = show.ScheduleTime;
+                    option.value = show.scheduleTime;
+                    option.textContent = show.scheduleTime;
                     timeSelect.appendChild(option);
-                    timeSet.add(show.ScheduleTime);
+                    timeSet.add(show.scheduleTime);
                 }
             });
             
@@ -683,7 +649,7 @@
             updateBookingSummary();
         }
 
-        window.continueToSeats = function() {
+        function continueToSeats() {
             const movieId = document.getElementById('movieId').value;
             const date = document.getElementById('dateSelect').value;
             const versionId = document.getElementById('versionSelect').value;
@@ -729,7 +695,7 @@
         }
 
         // Function to show the booking modal
-        window.showBookingModal = function() {
+        function showBookingModal() {
             const modalElement = document.getElementById('addBookingModal');
             if (modalElement && typeof bootstrap !== 'undefined') {
                 const bookingModal = new bootstrap.Modal(modalElement);
@@ -825,7 +791,7 @@
         }
 
         // Function to populate date dropdown
-        window.populateDateDropdown = function () {
+        function populateDateDropdown() {
             const dateSelect = document.getElementById('dateSelect');
             dateSelect.innerHTML = '<option value="">— Select Date —</option>';
             dateSelect.disabled = true;
@@ -835,6 +801,7 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0); // normalize time
 
+            // Since the API already filters shows, all returned shows are available
             const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
 
             uniqueDates.forEach(dateStr => {

@@ -164,6 +164,7 @@ namespace MovieTheater.Controllers
                     
                     // Set the current booking type filter for the view
                     ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
+                    ViewBag.StatusFilter = statusFilter;
 
                     // Bổ sung sort
                     var sortBy = Request.Query["sortBy"].ToString();

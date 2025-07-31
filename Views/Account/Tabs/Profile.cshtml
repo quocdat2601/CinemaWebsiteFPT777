@@ -1,4 +1,4 @@
-﻿@model MovieTheater.ViewModels.ProfilePageViewModel
+@model MovieTheater.ViewModels.ProfilePageViewModel
 @{
     ViewData["Title"] = "Profile";
     var profile = Model.Profile;
@@ -28,23 +28,23 @@
                 </form>
             </div>
 
-                         <div class="profile-marquee">
-                 <h1 class="name-display">@profile.FullName</h1>
-                 <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
-                     <span class="tier-icon">
-                         @if (!string.IsNullOrEmpty(rank.IconClass))
-                         {
-                             <i class="@rank.IconClass"></i>
-                         }
-                         else
-                         {
-                             <span>★</span>
-                         }
-                     </span>
-                     <span class="tier-name">@rank.CurrentRankName Member</span>
-                     <span class="tier-info-icon">ℹ️</span>
+            <div class="profile-marquee">
+                <h1 class="name-display">@profile.FullName</h1>
+                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
+                    <span class="tier-icon">
+                        @if (!string.IsNullOrEmpty(rank.IconClass))
+                        {
+                            <i class="@rank.IconClass"></i>
+                        }
+                        else
+                        {
+                            <span>★</span>
+                        }
+                    </span>
+                    <span class="tier-name">@rank.CurrentRankName Member</span>
+                    <span class="tier-info-icon">ℹ️</span>
+                </div>
             </div>
-        </div>
 
             <div class="cinema-stats">
                 <div class="stat-reel">
@@ -55,7 +55,7 @@
                     <div class="stat-frame">
                         <div class="stat-number">@rank.TotalPoints</div>
                         <div class="stat-label">Total Points</div>
-                </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,8 +93,8 @@
             <form asp-controller="MyAccount" asp-action="EditProfile" method="post" class="cinema-form">
                 <div class="form-row">
                     <div class="input-cinema">
-                    <input asp-for="Profile.FullName" placeholder=" " required>
-                    <label asp-for="Profile.FullName">Full Name</label>
+                        <input asp-for="Profile.FullName" placeholder=" " required>
+                        <label asp-for="Profile.FullName">Full Name</label>
                         <div class="input-glow"></div>
                     </div>
 
@@ -164,7 +164,7 @@
             <div class="wing-header">
                 <h2>🎟️ Booking History</h2>
                 <div class="header-line"></div>
-                </div>
+            </div>
 
             <div class="ticket-filters">
                 <button class="filter-ticket active" data-filter="all">All Tickets</button>
@@ -182,181 +182,147 @@
     </div>
 </div>
 
-<script>
-    // Avatar Upload with Cinema Effect
-    document.getElementById('avatarUpload').addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                showAvatarEditModal(e.target.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Avatar Edit Modal Functions
-    let currentZoom = 1;
-    let currentRotation = 0;
-    let originalImageData = null;
-
-    function showAvatarEditModal(imageSrc) {
-        originalImageData = imageSrc;
-        currentZoom = 1;
-        currentRotation = 0;
-        
-        const modal = document.getElementById('avatarEditModal');
-        const imagePreview = document.getElementById('avatarImagePreview');
-        const zoomSlider = document.getElementById('zoomSlider');
-        
-        imagePreview.src = imageSrc;
-        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
-        zoomSlider.value = 50; // Reset zoom slider to middle
-        
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeAvatarModal() {
-        const modal = document.getElementById('avatarEditModal');
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function updateZoom(value) {
-        currentZoom = 0.5 + (value / 100) * 1.5; // Range from 0.5 to 2.0
-        const imagePreview = document.getElementById('avatarImagePreview');
-        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
-    }
-
-    function zoomIn() {
-        const zoomSlider = document.getElementById('zoomSlider');
-        const newValue = Math.min(100, parseInt(zoomSlider.value) + 10);
-        zoomSlider.value = newValue;
-        updateZoom(newValue);
-    }
-
-    function zoomOut() {
-        const zoomSlider = document.getElementById('zoomSlider');
-        const newValue = Math.max(0, parseInt(zoomSlider.value) - 10);
-        zoomSlider.value = newValue;
-        updateZoom(newValue);
-    }
-
-    function rotateImage() {
-        currentRotation += 90;
-        const imagePreview = document.getElementById('avatarImagePreview');
-        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
-    }
-
-    function resetAvatar() {
-        currentZoom = 1;
-        currentRotation = 0;
-        const imagePreview = document.getElementById('avatarImagePreview');
-        const zoomSlider = document.getElementById('zoomSlider');
-        
-        imagePreview.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
-        zoomSlider.value = 50;
-    }
-
-    function applyAvatar() {
-        const imagePreview = document.getElementById('avatarImagePreview');
-        const avatar = document.getElementById('profileAvatar');
-        
-        // Create a canvas to apply transformations
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const size = 200; // Avatar size
-        
-        canvas.width = size;
-        canvas.height = size;
-        
-        // Create a temporary image to get the transformed result
-        const tempImg = new Image();
-        tempImg.onload = function() {
-            // Clear canvas
-            ctx.clearRect(0, 0, size, size);
-            
-            // Apply transformations
-            ctx.save();
-            ctx.translate(size/2, size/2);
-            ctx.rotate(currentRotation * Math.PI / 180);
-            ctx.scale(currentZoom, currentZoom);
-            
-            // Draw the image centered
-            const imgSize = Math.min(tempImg.width, tempImg.height);
-            const offsetX = (tempImg.width - imgSize) / 2;
-            const offsetY = (tempImg.height - imgSize) / 2;
-            
-            ctx.drawImage(tempImg, offsetX, offsetY, imgSize, imgSize, -size/2, -size/2, size, size);
-            ctx.restore();
-            
-            // Convert to blob and update form
-            canvas.toBlob(function(blob) {
-                const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                
-                const fileInput = document.getElementById('avatarUpload');
-                fileInput.files = dataTransfer.files;
-                
-                // Update avatar preview with animation
-                avatar.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    avatar.src = URL.createObjectURL(blob);
-                    avatar.style.transform = 'scale(1)';
-                }, 200);
-                
-                // Submit form
-                setTimeout(() => {
-                    const avatarForm = document.getElementById('avatarForm');
-                    if (avatarForm) {
-                        avatarForm.submit();
+<!-- Rank Details Modal -->
+<div class="rank-modal" id="rankDetailsModal" style="display:none;">
+    <div class="rank-modal-content">
+        <div class="rank-modal-header">
+            <h3>🎭 Rank Tiers & Benefits</h3>
+            <button class="rank-modal-close" onclick="closeRankDetails()">×</button>
+        </div>
+        <div class="rank-modal-body">
+            @if (Model.AllRanks != null && Model.AllRanks.Any())
+            {
+                var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
+                var currentUserScore = Model.RankInfo.TotalPoints;
+                var currentUserRankId = Model.RankInfo.CurrentRankId;
+            <div class="rank-carousel" id="rankCarousel">
+                <div class="rank-indicators">
+                    @for (int i = 0; i < sortedRanks.Count; i++)
+                    {
+                        var rankDetail = sortedRanks[i];
+                        var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                        <button class="rank-indicator @activeClass" onclick="showRankSlide(@i)"></button>
                     }
-                }, 500);
-                
-                closeAvatarModal();
-            }, 'image/jpeg', 0.9);
-        };
-        tempImg.src = originalImageData;
+                </div>
+                <div class="rank-slides">
+                    @for (int i = 0; i < sortedRanks.Count; i++)
+                    {
+                        var rankDetail = sortedRanks[i];
+                        var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
+                        var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
+                        var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
+                        var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                        var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
+                        var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
+                        var pointsForThisTier = targetRankPoints - prevRankPoints;
+                        double rankProgressPercentage;
+                        if (currentUserScore >= targetRankPoints)
+                        {
+                            rankProgressPercentage = 100;
+                        }
+                        else if (currentUserScore < prevRankPoints)
+                        {
+                            rankProgressPercentage = 0;
+                        }
+                        else
+                        {
+                            var progressRaw = currentUserScore - prevRankPoints;
+                            rankProgressPercentage = (pointsForThisTier > 0)
+                                ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
+                                : 100;
+                        }
+                    <div class="rank-slide @activeClass" data-slide="@i">
+                        <div class="rank-card" style="--rank-gradient: @rankGradient;">
+                            <div class="rank-card-header">
+                                <div class="rank-icon-wrapper" style="background: @rankGradient;">
+                                    <i class="@rankIcon"></i>
+                                </div>
+                                <div class="rank-info">
+                                    <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
+                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")">@rankStatus</span>
+                                </div>
+                            </div>
+                            <div class="rank-card-body">
+                                <div class="rank-progress-wrapper">
+                                    <div class="rank-progress">
+                                        <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
+                                    </div>
+                                    <div class="rank-points">
+                                        <span>@prevRankPoints.ToString("N0") pts</span>
+                                        <span>@targetRankPoints.ToString("N0") pts</span>
+                                    </div>
+                                </div>
+                                <div class="benefits-section">
+                                    <div class="benefits-header">
+                                        <span class="benefits-icon">🎁</span>
+                                        <span>Benefits:</span>
+                                    </div>
+                                    <div class="benefits-content">
+                                        <div class="benefit-item">
+                                            <span class="benefit-icon">🎫</span>
+                                            <div class="benefit-text">
+                                                <span class="benefit-label">Discount on Tickets</span>
+                                                <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                            </div>
+                                        </div>
+                                        <div class="benefit-item">
+                                            <span class="benefit-icon">💰</span>
+                                            <div class="benefit-text">
+                                                <span class="benefit-label">Point Earning Rate</span>
+                                                <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="auto-upgrade">
+                                    <span class="upgrade-icon">⚡</span>
+                                    Auto-upgrade at @targetRankPoints.ToString("N0") pts
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="rank-navigation">
+                    <button class="rank-nav-btn" onclick="prevRankSlide()">←</button>
+                    <button class="rank-nav-btn" onclick="nextRankSlide()">→</button>
+                </div>
+            </div>
+            }
+            else
+            {
+                <div class="no-ranks">No rank information available.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple initialization function
+    function initProfileTab() {
+        // Load tickets immediately
+        loadTickets('all');
+        
+        // Attach filter event listeners
+        document.querySelectorAll('.filter-ticket').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-ticket').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                loadTickets(this.dataset.filter, 1);
+            });
+        });
     }
 
-    // Filter Tickets
-    document.querySelectorAll('.filter-ticket').forEach(filter => {
-        filter.addEventListener('click', function () {
-            document.querySelectorAll('.filter-ticket').forEach(f => f.classList.remove('active'));
-            this.classList.add('active');
-            loadTickets(this.dataset.filter, 1);
-        });
-    });
-
-    // Pagination variables
-    let currentPage = 1;
-    const itemsPerPage = 5;
-    let allTickets = [];
-    let currentFilter = 'all';
-
-    // Load Tickets Function
+    // Load tickets function
     function loadTickets(filter, page = 1) {
         const showcase = document.getElementById('ticketsShowcase');
-        currentFilter = filter;
-        currentPage = page;
-        
         showcase.innerHTML = '<div class="loading-reel"><div class="film-loading"></div><p>Loading tickets...</p></div>';
 
-        // Map filter values to API status
-        const statusMap = {
-            'all': 'all',
-            'booked': 'booked',
-            'canceled': 'canceled'
-        };
-
-        fetch(`/Ticket/HistoryPartial?status=${statusMap[filter]}`)
+        fetch(`/Ticket/HistoryPartial?status=${filter}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data && data.data.length > 0) {
-                    allTickets = data.data;
-                    renderTickets();
+                    renderTickets(data.data, page);
                 } else {
                     showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">🎬</div><p>No tickets found</p></div>';
                 }
@@ -368,16 +334,18 @@
     }
 
     // Render tickets with pagination
-    function renderTickets() {
+    function renderTickets(tickets, page = 1) {
         const showcase = document.getElementById('ticketsShowcase');
-        const startIndex = (currentPage - 1) * itemsPerPage;
+        const itemsPerPage = 5;
+        const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        const currentTickets = allTickets.slice(startIndex, endIndex);
+        const currentTickets = tickets.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(tickets.length / itemsPerPage);
 
         if (currentTickets.length === 0) {
             showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">🎬</div><p>No tickets found</p></div>';
-                return;
-            }
+            return;
+        }
 
         const ticketsHtml = currentTickets.map(ticket => {
             const movieName = ticket.movieShow?.movie?.movieNameEnglish || 'Unknown Movie';
@@ -387,11 +355,10 @@
             const status = ticket.cancel ? 'canceled' : 'booked';
             const amount = ticket.totalMoney ? new Intl.NumberFormat('en-US').format(ticket.totalMoney) + ' VND' : 'N/A';
             const invoiceId = ticket.invoiceId || ticket.id;
-            // Get movie poster with fallback logic
+
+            // Lấy đường dẫn ảnh phim
             let moviePoster = ticket.movieShow?.movie?.image;
-            console.log('Movie poster path:', moviePoster, 'for movie:', movieName);
             if (!moviePoster || moviePoster === '') {
-                // Fallback to a real movie poster based on movie name
                 const movieNameLower = movieName.toLowerCase();
                 if (movieNameLower.includes('oppenheimer') || movieNameLower.includes('open')) {
                     moviePoster = '/image/open.jpg';
@@ -412,15 +379,14 @@
                 } else {
                     moviePoster = '/image/default-movie.png';
                 }
-                console.log('Using fallback poster:', moviePoster);
             }
-
+            
             return `
                 <div class="movie-ticket ${status}">
                     <div class="ticket-stub">
-                        <img src="${moviePoster}" alt="${movieName}" class="movie-poster" 
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
-                             onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                        <img src="${moviePoster}" alt="${movieName}" class="movie-poster"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                            onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
                         <div class="movie-poster-placeholder">🎬</div>
                     </div>
                     <div class="ticket-main">
@@ -457,290 +423,123 @@
             `;
         }).join('');
 
-        // Add pagination
-        const totalPages = Math.ceil(allTickets.length / itemsPerPage);
-        const paginationHtml = renderPagination(totalPages);
+        // Tạo phân trang
+        let paginationHtml = '';
+        if (totalPages > 1) {
+            paginationHtml = '<div class="ticket-pagination">';
+            
+            // Nút Previous
+            if (page > 1) {
+                paginationHtml += `<button class="page-btn prev-btn" onclick="changePage(${page - 1})">←</button>`;
+            }
+            
+            // Các nút số trang - tối ưu cho 1 hàng
+            const maxVisiblePages = 7; // Tăng số nút hiển thị
+            let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // Nút đầu tiên nếu cần
+            if (startPage > 1) {
+                paginationHtml += `<button class="page-btn" onclick="changePage(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHtml += `<span class="page-dots">...</span>`;
+                }
+            }
+            
+            // Các nút trang chính
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === page ? 'active' : '';
+                paginationHtml += `<button class="page-btn ${activeClass}" onclick="changePage(${i})">${i}</button>`;
+            }
+            
+            // Nút cuối cùng nếu cần
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHtml += `<span class="page-dots">...</span>`;
+                }
+                paginationHtml += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            // Nút Next
+            if (page < totalPages) {
+                paginationHtml += `<button class="page-btn next-btn" onclick="changePage(${page + 1})">→</button>`;
+            }
+            
+            paginationHtml += '</div>';
+        }
 
         showcase.innerHTML = ticketsHtml + paginationHtml;
     }
 
-    // Render pagination controls
-    function renderPagination(totalPages) {
-        if (totalPages <= 1) return '';
-
-        let paginationHtml = '<div class="ticket-pagination">';
-
-        // Previous button
-        if (currentPage > 1) {
-            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${currentPage - 1})">← Previous</button>`;
-        }
-
-        // Page numbers with smart display
-        const maxVisiblePages = 5;
-        let startPage = 1;
-        let endPage = totalPages;
-
-        if (totalPages > maxVisiblePages) {
-            if (currentPage <= 3) {
-                endPage = maxVisiblePages;
-            } else if (currentPage >= totalPages - 2) {
-                startPage = totalPages - maxVisiblePages + 1;
-            } else {
-                startPage = currentPage - 2;
-                endPage = currentPage + 2;
-            }
-        }
-
-        // Add first page and ellipsis if needed
-        if (startPage > 1) {
-            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', 1)">1</button>`;
-            if (startPage > 2) {
-                paginationHtml += `<span class="pagination-ellipsis">...</span>`;
-            }
-        }
-
-        // Page numbers
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === currentPage) {
-                paginationHtml += `<button class="cinema-btn primary" disabled>${i}</button>`;
-            } else {
-                paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${i})">${i}</button>`;
-            }
-        }
-
-        // Add last page and ellipsis if needed
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                paginationHtml += `<span class="pagination-ellipsis">...</span>`;
-            }
-            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${totalPages})">${totalPages}</button>`;
-        }
-
-        // Next button
-        if (currentPage < totalPages) {
-            paginationHtml += `<button class="cinema-btn secondary" onclick="loadTickets('${currentFilter}', ${currentPage + 1})">Next →</button>`;
-        }
-
-        paginationHtml += '</div>';
-        return paginationHtml;
+    // Hàm chuyển trang
+    function changePage(page) {
+        const currentFilter = document.querySelector('.filter-ticket.active').dataset.filter;
+        loadTickets(currentFilter, page);
     }
 
-    // Initialize
-    loadTickets('all');
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initProfileTab);
+    } else {
+        initProfileTab();
+    }
 
-    // Add some cinema ambiance
-    document.addEventListener('DOMContentLoaded', function () {
-        // Spotlight animation
-        const spotlight = document.querySelector('.spotlight-ring');
-        if (spotlight) {
-            setInterval(() => {
-                spotlight.style.transform = 'scale(1.1)';
-                setTimeout(() => {
-                    spotlight.style.transform = 'scale(1)';
-                }, 1000);
-            }, 3000);
+    // Avatar upload functionality
+    document.getElementById('avatarUpload').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                // Simple avatar update without modal
+                document.getElementById('profileAvatar').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
     });
 
-    // Rank Details Modal Functions
-    let currentRankSlide = 0;
-    const totalRankSlides = @(Model.AllRanks?.Count ?? 0);
-
+    // Rank details modal
     function showRankDetails() {
-        const modal = document.getElementById('rankDetailsModal');
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+        alert('Rank details feature coming soon!');
     }
-
-    function closeRankDetails() {
-        const modal = document.getElementById('rankDetailsModal');
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function showRankSlide(slideIndex) {
-        const slides = document.querySelectorAll('.rank-slide');
-        const indicators = document.querySelectorAll('.rank-indicator');
-        
-        slides.forEach(slide => slide.classList.remove('active'));
-        indicators.forEach(indicator => indicator.classList.remove('active'));
-        
-        slides[slideIndex].classList.add('active');
-        indicators[slideIndex].classList.add('active');
-        currentRankSlide = slideIndex;
-    }
-
-    function nextRankSlide() {
-        const nextSlide = (currentRankSlide + 1) % totalRankSlides;
-        showRankSlide(nextSlide);
-    }
-
-    function prevRankSlide() {
-        const prevSlide = (currentRankSlide - 1 + totalRankSlides) % totalRankSlides;
-        showRankSlide(prevSlide);
-    }
-
-    // Close modal when clicking outside
-    document.addEventListener('click', function(e) {
-        const rankModal = document.getElementById('rankDetailsModal');
-        const avatarModal = document.getElementById('avatarEditModal');
-        if (e.target === rankModal) {
-            closeRankDetails();
-        }
-        if (e.target === avatarModal) {
-            closeAvatarModal();
-        }
-    });
 </script>
 
-<!-- Avatar Edit Modal -->
-<div class="avatar-edit-modal" id="avatarEditModal">
-    <div class="avatar-edit-content">
-        <div class="avatar-edit-header">
-            <h3>Edit Image</h3>
-            <button class="avatar-edit-close" onclick="closeAvatarModal()">×</button>
-        </div>
-        <div class="avatar-edit-body">
-            <div class="avatar-preview-container">
-                <div class="avatar-preview-frame">
-                    <img id="avatarImagePreview" class="avatar-preview-image" alt="Avatar Preview">
-                </div>
-            </div>
-            <div class="avatar-controls">
-                <div class="zoom-control">
-                    <div class="zoom-icons">
-                        <span class="zoom-icon">🖼️</span>
-                        <span class="zoom-icon">🖼️</span>
-                    </div>
-                    <input type="range" id="zoomSlider" min="0" max="100" value="50" oninput="updateZoom(this.value)" class="zoom-slider">
-                </div>
-                <div class="rotate-control">
-                    <button class="rotate-btn" onclick="rotateImage()">
-                        <span class="rotate-icon">🔄</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="avatar-edit-actions">
-            <button class="avatar-btn secondary" onclick="resetAvatar()">Reset</button>
-            <button class="avatar-btn secondary" onclick="closeAvatarModal()">Cancel</button>
-            <button class="avatar-btn primary" onclick="applyAvatar()">Apply</button>
-        </div>
-    </div>
-</div>
-
-<!-- Rank Details Modal -->
-<div class="rank-modal" id="rankDetailsModal">
-    <div class="rank-modal-content">
-        <div class="rank-modal-header">
-            <h3>🎭 Rank Tiers & Benefits</h3>
-            <button class="rank-modal-close" onclick="closeRankDetails()">×</button>
-        </div>
-        <div class="rank-modal-body">
-            @if (Model.AllRanks != null && Model.AllRanks.Any())
-            {
-                var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
-                var currentUserScore = Model.RankInfo.TotalPoints;
-                var currentUserRankId = Model.RankInfo.CurrentRankId;
-
-                <div class="rank-carousel" id="rankCarousel">
-                    <div class="rank-indicators">
-                        @for (int i = 0; i < sortedRanks.Count; i++)
-                        {
-                            var rankDetail = sortedRanks[i];
-                            var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
-                            <button class="rank-indicator @activeClass" onclick="showRankSlide(@i)"></button>
-                        }
-                    </div>
-                    <div class="rank-slides">
-                        @for (int i = 0; i < sortedRanks.Count; i++)
-                        {
-                            var rankDetail = sortedRanks[i];
-                            var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
-                            var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
-                            var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
-                            var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
-                            var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
-                            var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
-                            var pointsForThisTier = targetRankPoints - prevRankPoints;
-                            double rankProgressPercentage;
-                            if (currentUserScore >= targetRankPoints)
-                            {
-                                rankProgressPercentage = 100;
-                            }
-                            else if (currentUserScore < prevRankPoints)
-                            {
-                                rankProgressPercentage = 0;
-                            }
-                            else
-                            {
-                                var progressRaw = currentUserScore - prevRankPoints;
-                                rankProgressPercentage = (pointsForThisTier > 0)
-                                ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
-                                : 100;
-                            }
-                            <div class="rank-slide @activeClass" data-slide="@i">
-                                <div class="rank-card" style="--rank-gradient: @rankGradient; border-color: @(rankDetail.ColorGradient != null ? "transparent" : "var(--cinema-border)");">
-                                                                            <div class="rank-card-header">
-                                            <div class="rank-icon-wrapper" style="background: @rankGradient;">
-                                                <i class="@rankIcon"></i>
-                                            </div>
-                                        <div class="rank-info">
-                                            <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
-                                            <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")">@rankStatus</span>
-                                        </div>
-                                    </div>
-                                    <div class="rank-card-body">
-                                        <div class="rank-progress-wrapper">
-                                            <div class="rank-progress">
-                                                <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
-                                            </div>
-                                            <div class="rank-points">
-                                                <span>@prevRankPoints.ToString("N0") pts</span>
-                                                <span>@targetRankPoints.ToString("N0") pts</span>
-                                            </div>
-                                        </div>
-                                        <div class="benefits-section">
-                                            <div class="benefits-header">
-                                                <span class="benefits-icon">🎁</span>
-                                                <span>Benefits:</span>
-                                            </div>
-                                            <div class="benefits-content">
-                                                <div class="benefit-item">
-                                                    <span class="benefit-icon">🎫</span>
-                                                    <div class="benefit-text">
-                                                        <span class="benefit-label">Discount on Tickets</span>
-                                                        <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
-                                                    </div>
-                                                </div>
-                                                <div class="benefit-item">
-                                                    <span class="benefit-icon">💰</span>
-                                                    <div class="benefit-text">
-                                                        <span class="benefit-label">Point Earning Rate</span>
-                                                        <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="auto-upgrade">
-                                            <span class="upgrade-icon">⚡</span>
-                                            Auto-upgrade at @targetRankPoints.ToString("N0") pts
-                    </div>
-                </div>
-                    </div>
-                    </div>
-                        }
-                    </div>
-                    <div class="rank-navigation">
-                        <button class="rank-nav-btn" onclick="prevRankSlide()">←</button>
-                        <button class="rank-nav-btn" onclick="nextRankSlide()">→</button>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="no-ranks">No rank information available.</div>
-            }
-        </div>
-    </div>
-</div>
+<script>
+// Rank Details Modal Logic
+if (typeof window.currentRankSlide === 'undefined') window.currentRankSlide = 0;
+function showRankDetails() {
+    document.getElementById('rankDetailsModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    showRankSlide(window.currentRankSlide);
+}
+function closeRankDetails() {
+    document.getElementById('rankDetailsModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+function showRankSlide(slideIndex) {
+    var slides = document.querySelectorAll('.rank-slide');
+    var indicators = document.querySelectorAll('.rank-indicator');
+    slides.forEach(slide => slide.classList.remove('active'));
+    indicators.forEach(indicator => indicator.classList.remove('active'));
+    if (slides[slideIndex]) slides[slideIndex].classList.add('active');
+    if (indicators[slideIndex]) indicators[slideIndex].classList.add('active');
+    window.currentRankSlide = slideIndex;
+}
+function nextRankSlide() {
+    var slides = document.querySelectorAll('.rank-slide');
+    var next = (window.currentRankSlide + 1) % slides.length;
+    showRankSlide(next);
+}
+function prevRankSlide() {
+    var slides = document.querySelectorAll('.rank-slide');
+    var prev = (window.currentRankSlide - 1 + slides.length) % slides.length;
+    showRankSlide(prev);
+}
+document.addEventListener('click', function(e) {
+    var modal = document.getElementById('rankDetailsModal');
+    if (e.target === modal) closeRankDetails();
+});
+</script> 

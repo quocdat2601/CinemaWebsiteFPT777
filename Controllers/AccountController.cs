@@ -273,7 +273,14 @@ namespace MovieTheater.Controllers
                 var account = _accountRepository.GetById(user.AccountId);
                 var employee = account?.Employees
                     .FirstOrDefault(e => e.AccountId == account.AccountId);
-                if (employee.Status.Equals(1))
+                
+                if (employee == null)
+                {
+                    TempData["ErrorMessage"] = "Employee account not found!";
+                    return RedirectToAction("Login");
+                }
+                
+                if (employee.Status)
                 {
                     return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER);
                 } else
