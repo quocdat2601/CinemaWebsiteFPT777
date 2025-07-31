@@ -11,7 +11,7 @@
 
 <div class="cinema-app">
     <!-- Theater Header -->
-    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");">
+    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");" data-auto-text-color>
         <div class="screen-glow"></div>
         <div class="profile-spotlight">
             <div class="avatar-theater">
@@ -29,8 +29,8 @@
             </div>
 
             <div class="profile-marquee">
-                <h1 class="name-display">@profile.FullName</h1>
-                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
+                <h1 class="name-display" data-auto-text-color>@profile.FullName</h1>
+                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");" data-auto-text-color>
                     <span class="tier-icon">
                         @if (!string.IsNullOrEmpty(rank.IconClass))
                         {
@@ -48,13 +48,13 @@
 
             <div class="cinema-stats">
                 <div class="stat-reel">
-                    <div class="stat-frame">
-                        <div class="stat-number">@rank.CurrentScore</div>
-                        <div class="stat-label">Current Points</div>
+                    <div class="stat-frame" data-auto-text-color>
+                        <div class="stat-number" data-auto-text-color>@rank.CurrentScore</div>
+                        <div class="stat-label" data-auto-text-color>Current Points</div>
                     </div>
-                    <div class="stat-frame">
-                        <div class="stat-number">@rank.TotalPoints</div>
-                        <div class="stat-label">Total Points</div>
+                    <div class="stat-frame" data-auto-text-color>
+                        <div class="stat-number" data-auto-text-color>@rank.TotalPoints</div>
+                        <div class="stat-label" data-auto-text-color>Total Points</div>
                     </div>
                 </div>
             </div>
@@ -71,11 +71,11 @@
             <div class="progress-info">
                 @if (isMaxRank)
                 {
-                    <span class="progress-text">🎬 VIP Member - Maximum Level Achieved</span>
+                    <span class="progress-text" data-auto-text-color>🎬 VIP Member - Maximum Level Achieved</span>
                 }
                 else
                 {
-                    <span class="progress-text">@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
+                    <span class="progress-text" data-auto-text-color>@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
                 }
             </div>
         </div>
@@ -234,51 +234,51 @@
                     <div class="rank-slide @activeClass" data-slide="@i">
                         <div class="rank-card" style="--rank-gradient: @rankGradient;">
                             <div class="rank-card-header">
-                                <div class="rank-icon-wrapper" style="background: @rankGradient;">
+                                <div class="rank-icon-wrapper" style="background: @rankGradient;" data-auto-text-color>
                                     <i class="@rankIcon"></i>
                                 </div>
                                 <div class="rank-info">
-                                    <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
-                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")">@rankStatus</span>
+                                    <span class="rank-title" data-auto-text-color>@rankDetail.CurrentRankName Rank</span>
+                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")" data-auto-text-color>@rankStatus</span>
                                 </div>
                             </div>
-                            <div class="rank-card-body">
-                                <div class="rank-progress-wrapper">
-                                    <div class="rank-progress">
-                                        <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
-                                    </div>
-                                    <div class="rank-points">
-                                        <span>@prevRankPoints.ToString("N0") pts</span>
-                                        <span>@targetRankPoints.ToString("N0") pts</span>
-                                    </div>
-                                </div>
-                                <div class="benefits-section">
-                                    <div class="benefits-header">
-                                        <span class="benefits-icon">🎁</span>
-                                        <span>Benefits:</span>
-                                    </div>
-                                    <div class="benefits-content">
-                                        <div class="benefit-item">
-                                            <span class="benefit-icon">🎫</span>
-                                            <div class="benefit-text">
-                                                <span class="benefit-label">Discount on Tickets</span>
-                                                <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
-                                            </div>
+                                                            <div class="rank-card-body">
+                                    <div class="rank-progress-wrapper">
+                                        <div class="rank-progress">
+                                            <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
                                         </div>
-                                        <div class="benefit-item">
-                                            <span class="benefit-icon">💰</span>
-                                            <div class="benefit-text">
-                                                <span class="benefit-label">Point Earning Rate</span>
-                                                <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
-                                            </div>
+                                        <div class="rank-points">
+                                            <span>@prevRankPoints.ToString("N0") pts</span>
+                                            <span>@targetRankPoints.ToString("N0") pts</span>
                                         </div>
                                     </div>
+                                    <div class="benefits-section">
+                                        <div class="benefits-header">
+                                            <span class="benefits-icon">🎁</span>
+                                            <span data-auto-text-color>Benefits:</span>
+                                        </div>
+                                        <div class="benefits-content">
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">🎫</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Discount on Tickets</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">💰</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Point Earning Rate</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="auto-upgrade">
+                                        <span class="upgrade-icon">⚡</span>
+                                        <span data-auto-text-color>Auto-upgrade at @targetRankPoints.ToString("N0") pts</span>
+                                    </div>
                                 </div>
-                                <div class="auto-upgrade">
-                                    <span class="upgrade-icon">⚡</span>
-                                    Auto-upgrade at @targetRankPoints.ToString("N0") pts
-                                </div>
-                            </div>
                         </div>
                     </div>
                     }
@@ -298,20 +298,128 @@
 </div>
 
 <script>
-    // Simple initialization function
-    function initProfileTab() {
-        // Load tickets immediately
-        loadTickets('all');
+    // Auto text color functionality
+    function calculateContrastRatio(backgroundColor) {
+        // Convert background color to RGB
+        let rgb;
+        if (backgroundColor.startsWith('linear-gradient')) {
+            // Extract multiple colors from gradient for better calculation
+            const colorMatches = backgroundColor.match(/(#[0-9a-fA-F]{3,6}|rgba?\([^)]+\))/g);
+            if (colorMatches && colorMatches.length > 0) {
+                // Calculate average of all colors in gradient
+                let totalR = 0, totalG = 0, totalB = 0;
+                let validColors = 0;
+                
+                colorMatches.forEach(color => {
+                    const parsed = hexToRgb(color) || parseRgb(color);
+                    if (parsed) {
+                        totalR += parsed.r;
+                        totalG += parsed.g;
+                        totalB += parsed.b;
+                        validColors++;
+                    }
+                });
+                
+                if (validColors > 0) {
+                    rgb = {
+                        r: Math.round(totalR / validColors),
+                        g: Math.round(totalG / validColors),
+                        b: Math.round(totalB / validColors)
+                    };
+                } else {
+                    // Fallback for gradients
+                    rgb = { r: 128, g: 128, b: 128 };
+                }
+            } else {
+                // Fallback to medium gray for gradients
+                rgb = { r: 128, g: 128, b: 128 };
+            }
+        } else if (backgroundColor.startsWith('#')) {
+            rgb = hexToRgb(backgroundColor);
+        } else if (backgroundColor.startsWith('rgb')) {
+            rgb = parseRgb(backgroundColor);
+        } else {
+            // Fallback
+            rgb = { r: 128, g: 128, b: 128 };
+        }
+
+        if (!rgb) {
+            return 0.5; // Default to medium luminance
+        }
+
+        // Calculate relative luminance using sRGB formula
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
         
-        // Attach filter event listeners
-        document.querySelectorAll('.filter-ticket').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-ticket').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                loadTickets(this.dataset.filter, 1);
-            });
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        
+        return luminance;
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function parseRgb(rgb) {
+        const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        return match ? {
+            r: parseInt(match[1]),
+            g: parseInt(match[2]),
+            b: parseInt(match[3])
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function applyAutoTextColor() {
+        const elements = document.querySelectorAll('[data-auto-text-color]');
+        
+        elements.forEach(element => {
+            const style = window.getComputedStyle(element);
+            const backgroundColor = style.background || style.backgroundColor;
+            
+            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                const luminance = calculateContrastRatio(backgroundColor);
+                
+                // Remove existing classes
+                element.classList.remove('text-white', 'text-black');
+                
+                // Use inline styles to avoid Bootstrap conflicts
+                if (luminance < 0.5) {
+                    element.style.setProperty('color', '#ffffff', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                } else {
+                    element.style.setProperty('color', '#000000', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                }
+            } else {
+                // For elements without background, try to get parent background
+                const parent = element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            }
         });
     }
+
+
 
     // Load tickets function
     function loadTickets(filter, page = 1) {
@@ -488,6 +596,362 @@
         initProfileTab();
     }
 
+    // Enhanced Theater Header Effects
+    function initTheaterHeaderEffects() {
+        const theaterHeader = document.querySelector('.theater-header');
+        const profileSpotlight = document.querySelector('.profile-spotlight');
+        const statFrames = document.querySelectorAll('.stat-frame');
+        const tierBadge = document.querySelector('.tier-badge');
+        
+        if (!theaterHeader) return;
+
+        // Enhanced Mouse tracking effect with magnetic attraction
+        theaterHeader.addEventListener('mousemove', (e) => {
+            const rect = theaterHeader.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const deltaX = (x - centerX) / centerX;
+            const deltaY = (y - centerY) / centerY;
+            
+            // Apply magnetic effect to liquid glass
+            theaterHeader.style.setProperty('--mouse-x', deltaX);
+            theaterHeader.style.setProperty('--mouse-y', deltaY);
+            
+            // Enhanced parallax effect for profile spotlight
+            if (profileSpotlight) {
+                profileSpotlight.style.transform = `translate(${deltaX * 8}px, ${deltaY * 8}px) rotateX(${deltaY * 5}deg) rotateY(${deltaX * 5}deg)`;
+            }
+            
+            // Magnetic effect for stat frames
+            statFrames.forEach((frame, index) => {
+                const frameRect = frame.getBoundingClientRect();
+                const frameCenterX = frameRect.left + frameRect.width / 2;
+                const frameCenterY = frameRect.top + frameRect.height / 2;
+                
+                const distanceX = e.clientX - frameCenterX;
+                const distanceY = e.clientY - frameCenterY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                const maxDistance = 200;
+                
+                if (distance < maxDistance) {
+                    const force = (maxDistance - distance) / maxDistance;
+                    const moveX = (distanceX / distance) * force * 10;
+                    const moveY = (distanceY / distance) * force * 10;
+                    
+                    frame.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.05})`;
+                } else {
+                    frame.style.transform = 'translate(0, 0) scale(1)';
+                }
+            });
+            
+            // Magnetic effect for tier badge
+            if (tierBadge) {
+                const badgeRect = tierBadge.getBoundingClientRect();
+                const badgeCenterX = badgeRect.left + badgeRect.width / 2;
+                const badgeCenterY = badgeRect.top + badgeRect.height / 2;
+                
+                const distanceX = e.clientX - badgeCenterX;
+                const distanceY = e.clientY - badgeCenterY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                const maxDistance = 150;
+                
+                if (distance < maxDistance) {
+                    const force = (maxDistance - distance) / maxDistance;
+                    const moveX = (distanceX / distance) * force * 15;
+                    const moveY = (distanceY / distance) * force * 15;
+                    
+                    tierBadge.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.1})`;
+                } else {
+                    tierBadge.style.transform = 'translate(0, 0) scale(1)';
+                }
+            }
+        });
+
+        // Enhanced Interactive stat frames with ripple and glow effects
+        statFrames.forEach((frame, index) => {
+            frame.addEventListener('mouseenter', () => {
+                frame.style.transform = 'translateY(-6px) scale(1.08)';
+                frame.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.3)';
+                
+                // Enhanced ripple effect
+                const ripple = document.createElement('div');
+                ripple.className = 'stat-ripple';
+                ripple.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+                    border-radius: 50%;
+                    transform: translate(-50%, -50%);
+                    animation: rippleEffect 0.8s ease-out;
+                    pointer-events: none;
+                    z-index: 1;
+                `;
+                frame.appendChild(ripple);
+                
+                // Add glow effect
+                frame.style.filter = 'brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))';
+                
+                setTimeout(() => {
+                    if (ripple.parentNode) {
+                        ripple.parentNode.removeChild(ripple);
+                    }
+                    frame.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+                }, 800);
+            });
+            
+            frame.addEventListener('mouseleave', () => {
+                frame.style.transform = 'translateY(0) scale(1)';
+                frame.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 255, 255, 0.1)';
+                frame.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+            });
+        });
+
+        // Enhanced tier badge interactions
+        if (tierBadge) {
+            tierBadge.addEventListener('mouseenter', () => {
+                tierBadge.style.transform = 'translateY(-4px) scale(1.12)';
+                tierBadge.style.boxShadow = '0 12px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.3)';
+                tierBadge.style.filter = 'brightness(1.3) drop-shadow(0 0 25px rgba(255, 255, 255, 0.4))';
+            });
+            
+            tierBadge.addEventListener('mouseleave', () => {
+                tierBadge.style.transform = 'translateY(0) scale(1)';
+                tierBadge.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 255, 255, 0.1)';
+                tierBadge.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+            });
+        }
+
+        // Enhanced floating particles with more variety
+        createEnhancedFloatingParticles(theaterHeader);
+        
+        // Enhanced progress bar animation
+        animateEnhancedProgressBar();
+        
+        // Add sparkle effects
+        createSparkleEffects(theaterHeader);
+    }
+
+    // Create enhanced floating particles with more variety
+    function createEnhancedFloatingParticles(container) {
+        const particleCount = 20; // Increased from 15
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'floating-particle';
+            
+            const size = Math.random() * 6 + 2; // Varied sizes
+            const opacity = Math.random() * 0.4 + 0.1;
+            const duration = Math.random() * 15 + 10; // Varied durations
+            const delay = Math.random() * 8;
+            const type = Math.random() > 0.5 ? 'circle' : 'star';
+            
+            particle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${type === 'circle' ? 
+                    `rgba(255, 255, 255, ${opacity})` : 
+                    `radial-gradient(circle at center, rgba(255, 255, 255, ${opacity}) 0%, transparent 70%)`
+                };
+                border-radius: ${type === 'circle' ? '50%' : '0'};
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: floatParticle ${duration}s linear infinite;
+                animation-delay: ${delay}s;
+                pointer-events: none;
+                z-index: 5;
+                filter: blur(0.5px);
+                ${type === 'star' ? `
+                    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+                ` : ''}
+            `;
+            container.appendChild(particle);
+        }
+    }
+
+    // Create sparkle effects
+    function createSparkleEffects(container) {
+        const sparkleCount = 8;
+        
+        for (let i = 0; i < sparkleCount; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            const size = Math.random() * 4 + 2;
+            const duration = Math.random() * 3 + 2;
+            const delay = Math.random() * 5;
+            
+            sparkle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+                border-radius: 50%;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: sparkleEffect ${duration}s ease-in-out infinite;
+                animation-delay: ${delay}s;
+                pointer-events: none;
+                z-index: 6;
+            `;
+            container.appendChild(sparkle);
+        }
+    }
+
+    // Enhanced progress bar animation with counting effect
+    function animateEnhancedProgressBar() {
+        const progressBar = document.querySelector('.film-progress');
+        const statNumbers = document.querySelectorAll('.stat-number');
+        
+        if (progressBar) {
+            const targetWidth = progressBar.style.width;
+            progressBar.style.width = '0%';
+            
+            setTimeout(() => {
+                progressBar.style.transition = 'width 2.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                progressBar.style.width = targetWidth;
+                
+                // Add pulse effect during animation
+                progressBar.style.animation = 'progressPulse 2.5s ease-out';
+            }, 500);
+        }
+        
+        // Enhanced stat numbers with bounce effect
+        statNumbers.forEach((number, index) => {
+            const targetValue = parseInt(number.textContent.replace(/,/g, ''));
+            const duration = 2500;
+            const startTime = Date.now();
+            
+            function updateNumber() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOutBounce = 1 - Math.pow(1 - progress, 3);
+                const currentValue = Math.floor(targetValue * easeOutBounce);
+                
+                number.textContent = currentValue.toLocaleString();
+                
+                // Add bounce effect
+                if (progress < 0.8) {
+                    number.style.transform = `scale(${1 + Math.sin(progress * Math.PI * 4) * 0.1})`;
+                } else {
+                    number.style.transform = 'scale(1)';
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                }
+            }
+            
+            setTimeout(() => {
+                updateNumber();
+            }, 600 + index * 300);
+        });
+    }
+
+    // Add CSS for enhanced effects
+    function addDynamicCSS() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes rippleEffect {
+                0% {
+                    width: 0;
+                    height: 0;
+                    opacity: 1;
+                }
+                100% {
+                    width: 300px;
+                    height: 300px;
+                    opacity: 0;
+                }
+            }
+            
+            @@keyframes floatParticle {
+                0% {
+                    transform: translateY(0) rotate(0deg) scale(1);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(-100vh) rotate(720deg) scale(0.5);
+                    opacity: 0;
+                }
+            }
+            
+            @@keyframes sparkleEffect {
+                0%, 100% {
+                    opacity: 0;
+                    transform: scale(0) rotate(0deg);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1) rotate(180deg);
+                }
+            }
+            
+            @@keyframes progressPulse {
+                0% {
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                }
+                50% {
+                    box-shadow: 0 0 35px rgba(255, 255, 255, 0.8);
+                }
+                100% {
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                }
+            }
+            
+            .theater-header {
+                --mouse-x: 0;
+                --mouse-y: 0;
+            }
+            
+            .theater-header::before {
+                transform: translate(calc(var(--mouse-x) * 8px), calc(var(--mouse-y) * 8px));
+            }
+            
+            .stat-frame {
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .floating-particle {
+                filter: blur(0.5px);
+            }
+            
+            .sparkle {
+                filter: blur(0.3px);
+            }
+            
+            /* Enhanced hover states */
+            .stat-frame:hover {
+                transform: translateY(-6px) scale(1.08) !important;
+            }
+            
+            .tier-badge:hover {
+                transform: translateY(-4px) scale(1.12) !important;
+            }
+            
+            /* Magnetic effect smoothness */
+            .stat-frame, .tier-badge {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // Avatar upload functionality
     document.getElementById('avatarUpload').addEventListener('change', function (e) {
         const file = e.target.files[0];
@@ -496,29 +960,89 @@
             reader.onload = function (e) {
                 // Simple avatar update without modal
                 document.getElementById('profileAvatar').src = e.target.result;
+                
+                // Add avatar update animation
+                const avatar = document.getElementById('profileAvatar');
+                avatar.style.transform = 'scale(1.1)';
+                avatar.style.filter = 'brightness(1.2)';
+                
+                setTimeout(() => {
+                    avatar.style.transform = 'scale(1)';
+                    avatar.style.filter = 'brightness(1)';
+                }, 300);
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // Rank details modal
-    function showRankDetails() {
-        alert('Rank details feature coming soon!');
+    // Enhanced initialization
+    function initProfileTab() {
+        // Load tickets immediately
+        loadTickets('all');
+        
+        // Attach filter event listeners
+        document.querySelectorAll('.filter-ticket').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-ticket').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                loadTickets(this.dataset.filter, 1);
+            });
+        });
+
+        // Apply auto text color after a short delay to ensure styles are loaded
+        setTimeout(applyAutoTextColor, 100);
+        
+        // Apply again after a longer delay to ensure all styles are fully loaded
+        setTimeout(applyAutoTextColor, 500);
+        
+        // Force apply to stat elements specifically
+        setTimeout(() => {
+            const statElements = document.querySelectorAll('.stat-frame[data-auto-text-color], .stat-number[data-auto-text-color], .stat-label[data-auto-text-color]');
+            statElements.forEach(element => {
+                const parent = element.closest('.stat-frame') || element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            });
+        }, 300);
+        
+        // Initialize enhanced theater header effects
+        addDynamicCSS();
+        setTimeout(initTheaterHeaderEffects, 1000);
     }
 </script>
 
 <script>
 // Rank Details Modal Logic
 if (typeof window.currentRankSlide === 'undefined') window.currentRankSlide = 0;
+
 function showRankDetails() {
     document.getElementById('rankDetailsModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     showRankSlide(window.currentRankSlide);
+    
+    // Apply auto text color after modal content is rendered
+    setTimeout(applyAutoTextColor, 200);
 }
+
 function closeRankDetails() {
     document.getElementById('rankDetailsModal').style.display = 'none';
     document.body.style.overflow = 'auto';
 }
+
 function showRankSlide(slideIndex) {
     var slides = document.querySelectorAll('.rank-slide');
     var indicators = document.querySelectorAll('.rank-indicator');
@@ -527,17 +1051,23 @@ function showRankSlide(slideIndex) {
     if (slides[slideIndex]) slides[slideIndex].classList.add('active');
     if (indicators[slideIndex]) indicators[slideIndex].classList.add('active');
     window.currentRankSlide = slideIndex;
+    
+    // Apply auto text color after slide change
+    setTimeout(applyAutoTextColor, 100);
 }
+
 function nextRankSlide() {
     var slides = document.querySelectorAll('.rank-slide');
     var next = (window.currentRankSlide + 1) % slides.length;
     showRankSlide(next);
 }
+
 function prevRankSlide() {
     var slides = document.querySelectorAll('.rank-slide');
     var prev = (window.currentRankSlide - 1 + slides.length) % slides.length;
     showRankSlide(prev);
 }
+
 document.addEventListener('click', function(e) {
     var modal = document.getElementById('rankDetailsModal');
     if (e.target === modal) closeRankDetails();
