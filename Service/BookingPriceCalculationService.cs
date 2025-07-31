@@ -71,7 +71,11 @@ namespace MovieTheater.Service
             
             // AddScore is based only on seat portion after discounts
             decimal earningRate = user?.Rank?.PointEarningPercentage ?? 1;
-            int addScore = (int)Math.Floor((promoSubtotal - rankDiscount - usedScoreValue) * earningRate / 100 / 1000);
+            decimal baseForEarning = promoSubtotal - rankDiscount - usedScoreValue;
+            int addScore = (int)Math.Floor(baseForEarning * earningRate / 100 / 1000);
+            
+            // Debug logging
+            System.Diagnostics.Debug.WriteLine($"AddScore calculation: promoSubtotal={promoSubtotal}, rankDiscount={rankDiscount}, usedScoreValue={usedScoreValue}, baseForEarning={baseForEarning}, earningRate={earningRate}, addScore={addScore}");
             
             return new BookingPriceResult
             {

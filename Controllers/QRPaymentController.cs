@@ -183,6 +183,8 @@ namespace MovieTheater.Controllers
                 _logger.LogInformation("TotalPrice from frontend: {TotalPrice}", model.TotalPrice);
                 _logger.LogInformation("BookingDetails.TotalPrice: {BookingTotalPrice}", model.BookingDetails?.TotalPrice);
                 _logger.LogInformation("TotalFoodPrice: {TotalFoodPrice}", model.TotalFoodPrice);
+                _logger.LogInformation("AddedScore from frontend: {AddedScore}", model.AddedScore);
+                _logger.LogInformation("UsedScore from frontend: {UsedScore}", model.UsedScore);
 
                 // Validate AccountId is not null or empty
                 if (string.IsNullOrEmpty(model.AccountId))
@@ -272,6 +274,13 @@ namespace MovieTheater.Controllers
                 {
                     _logger.LogWarning("UsedScoreValue ({UsedScoreValue}) is greater than TotalPrice ({TotalPrice})", model.UsedScoreValue, model.TotalPrice);
                     return Json(new { success = false, message = "Used score value cannot be greater than total price" });
+                }
+
+                // Validate AddedScore is not negative
+                if (model.AddedScore < 0)
+                {
+                    _logger.LogWarning("AddedScore is negative: {AddedScore}", model.AddedScore);
+                    return Json(new { success = false, message = "Added score cannot be negative" });
                 }
 
                 // Validate AddedScoreValue is not negative
@@ -608,14 +617,14 @@ namespace MovieTheater.Controllers
                 {
                     var voucherId = !string.IsNullOrEmpty(model.SelectedVoucherId) && model.SelectedVoucherId.Trim() != "" ? model.SelectedVoucherId : null;
                     
-                    _logger.LogInformation("Creating invoice with InvoiceId: {InvoiceId}, AccountId: {AccountId}, VoucherId: {VoucherId}", 
-                        invoiceId, model.AccountId, voucherId);
+                    _logger.LogInformation("Creating invoice with InvoiceId: {InvoiceId}, AccountId: {AccountId}, VoucherId: {VoucherId}, AddedScore: {AddedScore}, UsedScore: {UsedScore}", 
+                        invoiceId, model.AccountId, voucherId, model.AddedScore, model.UsedScore);
                     
                     var invoice = new Invoice
                     {
                         InvoiceId = invoiceId,
                         AccountId = model.AccountId, // Sử dụng AccountId của member
-                        AddScore = 0,
+                        AddScore = model.AddedScore, // Sử dụng AddedScore từ model
                         BookingDate = DateTime.Now,
                         Status = InvoiceStatus.Incomplete, // Pending
                         TotalMoney = totalAmount,
@@ -1000,22 +1009,38 @@ namespace MovieTheater.Controllers
                             var member = _context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
                             if (member != null)
                             {
+                                _logger.LogInformation("Found member {AccountId} with current TotalPoints: {CurrentPoints}", 
+                                    invoice.AccountId, member.TotalPoints);
+                                
                                 // Trừ điểm đã sử dụng
                                 if (invoice.UseScore > 0)
                                 {
                                     member.TotalPoints -= invoice.UseScore.Value;
-                                    _logger.LogInformation("Deducted {UseScore} points from account {AccountId}", 
-                                        invoice.UseScore, invoice.AccountId);
+                                    _logger.LogInformation("Deducted {UseScore} points from account {AccountId}. New TotalPoints: {NewPoints}", 
+                                        invoice.UseScore, invoice.AccountId, member.TotalPoints);
                                 }
                                 
                                 // Cộng điểm thưởng
                                 if (invoice.AddScore > 0)
                                 {
                                     member.TotalPoints += invoice.AddScore.Value;
-                                    _logger.LogInformation("Added {AddScore} points to account {AccountId}", 
-                                        invoice.AddScore, invoice.AccountId);
+                                    _logger.LogInformation("Added {AddScore} points to account {AccountId}. New TotalPoints: {NewPoints}", 
+                                        invoice.AddScore, invoice.AccountId, member.TotalPoints);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("AddScore is 0 or null for invoice {InvoiceId}. AddScore value: {AddScore}", 
+                                        invoiceId, invoice.AddScore);
                                 }
                             }
+                            else
+                            {
+                                _logger.LogWarning("Member not found for AccountId: {AccountId}", invoice.AccountId);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Skipping member points update - AccountId: {AccountId}", invoice.AccountId);
                         }
                         
                         // 4. Cập nhật voucher status nếu có

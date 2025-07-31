@@ -939,6 +939,12 @@
                 var earningRate = currentEarningRate || 0;
                 var pointsToEarn = Math.round((finalSeatPrice) * earningRate / 100 / pointValue);
                 $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`).addClass('text-success');
+                
+                // SỬA: Set addedScore value
+                $('#addedScore').val(pointsToEarn);
+                
+                // Debug logging
+                console.log('AddScore calculation: finalSeatPrice=', finalSeatPrice, 'earningRate=', earningRate, 'pointsToEarn=', pointsToEarn);
 
                 // Validate điểm (chỉ dựa trên seat price, không bao gồm food)
                 var memberScore = parseInt($('#memberScore').val()) || 0;
