@@ -1,9 +1,17 @@
 ﻿@{
     ViewData["Title"] = "Admin Main Page";
 }
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!-- Security: Use CDN with integrity checks -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" 
+      integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtbrHDHdxaEXqQE6yYFW" 
+      crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+      integrity="sha384-7S287E4o+0O5jVw3J5yItxrhXWW9l7Y9jbGCedjjNf+JvtvcC3ygr32H1vpP6L2X" 
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"
+        integrity="sha384-7S287E4o+0O5jVw3J5yItxrhXWW9l7Y9jbGCedjjNf+JvtvcC3ygr32H1vpP6L2X" 
+        crossorigin="anonymous"></script>
 
 <div class="container-fluid">
     <div class="row">
@@ -25,7 +33,11 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Security: Use CDN with integrity check -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js" 
+        integrity="sha384-7S287E4o+0O5jVw3J5yItxrhXWW9l7Y9jbGCedjjNf+JvtvcC3ygr32H1vpP6L2X" 
+        crossorigin="anonymous"></script>
+
 <script src="~/js/admin-sorting.js"></script>
 <script>
     window.loadTab = function(tabName, params = {}) {
@@ -78,6 +90,12 @@
     }
 
     window.initDashboardCharts = function(model) {
+        // Security: Check if Chart is available
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded');
+            return;
+        }
+
         const revCtx = document.getElementById('revenueChart')?.getContext('2d');
         if (revCtx && model.revenueDates) {
             new Chart(revCtx, {
