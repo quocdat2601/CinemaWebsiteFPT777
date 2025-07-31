@@ -753,6 +753,12 @@ namespace MovieTheater.Controllers
             {
                 discountPercent = member.Account.Rank.DiscountPercentage ?? 0;
                 earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
+                _logger.LogInformation("GetMemberDiscount: memberId={MemberId}, discountPercent={DiscountPercent}, earningRate={EarningRate}", 
+                    memberId, discountPercent, earningRate);
+            }
+            else
+            {
+                _logger.LogWarning("GetMemberDiscount: member or rank not found for memberId={MemberId}", memberId);
             }
             return Json(new { discountPercent, earningRate });
         }

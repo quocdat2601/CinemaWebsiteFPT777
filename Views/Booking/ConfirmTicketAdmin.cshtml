@@ -297,6 +297,21 @@
             <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Create QR Code</button>
         </div>
         <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
+        
+        <!-- Hidden inputs for missing properties -->
+        <input type="hidden" id="memberInput" value="@Model.MemberIdInput" />
+        <input type="hidden" id="memberEmail" value="@Model.MemberEmail" />
+        <input type="hidden" id="memberPhone" value="@Model.MemberPhone" />
+        <input type="hidden" id="ticketsToConvert" value="@Model.TicketsToConvert" />
+        <input type="hidden" id="discountFromScore" value="@Model.DiscountFromScore" />
+        <input type="hidden" id="addedScore" value="@Model.AddedScore" />
+        
+        <!-- Guest inputs -->
+        <input type="hidden" id="guestName" value="" />
+        <input type="hidden" id="guestPhone" value="" />
+        
+        <!-- Member message display -->
+        <div id="memberMessage" class="text-danger mt-2" style="display: none;"></div>
     </div>
 </div>
 
@@ -412,9 +427,9 @@
                     // Disable voucher button for guest
                     $('#openVoucherModalBtn').prop('disabled', true);
                     
-                    // Reset buttons for guest
-                    $('#confirmTicketAdminBtn').prop('disabled', true);
-                    $('#createQRCodeBtn').prop('disabled', true);
+                    // Reset buttons for guest - enable both buttons
+                    $('#confirmTicketAdminBtn').prop('disabled', false);
+                    $('#createQRCodeBtn').prop('disabled', false);
                     
                     // Update price calculation
                     updatePriceAll();
@@ -528,9 +543,9 @@
                     } else if (used > maxPoints) {
                         validScore = false;
                     }
-                    // Enable only if member is selected and score is valid
+                    // Enable buttons if member is selected and score is valid
                     $('#confirmTicketAdminBtn').prop('disabled', !(memberSelected && validScore));
-                    $('#createQRCodeBtn').prop('disabled', true); // Disable QR for members
+                    $('#createQRCodeBtn').prop('disabled', !(memberSelected && validScore)); // Enable QR for members too
                 } else {
                     // Guest customer - KHÔNG cần validate tên/sđt
                     $('#confirmTicketAdminBtn').prop('disabled', false);
@@ -555,6 +570,14 @@
                 $('#memberScore').val(member.score);
                 $('#accountId').val(member.account.accountId || '');
                 selectedAccountId = member.account.accountId;
+                
+                // Set values for missing inputs
+                $('#memberInput').val(member.memberId);
+                $('#memberEmail').val(member.account.email || '');
+                $('#memberPhone').val(member.account.phoneNumber || '');
+                $('#ticketsToConvert').val(0); // Default value
+                $('#discountFromScore').val(0); // Will be calculated
+                $('#addedScore').val(0); // Will be calculated
                 
                 // SỬA: Lấy rank discount từ API thay vì từ member object
                 $.getJSON('/Booking/GetMemberDiscount', { memberId: member.memberId }, function (data) {
@@ -624,6 +647,8 @@
                         MovieId: '@Model.BookingDetails.MovieId',
                         MovieName: '@Model.BookingDetails.MovieName',
                         CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
+                        VersionName: '@Model.BookingDetails.VersionName',
+                        VersionId: @(Model.BookingDetails.VersionId?.ToString() ?? "null"),
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
@@ -633,7 +658,7 @@
                         PromotionDiscountPercent: discountPercent, // SỬA: Gửi discount hiện tại
                     },
                     CustomerType: customerType,
-                    MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
+                    MemberIdInput: customerType === 'member' ? ($('#memberInput').val() || '') : '',
                     MemberId: customerType === 'member' ? $('#memberId').val() : '',
                     MemberFullName: customerType === 'member' ? $('#memberFullName').val() : $('#guestName').val(),
                     MemberIdentityCard: customerType === 'member' ? $('#memberIdentityCard').val() : '',
@@ -644,6 +669,13 @@
                     VoucherAmount: customerType === 'member' ? (parseInt($('#voucherAmountHidden').val()) || 0) : 0,
                     AccountId: customerType === 'member' ? $('#accountId').val() : '',
                     RankDiscountPercent: customerType === 'member' ? (parseFloat($('#rankDiscountPercent').val()) || 0) : 0,
+                    MemberCheckMessage: customerType === 'member' ? $('#memberMessage').text() : '',
+                    ReturnUrl: '@Model.ReturnUrl',
+                    MemberEmail: customerType === 'member' ? $('#memberEmail').val() : '',
+                    MemberPhone: customerType === 'member' ? $('#memberPhone').val() : '',
+                    TicketsToConvert: customerType === 'member' ? (parseInt($('#ticketsToConvert').val()) || 0) : 0,
+                    DiscountFromScore: customerType === 'member' ? (parseFloat($('#discountFromScore').val()) || 0) : 0,
+                    AddedScore: customerType === 'member' ? (parseInt($('#addedScore').val()) || 0) : 0,
                     MovieShowId: @Model.MovieShowId,
                     SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
                     TotalFoodPrice: @Model.TotalFoodPrice
@@ -669,7 +701,7 @@
                 });
             });
 
-            // Create QR Code button for Guest
+            // Create QR Code button for Guest/Member
             $('#createQRCodeBtn').click(function () {
                 const customerType = $('input[name="customerType"]:checked').val();
                 
@@ -706,16 +738,19 @@
                         MovieId: '@Model.BookingDetails.MovieId',
                         MovieName: '@Model.BookingDetails.MovieName',
                         CinemaRoomName: '@Model.BookingDetails.CinemaRoomName',
+                        VersionName: '@Model.BookingDetails.VersionName',
+                        VersionId: @(Model.BookingDetails.VersionId?.ToString() ?? "null"),
                         ShowDate: '@Model.BookingDetails.ShowDate.ToString("yyyy-MM-dd")',
                         ShowTime: '@Model.BookingDetails.ShowTime',
                         SelectedSeats: @Html.Raw(JsonConvert.SerializeObject(Model.BookingDetails.SelectedSeats)),
-                        TotalPrice: finalTotal, // SỬA: Gửi giá cuối cùng
+                        TotalPrice: @Model.BookingDetails.TotalPrice, // GIỮ NGUYÊN GIÁ GỐC
                         PricePerTicket: @Model.BookingDetails.PricePerTicket.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         MovieShowId: @Model.MovieShowId,
                         PromotionDiscountPercent: discountPercent, // SỬA: Gửi discount hiện tại
                     },
+                    TotalPrice: finalTotal, // SỬA: Gửi giá cuối cùng ở root level
                     CustomerType: customerType,
-                    MemberIdInput: customerType === 'member' ? $('#memberInput').val() : '',
+                    MemberIdInput: customerType === 'member' ? ($('#memberInput').val() || '') : '',
                     MemberId: customerType === 'member' ? $('#memberId').val() : '',
                     MemberFullName: customerType === 'member' ? $('#memberFullName').val() : $('#guestName').val(),
                     MemberIdentityCard: customerType === 'member' ? $('#memberIdentityCard').val() : '',
@@ -726,15 +761,27 @@
                     VoucherAmount: customerType === 'member' ? (parseInt($('#voucherAmountHidden').val()) || 0) : 0,
                     AccountId: customerType === 'member' ? $('#accountId').val() : '',
                     RankDiscountPercent: customerType === 'member' ? (parseFloat($('#rankDiscountPercent').val()) || 0) : 0,
+                    MemberCheckMessage: customerType === 'member' ? $('#memberMessage').text() : '',
+                    ReturnUrl: '@Model.ReturnUrl',
+                    MemberEmail: customerType === 'member' ? $('#memberEmail').val() : '',
+                    MemberPhone: customerType === 'member' ? $('#memberPhone').val() : '',
+                    TicketsToConvert: customerType === 'member' ? (parseInt($('#ticketsToConvert').val()) || 0) : 0,
+                    DiscountFromScore: customerType === 'member' ? (parseFloat($('#discountFromScore').val()) || 0) : 0,
+                    AddedScore: customerType === 'member' ? (parseInt($('#addedScore').val()) || 0) : 0,
                     MovieShowId: @Model.MovieShowId,
                     SelectedFoods: @Html.Raw(JsonConvert.SerializeObject(Model.SelectedFoods)),
                     TotalFoodPrice: @Model.TotalFoodPrice
                 };
 
+                // Chọn action dựa trên loại khách hàng
+                var actionUrl = customerType === 'member' 
+                    ? '@Url.Action("CreateQRCodeForMember", "QRPayment")'
+                    : '@Url.Action("CreateQRCode", "QRPayment")';
+
                 // Submit form để redirect đến QR code page
                 var form = $('<form>', {
                     'method': 'POST',
-                    'action': '@Url.Action("CreateQRCode", "QRPayment")'
+                    'action': actionUrl
                 });
                 
                 // Thêm input hidden cho model data
@@ -900,6 +947,12 @@
                 var earningRate = currentEarningRate || 0;
                 var pointsToEarn = Math.round((finalSeatPrice) * earningRate / 100 / pointValue);
                 $('#pointsEarnedPreview').text(`You will earn ${pointsToEarn} points from this transaction`).addClass('text-success');
+                
+                // SỬA: Set addedScore value
+                $('#addedScore').val(pointsToEarn);
+                
+                // Debug logging
+                console.log('AddScore calculation: finalSeatPrice=', finalSeatPrice, 'earningRate=', earningRate, 'pointsToEarn=', pointsToEarn);
 
                 // Validate điểm (chỉ dựa trên seat price, không bao gồm food)
                 var memberScore = parseInt($('#memberScore').val()) || 0;
