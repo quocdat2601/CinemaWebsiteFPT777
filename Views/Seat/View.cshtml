@@ -32,7 +32,7 @@
 
         ? Url.Action("Select", "Showtime", new { area = "Admin" })
 
-        : Url.Action("TicketBooking", "Booking");
+                    : "/#booking-widget";
 
     var coupleSeatPairs = new Dictionary<int, int>();
 
@@ -355,7 +355,7 @@
                 <span class="material-icons">home</span>
                 Home
             </a>
-            <a href="@Url.Action("TicketBooking", "Booking")" class="btn primary">
+                            <a href="/#booking-widget" class="btn primary">
                 <span class="material-icons">refresh</span>
                 Try Again
             </a>

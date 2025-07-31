@@ -3,9 +3,11 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize]
     public class SeatController : Controller
     {
         private readonly ICinemaService _cinemaService;
