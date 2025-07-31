@@ -1,7 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -9,6 +10,7 @@ namespace MovieTheater.Controllers
     {
         private readonly IFoodService _foodService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         public FoodController(IFoodService foodService, IWebHostEnvironment webHostEnvironment)
         {
@@ -30,11 +32,23 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public async Task<IActionResult> Create(FoodViewModel model)
         {
+            // Debug: Check if ModelState is valid
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(", ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+                TempData["ErrorMessage"] = $"Validation failed: {errors}";
+                return View(model);
+            }
+            
             if (ModelState.IsValid)
             {
+                // Debug: Log received values
+                
                 // Làm sạch dữ liệu đầu vào
                 model.Name = model.Name?.Trim();
                 model.Description = model.Description?.Trim();
@@ -55,10 +69,16 @@ namespace MovieTheater.Controllers
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.CreateAsync(model, webRootPath);
 
+                // Debug: Log service result
+
                 if (result)
                 {
                     TempData["SuccessMessage"] = "Food created successfully!";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                    if (role == "Admin")
+                    {
+                        return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                    }
+                    else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
                 }
                 else
                 {
@@ -75,7 +95,11 @@ namespace MovieTheater.Controllers
             if (food == null)
             {
                 TempData["ErrorMessage"] = "Food not found.";
-                return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                if (role == "Admin")
+                {
+                    return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                }
+                else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
             }
 
             return View(food);
@@ -93,7 +117,11 @@ namespace MovieTheater.Controllers
                 if (result)
                 {
                     TempData["SuccessMessage"] = "Food updated successfully!";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                    if (role == "Admin")
+                    {
+                        return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                    }
+                    else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
                 }
                 else
                 {
@@ -119,7 +147,11 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "Failed to delete food. Please try again.";
             }
 
-            return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+            if (role == "Admin")
+            {
+                return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+            }
+            else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
         }
 
         [HttpPost]
@@ -137,7 +169,11 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "Failed to update food status. Please try again.";
             }
 
-            return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+            if (role == "Admin")
+            {
+                return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+            }
+            else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
         }
     }
 }

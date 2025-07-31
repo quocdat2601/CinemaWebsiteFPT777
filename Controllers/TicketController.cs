@@ -4,9 +4,17 @@ using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize]
     public class TicketController : Controller
     {
         private readonly ITicketService _ticketService;
+
+        // Constants for string literals
+        private const string LOGIN_ACTION = "Login";
+        private const string ACCOUNT_CONTROLLER = "Account";
+        private const string TOAST_MESSAGE = "ToastMessage";
+        private const string ERROR_MESSAGE = "ErrorMessage";
+        private const string INDEX_ACTION = "Index";
 
         public TicketController(ITicketService ticketService)
         {
@@ -17,7 +25,7 @@ namespace MovieTheater.Controllers
         //public IActionResult History()
         //{
         //    // Redirect /Ticket/History to /Ticket/Index
-        //    return RedirectToAction("Index");
+        //    return RedirectToAction(INDEX_ACTION);
         //}
 
         //[HttpGet]
@@ -25,7 +33,7 @@ namespace MovieTheater.Controllers
         //{
         //    var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         //    if (string.IsNullOrEmpty(accountId))
-        //        return RedirectToAction("Login", "Account");
+        //        return RedirectToAction(LOGIN_ACTION, ACCOUNT_CONTROLLER);
 
         //    var bookings = await _ticketService.GetUserTicketsAsync(accountId);
         //    return View(bookings);
@@ -36,10 +44,10 @@ namespace MovieTheater.Controllers
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(LOGIN_ACTION, ACCOUNT_CONTROLLER);
 
             var bookings = await _ticketService.GetUserTicketsAsync(accountId, 1); // 1 = Completed
-            return View("Index", bookings);
+            return View(INDEX_ACTION, bookings);
         }
 
         [HttpGet]
@@ -47,10 +55,10 @@ namespace MovieTheater.Controllers
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(LOGIN_ACTION, ACCOUNT_CONTROLLER);
 
             var bookings = await _ticketService.GetUserTicketsAsync(accountId, 0); // 0 = Incomplete
-            return View("Index", bookings);
+            return View(INDEX_ACTION, bookings);
         }
 
         [HttpGet]
@@ -58,7 +66,7 @@ namespace MovieTheater.Controllers
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(LOGIN_ACTION, ACCOUNT_CONTROLLER);
 
             var bookingDetails = await _ticketService.GetTicketDetailsAsync(id, accountId);
             if (bookingDetails == null)
@@ -68,14 +76,15 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(string id, string returnUrl)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(LOGIN_ACTION, ACCOUNT_CONTROLLER);
 
             var (success, messages) = await _ticketService.CancelTicketAsync(id, accountId);
-            TempData[success ? "ToastMessage" : "ErrorMessage"] = string.Join("<br/>", messages);
+            TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
@@ -103,9 +112,11 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
         {
             var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id);
-            TempData[success ? "ToastMessage" : "ErrorMessage"] = string.Join("<br/>", messages);
+            TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
-            return RedirectToAction("TicketInfo", "Booking", new { invoiceId = id });
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+            return RedirectToAction(nameof(Index));
         }
     }
 }

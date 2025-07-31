@@ -12,6 +12,6 @@ namespace MovieTheater.Repository
         public void Save();
         public string GenerateEmployeeId();
         public Account? GetByUsername(string username);
-
+        public void ToggleStatus(string employeeId);
     }
 }

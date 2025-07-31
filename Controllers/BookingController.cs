@@ -45,6 +45,7 @@ namespace MovieTheater.Controllers
         public List<int> SelectedSeatIds { get; set; } = new List<int>();
     }
 
+    [Authorize]
     public class BookingController : Controller
     {
         private readonly IBookingService _bookingService;
@@ -98,111 +99,9 @@ namespace MovieTheater.Controllers
             _bookingDomainService = bookingDomainService;
             _promotionService = promotionService;
         }
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-        /// <summary>
-        /// Trang chọn phim và suất chiếu để đặt vé
-        /// </summary>
-        /// <remarks>url: /Booking/TicketBooking (GET)</remarks>
-        [HttpGet]
-        public async Task<IActionResult> TicketBooking(string movieId = null)
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-
-            // Get all movies with their shows
-            var movies = await _bookingService.GetAvailableMoviesAsync();
-
-            // Filter: Only movies with at least one show today or in the future
-            var filteredMovies = movies
-                .Where(m => _movieService.GetMovieShows(m.MovieId)
-                    .Any(ms => ms.ShowDate >= today))
-                .ToList();
-
-            ViewBag.MovieList = filteredMovies;
-            ViewBag.SelectedMovieId = movieId;
-
-            if (!string.IsNullOrEmpty(movieId))
-            {
-                // Get movie shows for the selected movie
-                var movieShows = _movieService.GetMovieShows(movieId);
-                
-                // Group by date and time
-                var showsByDate = movieShows
-                    .Where(ms => ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
-                    .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
-                              .Distinct()
-                              .OrderBy(t => t)
-                              .ToList()
-                    );
-
-                ViewBag.ShowsByDate = showsByDate;
-            }
-
-            return View();
-        }
-
-        /// <summary>
-        /// Lấy danh sách ngày chiếu cho một phim
-        /// </summary>
-        /// <remarks>url: /Booking/GetDates (GET)</remarks>
-        [HttpGet]
-        public async Task<IActionResult> GetDates(string movieId)
-        {
-            var dates = await _bookingService.GetShowDatesAsync(movieId);
-            return Json(dates.Select(d => d.ToString("yyyy-MM-dd")));
-        }
-
-        /// <summary>
-        /// Lấy danh sách giờ chiếu cho một phim vào ngày cụ thể
-        /// </summary>
-        /// <remarks>url: /Booking/GetTimes (GET)</remarks>
-        [HttpGet]
-        public IActionResult GetVersions(string movieId, string date)
-        {
-            if (!DateTime.TryParse(date, out var showDate))
-                return Json(new List<object>());
-
-            var movieShows = _movieService.GetMovieShows(movieId)
-                .Where(ms => ms.ShowDate == DateOnly.FromDateTime(showDate))
-                .ToList();
-
-            var versions = movieShows
-                .Where(ms => ms.Version != null)
-                .Select(ms => new { versionId = ms.Version.VersionId, versionName = ms.Version.VersionName })
-                .Distinct()
-                .ToList();
-
-            return Json(versions);
-        }
-
-       //GET: /api/booking/gettimes
-       /// <summary>
-       /// Trả về các khung giờ chiếu của phim trong một ngày.
-       /// </summary>
-       /// <param name="movieId">Id của phim.</param>
-       /// <param name="date">Ngày chiếu.</param>
-        /// <param name="versionId">Id của phiên bản.</param>
-       /// <returns>Json danh sách giờ chiếu.</returns>
-       [HttpGet]
-        public IActionResult GetTimes(string movieId, string date, int versionId)
-        {
-            if (!DateTime.TryParse(date, out var showDate))
-                return Json(new List<object>());
-
-            var movieShows = _movieService.GetMovieShows(movieId)
-                .Where(ms => ms.ShowDate == DateOnly.FromDateTime(showDate) && ms.VersionId == versionId && ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
-                .ToList();
-
-            var times = movieShows
-                .Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
-                .Distinct()
-                .OrderBy(t => t)
-                .ToList();
-
-           return Json(times);
-       }
+        
        //GET: /api/booking/information
        /// <summary>
        /// Hiển thị thông tin xác nhận đặt vé.
@@ -219,7 +118,7 @@ namespace MovieTheater.Controllers
            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
            {
                TempData["BookingError"] = "No seats were selected.";
-               return RedirectToAction("TicketBooking", new { movieId });
+               return RedirectToAction("Index", "Home", new { fragment = "booking-widget" });
            }
 
            var userId = _accountService.GetCurrentUser()?.AccountId;
@@ -311,6 +210,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Confirm (POST)</remarks>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
             var userId = _accountService.GetCurrentUser()?.AccountId;
@@ -621,14 +521,18 @@ namespace MovieTheater.Controllers
         /// Trang xác nhận bán vé cho admin (chọn ghế, nhập member...)
         /// </summary>
         /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds, List<int>? foodIds = null, List<int>? foodQtys = null, string memberId = null, string accountId = null)
         {
             if (selectedSeatIds == null || selectedSeatIds.Count == 0)
             {
                 TempData["ErrorMessage"] = "No seats were selected.";
+
+                if (role == "Admin")
                 return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
             }
             
             // Build lại ViewModel với memberId nếu có
@@ -664,7 +568,7 @@ namespace MovieTheater.Controllers
         /// Kiểm tra thông tin member khi bán vé cho admin
         /// </summary>
         /// <remarks>url: /Booking/CheckMemberDetails (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> CheckMemberDetails([FromBody] MemberCheckRequest request)
         {
@@ -692,7 +596,7 @@ namespace MovieTheater.Controllers
         /// Xác nhận bán vé cho admin (lưu invoice, cập nhật điểm, trạng thái ghế...)
         /// </summary>
         /// <remarks>url: /Booking/ConfirmTicketForAdmin (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> ConfirmTicketForAdmin([FromBody] ConfirmTicketAdminViewModel model)
         {
@@ -715,7 +619,7 @@ namespace MovieTheater.Controllers
         /// Trang xác nhận bán vé thành công cho admin
         /// </summary>
         /// <remarks>url: /Booking/TicketBookingConfirmed (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public async Task<IActionResult> TicketBookingConfirmed(string invoiceId)
         {
@@ -745,7 +649,7 @@ namespace MovieTheater.Controllers
         /// Kiểm tra điểm để quy đổi vé cho admin
         /// </summary>
         /// <remarks>url: /Booking/CheckScoreForConversion (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public IActionResult CheckScoreForConversion([FromBody] ScoreConversionRequest request)
         {
@@ -770,7 +674,7 @@ namespace MovieTheater.Controllers
         /// Xem thông tin vé (admin/employee)
         /// </summary>
         /// <remarks>url: /Booking/TicketInfo (GET)</remarks>
-        [Authorize(Roles = "Admin,Employee")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public async Task<IActionResult> TicketInfo(string invoiceId)
         {
@@ -784,7 +688,7 @@ namespace MovieTheater.Controllers
         /// Lấy danh sách member (admin)
         /// </summary>
         /// <remarks>url: /Booking/GetAllMembers (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public IActionResult GetAllMembers()
         {
@@ -809,14 +713,22 @@ namespace MovieTheater.Controllers
         /// Khởi tạo bán vé cho member (admin)
         /// </summary>
         /// <remarks>url: /Booking/InitiateTicketSellingForMember/{id} (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet("Booking/InitiateTicketSellingForMember/{id}")]
         public IActionResult InitiateTicketSellingForMember(string id)
         {
             // Store the member's AccountId in TempData to use in the ticket selling process
             TempData["InitiateTicketSellingForMemberId"] = id;
+            string returnUrl;
+            if (role == "Admin")
+            {
+                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
 
-            var returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            else
+            {
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
+            }
             return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
         }
 
@@ -824,7 +736,7 @@ namespace MovieTheater.Controllers
         /// Lấy discount và earning rate của member (admin)
         /// </summary>
         /// <remarks>url: /Booking/GetMemberDiscount (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public IActionResult GetMemberDiscount(string memberId)
         {
             if (string.IsNullOrEmpty(memberId))
@@ -850,7 +762,7 @@ namespace MovieTheater.Controllers
         /// Reload page với member đã chọn (admin)
         /// </summary>
         /// <remarks>url: /Booking/ReloadWithMember (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> ReloadWithMember([FromBody] ReloadWithMemberRequest request)
         {
@@ -890,7 +802,7 @@ namespace MovieTheater.Controllers
         /// Lấy danh sách promotion hợp lệ cho member
         /// </summary>
         /// <remarks>url: /Booking/GetEligiblePromotions (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> GetEligiblePromotions([FromBody] GetEligiblePromotionsRequest request)
         {

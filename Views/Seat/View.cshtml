@@ -32,7 +32,7 @@
 
         ? Url.Action("Select", "Showtime", new { area = "Admin" })
 
-        : Url.Action("TicketBooking", "Booking");
+                    : "/#booking-widget";
 
     var coupleSeatPairs = new Dictionary<int, int>();
 
@@ -86,6 +86,10 @@
                     <span class="meta-value">@Model.MovieDirector</span>
                 </div>
                 <div class="meta-item">
+                    <span class="meta-label">Starring:</span>
+                    <span class="meta-value">@Model.MovieActor</span>
+                </div>
+                <div class="meta-item">
                     <span class="meta-label">Genre:</span>
                     <span class="meta-value">@Model.MovieGenre</span>
                 </div>
@@ -93,6 +97,7 @@
                     <span class="meta-label">Duration:</span>
                     <span class="meta-value">@(Model.MovieDuration ?? 0) min</span>
                 </div>
+               
             </div>
         </div>
     </div>
@@ -149,7 +154,7 @@
                                                 }
                                                 else
                                                 {
-                                                    <div class="seat @(isBooked ? "booked" : "") @(seatType?.TypeName?.ToLower())"
+                                                    <div class="seat @(isBooked ? "booked" : "")"
                                                          data-seat-id="@seat.SeatId"
                                                          data-seat-name="@seat.SeatName"
                                                          data-seat-type="@seatType?.TypeName"
@@ -157,8 +162,9 @@
                                                          data-base-price="@(basePrice )"
                                                          data-version-multi="@versionMulti"
                                                          data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
+                                                         style="background-color:@(seatType?.ColorHex ?? "#cccbc8")"
                                                          @(coupleSeatPairs.ContainsKey(seat.SeatId) ? "data-couple-seat=true" : "")
-                                                    @(isBooked ? "" : "onclick=selectSeat(this)")>
+                                                         @(isBooked ? "" : "onclick=selectSeat(this)")>
                                                         <div class="seat-inner">
                                                             <span class="seat-number">@seat.SeatName</span>
                                                             @if (coupleSeatPairs.ContainsKey(seat.SeatId))
@@ -191,20 +197,23 @@
 
                         {
                             <div class="legend-item">
-                                <div class="legend-color @(type.TypeName.ToLower())" style="background-color: @(type.ColorHex ?? "#FFFFFF")"></div>
+                                <div class="legend-color" style="background-color: @(type.ColorHex ?? "#FFFFFF")"></div>
                                 <span>@type.TypeName</span>
                             </div>
                         }
                         <div class="legend-item">
-                            <div class="legend-color selected"></div>
+                            <div class="legend-color" style="background-color: #10b981"></div>
                             <span>Selected</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color booked"></div>
+                            <div class="legend-color" style="background-color: #cccbc8; filter: brightness(0.3) saturate(0.5); position: relative;">
+                                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #dc2626; font-weight: bold; font-size: 0.8rem; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);">✗</span>
+                            </div>
                             <span>Booked</span>
                         </div>
+                       
                         <div class="legend-item">
-                            <div class="legend-color being-held"></div>
+                            <div class="legend-color" style="background-color: #f59e42"></div>
                             <span>Being Held</span>
                         </div>
                     </div>
@@ -346,9 +355,26 @@
                 <span class="material-icons">home</span>
                 Home
             </a>
-            <a href="@Url.Action("TicketBooking", "Booking")" class="btn primary">
+                            <a href="/#booking-widget" class="btn primary">
                 <span class="material-icons">refresh</span>
                 Try Again
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Timeout Modal -->
+<div id="timeoutModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content timeout-modal">
+        <div class="modal-icon timeout">
+            <span class="material-icons">timer_off</span>
+        </div>
+        <h3>Time Expired</h3>
+        <p>Your seat selection time has expired. Please select your seats again.</p>
+        <div class="modal-actions">
+            <a href="https://localhost:7201/Booking/TicketBooking" class="btn primary">
+                <span class="material-icons">refresh</span>
+                Return to Booking
             </a>
         </div>
     </div>
@@ -413,7 +439,8 @@
                     seatElement.classList.add("booked");
                     seatElement.classList.remove("selected", "being-held");
                     seatElement.setAttribute("disabled", "disabled");
-                    seatElement.style.backgroundColor = "#19692c";
+                    // Keep the original seat type color from database, CSS will handle the darkening
+                    seatElement.style.backgroundColor = seatElement.getAttribute("data-seat-color") || "#cccbc8";
                     selectedSeats.delete(String(seatId));
                 } else {
                     seatElement.classList.remove("booked");
@@ -666,8 +693,6 @@
             countdownTimer = setInterval(() => {
                 if (secondsLeft <= 0) {
                     clearInterval(countdownTimer);
-                    // Handle timeout - show alert and redirect
-                    alert('Time is up! Your seat selection has expired. You will be redirected to the booking page.');
                     
                     // Notify server to release all held seats
                     const movieShowId = '@(ViewBag.MovieShow != null ? ViewBag.MovieShow.MovieShowId : 0)';
@@ -687,12 +712,13 @@
                     updateSelectionSummary();
                     updateBookButtonState();
                     
-                    // Redirect to booking page
-                    const returnUrl = '@returnUrl';
-                    if (returnUrl) {
-                        window.location.href = returnUrl;
-                    } else {
-                        window.location.href = '/Booking/TicketBooking';
+                    // Show full-screen timeout modal
+                    const timeoutModal = document.getElementById('timeoutModal');
+                    if (timeoutModal) {
+                        timeoutModal.style.display = 'flex';
+                        // Disable the main content
+                        document.getElementById('mainBookingArea').style.pointerEvents = 'none';
+                        document.getElementById('mainBookingArea').style.opacity = '0.4';
                     }
                 } else {
                     const min = Math.floor(secondsLeft / 60);
@@ -747,6 +773,20 @@
             // Use the stored raw seat total for accurate calculation
             let grandTotal = currentSeatTotal + totalFood;
             document.getElementById('grandTotal').textContent = grandTotal.toLocaleString() + ' VND';
+        }
+
+        function setSeatColorByStatus(seatElement) {
+            if (seatElement.classList.contains('booked')) {
+                // Keep the original seat type color from database, CSS will handle the darkening
+                seatElement.style.backgroundColor = seatElement.getAttribute('data-seat-color') || '#cccbc8';
+            } else if (seatElement.classList.contains('selected')) {
+                seatElement.style.backgroundColor = '#10b981';
+            } else if (seatElement.classList.contains('being-held')) {
+                seatElement.style.backgroundColor = '#f59e42';
+            } else {
+                // Mặc định lấy màu loại ghế từ data-seat-color
+                seatElement.style.backgroundColor = seatElement.getAttribute('data-seat-color') || '#cccbc8';
+            }
         }
 
         // Initialize

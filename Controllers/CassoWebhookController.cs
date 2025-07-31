@@ -3,6 +3,7 @@ using MovieTheater.Models;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -19,6 +20,11 @@ namespace MovieTheater.Controllers
         private const decimal ACCEPTABLE_DIFFERENCE = 10000m; // Số tiền chuyển thiếu tối đa mà hệ thống vẫn chấp nhận
         private const string MEMO_PREFIX = "DH"; // Tiền tố điền trước mã đơn hàng
         private const string HEADER_SECURE_TOKEN = "eogrBiWqaq"; // Key bảo mật từ PHP sample
+        
+        // Security constants
+        private const int DATABASE_TIMEOUT_SECONDS = 30;
+        private const int MAX_PROCESSING_TIME_SECONDS = 60;
+        private const int MAX_WEBHOOK_SIZE_BYTES = 1024 * 1024; // 1MB
 
         public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger)
         {
@@ -29,8 +35,24 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> HandleWebhook([FromBody] JsonElement body)
         {
+            var startTime = DateTime.UtcNow;
+            
             try
             {
+                // Security: Check request size
+                if (Request.ContentLength > MAX_WEBHOOK_SIZE_BYTES)
+                {
+                    _logger.LogWarning("Webhook request too large: {Size} bytes", Request.ContentLength);
+                    return BadRequest(new { error = 1, message = "Request too large" });
+                }
+
+                // Security: Check processing time
+                if ((DateTime.UtcNow - startTime).TotalSeconds > MAX_PROCESSING_TIME_SECONDS)
+                {
+                    _logger.LogWarning("Webhook processing timeout");
+                    return StatusCode(408, new { error = 1, message = "Request timeout" });
+                }
+
                 _logger.LogInformation("=== WEBHOOK DEBUG START ===");
                 _logger.LogInformation("Webhook received from Casso");
 
@@ -99,6 +121,9 @@ namespace MovieTheater.Controllers
         {
             try
             {
+                // Security: Set database timeout
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(DATABASE_TIMEOUT_SECONDS));
+                
                 // 1. Lấy id giao dịch từ Casso
                 var cassoId = item.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0;
                 // TẠM THỜI BỎ QUA CHECK NÀY ĐỂ TEST
@@ -221,23 +246,21 @@ namespace MovieTheater.Controllers
                 else if (paid <= expectedAmount + acceptableDifference)
                 {
                     // Thanh toán đủ
-                    invoice.Status = InvoiceStatus.Completed;
+                    await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
-                    await UpdateSeatStatusToBooked(invoice);
+                    await UpdateSeatStatusToBooked(invoice, cts.Token);
                     
-                    _context.SaveChanges();
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Đã thanh toán.", orderNote);
                 }
                 else
                 {
                     // Thanh toán dư
-                    invoice.Status = InvoiceStatus.Completed;
+                    await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
-                    await UpdateSeatStatusToBooked(invoice);
+                    await UpdateSeatStatusToBooked(invoice, cts.Token);
                     
-                    _context.SaveChanges();
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán dư.", orderNote);
                 }
 

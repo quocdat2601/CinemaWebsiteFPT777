@@ -43,5 +43,7 @@ namespace MovieTheater.Repository
         List<Movie> GetComingSoonMovies();
         List<Movie> GetCurrentlyShowingMoviesWithDetails();
         List<Movie> GetComingSoonMoviesWithDetails();
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId);
+        public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId);
     }
 }

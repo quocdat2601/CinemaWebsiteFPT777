@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace MovieTheater.Repository
 {
@@ -296,13 +298,26 @@ namespace MovieTheater.Repository
                 .FirstOrDefault(ms => ms.MovieShowId == id);
         }
 
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .FirstOrDefault(ms => ms.CinemaRoomId == cinemaRoomId);
+        }
+
         public List<MovieShow> GetMovieShowsByMovieId(string movieId)
         {
             return _context.MovieShows
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.CinemaRoom)
                 .Include(ms => ms.Version)
-                .Where(ms => ms.MovieId == movieId)
+                .Where(ms => ms.MovieId == movieId &&
+                    (ms.CinemaRoom.StatusId != 3 ||
+                     (ms.CinemaRoom.UnavailableEndDate.HasValue &&
+                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value))))
                 .OrderBy(ms => ms.ShowDate)
                 .ThenBy(ms => ms.Schedule.ScheduleTime)
                 .ToList();
@@ -371,6 +386,14 @@ namespace MovieTheater.Repository
                 .Include(ms => ms.Schedule)
                 .Include(ms => ms.CinemaRoom)
                 .Include(ms => ms.Version)
+                .Include(ms => ms.Invoices)
+                .ToList();
+        }
+
+        public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId)
+        {
+            return _context.Invoices
+                .Where(i => i.MovieShowId == movieShowId)
                 .ToList();
         }
 
@@ -514,10 +537,16 @@ namespace MovieTheater.Repository
         public List<Movie> GetCurrentlyShowingMovies()
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            
+
             // Get movies that have at least one MovieShow with ShowDate >= today
+            // AND either:
+            // 1. From cinema rooms with status != 3, OR
+            // 2. Show date is after the cinema room's unavailable end date
             return _context.Movies
-                .Where(m => m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Where(m => m.MovieShows.Any(ms => ms.ShowDate >= today &&
+                    (ms.CinemaRoom.StatusId != 3 ||
+                     (ms.CinemaRoom.UnavailableEndDate.HasValue &&
+                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))))
                 .Distinct()
                 .ToList();
         }
@@ -525,10 +554,15 @@ namespace MovieTheater.Repository
         public List<Movie> GetComingSoonMovies()
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            
+
             // Get movies that have no MovieShow with ShowDate >= today
+            // OR only have shows from cinema rooms with status 3 (overridden/inactive rooms)
+            // AND show date is not after the cinema room's unavailable end date
             return _context.Movies
-                .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today &&
+                    (ms.CinemaRoom.StatusId != 3 ||
+                     (ms.CinemaRoom.UnavailableEndDate.HasValue &&
+                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))))
                 .Distinct()
                 .ToList();
         }
@@ -536,14 +570,20 @@ namespace MovieTheater.Repository
         public List<Movie> GetCurrentlyShowingMoviesWithDetails()
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            
+
             // Get movies with all related data that have at least one MovieShow with ShowDate >= today
+            // AND either:
+            // 1. From cinema rooms with status != 3, OR
+            // 2. Show date is after the cinema room's unavailable end date
             return _context.Movies
                 .Include(m => m.MovieShows)
                 .Include(m => m.People)
                 .Include(m => m.Types)
                 .Include(m => m.Versions)
-                .Where(m => m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Where(m => m.MovieShows.Any(ms => ms.ShowDate >= today &&
+                    (ms.CinemaRoom.StatusId != 3 ||
+                     (ms.CinemaRoom.UnavailableEndDate.HasValue &&
+                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))))
                 .Distinct()
                 .ToList();
         }
@@ -551,14 +591,19 @@ namespace MovieTheater.Repository
         public List<Movie> GetComingSoonMoviesWithDetails()
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            
+
             // Get movies with all related data that have no MovieShow with ShowDate >= today
+            // OR only have shows from cinema rooms with status 3 (overridden/inactive rooms)
+            // AND show date is not after the cinema room's unavailable end date
             return _context.Movies
                 .Include(m => m.MovieShows)
                 .Include(m => m.People)
                 .Include(m => m.Types)
                 .Include(m => m.Versions)
-                .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today))
+                .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today &&
+                    (ms.CinemaRoom.StatusId != 3 ||
+                     (ms.CinemaRoom.UnavailableEndDate.HasValue &&
+                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))))
                 .Distinct()
                 .ToList();
         }

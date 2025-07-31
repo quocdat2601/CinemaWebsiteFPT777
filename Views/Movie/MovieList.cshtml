@@ -8,6 +8,7 @@
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+<link href="~/css/movie-grid.css" rel="stylesheet" />
 
 <div id="content">
     <div id="movieFilterAndGrid" class="movie-filter-and-grid-margin">
@@ -30,8 +31,14 @@
                 if (!chip) return;
                 const id = parseInt(chip.getAttribute('data-typeid'));
                 if (isNaN(id)) return;
-                if (chip.classList.contains('selected')) return;
-                selectedTypeIds.push(id);
+                
+                if (chip.classList.contains('selected')) {
+                    // If already selected, deselect it
+                    selectedTypeIds = selectedTypeIds.filter(tid => tid !== id);
+                } else {
+                    // If not selected, select it
+                    selectedTypeIds.push(id);
+                }
                 updateFilter();
             });
             document.getElementById('versionChips').addEventListener('click', function (e) {
@@ -39,8 +46,14 @@
                 if (!chip) return;
                 const id = parseInt(chip.getAttribute('data-versionid'));
                 if (isNaN(id)) return;
-                if (chip.classList.contains('selected')) return;
-                selectedVersionIds.push(id);
+                
+                if (chip.classList.contains('selected')) {
+                    // If already selected, deselect it
+                    selectedVersionIds = selectedVersionIds.filter(vid => vid !== id);
+                } else {
+                    // If not selected, select it
+                    selectedVersionIds.push(id);
+                }
                 updateFilter();
             });
             // Search
@@ -54,23 +67,18 @@
             });
         }
 
-        function removeChip(event, type, id) {
-            event.stopPropagation();
-            id = parseInt(id);
-            if (type === 'type') {
-                selectedTypeIds = selectedTypeIds.filter(tid => tid !== id);
-            } else {
-                selectedVersionIds = selectedVersionIds.filter(vid => vid !== id);
-            }
-            updateFilter();
-        }
+
 
         function updateFilter() {
             const params = new URLSearchParams();
             if (selectedTypeIds.length > 0) params.append('typeIds', selectedTypeIds.join(','));
             if (selectedVersionIds.length > 0) params.append('versionIds', selectedVersionIds.join(','));
             const searchInput = document.getElementById('searchInput');
-            if (searchInput && searchInput.value) params.append('searchTerm', searchInput.value);
+            const searchValue = searchInput ? searchInput.value : '';
+            const searchFocused = searchInput === document.activeElement;
+            const searchCursorPosition = searchInput ? searchInput.selectionStart : 0;
+            
+            if (searchValue) params.append('searchTerm', searchValue);
 
             const newUrl = window.location.pathname + '?' + params.toString();
             window.history.pushState({ path: newUrl }, '', newUrl);
@@ -81,6 +89,17 @@
             .then(response => response.text())
             .then(html => {
                 document.getElementById("movieFilterAndGrid").innerHTML = html;
+                
+                // Restore search input state
+                const newSearchInput = document.getElementById('searchInput');
+                if (newSearchInput && searchValue) {
+                    newSearchInput.value = searchValue;
+                    if (searchFocused) {
+                        newSearchInput.focus();
+                        newSearchInput.setSelectionRange(searchCursorPosition, searchCursorPosition);
+                    }
+                }
+                
                 bindFilterEvents(); // Re-bind after AJAX update
             });
         }

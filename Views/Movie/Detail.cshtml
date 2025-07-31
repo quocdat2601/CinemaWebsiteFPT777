@@ -238,7 +238,7 @@
             // Clear and populate available dates for booking modal
             availableDates.clear();
 
-            // Group shows by date and version
+            // Group shows by date and version (API already filters out disabled rooms)
             const groupedShows = shows.reduce((acc, show) => {
                 const dateKey = show.showDate;
                 

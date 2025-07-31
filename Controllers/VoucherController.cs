@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.SignalR;
-using MovieTheater.Hubs;
+using System.Data;
+using System.Security.Claims;
+using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {
@@ -13,12 +16,23 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
+        
+        // Constants for string literals
+        private const string TOAST_MESSAGE = "ToastMessage";
+        private const string ERROR_MESSAGE = "ErrorMessage";
+        private const string MAIN_PAGE = "MainPage";
+        private const string ADMIN_CONTROLLER = "Admin";
+        private const string EMPLOYEE_CONTROLLER = "Employee";
+        private const string VOUCHER_MG_TAB = "VoucherMg";
+        private const string INDEX_ACTION = "Index";
+        
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _voucherService = voucherService;
             _webHostEnvironment = webHostEnvironment;
-            _dashboardHubContext = dashboardHubContext;
+            _dashboardHubContext = dashboardHubContext;            
         }
 
         /// <summary>
@@ -191,13 +205,16 @@ namespace MovieTheater.Controllers
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
             {
-                TempData["ToastMessage"] = "Voucher not found.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Voucher not found.";
+                return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
             }
             _voucherService.Delete(id);
             await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-            TempData["ToastMessage"] = "Voucher deleted successfully.";
-            return Redirect("/Admin/MainPage?tab=VoucherMg");
+            TempData[TOAST_MESSAGE] = "Voucher deleted successfully.";
+            if (role == "Admin")
+                return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+            else
+                return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
         }
 
         /// <summary>
@@ -211,19 +228,21 @@ namespace MovieTheater.Controllers
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
             {
-                TempData["ToastMessage"] = "Voucher not found.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Voucher not found.";
+                return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
             }
 
             // Check if voucher can be edited
             var now = DateTime.Now;
             var isExpired = voucher.ExpiryDate <= now;
             var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
-
             if (isUsed || isExpired)
             {
-                TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Cannot edit used or expired vouchers.";
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
             }
 
             var viewModel = new VoucherViewModel
@@ -250,14 +269,13 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> AdminEdit(VoucherViewModel viewModel, IFormFile? imageFile)
         {
             if (!ModelState.IsValid) return View(viewModel);
-
             try
             {
                 var voucher = _voucherService.GetById(viewModel.VoucherId);
                 if (voucher == null)
                 {
-                    TempData["ToastMessage"] = "Voucher not found.";
-                    return Redirect("/Admin/MainPage?tab=VoucherMg");
+                    TempData[TOAST_MESSAGE] = "Voucher not found.";
+                    return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
                 }
 
                 // Check if voucher can be edited
@@ -267,8 +285,11 @@ namespace MovieTheater.Controllers
 
                 if (isUsed || isExpired)
                 {
-                    TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
-                    return Redirect("/Admin/MainPage?tab=VoucherMg");
+                    TempData[TOAST_MESSAGE] = "Cannot edit used or expired vouchers.";
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
                 }
 
                 voucher.AccountId = viewModel.AccountId;
@@ -296,10 +317,17 @@ namespace MovieTheater.Controllers
                         }
                     }
 
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                    
+                    string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                    if (secureFilePath == null)
+                    {
+                        TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                        return View(viewModel);
+                    }
+                    
+                    using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                     {
                         await imageFile.CopyToAsync(fileStream);
                     }
@@ -309,11 +337,15 @@ namespace MovieTheater.Controllers
 
                 _voucherService.Update(voucher);
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                TempData["ToastMessage"] = "Voucher updated successfully.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Voucher updated successfully.";
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
             }
             catch (Exception ex)
             {
+                Serilog.Log.Error(ex, "[Voucher AdminCreate] Exception: {Message}", ex.Message);
                 ModelState.AddModelError("", "Error updating voucher: " + ex.Message);
                 return View(viewModel);
             }
@@ -367,10 +399,17 @@ namespace MovieTheater.Controllers
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
+                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                        
+                        string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                        if (secureFilePath == null)
+                        {
+                            TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                            return View(viewModel);
+                        }
+                        
+                        using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                         {
                             await imageFile.CopyToAsync(fileStream);
                         }
@@ -384,8 +423,11 @@ namespace MovieTheater.Controllers
 
                     _voucherService.Add(voucher);
                     await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                    TempData["ToastMessage"] = "Voucher created successfully!";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    TempData[TOAST_MESSAGE] = "Voucher created successfully!";
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
                 }
                 catch (Exception ex)
                 {

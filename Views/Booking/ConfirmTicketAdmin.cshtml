@@ -1,6 +1,6 @@
 ﻿@using Newtonsoft.Json
 @model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
-
+@using System.Security.Claims
 <script>
     window.serverPromotionDiscountPercent = @Model.BookingDetails.PromotionDiscountPercent;
 </script>
@@ -8,6 +8,7 @@
 @{
     ViewBag.Title = "Confirm Ticket Information (Admin)";
     Layout = "_Layout";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 }
 
 <style>
@@ -111,7 +112,14 @@
     <div class="text-start p-3">
         <a href="@Url.Action("Select", "Seat", new { movieId = Model.BookingDetails.MovieId, date = Model.BookingDetails.ShowDate.ToString("dd/MM/yyyy"), time = Model.BookingDetails.ShowTime, versionId = Model.BookingDetails.VersionId, isAdminSell = "true" })" class="btn btn-secondary">&larr; Return</a>
     </div>
-    <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
+    @if (userRole == "Admin")
+    {
+        <h2 class="text-center mb-4">Confirm Ticket Information (Admin)</h2>
+    }
+    else
+    {
+        <h2 class="text-center mb-4">Confirm Ticket Information (Employee)</h2>
+    }
     <div class="card shadow p-4">
         <div class="section-title">Movie & Show Info</div>
         <div class="ticket-row">
@@ -197,14 +205,14 @@
                             <td>@food.Name
                                 @if (!string.IsNullOrEmpty(food.PromotionName))
                                 {
-                                    <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount.ToString("N0")% off)</span>
+                                    <span class="badge bg-info text-dark ms-2">@food.PromotionName (@food.PromotionDiscount?.ToString("N0")% off)</span>
                                 }
                             </td>
                             <td>@food.Quantity</td>
                             <td>
                                 @if (food.PromotionDiscount > 0)
                                 {
-                                    <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                    <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice?.ToString("N0") VND</span>
                                     <span style="color: #1a7f37; font-weight: bold;">@food.Price.ToString("N0") VND</span>
                                 }
                                 else
@@ -219,7 +227,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-end"><strong>Total Food (before discount):</strong></td>
-                        <td><strong>@Model.SelectedFoods.Sum(f => f.OriginalPrice * f.Quantity).ToString("N0") VND</strong></td>
+                        <td><strong>@Model.SelectedFoods.Sum(f => f.OriginalPrice * f.Quantity)?.ToString("N0") VND</strong></td>
                     </tr>
                     <tr>
                         <td colspan="3" class="text-end"><strong>Total Food (after discount):</strong></td>

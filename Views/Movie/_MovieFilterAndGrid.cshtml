@@ -5,6 +5,7 @@
     var selectedTypeIds = ViewBag.SelectedTypeIds as List<int> ?? new List<int>();
     var selectedVersionIds = ViewBag.SelectedVersionIds as List<int> ?? new List<int>();
 }
+<link href="~/css/movie-grid.css" rel="stylesheet" />
 <div class="row mb-4 align-items-center">
     <div class="col-md-6">
         <h1 class="header-title">Our Movies</h1>
@@ -24,10 +25,6 @@
                 var selected = selectedTypeIds.Contains(type.TypeId) ? "selected" : "";
                 <span class="chip @selected" data-typeid="@type.TypeId">
                     @type.TypeName
-                    @if (selected != "")
-                    {
-                        <span class="chip-x" onclick="removeChip(event, 'type', @type.TypeId)">×</span>
-                    }
                 </span>
             }
         </div>
@@ -40,10 +37,6 @@
                 var selected = selectedVersionIds.Contains(version.VersionId) ? "selected" : "";
                 <span class="chip @selected" data-versionid="@version.VersionId">
                     @version.VersionName
-                    @if (selected != "")
-                    {
-                        <span class="chip-x" onclick="removeChip(event, 'version', @version.VersionId)">×</span>
-                    }
                 </span>
             }
         </div>

@@ -1,62 +1,112 @@
 ﻿@model CinemaRoom
+@using System.Security.Claims
 
-<div class="container mt-3 mb-1" style="width: 600px;">
-	<div class="row justify-content-center">
-		<div class="col-md-8">
-			<div class="card">
-				<div class="card-header">
-					<h3 class="text-center">Edit Showroom</h3>
-				</div>
-				<div class="card-body">
-					<form asp-action="Edit" asp-controller="Cinema" method="post">
-						<input type="hidden" asp-for="CinemaRoomId" />
+@{
+    ViewData["Title"] = "Create a Movie";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
 
-						<div class="mb-3">
-							<label asp-for="CinemaRoomName" class="form-label">Showroom Name</label>
-							<input asp-for="CinemaRoomName" class="form-control" />
-							<span asp-validation-for="CinemaRoomName" class="text-danger"></span>
-						</div>
-						
-						<div class="mb-3">
-							<label asp-for="SeatWidth" class="form-label">Seat Width</label>
-							<input asp-for="SeatWidth" class="form-control" />
-							<span asp-validation-for="SeatWidth" class="text-danger"></span>
-						</div>
+@if (userRole == "Admin")
+{
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+        &larr; Return
+    </a>
+}
+else
+{
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+        &larr; Return
+    </a>
+}
 
-						<div class="mb-3">
-							<label asp-for="SeatLength" class="form-label">Seat Length</label>
-							<input asp-for="SeatLength" class="form-control" />
-							<span asp-validation-for="SeatLength" class="text-danger"></span>
-						</div>
-
-						<div class="mb-3">
-							<label class="form-label">Room Version</label>
-							<div>
-								@foreach (var version in ViewBag.Versions as List<MovieTheater.Models.Version>)
-								{
-									var isChecked = (ViewBag.CurrentVersionId != null && (int)ViewBag.CurrentVersionId == version.VersionId) ? "checked" : "";
-									<div class="form-check form-check-inline">
-										<input class="form-check-input" type="radio" name="VersionId" id="version_@version.VersionId" value="@version.VersionId" @isChecked required />
-										<label class="form-check-label" for="version_@version.VersionId">@version.VersionName</label>
-									</div>
-								}
-							</div>
-						</div>
-						<div class="alert alert-warning mb-3" role="alert">
-							Changing seat width or length will regenerate the layout. Please reconsider before making changes.
-						</div>
-
-						<div class="text-center">
-							<button type="submit" class="btn btn-primary">Update Showroom</button>
-							<a asp-action="MainPage" asp-controller="Admin" asp-route-tab="ShowroomMg" class="btn btn-secondary">Cancel</a>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
+<div class="card-header">
+    <h3 class="text-center">Edit Showroom</h3>
 </div>
+<form asp-action="Edit" asp-controller="Cinema" method="post">
+
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="container mt-3 mb-1 col-md-3">
+            <input type="hidden" asp-for="CinemaRoomId" />
+
+            <div class="mb-3">
+                <label asp-for="CinemaRoomName" class="form-label">Showroom Name</label>
+                <input asp-for="CinemaRoomName" class="form-control" />
+                <span asp-validation-for="CinemaRoomName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="SeatWidth" class="form-label">Seat Width</label>
+                <input asp-for="SeatWidth" class="form-control" />
+                <span asp-validation-for="SeatWidth" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="SeatLength" class="form-label">Seat Length</label>
+                <input asp-for="SeatLength" class="form-control" />
+                <span asp-validation-for="SeatLength" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Room Version</label>
+                <div>
+                    @foreach (var version in ViewBag.Versions as List<MovieTheater.Models.Version>)
+                    {
+                        var isChecked = (ViewBag.CurrentVersionId != null && (int)ViewBag.CurrentVersionId == version.VersionId) ? "checked" : "";
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="VersionId" id="version_@version.VersionId" value="@version.VersionId" @isChecked required />
+                            <label class="form-check-label" for="version_@version.VersionId">@version.VersionName</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="container mt-3 mb-1 col-md-4">
+            <div class="text-center">
+                <label>Movie Shows</label>
+            </div>
+            <div id="movieShowsByDate" style="margin-left: 10px"></div>
+        </div>
+        <div class="col-md-2"></div>
+
+    </div>
+
+    <div class="col-12 d-flex justify-content-center gap-2 mt-4">
+        <div class="alert alert-warning mb-3" role="alert" style="width: 800px">
+            Changing seat width or length will regenerate the layout. Please reconsider before making changes.
+        </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center gap-2">
+        <button type="submit" class="btn btn-primary">Update Showroom</button>
+    </div>
+</form>
 
 @section Scripts {
-	@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function() {
+            var cinemaRoomId = '@Model.CinemaRoomId';
+            $.get('/Cinema/GetMovieShowsByCinemaRoomGrouped', { cinemaRoomId: cinemaRoomId }, function(data) {
+                var container = $('#movieShowsByDate');
+                if (!data || data.length === 0) {
+                    container.html('<div class="text-muted">No shows found for this room.</div>');
+                    return;
+                }
+                var html = '';
+                data.forEach(function(group) {
+                    html += '<div class="mb-2">';
+                    html += '<strong>' + group.date + '</strong><br/>';
+                    group.times.forEach(function(time) {
+                        html += '<span class="badge bg-primary me-1">' + time + '</span>';
+                    });
+                    html += '</div>';
+                });
+                container.html(html);
+            });
+        });
+    </script>
 }

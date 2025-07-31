@@ -32,6 +32,7 @@
 <link rel="stylesheet" href="~/css/movie-section.css" />
 <link rel="stylesheet" href="~/css/promotions.css" />
 <link rel="stylesheet" href="~/css/booking-modal.css" />
+<link rel="stylesheet" href="~/css/booking-widget.css" />
 
 <!-- ===== HERO SECTION PLACEHOLDER ===== -->
 <!-- HERO SECTION (dùng SwiperJS) -->
@@ -171,6 +172,42 @@
     </div>
 </section>
 <!-- ===== END HERO SECTION PLACEHOLDER ===== -->
+
+<!-- QUICK BOOKING WIDGET -->
+<section class="booking-widget-section" id="booking-widget">
+    <div class="booking-widget">
+        <div class="booking-widget-header">
+            <h2 class="booking-widget-title">Quick Booking</h2>
+        </div>
+        <div class="booking-widget-form">
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">1. Select Movie</label>
+                <select class="booking-widget-select" id="movieSelect" onchange="updateBookingDates()">
+                    <option value="">1. Select Movie</option>
+                    @foreach (var movie in currentlyShowingMovies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                    {
+                        <option value="@movie.MovieId">@movie.MovieNameEnglish</option>
+                    }
+                </select>
+            </div>
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">2. Select Date</label>
+                <select class="booking-widget-select" id="dateSelect" disabled onchange="updateBookingVersions()">
+                    <option value="">2. Select Date</option>
+                </select>
+            </div>
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">3. Select Time</label>
+                <select class="booking-widget-select" id="timeSelect" disabled onchange="updateBookingTimes()">
+                    <option value="">3. Select Time</option>
+                </select>
+            </div>
+            <button class="booking-widget-btn" id="bookNowBtn" onclick="continueToSeatSelection()" disabled>
+                Book Now
+            </button>
+        </div>
+    </div>
+</section>
 
 <!-- NOW SHOWING SECTION -->
 <section class="now-showing-section" id="nowShowingSection">
@@ -423,6 +460,7 @@
     <script src="/js/trailer-modal.js?v=@DateTime.Now.Ticks" defer></script>
     <script src="~/js/movie-sections.js?v=@DateTime.Now.Ticks" defer></script>
     <script src="/js/home-page.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/booking-widget.js?v=@DateTime.Now.Ticks" defer></script>
     
 
 
@@ -498,13 +536,11 @@
             }
 
             // Fetch movie shows for this specific movie
-            fetch(`/Movie/GetMovieShows?movieId=${movieId}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
+            fetch(`/Movie/GetMovieShows?movieId=${movieId}`)
                 .then(response => {
-                    if (!response.ok) throw new Error('Failed to load movie shows');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
                     return response.json();
                 })
                 .then(shows => {
@@ -532,44 +568,12 @@
                         modalBody.appendChild(errorDiv);
                     }
                 });
-        }
-
-        window.populateDateDropdown = function () {
-            const dateSelect = document.getElementById('dateSelect');
-            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
-            dateSelect.disabled = true;
-
-            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // normalize time
-
-            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
-
-            uniqueDates.forEach(dateStr => {
-                const showDate = new Date(dateStr);
-                showDate.setHours(0, 0, 0, 0); // normalize show date
-
-                if (showDate >= today) {
-                    const [year, month, day] = dateStr.split('-');
-                    const displayDate = `${day}/${month}/${year}`;
-                    const option = document.createElement('option');
-                    option.value = dateStr;
-                    option.textContent = displayDate;
-                    dateSelect.appendChild(option);
-                }
-            });
-
-            if (dateSelect.options.length > 1) {
-                dateSelect.disabled = false;
-            }
-            
-            // Reset step status when loading new movie
-            resetModalState();
         };
 
+
+
         // Populate version dropdown
-        window.updateVersions = function() {
+        function updateVersions() {
             const date = document.getElementById('dateSelect').value;
             const versionSelect = document.getElementById('versionSelect');
             const timeSelect = document.getElementById('timeSelect');
@@ -581,7 +585,9 @@
             
             if (!date) return;
             
+            // Since the API already filters shows, all returned shows are available
             const filtered = window.currentMovieShows.filter(show => show.showDate === date);
+            
             // Use a Map to ensure unique versionId-versionName pairs
             const versionMap = new Map();
             filtered.forEach(show => {
@@ -609,7 +615,7 @@
         }
 
         // Populate time dropdown
-        window.updateTimes = function() {
+        function updateTimes() {
             const date = document.getElementById('dateSelect').value;
             const versionId = document.getElementById('versionSelect').value;
             const timeSelect = document.getElementById('timeSelect');
@@ -619,6 +625,7 @@
             
             if (!date || !versionId) return;
             
+            // Since the API already filters shows, all returned shows are available
             const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
             // Use a Set to ensure unique times
             const timeSet = new Set();
@@ -642,7 +649,7 @@
             updateBookingSummary();
         }
 
-        window.continueToSeats = function() {
+        function continueToSeats() {
             const movieId = document.getElementById('movieId').value;
             const date = document.getElementById('dateSelect').value;
             const versionId = document.getElementById('versionSelect').value;
@@ -688,7 +695,7 @@
         }
 
         // Function to show the booking modal
-        window.showBookingModal = function() {
+        function showBookingModal() {
             const modalElement = document.getElementById('addBookingModal');
             if (modalElement && typeof bootstrap !== 'undefined') {
                 const bookingModal = new bootstrap.Modal(modalElement);
@@ -784,7 +791,7 @@
         }
 
         // Function to populate date dropdown
-        window.populateDateDropdown = function () {
+        function populateDateDropdown() {
             const dateSelect = document.getElementById('dateSelect');
             dateSelect.innerHTML = '<option value="">— Select Date —</option>';
             dateSelect.disabled = true;
@@ -794,6 +801,7 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0); // normalize time
 
+            // Since the API already filters shows, all returned shows are available
             const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
 
             uniqueDates.forEach(dateStr => {
