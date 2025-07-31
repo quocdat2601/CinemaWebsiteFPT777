@@ -9,6 +9,7 @@ using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin,Employee")]
     public class CinemaController : Controller
     {
         private readonly ICinemaService _cinemaService;

@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
+using MovieTheater.Helpers;
 using System.Collections.Concurrent;
 using System.Security.Claims;
 
@@ -129,9 +130,16 @@ namespace MovieTheater.Service
             if (model.ImageFile != null && model.ImageFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
-                var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.ImageFile.FileName);
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    return false; // Invalid file path
+                }
+                
+                using (var stream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     model.ImageFile.CopyTo(stream);
                 }

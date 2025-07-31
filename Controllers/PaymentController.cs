@@ -5,11 +5,13 @@ using MovieTheater.ViewModels;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PaymentController : Controller
     {
         private readonly IVNPayService _vnPayService;
@@ -48,6 +50,7 @@ namespace MovieTheater.Controllers
         /// <response code="200">Trả về URL thanh toán</response>
         /// <response code="400">Nếu có lỗi xảy ra</response>
         [HttpPost("create-payment")]
+        [ValidateAntiForgeryToken]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
         public IActionResult CreatePayment([FromBody] PaymentRequest request)

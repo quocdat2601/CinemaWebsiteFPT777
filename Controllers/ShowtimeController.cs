@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+   [Authorize(Roles = "Admin,Employee")]
    public class ShowtimeController : Controller
    {
        private readonly IMovieRepository _movieRepository;
@@ -124,6 +126,9 @@ namespace MovieTheater.Controllers
             // Only dates today or in the future
             var availableDates = _movieRepository.GetMovieShow()
                 .Where(ms => ms.ShowDate >= today)
+                .Where(ms => ms.CinemaRoom.StatusId != 3 || 
+                    (ms.CinemaRoom.UnavailableEndDate.HasValue && 
+                     ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))
                 .Select(ms => ms.ShowDate)
                 .Distinct()
                 .OrderBy(d => d)
@@ -159,8 +164,12 @@ namespace MovieTheater.Controllers
             }
 
             // Only get MovieShows for the selected date (which is always today or future)
+            // Also filter by cinema room status to only show movies from active rooms
             var movieShowsForDate = _movieRepository.GetMovieShow()
                 .Where(ms => ms.ShowDate == selectedDateOnly)
+                .Where(ms => ms.CinemaRoom.StatusId != 3 || 
+                    (ms.CinemaRoom.UnavailableEndDate.HasValue && 
+                     ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value))) // Only include movies from active cinema rooms or after disable period
                 .ToList();
 
             // 3. Group by movie and version, then build the view model
