@@ -718,17 +718,16 @@ namespace MovieTheater.Controllers
                 var testAmount = 50000m;
                 var testOrderInfo = "Test QR Code Payment";
                 
-                // Tạo QR code VietQR thực tế
-                var qrData = _qrPaymentService.GenerateQRCodeData(testAmount, testOrderInfo, testOrderId);
-                var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
+                _logger.LogInformation("TestQR - Testing PayOS QR generation");
+                var payosQrUrl = _qrPaymentService.GeneratePayOSQRCode(testAmount, testOrderInfo, testOrderId);
+                _logger.LogInformation("TestQR - PayOS QR URL: {PayOSQRCodeUrl}", payosQrUrl);
                 
                 var viewModel = new QRPaymentViewModel
                 {
                     OrderId = testOrderId,
                     Amount = testAmount,
                     OrderInfo = testOrderInfo,
-                    QRCodeData = qrData,
-                    QRCodeImage = qrImage,
+                    PayOSQRCodeUrl = payosQrUrl,
                     ExpiredTime = DateTime.Now.AddMinutes(15),
                     CustomerName = "Test Customer",
                     CustomerPhone = "0123456789",
@@ -737,7 +736,7 @@ namespace MovieTheater.Controllers
                     SeatInfo = "A1, A2"
                 };
 
-                return View("TestQR", viewModel);
+                return View("DisplayQR", viewModel);
             }
             catch (Exception ex)
             {
@@ -797,8 +796,43 @@ namespace MovieTheater.Controllers
                 _logger.LogInformation("DisplayQR called with orderId: {OrderId}, amount: {Amount}", orderId, amount);
 
                 var orderInfo = $"Ve xem phim - {movieName}";
+                
+                // Debug: Log thông tin đầu vào
+                _logger.LogInformation("DisplayQR input - Amount: {Amount}, OrderInfo: {OrderInfo}, OrderId: {OrderId}", amount, orderInfo, orderId);
+                
                 // Chỉ tạo QR PayOS
                 var payosQrUrl = _qrPaymentService.GeneratePayOSQRCode(amount, orderInfo, orderId);
+
+                _logger.LogInformation("PayOS QR URL generated: {PayOSQRCodeUrl}", payosQrUrl);
+
+                // Fallback nếu PayOS QR không tạo được
+                if (string.IsNullOrEmpty(payosQrUrl))
+                {
+                    _logger.LogWarning("PayOS QR generation failed, using fallback VietQR");
+                    var vietQrUrl = _qrPaymentService.GenerateVietQRCode(amount, orderInfo, orderId);
+                    _logger.LogInformation("VietQR URL generated: {VietQRUrl}", vietQrUrl);
+                    
+                    if (!string.IsNullOrEmpty(vietQrUrl))
+                    {
+                        // Tạo QR code image từ VietQR URL
+                        payosQrUrl = _qrPaymentService.GetQRCodeImage(vietQrUrl);
+                        _logger.LogInformation("QR Image URL from VietQR: {QRImageUrl}", payosQrUrl);
+                    }
+                    else
+                    {
+                        // Fallback cuối cùng: tạo QR code đơn giản
+                        _logger.LogWarning("VietQR also failed, using simple QR code");
+                        payosQrUrl = _qrPaymentService.GenerateSimpleQRCode($"PAYMENT_{orderId}_{amount}");
+                        _logger.LogInformation("Simple QR URL: {SimpleQRUrl}", payosQrUrl);
+                    }
+                }
+
+                // Final fallback nếu tất cả đều fail
+                if (string.IsNullOrEmpty(payosQrUrl))
+                {
+                    _logger.LogError("All QR generation methods failed, using demo QR");
+                    payosQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=DEMO_QR_CODE_PAYMENT";
+                }
 
                 var viewModel = new QRPaymentViewModel
                 {
@@ -814,7 +848,7 @@ namespace MovieTheater.Controllers
                     SeatInfo = seatInfo
                 };
 
-                _logger.LogInformation("PayOS QR URL: {PayOSQRCodeUrl}", payosQrUrl);
+                _logger.LogInformation("Final ViewModel created with PayOSQRCodeUrl: {PayOSQRCodeUrl}", viewModel.PayOSQRCodeUrl);
                 return View(viewModel);
             }
             catch (Exception ex)
