@@ -31,7 +31,7 @@ namespace MovieTheater.Controllers
                 .Where(p => p.IsActive && p.EndTime >= DateTime.Now)
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
-            return View("Index", promotions);
+            return View("List", promotions);
         }
 
         /// <summary>
