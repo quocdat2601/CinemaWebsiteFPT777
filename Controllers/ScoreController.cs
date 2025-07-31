@@ -84,5 +84,7 @@ namespace MovieTheater.Controllers
             return Json(new { success = true, currentScore = currentScore, data = result });
         }
 
+
+
     }
 }
