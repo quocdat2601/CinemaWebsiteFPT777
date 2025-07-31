@@ -392,7 +392,7 @@ namespace MovieTheater.Controllers
                     versionName = ms.Version?.VersionName ?? "N/A",
                     startTime = ms.Schedule?.ScheduleTime,
                     endTime = ms.Schedule?.ScheduleTime?.AddMinutes(ms.Movie?.Duration ?? 0),
-                    bookingCount = ms.Invoices.Count()
+                    bookingCount = ms.Invoices.Count(i => i.Status == InvoiceStatus.Completed && i.Cancel == false)
                 })
                 .OrderBy(s => s.showDate)
                 .ThenBy(s => s.scheduleTime)
