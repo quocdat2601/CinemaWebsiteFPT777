@@ -397,9 +397,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="discount-badge">
-                                        <span>50% OFF</span>
-                                    </div>
+                                    @if (promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > 0)
+                                    {
+                                        <div class="discount-badge">
+                                            <span>@promo.DiscountLevel.Value% OFF</span>
+                                        </div>
+                                    }
                                 </div>
                                 
                                 <div class="promotion-content">
@@ -410,7 +413,7 @@
                                         <button class="btn-learn-more"
                                             data-image="@promo.Image"
                                             data-title="@promo.Title"
-                                            data-discount="@promo.DiscountLevel%"
+                                            data-discount="@(promo.DiscountLevel?.ToString() ?? "0")% OFF"
                                             data-detail="@promo.Detail"
                                             data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
                                             <i class="fas fa-info-circle"></i>
