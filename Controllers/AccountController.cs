@@ -16,22 +16,17 @@ namespace MovieTheater.Controllers
         private readonly IAccountService _service;
         private readonly ILogger<AccountController> _logger;
         private readonly IJwtService _jwtService;
-        private readonly IMemberRepository _memberRepository;
-        private readonly IEmployeeService _employeeService;
 
         public AccountController(
             IAccountService service,
             ILogger<AccountController> logger,
             IAccountRepository accountRepository,
-            IMemberRepository memberRepository,
-            IJwtService jwtService, IEmployeeService employeeService)
+            IJwtService jwtService)
         {
             _service = service;
             _logger = logger;
             _accountRepository = accountRepository;
-            _memberRepository = memberRepository;
             _jwtService = jwtService;
-            _employeeService = employeeService;
         }
 
         [HttpGet]
