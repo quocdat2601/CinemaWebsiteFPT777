@@ -166,7 +166,7 @@
 //        [Fact]
 //        public void Edit_Get_EmployeeFound_ReturnsViewWithModel()
 //        {
-//            var emp = new Employee { Account = new Account { Username = "u", FullName = "f", DateOfBirth = new System.DateOnly(2000,1,1), Gender = "M", IdentityCard = "idc", Email = "e", Address = "a", PhoneNumber = "p", Image = "img" }, AccountId = "aid" };
+//            var emp = new Employee { Account = new Account { Username = "u", FullName = "f", DateOfBirth = new System.DateOnly(2000, 1, 1), Gender = "M", IdentityCard = "idc", Email = "e", Address = "a", PhoneNumber = "p", Image = "img" }, AccountId = "aid" };
 //            _employeeServiceMock.Setup(s => s.GetById("id")).Returns(emp);
 //            var result = _controller.Edit("id") as ViewResult;
 //            Assert.NotNull(result);
@@ -209,9 +209,11 @@
 //        [Fact]
 //        public async Task Edit_Post_UpdatePasswordFails_ReturnsViewWithError()
 //        {
-//            var emp = new Employee {
+//            var emp = new Employee
+//            {
 //                AccountId = "aid",
-//                Account = new Account {
+//                Account = new Account
+//                {
 //                    Username = "u",
 //                    Password = "old"
 //                }
@@ -228,9 +230,11 @@
 //        [Fact]
 //        public async Task Edit_Post_UploadFileAndSuccess_RedirectsToMainPage()
 //        {
-//            var emp = new Employee {
+//            var emp = new Employee
+//            {
 //                AccountId = "aid",
-//                Account = new Account {
+//                Account = new Account
+//                {
 //                    Username = "u",
 //                    Password = "old",
 //                    Image = "img.png"
@@ -256,9 +260,11 @@
 //        [Fact]
 //        public async Task Edit_Post_NoUploadFile_UsesOldImage()
 //        {
-//            var emp = new Employee {
+//            var emp = new Employee
+//            {
 //                AccountId = "aid",
-//                Account = new Account {
+//                Account = new Account
+//                {
 //                    Username = "u",
 //                    Password = "old",
 //                    Image = "oldimg.png"
@@ -280,9 +286,11 @@
 //        [Fact]
 //        public async Task Edit_Post_UpdateFails_RedirectsWithError()
 //        {
-//            var emp = new Employee {
+//            var emp = new Employee
+//            {
 //                AccountId = "aid",
-//                Account = new Account {
+//                Account = new Account
+//                {
 //                    Username = "u",
 //                    Password = "old"
 //                }
@@ -303,9 +311,11 @@
 //        [Fact]
 //        public async Task Edit_Post_Exception_ReturnsViewWithError()
 //        {
-//            var emp = new Employee {
+//            var emp = new Employee
+//            {
 //                AccountId = "aid",
-//                Account = new Account {
+//                Account = new Account
+//                {
 //                    Username = "u",
 //                    Password = "old"
 //                }
@@ -397,4 +407,4 @@
 //            Assert.Contains("An error occurred during deletion", (string)_controller.TempData["ToastMessage"]);
 //        }
 //    }
-//} 
+//}

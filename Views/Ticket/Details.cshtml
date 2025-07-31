@@ -68,10 +68,22 @@
                     <h1>Ticket Information</h1>
                     <p>Booking ID: @ticketId</p>
                 </div>
+               
             </div>
             <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "status-completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "status-cancelled" : "status-secondary")">
                 @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Canceled" : "Not Paid")
             </span>
+        </div>
+        
+    </div>
+     <div class="alert alert-warning mb-3 ticket-warning role="alert">
+        <div>
+            @if (reason != null)
+            {
+                <h5>
+                    Unfortunately, your ticket has been canceled because of an emergency: <strong>@reason</strong>. We had to make this decision to prioritize your safety and overall experience. Please know that a voucher for the full ticket amount has been sent to your inventory. We deeply regret any inconvenience this may cause.
+                </h5>
+            }
         </div>
     </div>
 
