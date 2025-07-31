@@ -86,9 +86,12 @@ namespace MovieTheater.Controllers
             var (success, messages) = await _ticketService.CancelTicketAsync(id, accountId);
             TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
+            // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-            return RedirectToAction(nameof(Index));
+            
+            // Redirect về trang hiện tại (reload)
+            return Redirect(Request.Headers["Referer"].ToString() ?? "/");
         }
 
         [HttpGet]
@@ -114,9 +117,12 @@ namespace MovieTheater.Controllers
             var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id);
             TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
+            // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-            return RedirectToAction(nameof(Index));
+            
+            // Redirect về trang hiện tại (reload)
+            return Redirect(Request.Headers["Referer"].ToString() ?? "/");
         }
     }
 }
