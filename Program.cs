@@ -142,6 +142,7 @@ namespace MovieTheater
             
             builder.Services.AddScoped<IQRPaymentService, QRPaymentService>();
             builder.Services.AddScoped<IGuestInvoiceService, GuestInvoiceService>();
+            builder.Services.AddHostedService<CinemaAutoEnableService>();
 
             builder.Services.AddHttpContextAccessor();
 
@@ -200,6 +201,7 @@ namespace MovieTheater
             app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
             app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
             app.MapHub<DashboardHub>("/dashboardhub"); //Tuyen duong cho hub
+            app.MapHub<CinemaHub>("/cinemahub"); //Tuyen duong cho hub
 
             app.Run();
         }

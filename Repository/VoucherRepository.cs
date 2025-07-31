@@ -19,8 +19,39 @@ namespace MovieTheater.Repository
         }
         public void Add(Voucher voucher)
         {
-            _context.Vouchers.Add(voucher);
-            _context.SaveChanges();
+            int maxRetries = 3;
+            int retryCount = 0;
+
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    _context.Vouchers.Add(voucher);
+                    _context.SaveChanges();
+                    return; // Success, exit the method
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 2627)
+                {
+                    // Duplicate key error - regenerate the voucher ID and retry
+                    retryCount++;
+                    if (retryCount >= maxRetries)
+                    {
+                        // If we've exhausted retries, use timestamp-based ID
+                        voucher.VoucherId = $"VC{DateTime.Now:yyyyMMddHHmmss}";
+                        _context.Vouchers.Add(voucher);
+                        _context.SaveChanges();
+                        return;
+                    }
+                    
+                    // Regenerate the voucher ID
+                    voucher.VoucherId = GenerateVoucherId();
+                }
+                catch
+                {
+                    // For any other exception, rethrow
+                    throw;
+                }
+            }
         }
         public void Update(Voucher voucher)
         {
@@ -38,18 +69,31 @@ namespace MovieTheater.Repository
         }
         public string GenerateVoucherId()
         {
-            var latestVoucher = _context.Vouchers
-                .OrderByDescending(v => v.VoucherId)
-                .FirstOrDefault();
-            if (latestVoucher == null)
+            // Get all existing voucher IDs
+            var existingIds = _context.Vouchers
+                .Select(v => v.VoucherId)
+                .ToList();
+
+            // Find the highest number from existing IDs
+            int maxNumber = 0;
+            foreach (var id in existingIds)
             {
-                return "VC001";
+                if (id.StartsWith("VC") && int.TryParse(id.Substring(2), out int number))
+                {
+                    maxNumber = Math.Max(maxNumber, number);
+                }
             }
-            if (int.TryParse(latestVoucher.VoucherId.Substring(2, 3), out int number))
+
+            // Generate the next ID
+            string newId = $"VC{(maxNumber + 1):D3}";
+
+            // If the generated ID already exists, use timestamp
+            if (existingIds.Contains(newId))
             {
-                return $"VC{(number + 1):D3}";
+                newId = $"VC{DateTime.Now:yyyyMMddHHmmss}";
             }
-            return $"VC{System.DateTime.Now:yyyyMMddHHmmss}";
+
+            return newId;
         }
         public IEnumerable<Voucher> GetAvailableVouchers(string accountId)
         {

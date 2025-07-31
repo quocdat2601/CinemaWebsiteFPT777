@@ -30,14 +30,7 @@ namespace MovieTheater.Controllers
             _webHostEnvironment = webHostEnvironment;
             _personRepository = personRepository;
         }
-
-        /// <summary>
-        /// Lấy role người dùng hiện tại từ JWT Claims.
-        /// </summary>
-        private string GetUserRole()
-        {
-            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-        }
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         /// <summary>
         /// [GET] api/movie/movielist
@@ -50,7 +43,26 @@ namespace MovieTheater.Controllers
             var selectedTypeIds = string.IsNullOrEmpty(typeIds) ? new List<int>() : typeIds.Split(',').Select(int.Parse).ToList();
             var selectedVersionIds = string.IsNullOrEmpty(versionIds) ? new List<int>() : versionIds.Split(',').Select(int.Parse).ToList();
 
-            var movies = _movieService.SearchMovies(searchTerm)
+            // Get ongoing and incoming movies
+            var ongoingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails();
+            var incomingMovies = _movieService.GetComingSoonMoviesWithDetails();
+            
+            // Filter by search term first
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                ongoingMovies = ongoingMovies.Where(m => 
+                    m.MovieNameEnglish?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                    m.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
+                
+                incomingMovies = incomingMovies.Where(m => 
+                    m.MovieNameEnglish?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                    m.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            }
+
+            // Separate ongoing and incoming movies after filtering
+            var ongoingMoviesFiltered = ongoingMovies
+                .Where(m => (selectedTypeIds.Count == 0 || (m.Types ?? new List<Models.Type>()).Any(t => selectedTypeIds.Contains(t.TypeId))) &&
+                            (selectedVersionIds.Count == 0 || (m.Versions ?? new List<Models.Version>()).Any(v => selectedVersionIds.Contains(v.VersionId))))
                 .Select(m => new MovieViewModel
                 {
                     MovieId = m.MovieId,
@@ -58,11 +70,27 @@ namespace MovieTheater.Controllers
                     Duration = m.Duration,
                     SmallImage = m.SmallImage,
                     Types = m.Types.ToList(),
-                    Versions = m.Versions.ToList()
+                    Versions = m.Versions.ToList(),
+                    IsOngoing = true
                 })
+                .ToList();
+
+            var incomingMoviesFiltered = incomingMovies
                 .Where(m => (selectedTypeIds.Count == 0 || (m.Types ?? new List<Models.Type>()).Any(t => selectedTypeIds.Contains(t.TypeId))) &&
                             (selectedVersionIds.Count == 0 || (m.Versions ?? new List<Models.Version>()).Any(v => selectedVersionIds.Contains(v.VersionId))))
+                .Select(m => new MovieViewModel
+                {
+                    MovieId = m.MovieId,
+                    MovieNameEnglish = m.MovieNameEnglish,
+                    Duration = m.Duration,
+                    SmallImage = m.SmallImage,
+                    Types = m.Types.ToList(),
+                    Versions = m.Versions.ToList(),
+                    IsOngoing = false
+                })
                 .ToList();
+
+            var movies = ongoingMoviesFiltered.Concat(incomingMoviesFiltered).ToList();
 
             ViewBag.AllTypes = _movieService.GetAllTypes();
             ViewBag.AllVersions = _movieService.GetAllVersions();
@@ -254,7 +282,6 @@ namespace MovieTheater.Controllers
             {
                 TempData["ToastMessage"] = "Movie created successfully!";
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 else
@@ -492,7 +519,6 @@ namespace MovieTheater.Controllers
             {
                 TempData["ToastMessage"] = "Movie updated successfully!";
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                string role = GetUserRole();
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
                 else
@@ -514,7 +540,6 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {
-            string role = GetUserRole();
             try
             {
                 if (string.IsNullOrEmpty(id))
@@ -577,7 +602,8 @@ namespace MovieTheater.Controllers
                     ms.ShowDate,
                     ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
                     VersionName = ms.Version?.VersionName,
-                    VersionId = ms.VersionId
+                    VersionId = ms.VersionId,
+                    CinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1 // Include room status
                 }).ToList();
             return Json(movieShows);
         }
@@ -613,6 +639,7 @@ namespace MovieTheater.Controllers
                     scheduleTime = ms.Schedule?.ScheduleTime.HasValue == true ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null,
                     ms.CinemaRoomId,
                     cinemaRoomName = ms.CinemaRoom?.CinemaRoomName,
+                    cinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1, // Include room status
                     ms.VersionId,
                     versionName = ms.Version?.VersionName
                 }).ToList();
