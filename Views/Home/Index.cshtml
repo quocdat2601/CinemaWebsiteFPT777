@@ -498,13 +498,11 @@
             }
 
             // Fetch movie shows for this specific movie
-            fetch(`/Movie/GetMovieShows?movieId=${movieId}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
+            fetch(`/Movie/GetMovieShows?movieId=${movieId}`)
                 .then(response => {
-                    if (!response.ok) throw new Error('Failed to load movie shows');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
                     return response.json();
                 })
                 .then(shows => {
@@ -532,7 +530,7 @@
                         modalBody.appendChild(errorDiv);
                     }
                 });
-        }
+        };
 
         window.populateDateDropdown = function () {
             const dateSelect = document.getElementById('dateSelect');
@@ -544,7 +542,12 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0); // normalize time
 
-            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
+            // Convert ShowDate (DateOnly) to string format and get unique dates
+            const uniqueDates = [...new Set(window.currentMovieShows.map(show => {
+                // Convert DateOnly to yyyy-MM-dd format
+                const date = new Date(show.ShowDate);
+                return date.toISOString().split('T')[0]; // yyyy-MM-dd format
+            }))];
 
             uniqueDates.forEach(dateStr => {
                 const showDate = new Date(dateStr);
@@ -585,8 +588,8 @@
             // Use a Map to ensure unique versionId-versionName pairs
             const versionMap = new Map();
             filtered.forEach(show => {
-                if (show.versionId && show.versionName && !versionMap.has(show.versionId)) {
-                    versionMap.set(show.versionId, show.versionName);
+                if (show.VersionId && show.VersionName && !versionMap.has(show.VersionId)) {
+                    versionMap.set(show.VersionId, show.VersionName);
                 }
             });
             
@@ -623,12 +626,12 @@
             // Use a Set to ensure unique times
             const timeSet = new Set();
             filtered.forEach(show => {
-                if (show.scheduleTime && !timeSet.has(show.scheduleTime)) {
+                if (show.ScheduleTime && !timeSet.has(show.ScheduleTime)) {
                     const option = document.createElement('option');
-                    option.value = show.scheduleTime;
-                    option.textContent = show.scheduleTime;
+                    option.value = show.ScheduleTime;
+                    option.textContent = show.ScheduleTime;
                     timeSelect.appendChild(option);
-                    timeSet.add(show.scheduleTime);
+                    timeSet.add(show.ScheduleTime);
                 }
             });
             
