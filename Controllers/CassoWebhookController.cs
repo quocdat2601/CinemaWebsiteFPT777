@@ -108,15 +108,12 @@ namespace MovieTheater.Controllers
                 //     return;
                 // }
 
-                // 2. Lấy orderId từ description hoặc reference
-                // Đúng:
+                // 2. Lấy orderId từ reference trước, sau đó từ description
                 var description = item.TryGetProperty("description", out var descElement) ? descElement.GetString() : "";
                 var reference = item.TryGetProperty("reference", out var refElement) ? refElement.GetString() : "";
-                var orderId = ExtractOrderId(description);
-                if (string.IsNullOrEmpty(orderId) && !string.IsNullOrEmpty(reference))
-                {
-                    orderId = reference;
-                }
+                
+                // Ưu tiên sử dụng reference trước
+                var orderId = !string.IsNullOrEmpty(reference) ? reference : ExtractOrderId(description);
 
                 _logger.LogInformation("Processing transaction: CassoId={CassoId}, OrderId={OrderId}, Description={Description}", cassoId, orderId, description);
 
@@ -130,7 +127,9 @@ namespace MovieTheater.Controllers
                 var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == orderId) // Tìm chính xác
                     ?? _context.Invoices.FirstOrDefault(i => i.InvoiceId.ToString() == orderId) // Chuyển số thành chuỗi
                     ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId.ToString())) // Tìm trong chuỗi
-                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm theo thời gian gần nhất
+                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault() // Tìm theo thời gian gần nhất
+                    ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId)) // Tìm theo pattern linh hoạt hơn
+                    ?? _context.Invoices.Where(i => i.InvoiceId.Contains(orderId)).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm ngược lại
 
                 // Nếu vẫn không tìm thấy, thử tìm theo pattern từ description
                 if (invoice == null)
@@ -152,27 +151,35 @@ namespace MovieTheater.Controllers
                     if (paidAmount > 0) // Chỉ tìm nếu có số tiền hợp lệ
                     {
                         _logger.LogInformation("Trying to find invoice by amount: {Amount}", paidAmount);
+                        // Tìm theo số tiền chính xác
                         invoice = _context.Invoices
                             .Where(i => i.TotalMoney == paidAmount && i.Status != InvoiceStatus.Completed)
                             .OrderByDescending(i => i.BookingDate)
                             .FirstOrDefault();
+                        
+                        // Nếu không tìm thấy, tìm theo số tiền gần đúng (tolerance)
+                        if (invoice == null)
+                        {
+                            var tolerance = Math.Max(paidAmount * 0.1m, 1000m); // 10% hoặc 1000 VND
+                            invoice = _context.Invoices
+                                .Where(i => Math.Abs(i.TotalMoney.Value - paidAmount) <= tolerance && i.Status != InvoiceStatus.Completed)
+                                .OrderByDescending(i => i.BookingDate)
+                                .FirstOrDefault();
+                        }
+                        
+                        // Nếu vẫn không tìm thấy, tìm invoice gần nhất trong 24h
+                        if (invoice == null)
+                        {
+                            var recentTime = DateTime.Now.AddHours(-24);
+                            invoice = _context.Invoices
+                                .Where(i => i.BookingDate >= recentTime && i.Status != InvoiceStatus.Completed)
+                                .OrderByDescending(i => i.BookingDate)
+                                .FirstOrDefault();
+                        }
                     }
                 }
 
-                // Nếu vẫn không tìm thấy, thử tìm theo số tiền gần đúng (tolerance)
-                if (invoice == null)
-                {
-                    var paidAmountTolerance = item.TryGetProperty("amount", out var amountElement2) ? amountElement2.GetDecimal() : 0m;
-                    if (paidAmountTolerance > 0)
-                    {
-                        _logger.LogInformation("Trying to find invoice by amount with tolerance: {Amount}", paidAmountTolerance);
-                        var tolerance = Math.Max(paidAmountTolerance * 0.1m, 1000m); // 10% hoặc 1000 VND
-                        invoice = _context.Invoices
-                            .Where(i => Math.Abs(i.TotalMoney.Value - paidAmountTolerance) <= tolerance && i.Status != InvoiceStatus.Completed)
-                            .OrderByDescending(i => i.BookingDate)
-                            .FirstOrDefault();
-                    }
-                }
+
 
                 if (invoice == null)
                 {
