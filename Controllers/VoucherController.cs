@@ -7,6 +7,7 @@ using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Data;
 using System.Security.Claims;
+using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {
@@ -306,10 +307,17 @@ namespace MovieTheater.Controllers
                         }
                     }
 
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                    
+                    string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                    if (secureFilePath == null)
+                    {
+                        TempData["ErrorMessage"] = "Invalid file path detected.";
+                        return View(viewModel);
+                    }
+                    
+                    using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                     {
                         await imageFile.CopyToAsync(fileStream);
                     }
@@ -380,10 +388,17 @@ namespace MovieTheater.Controllers
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
+                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                        
+                        string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                        if (secureFilePath == null)
+                        {
+                            TempData["ErrorMessage"] = "Invalid file path detected.";
+                            return View(viewModel);
+                        }
+                        
+                        using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                         {
                             await imageFile.CopyToAsync(fileStream);
                         }

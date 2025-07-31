@@ -9,6 +9,7 @@ using MovieTheater.Repository;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
 using Microsoft.AspNetCore.Hosting;
+using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {//movie
@@ -192,9 +193,19 @@ namespace MovieTheater.Controllers
 
             if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
             {
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LargeImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData["ErrorMessage"] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    model.AvailableVersions = _movieService.GetAllVersions();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LargeImageFile.CopyToAsync(fileStream);
                 }
@@ -207,9 +218,19 @@ namespace MovieTheater.Controllers
 
             if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
             {
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.SmallImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData["ErrorMessage"] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    model.AvailableVersions = _movieService.GetAllVersions();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.SmallImageFile.CopyToAsync(fileStream);
                 }
@@ -222,11 +243,21 @@ namespace MovieTheater.Controllers
 
             if (model.LogoFile != null && model.LogoFile.Length > 0)
             {
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LogoFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
                 {
-                    await model.SmallImageFile.CopyToAsync(fileStream);
+                    TempData["ErrorMessage"] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    model.AvailableVersions = _movieService.GetAllVersions();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
+                {
+                    await model.LogoFile.CopyToAsync(fileStream);
                 }
                 logoPath = "/images/movies/" + uniqueFileName;
             }
@@ -388,9 +419,18 @@ namespace MovieTheater.Controllers
                     if (System.IO.File.Exists(oldImagePath))
                         System.IO.File.Delete(oldImagePath);
                 }
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LargeImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData["ErrorMessage"] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LargeImageFile.CopyToAsync(fileStream);
                 }
@@ -406,9 +446,18 @@ namespace MovieTheater.Controllers
                     if (System.IO.File.Exists(oldImagePath))
                         System.IO.File.Delete(oldImagePath);
                 }
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.SmallImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData["ErrorMessage"] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.SmallImageFile.CopyToAsync(fileStream);
                 }
@@ -423,9 +472,18 @@ namespace MovieTheater.Controllers
                     if (System.IO.File.Exists(oldImagePath))
                         System.IO.File.Delete(oldImagePath);
                 }
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LogoFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LogoFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData["ErrorMessage"] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LogoFile.CopyToAsync(fileStream);
                 }
