@@ -1,7 +1,11 @@
 @model MovieTheater.ViewModels.MovieDetailViewModel
 @using System.Security.Claims
+@using System
 
 @{
+	 
+	DateOnly todayDateOnly = DateOnly.FromDateTime(DateTime.Today);
+	string minDateFormatted = todayDateOnly.ToString("yyyy-MM-dd");
 	ViewData["Title"] = "Create a Movie";
 	var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 }
@@ -12,13 +16,13 @@
 	<div class="signup-card">
 		@if (userRole == "Admin")
 		{
-			<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+			<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
 				&larr; Return
 			</a>
 		}
 		else
 		{
-			<a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+			<a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
 				&larr; Return
 			</a>
 		}
@@ -83,12 +87,12 @@
 					<div class="row mb-3">
 						<div class="col">
 							<strong>From Date</strong>
-							<input type="date" class="form-control" asp-for="FromDate" />
+							<input type="date" class="form-control" asp-for="FromDate" min="@minDateFormatted" />
 							<span asp-validation-for="FromDate" class="text-danger"></span>
 						</div>
 						<div class="col">
 							<strong>To Date</strong>
-							<input type="date" class="form-control" asp-for="ToDate" />
+							<input type="date" class="form-control" asp-for="ToDate" min="@minDateFormatted"/>
 							<span asp-validation-for="ToDate" class="text-danger"></span>
 						</div>
 					</div>

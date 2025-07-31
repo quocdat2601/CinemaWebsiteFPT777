@@ -98,6 +98,7 @@ namespace MovieTheater.Controllers
             _bookingDomainService = bookingDomainService;
             _promotionService = promotionService;
         }
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         
        //GET: /api/booking/information
@@ -518,14 +519,18 @@ namespace MovieTheater.Controllers
         /// Trang xác nhận bán vé cho admin (chọn ghế, nhập member...)
         /// </summary>
         /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public async Task<IActionResult> ConfirmTicketForAdmin(int movieShowId, List<int>? selectedSeatIds, List<int>? foodIds = null, List<int>? foodQtys = null, string memberId = null, string accountId = null)
         {
             if (selectedSeatIds == null || selectedSeatIds.Count == 0)
             {
                 TempData["ErrorMessage"] = "No seats were selected.";
-                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
             }
             
             // Build lại ViewModel với memberId nếu có
@@ -561,7 +566,7 @@ namespace MovieTheater.Controllers
         /// Kiểm tra thông tin member khi bán vé cho admin
         /// </summary>
         /// <remarks>url: /Booking/CheckMemberDetails (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> CheckMemberDetails([FromBody] MemberCheckRequest request)
         {
@@ -589,7 +594,7 @@ namespace MovieTheater.Controllers
         /// Xác nhận bán vé cho admin (lưu invoice, cập nhật điểm, trạng thái ghế...)
         /// </summary>
         /// <remarks>url: /Booking/ConfirmTicketForAdmin (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> ConfirmTicketForAdmin([FromBody] ConfirmTicketAdminViewModel model)
         {
@@ -612,7 +617,7 @@ namespace MovieTheater.Controllers
         /// Trang xác nhận bán vé thành công cho admin
         /// </summary>
         /// <remarks>url: /Booking/TicketBookingConfirmed (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public async Task<IActionResult> TicketBookingConfirmed(string invoiceId)
         {
@@ -642,7 +647,7 @@ namespace MovieTheater.Controllers
         /// Kiểm tra điểm để quy đổi vé cho admin
         /// </summary>
         /// <remarks>url: /Booking/CheckScoreForConversion (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public IActionResult CheckScoreForConversion([FromBody] ScoreConversionRequest request)
         {
@@ -667,7 +672,7 @@ namespace MovieTheater.Controllers
         /// Xem thông tin vé (admin/employee)
         /// </summary>
         /// <remarks>url: /Booking/TicketInfo (GET)</remarks>
-        [Authorize(Roles = "Admin,Employee")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public async Task<IActionResult> TicketInfo(string invoiceId)
         {
@@ -681,7 +686,7 @@ namespace MovieTheater.Controllers
         /// Lấy danh sách member (admin)
         /// </summary>
         /// <remarks>url: /Booking/GetAllMembers (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
         public IActionResult GetAllMembers()
         {
@@ -706,14 +711,22 @@ namespace MovieTheater.Controllers
         /// Khởi tạo bán vé cho member (admin)
         /// </summary>
         /// <remarks>url: /Booking/InitiateTicketSellingForMember/{id} (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpGet("Booking/InitiateTicketSellingForMember/{id}")]
         public IActionResult InitiateTicketSellingForMember(string id)
         {
             // Store the member's AccountId in TempData to use in the ticket selling process
             TempData["InitiateTicketSellingForMemberId"] = id;
+            string returnUrl;
+            if (role == "Admin")
+            {
+                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
 
-            var returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            else
+            {
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
+            }
             return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
         }
 
@@ -721,7 +734,7 @@ namespace MovieTheater.Controllers
         /// Lấy discount và earning rate của member (admin)
         /// </summary>
         /// <remarks>url: /Booking/GetMemberDiscount (GET)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public IActionResult GetMemberDiscount(string memberId)
         {
             if (string.IsNullOrEmpty(memberId))
@@ -741,7 +754,7 @@ namespace MovieTheater.Controllers
         /// Reload page với member đã chọn (admin)
         /// </summary>
         /// <remarks>url: /Booking/ReloadWithMember (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> ReloadWithMember([FromBody] ReloadWithMemberRequest request)
         {
@@ -781,7 +794,7 @@ namespace MovieTheater.Controllers
         /// Lấy danh sách promotion hợp lệ cho member
         /// </summary>
         /// <remarks>url: /Booking/GetEligiblePromotions (POST)</remarks>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         public async Task<IActionResult> GetEligiblePromotions([FromBody] GetEligiblePromotionsRequest request)
         {
