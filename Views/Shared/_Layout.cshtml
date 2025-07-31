@@ -74,15 +74,8 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Promotion" asp-action="List">Promotions</a>
                         </li>
-                        @if (userRole == "Member")
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
-                            </li>
-                        }
                     </ul>
                     <ul class="navbar-nav align-items-center">
-
                         @if (userRole == "Admin")
                         {
                             <li class="nav-item me-2">
@@ -308,7 +301,7 @@
     if (retryBtn) {
       retryBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        window.location.href = '/Booking/TicketBooking';
+                        window.location.href = '/#booking-widget';
       });
     }
   });
