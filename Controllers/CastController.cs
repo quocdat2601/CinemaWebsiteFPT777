@@ -6,19 +6,23 @@ using MovieTheater.ViewModels;
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class CastController : Controller
     {
         private readonly IPersonRepository _personRepository;
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         public CastController(IPersonRepository personRepository)
         {
             _personRepository = personRepository;
         }
-
+       
         // GET: CastController/Detail/5
         public ActionResult Detail(int id)
         {
@@ -102,7 +106,10 @@ namespace MovieTheater.Controllers
                     _personRepository.Add(newPerson);
                     _personRepository.Save();
                     TempData["ToastMessage"] = "Cast created successfully.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
                 }
                 catch (Exception ex)
                 {
@@ -163,7 +170,6 @@ namespace MovieTheater.Controllers
 
             try
             {
-                // Get existing person
                 var existingPerson = _personRepository.GetById(id);
                 if (existingPerson == null)
                 {
@@ -206,7 +212,10 @@ namespace MovieTheater.Controllers
                     _personRepository.Update(existingPerson);
                     _personRepository.Save();
                     TempData["ToastMessage"] = "Cast updated successfully.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
                 }
                 catch (Exception dbEx)
                 {
@@ -233,7 +242,10 @@ namespace MovieTheater.Controllers
                 if (cast == null)
                 {
                     TempData["ErrorMessage"] = "Cast not found.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
                 }
 
                 // Check if person is associated with any movies
@@ -241,18 +253,27 @@ namespace MovieTheater.Controllers
                 if (movies != null && movies.Any())
                 {
                     TempData["ErrorMessage"] = $"Cannot delete {cast.Name} because they are associated with {movies.Count()} movie(s). Please remove them from all movies first.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
                 }
 
                 _personRepository.Delete(id);
                 _personRepository.Save(); // Ensure changes are committed
                 TempData["ToastMessage"] = "Cast deleted successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}. Details: {ex.InnerException?.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
             }
         }
     }

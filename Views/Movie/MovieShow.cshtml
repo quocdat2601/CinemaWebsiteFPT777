@@ -4,117 +4,148 @@
     ViewData["Title"] = "Movie Show Schedule";
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 }
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <link rel="stylesheet" href="~/css/schedule.css" asp-append-version="true" />
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+        text-shadow: none !important;
+    }
 
-<div class="container schedule-form-container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        @if (userRole == "Admin")
-        {
-            <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-secondary">
-                &larr; Return
-            </a>
-        }
-        else
-        {
-            <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-secondary">
-                &larr; Return
-            </a>
-        }
-    </div>
-
-    <h2 class="schedule-page-title mb-0 text-center" style="font-size: xx-large">Movie Schedule</h2>
-
-    <div class="movie-info mb-2" style="font-size: large">
-        <p class="text-muted mb-1">
-            <span class="fw-bold">Movie ID:</span> @Model.MovieId
-        </p>
-        <p class="text-muted mb-1">
-            <span class="fw-bold">Movie Name:</span> @Model.MovieNameEnglish
-        </p>
-         <p class="text-muted mb-1">
-            <span class="fw-bold">Duration:</span> @Model.Duration minutes
-        </p>
-        <input type="hidden" id="movieDuration" value="@Model.Duration" />
-    </p>
-
-    </div>
-
-    <div class="schedule-form">
-        <input type="hidden" id="movieId" value="@Model.MovieId" />
-        <div id="validationSummary" class="text-danger"></div>
-
-        <!-- Version Selection (First) -->
-        <div class="form-group mb-4">
-            <label class="section-title">Version</label>
-            <div id="versionRadioGroup" class="d-flex justify-content-center">
-                @foreach (var version in Model.AvailableVersions)
-                {
-                    <label class="me-5">
-                        <input type="radio"
-                               name="SelectedVersionIds"
-                               value="@version.VersionId"
-                               @(Model.SelectedVersionIds.Contains(version.VersionId) ? "checked" : "")
-                               class="version-radio" />
-                        @version.VersionName
-                    </label>
-                }
-            </div>
-            <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
+    .nav-tabs .nav-link.active {
+        background-color: #f8f9fa !important;
+        font-weight: bold;
+        color: black !important;
+        text-shadow: none !important;
+     }
+</style>
+<div class="mt-2 row" style="margin: 0 20px">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            @if (userRole == "Admin")
+            {
+                <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-secondary">
+                    &larr; Return
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-secondary">
+                    &larr; Return
+                </a>
+            }
         </div>
 
-        <!-- Cinema Room Selection (Second) -->
-        <div class="form-group mb-4">
-            <label for="cinemaRoomSelect" class="section-title">Cinema Room</label>
-            <div class="d-flex justify-content-center">
-                <select class="form-control w-75" id="cinemaRoomSelect" disabled>
-                    <option value="">-- Select a Cinema Room --</option>
-                </select>
-            </div>
-            <span class="text-danger" id="cinemaRoomError"></span>
+        <h2 class="schedule-page-title text-center">Movie Schedule</h2>
+
+        <div class="movie-info mb-2" style="font-size: large">
+            <p class="text-muted mb-1">
+                <span class="fw-bold">Movie Name:</span> @Model.MovieNameEnglish
+            </p>
+             <p class="text-muted mb-1">
+                <span class="fw-bold">Duration:</span> @Model.Duration minutes
+            </p>
+            <input type="hidden" id="movieDuration" value="@Model.Duration" />
         </div>
 
-        <!-- Show Dates (Third) -->
-        <div class="form-group mb-4">
-            <label class="section-title">Show Date</label>
-            <div class="d-flex justify-content-center">
-                <select class="form-control w-75" id="showDateSelect" disabled>
-                    <option value="">-- Select a Show Date --</option>
-                </select>
-            </div>
-            <span class="text-danger" id="showDateError"></span>
-        </div>
+        <div class="schedule-form">
+            <input type="hidden" id="movieId" value="@Model.MovieId" />
+            <div id="validationSummary" class="text-danger"></div>
 
-        <!-- Schedules (Fourth) -->
-        <div class="form-group mb-4">
-            <label class="section-title">Available Schedules</label>
-            <div id="lastShowEndTime" class="text-muted text-center" style="font-size: 0.9em; margin-bottom: 5px;"></div>
-            <div class="d-flex justify-content-center">
-                <select class="form-control w-75" id="scheduleSelect" disabled>
-                    <option value="">-- Select a Schedule --</option>
-                </select>
-            </div>
-            <span class="text-danger" id="scheduleError"></span>
-        </div>
-
-        <!-- Movie Show List -->
-        <div class="form-group">
-            <label class="section-title">Current Movie Shows</label>
-            <div id="movieShowsContainer" class="mt-3 p-2 bg-light rounded border">
-                <!-- Movie shows will be rendered here by JavaScript -->
+            <!-- Version Selection (First) -->
+            <div class="form-group mb-2">
+                <label class="section-title">Version</label>
+                <div id="versionRadioGroup" class="d-flex justify-content-center">
+                    @foreach (var version in Model.AvailableVersions)
+                    {
+                        <label class="me-5">
+                            <input type="radio"
+                                   name="SelectedVersionIds"
+                                   value="@version.VersionId"
+                                   @(Model.SelectedVersionIds.Contains(version.VersionId) ? "checked" : "")
+                                   class="version-radio" />
+                            @version.VersionName
+                        </label>
+                    }
+                </div>
+                <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
             </div>
 
-            <div class="text-center">
+            <!-- Cinema Room Selection (Second) -->
+            <div class="form-group mb-2">
+                <label for="cinemaRoomSelect" class="section-title">Cinema Room</label>
+                <div class="d-flex justify-content-center">
+                    <select class="form-control w-75" id="cinemaRoomSelect" disabled>
+                        <option value="">-- Select a Cinema Room --</option>
+                    </select>
+                </div>
+                <span class="text-danger" id="cinemaRoomError"></span>
+            </div>
+
+            <!-- Show Dates (Third) -->
+            <div class="form-group mb-2">
+                <label class="section-title">Show Date</label>
+                <div class="d-flex justify-content-center">
+                    <select class="form-control w-75" id="showDateSelect" disabled>
+                        <option value="">-- Select a Show Date --</option>
+                    </select>
+                </div>
+                <span class="text-danger" id="showDateError"></span>
+            </div>
+
+            <!-- Schedules (Fourth) -->
+            <div class="form-group mb-2">
+                <label class="section-title">Available Schedules</label>
+                <div id="lastShowEndTime" class="text-muted text-center" style="font-size: 0.9em; margin-bottom: 5px;"></div>
+                <div class="d-flex justify-content-center">
+                    <select class="form-control w-75" id="scheduleSelect" disabled>
+                        <option value="">-- Select a Schedule --</option>
+                    </select>
+                </div>
+                <span class="text-danger" id="scheduleError"></span>
+            </div>
+             <div class="text-center">
                 <button type="button" class="btn btn-outline-primary mt-3 mb-3" id="addMovieShowBtn" disabled>
                     Add Movie Show
                 </button>
             </div>
-        </div>
-        <div class="text-center">
-            <button type="button" class="btn btn-primary mb-3" id="saveChangesBtn">
-                Save Changes
-            </button>
-        </div>
+         </div>
     </div>
+
+    <div class="col">
+        <!-- Movie Show List -->
+        <div class="form-group">
+            <label class="section-title">Current Movie Shows</label>
+            <ul class="nav nav-tabs" id="movieShowTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing" type="button" role="tab" aria-controls="ongoing" aria-selected="true">
+                        Ongoing shows
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="old-tab" data-bs-toggle="tab" data-bs-target="#old" type="button" role="tab" aria-controls="old" aria-selected="false">
+                        Old shows
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content" id="movieShowTabsContent">
+                <div class="tab-pane fade show active" id="ongoing" role="tabpanel" aria-labelledby="ongoing-tab">
+                    <div id="movieShowsOngoingContainer" class="p-2 bg-light rounded border"></div>
+                </div>
+                <div class="tab-pane fade" id="old" role="tabpanel" aria-labelledby="old-tab">
+                    <div id="movieShowsOldContainer" class="p-2 bg-light rounded border"></div>
+                </div>
+            </div>
+        </div>
+    </div> 
+</div>
+
+<div class="col-12 d-flex justify-content-center gap-2 mt-4">
+    <button type="button" class="btn btn-primary mb-3" id="saveChangesBtn">
+        Save Changes
+    </button>
 </div>
 
 <partial name="_ToastMessages" />
@@ -317,80 +348,144 @@
 
         addMovieShowBtn.addEventListener('click', addMovieShow);
 
+        // Force the ongoing tab to be active on first load
+        var ongoingTab = document.getElementById('ongoing-tab');
+        if (ongoingTab) {
+            var tab = new bootstrap.Tab(ongoingTab);
+            tab.show();
+        }
+
+        // On initial load
         renderMovieShows();
 
-        function renderMovieShows() {
-            movieShowsContainer.innerHTML = '';
-            
-            movieShowItems.sort((a, b) => {
-                const dateComparison = a.dateId.localeCompare(b.dateId);
-                if (dateComparison !== 0) return dateComparison;
-                const roomComparison = a.roomName.localeCompare(b.roomName);
-                if (roomComparison !== 0) return roomComparison;
-                return a.scheduleText.localeCompare(b.scheduleText);
+        // On tab switch
+        ['show.bs.tab', 'shown.bs.tab'].forEach(function(eventName) {
+            document.getElementById('ongoing-tab').addEventListener(eventName, function (event) {
+                renderMovieShows();
             });
+            document.getElementById('old-tab').addEventListener(eventName, function (event) {
+                renderMovieShows();
+            });
+        });
 
-            const indexedMovieShowItems = movieShowItems.map((item, index) => ({ ...item, originalIndex: index }));
+        function renderMovieShows() {
+            const ongoingContainer = document.getElementById('movieShowsOngoingContainer');
+            const oldContainer = document.getElementById('movieShowsOldContainer');
+            ongoingContainer.innerHTML = '';
+            oldContainer.innerHTML = '';
 
-            const groupedByDate = indexedMovieShowItems.reduce((acc, show) => {
-                if (!acc[show.dateId]) {
-                    acc[show.dateId] = [];
+            // Get today's and tomorrow's date in yyyy-MM-dd
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+
+            // Helper to parse yyyy-MM-dd
+            function parseDate(dateStr) {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                return new Date(year, month - 1, day, 0, 0, 0, 0);
+            }
+
+            function isSameDay(d1, d2) {
+                return d1.getFullYear() === d2.getFullYear() &&
+                       d1.getMonth() === d2.getMonth() &&
+                       d1.getDate() === d2.getDate();
+            }
+
+            // Split shows
+            const ongoingShows = [];
+            const oldShows = [];
+
+            movieShowItems.forEach(item => {
+                const showDate = parseDate(item.dateId); // parseDate returns a Date object, time at midnight
+                if (showDate >= today) {
+                    ongoingShows.push(item);
+                } else {
+                    oldShows.push(item);
                 }
-                acc[show.dateId].push(show);
-                return acc;
-            }, {});
+            });
+            
+            // Helper to render shows into a container
+            function renderShows(shows, container) {
+                if (shows.length === 0) {
+                    container.innerHTML = '<h3 class="text-muted mt-3 mb-3 text-center">No shows found.</h3>';
+                    return;
+                }
 
-            Object.keys(groupedByDate).sort().forEach(dateId => {
-                const showsForDate = groupedByDate[dateId];
-                const dateText = new Date(dateId).toLocaleDateString('en-GB');
-
-                const dateContainer = document.createElement('div');
-                dateContainer.className = 'date-group mb-4 p-3 border rounded';
-                
-                const dateHeader = document.createElement('h5');
-                dateHeader.className = 'date-header mb-3 border-bottom pb-2';
-                dateHeader.textContent = `Date: ${dateText}`;
-                dateContainer.appendChild(dateHeader);
-
-                showsForDate.forEach(show => {
-                    const showDiv = document.createElement('div');
-                    showDiv.className = 'movie-show-entry alert alert-light d-flex justify-content-between align-items-center mb-2';
-                    
-                    let endTimeText = '';
-                    if (show.scheduleText && show.scheduleText !== 'N/A' && movieDuration) {
-                        const [hours, minutes] = show.scheduleText.split(':').map(Number);
-                        const startTime = new Date();
-                        startTime.setHours(hours, minutes, 0, 0);
-                        
-                        const endTime = new Date(startTime.getTime() + movieDuration * 60000);
-                        
-                        const endHours = endTime.getHours().toString().padStart(2, '0');
-                        const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
-                        endTimeText = ` ~ ${endHours}:${endMinutes}`;
-                    }
-
-                    const contentDiv = document.createElement('div');
-                    contentDiv.innerHTML = `
-                        <span class="fw-bold me-2">Room:</span><span>${show.roomName}</span>
-                        <span class="fw-bold ms-3 me-2">Time:</span><span>[${show.scheduleText}${endTimeText}]</span>
-                        <span class="fw-bold ms-3 me-2">Version:</span><span>${show.version}</span>
-                    `;
-
-                    const removeButton = document.createElement('button');
-                    removeButton.type = 'button';
-                    removeButton.className = 'btn btn-outline-danger btn-sm';
-                    removeButton.innerHTML = 'Remove';
-                    removeButton.onclick = function() {
-                        removeMovieShow(show.originalIndex);
-                    };
-
-                    showDiv.appendChild(contentDiv);
-                    showDiv.appendChild(removeButton);
-                    dateContainer.appendChild(showDiv);
+                // Sort and index
+                shows.sort((a, b) => {
+                    const dateComparison = a.dateId.localeCompare(b.dateId);
+                    if (dateComparison !== 0) return dateComparison;
+                    const roomComparison = a.roomName.localeCompare(b.roomName);
+                    if (roomComparison !== 0) return roomComparison;
+                    return a.scheduleText.localeCompare(b.scheduleText);
                 });
 
-                movieShowsContainer.appendChild(dateContainer);
-            });
+                const indexedShows = shows.map((item, index) => ({ ...item, originalIndex: movieShowItems.indexOf(item) }));
+
+                // Group by date
+                const groupedByDate = indexedShows.reduce((acc, show) => {
+                    if (!acc[show.dateId]) {
+                        acc[show.dateId] = [];
+                    }
+                    acc[show.dateId].push(show);
+                    return acc;
+                }, {});
+
+                Object.keys(groupedByDate).sort().forEach(dateId => {
+                    const showsForDate = groupedByDate[dateId];
+                    const dateText = new Date(dateId).toLocaleDateString('en-GB');
+
+                    const dateContainer = document.createElement('div');
+                    dateContainer.className = 'date-group mb-4 p-3 border rounded';
+
+                    const dateHeader = document.createElement('h5');
+                    dateHeader.className = 'date-header mb-3 border-bottom pb-2';
+                    dateHeader.textContent = `Date: ${dateText}`;
+                    dateContainer.appendChild(dateHeader);
+
+                    showsForDate.forEach(show => {
+                        const showDiv = document.createElement('div');
+                        showDiv.className = 'movie-show-entry alert alert-light d-flex justify-content-between align-items-center mb-2';
+
+                        let endTimeText = '';
+                        if (show.scheduleText && show.scheduleText !== 'N/A' && movieDuration) {
+                            const [hours, minutes] = show.scheduleText.split(':').map(Number);
+                            const startTime = new Date();
+                            startTime.setHours(hours, minutes, 0, 0);
+
+                            const endTime = new Date(startTime.getTime() + movieDuration * 60000);
+
+                            const endHours = endTime.getHours().toString().padStart(2, '0');
+                            const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
+                            endTimeText = ` ~ ${endHours}:${endMinutes}`;
+                        }
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.innerHTML = `
+                            <span class="fw-bold me-2">Room:</span><span>${show.roomName}</span>
+                            <span class="fw-bold ms-3 me-2">Time:</span><span>[${show.scheduleText}${endTimeText}]</span>
+                            <span class="fw-bold ms-3 me-2">Version:</span><span>${show.version}</span>
+                        `;
+
+                        const removeButton = document.createElement('button');
+                        removeButton.type = 'button';
+                        removeButton.className = 'btn btn-outline-danger btn-sm';
+                        removeButton.innerHTML = 'Remove';
+                        removeButton.onclick = function() {
+                            removeMovieShow(show.originalIndex);
+                        };
+
+                        showDiv.appendChild(contentDiv);
+                        showDiv.appendChild(removeButton);
+                        dateContainer.appendChild(showDiv);
+                    });
+
+                    container.appendChild(dateContainer);
+                });
+            }
+
+            renderShows(ongoingShows, ongoingContainer);
+            renderShows(oldShows, oldContainer);
         }
 
         async function addMovieShow() {

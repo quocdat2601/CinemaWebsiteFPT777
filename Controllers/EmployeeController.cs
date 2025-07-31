@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using System.Data;
 namespace MovieTheater.Controllers
 {
     public class EmployeeController : Controller
@@ -12,17 +14,27 @@ namespace MovieTheater.Controllers
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
-        public EmployeeController(IEmployeeService service, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService)
+        private readonly ICinemaService _cinemaService;
+        private readonly IPromotionService _promotionService;
+        private readonly IFoodService _foodService;
+        private readonly IVoucherService _voucherService;
+        private readonly IPersonRepository _personRepository;
+        public EmployeeController(IEmployeeService service, IMovieService movieService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService, ICinemaService cinemaService, IPromotionService promotionService, IFoodService foodService, IVoucherService voucherService, IPersonRepository personRepository)
         {
             _service = service;
             _movieService = movieService;
             _memberRepository = memberRepository;
             _accountService = accountService;
             _invoiceService = invoiceService;
+            _cinemaService = cinemaService;
+            _promotionService = promotionService;
+            _foodService = foodService;
+            _voucherService = voucherService;
+            _personRepository = personRepository;
         }
         // GET: EmployeeController
         [Authorize(Roles = "Employee")]
-        public IActionResult MainPage(string tab = "MemberMg")
+        public IActionResult MainPage(string tab = "MovieMg")
         {
             ViewData["ActiveTab"] = tab;
             return View();
@@ -36,39 +48,168 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Employee")]
-        public IActionResult LoadTab(string tab, string keyword = null)
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null)
         {
             switch (tab)
             {
                 case "MovieMg":
                     var movies = _movieService.GetAll();
                     return PartialView("MovieMg", movies);
-                case "MemberMg":
-                    var members = _memberRepository.GetAll();
-                    return PartialView("~/Views/Admin/MemberMg.cshtml", members);
-                case "ShowroomMg":
-                    return PartialView("ShowroomMg");
-                case "ScheduleMg":
-                    return PartialView("SheduleMg");
+             
                 case "PromotionMg":
-                    return PartialView("PromotionMg");
+                    var promotions = _promotionService.GetAll();
+                    return PartialView("PromotionMg", promotions);
                 case "BookingMg":
                     var invoices = _invoiceService.GetAll();
 
                     if (!string.IsNullOrWhiteSpace(keyword))
                     {
+                        ViewBag.Keyword = keyword;
                         keyword = keyword.Trim().ToLower();
+
                         invoices = invoices.Where(i =>
-                            (i.InvoiceId != null && i.InvoiceId.ToLower().Contains(keyword)) ||
-                            (i.AccountId != null && i.AccountId.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(i.InvoiceId) && i.InvoiceId.ToLower().Contains(keyword)) ||
+                            (!string.IsNullOrEmpty(i.AccountId) && i.AccountId.ToLower().Contains(keyword)) ||
                             (i.Account != null && (
-                                (i.Account.PhoneNumber != null && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
-                                (i.Account.IdentityCard != null && i.Account.IdentityCard.ToLower().Contains(keyword))
+                                (!string.IsNullOrEmpty(i.Account.PhoneNumber) && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                                (!string.IsNullOrEmpty(i.Account.IdentityCard) && i.Account.IdentityCard.ToLower().Contains(keyword))
                             ))
                         ).ToList();
                     }
 
+                    // Bổ sung filter trạng thái
+                    if (!string.IsNullOrEmpty(statusFilter))
+                    {
+                        if (statusFilter == "completed")
+                            invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && !b.Cancel).ToList();
+                        else if (statusFilter == "cancelled")
+                            invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && b.Cancel).ToList();
+                        else if (statusFilter == "notpaid")
+                            invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
+                    }
+
+                    // Bổ sung sort
+                    var sortBy = Request.Query["sortBy"].ToString();
+                    if (!string.IsNullOrEmpty(sortBy))
+                    {
+                        if (sortBy == "movie_az")
+                            invoices = invoices.OrderBy(i => i.MovieShow.Movie.MovieNameEnglish).ToList();
+                        else if (sortBy == "movie_za")
+                            invoices = invoices.OrderByDescending(i => i.MovieShow.Movie.MovieNameEnglish).ToList();
+                        else if (sortBy == "id_asc")
+                            invoices = invoices.OrderBy(i => i.InvoiceId).ToList();
+                        else if (sortBy == "id_desc")
+                            invoices = invoices.OrderByDescending(i => i.InvoiceId).ToList();
+                        else if (sortBy == "account_az")
+                            invoices = invoices.OrderBy(i => i.AccountId).ToList();
+                        else if (sortBy == "account_za")
+                            invoices = invoices.OrderByDescending(i => i.AccountId).ToList();
+                        else if (sortBy == "identity_az")
+                            invoices = invoices.OrderBy(i => i.Account != null ? i.Account.IdentityCard : "").ToList();
+                        else if (sortBy == "identity_za")
+                            invoices = invoices.OrderByDescending(i => i.Account != null ? i.Account.IdentityCard : "").ToList();
+                        else if (sortBy == "phone_az")
+                            invoices = invoices.OrderBy(i => i.Account != null ? i.Account.PhoneNumber : "").ToList();
+                        else if (sortBy == "phone_za")
+                            invoices = invoices.OrderByDescending(i => i.Account != null ? i.Account.PhoneNumber : "").ToList();
+                        else if (sortBy == "time_asc")
+                            invoices = invoices.OrderBy(i => i.MovieShow.Schedule.ScheduleTime).ToList();
+                        else if (sortBy == "time_desc")
+                            invoices = invoices.OrderByDescending(i => i.MovieShow.Schedule.ScheduleTime).ToList();
+                    }
+
                     return PartialView("BookingMg", invoices);
+                case "FoodMg":
+                    // Sử dụng parameter keyword thay vì Request.Query["keyword"]
+                    var searchKeyword = keyword ?? string.Empty;
+                    var categoryFilter = Request.Query["categoryFilter"].ToString();
+                    string statusFilterStr = Request.Query["statusFilter"].ToString();
+                    bool? foodStatusFilter = null;
+                    if (!string.IsNullOrEmpty(statusFilterStr))
+                    {
+                        if (bool.TryParse(statusFilterStr, out var parsedBool))
+                            foodStatusFilter = parsedBool;
+                        else if (statusFilterStr == "1")
+                            foodStatusFilter = true;
+                        else if (statusFilterStr == "0")
+                            foodStatusFilter = false;
+                    }
+
+                    var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, foodStatusFilter);
+
+                    // Bổ sung sort
+                    var sortByFood = Request.Query["sortBy"].ToString();
+                    if (!string.IsNullOrEmpty(sortByFood))
+                    {
+                        if (sortByFood == "name_az")
+                            foods.Foods = foods.Foods.OrderBy(f => f.Name).ToList();
+                        else if (sortByFood == "name_za")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.Name).ToList();
+                        else if (sortByFood == "category_az")
+                            foods.Foods = foods.Foods.OrderBy(f => f.Category).ToList();
+                        else if (sortByFood == "category_za")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.Category).ToList();
+                        else if (sortByFood == "price_asc")
+                            foods.Foods = foods.Foods.OrderBy(f => f.Price).ToList();
+                        else if (sortByFood == "price_desc")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.Price).ToList();
+                        else if (sortByFood == "created_asc")
+                            foods.Foods = foods.Foods.OrderBy(f => f.CreatedDate).ToList();
+                        else if (sortByFood == "created_desc")
+                            foods.Foods = foods.Foods.OrderByDescending(f => f.CreatedDate).ToList();
+                    }
+
+                    ViewBag.Keyword = searchKeyword;
+                    ViewBag.CategoryFilter = categoryFilter;
+                    ViewBag.StatusFilter = statusFilterStr;
+
+                    return PartialView("FoodMg", foods);
+                case "VoucherMg":
+                    var filter = new Service.VoucherFilterModel
+                    {
+                        Keyword = Request.Query["keyword"].ToString(),
+                        StatusFilter = Request.Query["statusFilter"].ToString(),
+                        ExpiryFilter = Request.Query["expiryFilter"].ToString()
+                    };
+                    var filteredVouchers = _voucherService.GetFilteredVouchers(filter).ToList();
+
+                    // Bổ sung sort
+                    var sortByVoucher = Request.Query["sortBy"].ToString();
+                    if (!string.IsNullOrEmpty(sortByVoucher))
+                    {
+                        if (sortByVoucher == "voucherid_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.VoucherId).ToList();
+                        else if (sortByVoucher == "voucherid_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.VoucherId).ToList();
+                        else if (sortByVoucher == "account_az")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.AccountId).ToList();
+                        else if (sortByVoucher == "account_za")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.AccountId).ToList();
+                        else if (sortByVoucher == "value_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.Value).ToList();
+                        else if (sortByVoucher == "value_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.Value).ToList();
+                        else if (sortByVoucher == "created_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.CreatedDate).ToList();
+                        else if (sortByVoucher == "created_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.CreatedDate).ToList();
+                        else if (sortByVoucher == "expiry_asc")
+                            filteredVouchers = filteredVouchers.OrderBy(v => v.ExpiryDate).ToList();
+                        else if (sortByVoucher == "expiry_desc")
+                            filteredVouchers = filteredVouchers.OrderByDescending(v => v.ExpiryDate).ToList();
+                    }
+
+                    ViewBag.Keyword = filter.Keyword;
+                    ViewBag.StatusFilter = filter.StatusFilter;
+                    ViewBag.ExpiryFilter = filter.ExpiryFilter;
+                    return PartialView("VoucherMg", filteredVouchers);
+                
+                case "CastMg":
+                    var persons = _personRepository.GetAll();
+                    ViewBag.Persons = persons;
+                    ViewBag.Actors = persons.Where(c => c.IsDirector == false).ToList();
+                    ViewBag.Directors = persons.Where(c => c.IsDirector == true).ToList();
+                    return PartialView("CastMg");
                 default:
                     return Content("Tab not found.");
             }
@@ -159,7 +300,8 @@ namespace MovieTheater.Controllers
                 Address = employee.Account.Address,
                 PhoneNumber = employee.Account.PhoneNumber,
                 Image = employee.Account.Image,
-                AccountId = employee.AccountId
+                AccountId = employee.AccountId,
+                Status = employee.Status
             };
 
             return View(viewModel);
@@ -168,7 +310,7 @@ namespace MovieTheater.Controllers
         // POST: EmployeeController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditAsync(string id, EmployeeEditViewModel model)
+        public ActionResult EditAsync(string id, EmployeeEditViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -180,6 +322,10 @@ namespace MovieTheater.Controllers
             {
                 TempData["ErrorMessage"] = "Employee not found.";
                 return View(model);
+            }
+            if (employee.Status != model.Status)
+            {
+                _service.ToggleStatus(employee.EmployeeId);
             }
 
             if (!string.IsNullOrEmpty(model.Password))
@@ -213,7 +359,7 @@ namespace MovieTheater.Controllers
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        await model.ImageFile.CopyToAsync(stream);
+                        model.ImageFile.CopyToAsync(stream);
                     }
                     model.Image = "/image/" + uniqueFileName;
                 }
@@ -309,6 +455,41 @@ namespace MovieTheater.Controllers
                 TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
                 return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public IActionResult ToggleStatus(string id)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(id))
+                {
+                    TempData["ErrorMessage"] = "Invalid employee ID.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                var employee = _service.GetById(id);
+                if (employee == null)
+                {
+                    TempData["ErrorMessage"] = "Employee not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+                }
+
+                _service.ToggleStatus(id);
+                TempData["ToastMessage"] = "Employee status updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+            }
+            catch (ArgumentException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
+            }
+            return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
         }
     }
 }

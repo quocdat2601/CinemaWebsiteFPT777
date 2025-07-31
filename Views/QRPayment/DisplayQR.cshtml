@@ -226,13 +226,17 @@
             <span id="timer">QR Code expires in: <span id="countdown">15:00</span></span>
         </div>
         
+        <div class="text-center text-muted mb-3">
+            <small><i class="fas fa-sync-alt"></i> Auto-checking payment status every 10 seconds...</small>
+        </div>
+        
         <div id="paymentStatus" class="payment-status">
             <i class="fas fa-check-circle"></i>
             <span id="statusMessage"></span>
         </div>
         
         <div class="action-buttons">
-            <button type="button" id="checkPaymentBtn" class="btn-check-payment">
+            <button type="button" id="checkPaymentBtn" class="btn-check-payment" style="display: none;">
                 <i class="fas fa-sync-alt"></i> Check Payment Status
             </button>
             <button type="button" id="cancelBtn" class="btn-cancel">
@@ -243,10 +247,12 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
             let timeLeft = 30 * 60; // 30 minutes in seconds
             let timerInterval;
+            let autoCheckInterval;
             
             function updateTimer() {
                 const minutes = Math.floor(timeLeft / 60);
@@ -270,90 +276,67 @@
             // Start timer
             timerInterval = setInterval(updateTimer, 1000);
             
-            // Check payment status - Demo version
+            // Check payment status
             $('#checkPaymentBtn').click(function() {
                 try {
                     const orderId = '@Model.OrderId';
-                    console.log('Demo OrderId:', orderId);
+                    console.log('OrderId:', orderId);
                     
-                    // Hiển thị thông báo demo
+                    // Hiển thị thông báo đang xử lý
                     $('#paymentStatus').removeClass('payment-failed payment-success').addClass('payment-pending').show();
-                    $('#statusMessage').html('<i class="fas fa-info-circle"></i> Demo: Processing payment...');
+                    $('#statusMessage').html('<i class="fas fa-info-circle"></i> Processing payment...');
                     
-                    // Tạo model data từ các field hiện có
-                    const modelData = {
-                        MemberFullName: '@Model.CustomerName',
-                        MemberPhoneNumber: '@Model.CustomerPhone',
-                        MovieShowId: 0, // Sẽ được set từ server
-                        BookingDetails: {
-                            MovieName: '@Model.MovieName',
-                            TotalPrice: @Model.Amount,
-                            ShowDate: '@Model.ShowTime.Split(" ")[0]',
-                            ShowTime: '@Model.ShowTime.Split(" ")[1]',
-                            SelectedSeats: [
-                                @foreach(var seat in Model.SeatInfo.Split(", "))
-                                {
-                                    <text>{ SeatName: '@seat.Trim()', SeatId: 0 },</text>
-                                }
-                            ]
-                        }
-                    };
-                    
-                    console.log('Demo ModelData:', modelData);
-                    console.log('Demo JSON stringified:', JSON.stringify(modelData));
-                    
+                    // Kiểm tra trạng thái thanh toán từ server
                     $.ajax({
                         url: '@Url.Action("CheckPaymentStatus", "QRPayment")',
                         type: 'POST',
-                        data: { 
-                            orderId: orderId,
-                            modelData: JSON.stringify(modelData)
-                        },
+                        data: JSON.stringify({
+                            orderId: orderId
+                        }),
+                        contentType: 'application/json',
                         success: function(response) {
-                            console.log('Demo Response:', response);
+                            console.log('Payment status response:', response);
+                            
                             if (response.success) {
                                 if (response.isPaid) {
+                                    // Thanh toán thành công!
                                     $('#paymentStatus').removeClass('payment-failed payment-pending').addClass('payment-success').show();
-                                    $('#statusMessage').html('<i class="fas fa-check-circle"></i> Demo: Payment successful! Redirecting...');
-                                    $('#checkPaymentBtn').prop('disabled', true);
-                                    // Gọi API lưu trạng thái Invoice
-                                    $.ajax({
-                                        url: '@Url.Action("ConfirmPayment", "QRPayment")',
-                                        type: 'POST',
-                                        data: { invoiceId: orderId },
-                                        success: function(saveRes) {
-                                            console.log('Invoice status updated:', saveRes);
-                                            // Redirect sau khi lưu thành công
-                                            setTimeout(function() {
-                                                window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
-                                            }, 3000);
-                                        },
-                                        error: function() {
-                                            // Redirect luôn nếu lỗi
-                                            setTimeout(function() {
-                                                window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
-                                            }, 3000);
-                                        }
+                                    $('#statusMessage').html('<i class="fas fa-check-circle"></i> Payment completed successfully!');
+                                    
+                                    // Hiển thị thông báo thành công
+                                    Swal.fire({
+                                        title: 'Payment Successful!',
+                                        text: 'Your payment has been processed successfully.',
+                                        icon: 'success',
+                                        confirmButtonText: 'OK',
+                                        allowOutsideClick: false
+                                    }).then((result) => {
+                                        // Redirect về booking manager
+                                        window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
                                     });
+                                    
+                                    // Dừng auto-polling
+                                    clearInterval(autoCheckInterval);
+                                    
                                 } else {
                                     $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
-                                    $('#statusMessage').html('<i class="fas fa-times-circle"></i> Demo: Payment not yet received. Please try again.');
+                                    $('#statusMessage').html('<i class="fas fa-times-circle"></i> Payment not yet received. Please try again.');
                                 }
                             } else {
                                 $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
-                                $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Demo: ' + (response.message || 'Error checking payment status.'));
+                                $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> ' + (response.message || 'Error checking payment status.'));
                             }
                         },
                         error: function(xhr, status, error) {
-                            console.error('Demo AJAX Error:', {xhr: xhr, status: status, error: error});
+                            console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
                             $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
-                            $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Demo: Error checking payment status.');
+                            $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Error checking payment status.');
                         }
                     });
                 } catch (error) {
-                    console.error('Demo JavaScript Error:', error);
+                    console.error('JavaScript Error:', error);
                     $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
-                    $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Demo: Error preparing payment data.');
+                    $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Error preparing payment data.');
                 }
             });
             
@@ -370,6 +353,13 @@
             //         $('#checkPaymentBtn').click();
             //     }
             // }, 10000);
+            
+            // BẬT auto-polling để tự động kiểm tra trạng thái thanh toán
+            autoCheckInterval = setInterval(function() {
+                if (timeLeft > 0) {
+                    $('#checkPaymentBtn').click();
+                }
+            }, 10000); // 10 giây kiểm tra 1 lần
         });
     </script>
 } 

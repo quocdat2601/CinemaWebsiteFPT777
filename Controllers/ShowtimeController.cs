@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+   [Authorize(Roles = "Admin,Employee")]
    public class ShowtimeController : Controller
    {
        private readonly IMovieRepository _movieRepository;

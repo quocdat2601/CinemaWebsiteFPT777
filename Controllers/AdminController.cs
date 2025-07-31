@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -69,7 +71,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly")
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null)
         {
             switch (tab)
             {
@@ -149,6 +151,19 @@ namespace MovieTheater.Controllers
                         else if (statusFilter == "notpaid")
                             invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
                     }
+
+                    // Bổ sung filter booking type (all vs normal vs employee)
+                    if (!string.IsNullOrEmpty(bookingTypeFilter))
+                    {
+                        if (bookingTypeFilter == "normal")
+                            invoices = invoices.Where(i => i.EmployeeId == null).ToList();
+                        else if (bookingTypeFilter == "employee")
+                            invoices = invoices.Where(i => i.EmployeeId != null).ToList();
+                        // If bookingTypeFilter is "all" or any other value, don't filter (show all)
+                    }
+                    
+                    // Set the current booking type filter for the view
+                    ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
 
                     // Bổ sung sort
                     var sortBy = Request.Query["sortBy"].ToString();
@@ -385,7 +400,11 @@ namespace MovieTheater.Controllers
 
                 // Redirect back to the member list on success
                 TempData["ToastMessage"] = "Member updated successfully!"; // Optional success message
-                return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userRole == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MemberMg" });
             }
             catch (Exception)
             {
@@ -482,6 +501,7 @@ namespace MovieTheater.Controllers
                 var result = _rankService.Create(infoModel);
                 TempData["ToastMessage"] = "Rank created successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+
             }
             catch (InvalidOperationException ex)
             {

@@ -141,7 +141,64 @@
             const tabName = $(this).data('tab');
             loadTab(tabName);
         });
+
+        // Initialize SignalR for cinema room notifications
+        if (window.cinemaConnection) {
+            window.cinemaConnection.stop();
+        }
+        window.cinemaConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/cinemahub")
+            .build();
+
+        // Handle room auto-enabled notifications
+        window.cinemaConnection.on("RoomAutoEnabled", function (cinemaRoomId, roomName) {
+            // Show notification
+            showToast(`Room "${roomName}" has been automatically enabled!`, 'success');
+            
+            // If currently on ShowroomMg tab, refresh it
+            if ($('.admin-tab.active').data('tab') === 'ShowroomMg') {
+                loadTab('ShowroomMg');
+            }
+        });
+
+        // Handle admin notifications
+        window.cinemaConnection.on("AdminNotification", function (message, roomName) {
+            showToast(message, 'info');
+        });
+
+        window.cinemaConnection.start().catch(function (err) {
+            console.error("CinemaHub connection failed: " + err.toString());
+        });
     });
+
+    // Helper function to show toast notifications
+    function showToast(message, type = 'info') {
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        const toastContainer = $('#toast-container');
+        if (toastContainer.length === 0) {
+            $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+        }
+        
+        $('#toast-container').append(toastHtml);
+        const toastElement = $('#toast-container .toast').last();
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toastElement.remove();
+        }, 5000);
+    }
 
     // Delegated event for edit button
     $(document).on('click', '.edit-version-btn', function () {

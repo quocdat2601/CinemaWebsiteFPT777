@@ -10,7 +10,8 @@ namespace MovieTheater.Repository
         public void Add(CinemaRoom cinemaRoom);
         public void Update(CinemaRoom cinemaRoom);
         Task Delete(int id);
-        Task Active(int id);
+        Task Disable(CinemaRoom cinemaRoom);
+        Task Enable(CinemaRoom cinemaRoom);
         Task Save();
         public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId);
     }

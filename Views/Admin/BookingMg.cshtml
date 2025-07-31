@@ -2,10 +2,15 @@
 @inject MovieTheater.Service.IAccountService AccountService
 @{
     ViewData["Title"] = "Booking Management";
+
     var now = DateTime.Now;
+
     var totalBookings = Model.Count();
+
     var completed = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && !b.Cancel);
+
     var cancelled = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && b.Cancel);
+
     var notPaid = Model.Count(b => b.Status != MovieTheater.Models.InvoiceStatus.Completed);
 }
 
@@ -15,36 +20,52 @@
         <a href="@Url.Action("InitiateTicketSellingForMember", "Booking", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Sell Ticket
         </a>
-</div>
+    </div>
 
     <!-- Search and Filter Section -->
     <div class="card mb-4">
         <div class="card-body">
-            <form id="bookingSearchForm" class="row g-3" onsubmit="searchBookings(); return false;">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" id="searchKeyword" name="keyword"
-                           placeholder="Search by Booking ID, Account ID, Phone, Identity Card..." value="@ViewBag.Keyword">
+            <form id="bookingSearchForm" onsubmit="searchBookings(); return false;">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="searchKeyword" name="keyword"
+                               placeholder="Search by Booking ID, Account ID, Phone, Identity Card..." value="@ViewBag.Keyword">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter" name="statusFilter">
+                            <option value="" selected>All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="notpaid">Not Paid</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="#" onclick="resetFilters(); return false;" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </a>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="statusFilter" name="statusFilter">
-                        <option value="" selected>All Status</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="notpaid">Not Paid</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <!-- Đã có sort bằng tiêu đề, không cần dropdown sortBy nữa -->
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <a href="#" onclick="loadTab('BookingMg'); return false;" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-arrow-clockwise"></i> Reset
-                    </a>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                                                 <div class="form-check form-check-inline">
+                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="allBookings" value="all" @(ViewBag.CurrentBookingTypeFilter == "all" || string.IsNullOrEmpty(ViewBag.CurrentBookingTypeFilter) ? "checked" : "")>
+                             <label class="form-check-label" for="allBookings">All Bookings</label>
+                         </div>
+                         <div class="form-check form-check-inline">
+                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="normalBookings" value="normal" @(ViewBag.CurrentBookingTypeFilter == "normal" ? "checked" : "")>
+                             <label class="form-check-label" for="normalBookings">Normal Bookings</label>
+                         </div>
+                         <div class="form-check form-check-inline">
+                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="employeeBookings" value="employee" @(ViewBag.CurrentBookingTypeFilter == "employee" ? "checked" : "")>
+                             <label class="form-check-label" for="employeeBookings">Employee Bookings</label>
+                         </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -131,34 +152,40 @@
                                 <th class="text-end sortable" data-sort="time">Schedule Time <span id="sortIconTime"></span></th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-            @foreach (var Invoice in Model)
-            {   
-                var account = AccountService.GetById(Invoice.AccountId);
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Invoice in Model)
+
+                            {
+                                var account = AccountService.GetById(Invoice.AccountId);
+
                                 var statusBadge = Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !Invoice.Cancel ?
-                                    "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
-                                    Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
-                                    "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
-                                    "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
-                <tr class="text-center booking-row">
+
+                                "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
+
+                                Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
+
+                                "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
+
+                                "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
+                                <tr class="text-center booking-row">
                                     <td class="text-center">@Invoice.InvoiceId</td>
-                                    <td class="text-start">@(Invoice.MovieShow.Movie.MovieNameEnglish ?? "N/A")</td>
+                                    <td class="text-start">@(Invoice.MovieShow?.Movie?.MovieNameEnglish ?? "N/A")</td>
                                     <td class="text-center">@Invoice.AccountId</td>
                                     <td class="text-end">@(account?.IdentityCard ?? "N/A")</td>
                                     <td class="text-end">@(account?.PhoneNumber ?? "N/A")</td>
-                                    <td class="text-end">@(Invoice.MovieShow.Schedule.ScheduleTime.ToString())</td>
+                                    <td class="text-end">@(Invoice.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A")</td>
                                     <td class="text-center">@Html.Raw(statusBadge)</td>
                                     <td class="text-center">
-                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
-                            <i class="fas fa-info-circle"></i> Details
-                        </a>
-                    </td>
-                </tr>
-        }
-    </tbody>
-</table>
+                                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                                            <i class="fas fa-info-circle"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
             else

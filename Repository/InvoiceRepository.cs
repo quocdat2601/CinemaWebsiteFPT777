@@ -16,6 +16,7 @@ namespace MovieTheater.Repository
         {
             return _context.Invoices
                 .Include(i => i.Account)
+                .Include(e => e.Employee)
                 .Include(i => i.MovieShow)
                     .ThenInclude(ms => ms.Movie)
                 .Include(i => i.MovieShow)
@@ -32,6 +33,7 @@ namespace MovieTheater.Repository
             return _context.Invoices
                 .Include(i => i.Account)
                 .ThenInclude(a => a.Members)
+                .Include(i => i.Employee)
                 .Include(i => i.MovieShow)
                     .ThenInclude(ms => ms.Movie)
                 .Include(i => i.MovieShow)
