@@ -68,8 +68,8 @@ namespace MovieTheater.Controllers
 
             if (!string.IsNullOrEmpty(statusFilter))
             {
-                bool isActive = statusFilter.ToLower() == "active";
-                vouchers = vouchers.Where(v => v.IsActive == isActive).ToList();
+                bool isUsed = statusFilter.ToLower() == "used";
+                vouchers = vouchers.Where(v => v.IsUsed == isUsed).ToList();
             }
 
             if (!string.IsNullOrEmpty(expiryFilter))
@@ -127,7 +127,7 @@ namespace MovieTheater.Controllers
                     code = voucher.Code,
                     value = voucher.Value,
                     expiryDate = voucher.ExpiryDate.ToString("yyyy-MM-dd"),
-                    isActive = voucher.IsActive,
+                    isUsed = voucher.IsUsed,
                     account = voucher.Account != null ? new
                     {
                         accountId = voucher.Account.AccountId,
