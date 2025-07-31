@@ -11,7 +11,7 @@
 
 <div class="cinema-app">
     <!-- Theater Header -->
-    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");">
+    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");" data-auto-text-color>
         <div class="screen-glow"></div>
         <div class="profile-spotlight">
             <div class="avatar-theater">
@@ -29,8 +29,8 @@
             </div>
 
             <div class="profile-marquee">
-                <h1 class="name-display">@profile.FullName</h1>
-                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
+                <h1 class="name-display" data-auto-text-color>@profile.FullName</h1>
+                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");" data-auto-text-color>
                     <span class="tier-icon">
                         @if (!string.IsNullOrEmpty(rank.IconClass))
                         {
@@ -48,13 +48,13 @@
 
             <div class="cinema-stats">
                 <div class="stat-reel">
-                    <div class="stat-frame">
-                        <div class="stat-number">@rank.CurrentScore</div>
-                        <div class="stat-label">Current Points</div>
+                    <div class="stat-frame" data-auto-text-color>
+                        <div class="stat-number" data-auto-text-color>@rank.CurrentScore</div>
+                        <div class="stat-label" data-auto-text-color>Current Points</div>
                     </div>
-                    <div class="stat-frame">
-                        <div class="stat-number">@rank.TotalPoints</div>
-                        <div class="stat-label">Total Points</div>
+                    <div class="stat-frame" data-auto-text-color>
+                        <div class="stat-number" data-auto-text-color>@rank.TotalPoints</div>
+                        <div class="stat-label" data-auto-text-color>Total Points</div>
                     </div>
                 </div>
             </div>
@@ -71,11 +71,11 @@
             <div class="progress-info">
                 @if (isMaxRank)
                 {
-                    <span class="progress-text">🎬 VIP Member - Maximum Level Achieved</span>
+                    <span class="progress-text" data-auto-text-color>🎬 VIP Member - Maximum Level Achieved</span>
                 }
                 else
                 {
-                    <span class="progress-text">@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
+                    <span class="progress-text" data-auto-text-color>@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
                 }
             </div>
         </div>
@@ -234,51 +234,51 @@
                     <div class="rank-slide @activeClass" data-slide="@i">
                         <div class="rank-card" style="--rank-gradient: @rankGradient;">
                             <div class="rank-card-header">
-                                <div class="rank-icon-wrapper" style="background: @rankGradient;">
+                                <div class="rank-icon-wrapper" style="background: @rankGradient;" data-auto-text-color>
                                     <i class="@rankIcon"></i>
                                 </div>
                                 <div class="rank-info">
-                                    <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
-                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")">@rankStatus</span>
+                                    <span class="rank-title" data-auto-text-color>@rankDetail.CurrentRankName Rank</span>
+                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")" data-auto-text-color>@rankStatus</span>
                                 </div>
                             </div>
-                            <div class="rank-card-body">
-                                <div class="rank-progress-wrapper">
-                                    <div class="rank-progress">
-                                        <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
-                                    </div>
-                                    <div class="rank-points">
-                                        <span>@prevRankPoints.ToString("N0") pts</span>
-                                        <span>@targetRankPoints.ToString("N0") pts</span>
-                                    </div>
-                                </div>
-                                <div class="benefits-section">
-                                    <div class="benefits-header">
-                                        <span class="benefits-icon">🎁</span>
-                                        <span>Benefits:</span>
-                                    </div>
-                                    <div class="benefits-content">
-                                        <div class="benefit-item">
-                                            <span class="benefit-icon">🎫</span>
-                                            <div class="benefit-text">
-                                                <span class="benefit-label">Discount on Tickets</span>
-                                                <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
-                                            </div>
+                                                            <div class="rank-card-body">
+                                    <div class="rank-progress-wrapper">
+                                        <div class="rank-progress">
+                                            <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
                                         </div>
-                                        <div class="benefit-item">
-                                            <span class="benefit-icon">💰</span>
-                                            <div class="benefit-text">
-                                                <span class="benefit-label">Point Earning Rate</span>
-                                                <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
-                                            </div>
+                                        <div class="rank-points">
+                                            <span>@prevRankPoints.ToString("N0") pts</span>
+                                            <span>@targetRankPoints.ToString("N0") pts</span>
                                         </div>
                                     </div>
+                                    <div class="benefits-section">
+                                        <div class="benefits-header">
+                                            <span class="benefits-icon">🎁</span>
+                                            <span data-auto-text-color>Benefits:</span>
+                                        </div>
+                                        <div class="benefits-content">
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">🎫</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Discount on Tickets</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">💰</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Point Earning Rate</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="auto-upgrade">
+                                        <span class="upgrade-icon">⚡</span>
+                                        <span data-auto-text-color>Auto-upgrade at @targetRankPoints.ToString("N0") pts</span>
+                                    </div>
                                 </div>
-                                <div class="auto-upgrade">
-                                    <span class="upgrade-icon">⚡</span>
-                                    Auto-upgrade at @targetRankPoints.ToString("N0") pts
-                                </div>
-                            </div>
                         </div>
                     </div>
                     }
@@ -298,6 +298,127 @@
 </div>
 
 <script>
+    // Auto text color functionality
+    function calculateContrastRatio(backgroundColor) {
+        // Convert background color to RGB
+        let rgb;
+        if (backgroundColor.startsWith('linear-gradient')) {
+            // Extract multiple colors from gradient for better calculation
+            const colorMatches = backgroundColor.match(/(#[0-9a-fA-F]{3,6}|rgba?\([^)]+\))/g);
+            if (colorMatches && colorMatches.length > 0) {
+                // Calculate average of all colors in gradient
+                let totalR = 0, totalG = 0, totalB = 0;
+                let validColors = 0;
+                
+                colorMatches.forEach(color => {
+                    const parsed = hexToRgb(color) || parseRgb(color);
+                    if (parsed) {
+                        totalR += parsed.r;
+                        totalG += parsed.g;
+                        totalB += parsed.b;
+                        validColors++;
+                    }
+                });
+                
+                if (validColors > 0) {
+                    rgb = {
+                        r: Math.round(totalR / validColors),
+                        g: Math.round(totalG / validColors),
+                        b: Math.round(totalB / validColors)
+                    };
+                } else {
+                    // Fallback for gradients
+                    rgb = { r: 128, g: 128, b: 128 };
+                }
+            } else {
+                // Fallback to medium gray for gradients
+                rgb = { r: 128, g: 128, b: 128 };
+            }
+        } else if (backgroundColor.startsWith('#')) {
+            rgb = hexToRgb(backgroundColor);
+        } else if (backgroundColor.startsWith('rgb')) {
+            rgb = parseRgb(backgroundColor);
+        } else {
+            // Fallback
+            rgb = { r: 128, g: 128, b: 128 };
+        }
+
+        if (!rgb) {
+            return 0.5; // Default to medium luminance
+        }
+
+        // Calculate relative luminance using sRGB formula
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
+        
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        
+        return luminance;
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function parseRgb(rgb) {
+        const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        return match ? {
+            r: parseInt(match[1]),
+            g: parseInt(match[2]),
+            b: parseInt(match[3])
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function applyAutoTextColor() {
+        const elements = document.querySelectorAll('[data-auto-text-color]');
+        
+        elements.forEach(element => {
+            const style = window.getComputedStyle(element);
+            const backgroundColor = style.background || style.backgroundColor;
+            
+            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                const luminance = calculateContrastRatio(backgroundColor);
+                
+                // Remove existing classes
+                element.classList.remove('text-white', 'text-black');
+                
+                // Use inline styles to avoid Bootstrap conflicts
+                if (luminance < 0.5) {
+                    element.style.setProperty('color', '#ffffff', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                } else {
+                    element.style.setProperty('color', '#000000', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                }
+            } else {
+                // For elements without background, try to get parent background
+                const parent = element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // Simple initialization function
     function initProfileTab() {
         // Load tickets immediately
@@ -311,6 +432,36 @@
                 loadTickets(this.dataset.filter, 1);
             });
         });
+
+        // Apply auto text color after a short delay to ensure styles are loaded
+        setTimeout(applyAutoTextColor, 100);
+        
+        // Apply again after a longer delay to ensure all styles are fully loaded
+        setTimeout(applyAutoTextColor, 500);
+        
+        // Force apply to stat elements specifically
+        setTimeout(() => {
+            const statElements = document.querySelectorAll('.stat-frame[data-auto-text-color], .stat-number[data-auto-text-color], .stat-label[data-auto-text-color]');
+            statElements.forEach(element => {
+                const parent = element.closest('.stat-frame') || element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            });
+        }, 300);
     }
 
     // Load tickets function
@@ -500,25 +651,26 @@
             reader.readAsDataURL(file);
         }
     });
-
-    // Rank details modal
-    function showRankDetails() {
-        alert('Rank details feature coming soon!');
-    }
 </script>
 
 <script>
 // Rank Details Modal Logic
 if (typeof window.currentRankSlide === 'undefined') window.currentRankSlide = 0;
+
 function showRankDetails() {
     document.getElementById('rankDetailsModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     showRankSlide(window.currentRankSlide);
+    
+    // Apply auto text color after modal content is rendered
+    setTimeout(applyAutoTextColor, 200);
 }
+
 function closeRankDetails() {
     document.getElementById('rankDetailsModal').style.display = 'none';
     document.body.style.overflow = 'auto';
 }
+
 function showRankSlide(slideIndex) {
     var slides = document.querySelectorAll('.rank-slide');
     var indicators = document.querySelectorAll('.rank-indicator');
@@ -527,17 +679,23 @@ function showRankSlide(slideIndex) {
     if (slides[slideIndex]) slides[slideIndex].classList.add('active');
     if (indicators[slideIndex]) indicators[slideIndex].classList.add('active');
     window.currentRankSlide = slideIndex;
+    
+    // Apply auto text color after slide change
+    setTimeout(applyAutoTextColor, 100);
 }
+
 function nextRankSlide() {
     var slides = document.querySelectorAll('.rank-slide');
     var next = (window.currentRankSlide + 1) % slides.length;
     showRankSlide(next);
 }
+
 function prevRankSlide() {
     var slides = document.querySelectorAll('.rank-slide');
     var prev = (window.currentRankSlide - 1 + slides.length) % slides.length;
     showRankSlide(prev);
 }
+
 document.addEventListener('click', function(e) {
     var modal = document.getElementById('rankDetailsModal');
     if (e.target === modal) closeRankDetails();

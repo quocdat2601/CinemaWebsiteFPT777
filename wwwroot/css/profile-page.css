@@ -14,6 +14,12 @@
     --cinema-border: #27272a;
     --cinema-glow: rgba(212, 175, 55, 0.3);
     --cinema-shadow: rgba(0, 0, 0, 0.8);
+    --auto-text-color: #ffffff;
+}
+
+/* Auto Text Color Support - High Priority */
+[data-auto-text-color] {
+    transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 * {
@@ -233,13 +239,23 @@ body {
     text-align: center;
     min-width: 120px;
     backdrop-filter: blur(10px);
+    position: relative;
+}
+
+.stat-frame[data-auto-text-color] {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .stat-number {
     font-size: 2rem;
-        font-weight: 700;
+    font-weight: 700;
     color: var(--cinema-gold);
     margin-bottom: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.stat-number[data-auto-text-color] {
+    color: inherit;
 }
 
 .stat-label {
@@ -247,6 +263,11 @@ body {
     color: var(--cinema-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    transition: color 0.3s ease;
+}
+
+.stat-label[data-auto-text-color] {
+    color: inherit;
 }
 
 /* Progress Theater */
@@ -1276,6 +1297,12 @@ body {
 .tier-badge:hover .tier-info-icon {
     opacity: 1;
 }
+
+/* Auto Color Text Based on Background - Removed conflicting rules */
+
+/* Dynamic text color for rank cards - Removed conflicting rules */
+
+/* JavaScript helper for dynamic color calculation - Removed conflicting rules */
 
 /* No Ranks */
 .no-ranks {
