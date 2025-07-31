@@ -5,6 +5,7 @@ using MovieTheater.ViewModels;
 using MovieTheater.Models;
 using MovieTheater.Hubs;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MovieTheater.Controllers
 {
@@ -13,15 +14,19 @@ namespace MovieTheater.Controllers
     {
         private readonly IQRPaymentService _qrPaymentService;
         private readonly IGuestInvoiceService _guestInvoiceService;
+        private readonly IBookingService _bookingService;
         private readonly ILogger<QRPaymentController> _logger;
         private readonly MovieTheaterContext _context;
+        private readonly IHubContext<SeatHub> _seatHubContext;
 
-        public QRPaymentController(IQRPaymentService qrPaymentService, IGuestInvoiceService guestInvoiceService, ILogger<QRPaymentController> logger, MovieTheaterContext context)
+        public QRPaymentController(IQRPaymentService qrPaymentService, IGuestInvoiceService guestInvoiceService, IBookingService bookingService, ILogger<QRPaymentController> logger, MovieTheaterContext context, IHubContext<SeatHub> seatHubContext)
         {
             _qrPaymentService = qrPaymentService;
             _guestInvoiceService = guestInvoiceService;
+            _bookingService = bookingService;
             _logger = logger;
             _context = context;
+            _seatHubContext = seatHubContext;
         }
 
         /// <summary>
@@ -52,15 +57,15 @@ namespace MovieTheater.Controllers
                     context.SaveChanges();
                 }
 
-                // 1. Sinh mã InvoiceId duy nhất, tối đa 10 ký tự
+                // 1. Sinh mã OrderId duy nhất cho QR Payment (DH = Đơn Hàng)
                 string invoiceId = "DH" + (DateTime.UtcNow.Ticks % 1000000).ToString("D6");
                 while (context.Invoices.Any(i => i.InvoiceId == invoiceId))
                 {
                     invoiceId = "DH" + (DateTime.UtcNow.Ticks % 1000000).ToString("D6");
                 }
 
-                // Tổng tiền = seat + food
-                decimal totalAmount = model.BookingDetails.TotalPrice + model.TotalFoodPrice;
+                // Tổng tiền = sử dụng giá đã được tính toán từ frontend
+                decimal totalAmount = model.TotalPrice > 0 ? model.TotalPrice : (model.BookingDetails.TotalPrice + model.TotalFoodPrice);
                 var orderInfo = $"Ve xem phim - {model.BookingDetails.MovieName}";
 
                 // 2. Lưu invoice vào DB
@@ -90,16 +95,45 @@ namespace MovieTheater.Controllers
                 var qrData = _qrPaymentService.GenerateQRCodeData(totalAmount, orderInfo, invoiceId);
                 var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
 
-                // Extend hold time for selected seats when creating QR code
+                // Tạo ScheduleSeat records và extend hold time for selected seats when creating QR code
                 var movieShowId = model.BookingDetails.MovieShowId;
                 var accountId = "GUEST"; // Since this is guest booking
                 foreach (var seat in model.BookingDetails.SelectedSeats)
                 {
                     if (seat.SeatId.HasValue)
                     {
+                        // Tạo hoặc cập nhật ScheduleSeat record
+                        var existingScheduleSeat = context.ScheduleSeats
+                            .FirstOrDefault(ss => ss.MovieShowId == movieShowId && ss.SeatId == seat.SeatId.Value);
+                        
+                        if (existingScheduleSeat != null)
+                        {
+                            // Cập nhật existing record
+                            existingScheduleSeat.InvoiceId = invoiceId;
+                            existingScheduleSeat.SeatStatusId = 1; // 1 = Held
+                            context.ScheduleSeats.Update(existingScheduleSeat);
+                        }
+                        else
+                        {
+                            // Tạo mới ScheduleSeat record
+                            var scheduleSeat = new ScheduleSeat
+                            {
+                                MovieShowId = movieShowId,
+                                InvoiceId = invoiceId,
+                                SeatId = seat.SeatId.Value,
+                                SeatStatusId = 1, // 1 = Held
+                                BookedPrice = seat.Price
+                            };
+                            context.ScheduleSeats.Add(scheduleSeat);
+                        }
+                        
+                        // Extend hold time
                         SeatHub.ExtendHoldTime(movieShowId, seat.SeatId.Value, accountId);
                     }
                 }
+                
+                // Save changes for ScheduleSeat records
+                context.SaveChanges();
 
                 var viewModel = new QRPaymentViewModel
                 {
@@ -506,13 +540,7 @@ namespace MovieTheater.Controllers
                     return Json(new { success = false, message = "Used score cannot be greater than member score" });
                 }
 
-                // Validate VoucherAmount is not greater than TotalPrice
-                var effectiveTotalPrice = model.TotalPrice > 0 ? model.TotalPrice : model.BookingDetails.TotalPrice;
-                if (model.VoucherAmount > effectiveTotalPrice)
-                {
-                    _logger.LogWarning("VoucherAmount ({VoucherAmount}) is greater than TotalPrice ({TotalPrice})", model.VoucherAmount, effectiveTotalPrice);
-                    return Json(new { success = false, message = "Voucher amount cannot be greater than total price" });
-                }
+
 
                 // Validate RankDiscount is not greater than Subtotal
                 if (model.RankDiscount > model.Subtotal)
@@ -546,14 +574,14 @@ namespace MovieTheater.Controllers
                     }
                 }
                 
-                // Đảm bảo TotalPrice không bị âm sau khi áp dụng voucher
-                if (model.VoucherAmount > 0 && model.TotalPrice > 0)
+                // Đảm bảo voucher amount không vượt quá giá gốc (trước khi áp dụng rank discount)
+                if (model.VoucherAmount > 0)
                 {
-                    var priceAfterVoucher = model.TotalPrice - model.VoucherAmount;
-                    if (priceAfterVoucher < 0)
+                    var originalTotalPrice = model.BookingDetails.TotalPrice + model.TotalFoodPrice;
+                    if (model.VoucherAmount > originalTotalPrice)
                     {
-                        _logger.LogWarning("Price after voucher would be negative: {PriceAfterVoucher}", priceAfterVoucher);
-                        return Json(new { success = false, message = "Voucher amount cannot be greater than total price" });
+                        _logger.LogWarning("VoucherAmount ({VoucherAmount}) is greater than original TotalPrice ({OriginalTotalPrice})", model.VoucherAmount, originalTotalPrice);
+                        return Json(new { success = false, message = "Voucher amount cannot be greater than original total price" });
                     }
                 }
 
@@ -564,15 +592,15 @@ namespace MovieTheater.Controllers
                     return Json(new { success = false, message = "Total food price cannot be negative" });
                 }
 
-                // 1. Sinh mã InvoiceId duy nhất, tối đa 10 ký tự
+                // 1. Sinh mã OrderId duy nhất cho QR Payment (DH = Đơn Hàng)
                 string invoiceId = "DH" + (DateTime.UtcNow.Ticks % 1000000).ToString("D6");
                 while (context.Invoices.Any(i => i.InvoiceId == invoiceId))
                 {
                     invoiceId = "DH" + (DateTime.UtcNow.Ticks % 1000000).ToString("D6");
                 }
 
-                // Tổng tiền = seat + food
-                decimal totalAmount = model.BookingDetails.TotalPrice + model.TotalFoodPrice;
+                // Tổng tiền = sử dụng giá đã được tính toán từ frontend
+                decimal totalAmount = model.TotalPrice > 0 ? model.TotalPrice : (model.BookingDetails.TotalPrice + model.TotalFoodPrice);
                 var orderInfo = $"Ve xem phim - {model.BookingDetails.MovieName}";
 
                 // 2. Lưu invoice vào DB với AccountId của member
@@ -607,16 +635,45 @@ namespace MovieTheater.Controllers
                 var qrData = _qrPaymentService.GenerateQRCodeData(totalAmount, orderInfo, invoiceId);
                 var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
 
-                // Extend hold time for selected seats when creating QR code
+                // Tạo ScheduleSeat records và extend hold time for selected seats when creating QR code
                 var movieShowId = model.BookingDetails.MovieShowId;
                 var accountId = model.AccountId; // Sử dụng AccountId của member
                 foreach (var seat in model.BookingDetails.SelectedSeats)
                 {
                     if (seat.SeatId.HasValue)
                     {
+                        // Tạo hoặc cập nhật ScheduleSeat record
+                        var existingScheduleSeat = context.ScheduleSeats
+                            .FirstOrDefault(ss => ss.MovieShowId == movieShowId && ss.SeatId == seat.SeatId.Value);
+                        
+                        if (existingScheduleSeat != null)
+                        {
+                            // Cập nhật existing record
+                            existingScheduleSeat.InvoiceId = invoiceId;
+                            existingScheduleSeat.SeatStatusId = 1; // 1 = Held
+                            context.ScheduleSeats.Update(existingScheduleSeat);
+                        }
+                        else
+                        {
+                            // Tạo mới ScheduleSeat record
+                            var scheduleSeat = new ScheduleSeat
+                            {
+                                MovieShowId = movieShowId,
+                                InvoiceId = invoiceId,
+                                SeatId = seat.SeatId.Value,
+                                SeatStatusId = 1, // 1 = Held
+                                BookedPrice = seat.Price
+                            };
+                            context.ScheduleSeats.Add(scheduleSeat);
+                        }
+                        
+                        // Extend hold time
                         SeatHub.ExtendHoldTime(movieShowId, seat.SeatId.Value, accountId);
                     }
                 }
+                
+                // Save changes for ScheduleSeat records
+                context.SaveChanges();
 
                 var viewModel = new QRPaymentViewModel
                 {
@@ -798,6 +855,22 @@ namespace MovieTheater.Controllers
                 if (isPaid)
                 {
                     _logger.LogInformation("Payment completed for {OrderId}, returning success response", request.orderId);
+                    
+                    // Tự động xác nhận thanh toán và cập nhật trạng thái ghế
+                    try
+                    {
+                        var existingInvoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == request.orderId);
+                        if (existingInvoice != null && existingInvoice.Status == InvoiceStatus.Completed)
+                        {
+                            // Gọi logic xác nhận thanh toán
+                            await ConfirmPaymentInternal(request.orderId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error auto-confirming payment for {OrderId}", request.orderId);
+                    }
+                    
                     return Json(new { 
                         success = true, 
                         isPaid = true, 
@@ -825,26 +898,115 @@ namespace MovieTheater.Controllers
         }
         
         /// <summary>
-        /// Xác nhận thanh toán và cập nhật trạng thái Invoice trong database
+        /// Xác nhận thanh toán và cập nhật trạng thái Invoice và ghế trong database
         /// </summary>
         [HttpPost]
         public IActionResult ConfirmPayment(string invoiceId)
         {
             try
             {
-                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
-                if (invoice != null)
-                {
-                    invoice.Status = InvoiceStatus.Completed; // hoặc tên enum tương ứng trạng thái đã thanh toán // Đã thanh toán
-                    _context.SaveChanges();
-                    TempData["PaymentSuccess"] = true;
-                    return Json(new { success = true });
-                }
-                return Json(new { success = false, message = "Không tìm thấy hóa đơn" });
+                var result = ConfirmPaymentInternal(invoiceId).Result;
+                return Json(new { success = result });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error confirming payment for invoice {InvoiceId}", invoiceId);
                 return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Logic nội bộ để xác nhận thanh toán và cập nhật trạng thái
+        /// </summary>
+        private async Task<bool> ConfirmPaymentInternal(string invoiceId)
+        {
+            try
+            {
+                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
+                if (invoice != null)
+                {
+                    // 1. Cập nhật trạng thái Invoice
+                    invoice.Status = InvoiceStatus.Completed;
+                    
+                    // 2. Cập nhật trạng thái ghế sang "booked"
+                    if (!string.IsNullOrEmpty(invoice.SeatIds) && invoice.MovieShowId.HasValue)
+                    {
+                        var seatIds = invoice.SeatIds.Split(',').Select(s => int.Parse(s.Trim())).ToList();
+                        var movieShowId = invoice.MovieShowId.Value;
+                        
+                        // Tìm và cập nhật trạng thái ghế
+                        var scheduleSeats = _context.ScheduleSeats
+                            .Where(ss => ss.MovieShowId == movieShowId && ss.SeatId.HasValue && seatIds.Contains(ss.SeatId.Value))
+                            .ToList();
+                        
+                        foreach (var scheduleSeat in scheduleSeats)
+                        {
+                            scheduleSeat.SeatStatusId = 2; // 2 = Booked status
+                            _logger.LogInformation("Updating seat {SeatId} status to Booked for invoice {InvoiceId}", 
+                                scheduleSeat.SeatId, invoiceId);
+                        }
+                        
+                        // Gửi SignalR notification để cập nhật UI real-time
+                        if (scheduleSeats.Any())
+                        {
+                            var currentMovieShowId = scheduleSeats.First().MovieShowId;
+                            foreach (var scheduleSeat in scheduleSeats)
+                            {
+                                if (scheduleSeat.SeatId.HasValue && currentMovieShowId.HasValue)
+                                {
+                                    // Gửi notification qua SignalR
+                                    await _seatHubContext.Clients.Group(currentMovieShowId.Value.ToString()).SendAsync("SeatStatusChanged", scheduleSeat.SeatId.Value, 2); // 2 = Booked
+                                }
+                            }
+                        }
+                        
+                        // 3. Cập nhật điểm cho member nếu có
+                        if (!string.IsNullOrEmpty(invoice.AccountId) && invoice.AccountId != "GUEST")
+                        {
+                            var member = _context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                            if (member != null)
+                            {
+                                // Trừ điểm đã sử dụng
+                                if (invoice.UseScore > 0)
+                                {
+                                    member.TotalPoints -= invoice.UseScore.Value;
+                                    _logger.LogInformation("Deducted {UseScore} points from account {AccountId}", 
+                                        invoice.UseScore, invoice.AccountId);
+                                }
+                                
+                                // Cộng điểm thưởng
+                                if (invoice.AddScore > 0)
+                                {
+                                    member.TotalPoints += invoice.AddScore.Value;
+                                    _logger.LogInformation("Added {AddScore} points to account {AccountId}", 
+                                        invoice.AddScore, invoice.AccountId);
+                                }
+                            }
+                        }
+                        
+                        // 4. Cập nhật voucher status nếu có
+                        if (!string.IsNullOrEmpty(invoice.VoucherId))
+                        {
+                            var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                            if (voucher != null)
+                            {
+                                voucher.IsUsed = true;
+                                _logger.LogInformation("Marked voucher {VoucherId} as used", invoice.VoucherId);
+                            }
+                        }
+                    }
+                    
+                    await _context.SaveChangesAsync();
+                    
+                    _logger.LogInformation("Payment confirmed successfully for invoice {InvoiceId}", invoiceId);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ConfirmPaymentInternal for invoice {InvoiceId}", invoiceId);
+                return false;
             }
         }
 
