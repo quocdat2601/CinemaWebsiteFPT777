@@ -72,22 +72,22 @@
         const initialTab = urlParams.get('tab') || 'Profile';
         $(`.sidebar-link[data-tab="${initialTab}"]`).trigger('click');
         
-        // Auto-hide sidebar when scrolling to footer
-        $(window).scroll(function() {
-            const sidebar = $('#modernSidebar');
-            const footer = $('.footer');
-            const scrollTop = $(window).scrollTop();
-            const windowHeight = $(window).height();
-            const documentHeight = $(document).height();
-            const footerOffset = footer.offset().top;
-            
-            // Check if we're near the footer
-            if (scrollTop + windowHeight >= footerOffset - 100) {
-                sidebar.addClass('sidebar-hidden');
-            } else {
-                sidebar.removeClass('sidebar-hidden');
-            }
-        });
+        // Auto-hide sidebar when scrolling to footer - DISABLED
+        // $(window).scroll(function() {
+        //     const sidebar = $('#modernSidebar');
+        //     const footer = $('.footer');
+        //     const scrollTop = $(window).scrollTop();
+        //     const windowHeight = $(window).height();
+        //     const documentHeight = $(document).height();
+        //     const footerOffset = footer.offset().top;
+        //     
+        //     // Check if we're near the footer
+        //     if (scrollTop + windowHeight >= footerOffset - 100) {
+        //         sidebar.addClass('sidebar-hidden');
+        //     } else {
+        //         sidebar.removeClass('sidebar-hidden');
+        //     }
+        // });
     });
 </script>
 }
