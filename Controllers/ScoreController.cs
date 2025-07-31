@@ -4,9 +4,11 @@ using MovieTheater.ViewModels;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Service;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize]
     public class ScoreController : Controller
     {
         private readonly IScoreService _scoreService;

@@ -45,6 +45,7 @@ namespace MovieTheater.Controllers
         public List<int> SelectedSeatIds { get; set; } = new List<int>();
     }
 
+    [Authorize]
     public class BookingController : Controller
     {
         private readonly IBookingService _bookingService;
@@ -209,6 +210,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Confirm (POST)</remarks>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
             var userId = _accountService.GetCurrentUser()?.AccountId;

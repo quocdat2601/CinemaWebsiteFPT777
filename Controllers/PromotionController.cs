@@ -4,9 +4,11 @@ using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class PromotionController : Controller
     {
         private readonly IPromotionService _promotionService;

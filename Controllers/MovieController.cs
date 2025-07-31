@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Hosting;
 
 namespace MovieTheater.Controllers
 {//movie
+    [Authorize(Roles = "Admin,Employee")]
     public class MovieController : Controller
     {
         private readonly IMovieService _movieService;

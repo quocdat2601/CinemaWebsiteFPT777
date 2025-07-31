@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Repository;
 using Version = MovieTheater.Models.Version;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class VersionController : Controller
     {
         private readonly IVersionRepository _versionRepo;

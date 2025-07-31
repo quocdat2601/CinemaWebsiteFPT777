@@ -134,10 +134,6 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Signup()
-        {
-            return View();
-        }
         public IActionResult Login()
         {
             return View();
@@ -163,6 +159,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Signup(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
@@ -213,6 +210,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (!ModelState.IsValid)
