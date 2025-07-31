@@ -11,6 +11,6 @@ namespace MovieTheater.Service
         public bool Update(string id, RegisterViewModel model);
         public bool Delete(string employeeId);
         public void Save();
-
+        public void ToggleStatus(string employeeId);
     }
 }

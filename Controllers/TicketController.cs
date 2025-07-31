@@ -4,6 +4,7 @@ using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize]
     public class TicketController : Controller
     {
         private readonly ITicketService _ticketService;
@@ -68,6 +69,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(string id, string returnUrl)
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

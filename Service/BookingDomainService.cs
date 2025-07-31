@@ -8,12 +8,15 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace MovieTheater.Service
 {
     public class BookingDomainService : IBookingDomainService
     {
         private readonly IBookingService _bookingService;
+        private readonly IAccountRepository _accountRepository;
         private readonly IMovieService _movieService;
         private readonly ISeatService _seatService;
         private readonly IAccountService _accountService;
@@ -24,6 +27,7 @@ namespace MovieTheater.Service
         private readonly IBookingPriceCalculationService _priceCalculationService;
         private readonly IVoucherService _voucherService;
         private readonly IHubContext<MovieTheater.Hubs.SeatHub> _seatHubContext;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public BookingDomainService(
             IBookingService bookingService,
@@ -32,11 +36,12 @@ namespace MovieTheater.Service
             IAccountService accountService,
             ISeatTypeService seatTypeService,
             IPromotionService promotionService,
-            IFoodService foodService,
+            IFoodService foodService, IAccountRepository accountRepository,
             MovieTheaterContext context,
             IBookingPriceCalculationService priceCalculationService,
             IVoucherService voucherService,
-            IHubContext<MovieTheater.Hubs.SeatHub> seatHubContext)
+            IHubContext<MovieTheater.Hubs.SeatHub> seatHubContext,
+            IHttpContextAccessor httpContextAccessor)
         {
             _bookingService = bookingService;
             _movieService = movieService;
@@ -49,6 +54,8 @@ namespace MovieTheater.Service
             _priceCalculationService = priceCalculationService;
             _voucherService = voucherService;
             _seatHubContext = seatHubContext;
+            _accountRepository = accountRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         private async Task<List<Seat>> GetSeatsByIdsAsync(List<int> seatIds)
@@ -62,6 +69,17 @@ namespace MovieTheater.Service
         private async Task<List<Food>> GetFoodsByIdsAsync(List<int> foodIds)
         {
             return await _context.Foods.Where(f => foodIds.Contains(f.FoodId)).ToListAsync();
+        }
+
+        private string GetCurrentUserId()
+        {
+            return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        private Account GetCurrentUser()
+        {
+            var userId = GetCurrentUserId();
+            return userId != null ? _accountService.GetById(userId) : null;
         }
 
         private decimal CalculateSeatPrice(Seat seat, MovieShow movieShow)
@@ -792,7 +810,9 @@ namespace MovieTheater.Service
             // SỬA: Sử dụng TotalPrice từ server thay vì từ client
             decimal finalTotalPrice = priceResult.TotalPrice;
             if (finalTotalPrice < 0) finalTotalPrice = 0;
-            
+            var account = GetCurrentUser();
+            var employee = account?.Employees
+                .FirstOrDefault(e => e.AccountId == account.AccountId);
             // Debug logging
             Console.WriteLine($"[BookingDomainService] Server calculated TotalPrice: {priceResult.TotalPrice}");
             Console.WriteLine($"[BookingDomainService] Server calculated PromotionDiscountPercent: {promotionDiscountPercent}");
@@ -809,6 +829,7 @@ namespace MovieTheater.Service
                 Status = InvoiceStatus.Completed,
                 TotalMoney = finalTotalPrice, // <-- luôn là seat sau giảm + food sau giảm - discount
                 UseScore = priceResult.UseScore,
+                EmployeeId = employee?.EmployeeId ?? null,
                 Seat = string.Join(", ", seatViewModels.Select(s => s.SeatName)),
                 SeatIds = string.Join(",", seatViewModels.Select(s => s.SeatId)),
                 MovieShowId = model.MovieShowId,
@@ -917,6 +938,8 @@ namespace MovieTheater.Service
                 
                 var invoice = _context.Invoices
                 .Include(i => i.Account)
+                .Include(e => e.Employee)
+                .ThenInclude(emp => emp.Account)
                 .Include(i => i.MovieShow)
                 .ThenInclude(ms => ms.Movie)
                 .Include(i => i.MovieShow)
@@ -1066,6 +1089,10 @@ namespace MovieTheater.Service
                 MemberEmail = member?.Account?.Email,
                 MemberIdentityCard = member?.Account?.IdentityCard,
                 MemberPhone = member?.Account?.PhoneNumber,
+                EmployeeId = invoice.EmployeeId ?? null,
+                EmployeeName = invoice.Employee?.Account?.FullName ?? null,
+                EmployeePhone = invoice.Employee?.Account?.PhoneNumber ?? null,
+                DateofBirth = invoice.Employee?.Account?.DateOfBirth ?? null,
                 UsedScore = usedScore,
                 UsedScoreValue = usedScoreValue,
                 AddedScore = addedScore,
@@ -1078,6 +1105,7 @@ namespace MovieTheater.Service
                 SelectedFoods = selectedFoods,
                 TotalFoodPrice = totalFoodPrice
             };
+            
             return viewModel;
             }
             catch (Exception ex)

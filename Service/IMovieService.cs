@@ -37,5 +37,7 @@ namespace MovieTheater.Service
         public List<Movie> GetComingSoonMovies();
         public List<Movie> GetCurrentlyShowingMoviesWithDetails();
         public List<Movie> GetComingSoonMoviesWithDetails();
+        public MovieShow? GetMovieShowByCinemaRoomId(int cinemaRoomId);
+        public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId);
     }
 }

@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class SeatTypeController : Controller
     {
         private readonly ISeatTypeService _seatTypeService;

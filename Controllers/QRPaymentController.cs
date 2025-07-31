@@ -5,6 +5,7 @@ using MovieTheater.ViewModels;
 using MovieTheater.Models;
 using MovieTheater.Hubs;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -69,7 +70,7 @@ namespace MovieTheater.Controllers
                     var invoice = new Invoice
                     {
                         InvoiceId = invoiceId,
-                        AccountId = "GUEST",
+                        AccountId = GetUserInfoInternal("AC002").ToString(), // GUEST account
                         AddScore = 0,
                         BookingDate = DateTime.Now,
                         Status = InvoiceStatus.Incomplete, // Pending
@@ -289,6 +290,86 @@ namespace MovieTheater.Controllers
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Lấy thông tin người dùng theo AccountId
+        /// </summary>
+        [HttpGet]
+        public IActionResult GetUserInfo(string accountId = null)
+        {
+            try
+            {
+                // Sử dụng hàm GetUserInfoInternal để lấy thông tin người dùng
+                var userInfo = GetUserInfoInternal(accountId ?? "AC002");
+                
+                if (userInfo == null)
+                {
+                    _logger.LogWarning("Account not found for accountId: {AccountId}", accountId ?? "AC002");
+                    return Json(new { success = false, message = "Không tìm thấy tài khoản" });
+                }
+                
+                _logger.LogInformation("User info retrieved successfully for accountId: {AccountId}", accountId ?? "AC002");
+                return Json(userInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user info for accountId: {AccountId}", accountId ?? "AC002");
+                return Json(new { success = false, message = "Lỗi khi lấy thông tin người dùng: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Hàm nội bộ để lấy thông tin người dùng - có thể tái sử dụng
+        /// </summary>
+        private object GetUserInfoInternal(string accountId)
+        {
+            var account = _context.Accounts
+                .Include(a => a.Rank)
+                .Include(a => a.Role)
+                .Include(a => a.Members)
+                .Include(a => a.Employees)
+                .FirstOrDefault(a => a.AccountId == accountId);
+            
+            if (account == null)
+            {
+                return null;
+            }
+            
+            return new
+            {
+                success = true,
+                accountId = account.AccountId,
+                fullName = account.FullName,
+                email = account.Email,
+                phoneNumber = account.PhoneNumber,
+                address = account.Address,
+                dateOfBirth = account.DateOfBirth,
+                gender = account.Gender,
+                identityCard = account.IdentityCard,
+                username = account.Username,
+                registerDate = account.RegisterDate,
+                status = account.Status,
+                image = account.Image,
+                rank = account.Rank != null ? new
+                {
+                    rankId = account.Rank.RankId,
+                    rankName = account.Rank.RankName,
+                    requiredPoints = account.Rank.RequiredPoints,
+                    discountPercentage = account.Rank.DiscountPercentage
+                } : null,
+                role = account.Role != null ? new
+                {
+                    roleId = account.Role.RoleId,
+                    roleName = account.Role.RoleName
+                } : null,
+                memberInfo = account.Members.FirstOrDefault() != null ? new
+                {
+                    score = account.Members.FirstOrDefault().Score,
+                    totalPoints = account.Members.FirstOrDefault().TotalPoints
+                } : null,
+                isEmployee = account.Employees.Any()
+            };
         }
 
     }

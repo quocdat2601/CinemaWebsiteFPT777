@@ -175,6 +175,15 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Remove validation for fields that might be empty during update
+            ModelState.Remove("Profile.FullName");
+            ModelState.Remove("Profile.DateOfBirth");
+            ModelState.Remove("Profile.Gender");
+            ModelState.Remove("Profile.IdentityCard");
+            ModelState.Remove("Profile.Email");
+            ModelState.Remove("Profile.Address");
+            ModelState.Remove("Profile.PhoneNumber");
+            
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -195,7 +204,7 @@ namespace MovieTheater.Controllers
                 Address = model.Profile.Address,
                 PhoneNumber = model.Profile.PhoneNumber,
                 Image = user.Image, // Preserve the existing image
-                ImageFile = null    // Ensure we do not process a file
+                ImageFile = model.Profile.ImageFile // Allow image upload
             };
 
             var success = _service.Update(user.AccountId, registerModel);
