@@ -3,6 +3,27 @@
 // Global sort state for booking management
 let currentSort = { by: '', dir: 'asc', param: '' };
 
+// Immediate fallback functions to ensure they're available
+window.searchBookings = window.searchBookings || function() {
+    console.log('Immediate fallback searchBookings called');
+    const keyword = document.getElementById('searchKeyword')?.value || '';
+    const status = document.getElementById('statusFilter')?.value || '';
+    let bookingType = localStorage.getItem('bookingTypeFilter') || 'all';
+    console.log('Calling loadTab with params:', { keyword, statusFilter: status, bookingTypeFilter: bookingType });
+    if (typeof window.loadTab === 'function') {
+        window.loadTab('BookingMg', { keyword, statusFilter: status, bookingTypeFilter: bookingType });
+    }
+};
+
+window.resetFilters = window.resetFilters || function() {
+    console.log('Immediate fallback resetFilters called');
+    localStorage.removeItem('bookingSort');
+    localStorage.removeItem('bookingTypeFilter');
+    if (typeof window.loadTab === 'function') {
+        window.loadTab('BookingMg', { bookingTypeFilter: 'all' });
+    }
+};
+
 // Booking table sorting
 $(document).on('click', '#booking-table .sortable', function() {
     const sortBy = $(this).data('sort');
@@ -25,10 +46,24 @@ $(document).on('click', '#booking-table .sortable', function() {
     updateSortIcons();
 });
 
-function searchBookings() {
-    const keyword = document.getElementById('searchKeyword').value;
-    const status = document.getElementById('statusFilter').value;
-    loadTab('BookingMg', { keyword, statusFilter: status, sortBy: currentSort.param });
+window.searchBookings = function() {
+    console.log('searchBookings called');
+    const keyword = document.getElementById('searchKeyword')?.value || '';
+    const status = document.getElementById('statusFilter')?.value || '';
+
+    // Get booking type from localStorage if available, otherwise from DOM
+    let bookingType = localStorage.getItem('bookingTypeFilter');
+    if (!bookingType) {
+        bookingType = document.querySelector('input[name="bookingTypeFilter"]:checked')?.value || 'all';
+    }
+
+    console.log('Calling loadTab with params:', { keyword, statusFilter: status, bookingTypeFilter: bookingType, sortBy: currentSort.param });
+    
+    if (typeof window.loadTab === 'function') {
+        window.loadTab('BookingMg', { keyword, statusFilter: status, bookingTypeFilter: bookingType, sortBy: currentSort.param });
+    } else {
+        console.error('loadTab function not found');
+    }
 }
 
 function updateSortIcons() {
@@ -74,13 +109,109 @@ function restoreSortState() {
 
 // Initialize when BookingMg tab is loaded
 $(document).on('tabContentLoaded', function(e, tabName) {
+    console.log('tabContentLoaded triggered for:', tabName);
     if (tabName === 'BookingMg') {
+        console.log('Initializing BookingMg tab');
         restoreSortState();
+        // Use a longer delay to ensure content is fully rendered
+        setTimeout(function() {
+            restoreRadioButtonState();
+        }, 200);
         if (currentSort.param) {
             searchBookings();
         }
     }
 });
+
+// Initialize radio button state on page load
+$(document).ready(function() {
+    console.log('admin-sorting.js loaded');
+    console.log('searchBookings function available:', typeof window.searchBookings);
+    console.log('resetFilters function available:', typeof window.resetFilters);
+    console.log('loadTab function available:', typeof window.loadTab);
+    
+    // Ensure functions are available globally
+    if (typeof window.searchBookings === 'undefined') {
+        console.error('searchBookings function not found, creating fallback');
+        window.searchBookings = function() {
+            console.log('Fallback searchBookings called');
+            const keyword = document.getElementById('searchKeyword')?.value || '';
+            const status = document.getElementById('statusFilter')?.value || '';
+            let bookingType = localStorage.getItem('bookingTypeFilter') || 'all';
+            console.log('Calling loadTab with params:', { keyword, statusFilter: status, bookingTypeFilter: bookingType });
+            if (typeof window.loadTab === 'function') {
+                window.loadTab('BookingMg', { keyword, statusFilter: status, bookingTypeFilter: bookingType });
+            }
+        };
+    }
+    
+    if (typeof window.resetFilters === 'undefined') {
+        console.error('resetFilters function not found, creating fallback');
+        window.resetFilters = function() {
+            console.log('Fallback resetFilters called');
+            localStorage.removeItem('bookingSort');
+            localStorage.removeItem('bookingTypeFilter');
+            if (typeof window.loadTab === 'function') {
+                window.loadTab('BookingMg', { bookingTypeFilter: 'all' });
+            }
+        };
+    }
+    
+    restoreRadioButtonState();
+});
+
+// Add event handler for radio button changes
+$(document).on('change', 'input[name="bookingTypeFilter"]', function() {
+    console.log('Radio button changed:', $(this).val());
+    const selectedValue = $(this).val();
+    // Save the selected value before reloading
+    localStorage.setItem('bookingTypeFilter', selectedValue);
+    searchBookings();
+});
+
+// Add event handler for search input changes
+$(document).on('input', '#searchKeyword', function() {
+    console.log('Search input changed:', $(this).val());
+    searchBookings();
+});
+
+// Add event handler for status filter changes
+$(document).on('change', '#statusFilter', function() {
+    console.log('Status filter changed:', $(this).val());
+    searchBookings();
+});
+
+// Function to restore radio button state
+function restoreRadioButtonState() {
+    const savedFilter = localStorage.getItem('bookingTypeFilter');
+    if (savedFilter) {
+        // Uncheck all radio buttons first
+        $('input[name="bookingTypeFilter"]').prop('checked', false);
+        // Check the saved one
+        $(`input[name="bookingTypeFilter"][value="${savedFilter}"]`).prop('checked', true);
+    } else {
+        // If no saved filter, default to "all"
+        $('input[name="bookingTypeFilter"]').prop('checked', false);
+        $('input[name="bookingTypeFilter"][value="all"]').prop('checked', true);
+    }
+}
+
+// Function to reset all filters
+window.resetFilters = function() {
+    // Clear localStorage
+    localStorage.removeItem('bookingSort');
+    localStorage.removeItem('bookingTypeFilter');
+
+    // Reset current sort state
+    currentSort = { by: '', dir: 'asc', param: '' };
+
+    // Load tab with default "all" filter
+    if (typeof window.loadTab === 'function') {
+        window.loadTab('BookingMg', { bookingTypeFilter: 'all' });
+    } else {
+        console.error('loadTab function not found');
+    }
+}
 
 // Food table sorting (from FoodMg.cshtml)
 (function() {

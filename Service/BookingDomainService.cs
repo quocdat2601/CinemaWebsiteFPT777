@@ -1017,22 +1017,21 @@ namespace MovieTheater.Service
                     PriceAfterPromotion = priceAfterPromotion
                 });
             }
-            var bookingDetails = new ConfirmBookingViewModel
-            {
-                MovieName = movieName,
-                CinemaRoomName = cinemaRoomName,
-                ShowDate = showDate,
-                ShowTime = showTime,
-                VersionName = versionName,
-                SelectedSeats = seats,
-                TotalPrice = invoice.TotalMoney ?? 0, // SỬA: Sử dụng TotalMoney từ database
-                PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
-                InvoiceId = invoice.InvoiceId,
-                ScoreUsed = invoice.UseScore ?? 0,
-                Status = invoice.Status ?? InvoiceStatus.Incomplete, // Ensure status is set from DB
-                Cancel = invoice.Cancel, // Set Cancel from invoice
-                AddScore = invoice.AddScore ?? 0
-            };
+                var bookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = movieName,
+                    CinemaRoomName = cinemaRoomName,
+                    ShowDate = showDate,
+                    ShowTime = showTime,
+                    VersionName = versionName,
+                    SelectedSeats = seats,
+                    TotalPrice = invoice.TotalMoney ?? 0, // SỬA: Sử dụng TotalMoney từ database
+                    PricePerTicket = seats.Any() ? (invoice.TotalMoney ?? 0) / seats.Count : 0,
+                    InvoiceId = invoice.InvoiceId,
+                    ScoreUsed = invoice.UseScore ?? 0,
+                    Status = invoice.Cancel ? null : invoice.Status,
+                    AddScore = invoice.AddScore ?? 0
+                };
             // Food
             var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
             var foodIds = foodInvoices.Select(f => f.FoodId).ToList();

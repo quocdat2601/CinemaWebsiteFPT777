@@ -45,6 +45,7 @@ namespace MovieTheater.Controllers
         public List<int> SelectedSeatIds { get; set; } = new List<int>();
     }
 
+    [Authorize]
     public class BookingController : Controller
     {
         private readonly IBookingService _bookingService;
@@ -100,110 +101,7 @@ namespace MovieTheater.Controllers
         }
         public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-        /// <summary>
-        /// Trang chọn phim và suất chiếu để đặt vé
-        /// </summary>
-        /// <remarks>url: /Booking/TicketBooking (GET)</remarks>
-        [HttpGet]
-        public async Task<IActionResult> TicketBooking(string movieId = null)
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-
-            // Get all movies with their shows
-            var movies = await _bookingService.GetAvailableMoviesAsync();
-
-            // Filter: Only movies with at least one show today or in the future
-            var filteredMovies = movies
-                .Where(m => _movieService.GetMovieShows(m.MovieId)
-                    .Any(ms => ms.ShowDate >= today))
-                .ToList();
-
-            ViewBag.MovieList = filteredMovies;
-            ViewBag.SelectedMovieId = movieId;
-
-            if (!string.IsNullOrEmpty(movieId))
-            {
-                // Get movie shows for the selected movie
-                var movieShows = _movieService.GetMovieShows(movieId);
-                
-                // Group by date and time
-                var showsByDate = movieShows
-                    .Where(ms => ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
-                    .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
-                              .Distinct()
-                              .OrderBy(t => t)
-                              .ToList()
-                    );
-
-                ViewBag.ShowsByDate = showsByDate;
-            }
-
-            return View();
-        }
-
-        /// <summary>
-        /// Lấy danh sách ngày chiếu cho một phim
-        /// </summary>
-        /// <remarks>url: /Booking/GetDates (GET)</remarks>
-        [HttpGet]
-        public async Task<IActionResult> GetDates(string movieId)
-        {
-            var dates = await _bookingService.GetShowDatesAsync(movieId);
-            return Json(dates.Select(d => d.ToString("yyyy-MM-dd")));
-        }
-
-        /// <summary>
-        /// Lấy danh sách giờ chiếu cho một phim vào ngày cụ thể
-        /// </summary>
-        /// <remarks>url: /Booking/GetTimes (GET)</remarks>
-        [HttpGet]
-        public IActionResult GetVersions(string movieId, string date)
-        {
-            if (!DateTime.TryParse(date, out var showDate))
-                return Json(new List<object>());
-
-            var movieShows = _movieService.GetMovieShows(movieId)
-                .Where(ms => ms.ShowDate == DateOnly.FromDateTime(showDate))
-                .ToList();
-
-            var versions = movieShows
-                .Where(ms => ms.Version != null)
-                .Select(ms => new { versionId = ms.Version.VersionId, versionName = ms.Version.VersionName })
-                .Distinct()
-                .ToList();
-
-            return Json(versions);
-        }
-
-       //GET: /api/booking/gettimes
-       /// <summary>
-       /// Trả về các khung giờ chiếu của phim trong một ngày.
-       /// </summary>
-       /// <param name="movieId">Id của phim.</param>
-       /// <param name="date">Ngày chiếu.</param>
-        /// <param name="versionId">Id của phiên bản.</param>
-       /// <returns>Json danh sách giờ chiếu.</returns>
-       [HttpGet]
-        public IActionResult GetTimes(string movieId, string date, int versionId)
-        {
-            if (!DateTime.TryParse(date, out var showDate))
-                return Json(new List<object>());
-
-            var movieShows = _movieService.GetMovieShows(movieId)
-                .Where(ms => ms.ShowDate == DateOnly.FromDateTime(showDate) && ms.VersionId == versionId && ms.Schedule != null && ms.Schedule.ScheduleTime.HasValue)
-                .ToList();
-
-            var times = movieShows
-                .Select(ms => ms.Schedule.ScheduleTime.Value.ToString("HH:mm"))
-                .Distinct()
-                .OrderBy(t => t)
-                .ToList();
-
-           return Json(times);
-       }
+        
        //GET: /api/booking/information
        /// <summary>
        /// Hiển thị thông tin xác nhận đặt vé.
@@ -220,7 +118,7 @@ namespace MovieTheater.Controllers
            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
            {
                TempData["BookingError"] = "No seats were selected.";
-               return RedirectToAction("TicketBooking", new { movieId });
+               return RedirectToAction("Index", "Home", new { fragment = "booking-widget" });
            }
 
            var userId = _accountService.GetCurrentUser()?.AccountId;
@@ -312,6 +210,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Confirm (POST)</remarks>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
             var userId = _accountService.GetCurrentUser()?.AccountId;
@@ -631,7 +530,7 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "No seats were selected.";
 
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
                 else
                     return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
             }

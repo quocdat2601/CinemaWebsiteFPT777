@@ -33,8 +33,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="~/js/admin-sorting.js"></script>
 <script>
-    function loadTab(tabName, params = {}) {
+    window.loadTab = function(tabName, params = {}) {
         $('.admin-tab').removeClass('active');
         $(`.admin-tab[data-tab="${tabName}"]`).addClass('active');
 
@@ -46,6 +47,9 @@
             if (status === 'error') {
                 $('#tabContent').html('<div class="alert alert-danger">Failed to load content</div>');
             } else {
+                // Trigger tabContentLoaded event for all tabs
+                $(document).trigger('tabContentLoaded', [tabName]);
+                
                 // Trigger appropriate event based on the loaded tab
                 switch(tabName) {
                     case 'BookingMg':

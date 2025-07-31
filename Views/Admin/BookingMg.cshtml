@@ -27,16 +27,44 @@
         <div class="card-body">
             <form id="bookingSearchForm" onsubmit="searchBookings(); return false;">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <input type="text" class="form-control" id="searchKeyword" name="keyword"
                                placeholder="Search by Booking ID, Account ID, Phone, Identity Card..." value="@ViewBag.Keyword">
                     </div>
                     <div class="col-md-2">
                         <select class="form-select" id="statusFilter" name="statusFilter">
-                            <option value="" selected>All Status</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="notpaid">Not Paid</option>
+                            @if (string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()))
+                            {
+                                <option value="" selected>All Status</option>
+                            }
+                            else
+                            {
+                                <option value="">All Status</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "completed")
+                            {
+                                <option value="completed" selected>Completed</option>
+                            }
+                            else
+                            {
+                                <option value="completed">Completed</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "cancelled")
+                            {
+                                <option value="cancelled" selected>Cancelled</option>
+                            }
+                            else
+                            {
+                                <option value="cancelled">Cancelled</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "notpaid")
+                            {
+                                <option value="notpaid" selected>Not Paid</option>
+                            }
+                            else
+                            {
+                                <option value="notpaid">Not Paid</option>
+                            }
                         </select>
                     </div>
 
@@ -49,6 +77,11 @@
                         <a href="#" onclick="resetFilters(); return false;" class="btn btn-outline-secondary w-100">
                             <i class="bi bi-arrow-clockwise"></i> Reset
                         </a>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" onclick="console.log('Test button clicked'); searchBookings();" class="btn btn-outline-info w-100">
+                            <i class="bi bi-bug"></i> Test
+                        </button>
                     </div>
                 </div>
                 <div class="row g-3 mt-1">
@@ -205,5 +238,5 @@
 }
 
 @section Scripts {
-    <script src="~/js/admin-sorting.js"></script>
+    <!-- Scripts are loaded in the main page -->
 }
