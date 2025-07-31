@@ -2,10 +2,15 @@
 @inject MovieTheater.Service.IAccountService AccountService
 @{
     ViewData["Title"] = "Booking Management";
+
     var now = DateTime.Now;
+
     var totalBookings = Model.Count();
+
     var completed = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && !b.Cancel);
+
     var cancelled = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && b.Cancel);
+
     var notPaid = Model.Count(b => b.Status != MovieTheater.Models.InvoiceStatus.Completed);
 }
 
@@ -15,7 +20,7 @@
         <a href="@Url.Action("InitiateTicketSellingForMember", "Booking", new { id = "admin", returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" }) })" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Sell Ticket
         </a>
-</div>
+    </div>
 
     <!-- Search and Filter Section -->
     <div class="card mb-4">
@@ -131,34 +136,40 @@
                                 <th class="text-end sortable" data-sort="time">Schedule Time <span id="sortIconTime"></span></th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-            @foreach (var Invoice in Model)
-            {   
-                var account = AccountService.GetById(Invoice.AccountId);
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Invoice in Model)
+
+                            {
+                                var account = AccountService.GetById(Invoice.AccountId);
+
                                 var statusBadge = Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !Invoice.Cancel ?
-                                    "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
-                                    Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
-                                    "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
-                                    "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
-                <tr class="text-center booking-row">
+
+                                "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
+
+                                Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
+
+                                "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
+
+                                "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
+                                <tr class="text-center booking-row">
                                     <td class="text-center">@Invoice.InvoiceId</td>
-                                    <td class="text-start">@(Invoice.MovieShow.Movie.MovieNameEnglish ?? "N/A")</td>
+                                    <td class="text-start">@(Invoice.MovieShow?.Movie?.MovieNameEnglish ?? "N/A")</td>
                                     <td class="text-center">@Invoice.AccountId</td>
                                     <td class="text-end">@(account?.IdentityCard ?? "N/A")</td>
                                     <td class="text-end">@(account?.PhoneNumber ?? "N/A")</td>
-                                    <td class="text-end">@(Invoice.MovieShow.Schedule.ScheduleTime.ToString())</td>
+                                    <td class="text-end">@(Invoice.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A")</td>
                                     <td class="text-center">@Html.Raw(statusBadge)</td>
                                     <td class="text-center">
-                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
-                            <i class="fas fa-info-circle"></i> Details
-                        </a>
-                    </td>
-                </tr>
-        }
-    </tbody>
-</table>
+                                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
+                                            <i class="fas fa-info-circle"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
             else

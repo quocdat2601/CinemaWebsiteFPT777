@@ -1,0 +1,383 @@
+using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+
+namespace MovieTheater.Controllers
+{
+    [ApiController]
+    [Route("api/casso/webhook")]
+    public class CassoWebhookController : ControllerBase
+    {
+        private readonly MovieTheaterContext _context;
+        private readonly ILogger<CassoWebhookController> _logger;
+        private const string SECURE_TOKEN = "AK_CS.0eafb1406d2811f0b7f9c39f1519547d.SgAfzKpqf62yKUOnIl5qG4z4heJhXAy0oo5UtfrcSBEaMKmzGcz2w56HEyGF1e9xqwiAWqwB";
+
+        // Constants from PHP sample
+        private const decimal ORDER_MONEY = 100000m; // Giá tiền tổng cộng của đơn hàng giả định
+        private const decimal ACCEPTABLE_DIFFERENCE = 10000m; // Số tiền chuyển thiếu tối đa mà hệ thống vẫn chấp nhận
+        private const string MEMO_PREFIX = "DH"; // Tiền tố điền trước mã đơn hàng
+        private const string HEADER_SECURE_TOKEN = "eogrBiWqaq"; // Key bảo mật từ PHP sample
+
+        public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> HandleWebhook([FromBody] JsonElement body)
+        {
+            try
+            {
+                _logger.LogInformation("=== WEBHOOK DEBUG START ===");
+                _logger.LogInformation("Webhook received from Casso");
+
+                // Log request headers
+                var headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
+                _logger.LogInformation("Request Headers: {Headers}", string.Join(", ", headers.Select(h => $"{h.Key}={h.Value}")));
+
+                // Log webhook body
+                _logger.LogInformation("Webhook body: {Body}", JsonSerializer.Serialize(body));
+
+                // 1. KHÔNG kiểm tra Secure-Token nếu không có, chỉ log warning
+                if (!Request.Headers.TryGetValue("Secure-Token", out var tokenValues))
+                {
+                    _logger.LogWarning("No Secure-Token header found (Webhook V2 có thể chỉ dùng X-Casso-Signature)");
+                }
+                else if (tokenValues.FirstOrDefault() != SECURE_TOKEN)
+                {
+                    _logger.LogWarning("Invalid secure-token");
+                    // Vẫn trả về 200 OK để Casso không retry, chỉ log warning
+                }
+
+                // 2. Parse đúng format JSON cho Webhook V2
+                if (body.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Object)
+                {
+                    _logger.LogInformation("Processing V2: data is object");
+                    await ProcessTransaction(dataElement);
+                }
+                else if (body.TryGetProperty("data", out var dataArray) && dataArray.ValueKind == JsonValueKind.Array)
+                {
+                    _logger.LogInformation("Processing V2: data is array");
+                    foreach (var item in dataArray.EnumerateArray())
+                    {
+                        await ProcessTransaction(item);
+                    }
+                }
+                else if (body.ValueKind == JsonValueKind.Array)
+                {
+                    _logger.LogInformation("Processing as JSON Array");
+                    foreach (var item in body.EnumerateArray())
+                    {
+                        await ProcessTransaction(item);
+                    }
+                }
+                else if (body.ValueKind == JsonValueKind.Object)
+                {
+                    _logger.LogInformation("Processing as JSON Object (no data property)");
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid webhook body structure");
+                }
+
+                _logger.LogInformation("=== WEBHOOK DEBUG END ===");
+                // Luôn trả về HTTP 200 và body JSON object đơn giản nhất có thể
+                return Ok(new { error = 0 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing webhook");
+                // Dù có lỗi vẫn trả về HTTP 200 để Casso không retry
+                return Ok(new { error = 0 });
+            }
+        }
+
+        private async Task ProcessTransaction(JsonElement item)
+        {
+            try
+            {
+                // 1. Lấy id giao dịch từ Casso
+                var cassoId = item.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0;
+                // TẠM THỜI BỎ QUA CHECK NÀY ĐỂ TEST
+                // if (cassoId == 0)
+                // {
+                //     _logger.LogWarning("No Casso transaction id found");
+                //     return;
+                // }
+
+                // 2. Lấy orderId từ description hoặc reference
+                // Đúng:
+                var description = item.TryGetProperty("description", out var descElement) ? descElement.GetString() : "";
+                var reference = item.TryGetProperty("reference", out var refElement) ? refElement.GetString() : "";
+                var orderId = ExtractOrderId(description);
+                if (string.IsNullOrEmpty(orderId) && !string.IsNullOrEmpty(reference))
+                {
+                    orderId = reference;
+                }
+
+                _logger.LogInformation("Processing transaction: CassoId={CassoId}, OrderId={OrderId}, Description={Description}", cassoId, orderId, description);
+
+                if (string.IsNullOrEmpty(orderId))
+                {
+                    _logger.LogWarning("Could not extract order ID from description or reference: {Description} / {Reference}", description, reference);
+                    return;
+                }
+
+                // 3. Tìm invoice và kiểm tra trạng thái (logic tìm kiếm linh hoạt nâng cao)
+                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == orderId) // Tìm chính xác
+                    ?? _context.Invoices.FirstOrDefault(i => i.InvoiceId.ToString() == orderId) // Chuyển số thành chuỗi
+                    ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId.ToString())) // Tìm trong chuỗi
+                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm theo thời gian gần nhất
+
+                // Nếu vẫn không tìm thấy, thử tìm theo pattern từ description
+                if (invoice == null)
+                {
+                    // Tìm pattern QADOBFxxxx từ description
+                    var patternMatch = System.Text.RegularExpressions.Regex.Match(description, @"QADOBF\d+");
+                    if (patternMatch.Success)
+                    {
+                        var patternId = patternMatch.Value;
+                        _logger.LogInformation("Trying to find invoice by pattern: {PatternId}", patternId);
+                        invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId.Contains(patternId));
+                    }
+                }
+
+                // Nếu vẫn không tìm thấy, thử tìm theo số tiền và thời gian gần nhất
+                if (invoice == null)
+                {
+                    var paidAmount = item.TryGetProperty("amount", out var amountElement1) ? amountElement1.GetDecimal() : 0m;
+                    if (paidAmount > 0) // Chỉ tìm nếu có số tiền hợp lệ
+                    {
+                        _logger.LogInformation("Trying to find invoice by amount: {Amount}", paidAmount);
+                        invoice = _context.Invoices
+                            .Where(i => i.TotalMoney == paidAmount && i.Status != InvoiceStatus.Completed)
+                            .OrderByDescending(i => i.BookingDate)
+                            .FirstOrDefault();
+                    }
+                }
+
+                // Nếu vẫn không tìm thấy, thử tìm theo số tiền gần đúng (tolerance)
+                if (invoice == null)
+                {
+                    var paidAmountTolerance = item.TryGetProperty("amount", out var amountElement2) ? amountElement2.GetDecimal() : 0m;
+                    if (paidAmountTolerance > 0)
+                    {
+                        _logger.LogInformation("Trying to find invoice by amount with tolerance: {Amount}", paidAmountTolerance);
+                        var tolerance = Math.Max(paidAmountTolerance * 0.1m, 1000m); // 10% hoặc 1000 VND
+                        invoice = _context.Invoices
+                            .Where(i => Math.Abs(i.TotalMoney.Value - paidAmountTolerance) <= tolerance && i.Status != InvoiceStatus.Completed)
+                            .OrderByDescending(i => i.BookingDate)
+                            .FirstOrDefault();
+                    }
+                }
+
+                if (invoice == null)
+                {
+                    _logger.LogWarning("Invoice not found for orderId: {OrderId}. Tried multiple search methods including pattern and amount matching.", orderId);
+                    return;
+                }
+
+                _logger.LogInformation("Found invoice: InvoiceId={InvoiceId}, Status={Status}, TotalMoney={TotalMoney}", 
+                    invoice.InvoiceId, invoice.Status, invoice.TotalMoney);
+
+                // 4. Chống trùng lặp: chỉ xử lý nếu invoice chưa hoàn thành
+                if (invoice.Status == InvoiceStatus.Completed)
+                {
+                    _logger.LogWarning("Invoice {OrderId} already completed. Ignore duplicate webhook. (CassoId={CassoId})", orderId, cassoId);
+                    return;
+                }
+
+                // 5. Xử lý logic thanh toán theo PHP sample
+                var paid = item.TryGetProperty("amount", out var amountElement) ? amountElement.GetDecimal() : 0m;
+                var total = string.Format("{0:N0}", paid);
+                var accountNumber = item.TryGetProperty("accountNumber", out var accElement) ? accElement.GetString() : "";
+                var orderNote = $"Casso thông báo nhận {total} VND, nội dung {description} chuyển vào STK {accountNumber}";
+
+                if (!invoice.TotalMoney.HasValue)
+                {
+                    _logger.LogWarning("Invoice {OrderId} has null TotalMoney", orderId);
+                    return;
+                }
+
+                var expectedAmount = invoice.TotalMoney.Value;
+                var acceptableDifference = Math.Abs(ACCEPTABLE_DIFFERENCE);
+
+                if (paid < expectedAmount - acceptableDifference)
+                {
+                    // Thanh toán thiếu
+                    _logger.LogWarning("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán thiếu.", orderNote);
+                    // Có thể cập nhật status thành "PartialPayment" hoặc giữ nguyên
+                }
+                else if (paid <= expectedAmount + acceptableDifference)
+                {
+                    // Thanh toán đủ
+                    invoice.Status = InvoiceStatus.Completed;
+                    
+                    // Cập nhật trạng thái seat từ "being held" thành "booked"
+                    await UpdateSeatStatusToBooked(invoice);
+                    
+                    _context.SaveChanges();
+                    _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Đã thanh toán.", orderNote);
+                }
+                else
+                {
+                    // Thanh toán dư
+                    invoice.Status = InvoiceStatus.Completed;
+                    
+                    // Cập nhật trạng thái seat từ "being held" thành "booked"
+                    await UpdateSeatStatusToBooked(invoice);
+                    
+                    _context.SaveChanges();
+                    _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán dư.", orderNote);
+                }
+
+                _logger.LogInformation("Invoice {OrderId} processed successfully. (CassoId={CassoId})", orderId, cassoId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing transaction");
+                throw;
+            }
+        }
+
+        private string ExtractOrderId(string description)
+        {
+            if (string.IsNullOrEmpty(description)) return "";
+
+            // Look for DH pattern (from PHP sample) - không phân biệt hoa thường
+            var dhMatch = System.Text.RegularExpressions.Regex.Match(description, $@"{MEMO_PREFIX}\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (dhMatch.Success)
+            {
+                var orderId = dhMatch.Value;
+                _logger.LogInformation("Parsed orderId '{OrderId}' from description: '{Description}'", orderId, description);
+                return orderId;
+            }
+
+            // Fallback: Look for INV pattern (original logic)
+            var invMatch = System.Text.RegularExpressions.Regex.Match(description, @"INV\d+");
+            if (invMatch.Success)
+            {
+                var orderId = invMatch.Value;
+                _logger.LogInformation("Parsed orderId '{OrderId}' from description: '{Description}'", orderId, description);
+                return orderId;
+            }
+
+            return "";
+        }
+
+        [HttpGet("ping")]
+        public IActionResult Ping()
+        {
+            return Ok("Webhook endpoint is accessible");
+        }
+
+        /// <summary>
+        /// Test endpoint để simulate payment qua GET request
+        /// </summary>
+        [HttpGet("test")]
+        public async Task<IActionResult> TestPayment([FromQuery] string orderId, [FromQuery] decimal amount)
+        {
+            try
+            {
+                _logger.LogInformation("Test payment called for orderId: {OrderId}, amount: {Amount}", orderId, amount);
+                
+                // Tạo test transaction data
+                var testTransaction = new
+                {
+                    description = $"Thanh toan {orderId}",
+                    amount = amount,
+                    type = "IN"
+                };
+                
+                // Convert to JsonElement để reuse existing logic
+                var jsonString = JsonSerializer.Serialize(new[] { testTransaction });
+                var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+                
+                // Process như webhook thật
+                await ProcessTransaction(jsonElement[0]);
+                
+                return Ok(new { 
+                    success = true, 
+                    message = $"Test payment processed for {orderId}",
+                    orderId = orderId,
+                    amount = amount
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in test payment");
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật trạng thái seat từ "being held" thành "booked" khi thanh toán thành công
+        /// </summary>
+        private async Task UpdateSeatStatusToBooked(Invoice invoice)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(invoice.SeatIds))
+                {
+                    _logger.LogWarning("Invoice {InvoiceId} has no seat IDs", invoice.InvoiceId);
+                    return;
+                }
+
+                var seatIds = invoice.SeatIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(id => int.TryParse(id.Trim(), out var seatId) ? seatId : 0)
+                    .Where(id => id > 0)
+                    .ToList();
+
+                if (!seatIds.Any())
+                {
+                    _logger.LogWarning("No valid seat IDs found in invoice {InvoiceId}", invoice.InvoiceId);
+                    return;
+                }
+
+                // Tìm SeatStatusId cho trạng thái "Booked"
+                var bookedStatus = _context.SeatStatuses.FirstOrDefault(s => s.StatusName == "Booked");
+                if (bookedStatus == null)
+                {
+                    _logger.LogError("SeatStatus 'Booked' not found in database");
+                    return;
+                }
+
+                // Tìm và cập nhật trạng thái seat
+                var seats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
+                
+                foreach (var seat in seats)
+                {
+                    seat.SeatStatusId = bookedStatus.SeatStatusId; // Chuyển từ BeingHeld thành Booked
+                    _logger.LogInformation("Updated seat {SeatId} status from BeingHeld to Booked for invoice {InvoiceId}", 
+                        seat.SeatId, invoice.InvoiceId);
+                }
+
+                // Cập nhật ScheduleSeat nếu có
+                if (invoice.MovieShowId.HasValue)
+                {
+                    var scheduleSeats = _context.ScheduleSeats
+                        .Where(ss => ss.MovieShowId == invoice.MovieShowId.Value && seatIds.Contains(ss.SeatId.Value))
+                        .ToList();
+
+                    foreach (var scheduleSeat in scheduleSeats)
+                    {
+                        scheduleSeat.SeatStatusId = bookedStatus.SeatStatusId;
+                        _logger.LogInformation("Updated ScheduleSeat {SeatId} status to Booked for MovieShow {MovieShowId}", 
+                            scheduleSeat.SeatId, invoice.MovieShowId.Value);
+                    }
+                }
+
+                _logger.LogInformation("Successfully updated {SeatCount} seats to Booked status for invoice {InvoiceId}", 
+                    seats.Count, invoice.InvoiceId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating seat status to booked for invoice {InvoiceId}", invoice.InvoiceId);
+                // Không throw exception để không ảnh hưởng đến việc cập nhật invoice
+            }
+        }
+    }
+} 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using MovieTheater.Models;
+using MovieTheater.Hubs;
 using System.Text.Json;
 
 namespace MovieTheater.Controllers
@@ -13,12 +14,14 @@ namespace MovieTheater.Controllers
         private readonly IQRPaymentService _qrPaymentService;
         private readonly IGuestInvoiceService _guestInvoiceService;
         private readonly ILogger<QRPaymentController> _logger;
+        private readonly MovieTheaterContext _context;
 
-        public QRPaymentController(IQRPaymentService qrPaymentService, IGuestInvoiceService guestInvoiceService, ILogger<QRPaymentController> logger)
+        public QRPaymentController(IQRPaymentService qrPaymentService, IGuestInvoiceService guestInvoiceService, ILogger<QRPaymentController> logger, MovieTheaterContext context)
         {
             _qrPaymentService = qrPaymentService;
             _guestInvoiceService = guestInvoiceService;
             _logger = logger;
+            _context = context;
         }
 
         /// <summary>
@@ -41,25 +44,31 @@ namespace MovieTheater.Controllers
                     {
                         AccountId = "GUEST",
                         Email = "guest@movietheater.com",
-                        // Sửa lại tên trường cho đúng với model, ví dụ:
-                        FullName = "Khách vãng lai",      // Nếu là FullName, không phải Full_Name
+                        FullName = "Khách vãng lai",
                         Password = "guest",
                         Address = "Không xác định",
                     };
                     context.Accounts.Add(guestAccount);
                     context.SaveChanges();
                 }
-                var orderId = await bookingService.GenerateInvoiceIdAsync();
+
+                // 1. Sinh mã InvoiceId duy nhất, tối đa 10 ký tự
+                string invoiceId = "DH" + (DateTime.UtcNow.Ticks % 1000000).ToString("D6");
+                while (context.Invoices.Any(i => i.InvoiceId == invoiceId))
+                {
+                    invoiceId = "DH" + (DateTime.UtcNow.Ticks % 1000000).ToString("D6");
+                }
+
                 // Tổng tiền = seat + food
                 decimal totalAmount = model.BookingDetails.TotalPrice + model.TotalFoodPrice;
                 var orderInfo = $"Ve xem phim - {model.BookingDetails.MovieName}";
-                var qrData = _qrPaymentService.GenerateQRCodeData(totalAmount, orderInfo, orderId);
-                var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
-                if (!context.Invoices.Any(i => i.InvoiceId == orderId))
+
+                // 2. Lưu invoice vào DB
+                if (!context.Invoices.Any(i => i.InvoiceId == invoiceId))
                 {
                     var invoice = new Invoice
                     {
-                        InvoiceId = orderId,
+                        InvoiceId = invoiceId,
                         AccountId = "GUEST",
                         AddScore = 0,
                         BookingDate = DateTime.Now,
@@ -76,9 +85,25 @@ namespace MovieTheater.Controllers
                     context.Invoices.Add(invoice);
                     context.SaveChanges();
                 }
+
+                // 3. Tạo QR code với reference là invoiceId
+                var qrData = _qrPaymentService.GenerateQRCodeData(totalAmount, orderInfo, invoiceId);
+                var qrImage = _qrPaymentService.GetQRCodeImage(qrData);
+
+                // Extend hold time for selected seats when creating QR code
+                var movieShowId = model.BookingDetails.MovieShowId;
+                var accountId = "GUEST"; // Since this is guest booking
+                foreach (var seat in model.BookingDetails.SelectedSeats)
+                {
+                    if (seat.SeatId.HasValue)
+                    {
+                        SeatHub.ExtendHoldTime(movieShowId, seat.SeatId.Value, accountId);
+                    }
+                }
+
                 var viewModel = new QRPaymentViewModel
                 {
-                    OrderId = orderId,
+                    OrderId = invoiceId,
                     Amount = totalAmount,
                     OrderInfo = orderInfo,
                     QRCodeData = qrData,
@@ -91,7 +116,7 @@ namespace MovieTheater.Controllers
                     SeatInfo = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName))
                 };
                 return RedirectToAction("DisplayQR", "QRPayment", new {
-                    orderId = orderId,
+                    orderId = invoiceId,
                     amount = totalAmount,
                     customerName = model.MemberFullName,
                     customerPhone = model.MemberPhoneNumber,
@@ -187,111 +212,58 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Kiểm tra trạng thái thanh toán - Demo version
+        /// Kiểm tra trạng thái thanh toán - Thực tế
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> CheckPaymentStatus(string orderId, string modelData)
+        public async Task<IActionResult> CheckPaymentStatus([FromBody] CheckPaymentRequest request)
         {
             try
             {
-                _logger.LogInformation("Demo CheckPaymentStatus called with orderId: {OrderId}", orderId);
+                _logger.LogInformation("CheckPaymentStatus called with orderId: {OrderId}", request.orderId);
                 
-                // Demo: Luôn trả về thanh toán thành công
-                var isPaid = true; // Demo payment success
+                // Force reload from database to get latest data
+                _context.ChangeTracker.Clear();
+                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == request.orderId);
+                
+                if (invoice == null)
+                {
+                    _logger.LogWarning("Invoice not found for orderId: {OrderId}", request.orderId);
+                    return Json(new { success = false, message = "Invoice not found" });
+                }
+                
+                // Log chi tiết invoice để debug
+                _logger.LogInformation("Invoice found: {OrderId}, Status: {Status}, TotalMoney: {TotalMoney}, BookingDate: {BookingDate}", 
+                    request.orderId, invoice.Status, invoice.TotalMoney, invoice.BookingDate);
+                
+                bool isPaid = invoice.Status == InvoiceStatus.Completed;
+                _logger.LogInformation("Invoice {OrderId} status: {Status}, isPaid: {IsPaid}", request.orderId, invoice.Status, isPaid);
                 
                 if (isPaid)
                 {
-                    try
-                    {
-                        // Parse model data từ JSON string
-                        var modelDataObj = JsonSerializer.Deserialize<JsonElement>(modelData);
-                        _logger.LogInformation("Demo JSON parsed successfully");
-                        
-                        // Lấy thông tin từ JSON một cách an toàn
-                        decimal totalPrice = 0;
-                        var seatNames = new List<string>();
-                        
-                        try
-                        {
-                            var bookingDetails = modelDataObj.GetProperty("BookingDetails");
-                            totalPrice = bookingDetails.GetProperty("TotalPrice").GetDecimal();
-                            
-                            var selectedSeats = bookingDetails.GetProperty("SelectedSeats");
-                            foreach (var seat in selectedSeats.EnumerateArray())
-                            {
-                                var seatName = seat.GetProperty("SeatName").GetString();
-                                if (!string.IsNullOrEmpty(seatName))
-                                {
-                                    seatNames.Add(seatName);
-                                }
-                            }
-                        }
-                        catch (Exception parseEx)
-                        {
-                            _logger.LogWarning("Demo JSON parsing warning: {Message}", parseEx.Message);
-                            // Sử dụng giá trị mặc định nếu parse lỗi
-                            totalPrice = 64000; // Default amount
-                            seatNames.Add("A10"); // Default seat
-                        }
-                        
-                        _logger.LogInformation("Demo TotalPrice: {TotalPrice}, Seat names: {SeatNames}", totalPrice, string.Join(", ", seatNames));
-                        
-                        // Kiểm tra xem invoice đã tồn tại chưa
-                        var existingInvoice = await _guestInvoiceService.GetInvoiceByOrderIdAsync(orderId);
-                        if (existingInvoice != null)
-                        {
-                            _logger.LogInformation("Invoice already exists for order: {OrderId}", orderId);
-                            return Json(new { 
-                                success = true, 
-                                isPaid = true, 
-                                message = "Payment already completed",
-                                invoiceId = existingInvoice.InvoiceId,
-                                redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = orderId })
-                            });
-                        }
-                        
-                        // Sử dụng GuestInvoiceService để lưu invoice
-                        var invoiceSuccess = await _guestInvoiceService.CreateGuestInvoiceAsync(
-                            orderId, 
-                            totalPrice, 
-                            "Demo Customer",
-                            "Demo Phone",
-                            "Demo Movie",
-                            "Demo Time",
-                            string.Join(", ", seatNames),
-                            1 // Default movieShowId
-                        );
-                        
-                        if (invoiceSuccess)
-                        {
-                            _logger.LogInformation("Guest invoice created successfully for order: {OrderId}", orderId);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Failed to create guest invoice for order: {OrderId}", orderId);
-                        }
-                        
-                        return Json(new { 
-                            success = true, 
-                            isPaid = true, 
-                            message = "Demo payment successful!",
-                            invoiceId = orderId,
-                            redirectUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" })
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Demo error processing payment data: {Message}", ex.Message);
-                        return Json(new { success = false, message = "Error processing demo payment data" });
-                    }
+                    _logger.LogInformation("Payment completed for {OrderId}, returning success response", request.orderId);
+                    return Json(new { 
+                        success = true, 
+                        isPaid = true, 
+                        message = "Payment completed successfully!",
+                        invoiceId = request.orderId,
+                        redirectUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" })
+                    });
                 }
-                
-                return Json(new { success = true, isPaid = false, message = "Demo payment pending" });
+                else
+                {
+                    _logger.LogInformation("Payment pending for {OrderId}, returning pending response", request.orderId);
+                    return Json(new { 
+                        success = true, 
+                        isPaid = false, 
+                        message = "Payment pending...",
+                        invoiceId = request.orderId
+                    });
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Demo error checking payment status: {Message}", ex.Message);
-                return Json(new { success = false, message = "Error checking demo payment status" });
+                _logger.LogError(ex, "Error checking payment status for orderId: {OrderId}", request.orderId);
+                return Json(new { success = false, message = "Error checking payment status: " + ex.Message });
             }
         }
         
@@ -303,12 +275,12 @@ namespace MovieTheater.Controllers
         {
             try
             {
-                var context = (MovieTheaterContext)HttpContext.RequestServices.GetService(typeof(MovieTheaterContext));
-                var invoice = context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
+                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
                 if (invoice != null)
                 {
                     invoice.Status = InvoiceStatus.Completed; // hoặc tên enum tương ứng trạng thái đã thanh toán // Đã thanh toán
-                    context.SaveChanges();
+                    _context.SaveChanges();
+                    TempData["PaymentSuccess"] = true;
                     return Json(new { success = true });
                 }
                 return Json(new { success = false, message = "Không tìm thấy hóa đơn" });

@@ -17,7 +17,7 @@ namespace MovieTheater.Hubs
         private static readonly ConcurrentDictionary<int, ConcurrentDictionary<int, HoldInfo>> _heldSeats = new();
         // movieShowId + accountId -> connectionId
         private static readonly ConcurrentDictionary<(int movieShowId, string accountId), string> _accountConnections = new();
-        private const int HoldMinutes = 5;
+        private const int HoldMinutes = 30; // Tăng từ 5 lên 30 phút để khớp với QR timer
         private readonly MovieTheaterContext _context;
 
         public SeatHub(MovieTheaterContext context)
@@ -141,6 +141,19 @@ namespace MovieTheater.Hubs
             if (_heldSeats.TryGetValue(movieShowId, out var seatsForShow))
             {
                 seatsForShow.TryRemove(seatId, out _);
+            }
+        }
+
+        // Thêm method để extend hold time khi tạo QR code
+        public static void ExtendHoldTime(int movieShowId, int seatId, string accountId)
+        {
+            if (_heldSeats.TryGetValue(movieShowId, out var seatsForShow))
+            {
+                if (seatsForShow.TryGetValue(seatId, out var holdInfo) && holdInfo.AccountId == accountId)
+                {
+                    // Reset hold time to current time
+                    holdInfo.HoldTime = DateTime.UtcNow;
+                }
             }
         }
 
