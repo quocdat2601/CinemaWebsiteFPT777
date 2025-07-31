@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
-    [Authorize]
     public class SeatController : Controller
     {
         private readonly ICinemaService _cinemaService;
@@ -42,6 +41,7 @@ namespace MovieTheater.Controllers
         /// Trang danh sách ghế
         /// </summary>
         /// <remarks>url: /Seat/Index (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Index()
         {
             return View();
@@ -51,6 +51,7 @@ namespace MovieTheater.Controllers
         /// Xem chi tiết ghế
         /// </summary>
         /// <remarks>url: /Seat/Details (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Details(int id)
         {
             return View();
@@ -60,6 +61,7 @@ namespace MovieTheater.Controllers
         /// Trang tạo ghế mới
         /// </summary>
         /// <remarks>url: /Seat/Create (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Create()
         {
             return View();
@@ -71,6 +73,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Create(IFormCollection collection)
         {
             try
@@ -88,6 +91,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Seat/Edit/{cinemaId} (GET)</remarks>
         [HttpGet("Seat/Edit/{cinemaId}")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Edit(int cinemaId)
         {
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
@@ -118,6 +122,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Seat/View/{cinemaId} (GET)</remarks>
         [HttpGet("Seat/View/{cinemaId}")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> View(int cinemaId)
         {
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
@@ -269,6 +274,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/UpdateSeatTypes (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> UpdateSeatTypes([FromBody] List<SeatTypeUpdateModel> updates)
         {
             foreach (var update in updates)
@@ -290,6 +296,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/CreateCoupleSeat (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> CreateCoupleSeat([FromBody] CoupleSeat coupleSeat)
         {
             try
@@ -307,6 +314,7 @@ namespace MovieTheater.Controllers
         /// Trang xóa ghế
         /// </summary>
         /// <remarks>url: /Seat/Delete (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Delete(int id)
         {
             return View();
@@ -318,6 +326,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/Delete (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Delete(int id, IFormCollection collection)
         {
             try
@@ -335,6 +344,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/DeleteCoupleSeat (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> DeleteCoupleSeat([FromBody] SeatIdsRequest request)
         {
             if (request.SeatIds == null || request.SeatIds.Count != 2)
@@ -350,6 +360,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/CreateCoupleSeatsBatch (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeat> coupleSeats)
         {
             if (coupleSeats == null || coupleSeats.Count == 0)

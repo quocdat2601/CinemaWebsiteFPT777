@@ -45,7 +45,6 @@ namespace MovieTheater.Controllers
         public List<int> SelectedSeatIds { get; set; } = new List<int>();
     }
 
-    [Authorize]
     public class BookingController : Controller
     {
         private readonly IBookingService _bookingService;
@@ -113,6 +112,7 @@ namespace MovieTheater.Controllers
        /// <param name="movieShowId">Id của suất chiếu cụ thể.</param>
        /// <returns>View xác nhận đặt vé.</returns>
        [HttpGet]
+       [Authorize]
        public async Task<IActionResult> Information(string movieId, DateOnly showDate, string showTime, List<int>? selectedSeatIds, int movieShowId, List<int>? foodIds, List<int>? foodQtys)
        {
            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
@@ -211,6 +211,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Booking/Confirm (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
             var userId = _accountService.GetCurrentUser()?.AccountId;
@@ -244,6 +245,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Success (GET)</remarks>
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Success(string invoiceId)
         {
             var userId = _accountService.GetCurrentUser()?.AccountId;
@@ -286,6 +288,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Payment (GET)</remarks>
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Payment(string invoiceId)
         {
             var invoice = _invoiceService.GetById(invoiceId);
@@ -411,6 +414,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/ProcessPayment (POST)</remarks>
         [HttpPost]
+        [Authorize]
         public IActionResult ProcessPayment(PaymentViewModel model)
         {
             try
@@ -495,6 +499,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Booking/Failed (GET)</remarks>
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Failed()
         {
             var invoiceId = TempData["InvoiceId"] as string;
