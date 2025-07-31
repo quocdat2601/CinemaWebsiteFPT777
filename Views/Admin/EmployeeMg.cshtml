@@ -3,19 +3,20 @@
 <div class="text-center mb-2">
     <h2>Employee List</h2>
 </div>
-
-<div class="text-center mb-2">
-    <a asp-controller="Employee" asp-action="Create" class="btn btn-sm btn-primary">Create an Employee</a>
-</div>
-
-<form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchEmployees();">
-    <input type="hidden" name="tab" value="EmployeeMg" />
-    <div class="input-group" style="max-width: 600px;">
-        <input type="text" id="searchKeyword" name="keyword" value="@ViewBag.Keyword" maxlength="50" class="form-control" placeholder="🔍 Search by name, email, phone, etc..." />
-        <button type="submit" class="btn btn-primary">Search</button>
+<div class="row">
+    <div class="col">
+        <a asp-controller="Employee" asp-action="Create" class="btn btn-sm btn-primary">Create an Employee</a>
     </div>
-</form>
-
+    <div class="col">
+        <form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchEmployees();">
+            <input type="hidden" name="tab" value="EmployeeMg" />
+            <div class="input-group" style="max-width: 600px;">
+                <input type="text" id="searchKeyword" name="keyword" value="@ViewBag.Keyword" maxlength="50" class="form-control" placeholder="🔍 Search by name, email, phone, etc..." />
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <table class="table table-bordered table-striped">
     <thead class="table-dark">
