@@ -119,5 +119,15 @@ namespace MovieTheater.Repository
             }
         }
 
+        public void ToggleStatus(string accountId)
+        {
+            var account = _context.Accounts.Find(accountId);
+
+            if (account != null)
+            {
+                account.Status = account.Status == 1 ? 0 : 1;
+                _context.SaveChanges();
+            }
+        }
     }
 }

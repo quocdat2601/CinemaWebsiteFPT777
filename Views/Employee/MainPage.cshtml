@@ -2,26 +2,19 @@
     ViewData["Title"] = "Admin Main Page";
 }
 
-<!-- Security: Use CDN with integrity checks -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" 
-      integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtbrHDHdxaEXqQE6yYFW" 
-      crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
-      integrity="sha384-7S287E4o+0O5jVw3J5yItxrhXWW9l7Y9jbGCedjjNf+JvtvcC3ygr32H1vpP6L2X" 
-      crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"
-        integrity="sha384-7S287E4o+0O5jVw3J5yItxrhXWW9l7Y9jbGCedjjNf+JvtvcC3ygr32H1vpP6L2X" 
-        crossorigin="anonymous"></script>
+<!-- CDN Resources -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3 col-lg-2 min-vh-100 border-end" id="account-sidebar">
             <ul class="nav flex-column nav-pills" id="adminTabs">
-                <a class="nav-link admin-tab" data-tab="CastMg" href="javascript:void(0)">Cast/Director Management</a>
                 <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
-                <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">Promotion Management</a>
-                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
+                <a class="nav-link admin-tab" data-tab="CastMg" href="javascript:void(0)">Cast/Director Management</a>
                 <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
+                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
                 <a class="nav-link admin-tab" data-tab="QRCode" href="javascript:void(0)" style="background-color: #28a745; color: white;">
                     <i class="fas fa-qrcode me-2"></i>QR Scanner
                 </a>
@@ -40,8 +33,8 @@
     window.initialTab = '@ViewData["ActiveTab"]';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="~/js/admin-sorting.js"></script>
 <script src="~/js/loadtab.js" asp-append-version="true"></script>
+<script src="~/js/admin-sorting.js"></script>
 
 <partial name="_ToastMessages" />
 

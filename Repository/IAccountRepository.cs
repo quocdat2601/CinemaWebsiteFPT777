@@ -15,6 +15,6 @@ namespace MovieTheater.Repository
         Account GetAccountByEmail(string email);
         IEnumerable<Account> GetAll();
         Task DeductScoreAsync(string userId, int points);
-
+        public void ToggleStatus(string accountId);
     }
 }

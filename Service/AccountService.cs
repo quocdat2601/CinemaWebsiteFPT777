@@ -122,10 +122,6 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            if (model.Status.HasValue)
-            {
-                account.Status = model.Status;
-            }
 
             if (model.ImageFile != null && model.ImageFile.Length > 0)
             {
@@ -517,6 +513,11 @@ namespace MovieTheater.Service
         public async Task SignOutUserAsync(HttpContext httpContext)
         {
             await httpContext.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        public void ToggleStatus(string accountId)
+        {
+            _repository.ToggleStatus(accountId);
         }
     }
 }

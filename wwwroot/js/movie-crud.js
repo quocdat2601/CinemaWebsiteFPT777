@@ -12,13 +12,22 @@
         
         if (directorIds) {
             selectedDirectors = directorIds.split(',').filter(id => id.trim() !== '');
-            updateDirectorSelection();
         }
         
         if (actorIds) {
             selectedActors = actorIds.split(',').filter(id => id.trim() !== '');
-            updateActorSelection();
         }
+        
+        // Ensure they are arrays
+        if (!Array.isArray(selectedDirectors)) {
+            selectedDirectors = [];
+        }
+        if (!Array.isArray(selectedActors)) {
+            selectedActors = [];
+        }
+        
+        updateDirectorSelection();
+        updateActorSelection();
     }
 
     // Image preview function
@@ -39,29 +48,66 @@
 
     // Director/Actor modal functions
     function openDirectorPopup() {
+        const modalElement = document.getElementById('directorModal');
+        if (!modalElement) {
+            console.error('Director modal element not found');
+            alert('Director modal not found. Please refresh the page.');
+            return;
+        }
+        
         fetch('/Movie/GetDirectors')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 allDirectors = data;
                 renderDirectors(data);
-                const modal = new bootstrap.Modal(document.getElementById('directorModal'));
+                const modal = new bootstrap.Modal(modalElement);
                 modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading directors:', error);
+                alert('Error loading directors. Please try again.');
             });
     }
 
     function openActorPopup() {
+        const modalElement = document.getElementById('actorModal');
+        if (!modalElement) {
+            console.error('Actor modal element not found');
+            alert('Actor modal not found. Please refresh the page.');
+            return;
+        }
+        
         fetch('/Movie/GetActors')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 allActors = data;
                 renderActors(data);
-                const modal = new bootstrap.Modal(document.getElementById('actorModal'));
+                const modal = new bootstrap.Modal(modalElement);
                 modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading actors:', error);
+                alert('Error loading actors. Please try again.');
             });
     }
 
     function renderDirectors(directors) {
         const directorsList = document.getElementById('directorsList');
+        if (!directorsList) {
+            console.error('Directors list element not found');
+            return;
+        }
+        
         directorsList.innerHTML = '';
         
         directors.forEach(director => {
@@ -71,7 +117,7 @@
                         <div class="selection-overlay">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <img src="${director.image || '/image/default-movie.png'}" class="card-img-top" alt="${director.name}">
+                        <img src="${director.image || '/images/movies/default-movie.jpg'}" class="card-img-top" alt="${director.name}">
                         <div class="card-body">
                             <h6 class="card-title">${director.name}</h6>
                         </div>
@@ -82,14 +128,21 @@
         });
 
         // Restore previously selected states
-        selectedDirectors.forEach(id => {
-            const card = document.querySelector(`.director-card[data-id="${id}"]`);
-            if (card) card.classList.add('selected');
-        });
+        if (Array.isArray(selectedDirectors)) {
+            selectedDirectors.forEach(id => {
+                const card = document.querySelector(`.director-card[data-id="${id}"]`);
+                if (card) card.classList.add('selected');
+            });
+        }
     }
 
     function renderActors(actors) {
         const actorsList = document.getElementById('actorsList');
+        if (!actorsList) {
+            console.error('Actors list element not found');
+            return;
+        }
+        
         actorsList.innerHTML = '';
         
         actors.forEach(actor => {
@@ -99,7 +152,7 @@
                         <div class="selection-overlay">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <img src="${actor.image || '/image/default-movie.png'}" class="card-img-top" alt="${actor.name}">
+                        <img src="${actor.image || '/images/movies/default-movie.jpg'}" class="card-img-top" alt="${actor.name}">
                         <div class="card-body">
                             <h6 class="card-title">${actor.name}</h6>
                         </div>
@@ -110,10 +163,12 @@
         });
 
         // Restore previously selected states
-        selectedActors.forEach(id => {
-            const card = document.querySelector(`.actor-card[data-id="${id}"]`);
-            if (card) card.classList.add('selected');
-        });
+        if (Array.isArray(selectedActors)) {
+            selectedActors.forEach(id => {
+                const card = document.querySelector(`.actor-card[data-id="${id}"]`);
+                if (card) card.classList.add('selected');
+            });
+        }
     }
 
     function toggleDirector(id, name) {

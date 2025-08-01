@@ -27,5 +27,6 @@ namespace MovieTheater.Service
         bool HasMissingProfileInfo(Account user);
         Task SignInUserAsync(HttpContext httpContext, Account user);
         Task SignOutUserAsync(HttpContext httpContext);
+        public void ToggleStatus(string accountId);
     }
 }
