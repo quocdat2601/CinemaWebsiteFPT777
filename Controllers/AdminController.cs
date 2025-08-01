@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Security.Claims;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
@@ -580,7 +581,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, int page = 1, int pageSize = 10)
         {
             var invoices = _invoiceService.GetAll();
@@ -666,6 +667,69 @@ namespace MovieTheater.Controllers
                     completed = completed,
                     cancelled = cancelled,
                     notPaid = notPaid
+                }
+            });
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult VoucherMgPartial(string keyword = null, string statusFilter = null, string expiryFilter = null, int page = 1, int pageSize = 10)
+        {
+            var filter = new Service.VoucherFilterModel
+            {
+                Keyword = keyword,
+                StatusFilter = statusFilter,
+                ExpiryFilter = expiryFilter
+            };
+            var vouchers = _voucherService.GetFilteredVouchers(filter).ToList();
+
+            // Calculate pagination
+            var totalCount = vouchers.Count();
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            var skip = (page - 1) * pageSize;
+            var pagedVouchers = vouchers.Skip(skip).Take(pageSize).ToList();
+
+            // Calculate statistics
+            var now = DateTime.Now;
+            var totalVouchers = totalCount;
+            var active = vouchers.Count(v => !v.IsUsed.HasValue || !v.IsUsed.Value && v.ExpiryDate > now);
+            var used = vouchers.Count(v => v.IsUsed.HasValue && v.IsUsed.Value);
+            var expired = vouchers.Count(v => v.ExpiryDate <= now);
+
+            var result = pagedVouchers.Select(v => new
+            {
+                voucherId = v.VoucherId,
+                code = v.Code,
+                accountId = v.AccountId,
+                value = v.Value,
+                createdDate = v.CreatedDate.ToString("dd/MM/yyyy"),
+                expiryDate = v.ExpiryDate.ToString("dd/MM/yyyy"),
+                isUsed = v.IsUsed,
+                isExpired = v.ExpiryDate <= now,
+                image = v.Image,
+                daysUntilExpiry = (v.ExpiryDate - now).Days,
+                isExpiringSoon = (v.ExpiryDate - now).Days <= 7 && (v.ExpiryDate - now).Days > 0
+            }).ToList();
+
+            return Json(new
+            {
+                success = true,
+                data = result,
+                pagination = new
+                {
+                    currentPage = page,
+                    totalPages = totalPages,
+                    totalCount = totalCount,
+                    pageSize = pageSize,
+                    hasNextPage = page < totalPages,
+                    hasPreviousPage = page > 1
+                },
+                statistics = new
+                {
+                    totalVouchers = totalVouchers,
+                    active = active,
+                    used = used,
+                    expired = expired
                 }
             });
         }
