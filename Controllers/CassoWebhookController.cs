@@ -347,7 +347,7 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Cập nhật trạng thái invoice khi thanh toán thành công
+        /// Cập nhật trạng thái invoice
         /// </summary>
         private async Task UpdateInvoiceStatus(string invoiceId, InvoiceStatus status, CancellationToken cancellationToken)
         {
@@ -364,11 +364,11 @@ namespace MovieTheater.Controllers
                 _invoiceService.Update(invoice);
                 _invoiceService.Save();
                 
-                _logger.LogInformation("Successfully updated invoice {InvoiceId} status to {Status}", invoiceId, status);
+                _logger.LogInformation("Updated invoice {InvoiceId} status to {Status}", invoiceId, status);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating invoice {InvoiceId} status to {Status}", invoiceId, status);
+                _logger.LogError(ex, "Error updating invoice {InvoiceId} status", invoiceId);
                 throw;
             }
         }
