@@ -11,26 +11,29 @@
 
 <div class="cinema-app">
     <!-- Theater Header -->
-    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");">
+    <div class="theater-header" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #1a1a1a 0%, var(--cinema-dark) 100%)");" data-auto-text-color>
         <div class="screen-glow"></div>
         <div class="profile-spotlight">
             <div class="avatar-theater">
                 <div class="spotlight-ring"></div>
                 <img src="@(profile.Image ?? "/image/profile.jpg")" alt="Profile" id="profileAvatar" class="avatar-image">
-                <label for="avatarUpload" class="camera-action">
+                <label for="avatarUpload" class="camera-action" title="Click to change profile picture" style="cursor: pointer;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
                     </svg>
+                    <span class="camera-tooltip">Change Photo</span>
                 </label>
-                <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm" style="display: none;">
-                    <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" hidden>
+                <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm">
+                    @Html.AntiForgeryToken()
+                    <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" style="display: none;">
+                    <input type="hidden" id="croppedImageData" name="Profile.CroppedImageData">
                 </form>
             </div>
 
             <div class="profile-marquee">
-                <h1 class="name-display">@profile.FullName</h1>
-                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
+                <h1 class="name-display" data-auto-text-color>@profile.FullName</h1>
+                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");" data-auto-text-color>
                     <span class="tier-icon">
                         @if (!string.IsNullOrEmpty(rank.IconClass))
                         {
@@ -48,13 +51,13 @@
 
             <div class="cinema-stats">
                 <div class="stat-reel">
-                    <div class="stat-frame">
-                        <div class="stat-number">@rank.CurrentScore</div>
-                        <div class="stat-label">Current Points</div>
+                    <div class="stat-frame" data-auto-text-color>
+                        <div class="stat-number" data-auto-text-color>@rank.CurrentScore</div>
+                        <div class="stat-label" data-auto-text-color>Current Points</div>
                     </div>
-                    <div class="stat-frame">
-                        <div class="stat-number">@rank.TotalPoints</div>
-                        <div class="stat-label">Total Points</div>
+                    <div class="stat-frame" data-auto-text-color>
+                        <div class="stat-number" data-auto-text-color>@rank.TotalPoints</div>
+                        <div class="stat-label" data-auto-text-color>Total Points</div>
                     </div>
                 </div>
             </div>
@@ -71,11 +74,11 @@
             <div class="progress-info">
                 @if (isMaxRank)
                 {
-                    <span class="progress-text">🎬 VIP Member - Maximum Level Achieved</span>
+                    <span class="progress-text" data-auto-text-color>🎬 VIP Member - Maximum Level Achieved</span>
                 }
                 else
                 {
-                    <span class="progress-text">@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
+                    <span class="progress-text" data-auto-text-color>@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to unlock @rank.NextRankName</span>
                 }
             </div>
         </div>
@@ -182,6 +185,45 @@
     </div>
 </div>
 
+<!-- Image Edit Modal -->
+<div class="image-edit-modal" id="imageEditModal" style="display:none;">
+    <div class="image-edit-content">
+        <div class="image-edit-header">
+            <h3>Edit Image</h3>
+            <button class="image-edit-close" onclick="closeImageEdit()">×</button>
+        </div>
+        <div class="image-edit-body">
+            <div class="image-preview-container">
+                <div class="image-preview-frame">
+                    <canvas id="imageCanvas" width="400" height="400" style="max-width: 100%; height: auto;"></canvas>
+                    <div class="crop-overlay">
+                        <div class="crop-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="image-controls">
+                <div class="zoom-control">
+                    <span class="zoom-icons">
+                        <i class="fas fa-search-minus"></i>
+                        <i class="fas fa-search-plus"></i>
+                    </span>
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="0.5" max="3" step="0.1" value="1">
+                </div>
+                <div class="rotate-control">
+                    <button class="rotate-btn" onclick="rotateImage()">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="image-edit-actions">
+                <button class="image-btn secondary" onclick="resetImageEdit()">Reset</button>
+                <button class="image-btn secondary" onclick="closeImageEdit()">Cancel</button>
+                <button class="image-btn primary" onclick="applyImageEdit()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Rank Details Modal -->
 <div class="rank-modal" id="rankDetailsModal" style="display:none;">
     <div class="rank-modal-content">
@@ -234,51 +276,51 @@
                     <div class="rank-slide @activeClass" data-slide="@i">
                         <div class="rank-card" style="--rank-gradient: @rankGradient;">
                             <div class="rank-card-header">
-                                <div class="rank-icon-wrapper" style="background: @rankGradient;">
+                                <div class="rank-icon-wrapper" style="background: @rankGradient;" data-auto-text-color>
                                     <i class="@rankIcon"></i>
                                 </div>
                                 <div class="rank-info">
-                                    <span class="rank-title">@rankDetail.CurrentRankName Rank</span>
-                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")">@rankStatus</span>
+                                    <span class="rank-title" data-auto-text-color>@rankDetail.CurrentRankName Rank</span>
+                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")" data-auto-text-color>@rankStatus</span>
                                 </div>
                             </div>
-                            <div class="rank-card-body">
-                                <div class="rank-progress-wrapper">
-                                    <div class="rank-progress">
-                                        <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
-                                    </div>
-                                    <div class="rank-points">
-                                        <span>@prevRankPoints.ToString("N0") pts</span>
-                                        <span>@targetRankPoints.ToString("N0") pts</span>
-                                    </div>
-                                </div>
-                                <div class="benefits-section">
-                                    <div class="benefits-header">
-                                        <span class="benefits-icon">🎁</span>
-                                        <span>Benefits:</span>
-                                    </div>
-                                    <div class="benefits-content">
-                                        <div class="benefit-item">
-                                            <span class="benefit-icon">🎫</span>
-                                            <div class="benefit-text">
-                                                <span class="benefit-label">Discount on Tickets</span>
-                                                <span class="benefit-value">@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
-                                            </div>
+                                                            <div class="rank-card-body">
+                                    <div class="rank-progress-wrapper">
+                                        <div class="rank-progress">
+                                            <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
                                         </div>
-                                        <div class="benefit-item">
-                                            <span class="benefit-icon">💰</span>
-                                            <div class="benefit-text">
-                                                <span class="benefit-label">Point Earning Rate</span>
-                                                <span class="benefit-value">@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
-                                            </div>
+                                        <div class="rank-points">
+                                            <span>@prevRankPoints.ToString("N0") pts</span>
+                                            <span>@targetRankPoints.ToString("N0") pts</span>
                                         </div>
                                     </div>
+                                    <div class="benefits-section">
+                                        <div class="benefits-header">
+                                            <span class="benefits-icon">🎁</span>
+                                            <span data-auto-text-color>Benefits:</span>
+                                        </div>
+                                        <div class="benefits-content">
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">🎫</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Discount on Tickets</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">💰</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Point Earning Rate</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="auto-upgrade">
+                                        <span class="upgrade-icon">⚡</span>
+                                        <span data-auto-text-color>Auto-upgrade at @targetRankPoints.ToString("N0") pts</span>
+                                    </div>
                                 </div>
-                                <div class="auto-upgrade">
-                                    <span class="upgrade-icon">⚡</span>
-                                    Auto-upgrade at @targetRankPoints.ToString("N0") pts
-                                </div>
-                            </div>
                         </div>
                     </div>
                     }
@@ -298,20 +340,128 @@
 </div>
 
 <script>
-    // Simple initialization function
-    function initProfileTab() {
-        // Load tickets immediately
-        loadTickets('all');
+    // Auto text color functionality
+    function calculateContrastRatio(backgroundColor) {
+        // Convert background color to RGB
+        let rgb;
+        if (backgroundColor.startsWith('linear-gradient')) {
+            // Extract multiple colors from gradient for better calculation
+            const colorMatches = backgroundColor.match(/(#[0-9a-fA-F]{3,6}|rgba?\([^)]+\))/g);
+            if (colorMatches && colorMatches.length > 0) {
+                // Calculate average of all colors in gradient
+                let totalR = 0, totalG = 0, totalB = 0;
+                let validColors = 0;
+                
+                colorMatches.forEach(color => {
+                    const parsed = hexToRgb(color) || parseRgb(color);
+                    if (parsed) {
+                        totalR += parsed.r;
+                        totalG += parsed.g;
+                        totalB += parsed.b;
+                        validColors++;
+                    }
+                });
+                
+                if (validColors > 0) {
+                    rgb = {
+                        r: Math.round(totalR / validColors),
+                        g: Math.round(totalG / validColors),
+                        b: Math.round(totalB / validColors)
+                    };
+                } else {
+                    // Fallback for gradients
+                    rgb = { r: 128, g: 128, b: 128 };
+                }
+            } else {
+                // Fallback to medium gray for gradients
+                rgb = { r: 128, g: 128, b: 128 };
+            }
+        } else if (backgroundColor.startsWith('#')) {
+            rgb = hexToRgb(backgroundColor);
+        } else if (backgroundColor.startsWith('rgb')) {
+            rgb = parseRgb(backgroundColor);
+        } else {
+            // Fallback
+            rgb = { r: 128, g: 128, b: 128 };
+        }
+
+        if (!rgb) {
+            return 0.5; // Default to medium luminance
+        }
+
+        // Calculate relative luminance using sRGB formula
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
         
-        // Attach filter event listeners
-        document.querySelectorAll('.filter-ticket').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-ticket').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                loadTickets(this.dataset.filter, 1);
-            });
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        
+        return luminance;
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function parseRgb(rgb) {
+        const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        return match ? {
+            r: parseInt(match[1]),
+            g: parseInt(match[2]),
+            b: parseInt(match[3])
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function applyAutoTextColor() {
+        const elements = document.querySelectorAll('[data-auto-text-color]');
+        
+        elements.forEach(element => {
+            const style = window.getComputedStyle(element);
+            const backgroundColor = style.background || style.backgroundColor;
+            
+            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                const luminance = calculateContrastRatio(backgroundColor);
+                
+                // Remove existing classes
+                element.classList.remove('text-white', 'text-black');
+                
+                // Use inline styles to avoid Bootstrap conflicts
+                if (luminance < 0.5) {
+                    element.style.setProperty('color', '#ffffff', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                } else {
+                    element.style.setProperty('color', '#000000', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                }
+            } else {
+                // For elements without background, try to get parent background
+                const parent = element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            }
         });
     }
+
+
 
     // Load tickets function
     function loadTickets(filter, page = 1) {
@@ -488,37 +638,819 @@
         initProfileTab();
     }
 
+    // Enhanced Theater Header Effects
+    function initTheaterHeaderEffects() {
+        const theaterHeader = document.querySelector('.theater-header');
+        const profileSpotlight = document.querySelector('.profile-spotlight');
+        const statFrames = document.querySelectorAll('.stat-frame');
+        const tierBadge = document.querySelector('.tier-badge');
+        
+        if (!theaterHeader) return;
+
+        // Enhanced Mouse tracking effect with magnetic attraction
+        theaterHeader.addEventListener('mousemove', (e) => {
+            const rect = theaterHeader.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const deltaX = (x - centerX) / centerX;
+            const deltaY = (y - centerY) / centerY;
+            
+            // Apply magnetic effect to liquid glass
+            theaterHeader.style.setProperty('--mouse-x', deltaX);
+            theaterHeader.style.setProperty('--mouse-y', deltaY);
+            
+            // Enhanced parallax effect for profile spotlight
+            if (profileSpotlight) {
+                profileSpotlight.style.transform = `translate(${deltaX * 8}px, ${deltaY * 8}px) rotateX(${deltaY * 5}deg) rotateY(${deltaX * 5}deg)`;
+            }
+            
+            // Magnetic effect for stat frames
+            statFrames.forEach((frame, index) => {
+                const frameRect = frame.getBoundingClientRect();
+                const frameCenterX = frameRect.left + frameRect.width / 2;
+                const frameCenterY = frameRect.top + frameRect.height / 2;
+                
+                const distanceX = e.clientX - frameCenterX;
+                const distanceY = e.clientY - frameCenterY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                const maxDistance = 200;
+                
+                if (distance < maxDistance) {
+                    const force = (maxDistance - distance) / maxDistance;
+                    const moveX = (distanceX / distance) * force * 10;
+                    const moveY = (distanceY / distance) * force * 10;
+                    
+                    frame.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.05})`;
+                } else {
+                    frame.style.transform = 'translate(0, 0) scale(1)';
+                }
+            });
+            
+            // Magnetic effect for tier badge
+            if (tierBadge) {
+                const badgeRect = tierBadge.getBoundingClientRect();
+                const badgeCenterX = badgeRect.left + badgeRect.width / 2;
+                const badgeCenterY = badgeRect.top + badgeRect.height / 2;
+                
+                const distanceX = e.clientX - badgeCenterX;
+                const distanceY = e.clientY - badgeCenterY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                const maxDistance = 150;
+                
+                if (distance < maxDistance) {
+                    const force = (maxDistance - distance) / maxDistance;
+                    const moveX = (distanceX / distance) * force * 15;
+                    const moveY = (distanceY / distance) * force * 15;
+                    
+                    tierBadge.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.1})`;
+                } else {
+                    tierBadge.style.transform = 'translate(0, 0) scale(1)';
+                }
+            }
+        });
+
+        // Enhanced Interactive stat frames with ripple and glow effects
+        statFrames.forEach((frame, index) => {
+            frame.addEventListener('mouseenter', () => {
+                frame.style.transform = 'translateY(-6px) scale(1.08)';
+                frame.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.3)';
+                
+                // Enhanced ripple effect
+                const ripple = document.createElement('div');
+                ripple.className = 'stat-ripple';
+                ripple.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+                    border-radius: 50%;
+                    transform: translate(-50%, -50%);
+                    animation: rippleEffect 0.8s ease-out;
+                    pointer-events: none;
+                    z-index: 1;
+                `;
+                frame.appendChild(ripple);
+                
+                // Add glow effect
+                frame.style.filter = 'brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))';
+                
+                setTimeout(() => {
+                    if (ripple.parentNode) {
+                        ripple.parentNode.removeChild(ripple);
+                    }
+                    frame.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+                }, 800);
+            });
+            
+            frame.addEventListener('mouseleave', () => {
+                frame.style.transform = 'translateY(0) scale(1)';
+                frame.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 255, 255, 0.1)';
+                frame.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+            });
+        });
+
+        // Enhanced tier badge interactions
+        if (tierBadge) {
+            tierBadge.addEventListener('mouseenter', () => {
+                tierBadge.style.transform = 'translateY(-4px) scale(1.12)';
+                tierBadge.style.boxShadow = '0 12px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.3)';
+                tierBadge.style.filter = 'brightness(1.3) drop-shadow(0 0 25px rgba(255, 255, 255, 0.4))';
+            });
+            
+            tierBadge.addEventListener('mouseleave', () => {
+                tierBadge.style.transform = 'translateY(0) scale(1)';
+                tierBadge.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 255, 255, 0.1)';
+                tierBadge.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+            });
+        }
+
+        // Enhanced floating particles with more variety
+        createEnhancedFloatingParticles(theaterHeader);
+        
+        // Enhanced progress bar animation
+        animateEnhancedProgressBar();
+        
+        // Add sparkle effects
+        createSparkleEffects(theaterHeader);
+    }
+
+    // Create enhanced floating particles with more variety
+    function createEnhancedFloatingParticles(container) {
+        const particleCount = 20; // Increased from 15
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'floating-particle';
+            
+            const size = Math.random() * 6 + 2; // Varied sizes
+            const opacity = Math.random() * 0.4 + 0.1;
+            const duration = Math.random() * 15 + 10; // Varied durations
+            const delay = Math.random() * 8;
+            const type = Math.random() > 0.5 ? 'circle' : 'star';
+            
+            particle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${type === 'circle' ? 
+                    `rgba(255, 255, 255, ${opacity})` : 
+                    `radial-gradient(circle at center, rgba(255, 255, 255, ${opacity}) 0%, transparent 70%)`
+                };
+                border-radius: ${type === 'circle' ? '50%' : '0'};
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: floatParticle ${duration}s linear infinite;
+                animation-delay: ${delay}s;
+                pointer-events: none;
+                z-index: 5;
+                filter: blur(0.5px);
+                ${type === 'star' ? `
+                    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+                ` : ''}
+            `;
+            container.appendChild(particle);
+        }
+    }
+
+    // Create sparkle effects
+    function createSparkleEffects(container) {
+        const sparkleCount = 8;
+        
+        for (let i = 0; i < sparkleCount; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            const size = Math.random() * 4 + 2;
+            const duration = Math.random() * 3 + 2;
+            const delay = Math.random() * 5;
+            
+            sparkle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+                border-radius: 50%;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: sparkleEffect ${duration}s ease-in-out infinite;
+                animation-delay: ${delay}s;
+                pointer-events: none;
+                z-index: 6;
+            `;
+            container.appendChild(sparkle);
+        }
+    }
+
+    // Enhanced progress bar animation with counting effect
+    function animateEnhancedProgressBar() {
+        const progressBar = document.querySelector('.film-progress');
+        const statNumbers = document.querySelectorAll('.stat-number');
+        
+        if (progressBar) {
+            const targetWidth = progressBar.style.width;
+            progressBar.style.width = '0%';
+            
+            setTimeout(() => {
+                progressBar.style.transition = 'width 2.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                progressBar.style.width = targetWidth;
+                
+                // Add pulse effect during animation
+                progressBar.style.animation = 'progressPulse 2.5s ease-out';
+            }, 500);
+        }
+        
+        // Enhanced stat numbers with bounce effect
+        statNumbers.forEach((number, index) => {
+            const targetValue = parseInt(number.textContent.replace(/,/g, ''));
+            const duration = 2500;
+            const startTime = Date.now();
+            
+            function updateNumber() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOutBounce = 1 - Math.pow(1 - progress, 3);
+                const currentValue = Math.floor(targetValue * easeOutBounce);
+                
+                number.textContent = currentValue.toLocaleString();
+                
+                // Add bounce effect
+                if (progress < 0.8) {
+                    number.style.transform = `scale(${1 + Math.sin(progress * Math.PI * 4) * 0.1})`;
+                } else {
+                    number.style.transform = 'scale(1)';
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                }
+            }
+            
+            setTimeout(() => {
+                updateNumber();
+            }, 600 + index * 300);
+        });
+    }
+
+    // Add CSS for enhanced effects
+    function addDynamicCSS() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes rippleEffect {
+                0% {
+                    width: 0;
+                    height: 0;
+                    opacity: 1;
+                }
+                100% {
+                    width: 300px;
+                    height: 300px;
+                    opacity: 0;
+                }
+            }
+            
+            @@keyframes floatParticle {
+                0% {
+                    transform: translateY(0) rotate(0deg) scale(1);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(-100vh) rotate(720deg) scale(0.5);
+                    opacity: 0;
+                }
+            }
+            
+            @@keyframes sparkleEffect {
+                0%, 100% {
+                    opacity: 0;
+                    transform: scale(0) rotate(0deg);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1) rotate(180deg);
+                }
+            }
+            
+            @@keyframes progressPulse {
+                0% {
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                }
+                50% {
+                    box-shadow: 0 0 35px rgba(255, 255, 255, 0.8);
+                }
+                100% {
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                }
+            }
+            
+            @@keyframes spin {
+                0% { transform: translate(-50%, -50%) rotate(0deg); }
+                100% { transform: translate(-50%, -50%) rotate(360deg); }
+            }
+            
+            .theater-header {
+                --mouse-x: 0;
+                --mouse-y: 0;
+            }
+            
+            .theater-header::before {
+                transform: translate(calc(var(--mouse-x) * 8px), calc(var(--mouse-y) * 8px));
+            }
+            
+            .stat-frame {
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .floating-particle {
+                filter: blur(0.5px);
+            }
+            
+            .sparkle {
+                filter: blur(0.3px);
+            }
+            
+            /* Enhanced hover states */
+            .stat-frame:hover {
+                transform: translateY(-6px) scale(1.08) !important;
+            }
+            
+            .tier-badge:hover {
+                transform: translateY(-4px) scale(1.12) !important;
+            }
+            
+            /* Magnetic effect smoothness */
+            .stat-frame, .tier-badge {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            /* Enhanced camera action hover effects */
+            .camera-action {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+                position: relative;
+            }
+            
+            .camera-action:hover {
+                transform: scale(1.2);
+                filter: brightness(1.3);
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+            
+            .camera-action:active {
+                transform: scale(0.95);
+            }
+            
+            /* Avatar loading state */
+            .avatar-loading {
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 50%;
+                padding: 10px;
+                backdrop-filter: blur(5px);
+            }
+            
+            /* Camera tooltip */
+            .camera-tooltip {
+                position: absolute;
+                bottom: -30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                white-space: nowrap;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 1000;
+            }
+            
+            .camera-action:hover .camera-tooltip {
+                opacity: 1;
+            }
+            
+            /* Image Edit Modal Styles */
+            .image-edit-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                backdrop-filter: blur(10px);
+            }
+            
+            .image-edit-content {
+                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                border-radius: 20px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .image-edit-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 25px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            
+            .image-edit-header h3 {
+                color: #ffffff;
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0;
+            }
+            
+            .image-edit-close {
+                background: none;
+                border: none;
+                color: #ffffff;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 5px;
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            
+            .image-edit-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: scale(1.1);
+            }
+            
+            .image-edit-body {
+                padding: 25px;
+            }
+            
+            .image-preview-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 25px;
+            }
+            
+            .image-preview-frame {
+                position: relative;
+                width: 400px;
+                height: 400px;
+                background: #333;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            }
+            
+            #imageCanvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                cursor: move;
+            }
+            
+            .crop-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 10;
+            }
+            
+            .crop-circle {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 300px;
+                height: 300px;
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            }
+            
+            .image-controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 25px;
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 10px;
+            }
+            
+            .zoom-control {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex: 1;
+            }
+            
+            .zoom-icons {
+                display: flex;
+                gap: 10px;
+                color: #ffffff;
+                font-size: 14px;
+            }
+            
+            .zoom-slider {
+                flex: 1;
+                height: 6px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 3px;
+                outline: none;
+                -webkit-appearance: none;
+            }
+            
+            .zoom-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                background: #007bff;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .zoom-slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                background: #007bff;
+                border-radius: 50%;
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .rotate-control {
+                margin-left: 20px;
+            }
+            
+            .rotate-btn {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #ffffff;
+                padding: 10px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .rotate-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: scale(1.05);
+            }
+            
+            .image-edit-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .image-btn {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            }
+            
+            .image-btn.primary {
+                background: #007bff;
+                color: white;
+            }
+            
+            .image-btn.primary:hover {
+                background: #0056b3;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+            }
+            
+            .image-btn.secondary {
+                background: transparent;
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            
+            .image-btn.secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.5);
+            }
+            
+            @@media (max-width: 768px) {
+                .image-edit-content {
+                    width: 95%;
+                    margin: 10px;
+                    max-height: 95vh;
+                }
+                
+                .image-preview-frame {
+                    width: 300px;
+                    height: 300px;
+                }
+                
+                .crop-circle {
+                    width: 250px;
+                    height: 250px;
+                }
+                
+                .image-controls {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                
+                .rotate-control {
+                    margin-left: 0;
+                }
+                
+                .image-edit-actions {
+                    flex-direction: column;
+                }
+                
+                .image-btn {
+                    width: 100%;
+                }
+                
+                #imageCanvas {
+                    width: 300px !important;
+                    height: 300px !important;
+                }
+            }
+            
+            @@media (max-width: 480px) {
+                .image-edit-content {
+                    width: 98%;
+                    margin: 5px;
+                }
+                
+                .image-preview-frame {
+                    width: 250px;
+                    height: 250px;
+                }
+                
+                .crop-circle {
+                    width: 200px;
+                    height: 200px;
+                }
+                
+                #imageCanvas {
+                    width: 250px !important;
+                    height: 250px !important;
+                }
+                
+                .image-edit-header {
+                    padding: 15px 20px;
+                }
+                
+                .image-edit-body {
+                    padding: 20px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // Avatar upload functionality
     document.getElementById('avatarUpload').addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                // Simple avatar update without modal
-                document.getElementById('profileAvatar').src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPEG, PNG, or GIF)');
+                return;
+            }
+            
+            // Open image edit modal
+            openImageEditModal(file);
         }
     });
 
-    // Rank details modal
-    function showRankDetails() {
-        alert('Rank details feature coming soon!');
+    // Enhanced initialization
+    function initProfileTab() {
+        // Load tickets immediately
+        loadTickets('all');
+        
+        // Attach filter event listeners
+        document.querySelectorAll('.filter-ticket').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-ticket').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                loadTickets(this.dataset.filter, 1);
+            });
+        });
+
+        // Apply auto text color after a short delay to ensure styles are loaded
+        setTimeout(applyAutoTextColor, 100);
+        
+        // Apply again after a longer delay to ensure all styles are fully loaded
+        setTimeout(applyAutoTextColor, 500);
+        
+        // Force apply to stat elements specifically
+        setTimeout(() => {
+            const statElements = document.querySelectorAll('.stat-frame[data-auto-text-color], .stat-number[data-auto-text-color], .stat-label[data-auto-text-color]');
+            statElements.forEach(element => {
+                const parent = element.closest('.stat-frame') || element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            });
+        }, 300);
+        
+        // Initialize enhanced theater header effects
+        addDynamicCSS();
+        setTimeout(initTheaterHeaderEffects, 1000);
     }
 </script>
 
 <script>
+// Image Edit Modal Variables
+let currentImageFile = null;
+let imageEditor = {
+    canvas: null,
+    ctx: null,
+    image: null,
+    scale: 1,
+    rotation: 0,
+    offsetX: 0,
+    offsetY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0
+};
+
 // Rank Details Modal Logic
 if (typeof window.currentRankSlide === 'undefined') window.currentRankSlide = 0;
+
 function showRankDetails() {
     document.getElementById('rankDetailsModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     showRankSlide(window.currentRankSlide);
+    
+    // Apply auto text color after modal content is rendered
+    setTimeout(applyAutoTextColor, 200);
 }
+
 function closeRankDetails() {
     document.getElementById('rankDetailsModal').style.display = 'none';
     document.body.style.overflow = 'auto';
 }
+
 function showRankSlide(slideIndex) {
     var slides = document.querySelectorAll('.rank-slide');
     var indicators = document.querySelectorAll('.rank-indicator');
@@ -527,19 +1459,306 @@ function showRankSlide(slideIndex) {
     if (slides[slideIndex]) slides[slideIndex].classList.add('active');
     if (indicators[slideIndex]) indicators[slideIndex].classList.add('active');
     window.currentRankSlide = slideIndex;
+    
+    // Apply auto text color after slide change
+    setTimeout(applyAutoTextColor, 100);
 }
+
 function nextRankSlide() {
     var slides = document.querySelectorAll('.rank-slide');
     var next = (window.currentRankSlide + 1) % slides.length;
     showRankSlide(next);
 }
+
 function prevRankSlide() {
     var slides = document.querySelectorAll('.rank-slide');
     var prev = (window.currentRankSlide - 1 + slides.length) % slides.length;
     showRankSlide(prev);
 }
+
+// Image Edit Modal Functions
+function openImageEditModal(file) {
+    currentImageFile = file;
+    document.getElementById('imageEditModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Initialize canvas with responsive sizing
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size based on container
+    const container = canvas.parentElement;
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+    
+    canvas.width = Math.min(400, containerWidth);
+    canvas.height = Math.min(400, containerHeight);
+    
+    imageEditor.canvas = canvas;
+    imageEditor.ctx = ctx;
+    
+    // Load image
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            imageEditor.image = img;
+            resetImageEdit();
+            drawImage();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // Add event listeners
+    addImageEditEventListeners();
+}
+
+function closeImageEdit() {
+    document.getElementById('imageEditModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentImageFile = null;
+    removeImageEditEventListeners();
+}
+
+function resetImageEdit() {
+    imageEditor.scale = 1;
+    imageEditor.rotation = 0;
+    imageEditor.offsetX = 0;
+    imageEditor.offsetY = 0;
+    document.getElementById('zoomSlider').value = 1;
+    drawImage();
+}
+
+function rotateImage() {
+    imageEditor.rotation += 90;
+    if (imageEditor.rotation >= 360) {
+        imageEditor.rotation = 0;
+    }
+    drawImage();
+}
+
+function drawImage() {
+    if (!imageEditor.image || !imageEditor.ctx) return;
+    
+    const canvas = imageEditor.canvas;
+    const ctx = imageEditor.ctx;
+    const img = imageEditor.image;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Save context
+    ctx.save();
+    
+    // Move to center
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    
+    // Apply transformations
+    ctx.rotate((imageEditor.rotation * Math.PI) / 180);
+    ctx.scale(imageEditor.scale, imageEditor.scale);
+    
+    // Draw image
+    const imgWidth = img.width;
+    const imgHeight = img.height;
+    const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
+    const scale = Math.min(maxSize / imgWidth, maxSize / imgHeight);
+    
+    ctx.drawImage(
+        img,
+        -imgWidth * scale / 2 + imageEditor.offsetX,
+        -imgHeight * scale / 2 + imageEditor.offsetY,
+        imgWidth * scale,
+        imgHeight * scale
+    );
+    
+    // Restore context
+    ctx.restore();
+}
+
+function addImageEditEventListeners() {
+    const canvas = imageEditor.canvas;
+    const zoomSlider = document.getElementById('zoomSlider');
+    
+    // Zoom slider
+    zoomSlider.addEventListener('input', function() {
+        imageEditor.scale = parseFloat(this.value);
+        drawImage();
+    });
+    
+    // Mouse events for dragging
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', startDrag);
+    canvas.addEventListener('touchmove', drag);
+    canvas.addEventListener('touchend', endDrag);
+}
+
+function removeImageEditEventListeners() {
+    const canvas = imageEditor.canvas;
+    const zoomSlider = document.getElementById('zoomSlider');
+    
+    if (zoomSlider) {
+        zoomSlider.removeEventListener('input', function() {});
+    }
+    
+    if (canvas) {
+        canvas.removeEventListener('mousedown', startDrag);
+        canvas.removeEventListener('mousemove', drag);
+        canvas.removeEventListener('mouseup', endDrag);
+        canvas.removeEventListener('mouseleave', endDrag);
+        canvas.removeEventListener('touchstart', startDrag);
+        canvas.removeEventListener('touchmove', drag);
+        canvas.removeEventListener('touchend', endDrag);
+    }
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    imageEditor.isDragging = true;
+    
+    const rect = imageEditor.canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    imageEditor.startX = clientX - rect.left - imageEditor.offsetX;
+    imageEditor.startY = clientY - rect.top - imageEditor.offsetY;
+}
+
+function drag(e) {
+    e.preventDefault();
+    if (!imageEditor.isDragging) return;
+    
+    const rect = imageEditor.canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    imageEditor.offsetX = clientX - rect.left - imageEditor.startX;
+    imageEditor.offsetY = clientY - rect.top - imageEditor.startY;
+    
+    drawImage();
+}
+
+function endDrag() {
+    imageEditor.isDragging = false;
+}
+
+function applyImageEdit() {
+    if (!imageEditor.image) return;
+    
+    // Create a temporary canvas for cropping
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    const size = 300; // Final avatar size
+    tempCanvas.width = size;
+    tempCanvas.height = size;
+    
+    // Draw the cropped and processed image
+    tempCtx.save();
+    tempCtx.translate(size / 2, size / 2);
+    tempCtx.rotate((imageEditor.rotation * Math.PI) / 180);
+    tempCtx.scale(imageEditor.scale, imageEditor.scale);
+    
+    const img = imageEditor.image;
+    const maxSize = Math.min(imageEditor.canvas.width, imageEditor.canvas.height) * 0.8;
+    const scale = Math.min(maxSize / img.width, maxSize / img.height);
+    
+    tempCtx.drawImage(
+        img,
+        -img.width * scale / 2 + imageEditor.offsetX,
+        -img.height * scale / 2 + imageEditor.offsetY,
+        img.width * scale,
+        img.height * scale
+    );
+    
+    tempCtx.restore();
+    
+    // Convert to blob and create file
+    tempCanvas.toBlob(function(blob) {
+        // Create a new file from the blob
+        const croppedFile = new File([blob], currentImageFile.name, {
+            type: currentImageFile.type,
+            lastModified: Date.now()
+        });
+        
+        // Create a new FileList-like object
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(croppedFile);
+        
+        // Update the file input
+        const fileInput = document.getElementById('avatarUpload');
+        fileInput.files = dataTransfer.files;
+        
+        // Update the cropped image data
+        document.getElementById('croppedImageData').value = tempCanvas.toDataURL();
+        
+        // Close modal
+        closeImageEdit();
+        
+        // Show preview and submit
+        showCroppedPreview(tempCanvas.toDataURL());
+        submitAvatarForm();
+    }, currentImageFile.type, 0.9);
+}
+
+function showCroppedPreview(dataUrl) {
+    const avatar = document.getElementById('profileAvatar');
+    
+    // Add loading animation
+    avatar.style.opacity = '0.7';
+    avatar.style.filter = 'grayscale(50%)';
+    
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'avatar-loading';
+    loadingIndicator.innerHTML = '🔄';
+    loadingIndicator.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        z-index: 10;
+        animation: spin 1s linear infinite;
+    `;
+    avatar.parentElement.style.position = 'relative';
+    avatar.parentElement.appendChild(loadingIndicator);
+    
+    // Update avatar
+    avatar.src = dataUrl;
+    avatar.style.opacity = '1';
+    avatar.style.filter = 'grayscale(0%)';
+    
+    // Add animation
+    avatar.style.transform = 'scale(1.1)';
+    avatar.style.filter = 'brightness(1.2)';
+    
+    setTimeout(() => {
+        avatar.style.transform = 'scale(1)';
+        avatar.style.filter = 'brightness(1)';
+    }, 300);
+}
+
+function submitAvatarForm() {
+    setTimeout(() => {
+        if (typeof showToast === 'function') {
+            showToast('Uploading profile picture...');
+        }
+        
+        const form = document.getElementById('avatarForm');
+        form.submit();
+    }, 100);
+}
+
 document.addEventListener('click', function(e) {
     var modal = document.getElementById('rankDetailsModal');
     if (e.target === modal) closeRankDetails();
+    
+    var imageModal = document.getElementById('imageEditModal');
+    if (e.target === imageModal) closeImageEdit();
 });
 </script> 
