@@ -23,12 +23,7 @@ class PromotionsManager {
         slidesPerView: 1,
         slidesPerGroup: 1,
         spaceBetween: 30,
-        loop: true,
-        autoplay: {
-          delay: 6000,
-          disableOnInteraction: false,
-          pauseOnMouseEnter: true,
-        },
+        loop: false, // Bỏ loop
         navigation: {
           nextEl: ".promotions-swiper-modern .swiper-button-next",
           prevEl: ".promotions-swiper-modern .swiper-button-prev",
@@ -67,13 +62,13 @@ class PromotionsManager {
   }
 
   bindEvents() {
-    // Learn more buttons
-    document.querySelectorAll(".btn-learn-more").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+    // Click event cho promotion card (cả image và content)
+    document.querySelectorAll(".promotion-card").forEach((card) => {
+      card.addEventListener("click", (e) => {
         e.preventDefault()
-        const promoCard = btn.closest(".promotion-card")
-        const promoId = promoCard.getAttribute("data-promo-id")
-        this.showPromotionDetails(promoId)
+        const promoId = card.getAttribute("data-promo-id")
+        const contentElement = card.querySelector(".promotion-content")
+        this.showPromotionDetails(promoId, contentElement)
       })
     })
 
@@ -236,23 +231,30 @@ class PromotionsManager {
     }
   }
 
+  showPromotionDetails(promoId, contentElement) {
+    // Lấy dữ liệu từ data attributes
+    const image = contentElement.dataset.image || ''
+    const title = contentElement.dataset.title || ''
+    const discount = contentElement.dataset.discount || ''
+    const detail = contentElement.dataset.detail || ''
+    const time = contentElement.dataset.time || ''
 
-
-  showPromotionDetails(promoId) {
-    // Create and show promotion details modal
-    const modal = this.createPromotionModal(promoId)
-    document.body.appendChild(modal)
-
-    // Show modal
-    setTimeout(() => {
-      modal.classList.add("show")
-    }, 100)
+    // Mở modal với dữ liệu
+    this.openPromotionModal({ image, title, discount, detail, time })
 
     // Track promotion interaction
-    this.trackPromotionClick(promoId, "learn_more")
+    this.trackPromotionClick(promoId, "card_click")
   }
 
-
+  openPromotionModal({ image, title, discount, detail, time }) {
+    document.getElementById('promotionModalImage').src = image
+    document.getElementById('promotionModalTitle').textContent = title
+    document.getElementById('promotionModalDiscount').textContent = discount
+    document.getElementById('promotionModalDetail').textContent = detail
+    document.getElementById('promotionModalTime').textContent = time
+    document.getElementById('promotionModalOverlay').classList.remove('hidden')
+    document.body.style.overflow = 'hidden'
+  }
 
   createPromotionModal(promoId) {
     const modal = document.createElement("div")
@@ -284,18 +286,6 @@ class PromotionsManager {
   prevSlide() {
     if (this.swiper) {
       this.swiper.slidePrev()
-    }
-  }
-
-  pauseAutoplay() {
-    if (this.swiper && this.swiper.autoplay) {
-      this.swiper.autoplay.stop()
-    }
-  }
-
-  resumeAutoplay() {
-    if (this.swiper && this.swiper.autoplay) {
-      this.swiper.autoplay.start()
     }
   }
 

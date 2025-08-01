@@ -17,8 +17,9 @@
     // Set up event listeners
     function setupEventListeners() {
         const movieSelect = document.getElementById('movieSelect');
-        const dateSelect = document.getElementById('dateSelect');
-        const timeSelect = document.getElementById('timeSelect');
+        const dateSelect = document.getElementById('widgetDateSelect');
+        const versionSelect = document.getElementById('widgetVersionSelect');
+        const timeSelect = document.getElementById('widgetTimeSelect');
         const bookNowBtn = document.getElementById('bookNowBtn');
 
         if (movieSelect) {
@@ -29,8 +30,12 @@
             dateSelect.addEventListener('change', updateBookingVersions);
         }
 
+        if (versionSelect) {
+            versionSelect.addEventListener('change', updateBookingTimes);
+        }
+
         if (timeSelect) {
-            timeSelect.addEventListener('change', updateBookingTimes);
+            timeSelect.addEventListener('change', updateWidgetButtonState);
         }
 
         if (bookNowBtn) {
@@ -38,13 +43,12 @@
         }
     }
 
-
-
     // Update dates when movie is selected
     window.updateBookingDates = function() {
         const movieSelect = document.getElementById('movieSelect');
-        const dateSelect = document.getElementById('dateSelect');
-        const timeSelect = document.getElementById('timeSelect');
+        const dateSelect = document.getElementById('widgetDateSelect');
+        const versionSelect = document.getElementById('widgetVersionSelect');
+        const timeSelect = document.getElementById('widgetTimeSelect');
         const bookNowBtn = document.getElementById('bookNowBtn');
 
         if (!movieSelect || !dateSelect) return;
@@ -54,7 +58,9 @@
         // Reset dependent dropdowns
         dateSelect.innerHTML = '<option value="">2. Select Date</option>';
         dateSelect.disabled = true;
-        timeSelect.innerHTML = '<option value="">3. Select Time</option>';
+        versionSelect.innerHTML = '<option value="">3. Select Version</option>';
+        versionSelect.disabled = true;
+        timeSelect.innerHTML = '<option value="">4. Select Time</option>';
         timeSelect.disabled = true;
         bookNowBtn.disabled = true;
 
@@ -96,7 +102,7 @@
 
     // Populate date dropdown
     function populateDateDropdown() {
-        const dateSelect = document.getElementById('dateSelect');
+        const dateSelect = document.getElementById('widgetDateSelect');
         if (!dateSelect) return;
 
         dateSelect.innerHTML = '<option value="">2. Select Date</option>';
@@ -129,17 +135,20 @@
     }
 
     // Update versions when date is selected
-    window.updateBookingVersions = function() {
-        const dateSelect = document.getElementById('dateSelect');
-        const timeSelect = document.getElementById('timeSelect');
+    window.updateWidgetVersions = function() {
+        const dateSelect = document.getElementById('widgetDateSelect');
+        const versionSelect = document.getElementById('widgetVersionSelect');
+        const timeSelect = document.getElementById('widgetTimeSelect');
         const bookNowBtn = document.getElementById('bookNowBtn');
 
-        if (!dateSelect || !timeSelect) return;
+        if (!dateSelect || !versionSelect || !timeSelect) return;
 
         const date = dateSelect.value;
         
         // Reset dependent dropdowns
-        timeSelect.innerHTML = '<option value="">3. Select Time</option>';
+        versionSelect.innerHTML = '<option value="">3. Select Version</option>';
+        versionSelect.disabled = true;
+        timeSelect.innerHTML = '<option value="">4. Select Time</option>';
         timeSelect.disabled = true;
         bookNowBtn.disabled = true;
 
@@ -154,23 +163,36 @@
             }
         });
 
-        // For now, we'll just populate times directly since we don't have version selection in the widget
-        populateTimeDropdown(date);
+        // Add version options
+        versionMap.forEach((name, id) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            versionSelect.appendChild(option);
+        });
+
+        if (versionSelect.options.length > 1) {
+            versionSelect.disabled = false;
+        }
     };
 
     // Populate time dropdown
-    function populateTimeDropdown(selectedDate) {
-        const timeSelect = document.getElementById('timeSelect');
+    function populateTimeDropdown(selectedDate, selectedVersionId) {
+        const timeSelect = document.getElementById('widgetTimeSelect');
         const bookNowBtn = document.getElementById('bookNowBtn');
 
         if (!timeSelect) return;
 
-        timeSelect.innerHTML = '<option value="">3. Select Time</option>';
+        timeSelect.innerHTML = '<option value="">4. Select Time</option>';
         timeSelect.disabled = true;
 
         if (!selectedDate) return;
 
-        const filtered = currentMovieShows.filter(show => show.showDate === selectedDate);
+        // Filter shows for the selected date and version
+        const filtered = currentMovieShows.filter(show => 
+            show.showDate === selectedDate && String(show.versionId) === String(selectedVersionId)
+        );
+        
         const timeSet = new Set();
 
         filtered.forEach(show => {
@@ -188,9 +210,32 @@
         }
     }
 
-    // Update times when version is selected (simplified for widget)
-    window.updateBookingTimes = function() {
-        const timeSelect = document.getElementById('timeSelect');
+    // Update times when version is selected
+    window.updateWidgetTimes = function() {
+        const dateSelect = document.getElementById('widgetDateSelect');
+        const versionSelect = document.getElementById('widgetVersionSelect');
+        const timeSelect = document.getElementById('widgetTimeSelect');
+        const bookNowBtn = document.getElementById('bookNowBtn');
+
+        if (!dateSelect || !versionSelect || !timeSelect || !bookNowBtn) return;
+
+        const date = dateSelect.value;
+        const versionId = versionSelect.value;
+
+        // Reset time dropdown
+        timeSelect.innerHTML = '<option value="">4. Select Time</option>';
+        timeSelect.disabled = true;
+        bookNowBtn.disabled = true;
+
+        if (!date || !versionId) return;
+
+        // Populate times based on selected date and version
+        populateTimeDropdown(date, versionId);
+    };
+
+    // Update button state when time is selected
+    window.updateWidgetButtonState = function() {
+        const timeSelect = document.getElementById('widgetTimeSelect');
         const bookNowBtn = document.getElementById('bookNowBtn');
 
         if (!timeSelect || !bookNowBtn) return;
@@ -205,16 +250,18 @@
     // Continue to seat selection
     window.continueToSeatSelection = function() {
         const movieSelect = document.getElementById('movieSelect');
-        const dateSelect = document.getElementById('dateSelect');
-        const timeSelect = document.getElementById('timeSelect');
+        const dateSelect = document.getElementById('widgetDateSelect');
+        const versionSelect = document.getElementById('widgetVersionSelect');
+        const timeSelect = document.getElementById('widgetTimeSelect');
 
-        if (!movieSelect || !dateSelect || !timeSelect) return;
+        if (!movieSelect || !dateSelect || !versionSelect || !timeSelect) return;
 
         const movieId = movieSelect.value;
         const date = dateSelect.value;
+        const versionId = versionSelect.value;
         const time = timeSelect.value;
 
-        if (!movieId || !date || !time) {
+        if (!movieId || !date || !versionId || !time) {
             showError('Please select all required information');
             return;
         }
@@ -230,8 +277,8 @@
             bookNowBtn.disabled = true;
         }
 
-        // Redirect to seat selection
-        window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&time=${encodeURIComponent(time)}`;
+        // Redirect to seat selection with versionId
+        window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${encodeURIComponent(versionId)}&time=${encodeURIComponent(time)}`;
     };
 
     // Show error message

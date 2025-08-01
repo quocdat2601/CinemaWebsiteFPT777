@@ -17,6 +17,52 @@
                         </div>
                     </div>
 
+
+
+                    <!-- Score Statistics Dashboard -->
+                    <div class="row mb-4" id="scoreStats">
+                        <div class="col-md-3">
+                            <div class="stat-card bg-success text-white">
+                                <i class="fas fa-plus-circle fa-2x"></i>
+                                <h4 id="totalEarned">0</h4>
+                                <p>Total Earned</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-danger text-white">
+                                <i class="fas fa-minus-circle fa-2x"></i>
+                                <h4 id="totalUsed">0</h4>
+                                <p>Total Used</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-info text-white">
+                                <i class="fas fa-calendar fa-2x"></i>
+                                <h4 id="thisMonth">0</h4>
+                                <p>This Month</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-warning text-white">
+                                <i class="fas fa-trophy fa-2x"></i>
+                                <h4 id="avgPerMovie">0</h4>
+                                <p>Avg/Movie</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Dynamic Achievements -->
+                    <div class="achievement-section mb-4" id="achievementSection">
+                        <h5 class="text-warning mb-3">
+                            <i class="fas fa-medal"></i> Your Achievements
+                        </h5>
+                        <div class="achievement-badges" id="achievementBadges">
+                            <!-- Will be populated with real data -->
+                        </div>
+                    </div>
+
                     <form id="scoreFilterForm" class="row g-3 p-4 bg-light rounded-3 shadow-sm mb-4">
                         <div class="col-md-4">
                             <label class="form-label fw-bold">From Date</label>
@@ -53,6 +99,32 @@
                         </div>
                     </form>
 
+                    <!-- Quick Actions -->
+                    <div class="quick-actions mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-warning w-100" id="exportBtn">
+                                    <i class="fas fa-download"></i> Export Data
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-info w-100" id="shareBtn">
+                                    <i class="fas fa-share"></i> Share Stats
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-success w-100" id="printBtn">
+                                    <i class="fas fa-print"></i> Print Report
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-primary w-100" id="refreshBtn">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="scoreResult">
                         <div class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
@@ -69,6 +141,7 @@
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     $(function() {
         // Prevent form submission
@@ -93,6 +166,8 @@
                     if (response.success) {
                         currentPage = 1;
                         renderScoreTable(response.data, response.currentScore);
+                        calculateStatistics(response.data);
+                        generateAchievements(response.data);
                     } else {
                         $('#scoreResult').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ' + response.message + '</div>');
                     }
@@ -108,6 +183,130 @@
                     $('#viewScoreBtn').html('<i class="fas fa-search"></i> Filter');
                 }
             });
+        }
+
+        // Calculate statistics from real data
+        function calculateStatistics(scoreData) {
+            const totalEarned = scoreData.filter(item => item.type === "add").reduce((sum, item) => sum + item.score, 0);
+            const totalUsed = scoreData.filter(item => item.type === "use").reduce((sum, item) => sum + item.score, 0);
+            
+            // Calculate this month's score
+            const now = new Date();
+            const thisMonthData = scoreData.filter(item => {
+                const itemDate = new Date(item.dateCreated);
+                return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+            });
+            const thisMonth = thisMonthData.reduce((sum, item) => sum + (item.type === "add" ? item.score : -item.score), 0);
+            
+            // Calculate average per movie
+            const earnedMovies = scoreData.filter(item => item.type === "add");
+            const avgPerMovie = earnedMovies.length > 0 ? Math.round(totalEarned / earnedMovies.length) : 0;
+            
+            $('#totalEarned').text(totalEarned.toLocaleString());
+            $('#totalUsed').text(totalUsed.toLocaleString());
+            $('#thisMonth').text(thisMonth.toLocaleString());
+            $('#avgPerMovie').text(avgPerMovie.toLocaleString());
+        }
+
+
+
+        // Generate achievements based on real data
+        function generateAchievements(scoreData) {
+            const achievements = [];
+            
+            // First movie achievement
+            if (scoreData.length > 0) {
+                achievements.push({
+                    id: 'firstMovie',
+                    title: 'First Movie',
+                    icon: 'fas fa-star',
+                    color: 'bg-gold',
+                    description: 'Watched your first movie'
+                });
+            }
+            
+            // Movie buff achievement (5+ movies)
+            const earnedMovies = scoreData.filter(item => item.type === "add");
+            if (earnedMovies.length >= 5) {
+                achievements.push({
+                    id: 'movieBuff',
+                    title: 'Movie Buff',
+                    icon: 'fas fa-film',
+                    color: 'bg-silver',
+                    description: 'Watched 5+ movies'
+                });
+            }
+            
+            // Big spender achievement (spent 500+ points)
+            const totalSpent = scoreData.filter(item => item.type === "use").reduce((sum, item) => sum + item.score, 0);
+            if (totalSpent >= 500) {
+                achievements.push({
+                    id: 'bigSpender',
+                    title: 'Big Spender',
+                    icon: 'fas fa-coins',
+                    color: 'bg-bronze',
+                    description: 'Spent 500+ points'
+                });
+            }
+            
+            // High roller achievement (earned 2000+ points)
+            const totalEarned = scoreData.filter(item => item.type === "add").reduce((sum, item) => sum + item.score, 0);
+            if (totalEarned >= 2000) {
+                achievements.push({
+                    id: 'highRoller',
+                    title: 'High Roller',
+                    icon: 'fas fa-crown',
+                    color: 'bg-purple',
+                    description: 'Earned 2000+ points'
+                });
+            }
+            
+            // Monthly master achievement (earned 200+ points this month)
+            const now = new Date();
+            const thisMonthEarned = scoreData.filter(item => {
+                const itemDate = new Date(item.dateCreated);
+                return item.type === "add" && itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+            }).reduce((sum, item) => sum + item.score, 0);
+            
+            if (thisMonthEarned >= 200) {
+                achievements.push({
+                    id: 'monthlyMaster',
+                    title: 'Monthly Master',
+                    icon: 'fas fa-calendar-alt',
+                    color: 'bg-info',
+                    description: 'Earned 200+ points this month'
+                });
+            }
+            
+            // Regular viewer achievement (watched 3+ movies this month)
+            const thisMonthMovies = scoreData.filter(item => {
+                const itemDate = new Date(item.dateCreated);
+                return item.type === "add" && itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+            });
+            
+            if (thisMonthMovies.length >= 3) {
+                achievements.push({
+                    id: 'regularViewer',
+                    title: 'Regular Viewer',
+                    icon: 'fas fa-eye',
+                    color: 'bg-success',
+                    description: 'Watched 3+ movies this month'
+                });
+            }
+            
+            // Render achievements
+            let html = '';
+            achievements.forEach(achievement => {
+                html += `<span class="badge ${achievement.color}" title="${achievement.description}">
+                    <i class="${achievement.icon}"></i> ${achievement.title}
+                </span>`;
+            });
+            
+            if (achievements.length === 0) {
+                html = '<p class="text-muted">Complete more activities to earn achievements!</p>';
+            }
+            
+            $('#achievementBadges').html(html);
         }
 
         // Function to render score table
@@ -226,11 +425,81 @@
             loadScoreHistory('', '', 'all');
         });
 
+        // Handle Quick Action buttons
+        $('#exportBtn').on('click', function() {
+            if (scoreDataCache.length > 0) {
+                exportToCSV(scoreDataCache);
+            } else {
+                alert('No data to export');
+            }
+        });
+
+        $('#shareBtn').on('click', function() {
+            shareStats();
+        });
+
+        $('#printBtn').on('click', function() {
+            window.print();
+        });
+
+        $('#refreshBtn').on('click', function() {
+            loadScoreHistory('', '', 'all');
+        });
+
+        // Export to CSV function
+        function exportToCSV(data) {
+            const headers = ['Date', 'Movie', 'Score', 'Type'];
+            const csvContent = [
+                headers.join(','),
+                ...data.map(item => [
+                    new Date(item.dateCreated).toLocaleDateString('vi-VN'),
+                    item.movieName || 'N/A',
+                    item.score,
+                    item.type
+                ].join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'score_history.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Share stats function
+        function shareStats() {
+            const totalEarned = $('#totalEarned').text();
+            const totalUsed = $('#totalUsed').text();
+            const thisMonth = $('#thisMonth').text();
+            const currentScore = $('#currentScoreValue').text();
+            
+            const shareText = `My Movie Theater Score Stats:
+🏆 Current Score: ${currentScore} points
+💰 Total Earned: ${totalEarned} points
+💸 Total Used: ${totalUsed} points
+📅 This Month: ${thisMonth} points`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Score Stats',
+                    text: shareText
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Stats copied to clipboard!');
+                });
+            }
+        }
+
         // Load initial data (all records)
         loadScoreHistory('', '', 'all');
     });
 </script>
-
 <style>
 /* Modern Cinema Theme for Score */
 /* Override Bootstrap defaults */
@@ -562,10 +831,142 @@
     color: #d4af37;
 }
 
+/* New Features Styling */
+.stat-card {
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+
+.stat-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+
+
+.achievement-section {
+    background: rgba(255,255,255,0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.achievement-badges .badge {
+    margin: 0.25rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.achievement-badges .badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.bg-gold { 
+    background: linear-gradient(135deg, #FFD700, #FFA500) !important; 
+    color: #000 !important;
+}
+
+.bg-silver { 
+    background: linear-gradient(135deg, #C0C0C0, #A9A9A9) !important; 
+    color: #000 !important;
+}
+
+.bg-bronze { 
+    background: linear-gradient(135deg, #CD7F32, #B8860B) !important; 
+    color: #fff !important;
+}
+
+.bg-purple { 
+    background: linear-gradient(135deg, #9B59B6, #8E44AD) !important; 
+    color: #fff !important;
+}
+
+.bg-success { 
+    background: linear-gradient(135deg, #28a745, #20c997) !important; 
+    color: #fff !important;
+}
+
+.quick-actions .btn {
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.quick-actions .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.btn-outline-warning {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+    background: linear-gradient(135deg, #ffc107, #ffca2c);
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-outline-info {
+    border-color: #17a2b8;
+    color: #17a2b8;
+}
+
+.btn-outline-info:hover {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border-color: #17a2b8;
+    color: #fff;
+}
+
 /* Responsive */
 @@media (max-width: 768px) {
     .card-body {
         padding: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card h4 {
+        font-size: 1.5rem;
+    }
+    
+    .achievement-section {
+        padding: 1rem;
+    }
+    
+    .achievement-badges .badge {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        margin: 0.2rem;
+    }
+    
+    .quick-actions .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
     }
     
     .btn-group {
@@ -598,6 +999,28 @@
 }
 
 @@media (max-width: 480px) {
+    .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .stat-card h4 {
+        font-size: 1.25rem;
+    }
+    
+    .stat-card i {
+        font-size: 1.5rem !important;
+    }
+    
+    .achievement-section {
+        padding: 0.75rem;
+    }
+    
+    .achievement-badges .badge {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+        margin: 0.1rem;
+    }
+    
     .pagination {
         gap: 0.2rem;
     }
@@ -615,3 +1038,4 @@
     }
 }
 </style>
+

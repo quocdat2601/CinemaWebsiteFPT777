@@ -67,7 +67,8 @@ namespace MovieTheater.Controllers
             }
 
             // Get categorized movies
-            var currentlyShowingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails().ToList();
+            var currentlyShowingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails()?
+                .ToList() ?? new List<Movie>();
             var comingSoonMovies = _movieService.GetComingSoonMoviesWithDetails().ToList();
             var promotions = _promotionService.GetAll();
             var people = _personRepository.GetAll().ToList();

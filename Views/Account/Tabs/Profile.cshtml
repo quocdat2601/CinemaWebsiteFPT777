@@ -17,14 +17,17 @@
             <div class="avatar-theater">
                 <div class="spotlight-ring"></div>
                 <img src="@(profile.Image ?? "/image/profile.jpg")" alt="Profile" id="profileAvatar" class="avatar-image">
-                <label for="avatarUpload" class="camera-action">
+                <label for="avatarUpload" class="camera-action" title="Click to change profile picture" style="cursor: pointer;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
                     </svg>
+                    <span class="camera-tooltip">Change Photo</span>
                 </label>
-                <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm" style="display: none;">
-                    <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" hidden>
+                <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm">
+                    @Html.AntiForgeryToken()
+                    <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" style="display: none;">
+                    <input type="hidden" id="croppedImageData" name="Profile.CroppedImageData">
                 </form>
             </div>
 
@@ -177,6 +180,45 @@
                     <div class="film-loading"></div>
                     <p>Loading your cinema history...</p>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Edit Modal -->
+<div class="image-edit-modal" id="imageEditModal" style="display:none;">
+    <div class="image-edit-content">
+        <div class="image-edit-header">
+            <h3>Edit Image</h3>
+            <button class="image-edit-close" onclick="closeImageEdit()">×</button>
+        </div>
+        <div class="image-edit-body">
+            <div class="image-preview-container">
+                <div class="image-preview-frame">
+                    <canvas id="imageCanvas" width="400" height="400" style="max-width: 100%; height: auto;"></canvas>
+                    <div class="crop-overlay">
+                        <div class="crop-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="image-controls">
+                <div class="zoom-control">
+                    <span class="zoom-icons">
+                        <i class="fas fa-search-minus"></i>
+                        <i class="fas fa-search-plus"></i>
+                    </span>
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="0.5" max="3" step="0.1" value="1">
+                </div>
+                <div class="rotate-control">
+                    <button class="rotate-btn" onclick="rotateImage()">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="image-edit-actions">
+                <button class="image-btn secondary" onclick="resetImageEdit()">Reset</button>
+                <button class="image-btn secondary" onclick="closeImageEdit()">Cancel</button>
+                <button class="image-btn primary" onclick="applyImageEdit()">Apply</button>
             </div>
         </div>
     </div>
@@ -912,6 +954,11 @@
                 }
             }
             
+            @@keyframes spin {
+                0% { transform: translate(-50%, -50%) rotate(0deg); }
+                100% { transform: translate(-50%, -50%) rotate(360deg); }
+            }
+            
             .theater-header {
                 --mouse-x: 0;
                 --mouse-y: 0;
@@ -948,6 +995,352 @@
             .stat-frame, .tier-badge {
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
+            
+            /* Enhanced camera action hover effects */
+            .camera-action {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+                position: relative;
+            }
+            
+            .camera-action:hover {
+                transform: scale(1.2);
+                filter: brightness(1.3);
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+            
+            .camera-action:active {
+                transform: scale(0.95);
+            }
+            
+            /* Avatar loading state */
+            .avatar-loading {
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 50%;
+                padding: 10px;
+                backdrop-filter: blur(5px);
+            }
+            
+            /* Camera tooltip */
+            .camera-tooltip {
+                position: absolute;
+                bottom: -30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                white-space: nowrap;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 1000;
+            }
+            
+            .camera-action:hover .camera-tooltip {
+                opacity: 1;
+            }
+            
+            /* Image Edit Modal Styles */
+            .image-edit-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                backdrop-filter: blur(10px);
+            }
+            
+            .image-edit-content {
+                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                border-radius: 20px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .image-edit-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 25px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            
+            .image-edit-header h3 {
+                color: #ffffff;
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0;
+            }
+            
+            .image-edit-close {
+                background: none;
+                border: none;
+                color: #ffffff;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 5px;
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            
+            .image-edit-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: scale(1.1);
+            }
+            
+            .image-edit-body {
+                padding: 25px;
+            }
+            
+            .image-preview-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 25px;
+            }
+            
+            .image-preview-frame {
+                position: relative;
+                width: 400px;
+                height: 400px;
+                background: #333;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            }
+            
+            #imageCanvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                cursor: move;
+            }
+            
+            .crop-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 10;
+            }
+            
+            .crop-circle {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 300px;
+                height: 300px;
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            }
+            
+            .image-controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 25px;
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 10px;
+            }
+            
+            .zoom-control {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex: 1;
+            }
+            
+            .zoom-icons {
+                display: flex;
+                gap: 10px;
+                color: #ffffff;
+                font-size: 14px;
+            }
+            
+            .zoom-slider {
+                flex: 1;
+                height: 6px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 3px;
+                outline: none;
+                -webkit-appearance: none;
+            }
+            
+            .zoom-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                background: #007bff;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .zoom-slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                background: #007bff;
+                border-radius: 50%;
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .rotate-control {
+                margin-left: 20px;
+            }
+            
+            .rotate-btn {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #ffffff;
+                padding: 10px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .rotate-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: scale(1.05);
+            }
+            
+            .image-edit-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .image-btn {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            }
+            
+            .image-btn.primary {
+                background: #007bff;
+                color: white;
+            }
+            
+            .image-btn.primary:hover {
+                background: #0056b3;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+            }
+            
+            .image-btn.secondary {
+                background: transparent;
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            
+            .image-btn.secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.5);
+            }
+            
+            @@media (max-width: 768px) {
+                .image-edit-content {
+                    width: 95%;
+                    margin: 10px;
+                    max-height: 95vh;
+                }
+                
+                .image-preview-frame {
+                    width: 300px;
+                    height: 300px;
+                }
+                
+                .crop-circle {
+                    width: 250px;
+                    height: 250px;
+                }
+                
+                .image-controls {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                
+                .rotate-control {
+                    margin-left: 0;
+                }
+                
+                .image-edit-actions {
+                    flex-direction: column;
+                }
+                
+                .image-btn {
+                    width: 100%;
+                }
+                
+                #imageCanvas {
+                    width: 300px !important;
+                    height: 300px !important;
+                }
+            }
+            
+            @@media (max-width: 480px) {
+                .image-edit-content {
+                    width: 98%;
+                    margin: 5px;
+                }
+                
+                .image-preview-frame {
+                    width: 250px;
+                    height: 250px;
+                }
+                
+                .crop-circle {
+                    width: 200px;
+                    height: 200px;
+                }
+                
+                #imageCanvas {
+                    width: 250px !important;
+                    height: 250px !important;
+                }
+                
+                .image-edit-header {
+                    padding: 15px 20px;
+                }
+                
+                .image-edit-body {
+                    padding: 20px;
+                }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -956,22 +1349,22 @@
     document.getElementById('avatarUpload').addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                // Simple avatar update without modal
-                document.getElementById('profileAvatar').src = e.target.result;
-                
-                // Add avatar update animation
-                const avatar = document.getElementById('profileAvatar');
-                avatar.style.transform = 'scale(1.1)';
-                avatar.style.filter = 'brightness(1.2)';
-                
-                setTimeout(() => {
-                    avatar.style.transform = 'scale(1)';
-                    avatar.style.filter = 'brightness(1)';
-                }, 300);
-            };
-            reader.readAsDataURL(file);
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPEG, PNG, or GIF)');
+                return;
+            }
+            
+            // Open image edit modal
+            openImageEditModal(file);
         }
     });
 
@@ -1026,6 +1419,21 @@
 </script>
 
 <script>
+// Image Edit Modal Variables
+let currentImageFile = null;
+let imageEditor = {
+    canvas: null,
+    ctx: null,
+    image: null,
+    scale: 1,
+    rotation: 0,
+    offsetX: 0,
+    offsetY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0
+};
+
 // Rank Details Modal Logic
 if (typeof window.currentRankSlide === 'undefined') window.currentRankSlide = 0;
 
@@ -1068,8 +1476,289 @@ function prevRankSlide() {
     showRankSlide(prev);
 }
 
+// Image Edit Modal Functions
+function openImageEditModal(file) {
+    currentImageFile = file;
+    document.getElementById('imageEditModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Initialize canvas with responsive sizing
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size based on container
+    const container = canvas.parentElement;
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+    
+    canvas.width = Math.min(400, containerWidth);
+    canvas.height = Math.min(400, containerHeight);
+    
+    imageEditor.canvas = canvas;
+    imageEditor.ctx = ctx;
+    
+    // Load image
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            imageEditor.image = img;
+            resetImageEdit();
+            drawImage();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // Add event listeners
+    addImageEditEventListeners();
+}
+
+function closeImageEdit() {
+    document.getElementById('imageEditModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentImageFile = null;
+    removeImageEditEventListeners();
+}
+
+function resetImageEdit() {
+    imageEditor.scale = 1;
+    imageEditor.rotation = 0;
+    imageEditor.offsetX = 0;
+    imageEditor.offsetY = 0;
+    document.getElementById('zoomSlider').value = 1;
+    drawImage();
+}
+
+function rotateImage() {
+    imageEditor.rotation += 90;
+    if (imageEditor.rotation >= 360) {
+        imageEditor.rotation = 0;
+    }
+    drawImage();
+}
+
+function drawImage() {
+    if (!imageEditor.image || !imageEditor.ctx) return;
+    
+    const canvas = imageEditor.canvas;
+    const ctx = imageEditor.ctx;
+    const img = imageEditor.image;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Save context
+    ctx.save();
+    
+    // Move to center
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    
+    // Apply transformations
+    ctx.rotate((imageEditor.rotation * Math.PI) / 180);
+    ctx.scale(imageEditor.scale, imageEditor.scale);
+    
+    // Draw image
+    const imgWidth = img.width;
+    const imgHeight = img.height;
+    const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
+    const scale = Math.min(maxSize / imgWidth, maxSize / imgHeight);
+    
+    ctx.drawImage(
+        img,
+        -imgWidth * scale / 2 + imageEditor.offsetX,
+        -imgHeight * scale / 2 + imageEditor.offsetY,
+        imgWidth * scale,
+        imgHeight * scale
+    );
+    
+    // Restore context
+    ctx.restore();
+}
+
+function addImageEditEventListeners() {
+    const canvas = imageEditor.canvas;
+    const zoomSlider = document.getElementById('zoomSlider');
+    
+    // Zoom slider
+    zoomSlider.addEventListener('input', function() {
+        imageEditor.scale = parseFloat(this.value);
+        drawImage();
+    });
+    
+    // Mouse events for dragging
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', startDrag);
+    canvas.addEventListener('touchmove', drag);
+    canvas.addEventListener('touchend', endDrag);
+}
+
+function removeImageEditEventListeners() {
+    const canvas = imageEditor.canvas;
+    const zoomSlider = document.getElementById('zoomSlider');
+    
+    if (zoomSlider) {
+        zoomSlider.removeEventListener('input', function() {});
+    }
+    
+    if (canvas) {
+        canvas.removeEventListener('mousedown', startDrag);
+        canvas.removeEventListener('mousemove', drag);
+        canvas.removeEventListener('mouseup', endDrag);
+        canvas.removeEventListener('mouseleave', endDrag);
+        canvas.removeEventListener('touchstart', startDrag);
+        canvas.removeEventListener('touchmove', drag);
+        canvas.removeEventListener('touchend', endDrag);
+    }
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    imageEditor.isDragging = true;
+    
+    const rect = imageEditor.canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    imageEditor.startX = clientX - rect.left - imageEditor.offsetX;
+    imageEditor.startY = clientY - rect.top - imageEditor.offsetY;
+}
+
+function drag(e) {
+    e.preventDefault();
+    if (!imageEditor.isDragging) return;
+    
+    const rect = imageEditor.canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    imageEditor.offsetX = clientX - rect.left - imageEditor.startX;
+    imageEditor.offsetY = clientY - rect.top - imageEditor.startY;
+    
+    drawImage();
+}
+
+function endDrag() {
+    imageEditor.isDragging = false;
+}
+
+function applyImageEdit() {
+    if (!imageEditor.image) return;
+    
+    // Create a temporary canvas for cropping
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    const size = 300; // Final avatar size
+    tempCanvas.width = size;
+    tempCanvas.height = size;
+    
+    // Draw the cropped and processed image
+    tempCtx.save();
+    tempCtx.translate(size / 2, size / 2);
+    tempCtx.rotate((imageEditor.rotation * Math.PI) / 180);
+    tempCtx.scale(imageEditor.scale, imageEditor.scale);
+    
+    const img = imageEditor.image;
+    const maxSize = Math.min(imageEditor.canvas.width, imageEditor.canvas.height) * 0.8;
+    const scale = Math.min(maxSize / img.width, maxSize / img.height);
+    
+    tempCtx.drawImage(
+        img,
+        -img.width * scale / 2 + imageEditor.offsetX,
+        -img.height * scale / 2 + imageEditor.offsetY,
+        img.width * scale,
+        img.height * scale
+    );
+    
+    tempCtx.restore();
+    
+    // Convert to blob and create file
+    tempCanvas.toBlob(function(blob) {
+        // Create a new file from the blob
+        const croppedFile = new File([blob], currentImageFile.name, {
+            type: currentImageFile.type,
+            lastModified: Date.now()
+        });
+        
+        // Create a new FileList-like object
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(croppedFile);
+        
+        // Update the file input
+        const fileInput = document.getElementById('avatarUpload');
+        fileInput.files = dataTransfer.files;
+        
+        // Update the cropped image data
+        document.getElementById('croppedImageData').value = tempCanvas.toDataURL();
+        
+        // Close modal
+        closeImageEdit();
+        
+        // Show preview and submit
+        showCroppedPreview(tempCanvas.toDataURL());
+        submitAvatarForm();
+    }, currentImageFile.type, 0.9);
+}
+
+function showCroppedPreview(dataUrl) {
+    const avatar = document.getElementById('profileAvatar');
+    
+    // Add loading animation
+    avatar.style.opacity = '0.7';
+    avatar.style.filter = 'grayscale(50%)';
+    
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'avatar-loading';
+    loadingIndicator.innerHTML = '🔄';
+    loadingIndicator.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        z-index: 10;
+        animation: spin 1s linear infinite;
+    `;
+    avatar.parentElement.style.position = 'relative';
+    avatar.parentElement.appendChild(loadingIndicator);
+    
+    // Update avatar
+    avatar.src = dataUrl;
+    avatar.style.opacity = '1';
+    avatar.style.filter = 'grayscale(0%)';
+    
+    // Add animation
+    avatar.style.transform = 'scale(1.1)';
+    avatar.style.filter = 'brightness(1.2)';
+    
+    setTimeout(() => {
+        avatar.style.transform = 'scale(1)';
+        avatar.style.filter = 'brightness(1)';
+    }, 300);
+}
+
+function submitAvatarForm() {
+    setTimeout(() => {
+        if (typeof showToast === 'function') {
+            showToast('Uploading profile picture...');
+        }
+        
+        const form = document.getElementById('avatarForm');
+        form.submit();
+    }, 100);
+}
+
 document.addEventListener('click', function(e) {
     var modal = document.getElementById('rankDetailsModal');
     if (e.target === modal) closeRankDetails();
+    
+    var imageModal = document.getElementById('imageEditModal');
+    if (e.target === imageModal) closeImageEdit();
 });
 </script> 

@@ -6,5 +6,5 @@ public interface ITicketService
     Task<TicketDetailsViewModel> GetTicketDetailsAsync(string ticketId, string accountId);
     Task<(bool Success, List<string> Messages)> CancelTicketAsync(string ticketId, string accountId);
     Task<IEnumerable<object>> GetHistoryPartialAsync(string accountId, DateTime? fromDate, DateTime? toDate, string status);
-    Task<(bool Success, List<string> Messages)> CancelTicketByAdminAsync(string ticketId);
+    Task<(bool Success, List<string> Messages)> CancelTicketByAdminAsync(string ticketId, string cancelledByRole = "Admin");
 }

@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace MovieTheater.Controllers
 {
-    [Authorize(Roles = "Admin")]
     public class QRPaymentController : Controller
     {
         private readonly IQRPaymentService _qrPaymentService;
@@ -33,6 +32,7 @@ namespace MovieTheater.Controllers
         /// Tạo QR code cho thanh toán Guest
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateQRCode(string modelData)
         {
             try
@@ -719,6 +719,7 @@ namespace MovieTheater.Controllers
         /// Test QR code - để kiểm tra QR code có hoạt động không
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult TestQR()
         {
             try
@@ -872,6 +873,7 @@ namespace MovieTheater.Controllers
         /// Kiểm tra trạng thái thanh toán - Thực tế
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CheckPaymentStatus([FromBody] CheckPaymentRequest request)
         {
             try
@@ -944,6 +946,7 @@ namespace MovieTheater.Controllers
         /// Xác nhận thanh toán và cập nhật trạng thái Invoice và ghế trong database
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult ConfirmPayment(string invoiceId)
         {
             try
