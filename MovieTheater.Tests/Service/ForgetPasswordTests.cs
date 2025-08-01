@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using Microsoft.AspNetCore.Http;
 
 namespace MovieTheater.Tests.Service
 {
@@ -24,7 +25,7 @@ namespace MovieTheater.Tests.Service
             _mockEmailService = new Mock<EmailService>(Mock.Of<IConfiguration>(), Mock.Of<ILogger<EmailService>>());
             _mockLogger = new Mock<ILogger<AccountService>>();
             _mockContext = new Mock<MovieTheaterContext>();
-            
+
             _accountService = new AccountService(
                 _mockAccountRepository.Object,
                 Mock.Of<IEmployeeRepository>(),
@@ -83,12 +84,12 @@ namespace MovieTheater.Tests.Service
             // Arrange
             var email = "test@example.com";
             var otp = "123456";
-            
+
             // First send OTP to store it
             var account = new Account { Email = email, FullName = "Test User" };
             _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns(account);
             _mockEmailService.Setup(e => e.SendEmail(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
-            
+
             _accountService.SendForgetPasswordOtp(email);
 
             // Act
@@ -181,4 +182,4 @@ namespace MovieTheater.Tests.Service
             _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
         }
     }
-} 
+}
