@@ -27,7 +27,7 @@
         <div class="card-body">
             <form id="bookingSearchForm" onsubmit="searchBookings(); return false;">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <input type="text" class="form-control" id="searchKeyword" name="keyword"
                                placeholder="Search by Booking ID, Account ID, Phone, Identity Card..." value="@ViewBag.Keyword">
                     </div>
@@ -67,7 +67,6 @@
                             }
                         </select>
                     </div>
-
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-outline-primary w-100">
                             <i class="bi bi-search"></i> Search
@@ -78,26 +77,21 @@
                             <i class="bi bi-arrow-clockwise"></i> Reset
                         </a>
                     </div>
-                    <div class="col-md-2">
-                        <button type="button" onclick="console.log('Test button clicked'); searchBookings();" class="btn btn-outline-info w-100">
-                            <i class="bi bi-bug"></i> Test
-                        </button>
-                    </div>
                 </div>
                 <div class="row g-3 mt-1">
                     <div class="col-md-6">
-                                                 <div class="form-check form-check-inline">
-                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="allBookings" value="all" @(ViewBag.CurrentBookingTypeFilter == "all" || string.IsNullOrEmpty(ViewBag.CurrentBookingTypeFilter) ? "checked" : "")>
-                             <label class="form-check-label" for="allBookings">All Bookings</label>
-                         </div>
-                         <div class="form-check form-check-inline">
-                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="normalBookings" value="normal" @(ViewBag.CurrentBookingTypeFilter == "normal" ? "checked" : "")>
-                             <label class="form-check-label" for="normalBookings">Normal Bookings</label>
-                         </div>
-                         <div class="form-check form-check-inline">
-                             <input class="form-check-input" type="radio" name="bookingTypeFilter" id="employeeBookings" value="employee" @(ViewBag.CurrentBookingTypeFilter == "employee" ? "checked" : "")>
-                             <label class="form-check-label" for="employeeBookings">Employee Bookings</label>
-                         </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="bookingTypeFilter" id="allBookings" value="all" @(ViewBag.CurrentBookingTypeFilter == "all" || string.IsNullOrEmpty(ViewBag.CurrentBookingTypeFilter) ? "checked" : "")>
+                            <label class="form-check-label" for="allBookings">All Bookings</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="bookingTypeFilter" id="normalBookings" value="normal" @(ViewBag.CurrentBookingTypeFilter == "normal" ? "checked" : "")>
+                            <label class="form-check-label" for="normalBookings">Normal Bookings</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="bookingTypeFilter" id="employeeBookings" value="employee" @(ViewBag.CurrentBookingTypeFilter == "employee" ? "checked" : "")>
+                            <label class="form-check-label" for="employeeBookings">Employee Bookings</label>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -105,13 +99,13 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4" id="statisticsCards">
         <div class="col-md-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@totalBookings</h4>
+                            <h4 class="mb-0" id="totalBookingsCount">@totalBookings</h4>
                             <p class="mb-0">Total Bookings</p>
                         </div>
                         <div class="align-self-center">
@@ -126,7 +120,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@completed</h4>
+                            <h4 class="mb-0" id="completedCount">@completed</h4>
                             <p class="mb-0">Completed</p>
                         </div>
                         <div class="align-self-center">
@@ -141,7 +135,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@cancelled</h4>
+                            <h4 class="mb-0" id="cancelledCount">@cancelled</h4>
                             <p class="mb-0">Cancelled</p>
                         </div>
                         <div class="align-self-center">
@@ -156,7 +150,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@notPaid</h4>
+                            <h4 class="mb-0" id="notPaidCount">@notPaid</h4>
                             <p class="mb-0">Not Paid</p>
                         </div>
                         <div class="align-self-center">
@@ -171,72 +165,20 @@
     <!-- Booking List -->
     <div class="card">
         <div class="card-body">
-            @if (Model.Any())
-            {
-                <div class="table-responsive">
-                    <table id="booking-table" class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="text-center sortable" data-sort="id">Booking ID <span id="sortIconId"></span></th>
-                                <th class="text-start sortable" data-sort="movie">Movie Name <span id="sortIconMovie"></span></th>
-                                <th class="text-center sortable" data-sort="account">Account ID <span id="sortIconAccount"></span></th>
-                                <th class="text-end sortable" data-sort="identity">Identity Card <span id="sortIconIdentity"></span></th>
-                                <th class="text-end sortable" data-sort="phone">Phone Number <span id="sortIconPhone"></span></th>
-                                <th class="text-end sortable" data-sort="time">Schedule Time <span id="sortIconTime"></span></th>
-                                <th class="text-center">Status</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var Invoice in Model)
-
-                            {
-                                var account = AccountService.GetById(Invoice.AccountId);
-
-                                var statusBadge = Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !Invoice.Cancel ?
-
-                                "<span class='badge bg-success'><i class='bi bi-check-circle me-1'></i>Completed</span>" :
-
-                                Invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && Invoice.Cancel ?
-
-                                "<span class='badge bg-danger'><i class='bi bi-x-circle me-1'></i>Cancelled</span>" :
-
-                                "<span class='badge bg-secondary'><i class='bi bi-hourglass-split me-1'></i>Not Paid</span>";
-                                <tr class="text-center booking-row">
-                                    <td class="text-center">@Invoice.InvoiceId</td>
-                                    <td class="text-start">@(Invoice.MovieShow?.Movie?.MovieNameEnglish ?? "N/A")</td>
-                                    <td class="text-center">@Invoice.AccountId</td>
-                                    <td class="text-end">@(account?.IdentityCard ?? "N/A")</td>
-                                    <td class="text-end">@(account?.PhoneNumber ?? "N/A")</td>
-                                    <td class="text-end">@(Invoice.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A")</td>
-                                    <td class="text-center">@Html.Raw(statusBadge)</td>
-                                    <td class="text-center">
-                                        <a href="@Url.Action("TicketInfo", "Booking", new { invoiceId = Invoice.InvoiceId })" class="btn btn-sm btn-info">
-                                            <i class="fas fa-info-circle"></i> Details
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+            <div id="bookingResult">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading bookings...</p>
                 </div>
-            }
-            else
-            {
-                <div class="text-center py-4">
-                    <i class="bi bi-emoji-frown display-1 text-muted"></i>
-                    <h4 class="text-muted mt-3">No bookings found</h4>
-                    <p class="text-muted">Try adjusting your search criteria or add a new booking.</p>
-                </div>
-            }
+            </div>
+            <nav id="bookingPagination" class="mt-3"></nav>
         </div>
     </div>
 </div>
 
 @section Styles {
     <link rel="stylesheet" href="~/css/admin-styles.css" />
-}
-
-@section Scripts {
-    <!-- Scripts are loaded in the main page -->
+    <link rel="stylesheet" href="~/css/pagination-styles.css" />
 }

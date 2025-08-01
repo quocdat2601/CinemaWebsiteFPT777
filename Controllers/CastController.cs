@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Employee")]
     public class CastController : Controller
     {
         private readonly IPersonRepository _personRepository;

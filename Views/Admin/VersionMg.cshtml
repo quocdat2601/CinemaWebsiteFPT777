@@ -9,7 +9,7 @@
 		Create a Version
 	</button>
 	<button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSeatTypeModal">
-		Show Seat Types
+		Show Seat Price
 	</button>
 </div>
 
@@ -97,9 +97,9 @@
 
 <!-- Create Version Modal -->
 <div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<form asp-action="Create" asp-controller="Version" method="post">
-			<div class="modal-content">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content text-black">
+			<form asp-action="Create" asp-controller="Version" method="post">
 				<div class="modal-header">
 					<h5 class="modal-title" id="createVersionModalLabel">Create Version</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -117,8 +117,8 @@
 				<div class="modal-footer">
 					<button type="submit" class="btn btn-primary">Create</button>
 				</div>
-			</div>
-		</form>
+			</form>
+		</div>
 	</div>
 </div>
 
@@ -209,7 +209,7 @@ $(document).ready(function () {
 
 <div class="modal fade" id="editSeatTypeModal" tabindex="-1" aria-labelledby="editSeatTypeModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 30vw;">
-		<div class="modal-content">
+		<div class="modal-content text-black">
 			<form asp-action="Edit" asp-controller="SeatType" method="post">
 
 				<div class="modal-header">

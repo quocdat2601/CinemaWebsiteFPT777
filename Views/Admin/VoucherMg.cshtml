@@ -3,6 +3,11 @@
 @{
     ViewData["Title"] = "Voucher Management";
     var now = DateTime.Now;
+    
+    var totalVouchers = Model.Count();
+    var active = Model.Count(v => !v.IsUsed.HasValue || !v.IsUsed.Value && v.ExpiryDate > now);
+    var used = Model.Count(v => v.IsUsed.HasValue && v.IsUsed.Value);
+    var expired = Model.Count(v => v.ExpiryDate <= now);
 }
 
 <div class="container-fluid">
@@ -16,105 +21,107 @@
     <!-- Search and Filter Section -->
     <div class="card mb-4">
         <div class="card-body">
-            <form id="voucherSearchForm" class="row g-3" onsubmit="searchVouchers(); return false;">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" id="searchKeyword" name="keyword"
-                           placeholder="Search by code or account..." value="@ViewBag.Keyword">
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="statusFilter" name="statusFilter">
-                        @if (ViewBag.StatusFilter == null)
-                        {
-                            <option value="" selected>All Status</option>
-                        }
-                        else
-                        {
-                            <option value="">All Status</option>
-                        }
-                        @if (ViewBag.StatusFilter == "active")
-                        {
-                            <option value="active" selected>Active</option>
-                        }
-                        else
-                        {
-                            <option value="active">Active</option>
-                        }
-                        @if (ViewBag.StatusFilter == "used")
-                        {
-                            <option value="used" selected>Used</option>
-                        }
-                        else
-                        {
-                            <option value="used">Used</option>
-                        }
-                        @if (ViewBag.StatusFilter == "expired")
-                        {
-                            <option value="expired" selected>Expired</option>
-                        }
-                        else
-                        {
-                            <option value="expired">Expired</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="expiryFilter" name="expiryFilter">
-                        @if (ViewBag.ExpiryFilter == null)
-                        {
-                            <option value="" selected>All Expiry</option>
-                        }
-                        else
-                        {
-                            <option value="">All Expiry</option>
-                        }
-                        @if (ViewBag.ExpiryFilter == "expiring-soon")
-                        {
-                            <option value="expiring-soon" selected>Expiring Soon</option>
-                        }
-                        else
-                        {
-                            <option value="expiring-soon">Expiring Soon</option>
-                        }
-                        @if (ViewBag.ExpiryFilter == "expired")
-                        {
-                            <option value="expired" selected>Expired</option>
-                        }
-                        else
-                        {
-                            <option value="expired">Expired</option>
-                        }
-                        @if (ViewBag.ExpiryFilter == "valid")
-                        {
-                            <option value="valid" selected>Valid</option>
-                        }
-                        else
-                        {
-                            <option value="valid">Valid</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <a href="#" onclick="loadTab('VoucherMg'); return false;" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-arrow-clockwise"></i> Reset
-                    </a>
+            <form id="voucherSearchForm" onsubmit="searchVouchers(); return false;">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="searchKeyword" name="keyword"
+                               placeholder="Search by code or account..." value="@ViewBag.Keyword">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter" name="statusFilter">
+                            @if (string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()))
+                            {
+                                <option value="" selected>All Status</option>
+                            }
+                            else
+                            {
+                                <option value="">All Status</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "active")
+                            {
+                                <option value="active" selected>Active</option>
+                            }
+                            else
+                            {
+                                <option value="active">Active</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "used")
+                            {
+                                <option value="used" selected>Used</option>
+                            }
+                            else
+                            {
+                                <option value="used">Used</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "expired")
+                            {
+                                <option value="expired" selected>Expired</option>
+                            }
+                            else
+                            {
+                                <option value="expired">Expired</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="expiryFilter" name="expiryFilter">
+                            @if (string.IsNullOrEmpty(ViewBag.ExpiryFilter?.ToString()))
+                            {
+                                <option value="" selected>All Expiry</option>
+                            }
+                            else
+                            {
+                                <option value="">All Expiry</option>
+                            }
+                            @if (ViewBag.ExpiryFilter?.ToString() == "expiring-soon")
+                            {
+                                <option value="expiring-soon" selected>Expiring Soon</option>
+                            }
+                            else
+                            {
+                                <option value="expiring-soon">Expiring Soon</option>
+                            }
+                            @if (ViewBag.ExpiryFilter?.ToString() == "expired")
+                            {
+                                <option value="expired" selected>Expired</option>
+                            }
+                            else
+                            {
+                                <option value="expired">Expired</option>
+                            }
+                            @if (ViewBag.ExpiryFilter?.ToString() == "valid")
+                            {
+                                <option value="valid" selected>Valid</option>
+                            }
+                            else
+                            {
+                                <option value="valid">Valid</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="#" onclick="resetVoucherFilters(); return false;" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4" id="voucherStatisticsCards">
         <div class="col-md-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@Model.Count()</h4>
+                            <h4 class="mb-0" id="totalVouchersCount">@totalVouchers</h4>
                             <p class="mb-0">Total Vouchers</p>
                         </div>
                         <div class="align-self-center">
@@ -129,7 +136,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@Model.Count(v => !v.IsUsed.HasValue || !v.IsUsed.Value && v.ExpiryDate > now)</h4>
+                            <h4 class="mb-0" id="activeCount">@active</h4>
                             <p class="mb-0">Active</p>
                         </div>
                         <div class="align-self-center">
@@ -144,7 +151,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@Model.Count(v => v.IsUsed.HasValue && v.IsUsed.Value)</h4>
+                            <h4 class="mb-0" id="usedCount">@used</h4>
                             <p class="mb-0">Used</p>
                         </div>
                         <div class="align-self-center">
@@ -159,7 +166,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0">@Model.Count(v => v.ExpiryDate <= now)</h4>
+                            <h4 class="mb-0" id="expiredCount">@expired</h4>
                             <p class="mb-0">Expired</p>
                         </div>
                         <div class="align-self-center">
@@ -174,154 +181,15 @@
     <!-- Voucher List -->
     <div class="card">
         <div class="card-body">
-            @if (Model.Any())
-            {
-                <div class="table-responsive">
-                    <table id="voucher-table" class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Image</th>
-                                <th class="sortable" data-sort="voucherid">Voucher ID <span id="sortIconVoucherId"></span></th>
-                                <th>Code</th>
-                                <th class="sortable" data-sort="account">Account ID <span id="sortIconAccount"></span></th>
-                                <th class="sortable" data-sort="value">Value <span id="sortIconValue"></span></th>
-                                <th class="sortable" data-sort="created">Created Date <span id="sortIconCreated"></span></th>
-                                <th class="sortable" data-sort="expiry">Expiry Date <span id="sortIconExpiry"></span></th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var voucher in Model)
-                            {
-                                var isExpired = voucher.ExpiryDate <= now;
-                                var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
-                                var isActive = !isUsed && !isExpired;
-                                var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
-                                var isExpiringSoon = daysUntilExpiry <= 7 && daysUntilExpiry > 0;
-
-                                <tr class="@(isExpired ? "table-danger" : isUsed ? "table-secondary" : "")">
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(voucher.Image))
-                                        {
-                                            <img src="@voucher.Image" alt="Voucher" class="img-thumbnail voucher-image"
-                                                 style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
-                                                 data-bs-toggle="modal"
-                                                 data-bs-target="#imageModal"
-                                                 data-image="@voucher.Image"
-                                                 data-code="@voucher.Code">
-                                        }
-                                        else
-                                        {
-                                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
-                                                 style="width: 50px; height: 50px; font-size: 12px;">
-                                                <i class="bi bi-ticket-perforated"></i>
-                                            </div>
-                                        }
-                                    </td>
-                                    <td>
-                                        <strong class="text-primary">@voucher.VoucherId</strong>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark font-monospace">@voucher.Code</span>
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(voucher.AccountId))
-                                        {
-                                            <span class="text-muted">@voucher.AccountId</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted fst-italic">Unassigned</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <strong class="text-success">@voucher.Value.ToString("N0") VND</strong>
-                                    </td>
-                                    <td>@voucher.CreatedDate.ToString("dd/MM/yyyy")</td>
-                                    <td>
-                                        @if (isExpiringSoon)
-                                        {
-                                            <span class="text-warning fw-bold">
-                                                @voucher.ExpiryDate.ToString("dd/MM/yyyy")
-                                                <i class="bi bi-exclamation-triangle ms-1" title="Expires in @daysUntilExpiry day@(daysUntilExpiry == 1 ? "" : "s")"></i>
-                                            </span>
-                                        }
-                                        else if (isExpired)
-                                        {
-                                            <span class="text-danger fw-bold">
-                                                @voucher.ExpiryDate.ToString("dd/MM/yyyy")
-                                                <i class="bi bi-x-circle ms-1"></i>
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-success">@voucher.ExpiryDate.ToString("dd/MM/yyyy")</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (isUsed)
-                                        {
-                                            <span class="badge bg-secondary">
-                                                <i class="bi bi-check2-all me-1"></i>
-                                                Used
-                                            </span>
-                                        }
-                                        else if (isExpired)
-                                        {
-                                            <span class="badge bg-danger">
-                                                <i class="bi bi-x-circle me-1"></i>
-                                                Expired
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                Active
-                                            </span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <form asp-action="AdminEdit" asp-controller="Voucher" method="get" style="display:inline;">
-                                                <input type="hidden" name="id" value="@voucher.VoucherId" />
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-outline-primary"
-                                                        @(isUsed || isExpired ? "disabled" : "")
-                                                        title="@(isUsed || isExpired ? "Cannot edit used or expired vouchers" : "Edit voucher")">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                            </form>
-                                            <button type="button" class="btn btn-sm btn-outline-info"
-                                                    onclick="viewVoucherDetails('@voucher.VoucherId')"
-                                                    title="View details">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <form asp-action="AdminDelete" asp-controller="Voucher" method="post"
-                                                  onsubmit="return confirm('Are you sure you want to delete this voucher? This action cannot be undone.');"
-                                                  style="display: inline;">
-                                                <input type="hidden" name="id" value="@voucher.VoucherId" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete voucher">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+            <div id="voucherResult">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading vouchers...</p>
                 </div>
-            }
-            else
-            {
-                <div class="text-center py-4">
-                    <i class="bi bi-emoji-frown display-1 text-muted"></i>
-                    <h4 class="text-muted mt-3">No vouchers found</h4>
-                    <p class="text-muted">Try adjusting your search criteria or add a new voucher.</p>
-                </div>
-            }
+            </div>
+            <nav id="voucherPagination" class="mt-3"></nav>
         </div>
     </div>
 </div>
@@ -361,106 +229,5 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/admin-styles.css" />
+    <link rel="stylesheet" href="~/css/pagination-styles.css" />
 }
-
-@section Scripts {
-    <script src="~/js/admin-sorting.js"></script>
-    <script>
-        // Image modal functionality
-        $('#imageModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var image = button.data('image');
-            var code = button.data('code');
-            var modal = $(this);
-            modal.find('#modalImage').attr('src', image);
-            modal.find('#modalImageCode').text('Code: ' + code);
-        });
-
-        // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Voucher details function
-    function viewVoucherDetails(voucherId) {
-        $('#voucherDetailsContent').html(`
-            <div class="text-center">
-                <i class="bi bi-arrow-clockwise fa-spin fa-2x text-primary mb-3"></i>
-                <p>Loading voucher details...</p>
-            </div>
-        `);
-        $('#voucherDetailsModal').modal('show');
-
-        // Load voucher details via AJAX
-        $.getJSON('/Voucher/GetVoucherDetails', { id: voucherId }, function(response) {
-            if (response.success) {
-                var voucher = response.voucher;
-                var statusBadge = '';
-
-                if (voucher.status === 'Active') {
-                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>';
-                } else if (voucher.status === 'Used') {
-                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-check2-all me-1"></i>Used</span>';
-                } else {
-                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>';
-                }
-
-                var expiryWarning = '';
-                if (voucher.isExpiringSoon) {
-                    expiryWarning = `<div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        This voucher expires in ${voucher.daysUntilExpiry} day${voucher.daysUntilExpiry === 1 ? '' : 's'}!
-                    </div>`;
-                }
-
-                var imageSection = '';
-                if (voucher.image) {
-                    imageSection = `
-                        <div class="text-center mb-3">
-                            <img src="${voucher.image}" alt="Voucher Image" class="img-fluid rounded" style="max-height: 200px;">
-                        </div>
-                    `;
-                }
-
-                $('#voucherDetailsContent').html(`
-                    ${expiryWarning}
-                    ${imageSection}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-ticket-perforated me-2 text-primary"></i>Voucher Information</h6>
-                            <table class="table table-sm">
-                                <tr><td><strong>Voucher ID:</strong></td><td>${voucher.id}</td></tr>
-                                <tr><td><strong>Code:</strong></td><td><span class="badge bg-light text-dark font-monospace">${voucher.code}</span></td></tr>
-                                <tr><td><strong>Value:</strong></td><td><span class="fw-bold text-success">${voucher.value.toLocaleString()} VND</span></td></tr>
-                                <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-calendar me-2 text-primary"></i>Date Information</h6>
-                            <table class="table table-sm">
-                                <tr><td><strong>Created:</strong></td><td>${voucher.createdDate}</td></tr>
-                                <tr><td><strong>Expires:</strong></td><td>${voucher.expiryDate}</td></tr>
-                                <tr><td><strong>Account ID:</strong></td><td>${voucher.accountId || '<span class="text-muted fst-italic">Unassigned</span>'}</td></tr>
-                            </table>
-                        </div>
-                    </div>
-                `);
-            } else {
-                $('#voucherDetailsContent').html(`
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        ${response.message}
-                    </div>
-                `);
-            }
-        }).fail(function() {
-            $('#voucherDetailsContent').html(`
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Failed to load voucher details. Please try again.
-                </div>
-            `);
-        });
-    }
-</script> }
