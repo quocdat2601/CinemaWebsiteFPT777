@@ -111,10 +111,11 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
         {
-            var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id);
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Admin";
+            var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id, currentRole);
             TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
             // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy

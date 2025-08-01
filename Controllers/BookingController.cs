@@ -729,12 +729,51 @@ namespace MovieTheater.Controllers
             {
                 returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
             }
-
             else
             {
-                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
             }
-            return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
+            return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl, isAdminSell = "true" });
+        }
+
+        /// <summary>
+        /// Trang booking cho admin/employee với Date, Version, Time selection (Quick Book)
+        /// </summary>
+        /// <remarks>url: /Booking/TicketBookingAdmin (GET)</remarks>
+        [Authorize(Roles = "Admin, Employee")]
+        [HttpGet]
+        public IActionResult TicketBookingAdmin(string returnUrl)
+        {
+            // Get all currently showing movies
+            var currentlyShowingMovies = _movieService.GetCurrentlyShowingMovies();
+            
+            var viewModel = new TicketBookingAdminViewModel
+            {
+                Movies = currentlyShowingMovies,
+                ReturnUrl = returnUrl
+            };
+            
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// Quick Book action cho admin/employee
+        /// </summary>
+        /// <remarks>url: /Booking/QuickBook (GET)</remarks>
+        [Authorize(Roles = "Admin, Employee")]
+        [HttpGet]
+        public IActionResult QuickBook()
+        {
+            string returnUrl;
+            if (role == "Admin")
+            {
+                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            else
+            {
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+            }
+            return RedirectToAction("TicketBookingAdmin", "Booking", new { returnUrl = returnUrl });
         }
 
         /// <summary>

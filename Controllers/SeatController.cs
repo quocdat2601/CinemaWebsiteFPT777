@@ -167,7 +167,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/Select (GET)</remarks>
         [HttpGet]
         [Route("Seat/Select")]
-        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId)
+        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId, [FromQuery] string returnUrl = null)
         {
             var movie = _movieService.GetById(movieId);
             if (movie == null)
@@ -262,7 +262,8 @@ namespace MovieTheater.Controllers
                 MovieFromDate = movie.FromDate,
                 MovieDuration = movie.Duration,
                 MovieDirector = movieDirector,
-                MovieActor = movieActor
+                MovieActor = movieActor,
+                ReturnUrl = returnUrl
             };
 
             return View("View", viewModel);

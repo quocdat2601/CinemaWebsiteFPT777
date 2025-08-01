@@ -200,7 +200,7 @@ namespace MovieTheater.Controllers
                     {
                         foreach (var invoice in invoices)
                         {
-                            var (refundSuccess, refundMessages) = await _ticketService.CancelTicketByAdminAsync(invoice.InvoiceId);
+                            var (refundSuccess, refundMessages) = await _ticketService.CancelTicketByAdminAsync(invoice.InvoiceId, role);
                             if (refundSuccess)
                             {
                                 refundedShows.Add($"Show {show.MovieShowId} - {invoice.InvoiceId}");
@@ -417,7 +417,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public async Task<IActionResult> RefundByMovieShow(int movieShowId)
         {
             // Get all non-cancelled invoices for this show
@@ -429,7 +429,7 @@ namespace MovieTheater.Controllers
             var results = new List<object>();
             foreach (var id in invoices)
             {
-                var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id);
+                var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id, role);
                 results.Add(new { invoiceId = id, success, messages });
             }
             return Json(new { success = true, results });
