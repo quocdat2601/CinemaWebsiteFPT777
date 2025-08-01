@@ -1,52 +1,166 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@model IEnumerable<MovieTheater.Models.Promotion>
+﻿@using MovieTheater.Models
+@model List<Promotion>
 
 @{
-    ViewData["Title"] = "Current Promotions";
+    ViewData["Title"] = "Promotions List";
 }
 
-<div class="container mt-4">
-    <div class="text-center mb-5">
-        <h1 class="display-4">Current Promotions</h1>
-        <p class="lead">Check out our latest offers and discounts!</p>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+<link rel="stylesheet" href="~/css/modern-base.css" />
+<link rel="stylesheet" href="~/css/promotions.css" />
+
+<style>
+    /* Custom CSS để làm mờ navigation buttons */
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: rgba(255, 255, 255, 0.3) !important;
+        background-color: rgba(0, 0, 0, 0.1) !important;
+        border-radius: 50%;
+        width: 40px !important;
+        height: 40px !important;
+        transition: all 0.3s ease;
+    }
+
+        .swiper-button-next:hover,
+        .swiper-button-prev:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+            background-color: rgba(0, 0, 0, 0.3) !important;
+        }
+
+    /* Ẩn navigation khi không cần thiết */
+    .swiper-button-disabled {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Thêm cursor pointer cho promotion card */
+    .promotion-card {
+        cursor: pointer;
+    }
+
+    /* Ẩn nút learn more */
+    .promotion-actions {
+        display: none !important;
+    }
+</style>
+
+<!-- PROMOTIONS SECTION -->
+<section class="promotions-section" id="promotionsSection">
+    <div class="section-header-modern">
+        <h2 class="section-title-gradient promotions-title">
+            <span class="title-text">SPECIAL OFFERS</span>
+            <div class="title-underline promotions-underline"></div>
+        </h2>
+        <div class="section-subtitle">Don't miss out on our exclusive deals and promotions</div>
     </div>
 
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info text-center" role="alert">
-            <h4 class="alert-heading">No Active Promotions</h4>
-            <p>There are currently no active promotions. Please check back later!</p>
-        </div>
-    }
-    else
-    {
-        <div class="promotion-grid">
-            @foreach (var promotion in Model)
-            {
-                <div class="promotion-item">
-                    @if (!string.IsNullOrEmpty(promotion.Image))
+    <div class="promotions-container">
+        <div class="promotions-wrapper">
+            <div class="swiper promotions-swiper-modern">
+                <div class="swiper-wrapper">
+                    @foreach (var promotion in Model)
                     {
-                        <img src="@promotion.Image" alt="@promotion.Title">
-                    }
-                    else
-                    {
-                        <div class="promotion-image-placeholder bg-light text-center">
-                            <i class="fas fa-ticket-alt fa-4x text-muted"></i>
+                        <div class="swiper-slide">
+                            <div class="promotion-card" data-promo-id="@promotion.PromotionId">
+                                <div class="promotion-image">
+                                    <img src="@promotion.Image" alt="@promotion.Title" loading="lazy">
+                                    <div class="promotion-overlay">
+                                        <div class="overlay-content">
+                                            <div class="promotion-badge">
+                                                <i class="fas fa-gift"></i>
+                                                <span>Special Offer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="discount-badge">
+                                        <span>@promotion.DiscountLevel% OFF</span>
+                                    </div>
+                                </div>
+
+                                <div class="promotion-content"
+                                     data-image="@promotion.Image"
+                                     data-title="@promotion.Title"
+                                     data-discount="@promotion.DiscountLevel%"
+                                     data-detail="@promotion.Detail"
+                                     data-time="@promotion.StartTime?.ToString("dd/MM/yyyy") - @promotion.EndTime?.ToString("dd/MM/yyyy")">
+                                    <h3 class="promotion-title">@promotion.Title</h3>
+                                    <p class="promotion-description">@promotion.Detail</p>
+                                </div>
+                            </div>
                         </div>
                     }
-                    <div class="promotion-content">
-                        <h3>@promotion.Title</h3>
-                        <p>@promotion.Detail</p>
-                        <div class="promotion-details">
-                            <p>Discount: <span class="discount">@promotion.DiscountLevel%</span></p>
-                            <p>Start: @promotion.StartTime?.ToString("MMM dd, yyyy HH:mm")</p>
-                            <p>End: @promotion.EndTime?.ToString("MMM dd, yyyy HH:mm")</p>
-                        </div>
-                    </div>
                 </div>
-            }
+
+                <!-- Navigation -->
+                <div class="swiper-button-next modern-nav-btn promotions-nav"></div>
+                <div class="swiper-button-prev modern-nav-btn promotions-nav"></div>
+            </div>
         </div>
-    }
+    </div>
+</section>
+
+<!-- Promotion Modal (Reusable) -->
+<div class="promotion-modal-overlay hidden" id="promotionModalOverlay">
+    <div class="promotion-modal">
+        <button class="promotion-modal-close" id="promotionModalClose" aria-label="Close">&times;</button>
+        <img class="promotion-modal-image" id="promotionModalImage" src="" alt="Promotion Image" />
+        <div class="promotion-modal-content">
+            <div class="promotion-modal-title" id="promotionModalTitle">Tên khuyến mãi</div>
+            <div class="promotion-modal-discount" id="promotionModalDiscount">Giảm giá 50%</div>
+            <div class="promotion-modal-detail" id="promotionModalDetail">Mô tả chi tiết khuyến mãi...</div>
+            <div class="promotion-modal-time" id="promotionModalTime">01/06/2024 - 30/06/2024</div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+    <script>
+        var swiper = new Swiper('.promotions-swiper-modern', {
+            slidesPerView: 1,
+            spaceBetween: 30,
+            loop: false, // Bỏ loop
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                768: { slidesPerView: 2 },
+                992: { slidesPerView: 3 }
+            }
+        });
+
+        // Hàm mở popup với dữ liệu động
+        function openPromotionModal({ image, title, discount, detail, time }) {
+          document.getElementById('promotionModalImage').src = image;
+          document.getElementById('promotionModalTitle').textContent = title;
+          document.getElementById('promotionModalDiscount').textContent = discount;
+          document.getElementById('promotionModalDetail').textContent = detail;
+          document.getElementById('promotionModalTime').textContent = time;
+          document.getElementById('promotionModalOverlay').classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        }
+        function closePromotionModal() {
+          document.getElementById('promotionModalOverlay').classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+        document.getElementById('promotionModalClose').onclick = closePromotionModal;
+        document.getElementById('promotionModalOverlay').onclick = function(e) {
+          if (e.target === this) closePromotionModal();
+        };
+        
+        // Thêm click event cho promotion card (cả image và content)
+        document.querySelectorAll('.promotion-card').forEach(card => {
+          card.addEventListener('click', function() {
+            const contentElement = this.querySelector('.promotion-content');
+            openPromotionModal({
+              image: contentElement.dataset.image || '',
+              title: contentElement.dataset.title || '',
+              discount: contentElement.dataset.discount || '',
+              detail: contentElement.dataset.detail || '',
+              time: contentElement.dataset.time || ''
+            });
+          });
+        });
+    </script>
+}

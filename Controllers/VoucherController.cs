@@ -39,90 +39,114 @@ namespace MovieTheater.Controllers
         /// Trang danh sách voucher
         /// </summary>
         /// <remarks>url: /Voucher/Index (GET)</remarks>
+        [Authorize]
         public IActionResult Index()
         {
-            var vouchers = _voucherService.GetAll();
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+                return RedirectToAction("Login", "Account");
+
+            var vouchers = _voucherService.GetAvailableVouchers(accountId);
             return View(vouchers);
         }
 
         /// <summary>
-        /// Trang quản lý voucher cho admin
+        /// Trang quản lý voucher (admin)
         /// </summary>
         /// <remarks>url: /Voucher/AdminIndex (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult AdminIndex(string keyword = "", string statusFilter = "", string expiryFilter = "")
         {
-            var filter = new MovieTheater.Service.VoucherFilterModel
+            var vouchers = _voucherService.GetAll();
+
+            if (!string.IsNullOrEmpty(keyword))
             {
-                Keyword = keyword,
-                StatusFilter = statusFilter,
-                ExpiryFilter = expiryFilter
-            };
-            var vouchers = _voucherService.GetFilteredVouchers(filter);
-            ViewBag.Keyword = keyword;
-            ViewBag.StatusFilter = statusFilter;
-            ViewBag.ExpiryFilter = expiryFilter;
-            return View("VoucherMg", vouchers);
+                vouchers = vouchers.Where(v => v.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                                               v.Account?.FullName.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                bool isUsed = statusFilter.ToLower() == "used";
+                vouchers = vouchers.Where(v => v.IsUsed == isUsed).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(expiryFilter))
+            {
+                DateTime now = DateTime.Now;
+                switch (expiryFilter.ToLower())
+                {
+                    case "expired":
+                        vouchers = vouchers.Where(v => v.ExpiryDate < now).ToList();
+                        break;
+                    case "expiring_soon":
+                        vouchers = vouchers.Where(v => v.ExpiryDate >= now && v.ExpiryDate <= now.AddDays(7)).ToList();
+                        break;
+                    case "valid":
+                        vouchers = vouchers.Where(v => v.ExpiryDate > now.AddDays(7)).ToList();
+                        break;
+                }
+            }
+
+            return View(vouchers);
         }
 
         /// <summary>
         /// Xem chi tiết voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Details (GET)</remarks>
+        /// <remarks>url: /Voucher/Details/{id} (GET)</remarks>
+        [Authorize]
         public IActionResult Details(string id)
         {
             var voucher = _voucherService.GetById(id);
-            if (voucher == null) return NotFound();
+            if (voucher == null)
+                return NotFound();
+
             return View(voucher);
         }
 
         /// <summary>
         /// Lấy chi tiết voucher (admin, ajax)
         /// </summary>
-        /// <remarks>url: /Voucher/GetVoucherDetails (GET)</remarks>
+        /// <remarks>url: /Voucher/GetVoucherDetails/{id} (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult GetVoucherDetails(string id)
         {
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
-            {
-                return Json(new { success = false, message = "Voucher not found" });
-            }
+                return Json(new { success = false, message = "Voucher not found." });
 
-            var now = DateTime.Now;
-            var isExpired = voucher.ExpiryDate <= now;
-            var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
-            var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
-
-            var details = new
+            var result = new
             {
                 success = true,
                 voucher = new
                 {
                     id = voucher.VoucherId,
                     code = voucher.Code,
-                    accountId = voucher.AccountId,
                     value = voucher.Value,
-                    createdDate = voucher.CreatedDate.ToString("dd/MM/yyyy HH:mm"),
-                    expiryDate = voucher.ExpiryDate.ToString("dd/MM/yyyy HH:mm"),
+                    expiryDate = voucher.ExpiryDate.ToString("yyyy-MM-dd"),
                     isUsed = voucher.IsUsed,
-                    image = voucher.Image,
-                    status = isUsed ? "Used" : isExpired ? "Expired" : "Active",
-                    daysUntilExpiry = daysUntilExpiry,
-                    isExpiringSoon = daysUntilExpiry <= 7 && daysUntilExpiry > 0
+                    account = voucher.Account != null ? new
+                    {
+                        accountId = voucher.Account.AccountId,
+                        fullName = voucher.Account.FullName,
+                        email = voucher.Account.Email,
+                        phoneNumber = voucher.Account.PhoneNumber
+                    } : null,
+                    image = voucher.Image
                 }
             };
 
-            return Json(details);
+            return Json(result);
         }
 
         /// <summary>
         /// Trang tạo voucher mới
         /// </summary>
         /// <remarks>url: /Voucher/Create (GET)</remarks>
-        [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
@@ -132,66 +156,73 @@ namespace MovieTheater.Controllers
         /// Tạo voucher mới
         /// </summary>
         /// <remarks>url: /Voucher/Create (POST)</remarks>
-        [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create(Voucher voucher)
         {
-            if (!ModelState.IsValid) return View(voucher);
-            voucher.VoucherId = _voucherService.GenerateVoucherId();
-            voucher.Code = "VOUCHER";
-            voucher.CreatedDate = DateTime.Now;
-            voucher.ExpiryDate = DateTime.Now.AddDays(30);
-            voucher.Value = voucher.Value;
-            voucher.IsUsed = false;
-            voucher.Image = "/voucher-img/voucher.jpg";
-            _voucherService.Add(voucher);
-            return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _voucherService.Add(voucher);
+                return RedirectToAction(nameof(Index));
+            }
+            return View(voucher);
         }
 
         /// <summary>
         /// Trang sửa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Edit (GET)</remarks>
-        [HttpGet]
+        /// <remarks>url: /Voucher/Edit/{id} (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult Edit(string id)
         {
             var voucher = _voucherService.GetById(id);
-            if (voucher == null) return NotFound();
+            if (voucher == null)
+                return NotFound();
+
             return View(voucher);
         }
 
         /// <summary>
         /// Sửa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Edit (POST)</remarks>
-        [HttpPost]
+        /// <remarks>url: /Voucher/Edit/{id} (POST)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult Edit(Voucher voucher)
         {
-            if (!ModelState.IsValid) return View(voucher);
-            _voucherService.Update(voucher);
-            return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _voucherService.Update(voucher);
+                return RedirectToAction(nameof(Index));
+            }
+            return View(voucher);
         }
 
         /// <summary>
         /// Trang xóa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Delete (GET)</remarks>
-        [HttpGet]
+        /// <remarks>url: /Voucher/Delete/{id} (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult Delete(string id)
         {
             var voucher = _voucherService.GetById(id);
-            if (voucher == null) return NotFound();
+            if (voucher == null)
+                return NotFound();
+
             return View(voucher);
         }
 
         /// <summary>
         /// Xóa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Delete (POST)</remarks>
-        [HttpPost, ActionName("Delete")]
+        /// <remarks>url: /Voucher/Delete/{id} (POST)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult DeleteConfirmed(string id)
         {
-            _voucherService.Delete(id);
-            return RedirectToAction("Index");
+            var voucher = _voucherService.GetById(id);
+            if (voucher != null)
+            {
+                _voucherService.Delete(id);
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         /// <summary>

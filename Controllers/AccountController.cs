@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -43,7 +44,6 @@ namespace MovieTheater.Controllers
             _logger = logger;
             _accountRepository = accountRepository;
             _jwtService = jwtService;
-            _employeeService = employeeService;
         }
 
         [HttpGet]
@@ -184,7 +184,7 @@ namespace MovieTheater.Controllers
                     DateTime.UtcNow, errors);
 
                 TempData[ERROR_MESSAGE] = $"{errors}";
-                return View(model);
+                return RedirectToAction(LOGIN_ACTION);
             }
 
             try
@@ -197,14 +197,14 @@ namespace MovieTheater.Controllers
                         model.Username, DateTime.UtcNow);
 
                     TempData[ERROR_MESSAGE] = "Registration failed - Username already exists";
-                    return View(model);
+                    return RedirectToAction(LOGIN_ACTION);
                 }
 
                 _logger.LogInformation("New account registered: {Username} at {Time}",
                     model.Username, DateTime.UtcNow);
 
                 TempData[TOAST_MESSAGE] = "Sign up successful! Redirecting to log in..";
-                return RedirectToAction("Signup");
+                return RedirectToAction(LOGIN_ACTION);
             }
             catch (Exception ex)
             {
@@ -217,7 +217,7 @@ namespace MovieTheater.Controllers
                     TempData[ERROR_MESSAGE] += $" Inner error: {ex.InnerException.Message}";
                 }
 
-                return View(model);
+                return RedirectToAction(LOGIN_ACTION);
             }
         }
 
@@ -312,6 +312,124 @@ namespace MovieTheater.Controllers
         {
             // This action is obsolete since history is now in the profile tab
             return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER);
+        }
+
+        // --- Forget Password Actions ---
+        [HttpGet]
+        public IActionResult ForgetPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ForgetPassword(ForgetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var account = _service.GetAccountByEmail(model.Email);
+            if (account == null)
+            {
+                ModelState.AddModelError("Email", "Email không tồn tại trong hệ thống.");
+                return View(model);
+            }
+
+            var success = _service.SendForgetPasswordOtp(model.Email);
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư và thư mục spam.";
+                TempData["Email"] = model.Email;
+                return RedirectToAction("ResetPassword");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Không thể gửi mã OTP. Vui lòng thử lại sau.");
+                return View(model);
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            var email = TempData["Email"] as string;
+            if (string.IsNullOrEmpty(email))
+            {
+                return RedirectToAction("ForgetPassword");
+            }
+
+            var model = new ResetPasswordViewModel
+            {
+                Email = email
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Verify OTP
+            if (!_service.VerifyForgetPasswordOtp(model.Email, model.Otp))
+            {
+                ModelState.AddModelError("Otp", "Mã OTP không đúng hoặc đã hết hạn.");
+                return View(model);
+            }
+
+            // Reset password
+            var success = _service.ResetPassword(model.Email, model.NewPassword);
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.";
+                return RedirectToAction("Login");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Không thể đặt lại mật khẩu. Vui lòng thử lại sau.");
+                return View(model);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public IActionResult ToggleStatus(string id)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(id))
+                {
+                    TempData["ErrorMessage"] = "Invalid Account ID.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                }
+
+                var account = _service.GetById(id);
+                if (account == null)
+                {
+                    TempData["ErrorMessage"] = "Member not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                }
+
+                _service.ToggleStatus(id);
+                TempData["ToastMessage"] = "Member status updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+            }
+            catch (ArgumentException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
+            }
+            return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
         }
     }
 }

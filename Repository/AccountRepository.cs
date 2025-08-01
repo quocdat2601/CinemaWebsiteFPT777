@@ -28,7 +28,9 @@ namespace MovieTheater.Repository
                 return $"AC{(number + 1):D3}";
             }
 
-            return $"AC{DateTime.Now:yyyyMMddHHmmss}";
+            // Fallback: tạo ID ngắn hơn để đảm bảo không vượt quá 10 ký tự
+            var timestamp = DateTime.Now.ToString("MMddHHmm");
+            return $"AC{timestamp}";
         }
 
         public void Add(Account account)
@@ -119,5 +121,15 @@ namespace MovieTheater.Repository
             }
         }
 
+        public void ToggleStatus(string accountId)
+        {
+            var account = _context.Accounts.Find(accountId);
+
+            if (account != null)
+            {
+                account.Status = account.Status == 1 ? 0 : 1;
+                _context.SaveChanges();
+            }
+        }
     }
 }

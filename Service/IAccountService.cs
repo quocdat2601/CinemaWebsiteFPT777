@@ -27,5 +27,12 @@ namespace MovieTheater.Service
         bool HasMissingProfileInfo(Account user);
         Task SignInUserAsync(HttpContext httpContext, Account user);
         Task SignOutUserAsync(HttpContext httpContext);
+        
+        // Forget password methods
+        bool SendForgetPasswordOtp(string email);
+        bool VerifyForgetPasswordOtp(string email, string otp);
+        bool ResetPassword(string email, string newPassword);
+        Account? GetAccountByEmail(string email);
+        public void ToggleStatus(string accountId);
     }
 }

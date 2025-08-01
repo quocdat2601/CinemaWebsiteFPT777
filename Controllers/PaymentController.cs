@@ -11,7 +11,6 @@ namespace MovieTheater.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class PaymentController : Controller
     {
         private readonly IVNPayService _vnPayService;
@@ -51,6 +50,7 @@ namespace MovieTheater.Controllers
         /// <response code="400">Nếu có lỗi xảy ra</response>
         [HttpPost("create-payment")]
         [ValidateAntiForgeryToken]
+        [Authorize]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(typeof(object), 400)]
         public IActionResult CreatePayment([FromBody] PaymentRequest request)

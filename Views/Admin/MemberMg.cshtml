@@ -14,12 +14,11 @@ else
     <table class="table table-bordered table-striped table-hover">
         <thead class="table-dark">
             <tr class="text-center">
-                <th>Member ID</th>
+                <th>ID</th>
                 <th>Full Name</th>
-                <th>Identity card</th>
                 <th>Email</th>
                 <th>Phone Number</th>
-                <th>Address</th>
+                <th>Status</th>
                 @if (User.IsInRole("Admin"))
                 {
                     <th style="width: 150px;">Actions</th>
@@ -32,18 +31,27 @@ else
                 <tr class="text-center">
                     <td>@member.MemberId</td>
                     <td>@member.Account.FullName</td>
-                    <td>@member.Account.IdentityCard</td>
                     <td>@member.Account.Email</td>
                     <td>@member.Account.PhoneNumber</td>
-                    <td>@member.Account.Address</td>
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <td>
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <a href="@Url.Action("Edit", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-primary">Edit</a>
-                            </div>
-                        </td>
-                    }
+                    <td>
+                        <span class="badge @(member.Account.Status  == 1 ? "bg-success" : "bg-danger")">
+                            @(member.Account.Status == 1 ? "Active" : "Inactive")
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <a href="@Url.Action("Edit", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-primary">Edit</a>
+                            <form method="post" action="@Url.Action("ToggleStatus", "Account", new { id = member.AccountId })"
+                                  style="display: inline;" onsubmit="return confirm('Are you sure you want to change the status?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="btn btn-sm @(member.Account.Status == 0 ? "btn-outline-danger" : "btn-outline-success")"
+                                        title="@(member.Account.Status == 0 ? "Activate" : "Deactivate")">
+                                    <i class="bi @(member.Account.Status == 0 ? "bi-toggle-off" : "bi-toggle-on")"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             }
         </tbody>

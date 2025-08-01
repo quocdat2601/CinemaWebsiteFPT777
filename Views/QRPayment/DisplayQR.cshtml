@@ -190,6 +190,14 @@
                 <span class="info-value">@Model.OrderId</span>
             </div>
             <div class="info-row">
+                <span class="info-label">Customer:</span>
+                <span class="info-value">@Model.CustomerName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">@Model.CustomerPhone</span>
+            </div>
+            <div class="info-row">
                 <span class="info-label">Movie:</span>
                 <span class="info-value">@Model.MovieName</span>
             </div>
@@ -212,12 +220,18 @@
             {
                 <div class="text-center">
                     <h5 class="mb-2">Scan QR PayOS to pay</h5>
-                    <img src="@Model.PayOSQRCodeUrl" alt="QR PayOS" style="max-width: 300px; max-height: 300px; border: 8px solid #f5f5f5; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);" />
-                    <div class="mt-2">
-                        <a href="@Model.PayOSQRCodeUrl" target="_blank" class="btn btn-primary mt-2">Open link payment PayOS</a>
-                    </div>
+                    <img src="@Model.PayOSQRCodeUrl" alt="QR PayOS" style="max-width: 300px; max-height: 300px; border: 8px solid #f5f5f5; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);" onerror="console.error('QR image failed to load:', this.src);" />
                     <p class="text-muted mt-3">Use banking app or e-wallet scan this QR code to pay.</p>
-            </div>
+                    <small class="text-muted">QR URL: @Model.PayOSQRCodeUrl</small>
+                </div>
+            }
+            else
+            {
+                <div class="text-center">
+                    <h5 class="mb-2">QR Code not available</h5>
+                    <p class="text-muted">Unable to generate QR code. Please try again.</p>
+                    <small class="text-muted">Debug: PayOSQRCodeUrl is null or empty</small>
+                </div>
             }
         </div>
         
@@ -247,7 +261,9 @@
 </div>
 
 @section Scripts {
+    <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script>
         $(document).ready(function() {
             let timeLeft = 30 * 60; // 30 minutes in seconds
@@ -304,16 +320,22 @@
                                     $('#statusMessage').html('<i class="fas fa-check-circle"></i> Payment completed successfully!');
                                     
                                     // Hiển thị thông báo thành công
-                                    Swal.fire({
-                                        title: 'Payment Successful!',
-                                        text: 'Your payment has been processed successfully.',
-                                        icon: 'success',
-                                        confirmButtonText: 'OK',
-                                        allowOutsideClick: false
-                                    }).then((result) => {
-                                        // Redirect về booking manager
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            title: 'Payment Successful!',
+                                            text: 'Your payment has been processed successfully.',
+                                            icon: 'success',
+                                            confirmButtonText: 'OK',
+                                            allowOutsideClick: false
+                                        }).then((result) => {
+                                            // Redirect về booking manager
+                                            window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
+                                        });
+                                    } else {
+                                        // Fallback if SweetAlert2 is not available
+                                        alert('Payment Successful! Your payment has been processed successfully.');
                                         window.location.href = '@Url.Action("MainPage", "Admin", new { tab = "BookingMg" })';
-                                    });
+                                    }
                                     
                                     // Dừng auto-polling
                                     clearInterval(autoCheckInterval);

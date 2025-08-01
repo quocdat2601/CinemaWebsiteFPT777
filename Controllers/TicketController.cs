@@ -86,9 +86,12 @@ namespace MovieTheater.Controllers
             var (success, messages) = await _ticketService.CancelTicketAsync(id, accountId);
             TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
+            // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-            return RedirectToAction(nameof(Index));
+            
+            // Redirect về trang hiện tại (reload)
+            return Redirect(Request.Headers["Referer"].ToString() ?? "/");
         }
 
         [HttpGet]
@@ -108,15 +111,19 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Employee")]
         public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
         {
-            var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id);
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Admin";
+            var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id, currentRole);
             TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);
 
+            // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-            return RedirectToAction(nameof(Index));
+            
+            // Redirect về trang hiện tại (reload)
+            return Redirect(Request.Headers["Referer"].ToString() ?? "/");
         }
     }
 }

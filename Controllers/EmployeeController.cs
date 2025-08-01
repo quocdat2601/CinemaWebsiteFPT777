@@ -55,10 +55,6 @@ namespace MovieTheater.Controllers
                 case "MovieMg":
                     var movies = _movieService.GetAll();
                     return PartialView("MovieMg", movies);
-             
-                case "PromotionMg":
-                    var promotions = _promotionService.GetAll();
-                    return PartialView("PromotionMg", promotions);
                 case "BookingMg":
                     var invoices = _invoiceService.GetAll();
 
@@ -223,6 +219,8 @@ namespace MovieTheater.Controllers
                     ViewBag.Actors = persons.Where(c => c.IsDirector == false).ToList();
                     ViewBag.Directors = persons.Where(c => c.IsDirector == true).ToList();
                     return PartialView("CastMg");
+                case "QRCode":
+                    return PartialView("QRCode");
                 default:
                     return Content("Tab not found.");
             }

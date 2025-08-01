@@ -47,20 +47,18 @@
             overflow-x: hidden;
         }
 
-        /* Cinema Background Pattern */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(220, 38, 38, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
+            /* Cinema Background Pattern */
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: radial-gradient(circle at 25% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(220, 38, 38, 0.1) 0%, transparent 50%);
+                pointer-events: none;
+                z-index: -1;
+            }
 
         /* Header Section */
         .cinema-header {
@@ -102,12 +100,12 @@
             font-weight: 500;
         }
 
-        .back-btn:hover {
-            background: rgba(255, 215, 0, 0.1);
-            border-color: var(--cinema-gold);
-            color: var(--cinema-gold);
-            transform: translateY(-2px);
-        }
+            .back-btn:hover {
+                background: rgba(255, 215, 0, 0.1);
+                border-color: var(--cinema-gold);
+                color: var(--cinema-gold);
+                transform: translateY(-2px);
+            }
 
         /* Main Content Container */
         .booking-container {
@@ -127,10 +125,10 @@
             transition: all 0.3s ease;
         }
 
-        .glass-section:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 215, 0, 0.3);
-        }
+            .glass-section:hover {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 215, 0, 0.3);
+            }
 
         /* Section Headers */
         .section-header {
@@ -175,9 +173,9 @@
             margin-bottom: 2rem;
         }
 
-        .booking-row.full-width {
-            grid-template-columns: 1fr;
-        }
+            .booking-row.full-width {
+                grid-template-columns: 1fr;
+            }
 
         /* Seats and Food Lists */
         .item-list {
@@ -194,11 +192,11 @@
             transition: all 0.3s ease;
         }
 
-        .item-row:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 215, 0, 0.3);
-            transform: translateY(-2px);
-        }
+            .item-row:hover {
+                background: rgba(255, 255, 255, 0.05);
+                border-color: rgba(255, 215, 0, 0.3);
+                transform: translateY(-2px);
+            }
 
         .seat-info {
             display: flex;
@@ -296,10 +294,10 @@
             transition: all 0.3s ease;
         }
 
-        .info-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 215, 0, 0.3);
-        }
+            .info-item:hover {
+                background: rgba(255, 255, 255, 0.05);
+                border-color: rgba(255, 215, 0, 0.3);
+            }
 
         .info-label {
             color: var(--text-muted);
@@ -364,12 +362,12 @@
             transition: all 0.3s ease;
         }
 
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--cinema-gold);
-            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
-            color: var(--text-light);
-        }
+            .form-control:focus {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: var(--cinema-gold);
+                box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+                color: var(--text-light);
+            }
 
         .input-group-text {
             background: rgba(255, 215, 0, 0.1);
@@ -390,11 +388,11 @@
             font-weight: 500;
         }
 
-        .voucher-btn:hover {
-            background: rgba(255, 215, 0, 0.1);
-            border-color: var(--cinema-gold);
-            color: var(--cinema-gold);
-        }
+            .voucher-btn:hover {
+                background: rgba(255, 215, 0, 0.1);
+                border-color: var(--cinema-gold);
+                color: var(--cinema-gold);
+            }
 
         /* Price Breakdown */
         .price-breakdown {
@@ -411,17 +409,17 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .price-row:last-child {
-            border-bottom: none;
-        }
+            .price-row:last-child {
+                border-bottom: none;
+            }
 
-        .price-row.total {
-            border-top: 2px solid var(--cinema-gold);
-            padding-top: 1rem;
-            margin-top: 1rem;
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
+            .price-row.total {
+                border-top: 2px solid var(--cinema-gold);
+                padding-top: 1rem;
+                margin-top: 1rem;
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
 
         .price-label {
             color: var(--text-muted);
@@ -459,17 +457,17 @@
             margin-bottom: 1rem;
         }
 
-        .cinema-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-            color: var(--cinema-dark);
-        }
+            .cinema-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+                color: var(--cinema-dark);
+            }
 
-        .cinema-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
+            .cinema-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
 
         .test-btn {
             background: var(--glass-bg);
@@ -482,10 +480,10 @@
             transition: all 0.3s ease;
         }
 
-        .test-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-light);
-        }
+            .test-btn:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: var(--text-light);
+            }
 
         /* Modal Styles */
         .modal-content {
@@ -527,17 +525,17 @@
             height: 100%;
         }
 
-        .voucher-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--cinema-gold);
-            transform: translateY(-5px);
-        }
+            .voucher-card:hover {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: var(--cinema-gold);
+                transform: translateY(-5px);
+            }
 
-        .voucher-card.selected {
-            background: rgba(255, 215, 0, 0.1);
-            border-color: var(--cinema-gold);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
+            .voucher-card.selected {
+                background: rgba(255, 215, 0, 0.1);
+                border-color: var(--cinema-gold);
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            }
 
         .voucher-icon {
             font-size: 2rem;
@@ -595,10 +593,10 @@
             flex-shrink: 0;
         }
 
-        .remove-voucher:hover {
-            background: #b91c1c;
-            transform: scale(1.1);
-        }
+            .remove-voucher:hover {
+                background: #b91c1c;
+                transform: scale(1.1);
+            }
 
         .voucher-actions {
             display: flex;
@@ -636,17 +634,17 @@
             font-size: 0.9rem;
         }
 
-        .message.success {
-            background: rgba(5, 150, 105, 0.1);
-            border: 1px solid var(--cinema-green);
-            color: var(--cinema-green);
-        }
+            .message.success {
+                background: rgba(5, 150, 105, 0.1);
+                border: 1px solid var(--cinema-green);
+                color: var(--cinema-green);
+            }
 
-        .message.error {
-            background: rgba(220, 38, 38, 0.1);
-            border: 1px solid var(--cinema-red);
-            color: var(--cinema-red);
-        }
+            .message.error {
+                background: rgba(220, 38, 38, 0.1);
+                border: 1px solid var(--cinema-red);
+                color: var(--cinema-red);
+            }
 
         /* Force Dark Theme - Override Light Mode */
         body[data-bs-theme="light"],
@@ -654,217 +652,217 @@
             background: linear-gradient(135deg, var(--cinema-darker) 0%, var(--cinema-dark) 50%, #1a1a1a 100%) !important;
             color: var(--text-light) !important;
         }
-        
-        /* Override any Bootstrap light theme styles */
-        body[data-bs-theme="light"] *,
-        body:not(.dark-mode) * {
-            color: inherit !important;
-        }
 
-        body[data-bs-theme="light"] .cinema-header {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
-            border-bottom: 1px solid var(--glass-border) !important;
-        }
+            /* Override any Bootstrap light theme styles */
+            body[data-bs-theme="light"] *,
+            body:not(.dark-mode) * {
+                color: inherit !important;
+            }
 
-        body[data-bs-theme="light"] .cinema-title {
-            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
+            body[data-bs-theme="light"] .cinema-header {
+                background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
+                border-bottom: 1px solid var(--glass-border) !important;
+            }
 
-        body[data-bs-theme="light"] .cinema-subtitle {
-            color: var(--text-muted) !important;
-        }
+            body[data-bs-theme="light"] .cinema-title {
+                background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
+                -webkit-background-clip: text !important;
+                -webkit-text-fill-color: transparent !important;
+                background-clip: text !important;
+            }
 
-        body[data-bs-theme="light"] .glass-section {
-            background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border) !important;
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .cinema-subtitle {
+                color: var(--text-muted) !important;
+            }
 
-        body[data-bs-theme="light"] .section-title {
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .glass-section {
+                background: var(--glass-bg) !important;
+                border: 1px solid var(--glass-border) !important;
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .info-label {
-            color: var(--text-muted) !important;
-        }
+            body[data-bs-theme="light"] .section-title {
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .info-value {
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .info-label {
+                color: var(--text-muted) !important;
+            }
 
-        body[data-bs-theme="light"] .control-label {
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .info-value {
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .form-control {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid var(--glass-border) !important;
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .control-label {
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .form-control:focus {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-color: var(--cinema-gold) !important;
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .form-control {
+                background: rgba(255, 255, 255, 0.05) !important;
+                border: 1px solid var(--glass-border) !important;
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .price-label {
-            color: var(--text-muted) !important;
-        }
+                body[data-bs-theme="light"] .form-control:focus {
+                    background: rgba(255, 255, 255, 0.08) !important;
+                    border-color: var(--cinema-gold) !important;
+                    color: var(--text-light) !important;
+                }
 
-        body[data-bs-theme="light"] .price-value {
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .price-label {
+                color: var(--text-muted) !important;
+            }
 
-        body[data-bs-theme="light"] .modal-content {
-            background: var(--cinema-dark) !important;
-            border: 1px solid var(--glass-border) !important;
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .price-value {
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .modal-body {
-            background: var(--cinema-dark) !important;
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .modal-content {
+                background: var(--cinema-dark) !important;
+                border: 1px solid var(--glass-border) !important;
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .voucher-card {
-            background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border) !important;
-            color: var(--text-light) !important;
-        }
+            body[data-bs-theme="light"] .modal-body {
+                background: var(--cinema-dark) !important;
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .voucher-card:hover {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-color: var(--cinema-gold) !important;
-        }
+            body[data-bs-theme="light"] .voucher-card {
+                background: var(--glass-bg) !important;
+                border: 1px solid var(--glass-border) !important;
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .voucher-code {
-            color: var(--text-light) !important;
-        }
+                body[data-bs-theme="light"] .voucher-card:hover {
+                    background: rgba(255, 255, 255, 0.08) !important;
+                    border-color: var(--cinema-gold) !important;
+                }
 
-        body[data-bs-theme="light"] .voucher-expiry {
-            color: var(--text-muted) !important;
-        }
+            body[data-bs-theme="light"] .voucher-code {
+                color: var(--text-light) !important;
+            }
 
-        body[data-bs-theme="light"] .empty-state {
-            color: var(--text-muted) !important;
-        }
+            body[data-bs-theme="light"] .voucher-expiry {
+                color: var(--text-muted) !important;
+            }
 
-        body[data-bs-theme="light"] .message.success {
-            background: rgba(5, 150, 105, 0.1) !important;
-            border: 1px solid var(--cinema-green) !important;
-            color: var(--cinema-green) !important;
-        }
+            body[data-bs-theme="light"] .empty-state {
+                color: var(--text-muted) !important;
+            }
 
-        body[data-bs-theme="light"] .message.error {
-            background: rgba(220, 38, 38, 0.1) !important;
-            border: 1px solid var(--cinema-red) !important;
-            color: var(--cinema-red) !important;
-        }
-        
-        /* Additional overrides for light mode */
-        body[data-bs-theme="light"] .booking-container,
-        body:not(.dark-mode) .booking-container {
-            background: transparent !important;
-        }
-        
-        body[data-bs-theme="light"] .item-row,
-        body:not(.dark-mode) .item-row {
-            background: rgba(255, 255, 255, 0.03) !important;
-            border: 1px solid rgba(255, 255, 255, 0.05) !important;
-            color: var(--text-light) !important;
-        }
-        
-        body[data-bs-theme="light"] .item-row:hover,
-        body:not(.dark-mode) .item-row:hover {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border-color: rgba(255, 215, 0, 0.3) !important;
-        }
-        
-        body[data-bs-theme="light"] .price-breakdown,
-        body:not(.dark-mode) .price-breakdown {
-            background: rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        body[data-bs-theme="light"] .price-row,
-        body:not(.dark-mode) .price-row {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        body[data-bs-theme="light"] .totals-row,
-        body:not(.dark-mode) .totals-row {
-            background: rgba(255, 255, 255, 0.03) !important;
-        }
-        
-        body[data-bs-theme="light"] .current-points-display,
-        body:not(.dark-mode) .current-points-display {
-            background: rgba(255, 215, 0, 0.1) !important;
-            border: 1px solid rgba(255, 215, 0, 0.3) !important;
-        }
-        
-        body[data-bs-theme="light"] .selected-voucher,
-        body:not(.dark-mode) .selected-voucher {
-            background: rgba(5, 150, 105, 0.1) !important;
-            border: 1px solid var(--cinema-green) !important;
-        }
-        
-        /* Override any potential Bootstrap container styles */
-        body[data-bs-theme="light"] .container,
-        body[data-bs-theme="light"] .container-fluid,
-        body:not(.dark-mode) .container,
-        body:not(.dark-mode) .container-fluid {
-            background: transparent !important;
-        }
-        
-        /* Force all text to be light colored */
-        body[data-bs-theme="light"] h1,
-        body[data-bs-theme="light"] h2,
-        body[data-bs-theme="light"] h3,
-        body[data-bs-theme="light"] h4,
-        body[data-bs-theme="light"] h5,
-        body[data-bs-theme="light"] h6,
-        body[data-bs-theme="light"] p,
-        body[data-bs-theme="light"] span,
-        body[data-bs-theme="light"] div,
-        body:not(.dark-mode) h1,
-        body:not(.dark-mode) h2,
-        body:not(.dark-mode) h3,
-        body:not(.dark-mode) h4,
-        body:not(.dark-mode) h5,
-        body:not(.dark-mode) h6,
-        body:not(.dark-mode) p,
-        body:not(.dark-mode) span,
-        body:not(.dark-mode) div {
-            color: var(--text-light) !important;
-        }
-        
-        /* Exception for specific elements that should keep their colors */
-        body[data-bs-theme="light"] .cinema-title,
-        body:not(.dark-mode) .cinema-title {
-            background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
-        
-        body[data-bs-theme="light"] .points-badge,
-        body:not(.dark-mode) .points-badge {
-            background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%) !important;
-            color: var(--cinema-dark) !important;
-        }
-        
-        body[data-bs-theme="light"] .current-price,
-        body:not(.dark-mode) .current-price {
-            color: var(--cinema-green) !important;
-        }
-        
-        body[data-bs-theme="light"] .total-value,
-        body:not(.dark-mode) .total-value {
-            color: var(--cinema-gold) !important;
-        }
+            body[data-bs-theme="light"] .message.success {
+                background: rgba(5, 150, 105, 0.1) !important;
+                border: 1px solid var(--cinema-green) !important;
+                color: var(--cinema-green) !important;
+            }
+
+            body[data-bs-theme="light"] .message.error {
+                background: rgba(220, 38, 38, 0.1) !important;
+                border: 1px solid var(--cinema-red) !important;
+                color: var(--cinema-red) !important;
+            }
+
+            /* Additional overrides for light mode */
+            body[data-bs-theme="light"] .booking-container,
+            body:not(.dark-mode) .booking-container {
+                background: transparent !important;
+            }
+
+            body[data-bs-theme="light"] .item-row,
+            body:not(.dark-mode) .item-row {
+                background: rgba(255, 255, 255, 0.03) !important;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                color: var(--text-light) !important;
+            }
+
+                body[data-bs-theme="light"] .item-row:hover,
+                body:not(.dark-mode) .item-row:hover {
+                    background: rgba(255, 255, 255, 0.05) !important;
+                    border-color: rgba(255, 215, 0, 0.3) !important;
+                }
+
+            body[data-bs-theme="light"] .price-breakdown,
+            body:not(.dark-mode) .price-breakdown {
+                background: rgba(0, 0, 0, 0.3) !important;
+            }
+
+            body[data-bs-theme="light"] .price-row,
+            body:not(.dark-mode) .price-row {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            }
+
+            body[data-bs-theme="light"] .totals-row,
+            body:not(.dark-mode) .totals-row {
+                background: rgba(255, 255, 255, 0.03) !important;
+            }
+
+            body[data-bs-theme="light"] .current-points-display,
+            body:not(.dark-mode) .current-points-display {
+                background: rgba(255, 215, 0, 0.1) !important;
+                border: 1px solid rgba(255, 215, 0, 0.3) !important;
+            }
+
+            body[data-bs-theme="light"] .selected-voucher,
+            body:not(.dark-mode) .selected-voucher {
+                background: rgba(5, 150, 105, 0.1) !important;
+                border: 1px solid var(--cinema-green) !important;
+            }
+
+            /* Override any potential Bootstrap container styles */
+            body[data-bs-theme="light"] .container,
+            body[data-bs-theme="light"] .container-fluid,
+            body:not(.dark-mode) .container,
+            body:not(.dark-mode) .container-fluid {
+                background: transparent !important;
+            }
+
+            /* Force all text to be light colored */
+            body[data-bs-theme="light"] h1,
+            body[data-bs-theme="light"] h2,
+            body[data-bs-theme="light"] h3,
+            body[data-bs-theme="light"] h4,
+            body[data-bs-theme="light"] h5,
+            body[data-bs-theme="light"] h6,
+            body[data-bs-theme="light"] p,
+            body[data-bs-theme="light"] span,
+            body[data-bs-theme="light"] div,
+            body:not(.dark-mode) h1,
+            body:not(.dark-mode) h2,
+            body:not(.dark-mode) h3,
+            body:not(.dark-mode) h4,
+            body:not(.dark-mode) h5,
+            body:not(.dark-mode) h6,
+            body:not(.dark-mode) p,
+            body:not(.dark-mode) span,
+            body:not(.dark-mode) div {
+                color: var(--text-light) !important;
+            }
+
+            /* Exception for specific elements that should keep their colors */
+            body[data-bs-theme="light"] .cinema-title,
+            body:not(.dark-mode) .cinema-title {
+                background: linear-gradient(135deg, var(--cinema-gold) 0%, #fff 50%, var(--cinema-gold) 100%) !important;
+                -webkit-background-clip: text !important;
+                -webkit-text-fill-color: transparent !important;
+                background-clip: text !important;
+            }
+
+            body[data-bs-theme="light"] .points-badge,
+            body:not(.dark-mode) .points-badge {
+                background: linear-gradient(135deg, var(--cinema-gold) 0%, var(--cinema-gold-dark) 100%) !important;
+                color: var(--cinema-dark) !important;
+            }
+
+            body[data-bs-theme="light"] .current-price,
+            body:not(.dark-mode) .current-price {
+                color: var(--cinema-green) !important;
+            }
+
+            body[data-bs-theme="light"] .total-value,
+            body:not(.dark-mode) .total-value {
+                color: var(--cinema-gold) !important;
+            }
 
         /* Responsive Design */
         @@media (max-width: 1200px) {
@@ -872,7 +870,7 @@
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
             }
-            
+
             .payment-grid {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
@@ -883,25 +881,25 @@
             .cinema-title {
                 font-size: 2rem;
             }
-            
+
             .booking-container {
                 padding: 0 1rem;
             }
-            
+
             .glass-section {
                 padding: 1.5rem;
             }
-            
+
             .info-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .section-icon {
                 width: 40px;
                 height: 40px;
                 font-size: 1.2rem;
             }
-            
+
             .section-title {
                 font-size: 1.2rem;
             }
@@ -919,8 +917,13 @@
         }
 
         @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Empty State */
@@ -930,15 +933,15 @@
             color: var(--text-muted);
         }
 
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
+            .empty-state i {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                opacity: 0.5;
+            }
     </style>
 </head>
 <body>
-    
+
     <!-- Header -->
     <div class="cinema-header">
         <div class="container-fluid">
@@ -947,7 +950,7 @@
                     <h1 class="cinema-title">🎬 Confirm Your Booking</h1>
                     <p class="cinema-subtitle">Review your selection and complete your purchase</p>
                 </div>
-                <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })" 
+                <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })"
                    class="back-btn">
                     <i class="fas fa-arrow-left me-2"></i>Back to Seats
                 </a>
@@ -968,7 +971,7 @@
                         </div>
                         <h3 class="section-title">Movie & Show Details</h3>
                     </div>
-                    
+
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="info-label">Movie</div>
@@ -997,7 +1000,7 @@
                         </div>
                         <h3 class="section-title">Customer Information</h3>
                     </div>
-                    
+
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="info-label">Full Name</div>
@@ -1035,7 +1038,7 @@
                         </div>
                         <h3 class="section-title">Selected Seats</h3>
                     </div>
-                    
+
                     <div class="item-list">
                         @foreach (var seat in Model.SelectedSeats)
                         {
@@ -1064,7 +1067,7 @@
                             </div>
                         }
                     </div>
-                    
+
                     <div class="totals-row">
                         <div class="total-label">Seats Total</div>
                         <div class="total-amount">@Model.Subtotal.ToString("N0") VND</div>
@@ -1079,7 +1082,7 @@
                         </div>
                         <h3 class="section-title">Food & Drinks</h3>
                     </div>
-                    
+
                     @if (Model.SelectedFoods != null && Model.SelectedFoods.Any())
                     {
                         <div class="item-list">
@@ -1116,7 +1119,7 @@
                                 </div>
                             }
                         </div>
-                        
+
                         <div class="totals-row">
                             <div class="total-label">Food & Drinks Total</div>
                             <div class="total-amount">@Model.TotalFoodPrice.ToString("N0") VND</div>
@@ -1164,7 +1167,7 @@
                             </div>
                         </div>
                         <div class="input-group">
-                            <input asp-for="UseScore" type="number" class="form-control" 
+                            <input asp-for="UseScore" type="number" class="form-control"
                                    id="useScore" min="0" value="0" placeholder="0" />
                             <span class="input-group-text">pts</span>
                         </div>
@@ -1219,7 +1222,7 @@
                             <span class="price-label">Points Used:</span>
                             <span class="discount-value" id="pointsUsedDisplay"></span>
                         </div>
-                        
+
                         <div class="price-row total">
                             <span class="price-label">Total Price:</span>
                             <span class="total-value" id="totalPriceDisplay">@Model.TotalPrice.ToString("N0") VND</span>
@@ -1249,13 +1252,13 @@
                 @Html.HiddenFor(m => m.AddScore)
                 @Html.HiddenFor(m => m.TotalFoodPrice)
                 @Html.HiddenFor(m => m.EarningRate)
-                
+
                 <input type="hidden" name="UseScore" id="hiddenUseScore" value="0" />
                 <input type="hidden" name="IsTestSuccess" id="isTestSuccess" value="false" />
                 <input type="hidden" name="SelectedVoucherId" id="hiddenVoucherId" />
                 <input type="hidden" name="VoucherAmount" id="hiddenVoucherAmount" value="@Model.VoucherAmount" />
                 <input type="hidden" name="SelectedPromotionId" id="hiddenPromotionId" />
-                
+
                 @for (int i = 0; i < Model.SelectedSeats.Count; i++)
                 {
                     <input type="hidden" name="SelectedSeats[@i].SeatName" value="@Model.SelectedSeats[i].SeatName" />
@@ -1263,7 +1266,7 @@
                     <input type="hidden" name="SelectedSeats[@i].Price" value="@Model.SelectedSeats[i].Price" />
                     <input type="hidden" name="SelectedSeats[@i].SeatId" value="@Model.SelectedSeats[i].SeatId" />
                 }
-                
+
                 @for (int i = 0; i < Model.SelectedFoods.Count; i++)
                 {
                     <input type="hidden" name="SelectedFoods[@i].FoodId" value="@Model.SelectedFoods[i].FoodId" />
@@ -1319,304 +1322,25 @@
         </div>
     </div>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/booking-confirm-styles.css" />
-}
+    @section Styles {
+        <link rel="stylesheet" href="~/css/booking-confirm-styles.css" />
+    }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // Use the correct seat price from Razor
-        var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var pointValue = 1000;
-        let voucherModalInstance = null;
-        let selectedVoucher = null;
-        let selectedPromotion = null;
-
-            // Voucher modal handlers
-            $('#openVoucherModalBtn').click(function () {
-                if (!voucherModalInstance) {
-                    voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
-                }
-                loadVouchers();
-                voucherModalInstance.show();
-            });
-
-            $('#clearVoucherBtn').click(function () {
-                selectedVoucher = null;
-                $('#selectedVoucherInfo').html('');
-                $('.voucher-card').removeClass('selected');
-                updatePriceFlow();
-                if (voucherModalInstance) voucherModalInstance.hide();
-            });
-
-            // Load vouchers function
-            function loadVouchers() {
-                $('#voucherListContainer').html('<div class="col-12 text-center"><div class="loading-spinner"></div><p class="mt-2">Loading vouchers...</p></div>');
-                
-                $.ajax({
-                    url: '/Voucher/GetAvailableVouchers',
-                    method: 'GET',
-                    success: function (data) {
-                        let html = '';
-                        if (data.length === 0) {
-                            html = '<div class="col-12"><div class="empty-state"><i class="fas fa-ticket-alt"></i><p>No available vouchers found.</p></div></div>';
-                        } else {
-                            data.forEach(v => {
-                                html += `
-                                <div class="col-md-6 mb-3">
-                                  <div class="voucher-card" data-id="${v.id}" data-value="${v.value}">
-                                    <div class="voucher-icon">
-                                      <i class="fas fa-ticket-alt"></i>
-                                    </div>
-                                    <div class="voucher-code">${v.code}</div>
-                                    <div class="voucher-value">${v.value.toLocaleString()} VND</div>
-                                    <div class="voucher-expiry">
-                                      <i class="fas fa-calendar-alt me-1"></i>
-                                      Expires: ${v.expirationDate}
-                                    </div>
-                                  </div>
-                                </div>`;
-                            });
-                        }
-                        $('#voucherListContainer').html(html);
-                        
-                        $('.voucher-card').click(function () {
-                            $('.voucher-card').removeClass('selected');
-                            $(this).addClass('selected');
-                            selectedVoucher = {
-                                id: $(this).data('id'),
-                                value: $(this).data('value')
-                            };
-                            renderSelectedVoucherInfo();
-                            updatePriceFlow();
-                            if (voucherModalInstance) voucherModalInstance.hide();
-                        });
-                    },
-                    error: function() {
-                        $('#voucherListContainer').html('<div class="col-12"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p class="text-danger">Error loading vouchers. Please try again.</p></div></div>');
-                    }
-                });
-            }
-
-            function renderSelectedVoucherInfo() {
-                if (selectedVoucher) {
-                    $('#selectedVoucherInfo').html(`
-                        <div class="selected-voucher">
-                            <div class="d-flex align-items-center flex-grow-1">
-                                <div class="voucher-icon-large me-3">
-                                    <i class="fas fa-ticket-alt text-success" style="font-size: 2rem;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold text-light mb-1" style="font-size: 1.1rem;">Selected Voucher</div>
-                                    <div class="voucher-code-display mb-2" style="font-size: 1.2rem; font-weight: 600; color: var(--cinema-gold);">${selectedVoucher.id}</div>
-                                    <div class="voucher-value-display" style="font-size: 1.3rem; font-weight: 700; color: var(--cinema-green);">${selectedVoucher.value.toLocaleString()} VND</div>
-                                </div>
-                            </div>
-                            <div class="voucher-actions">
-                                <button type="button" class="remove-voucher" title="Remove voucher">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `);
-                    
-                    $('.remove-voucher').off('click').on('click', function () {
-                        selectedVoucher = null;
-                        $('#selectedVoucherInfo').html('');
-                        $('.voucher-card').removeClass('selected');
-                        updatePriceFlow();
-                    });
-                } else {
-                    $('#selectedVoucherInfo').html('');
-                }
-            }
-
-            function updateMaxUsablePoints(discountedTotal) {
-                var maxPoints = Math.floor((discountedTotal * 0.9) / pointValue);
-                maxPoints = Math.min(maxPoints, currentScore);
-                
-                // Minimum points validation - must be at least 20 points
-                var minPoints = 20;
-                if (maxPoints < minPoints) {
-                    maxPoints = 0; // Cannot use points if max is less than minimum
-                }
-                
-                $('#maxUsablePoints').text(maxPoints + ' pts');
-                $('#useScore').attr('max', maxPoints);
-                $('#useScore').attr('min', maxPoints > 0 ? minPoints : 0);
-                return maxPoints;
-            }
-
-            function updatePriceFlow() {
-                var originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                var subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                var foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                
-                // Calculate discounts
-                var rankDiscountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                var rankDiscountAmount = Math.round(subtotal * (rankDiscountPercent / 100));
-                var afterRank = subtotal - rankDiscountAmount;
-                if (afterRank < 0) afterRank = 0;
-
-                var promotionPercent = selectedPromotion ? selectedPromotion.discountPercent : 0;
-                var promoDiscountAmount = Math.round(afterRank * (promotionPercent / 100));
-                var afterPromo = afterRank - promoDiscountAmount;
-                if (afterPromo < 0) afterPromo = 0;
-
-                var voucherAmount = selectedVoucher ? selectedVoucher.value : 0;
-                var afterVoucher = afterPromo - voucherAmount;
-                if (afterVoucher < 0) afterVoucher = 0;
-
-                var useScore = parseInt($('#useScore').val()) || 0;
-                var maxUsablePoints = updateMaxUsablePoints(afterVoucher);
-                var valid = true;
-
-                // Validate minimum points requirement
-                if (useScore > 0 && useScore < 20) {
-                    useScore = 0;
-                    $('#useScore').val(0);
-                    $('#pointValidation').html('<i class="fas fa-exclamation-triangle me-1"></i>Minimum points required: 20 points').show();
-                    valid = false;
-                }
-
-                if (useScore > maxUsablePoints) {
-                    useScore = maxUsablePoints;
-                    $('#useScore').val(useScore);
-                }
-
-                if (useScore < 0) useScore = 0;
-
-                var pointsValue = useScore * pointValue;
-                if (useScore > 0 && pointsValue > afterVoucher) {
-                    useScore = Math.floor(afterVoucher / pointValue);
-                    $('#useScore').val(useScore);
-                }
-
-                pointsValue = useScore * pointValue;
-                var seatFinal = afterVoucher - pointsValue;
-                if (seatFinal < 0) seatFinal = 0;
-
-                var finalTotal = seatFinal + parseInt(foodPrices);
-
-                // Update UI
-                $('#originalTotal').text(Number(originalTotal).toLocaleString() + ' VND');
-                $('#totalPriceDisplay').text(finalTotal.toLocaleString() + ' VND');
-
-                // Show/hide discount rows
-                if (rankDiscountPercent > 0) {
-                    $('#rankDiscountRow').show();
-                    $('#rankDiscountDisplay').text(`-${rankDiscountAmount.toLocaleString()} VND (${rankDiscountPercent}%)`);
-                } else {
-                    $('#rankDiscountRow').hide();
-                }
-
-                if (voucherAmount > 0) {
-                    $('#voucherDiscountRow').show();
-                    $('#voucherDiscountDisplay').text(`-${voucherAmount.toLocaleString()} VND`);
-                } else {
-                    $('#voucherDiscountRow').hide();
-                }
-
-                if (promotionPercent > 0) {
-                    $('#promotionDiscountRow').show();
-                    $('#promotionDiscountDisplay').text(`-${promoDiscountAmount.toLocaleString()} VND (${promotionPercent}%)`);
-                } else {
-                    $('#promotionDiscountRow').hide();
-                }
-
-                if (useScore > 0 && valid) {
-                    $('#pointsUsedRow').show();
-                    $('#pointsUsedDisplay').text(`-${(useScore * pointValue).toLocaleString()} VND`);
-                } else {
-                    $('#pointsUsedRow').hide();
-                }
-
-                // Points earning preview
-                var pointsToEarn = 0;
-                if (valid) {
-                    pointsToEarn = Math.round(seatFinal * earningRate / 100 / pointValue);
-                }
-                
-                if (pointsToEarn > 0) {
-                    $('#pointsEarnedPreview').html(`<i class="fas fa-star text-warning me-1"></i>You will earn <strong>${pointsToEarn}</strong> point${pointsToEarn === 1 ? '' : 's'} from this transaction`).show();
-                } else {
-                    $('#pointsEarnedPreview').hide();
-                }
-
-                // Savings display
-                if (valid && useScore > 0) {
-                    var savings = useScore * pointValue;
-                    $('#pointSavings').html(`<i class="fas fa-piggy-bank me-1"></i>Using <strong>${useScore}</strong> points saves you <strong>${savings.toLocaleString()} VND</strong>`).show();
-                } else {
-                    $('#pointSavings').hide();
-                }
-
-                // Update hidden fields
-                $('#confirmBtn').prop('disabled', !valid);
-                $('#hiddenUseScore').val(valid ? useScore : 0);
-                $('#hiddenVoucherId').val(selectedVoucher ? selectedVoucher.id : '');
-                $('#hiddenVoucherAmount').val(selectedVoucher ? selectedVoucher.value : 0);
-                $('#hiddenPromotionId').val(selectedPromotion ? selectedPromotion.id : '');
-            }
-
-            $('#useScore').on('input', function () {
-                var max = parseInt($(this).attr('max')) || 0;
-                var min = parseInt($(this).attr('min')) || 0;
-                var val = parseInt($(this).val()) || 0;
-                
-                // Validate minimum points (20 points)
-                if (val > 0 && val < 20) {
-                    $('#pointValidation').html('<i class="fas fa-exclamation-triangle me-1"></i>Minimum points required: 20 points').show();
-                    $('#confirmBtn').prop('disabled', true);
-                    return;
-                } else {
-                    $('#pointValidation').hide();
-                }
-                
-                // Validate maximum points
-                if (val > max) {
-                    $(this).val(max);
-                    val = max;
-                }
-                
-                // Clear validation if value is valid
-                if (val === 0 || (val >= 20 && val <= max)) {
-                    $('#pointValidation').hide();
-                    $('#confirmBtn').prop('disabled', false);
-                }
-                
-                updatePriceFlow();
-            });
-
-            $('#confirmBtn').on('click', function(e) {
-                $(this).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...').prop('disabled', true);
-                updatePriceFlow();
-            });
-
-            // Initialize
-            updatePriceFlow();
-        });
-
-        function testSuccess() {
-            var useScoreInput = document.getElementById('useScore');
-            var hiddenUseScore = document.getElementById('hiddenUseScore');
-            var isTestSuccess = document.getElementById('isTestSuccess');
-            
-            if (useScoreInput && hiddenUseScore) {
-                hiddenUseScore.value = useScoreInput.value || 0;
-            }
-            
-            if (isTestSuccess) {
-                isTestSuccess.value = "true";
-            }
-            
-            document.querySelector('form[method="post"]').submit();
-        }
+    <!-- Pass data from Razor to JavaScript -->
+    <script>
+        // Set global variables for the JavaScript file to use
+        window.originalTotal = @seatPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        window.foodPrices = @Model.TotalFoodPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        window.discountPercent = @Model.RankDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        window.earningRate = @Model.EarningRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        window.currentScore = @Model.CurrentScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        window.subtotal = @Model.Subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
     </script>
+
+    <!-- Include the JavaScript file -->
+    <script src="~/js/confirm-booking.js" asp-append-version="true"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+
 </body>
 </html>

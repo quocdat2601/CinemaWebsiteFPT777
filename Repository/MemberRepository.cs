@@ -17,7 +17,6 @@ namespace MovieTheater.Repository
         {
             return _context.Members
                 .Include(m => m.Account)
-                .Where(m => m.Account != null && m.Account.Status == 1)
                 .ToList();
         }
 
