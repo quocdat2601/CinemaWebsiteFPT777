@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
+using MovieTheater.Service;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -13,6 +14,7 @@ namespace MovieTheater.Controllers
     {
         private readonly MovieTheaterContext _context;
         private readonly ILogger<CassoWebhookController> _logger;
+        private readonly IInvoiceService _invoiceService;
         private const string SECURE_TOKEN = "AK_CS.0eafb1406d2811f0b7f9c39f1519547d.SgAfzKpqf62yKUOnIl5qG4z4heJhXAy0oo5UtfrcSBEaMKmzGcz2w56HEyGF1e9xqwiAWqwB";
 
         // Constants from PHP sample
@@ -26,10 +28,11 @@ namespace MovieTheater.Controllers
         private const int MAX_PROCESSING_TIME_SECONDS = 60;
         private const int MAX_WEBHOOK_SIZE_BYTES = 1024 * 1024; // 1MB
 
-        public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger)
+        public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger, IInvoiceService invoiceService)
         {
             _context = context;
             _logger = logger;
+            _invoiceService = invoiceService;
         }
 
         [HttpPost]
@@ -249,7 +252,7 @@ namespace MovieTheater.Controllers
                     await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
-                    await UpdateSeatStatusToBooked(invoice, cts.Token);
+                    await UpdateSeatStatusToBooked(invoice);
                     
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Đã thanh toán.", orderNote);
                 }
@@ -259,7 +262,7 @@ namespace MovieTheater.Controllers
                     await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
-                    await UpdateSeatStatusToBooked(invoice, cts.Token);
+                    await UpdateSeatStatusToBooked(invoice);
                     
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán dư.", orderNote);
                 }
@@ -340,6 +343,33 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Error in test payment");
                 return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật trạng thái invoice khi thanh toán thành công
+        /// </summary>
+        private async Task UpdateInvoiceStatus(string invoiceId, InvoiceStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var invoice = _invoiceService.GetById(invoiceId);
+                if (invoice == null)
+                {
+                    _logger.LogWarning("Invoice {InvoiceId} not found", invoiceId);
+                    return;
+                }
+
+                invoice.Status = status;
+                _invoiceService.Update(invoice);
+                _invoiceService.Save();
+                
+                _logger.LogInformation("Successfully updated invoice {InvoiceId} status to {Status}", invoiceId, status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating invoice {InvoiceId} status to {Status}", invoiceId, status);
+                throw;
             }
         }
 
