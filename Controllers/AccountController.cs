@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -43,7 +44,6 @@ namespace MovieTheater.Controllers
             _logger = logger;
             _accountRepository = accountRepository;
             _jwtService = jwtService;
-            _employeeService = employeeService;
         }
 
         [HttpGet]
@@ -395,6 +395,41 @@ namespace MovieTheater.Controllers
                 ModelState.AddModelError("", "Không thể đặt lại mật khẩu. Vui lòng thử lại sau.");
                 return View(model);
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public IActionResult ToggleStatus(string id)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(id))
+                {
+                    TempData["ErrorMessage"] = "Invalid Account ID.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                }
+
+                var account = _service.GetById(id);
+                if (account == null)
+                {
+                    TempData["ErrorMessage"] = "Member not found.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                }
+
+                _service.ToggleStatus(id);
+                TempData["ToastMessage"] = "Member status updated successfully!";
+                return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+            }
+            catch (ArgumentException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
+            }
+            return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
         }
     }
 }

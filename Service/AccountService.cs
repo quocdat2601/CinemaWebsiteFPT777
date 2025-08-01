@@ -125,10 +125,6 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            if (model.Status.HasValue)
-            {
-                account.Status = model.Status;
-            }
 
             if (model.ImageFile != null && model.ImageFile.Length > 0)
             {
@@ -663,6 +659,11 @@ namespace MovieTheater.Service
         {
             var random = new Random();
             return random.Next(100000, 999999).ToString();
+        }
+
+        public void ToggleStatus(string accountId)
+        {
+            _repository.ToggleStatus(accountId);
         }
     }
 }

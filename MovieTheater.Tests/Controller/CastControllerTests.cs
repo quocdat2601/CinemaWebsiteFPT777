@@ -150,7 +150,7 @@ namespace MovieTheater.Tests.Controller
 
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
 
             _mockPersonRepository.Verify(r => r.Add(It.IsAny<Person>()), Times.Once());
@@ -189,7 +189,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
 
             _mockPersonRepository.Verify(r => r.Add(It.Is<Person>(p => p.Image == "/image/default-movie.png")), Times.Once());
@@ -376,7 +376,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
 
             _mockPersonRepository.Verify(r => r.Update(It.Is<Person>(p =>
@@ -424,7 +424,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
 
             // Verify that the image path remains the same as the existing one
@@ -613,7 +613,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
             Assert.Equal("Cast deleted successfully!", controller.TempData["ToastMessage"]);
 
@@ -636,7 +636,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
             Assert.Equal("Cast not found.", controller.TempData["ErrorMessage"]);
 
@@ -663,7 +663,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
             Assert.Contains($"Cannot delete {cast.Name} because they are associated with {movies.Count()} movie(s).", controller.TempData["ErrorMessage"].ToString());
 
@@ -689,7 +689,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
             Assert.Contains("An error occurred during deletion:", controller.TempData["ErrorMessage"].ToString());
 

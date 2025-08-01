@@ -671,9 +671,9 @@ namespace MovieTheater.Controllers
                     ms.MovieShowId,
                     ms.MovieId,
                     showDate = ms.ShowDate.ToString("yyyy-MM-dd"),
-                    ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
-                    VersionName = ms.Version?.VersionName,
-                    VersionId = ms.VersionId,
+                    scheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
+                    versionName = ms.Version?.VersionName,
+                    versionId = ms.VersionId,
                     CinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1, // Include room status for backward compatibility
                     IsAvailable = true // Since GetMovieShowsByMovieId already filters, all returned shows are available
                 }).ToList();

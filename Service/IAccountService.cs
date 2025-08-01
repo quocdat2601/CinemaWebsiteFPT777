@@ -33,5 +33,6 @@ namespace MovieTheater.Service
         bool VerifyForgetPasswordOtp(string email, string otp);
         bool ResetPassword(string email, string newPassword);
         Account? GetAccountByEmail(string email);
+        public void ToggleStatus(string accountId);
     }
 }

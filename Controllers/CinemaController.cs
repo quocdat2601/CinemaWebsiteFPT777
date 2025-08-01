@@ -422,7 +422,7 @@ namespace MovieTheater.Controllers
         {
             // Get all non-cancelled invoices for this show
             var invoices = _movieService.GetInvoicesByMovieShow(movieShowId)
-                .Where(i => !i.Cancel) // Only not-cancelled invoices
+                .Where(i => !i.Cancel && i.Status == InvoiceStatus.Completed)
                 .Select(i => i.InvoiceId)
                 .ToList();
 
