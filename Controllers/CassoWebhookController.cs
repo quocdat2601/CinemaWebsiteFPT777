@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
+using MovieTheater.Service;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -12,6 +14,7 @@ namespace MovieTheater.Controllers
     {
         private readonly MovieTheaterContext _context;
         private readonly ILogger<CassoWebhookController> _logger;
+        private readonly IInvoiceService _invoiceService;
         private const string SECURE_TOKEN = "AK_CS.0eafb1406d2811f0b7f9c39f1519547d.SgAfzKpqf62yKUOnIl5qG4z4heJhXAy0oo5UtfrcSBEaMKmzGcz2w56HEyGF1e9xqwiAWqwB";
 
         // Constants from PHP sample
@@ -19,18 +22,40 @@ namespace MovieTheater.Controllers
         private const decimal ACCEPTABLE_DIFFERENCE = 10000m; // Số tiền chuyển thiếu tối đa mà hệ thống vẫn chấp nhận
         private const string MEMO_PREFIX = "DH"; // Tiền tố điền trước mã đơn hàng
         private const string HEADER_SECURE_TOKEN = "eogrBiWqaq"; // Key bảo mật từ PHP sample
+        
+        // Security constants
+        private const int DATABASE_TIMEOUT_SECONDS = 30;
+        private const int MAX_PROCESSING_TIME_SECONDS = 60;
+        private const int MAX_WEBHOOK_SIZE_BYTES = 1024 * 1024; // 1MB
 
-        public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger)
+        public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger, IInvoiceService invoiceService)
         {
             _context = context;
             _logger = logger;
+            _invoiceService = invoiceService;
         }
 
         [HttpPost]
         public async Task<IActionResult> HandleWebhook([FromBody] JsonElement body)
         {
+            var startTime = DateTime.UtcNow;
+            
             try
             {
+                // Security: Check request size
+                if (Request.ContentLength > MAX_WEBHOOK_SIZE_BYTES)
+                {
+                    _logger.LogWarning("Webhook request too large: {Size} bytes", Request.ContentLength);
+                    return BadRequest(new { error = 1, message = "Request too large" });
+                }
+
+                // Security: Check processing time
+                if ((DateTime.UtcNow - startTime).TotalSeconds > MAX_PROCESSING_TIME_SECONDS)
+                {
+                    _logger.LogWarning("Webhook processing timeout");
+                    return StatusCode(408, new { error = 1, message = "Request timeout" });
+                }
+
                 _logger.LogInformation("=== WEBHOOK DEBUG START ===");
                 _logger.LogInformation("Webhook received from Casso");
 
@@ -99,6 +124,9 @@ namespace MovieTheater.Controllers
         {
             try
             {
+                // Security: Set database timeout
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(DATABASE_TIMEOUT_SECONDS));
+                
                 // 1. Lấy id giao dịch từ Casso
                 var cassoId = item.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0;
                 // TẠM THỜI BỎ QUA CHECK NÀY ĐỂ TEST
@@ -108,15 +136,12 @@ namespace MovieTheater.Controllers
                 //     return;
                 // }
 
-                // 2. Lấy orderId từ description hoặc reference
-                // Đúng:
+                // 2. Lấy orderId từ reference trước, sau đó từ description
                 var description = item.TryGetProperty("description", out var descElement) ? descElement.GetString() : "";
                 var reference = item.TryGetProperty("reference", out var refElement) ? refElement.GetString() : "";
-                var orderId = ExtractOrderId(description);
-                if (string.IsNullOrEmpty(orderId) && !string.IsNullOrEmpty(reference))
-                {
-                    orderId = reference;
-                }
+                
+                // Ưu tiên sử dụng reference trước
+                var orderId = !string.IsNullOrEmpty(reference) ? reference : ExtractOrderId(description);
 
                 _logger.LogInformation("Processing transaction: CassoId={CassoId}, OrderId={OrderId}, Description={Description}", cassoId, orderId, description);
 
@@ -130,7 +155,9 @@ namespace MovieTheater.Controllers
                 var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == orderId) // Tìm chính xác
                     ?? _context.Invoices.FirstOrDefault(i => i.InvoiceId.ToString() == orderId) // Chuyển số thành chuỗi
                     ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId.ToString())) // Tìm trong chuỗi
-                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm theo thời gian gần nhất
+                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault() // Tìm theo thời gian gần nhất
+                    ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId)) // Tìm theo pattern linh hoạt hơn
+                    ?? _context.Invoices.Where(i => i.InvoiceId.Contains(orderId)).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm ngược lại
 
                 // Nếu vẫn không tìm thấy, thử tìm theo pattern từ description
                 if (invoice == null)
@@ -152,27 +179,35 @@ namespace MovieTheater.Controllers
                     if (paidAmount > 0) // Chỉ tìm nếu có số tiền hợp lệ
                     {
                         _logger.LogInformation("Trying to find invoice by amount: {Amount}", paidAmount);
+                        // Tìm theo số tiền chính xác
                         invoice = _context.Invoices
                             .Where(i => i.TotalMoney == paidAmount && i.Status != InvoiceStatus.Completed)
                             .OrderByDescending(i => i.BookingDate)
                             .FirstOrDefault();
+                        
+                        // Nếu không tìm thấy, tìm theo số tiền gần đúng (tolerance)
+                        if (invoice == null)
+                        {
+                            var tolerance = Math.Max(paidAmount * 0.1m, 1000m); // 10% hoặc 1000 VND
+                            invoice = _context.Invoices
+                                .Where(i => Math.Abs(i.TotalMoney.Value - paidAmount) <= tolerance && i.Status != InvoiceStatus.Completed)
+                                .OrderByDescending(i => i.BookingDate)
+                                .FirstOrDefault();
+                        }
+                        
+                        // Nếu vẫn không tìm thấy, tìm invoice gần nhất trong 24h
+                        if (invoice == null)
+                        {
+                            var recentTime = DateTime.Now.AddHours(-24);
+                            invoice = _context.Invoices
+                                .Where(i => i.BookingDate >= recentTime && i.Status != InvoiceStatus.Completed)
+                                .OrderByDescending(i => i.BookingDate)
+                                .FirstOrDefault();
+                        }
                     }
                 }
 
-                // Nếu vẫn không tìm thấy, thử tìm theo số tiền gần đúng (tolerance)
-                if (invoice == null)
-                {
-                    var paidAmountTolerance = item.TryGetProperty("amount", out var amountElement2) ? amountElement2.GetDecimal() : 0m;
-                    if (paidAmountTolerance > 0)
-                    {
-                        _logger.LogInformation("Trying to find invoice by amount with tolerance: {Amount}", paidAmountTolerance);
-                        var tolerance = Math.Max(paidAmountTolerance * 0.1m, 1000m); // 10% hoặc 1000 VND
-                        invoice = _context.Invoices
-                            .Where(i => Math.Abs(i.TotalMoney.Value - paidAmountTolerance) <= tolerance && i.Status != InvoiceStatus.Completed)
-                            .OrderByDescending(i => i.BookingDate)
-                            .FirstOrDefault();
-                    }
-                }
+
 
                 if (invoice == null)
                 {
@@ -214,23 +249,21 @@ namespace MovieTheater.Controllers
                 else if (paid <= expectedAmount + acceptableDifference)
                 {
                     // Thanh toán đủ
-                    invoice.Status = InvoiceStatus.Completed;
+                    await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
                     await UpdateSeatStatusToBooked(invoice);
                     
-                    _context.SaveChanges();
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Đã thanh toán.", orderNote);
                 }
                 else
                 {
                     // Thanh toán dư
-                    invoice.Status = InvoiceStatus.Completed;
+                    await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
                     
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
                     await UpdateSeatStatusToBooked(invoice);
                     
-                    _context.SaveChanges();
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán dư.", orderNote);
                 }
 
@@ -310,6 +343,33 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Error in test payment");
                 return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật trạng thái invoice khi thanh toán thành công
+        /// </summary>
+        private async Task UpdateInvoiceStatus(string invoiceId, InvoiceStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var invoice = _invoiceService.GetById(invoiceId);
+                if (invoice == null)
+                {
+                    _logger.LogWarning("Invoice {InvoiceId} not found", invoiceId);
+                    return;
+                }
+
+                invoice.Status = status;
+                _invoiceService.Update(invoice);
+                _invoiceService.Save();
+                
+                _logger.LogInformation("Successfully updated invoice {InvoiceId} status to {Status}", invoiceId, status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating invoice {InvoiceId} status to {Status}", invoiceId, status);
+                throw;
             }
         }
 

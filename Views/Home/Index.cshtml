@@ -34,6 +34,29 @@
 <link rel="stylesheet" href="~/css/booking-modal.css" />
 <link rel="stylesheet" href="~/css/booking-widget.css" />
 
+<style>
+    /* Ẩn nút learn more và thêm cursor pointer cho promotion card */
+    .promotion-actions {
+        display: none !important;
+    }
+    
+    .btn-learn-more {
+        display: none !important;
+    }
+    
+    .promotion-card {
+        cursor: pointer;
+    }
+    
+    .promotion-content {
+        cursor: pointer;
+    }
+    
+    .promotion-image {
+        cursor: pointer;
+    }
+</style>
+
 <!-- ===== HERO SECTION PLACEHOLDER ===== -->
 <!-- HERO SECTION (dùng SwiperJS) -->
 <section class="hero-section">
@@ -233,7 +256,12 @@
                     <div class="swiper-slide">
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
-                                <div class="hover-overlay"></div>
+                                <div class="hover-overlay">
+                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="detail-btn">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Detail</span>
+                                    </a>
+                                </div>
                                 <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge">HD</div>
                             </div>
@@ -317,7 +345,12 @@
                     <div class="swiper-slide">
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
-                                <div class="hover-overlay"></div>
+                                <div class="hover-overlay">
+                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="detail-btn">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Detail</span>
+                                    </a>
+                                </div>
                                 <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge coming-soon-badge">Soon</div>
                             </div>
@@ -403,26 +436,22 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="discount-badge">
-                                        <span>50% OFF</span>
-                                    </div>
+                                    @if (promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > 0)
+                                    {
+                                        <div class="discount-badge">
+                                            <span>@promo.DiscountLevel.Value% OFF</span>
+                                        </div>
+                                    }
                                 </div>
                                 
-                                <div class="promotion-content">
+                                <div class="promotion-content"
+                                     data-image="@promo.Image"
+                                     data-title="@promo.Title"
+                                     data-discount="@(promo.DiscountLevel?.ToString() ?? "0")% OFF"
+                                     data-detail="@promo.Detail"
+                                     data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
                                     <h3 class="promotion-title">@promo.Title</h3>
                                     <p class="promotion-description">@promo.Detail</p>
-                                    
-                                    <div class="promotion-actions">
-                                        <button class="btn-learn-more"
-                                            data-image="@promo.Image"
-                                            data-title="@promo.Title"
-                                            data-discount="@promo.DiscountLevel%"
-                                            data-detail="@promo.Detail"
-                                            data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
-                                            <i class="fas fa-info-circle"></i>
-                                            <span>Learn More</span>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -682,14 +711,16 @@ document.getElementById('promotionModalClose').onclick = closePromotionModal;
 document.getElementById('promotionModalOverlay').onclick = function(e) {
   if (e.target === this) closePromotionModal();
 };
-document.querySelectorAll('.btn-learn-more').forEach(btn => {
-  btn.addEventListener('click', function() {
+// Thêm click event cho promotion card (cả image và content)
+document.querySelectorAll('.promotion-card').forEach(card => {
+  card.addEventListener('click', function() {
+    const contentElement = this.querySelector('.promotion-content');
     openPromotionModal({
-      image: btn.dataset.image || '',
-      title: btn.dataset.title || '',
-      discount: btn.dataset.discount || '',
-      detail: btn.dataset.detail || '',
-      time: btn.dataset.time || ''
+      image: contentElement.dataset.image || '',
+      title: contentElement.dataset.title || '',
+      discount: contentElement.dataset.discount || '',
+      detail: contentElement.dataset.detail || '',
+      time: contentElement.dataset.time || ''
     });
   });
 });

@@ -25,6 +25,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Create()
         {
             return View(new FoodViewModel());
@@ -89,6 +90,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Edit(int id)
         {
             var food = await _foodService.GetByIdAsync(id);
@@ -107,6 +109,7 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Edit(FoodViewModel model)
         {
             if (ModelState.IsValid)
@@ -134,6 +137,7 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _foodService.DeleteAsync(id);
@@ -156,6 +160,7 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var result = await _foodService.ToggleStatusAsync(id);

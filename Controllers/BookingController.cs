@@ -45,7 +45,6 @@ namespace MovieTheater.Controllers
         public List<int> SelectedSeatIds { get; set; } = new List<int>();
     }
 
-    [Authorize]
     public class BookingController : Controller
     {
         private readonly IBookingService _bookingService;
@@ -113,6 +112,7 @@ namespace MovieTheater.Controllers
        /// <param name="movieShowId">Id của suất chiếu cụ thể.</param>
        /// <returns>View xác nhận đặt vé.</returns>
        [HttpGet]
+       [Authorize]
        public async Task<IActionResult> Information(string movieId, DateOnly showDate, string showTime, List<int>? selectedSeatIds, int movieShowId, List<int>? foodIds, List<int>? foodQtys)
        {
            if (selectedSeatIds == null || selectedSeatIds.Count == 0)
@@ -205,17 +205,18 @@ namespace MovieTheater.Controllers
            return View("ConfirmBooking", viewModel);
        }
 
-       /// <summary>
-       /// Xác nhận đặt vé (tính toán giá, lưu invoice, chuyển sang thanh toán)
-       /// </summary>
-       /// <remarks>url: /Booking/Confirm (POST)</remarks>
-       [HttpPost]
-       [ValidateAntiForgeryToken]
-       public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
-       {
-           var userId = _accountService.GetCurrentUser()?.AccountId;
-           if (userId == null)
-               return RedirectToAction("Login", "Account");
+        /// <summary>
+        /// Xác nhận đặt vé (tính toán giá, lưu invoice, chuyển sang thanh toán)
+        /// </summary>
+        /// <remarks>url: /Booking/Confirm (POST)</remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
+        {
+            var userId = _accountService.GetCurrentUser()?.AccountId;
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
 
            var result = await _bookingDomainService.ConfirmBookingAsync(model, userId, IsTestSuccess);
            Console.WriteLine($"[Controller] Model.SelectedVoucherId: {model.SelectedVoucherId}, Model.VoucherAmount: {model.VoucherAmount}");
@@ -239,16 +240,17 @@ namespace MovieTheater.Controllers
            }
        }
 
-       /// <summary>
-       /// Trang thông báo đặt vé thành công, cộng/trừ điểm
-       /// </summary>
-       /// <remarks>url: /Booking/Success (GET)</remarks>
-       [HttpGet]
-       public async Task<IActionResult> Success(string invoiceId)
-       {
-           var userId = _accountService.GetCurrentUser()?.AccountId;
-           if (userId == null)
-               return RedirectToAction("Login", "Account");
+        /// <summary>
+        /// Trang thông báo đặt vé thành công, cộng/trừ điểm
+        /// </summary>
+        /// <remarks>url: /Booking/Success (GET)</remarks>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Success(string invoiceId)
+        {
+            var userId = _accountService.GetCurrentUser()?.AccountId;
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
 
            // Mark voucher as used if present and not already used (for 0 VND transactions)
            var invoice = _invoiceService.GetById(invoiceId);
@@ -281,18 +283,19 @@ namespace MovieTheater.Controllers
            return View("Success", viewModel);
        }
 
-       /// <summary>
-       /// Trang thanh toán VNPay
-       /// </summary>
-       /// <remarks>url: /Booking/Payment (GET)</remarks>
-       [HttpGet]
-       public async Task<IActionResult> Payment(string invoiceId)
-       {
-           var invoice = _invoiceService.GetById(invoiceId);
-           if (invoice == null)
-           {
-               return NotFound();
-           }
+        /// <summary>
+        /// Trang thanh toán VNPay
+        /// </summary>
+        /// <remarks>url: /Booking/Payment (GET)</remarks>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Payment(string invoiceId)
+        {
+            var invoice = _invoiceService.GetById(invoiceId);
+            if (invoice == null)
+            {
+                return NotFound();
+            }
 
            // Redirect to Success if total is 0 (for 0 VND bookings)   
            if ((invoice.TotalMoney ?? 0) == 0)
@@ -406,20 +409,21 @@ namespace MovieTheater.Controllers
            return View("Payment", viewModel);
        }
 
-       /// <summary>
-       /// Xử lý tạo URL thanh toán VNPay
-       /// </summary>
-       /// <remarks>url: /Booking/ProcessPayment (POST)</remarks>
-       [HttpPost]
-       public IActionResult ProcessPayment(PaymentViewModel model)
-       {
-           try
-           {
-               var paymentUrl = _vnPayService.CreatePaymentUrl(
-                   (int)model.TotalAmount,
-                   model.OrderInfo,
-                   model.InvoiceId
-               );
+        /// <summary>
+        /// Xử lý tạo URL thanh toán VNPay
+        /// </summary>
+        /// <remarks>url: /Booking/ProcessPayment (POST)</remarks>
+        [HttpPost]
+        [Authorize]
+        public IActionResult ProcessPayment(PaymentViewModel model)
+        {
+            try
+            {
+                var paymentUrl = _vnPayService.CreatePaymentUrl(
+                    (int)model.TotalAmount,
+                    model.OrderInfo,
+                    model.InvoiceId
+                );
 
                return Redirect(paymentUrl);
            }
@@ -490,32 +494,33 @@ namespace MovieTheater.Controllers
            }
        }
 
-       /// <summary>
-       /// Trang thông báo thanh toán thất bại
-       /// </summary>
-       /// <remarks>url: /Booking/Failed (GET)</remarks>
-       [HttpGet]
-       public async Task<IActionResult> Failed()
-       {
-           var invoiceId = TempData["InvoiceId"] as string;
-           var userId = _accountService.GetCurrentUser()?.AccountId;
-           if (!string.IsNullOrEmpty(invoiceId) && userId != null)
-           {
-               var invoice = _invoiceService.GetById(invoiceId);
-               if (invoice != null && invoice.Status != InvoiceStatus.Incomplete)
-               {
-                   invoice.Status = InvoiceStatus.Incomplete;
-                   invoice.UseScore = 0;
-                   _context.Invoices.Update(invoice);
-                   _context.SaveChanges();
-               }
-               await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-               var viewModel = await _bookingDomainService.BuildSuccessViewModelAsync(invoiceId, userId);
-               return View(viewModel);
-           }
-           // Nếu không có invoiceId hoặc userId, truyền ViewModel rỗng để tránh null
-           return View(new BookingSuccessViewModel());
-       }
+        /// <summary>
+        /// Trang thông báo thanh toán thất bại
+        /// </summary>
+        /// <remarks>url: /Booking/Failed (GET)</remarks>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Failed()
+        {
+            var invoiceId = TempData["InvoiceId"] as string;
+            var userId = _accountService.GetCurrentUser()?.AccountId;
+            if (!string.IsNullOrEmpty(invoiceId) && userId != null)
+            {
+                var invoice = _invoiceService.GetById(invoiceId);
+                if (invoice != null && invoice.Status != InvoiceStatus.Incomplete)
+                {
+                    invoice.Status = InvoiceStatus.Incomplete;
+                    invoice.UseScore = 0;
+                    _context.Invoices.Update(invoice);
+                    _context.SaveChanges();
+                }
+                await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
+                var viewModel = await _bookingDomainService.BuildSuccessViewModelAsync(invoiceId, userId);
+                return View(viewModel);
+            }
+            // Nếu không có invoiceId hoặc userId, truyền ViewModel rỗng để tránh null
+            return View(new BookingSuccessViewModel());
+        }
 
        /// <summary>
        /// Trang xác nhận bán vé cho admin (chọn ghế, nhập member...)
@@ -709,48 +714,93 @@ namespace MovieTheater.Controllers
           return Json(members);
       }
 
-      /// <summary>
-      /// Khởi tạo bán vé cho member (admin)
-      /// </summary>
-      /// <remarks>url: /Booking/InitiateTicketSellingForMember/{id} (GET)</remarks>
-      [Authorize(Roles = "Admin, Employee")]
-      [HttpGet("Booking/InitiateTicketSellingForMember/{id}")]
-      public IActionResult InitiateTicketSellingForMember(string id)
-      {
-          // Store the member's AccountId in TempData to use in the ticket selling process
-          TempData["InitiateTicketSellingForMemberId"] = id;
-          string returnUrl;
-          if (role == "Admin")
-          {
-              returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
-          }
+        /// <summary>
+        /// Khởi tạo bán vé cho member (admin)
+        /// </summary>
+        /// <remarks>url: /Booking/InitiateTicketSellingForMember/{id} (GET)</remarks>
+        [Authorize(Roles = "Admin, Employee")]
+        [HttpGet("Booking/InitiateTicketSellingForMember/{id}")]
+        public IActionResult InitiateTicketSellingForMember(string id)
+        {
+            // Store the member's AccountId in TempData to use in the ticket selling process
+            TempData["InitiateTicketSellingForMemberId"] = id;
+            string returnUrl;
+            if (role == "Admin")
+            {
+                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            else
+            {
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+            }
+            return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl, isAdminSell = "true" });
+        }
 
-          else
-          {
-              returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
-          }
-          return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl });
-      }
+        /// <summary>
+        /// Trang booking cho admin/employee với Date, Version, Time selection (Quick Book)
+        /// </summary>
+        /// <remarks>url: /Booking/TicketBookingAdmin (GET)</remarks>
+        [Authorize(Roles = "Admin, Employee")]
+        [HttpGet]
+        public IActionResult TicketBookingAdmin(string returnUrl)
+        {
+            // Get all currently showing movies
+            var currentlyShowingMovies = _movieService.GetCurrentlyShowingMovies();
+            
+            var viewModel = new TicketBookingAdminViewModel
+            {
+                Movies = currentlyShowingMovies,
+                ReturnUrl = returnUrl
+            };
+            
+            return View(viewModel);
+        }
 
-      /// <summary>
-      /// Lấy discount và earning rate của member (admin)
-      /// </summary>
-      /// <remarks>url: /Booking/GetMemberDiscount (GET)</remarks>
-      [Authorize(Roles = "Admin, Employee")]
-      public IActionResult GetMemberDiscount(string memberId)
-      {
-          if (string.IsNullOrEmpty(memberId))
-              return Json(new { discountPercent = 0, earningRate = 0 });
-          var member = _memberRepository.GetByMemberId(memberId);
-          decimal discountPercent = 0;
-          decimal earningRate = 0;
-          if (member?.Account?.Rank != null)
-          {
-              discountPercent = member.Account.Rank.DiscountPercentage ?? 0;
-              earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
-          }
-          return Json(new { discountPercent, earningRate });
-      }
+        /// <summary>
+        /// Quick Book action cho admin/employee
+        /// </summary>
+        /// <remarks>url: /Booking/QuickBook (GET)</remarks>
+        [Authorize(Roles = "Admin, Employee")]
+        [HttpGet]
+        public IActionResult QuickBook()
+        {
+            string returnUrl;
+            if (role == "Admin")
+            {
+                returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            else
+            {
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+            }
+            return RedirectToAction("TicketBookingAdmin", "Booking", new { returnUrl = returnUrl });
+        }
+
+        /// <summary>
+        /// Lấy discount và earning rate của member (admin)
+        /// </summary>
+        /// <remarks>url: /Booking/GetMemberDiscount (GET)</remarks>
+        [Authorize(Roles = "Admin, Employee")]
+        public IActionResult GetMemberDiscount(string memberId)
+        {
+            if (string.IsNullOrEmpty(memberId))
+                return Json(new { discountPercent = 0, earningRate = 0 });
+            var member = _memberRepository.GetByMemberId(memberId);
+            decimal discountPercent = 0;
+            decimal earningRate = 0;
+            if (member?.Account?.Rank != null)
+            {
+                discountPercent = member.Account.Rank.DiscountPercentage ?? 0;
+                earningRate = member.Account.Rank.PointEarningPercentage ?? 0;
+                _logger.LogInformation("GetMemberDiscount: memberId={MemberId}, discountPercent={DiscountPercent}, earningRate={EarningRate}", 
+                    memberId, discountPercent, earningRate);
+            }
+            else
+            {
+                _logger.LogWarning("GetMemberDiscount: member or rank not found for memberId={MemberId}", memberId);
+            }
+            return Json(new { discountPercent, earningRate });
+        }
 
       /// <summary>
       /// Reload page với member đã chọn (admin)

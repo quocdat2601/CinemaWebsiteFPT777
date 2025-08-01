@@ -13,7 +13,6 @@ using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {//movie
-    [Authorize(Roles = "Admin,Employee")]
     public class MovieController : Controller
     {
         private readonly IMovieService _movieService;
@@ -156,6 +155,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/Create")]
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Create()
         {
             var model = new MovieDetailViewModel
@@ -173,6 +173,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Create")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Create(MovieDetailViewModel model)
         {
             if (!ModelState.IsValid)
@@ -340,6 +341,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/Edit/{id}")]
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Edit(string id)
         {
             var movie = _movieService.GetById(id);
@@ -383,6 +385,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Edit(string id, MovieDetailViewModel model)
         {
             if (id != model.MovieId)
@@ -605,6 +608,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Delete/{id}")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Delete(string id, IFormCollection collection)
         {
             try

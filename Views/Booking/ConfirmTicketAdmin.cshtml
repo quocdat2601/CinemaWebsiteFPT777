@@ -294,6 +294,21 @@
             <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Create QR Code</button>
         </div>
         <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
+        
+        <!-- Hidden inputs for missing properties -->
+        <input type="hidden" id="memberInput" value="@Model.MemberIdInput" />
+        <input type="hidden" id="memberEmail" value="@Model.MemberEmail" />
+        <input type="hidden" id="memberPhone" value="@Model.MemberPhone" />
+        <input type="hidden" id="ticketsToConvert" value="@Model.TicketsToConvert" />
+        <input type="hidden" id="discountFromScore" value="@Model.DiscountFromScore" />
+        <input type="hidden" id="addedScore" value="@Model.AddedScore" />
+        
+        <!-- Guest inputs -->
+        <input type="hidden" id="guestName" value="" />
+        <input type="hidden" id="guestPhone" value="" />
+        
+        <!-- Member message display -->
+        <div id="memberMessage" class="text-danger mt-2" style="display: none;"></div>
     </div>
 </div>
 

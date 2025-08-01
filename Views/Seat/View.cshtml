@@ -28,11 +28,35 @@
 
     var isAdminSell = Context.Request.Query["isAdminSell"] == "true";
 
-    string returnLink = isAdminSell
-
-        ? Url.Action("Select", "Showtime", new { area = "Admin" })
-
-                    : "/#booking-widget";
+    string returnLink;
+    if (isAdminSell)
+    {
+        // Nếu có returnUrl từ parameter thì dùng, không thì về trang trước đó
+        if (!string.IsNullOrEmpty(Model.ReturnUrl))
+        {
+            returnLink = Model.ReturnUrl;
+        }
+        else
+        {
+            // Default return về trang trước đó dựa trên role
+            if (User.IsInRole("Admin"))
+            {
+                returnLink = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+            }
+            else if (User.IsInRole("Employee"))
+            {
+                returnLink = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+            }
+            else
+            {
+                returnLink = Url.Action("Select", "Showtime", new { area = "Admin" });
+            }
+        }
+    }
+    else
+    {
+        returnLink = "/#booking-widget";
+    }
 
     var coupleSeatPairs = new Dictionary<int, int>();
 
