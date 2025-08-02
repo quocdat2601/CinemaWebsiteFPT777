@@ -278,7 +278,7 @@ namespace MovieTheater.Controllers
                 return Json(new OtpResponse { Success = false, Error = "Current password is incorrect." });
             }
 
-            _logger.LogInformation($"[SendOtp] accountId={user.AccountId}");
+            _logger.LogInformation("OTP send request initiated");
 
             var otp = new Random().Next(100000, 999999).ToString();
             var expiry = DateTime.UtcNow.AddMinutes(10);
@@ -305,7 +305,7 @@ namespace MovieTheater.Controllers
             if (user == null)
                 return Json(new { success = false, error = "User not found." });
 
-            _logger.LogInformation($"[VerifyOtp] accountId={user.AccountId}");
+            _logger.LogInformation("OTP verification request initiated");
 
             var receivedOtp = model?.Otp?.Trim();
             var otpValid = _service.VerifyOtp(user.AccountId, receivedOtp);

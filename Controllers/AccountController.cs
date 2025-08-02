@@ -77,9 +77,6 @@ namespace MovieTheater.Controllers
             // Refactor: Đẩy logic tạo user/member mới vào service
             var user = _service.GetOrCreateGoogleAccount(email, name, givenName, surname, picture);
 
-            // Log fields for debugging
-            _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
-
             // Refactor: Đẩy logic kiểm tra thông tin thiếu vào service
             bool missingInfo = _service.HasMissingProfileInfo(user);
             if (missingInfo)
@@ -193,23 +190,23 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
-                    _logger.LogWarning("Registration failed for username: {Username} at {Time}. Reason: Username already exists",
-                        model.Username, DateTime.UtcNow);
+                    _logger.LogWarning("Registration failed at {Time}. Reason: Username already exists",
+                        DateTime.UtcNow);
 
                     TempData[ERROR_MESSAGE] = "Registration failed - Username already exists";
                     return RedirectToAction(LOGIN_ACTION);
                 }
 
-                _logger.LogInformation("New account registered: {Username} at {Time}",
-                    model.Username, DateTime.UtcNow);
+                _logger.LogInformation("New account registered at {Time}",
+                    DateTime.UtcNow);
 
                 TempData[TOAST_MESSAGE] = "Sign up successful! Redirecting to log in..";
                 return RedirectToAction(LOGIN_ACTION);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception occurred during registration for {Username} at {Time}",
-                    model.Username, DateTime.UtcNow);
+                _logger.LogError(ex, "Exception occurred during registration at {Time}",
+                    DateTime.UtcNow);
 
                 TempData[ERROR_MESSAGE] = $"Error during registration: {ex.Message}";
                 if (ex.InnerException != null)

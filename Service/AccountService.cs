@@ -260,7 +260,7 @@ namespace MovieTheater.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error verifying password for user {username}: {ex.Message}");
+                _logger.LogError($"Error verifying password for user: {ex.Message}");
                 return false;
             }
         }
@@ -289,13 +289,13 @@ namespace MovieTheater.Service
                 var result = _emailService.SendEmail(toEmail, subject, body);
                 if (!result)
                 {
-                    _logger.LogError($"Failed to send OTP email to {toEmail}");
+                    _logger.LogError("Failed to send OTP email");
                 }
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while sending OTP email to {toEmail}: {ex.Message}");
+                _logger.LogError($"Exception while sending OTP email: {ex.Message}");
                 return false;
             }
         }
@@ -336,7 +336,7 @@ namespace MovieTheater.Service
             try
             {
                 _otpStore[accountId] = (otp, expiry);
-                _logger.LogInformation($"[StoreOtp] accountId={accountId}, otp={otp}, expiry={expiry}");
+                _logger.LogInformation("OTP stored successfully for account");
                 return true;
             }
             catch
@@ -356,7 +356,7 @@ namespace MovieTheater.Service
                 return false;
             }
 
-            _logger.LogInformation($"[VerifyOtp] accountId={{accountId}}, otp={{otp}}", accountId, otp);
+            _logger.LogInformation("OTP verification completed");
             return otpData.Otp == otp;
         }
 
@@ -532,7 +532,7 @@ namespace MovieTheater.Service
                 var account = _repository.GetAccountByEmail(email);
                 if (account == null)
                 {
-                    _logger.LogWarning($"Attempted to send OTP to non-existent email: {email}");
+                    _logger.LogWarning("Attempted to send OTP to non-existent email");
                     return false;
                 }
 
@@ -588,17 +588,17 @@ namespace MovieTheater.Service
                 var result = _emailService.SendEmail(email, subject, body);
                 if (result)
                 {
-                    _logger.LogInformation($"Forget password OTP sent successfully to {email}");
+                    _logger.LogInformation("Forget password OTP sent successfully");
                 }
                 else
                 {
-                    _logger.LogError($"Failed to send forget password OTP to {email}");
+                    _logger.LogError("Failed to send forget password OTP");
                 }
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while sending forget password OTP to {email}: {ex.Message}");
+                _logger.LogError($"Exception while sending forget password OTP: {ex.Message}");
                 return false;
             }
         }
@@ -617,11 +617,11 @@ namespace MovieTheater.Service
             var isValid = otpData.Otp == otp;
             if (isValid)
             {
-                _logger.LogInformation($"Forget password OTP verified successfully for {email}");
+                _logger.LogInformation("Forget password OTP verified successfully");
             }
             else
             {
-                _logger.LogWarning($"Invalid forget password OTP attempt for {email}");
+                _logger.LogWarning("Invalid forget password OTP attempt");
             }
             return isValid;
         }
@@ -633,7 +633,7 @@ namespace MovieTheater.Service
                 var account = _repository.GetAccountByEmail(email);
                 if (account == null)
                 {
-                    _logger.LogWarning($"Attempted to reset password for non-existent email: {email}");
+                    _logger.LogWarning("Attempted to reset password for non-existent email");
                     return false;
                 }
 
@@ -646,12 +646,12 @@ namespace MovieTheater.Service
                 // Clear OTP after successful password reset
                 _otpStore.TryRemove(email, out _);
 
-                _logger.LogInformation($"Password reset successfully for {email}");
+                _logger.LogInformation("Password reset successfully");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while resetting password for {email}: {ex.Message}");
+                _logger.LogError($"Exception while resetting password: {ex.Message}");
                 return false;
             }
         }
