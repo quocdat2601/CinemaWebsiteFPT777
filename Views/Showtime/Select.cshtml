@@ -118,51 +118,12 @@
     - All data is based on the ViewModel (active schedule, valid showtimes) (AC-05)
 --> 
 
+<!-- Pass data from Razor to JavaScript -->
 <script>
-    // Initialize flatpickr with dd/MM/yyyy format
-    flatpickr("#calendarInput", {
-        dateFormat: "d/m/Y",
-        defaultDate: "@Model.SelectedDate.ToString("dd/MM/yyyy")",
-        allowInput: true,
-        minDate: "today",
-        onChange: function(selectedDates, dateStr, instance) {
-            document.getElementById('dateNavForm').submit();
-        }
-    });
-
-    function getSelectedDate() {
-        // Get value in dd/MM/yyyy and parse
-        const val = document.getElementById('calendarInput').value;
-        const [d, m, y] = val.split('/');
-        return new Date(`${y}-${m}-${d}`);
-    }
-    function setSelectedDate(date) {
-        // Format as dd/MM/yyyy
-        const d = date.getDate().toString().padStart(2, '0');
-        const m = (date.getMonth() + 1).toString().padStart(2, '0');
-        const y = date.getFullYear();
-        const formatted = `${d}/${m}/${y}`;
-        document.getElementById('calendarInput')._flatpickr.setDate(formatted, true, "d/m/Y");
-        document.getElementById('dateNavForm').submit();
-    }
-
-    var prevDayBtn = document.getElementById('prevDayBtn');
-    if (prevDayBtn) {
-        prevDayBtn.addEventListener('click', function() {
-            const date = getSelectedDate();
-            date.setDate(date.getDate() - 1);
-            // Prevent going before today
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            if (date >= today) {
-                setSelectedDate(date);
-            }
-        });
-    }
-
-    document.getElementById('nextDayBtn').addEventListener('click', function() {
-        const date = getSelectedDate();
-        date.setDate(date.getDate() + 1);
-        setSelectedDate(date);
-    });
+    // Set global variables for the JavaScript file to use
+    window.selectedDate = '@Model.SelectedDate.ToString("dd/MM/yyyy")';
+    window.isAtToday = @isAtToday.ToString().ToLower();
 </script>
+
+<!-- Include the JavaScript file -->
+<script src="~/js/select.js" asp-append-version="true"></script>

@@ -68,6 +68,14 @@ body {
     overflow: hidden !important;
 }
 
+.ticket-warning {
+    border-radius: 30px !important;
+    padding: 1.5rem !important;
+    box-shadow: var(--shadow-primary) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
 .ticket-header-card::before {
     content: "" !important;
     position: absolute !important;
