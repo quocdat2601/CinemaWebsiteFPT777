@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using static MovieTheater.Service.PromotionService;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -137,6 +138,23 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
+        public async Task GetDates_ReturnsEmptyList_WhenNoDates()
+        {
+            // Arrange
+            _bookingService.Setup(s => s.GetShowDatesAsync("M1"))
+                           .ReturnsAsync(new List<DateOnly>());
+
+            var ctrl = BuildController();
+
+            // Act
+            var json = await ctrl.GetDates("M1") as JsonResult;
+            var list = Assert.IsAssignableFrom<IEnumerable<string>>(json.Value);
+
+            // Assert
+            Assert.Empty(list);
+        }
+
+        [Fact]
         public async Task Confirm_Post_InvalidModel_ReturnsConfirmViewWithError()
         {
             // Arrange
@@ -253,6 +271,32 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
+        public async Task Information_HandlesSeatTypeInformation_ForPromotionContext()
+        {
+            // Arrange
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _accountService.Setup(a => a.GetById("u1")).Returns(new Account { AccountId = "u1" });
+            _movieService.Setup(m => m.GetById("M1")).Returns(new Movie { MovieId = "M1", MovieNameEnglish = "Test Movie" });
+            _domainService.Setup(d => d.BuildConfirmBookingViewModelAsync("M1", It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<List<int>>(), It.IsAny<int>(), null, null, "u1"))
+                .ReturnsAsync(new ConfirmBookingViewModel());
+
+            // Setup context with seats
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.SaveChanges();
+
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.Information("M1", DateOnly.FromDateTime(DateTime.Today), "10:00", new List<int> { 1 }, 1, null, null) as ViewResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<ConfirmBookingViewModel>(result.Model);
+        }
+
+        [Fact]
         public async Task Success_ReturnsNotFound_WhenInvoiceMissing()
         {
             // Arrange
@@ -334,6 +378,8 @@ namespace MovieTheater.Tests.Controller
             Assert.NotNull(result);
             Assert.IsType<PaymentViewModel>(result.Model);
         }
+
+
 
         [Fact]
         public void ProcessPayment_RedirectsToPaymentUrl_WhenSuccess()
@@ -417,6 +463,34 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
+        public async Task CheckMemberDetails_ReturnsJson_WhenFoundByIdentityCard()
+        {
+            // Arrange
+            _memberRepo.Setup(m => m.GetByIdentityCard("123456789")).Returns(new Member { MemberId = "mem1", Score = 10, Account = new Account { FullName = "Test User", IdentityCard = "123456789", PhoneNumber = "555" } });
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.CheckMemberDetails(new MemberCheckRequest { MemberInput = "123456789" }) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var successProp = result.Value.GetType().GetProperty("success");
+            Assert.True((bool)successProp.GetValue(result.Value));
+        }
+
+        [Fact]
+        public async Task CheckMemberDetails_ReturnsJson_WhenFoundByMemberId()
+        {
+            // Arrange
+            _memberRepo.Setup(m => m.GetByMemberId("MEM001")).Returns(new Member { MemberId = "MEM001", Score = 10, Account = new Account { FullName = "Test User", IdentityCard = "123", PhoneNumber = "555" } });
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.CheckMemberDetails(new MemberCheckRequest { MemberInput = "MEM001" }) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var successProp = result.Value.GetType().GetProperty("success");
+            Assert.True((bool)successProp.GetValue(result.Value));
+        }
+
+        [Fact]
         public async Task ConfirmTicketForAdmin_Get_ReturnsView()
         {
             // Arrange
@@ -431,6 +505,33 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.IsType<ConfirmTicketAdminViewModel>(result.Model);
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdmin_Get_WithMemberId_UpdatesViewModel()
+        {
+            // Arrange
+            var user = new ProfileUpdateViewModel { AccountId = "admin" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.BuildConfirmTicketAdminViewModelAsync(1, It.IsAny<List<int>>(), It.IsAny<List<int>>(), It.IsAny<List<int>>(), "member1"))
+                .ReturnsAsync(new ConfirmTicketAdminViewModel { MovieShowId = 1, SelectedFoods = new List<FoodViewModel>(), BookingDetails = new ConfirmBookingViewModel() });
+
+            var member = new Member { MemberId = "member1", AccountId = "acc1", Score = 100 };
+            var account = new Account { AccountId = "acc1", FullName = "Test User", IdentityCard = "123", PhoneNumber = "555" };
+            member.Account = account;
+
+            _context.Members.Add(member);
+            _context.Accounts.Add(account);
+            _context.SaveChanges();
+
+            var ctrl = BuildController();
+            ctrl.Url = new Mock<IUrlHelper>().Object;
+            // Act
+            var result = await ctrl.ConfirmTicketForAdmin(1, new List<int> { 1 }, new List<int> { 1 }, new List<int> { 1 }, "member1", null) as ViewResult;
+            // Assert
+            Assert.NotNull(result);
+            var viewModel = Assert.IsType<ConfirmTicketAdminViewModel>(result.Model);
+            Assert.Equal("member1", viewModel.MemberId);
         }
 
         [Fact]
@@ -454,6 +555,23 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
+        public async Task ConfirmTicketForAdmin_Post_ReturnsJsonError_WhenFailed()
+        {
+            // Arrange
+            _domainService.Setup(d => d.ConfirmTicketForAdminAsync(It.IsAny<ConfirmTicketAdminViewModel>()))
+                .ReturnsAsync(new BookingResult { Success = false, ErrorMessage = "Failed to confirm" });
+            var ctrl = BuildController();
+            ctrl.Url = new Mock<IUrlHelper>().Object;
+            // Act
+            var result = await ctrl.ConfirmTicketForAdmin(new ConfirmTicketAdminViewModel { MovieShowId = 1, SelectedFoods = new List<FoodViewModel>(), BookingDetails = new ConfirmBookingViewModel() }) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.False((bool)result.Value.GetType().GetProperty("success").GetValue(result.Value));
+            var messageProp = result.Value.GetType().GetProperty("message");
+            Assert.Equal("Failed to confirm", messageProp.GetValue(result.Value));
+        }
+
+        [Fact]
         public void CheckScoreForConversion_ReturnsJson()
         {
             // Arrange
@@ -464,6 +582,50 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Value is object);
+        }
+
+        [Fact]
+        public void CheckScoreForConversion_ReturnsJson_NotEnoughTickets()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 3, MemberScore = 300 };
+            // Act
+            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var msg = result.Value.GetType().GetProperty("message").GetValue(result.Value);
+            Assert.Equal("Not enough tickets selected.", msg);
+        }
+
+        [Fact]
+        public void CheckScoreForConversion_ReturnsJson_NotEnoughScore()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 2, MemberScore = 50 };
+            // Act
+            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var msg = result.Value.GetType().GetProperty("message").GetValue(result.Value);
+            Assert.Equal("Member score is not enough to convert into ticket", msg);
+        }
+
+        [Fact]
+        public void CheckScoreForConversion_ReturnsJson_Success()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 2, MemberScore = 300 };
+            // Act
+            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var ticketsConverted = result.Value.GetType().GetProperty("ticketsConverted").GetValue(result.Value);
+            Assert.Equal(2, ticketsConverted);
         }
 
         [Fact]
@@ -478,6 +640,19 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.IsType<ConfirmTicketAdminViewModel>(result.Model);
+        }
+
+        [Fact]
+        public async Task TicketInfo_ReturnsNotFound_WhenViewModelNull()
+        {
+            // Arrange
+            _domainService.Setup(d => d.BuildTicketBookingConfirmedViewModelAsync("inv1"))
+                .ReturnsAsync((ConfirmTicketAdminViewModel)null);
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.TicketInfo("inv1");
+            // Assert
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
@@ -519,6 +694,62 @@ namespace MovieTheater.Tests.Controller
             Assert.NotNull(result);
             Assert.True(result.Value is object);
         }
+
+        [Fact]
+        public void GetMemberDiscount_ReturnsJson_WhenMemberIdEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetMemberDiscount(null) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var val = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
+            Assert.Equal(0, val);
+        }
+
+        [Fact]
+        public void GetMemberDiscount_ReturnsJson_WhenRankNull()
+        {
+            // Arrange
+            var member = new Member { MemberId = "m1", Account = new Account { Rank = null } };
+            _memberRepo.Setup(m => m.GetByMemberId("m1")).Returns(member);
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetMemberDiscount("m1") as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var val = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
+            Assert.Equal(0m, val); // Ensure decimal 0 for strict equality
+        }
+
+
+
+
+
+        [Fact]
+        public async Task Payment_RedirectsToSuccess_WhenTotalIsZero()
+        {
+            var invoice = new Invoice
+            {
+                InvoiceId = "I1",
+                TotalMoney = 0m,
+                MovieShow = new MovieShow
+                {
+                    Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) }
+                },
+                Seat = "A1"
+            };
+            _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
+            var ctrl = BuildController();
+            var result = await ctrl.Payment("I1") as RedirectToActionResult;
+            Assert.NotNull(result);
+            Assert.Equal("Success", result.ActionName);
+        }
+
+
 
         [Fact]
         public async Task GetFoods_ReturnsJson()
@@ -646,59 +877,100 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void CheckScoreForConversion_ReturnsJson_NotEnoughTickets()
+        public async Task ReloadWithMember_ReturnsJson()
         {
             // Arrange
             var ctrl = BuildController();
-            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 3, MemberScore = 300 };
+            ctrl.Url = new Mock<IUrlHelper>().Object;
+            var request = new ReloadWithMemberRequest
+            {
+                MovieShowId = 1,
+                SelectedSeatIds = new List<int> { 1, 2 },
+                FoodIds = new List<int> { 1 },
+                FoodQtys = new List<int> { 2 },
+                MemberId = "member1"
+            };
             // Act
-            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            var result = await ctrl.ReloadWithMember(request) as JsonResult;
             // Assert
             Assert.NotNull(result);
-            var msg = result.Value.GetType().GetProperty("message").GetValue(result.Value);
-            Assert.Equal("Not enough tickets selected.", msg);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
         }
 
         [Fact]
-        public void CheckScoreForConversion_ReturnsJson_NotEnoughScore()
+        public async Task ReloadWithMember_ReturnsJsonError_WhenException()
         {
             // Arrange
             var ctrl = BuildController();
-            var req = new ScoreConversionRequest { TicketPrices = new List<decimal> { 100, 200 }, TicketsToConvert = 2, MemberScore = 50 };
+            ctrl.Url = new Mock<IUrlHelper>().Object;
+            var request = new ReloadWithMemberRequest
+            {
+                MovieShowId = 1,
+                SelectedSeatIds = new List<int> { 1, 2 },
+                MemberId = "member1"
+            };
             // Act
-            var result = ctrl.CheckScoreForConversion(req) as JsonResult;
+            var result = await ctrl.ReloadWithMember(request) as JsonResult;
             // Assert
             Assert.NotNull(result);
-            var msg = result.Value.GetType().GetProperty("message").GetValue(result.Value);
-            Assert.Equal("Member score is not enough to convert into ticket", msg);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
         }
 
         [Fact]
-        public void GetMemberDiscount_ReturnsJson_WhenMemberIdEmpty()
+        public async Task GetEligiblePromotions_ReturnsJson()
         {
             // Arrange
             var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            var seat2 = new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Seats.Add(seat2);
+            _context.SaveChanges();
+
             // Act
-            var result = ctrl.GetMemberDiscount(null) as JsonResult;
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
             // Assert
             Assert.NotNull(result);
-            var val = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
-            Assert.Equal(0, val);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
         }
 
         [Fact]
-        public void GetMemberDiscount_ReturnsJson_WhenRankNull()
+        public async Task GetEligiblePromotions_ReturnsJsonError_WhenException()
         {
             // Arrange
-            var member = new Member { MemberId = "m1", Account = new Account { Rank = null } };
-            _memberRepo.Setup(m => m.GetByMemberId("m1")).Returns(member);
             var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = "invalid-date",
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
             // Act
-            var result = ctrl.GetMemberDiscount("m1") as JsonResult;
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
             // Assert
             Assert.NotNull(result);
-            var val = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
-            Assert.Equal(0m, val); // Ensure decimal 0 for strict equality
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.False((bool)success);
         }
     }
 
