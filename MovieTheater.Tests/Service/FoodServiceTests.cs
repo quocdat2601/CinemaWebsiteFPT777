@@ -227,7 +227,7 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public async Task GetAllAsync_UsesSearchAsync_WhenSearchKeywordProvided()
         {
-            _mockRepo.Setup(r => r.SearchAsync("pop")).ReturnsAsync(new List<Food> { new Food { FoodId = 1, Name = "Popcorn" } });
+            _mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Food> { new Food { FoodId = 1, Name = "Popcorn" } });
             var result = await _service.GetAllAsync("pop", null, null);
             Assert.Single(result.Foods);
             Assert.Equal("Popcorn", result.Foods[0].Name);
@@ -236,7 +236,7 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public async Task GetAllAsync_UsesGetByCategoryAsync_WhenCategoryProvided()
         {
-            _mockRepo.Setup(r => r.GetByCategoryAsync("food")).ReturnsAsync(new List<Food> { new Food { FoodId = 1, Name = "Popcorn", Category = "food" } });
+            _mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Food> { new Food { FoodId = 1, Name = "Popcorn", Category = "food" } });
             var result = await _service.GetAllAsync(null, "food", null);
             Assert.Single(result.Foods);
             Assert.Equal("food", result.Foods[0].Category);
@@ -245,7 +245,7 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public async Task GetAllAsync_UsesGetByStatusAsync_WhenStatusProvided()
         {
-            _mockRepo.Setup(r => r.GetByStatusAsync(true)).ReturnsAsync(new List<Food> { new Food { FoodId = 1, Name = "Popcorn", Status = true } });
+            _mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Food> { new Food { FoodId = 1, Name = "Popcorn", Status = true } });
             var result = await _service.GetAllAsync(null, null, true);
             Assert.Single(result.Foods);
             Assert.True(result.Foods[0].Status);

@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Threading;
 using System.IO;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -37,7 +38,7 @@ namespace MovieTheater.Tests.Controller
             _controller = new VoucherController(_voucherServiceMock.Object, _envMock.Object, _hubMock.Object);
         }
 
-        private VoucherController CreateControllerWithTempData()
+        private VoucherController CreateControllerWithTempData(string role = "Admin")
         {
             var hubMock = new Mock<IHubContext<DashboardHub>>();
             var clientsMock = new Mock<IHubClients>();
@@ -50,6 +51,24 @@ namespace MovieTheater.Tests.Controller
 
             var controller = new VoucherController(_voucherServiceMock.Object, _envMock.Object, hubMock.Object);
             controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Set up user with role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "test-user"),
+                new Claim(ClaimTypes.Role, role)
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            var principal = new ClaimsPrincipal(identity);
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = principal;
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext,
+                ActionDescriptor = new ControllerActionDescriptor()
+            };
+            
             return controller;
         }
 
@@ -84,10 +103,23 @@ namespace MovieTheater.Tests.Controller
         public void AdminIndex_ReturnsViewWithFilteredVouchers()
         {
             // Arrange
-            var vouchers = new List<Voucher> { new Voucher { VoucherId = "V1" } };
+            var vouchers = new List<Voucher> { 
+                new Voucher { 
+                    VoucherId = "V1",
+                    Code = "TESTCODE",
+                    IsUsed = false,
+                    ExpiryDate = DateTime.Now.AddDays(5), // Expiring soon
+                    Account = new Account { 
+                        AccountId = "A1",
+                        FullName = "Test User",
+                        Email = "test@example.com",
+                        PhoneNumber = "1234567890"
+                    }
+                } 
+            };
             _voucherServiceMock.Setup(s => s.GetAll()).Returns(vouchers);
             // Act
-            var result = _controller.AdminIndex("key", "active", "soon");
+            var result = _controller.AdminIndex("TEST", "active", "expiring_soon");
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Null(viewResult.ViewName); // Default view name is null
@@ -275,7 +307,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1" };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var result = await controller.AdminDelete("V1", null);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -299,7 +331,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1", IsUsed = true, ExpiryDate = DateTime.Now.AddDays(10) };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var result = controller.AdminEdit("V1");
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -324,7 +356,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1", IsUsed = true, ExpiryDate = DateTime.Now.AddDays(10) };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var viewModel = new VoucherViewModel { VoucherId = "V1" };
             var result = await controller.AdminEdit(viewModel, null);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
@@ -339,7 +371,7 @@ namespace MovieTheater.Tests.Controller
             var voucher = new Voucher { VoucherId = "V1", IsUsed = false, ExpiryDate = DateTime.Now.AddDays(10) };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
 
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var viewModel = new VoucherViewModel
             {
                 VoucherId = "V1",
@@ -603,7 +635,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1", IsUsed = false, ExpiryDate = DateTime.Now.AddDays(-1) };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var result = controller.AdminEdit("V1");
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -616,7 +648,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1", IsUsed = false, ExpiryDate = DateTime.Now.AddDays(10), Image = "/images/vouchers/old.jpg" };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var viewModel = new VoucherViewModel
             {
                 VoucherId = "V1",
@@ -650,7 +682,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1", IsUsed = false, ExpiryDate = DateTime.Now.AddDays(10) };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var viewModel = new VoucherViewModel
             {
                 VoucherId = "V1",
@@ -670,7 +702,7 @@ namespace MovieTheater.Tests.Controller
         [Fact]
         public async Task AdminCreate_Post_ValidModel_ImageFileNull()
         {
-            var controller = CreateControllerWithTempData();
+            var controller = CreateControllerWithTempData("Admin");
             var viewModel = new VoucherViewModel
             {
                 AccountId = "A1",

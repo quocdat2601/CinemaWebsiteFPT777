@@ -9,12 +9,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Tests.Hub
 {
     public class SeatHubTests
     {
-        private MovieTheaterContext _context = new Mock<MovieTheaterContext>().Object;
+        private MovieTheaterContext _context;
         private SeatHub CreateHubWithUser(string accountId = "acc1", string connectionId = null)
         {
             var hub = new SeatHub(_context);
@@ -41,7 +42,31 @@ namespace MovieTheater.Tests.Hub
             return hub;
         }
 
-        public SeatHubTests() { SeatHub.ResetState(); }
+        public SeatHubTests() 
+        { 
+            SeatHub.ResetState(); 
+            _context = CreateContext();
+        }
+        
+        private MovieTheaterContext CreateContext()
+        {
+            var options = new DbContextOptionsBuilder<MovieTheaterContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var context = new MovieTheaterContext(options);
+            
+            // Seed some ScheduleSeats data
+            var scheduleSeats = new List<ScheduleSeat>
+            {
+                new ScheduleSeat { MovieShowId = 1, SeatId = 1, SeatStatusId = 2 },
+                new ScheduleSeat { MovieShowId = 2, SeatId = 2, SeatStatusId = 1 },
+                new ScheduleSeat { MovieShowId = 5, SeatId = 3, SeatStatusId = 1 }
+            };
+            context.ScheduleSeats.AddRange(scheduleSeats);
+            context.SaveChanges();
+            
+            return context;
+        }
 
         [Fact]
         public async Task JoinShowtime_AccountIdNull_DoesNotSaveConnection()
@@ -98,13 +123,13 @@ namespace MovieTheater.Tests.Hub
             var seats = new System.Collections.Concurrent.ConcurrentDictionary<int, HoldInfo>();
             seats[1] = new HoldInfo { AccountId = "acc3", HoldTime = DateTime.UtcNow };
             seats[2] = new HoldInfo { AccountId = "other", HoldTime = DateTime.UtcNow };
-            seats[3] = new HoldInfo { AccountId = "acc3", HoldTime = DateTime.UtcNow.AddMinutes(-10) }; // hết hạn
+            seats[3] = new HoldInfo { AccountId = "acc3", HoldTime = DateTime.UtcNow.AddMinutes(-35) }; // hết hạn (more than 30 minutes)
             dict[5] = seats;
             await hub.JoinShowtime(5);
-            // Ghế 1 thuộc heldByMe, ghế 2 thuộc heldByOthers, ghế 3 bị xóa
+            // Ghế 1 thuộc heldByMe, ghế 2 thuộc heldByOthers, ghế 3 bị xóa (expired)
             Assert.True(seats.ContainsKey(1));
             Assert.True(seats.ContainsKey(2));
-            Assert.False(seats.ContainsKey(3));
+            Assert.False(seats.ContainsKey(3)); // Seat 3 should be removed because it's expired
         }
 
         [Fact]
@@ -147,7 +172,7 @@ namespace MovieTheater.Tests.Hub
             var dict = typeof(SeatHub).GetField("_heldSeats", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
                 .GetValue(null) as System.Collections.Concurrent.ConcurrentDictionary<int, System.Collections.Concurrent.ConcurrentDictionary<int, HoldInfo>>;
             var seats = new System.Collections.Concurrent.ConcurrentDictionary<int, HoldInfo>();
-            seats[80] = new HoldInfo { AccountId = "acc6", HoldTime = DateTime.UtcNow.AddMinutes(-10) };
+            seats[80] = new HoldInfo { AccountId = "acc6", HoldTime = DateTime.UtcNow.AddMinutes(-35) }; // More than 30 minutes expired
             dict[8] = seats;
             await hub.SelectSeat(8, 80);
             Assert.True(seats[80].HoldTime > DateTime.UtcNow.AddMinutes(-1));
