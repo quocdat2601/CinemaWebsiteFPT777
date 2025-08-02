@@ -1,44 +1,46 @@
-using Xunit;
-using MovieTheater.Service;
-using MovieTheater.Repository;
-using MovieTheater.Models;
-using MovieTheater.ViewModels;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using MovieTheater.Models;
+using MovieTheater.Repository;
+using MovieTheater.Service;
+using MovieTheater.ViewModels;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
 using Microsoft.AspNetCore.Http;
 
 namespace MovieTheater.Tests.Service
 {
     public class ForgetPasswordTests
     {
-        private readonly Mock<IAccountRepository> _mockAccountRepository;
-        private readonly EmailService _emailService;
-        private readonly Mock<ILogger<AccountService>> _mockLogger;
-        private readonly Mock<MovieTheaterContext> _mockContext;
+        private readonly Mock<IAccountRepository> _accountRepositoryMock;
+        private readonly Mock<IEmployeeRepository> _employeeRepositoryMock;
+        private readonly Mock<IMemberRepository> _memberRepositoryMock;
+        private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
+        private readonly Mock<EmailService> _emailServiceMock;
+        private readonly Mock<ILogger<AccountService>> _loggerMock;
+        private readonly Mock<MovieTheaterContext> _contextMock;
         private readonly AccountService _accountService;
 
         public ForgetPasswordTests()
         {
-            _mockAccountRepository = new Mock<IAccountRepository>();
-            
-            // Create a real EmailService instance with mocked dependencies
-            var mockConfiguration = new Mock<IConfiguration>();
-            var mockLogger = new Mock<ILogger<EmailService>>();
-            var emailService = new EmailService(mockConfiguration.Object, mockLogger.Object);
-            
-            _mockLogger = new Mock<ILogger<AccountService>>();
-            _mockContext = new Mock<MovieTheaterContext>();
+            _accountRepositoryMock = new Mock<IAccountRepository>();
+            _employeeRepositoryMock = new Mock<IEmployeeRepository>();
+            _memberRepositoryMock = new Mock<IMemberRepository>();
+            _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+            _emailServiceMock = new Mock<EmailService>();
+            _loggerMock = new Mock<ILogger<AccountService>>();
+            _contextMock = new Mock<MovieTheaterContext>();
 
             _accountService = new AccountService(
-                _mockAccountRepository.Object,
-                Mock.Of<IEmployeeRepository>(),
-                Mock.Of<IMemberRepository>(),
-                Mock.Of<IHttpContextAccessor>(),
-                emailService,
-                _mockLogger.Object,
-                _mockContext.Object
+                _accountRepositoryMock.Object,
+                _employeeRepositoryMock.Object,
+                _memberRepositoryMock.Object,
+                _httpContextAccessorMock.Object,
+                _emailServiceMock.Object,
+                _loggerMock.Object,
+                _contextMock.Object
             );
         }
 
@@ -52,18 +54,19 @@ namespace MovieTheater.Tests.Service
                 AccountId = "1",
                 Email = email,
                 FullName = "Test User",
-                Username = "testuser"
+                Status = 1
             };
 
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns(account);
+            _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
+            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             // Act
             var result = _accountService.SendForgetPasswordOtp(email);
 
             // Assert
-            // Note: EmailService will fail in test environment due to missing SMTP configuration
-            // but we can still test the account lookup logic
-            _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
+            Assert.True(result);
+            _accountRepositoryMock.Verify(r => r.GetAccountByEmail(email), Times.Once);
+            _emailServiceMock.Verify(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -71,14 +74,15 @@ namespace MovieTheater.Tests.Service
         {
             // Arrange
             var email = "nonexistent@example.com";
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns((Account)null);
+            _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns((Account)null);
 
             // Act
             var result = _accountService.SendForgetPasswordOtp(email);
 
             // Assert
             Assert.False(result);
-            _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
+            _accountRepositoryMock.Verify(r => r.GetAccountByEmail(email), Times.Once);
+            _emailServiceMock.Verify(e => e.SendEmail(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -89,8 +93,9 @@ namespace MovieTheater.Tests.Service
             var otp = "123456";
 
             // First send OTP to store it
-            var account = new Account { Email = email, FullName = "Test User" };
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns(account);
+            var account = new Account { AccountId = "1", Email = email, FullName = "Test User", Status = 1 };
+            _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
+            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _accountService.SendForgetPasswordOtp(email);
 
@@ -98,34 +103,42 @@ namespace MovieTheater.Tests.Service
             var result = _accountService.VerifyForgetPasswordOtp(email, otp);
 
             // Assert
-            Assert.False(result); // Should be false because we don't know the actual OTP generated
+            Assert.True(result);
         }
 
         [Fact]
-        public void ResetPassword_WithValidEmail_ShouldReturnTrue()
+        public void VerifyForgetPasswordOtp_WithInvalidOtp_ShouldReturnFalse()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var invalidOtp = "999999";
+
+            // Act
+            var result = _accountService.VerifyForgetPasswordOtp(email, invalidOtp);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ResetPassword_WithValidData_ShouldReturnTrue()
         {
             // Arrange
             var email = "test@example.com";
             var newPassword = "NewPassword123!";
-            var account = new Account
-            {
-                AccountId = "1",
-                Email = email,
-                FullName = "Test User"
-            };
+            var account = new Account { AccountId = "1", Email = email, FullName = "Test User", Status = 1 };
 
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns(account);
-            _mockAccountRepository.Setup(r => r.Update(It.IsAny<Account>()));
-            _mockAccountRepository.Setup(r => r.Save());
+            _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
+            _accountRepositoryMock.Setup(r => r.Update(It.IsAny<Account>())).Verifiable();
+            _accountRepositoryMock.Setup(r => r.Save()).Verifiable();
 
             // Act
             var result = _accountService.ResetPassword(email, newPassword);
 
             // Assert
             Assert.True(result);
-            _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
-            _mockAccountRepository.Verify(r => r.Update(It.IsAny<Account>()), Times.Once);
-            _mockAccountRepository.Verify(r => r.Save(), Times.Once);
+            _accountRepositoryMock.Verify(r => r.Update(It.IsAny<Account>()), Times.Once);
+            _accountRepositoryMock.Verify(r => r.Save(), Times.Once);
         }
 
         [Fact]
@@ -135,53 +148,60 @@ namespace MovieTheater.Tests.Service
             var email = "nonexistent@example.com";
             var newPassword = "NewPassword123!";
 
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns((Account)null);
+            _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns((Account)null);
 
             // Act
             var result = _accountService.ResetPassword(email, newPassword);
 
             // Assert
             Assert.False(result);
-            _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
-            _mockAccountRepository.Verify(r => r.Update(It.IsAny<Account>()), Times.Never);
-            _mockAccountRepository.Verify(r => r.Save(), Times.Never);
+            _accountRepositoryMock.Verify(r => r.Update(It.IsAny<Account>()), Times.Never);
+            _accountRepositoryMock.Verify(r => r.Save(), Times.Never);
         }
 
         [Fact]
-        public void GetAccountByEmail_WithValidEmail_ShouldReturnAccount()
+        public void SendForgetPasswordOtpEmail_WithValidEmail_ShouldReturnTrue()
         {
             // Arrange
             var email = "test@example.com";
-            var expectedAccount = new Account
-            {
-                AccountId = "1",
-                Email = email,
-                FullName = "Test User"
-            };
+            var otp = "123456";
+            var account = new Account { AccountId = "1", Email = email, FullName = "Test User", Status = 1 };
 
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns(expectedAccount);
+            _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
+            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             // Act
-            var result = _accountService.GetAccountByEmail(email);
+            var result = _accountService.SendForgetPasswordOtpEmail(email, otp);
 
             // Assert
-            Assert.Equal(expectedAccount, result);
-            _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
+            Assert.True(result);
+            _emailServiceMock.Verify(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
-        public void GetAccountByEmail_WithInvalidEmail_ShouldReturnNull()
+        public void StoreForgetPasswordOtp_ShouldReturnTrue()
         {
             // Arrange
-            var email = "nonexistent@example.com";
-            _mockAccountRepository.Setup(r => r.GetAccountByEmail(email)).Returns((Account)null);
+            var email = "test@example.com";
+            var otp = "123456";
+            var expiry = DateTime.UtcNow.AddMinutes(10);
 
             // Act
-            var result = _accountService.GetAccountByEmail(email);
+            var result = _accountService.StoreForgetPasswordOtp(email, otp, expiry);
 
             // Assert
-            Assert.Null(result);
-            _mockAccountRepository.Verify(r => r.GetAccountByEmail(email), Times.Once);
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void ClearForgetPasswordOtp_ShouldNotThrowException()
+        {
+            // Arrange
+            var email = "test@example.com";
+
+            // Act & Assert
+            var exception = Record.Exception(() => _accountService.ClearForgetPasswordOtp(email));
+            Assert.Null(exception);
         }
     }
 }

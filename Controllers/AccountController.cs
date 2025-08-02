@@ -394,6 +394,126 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // --- New Forget Password Actions (AJAX-based) ---
+        [HttpPost]
+        [Route("Account/SendForgetPasswordOtp")]
+        public IActionResult SendForgetPasswordOtp([FromBody] SendForgetPasswordOtpRequest req)
+        {
+            if (string.IsNullOrEmpty(req.Email))
+                return Json(new { success = false, error = "Email is required." });
+
+            var account = _service.GetAccountByEmail(req.Email);
+            if (account == null)
+                return Json(new { success = false, error = "Email không tồn tại trong hệ thống." });
+
+            _logger.LogInformation("Forget password OTP send request initiated for email: {Email}", req.Email);
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            var expiry = DateTime.UtcNow.AddMinutes(10);
+
+            var otpStored = _service.StoreForgetPasswordOtp(req.Email, otp, expiry);
+            if (!otpStored)
+                return Json(new { success = false, error = "Failed to store OTP. Please try again later." });
+
+            var emailSent = _service.SendForgetPasswordOtpEmail(req.Email, otp);
+            if (!emailSent)
+                return Json(new { success = false, error = "Failed to send OTP email. Please try again later." });
+
+            return Json(new { success = true, message = "OTP sent to your email." });
+        }
+
+        [HttpPost]
+        public IActionResult VerifyForgetPasswordOtp([FromBody] VerifyForgetPasswordOtpViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Otp))
+                return Json(new { success = false, error = "Email and OTP are required." });
+
+            _logger.LogInformation("Forget password OTP verification request initiated for email: {Email}", model.Email);
+
+            var receivedOtp = model.Otp?.Trim();
+            var otpValid = _service.VerifyForgetPasswordOtp(model.Email, receivedOtp);
+            if (!otpValid)
+                return Json(new { success = false, error = "Invalid or expired OTP." });
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [Route("Account/ResetPasswordAsync")]
+        public async Task<IActionResult> ResetPasswordAsync(string email, string newPassword, string confirmPassword, string otp)
+        {
+            _logger.LogInformation("ResetPasswordAsync endpoint hit with email: {Email}", email ?? "null");
+            try
+            {
+                _logger.LogInformation("ResetPasswordAsync called for email: {Email}", email);
+
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+                {
+                    _logger.LogWarning("ResetPasswordAsync validation failed: missing required fields");
+                    return Json(new { success = false, error = "All fields are required." });
+                }
+
+                if (newPassword != confirmPassword)
+                {
+                    _logger.LogWarning("ResetPasswordAsync validation failed: passwords do not match");
+                    return Json(new { success = false, error = "Passwords do not match." });
+                }
+
+                // Check OTP
+                if (!_service.VerifyForgetPasswordOtp(email, otp))
+                {
+                    _logger.LogWarning("ResetPasswordAsync validation failed: invalid OTP for email: {Email}", email);
+                    return Json(new { success = false, error = "Invalid or expired OTP." });
+                }
+
+                var result = _service.ResetPassword(email, newPassword);
+                _service.ClearForgetPasswordOtp(email);
+
+                if (!result)
+                {
+                    _logger.LogError("ResetPasswordAsync failed to reset password for email: {Email}", email);
+                    return Json(new { success = false, error = "Failed to reset password." });
+                }
+
+                _logger.LogInformation("ResetPasswordAsync successful for email: {Email}", email);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception in ResetPasswordAsync for email: {Email}", email);
+                return Json(new { success = false, error = "An unexpected error occurred." });
+            }
+        }
+        // Request/Response models for AJAX calls
+        public class SendForgetPasswordOtpRequest
+        {
+            public string Email { get; set; } = string.Empty;
+        }
+
+        public class VerifyForgetPasswordOtpViewModel
+        {
+            public string Email { get; set; } = string.Empty;
+            public string Otp { get; set; } = string.Empty;
+        }
+
+        // Test endpoint to verify routing
+        [HttpGet]
+        [Route("Account/TestResetPasswordAsync")]
+        public IActionResult TestResetPasswordAsync()
+        {
+            _logger.LogInformation("TestResetPasswordAsync endpoint hit");
+            return Json(new { success = true, message = "ResetPasswordAsync endpoint is accessible" });
+        }
+
+        // Test POST endpoint without validation
+        [HttpPost]
+        [Route("Account/TestResetPasswordAsyncPost")]
+        public IActionResult TestResetPasswordAsyncPost()
+        {
+            _logger.LogInformation("TestResetPasswordAsyncPost endpoint hit");
+            return Json(new { success = true, message = "POST endpoint is accessible" });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
