@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Claims;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -51,6 +52,19 @@ namespace MovieTheater.Tests.Controller
             _mockEnv.Setup(e => e.WebRootPath).Returns("wwwroot");
             // Setup TempData để tránh lỗi null
             _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Admin role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+            
             var result = await _controller.Create(model);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -63,6 +77,10 @@ namespace MovieTheater.Tests.Controller
         {
             _controller.ModelState.AddModelError("Name", "Required");
             var model = new FoodViewModel();
+            
+            // Setup TempData to avoid null reference
+            _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
             var result = await _controller.Create(model);
             Assert.IsType<ViewResult>(result);
         }
@@ -82,6 +100,19 @@ namespace MovieTheater.Tests.Controller
             _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((FoodViewModel)null);
             // Setup TempData để tránh lỗi null
             _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Admin role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+            
             var result = await _controller.Edit(99);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -97,6 +128,19 @@ namespace MovieTheater.Tests.Controller
             _mockEnv.Setup(e => e.WebRootPath).Returns("wwwroot");
             // Setup TempData để tránh lỗi null
             _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Admin role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+            
             var result = await _controller.Edit(model);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -119,6 +163,19 @@ namespace MovieTheater.Tests.Controller
             _mockService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
             // Setup TempData để tránh lỗi null
             _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Admin role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+            
             var result = await _controller.Delete(1);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);
@@ -132,6 +189,19 @@ namespace MovieTheater.Tests.Controller
             _mockService.Setup(s => s.ToggleStatusAsync(1)).ReturnsAsync(true);
             // Setup TempData để tránh lỗi null
             _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Admin role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+            
             var result = await _controller.ToggleStatus(1);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirect.ActionName);

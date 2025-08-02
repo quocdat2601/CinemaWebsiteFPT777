@@ -11,6 +11,7 @@ using MovieTheater.ViewModels;
 using Xunit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using System.Security.Claims;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -593,6 +594,22 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var ctrl = BuildController();
             ctrl.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Admin role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            ctrl.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = principal
+                }
+            };
+            
             var model = new RegisterViewModel { AccountId = "id" };
             _acctSvc.Setup(a => a.Update("id", model)).Returns(true);
 

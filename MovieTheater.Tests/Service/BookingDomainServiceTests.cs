@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Xunit;
 using ModelVersion = MovieTheater.Models.Version;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Http;
 using System.Threading;
 
 namespace MovieTheater.Tests.Service
@@ -47,10 +48,12 @@ namespace MovieTheater.Tests.Service
                 _seatTypeSvc.Object,
                 _promoService.Object,
                 _foodService.Object,
+                Mock.Of<IAccountRepository>(),
                 _context,
                 _priceCalc.Object,
                 _voucherService.Object,
-                _seatHubContext.Object
+                _seatHubContext.Object,
+                Mock.Of<IHttpContextAccessor>()
             );
         }
 

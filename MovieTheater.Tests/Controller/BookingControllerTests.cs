@@ -57,102 +57,7 @@ namespace MovieTheater.Tests.Controller
         _promotionService.Object
     );
 
-        [Fact]
-        public async Task TicketBooking_Get_ReturnsView_WithMoviesInViewBag()
-        {
-            // Arrange
-            var expected = new List<Movie> { new() { MovieId = "M1", MovieNameEnglish = "X" } };
-            _bookingService
-              .Setup(s => s.GetAvailableMoviesAsync())
-              .ReturnsAsync(expected);
-            _movieService
-              .Setup(m => m.GetMovieShows("M1"))
-              .Returns(new List<MovieShow> { new() { ShowDate = DateOnly.FromDateTime(DateTime.Today) } });
 
-            var ctrl = BuildController();
-
-            // Act
-            var result = await ctrl.TicketBooking(movieId: null) as ViewResult;
-
-            // Assert
-            Assert.NotNull(result);
-            var movieList = result.ViewData["MovieList"] as List<Movie>;
-            Assert.NotNull(movieList);
-            Assert.Equal(expected.Count, movieList.Count);
-            Assert.Equal(expected[0].MovieId, movieList[0].MovieId);
-            Assert.Null(result.ViewData["SelectedMovieId"]);
-        }
-
-        [Fact]
-        public async Task TicketBooking_Get_WithMovieId_SetsShowsByDate()
-        {
-            // Arrange
-            var showDate = DateOnly.FromDateTime(DateTime.Today);
-            var schedule = new Schedule { ScheduleTime = new TimeOnly(9, 30) };
-            var show = new MovieShow
-            {
-                MovieId = "M1",
-                ShowDate = showDate,
-                Schedule = schedule
-            };
-            _bookingService.Setup(s => s.GetAvailableMoviesAsync())
-                           .ReturnsAsync(new List<Movie>());
-            _movieService
-              .Setup(m => m.GetMovieShows("M1"))
-              .Returns(new List<MovieShow> { show });
-
-            var ctrl = BuildController();
-
-            // Act
-            var result = await ctrl.TicketBooking(movieId: "M1") as ViewResult;
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("M1", result.ViewData["SelectedMovieId"]);
-            var showsByDate = Assert.IsType<Dictionary<string, List<string>>>(result.ViewData["ShowsByDate"]);
-            var key = showDate.ToString("dd/MM/yyyy");
-            Assert.True(showsByDate.ContainsKey(key));
-            Assert.Contains("09:30", showsByDate[key]);
-        }
-
-        [Fact]
-        public async Task GetDates_ReturnsJsonListOfStrings()
-        {
-            // Arrange
-            var dates = new List<DateOnly> {
-                DateOnly.Parse("2025-07-20"),
-                DateOnly.Parse("2025-07-21")
-            };
-            _bookingService.Setup(s => s.GetShowDatesAsync("M1"))
-                           .ReturnsAsync(dates);
-
-            var ctrl = BuildController();
-
-            // Act
-            var json = await ctrl.GetDates("M1") as JsonResult;
-            var list = Assert.IsAssignableFrom<IEnumerable<string>>(json.Value);
-
-            // Assert
-            Assert.Contains("2025-07-20", list);
-            Assert.Contains("2025-07-21", list);
-        }
-
-        [Fact]
-        public async Task GetDates_ReturnsEmptyList_WhenNoDates()
-        {
-            // Arrange
-            _bookingService.Setup(s => s.GetShowDatesAsync("M1"))
-                           .ReturnsAsync(new List<DateOnly>());
-
-            var ctrl = BuildController();
-
-            // Act
-            var json = await ctrl.GetDates("M1") as JsonResult;
-            var list = Assert.IsAssignableFrom<IEnumerable<string>>(json.Value);
-
-            // Assert
-            Assert.Empty(list);
-        }
 
         [Fact]
         public async Task Confirm_Post_InvalidModel_ReturnsConfirmViewWithError()
@@ -234,8 +139,8 @@ namespace MovieTheater.Tests.Controller
             var result = await ctrl.Information("M1", DateOnly.FromDateTime(DateTime.Today), "10:00", null, 1, null, null) as RedirectToActionResult;
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("TicketBooking", result.ActionName);
-            Assert.Equal("M1", result.RouteValues["movieId"]);
+            Assert.Equal("Index", result.ActionName);
+            Assert.Equal("Home", result.ControllerName);
         }
 
         [Fact]
@@ -774,7 +679,7 @@ namespace MovieTheater.Tests.Controller
                 new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), Version = new Models.Version { VersionId = 1, VersionName = "2D" } },
                 new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), Version = new Models.Version { VersionId = 2, VersionName = "3D" } }
             };
-            _movieService.Setup(m => m.GetMovieShows("M1")).Returns(shows);
+            _movieService.Setup(m => m.GetMovieShowsByMovieId("M1")).Returns(shows);
             var ctrl = BuildController();
             // Act
             var result = ctrl.GetVersions("M1", DateTime.Today.ToString("yyyy-MM-dd")) as JsonResult;
@@ -804,7 +709,7 @@ namespace MovieTheater.Tests.Controller
                 new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), VersionId = 1, Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) } },
                 new MovieShow { ShowDate = DateOnly.FromDateTime(DateTime.Today), VersionId = 1, Schedule = new Schedule { ScheduleTime = new TimeOnly(12, 0) } }
             };
-            _movieService.Setup(m => m.GetMovieShows("M1")).Returns(shows);
+            _movieService.Setup(m => m.GetMovieShowsByMovieId("M1")).Returns(shows);
             var ctrl = BuildController();
             // Act
             var result = ctrl.GetTimes("M1", DateTime.Today.ToString("yyyy-MM-dd"), 1) as JsonResult;

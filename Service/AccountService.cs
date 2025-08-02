@@ -125,6 +125,12 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
+            
+            // Update status if provided
+            if (model.Status.HasValue)
+            {
+                account.Status = model.Status.Value;
+            }
 
             if (model.ImageFile != null && model.ImageFile.Length > 0)
             {

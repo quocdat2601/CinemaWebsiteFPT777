@@ -253,7 +253,7 @@ namespace MovieTheater.Tests.Service
                 Email = "new@example.com",
                 Address = "New Address",
                 PhoneNumber = "987654321",
-                Status = 1
+                Status = 2
             };
             // Act
             var result = service.Update("id", model);
@@ -340,7 +340,7 @@ namespace MovieTheater.Tests.Service
             var service = CreateService();
             var account = new Account { AccountId = "id", Username = "user", Password = "pass" };
             _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
-            var model = new RegisterViewModel { Username = "user", Status = 1 };
+            var model = new RegisterViewModel { Username = "user", Status = 5 };
             // Act
             var result = service.Update("id", model);
             // Assert

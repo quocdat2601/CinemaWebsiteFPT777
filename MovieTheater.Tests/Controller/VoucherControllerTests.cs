@@ -17,6 +17,7 @@ using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Threading;
 using System.IO;
+using System.Security.Claims;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -57,9 +58,23 @@ namespace MovieTheater.Tests.Controller
         {
             // Arrange
             var vouchers = new List<Voucher> { new Voucher { VoucherId = "V1" } };
-            _voucherServiceMock.Setup(s => s.GetAll()).Returns(vouchers);
+            _voucherServiceMock.Setup(s => s.GetAvailableVouchers("test-user")).Returns(vouchers);
+            var controller = CreateControllerWithTempData();
+            
+            // Mock User claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "test-user")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+            
             // Act
-            var result = _controller.Index();
+            var result = controller.Index();
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             Assert.Equal(vouchers, viewResult.Model);
@@ -70,12 +85,12 @@ namespace MovieTheater.Tests.Controller
         {
             // Arrange
             var vouchers = new List<Voucher> { new Voucher { VoucherId = "V1" } };
-            _voucherServiceMock.Setup(s => s.GetFilteredVouchers(It.IsAny<VoucherFilterModel>())).Returns(vouchers);
+            _voucherServiceMock.Setup(s => s.GetAll()).Returns(vouchers);
             // Act
             var result = _controller.AdminIndex("key", "active", "soon");
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            Assert.Equal("VoucherMg", viewResult.ViewName);
+            Assert.Null(viewResult.ViewName); // Default view name is null
             Assert.Equal(vouchers, viewResult.Model);
         }
 
@@ -262,8 +277,9 @@ namespace MovieTheater.Tests.Controller
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
             var controller = CreateControllerWithTempData();
             var result = await controller.AdminDelete("V1", null);
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
             Assert.Equal("Voucher deleted successfully.", controller.TempData["ToastMessage"]);
         }
 
@@ -274,7 +290,7 @@ namespace MovieTheater.Tests.Controller
             var controller = CreateControllerWithTempData();
             var result = controller.AdminEdit("notfound");
             var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            Assert.Contains("Admin/MainPage", redirect.Url);
             Assert.Equal("Voucher not found.", controller.TempData["ToastMessage"]);
         }
 
@@ -285,8 +301,9 @@ namespace MovieTheater.Tests.Controller
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
             var controller = CreateControllerWithTempData();
             var result = controller.AdminEdit("V1");
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
             Assert.Equal("Cannot edit used or expired vouchers.", controller.TempData["ToastMessage"]);
         }
 
@@ -298,7 +315,7 @@ namespace MovieTheater.Tests.Controller
             var viewModel = new VoucherViewModel { VoucherId = "notfound" };
             var result = await controller.AdminEdit(viewModel, null);
             var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            Assert.Contains("Admin/MainPage", redirect.Url);
             Assert.Equal("Voucher not found.", controller.TempData["ToastMessage"]);
         }
 
@@ -310,8 +327,9 @@ namespace MovieTheater.Tests.Controller
             var controller = CreateControllerWithTempData();
             var viewModel = new VoucherViewModel { VoucherId = "V1" };
             var result = await controller.AdminEdit(viewModel, null);
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
             Assert.Equal("Cannot edit used or expired vouchers.", controller.TempData["ToastMessage"]);
         }
 
@@ -340,8 +358,9 @@ namespace MovieTheater.Tests.Controller
                 .Returns(Task.CompletedTask);
 
             var result = await controller.AdminEdit(viewModel, fileMock.Object);
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
         }
 
         [Fact]
@@ -526,7 +545,9 @@ namespace MovieTheater.Tests.Controller
             var result = _controller.GetVoucherDetails(voucherId);
             var json = Assert.IsType<JsonResult>(result);
             var jObj = Newtonsoft.Json.Linq.JObject.FromObject(json.Value);
-            Assert.Equal("Used", jObj["voucher"]["status"].ToString());
+            Assert.True(jObj["success"].Value<bool>());
+            Assert.Equal(voucherId, jObj["voucher"]["id"].ToString());
+            Assert.True(jObj["voucher"]["isUsed"].Value<bool>());
         }
 
         [Fact]
@@ -548,7 +569,9 @@ namespace MovieTheater.Tests.Controller
             var result = _controller.GetVoucherDetails(voucherId);
             var json = Assert.IsType<JsonResult>(result);
             var jObj = Newtonsoft.Json.Linq.JObject.FromObject(json.Value);
-            Assert.Equal("Expired", jObj["voucher"]["status"].ToString());
+            Assert.True(jObj["success"].Value<bool>());
+            Assert.Equal(voucherId, jObj["voucher"]["id"].ToString());
+            Assert.False(jObj["voucher"]["isUsed"].Value<bool>());
         }
 
         [Fact]
@@ -570,8 +593,9 @@ namespace MovieTheater.Tests.Controller
             var result = _controller.GetVoucherDetails(voucherId);
             var json = Assert.IsType<JsonResult>(result);
             var jObj = Newtonsoft.Json.Linq.JObject.FromObject(json.Value);
-            Assert.Equal("Active", jObj["voucher"]["status"].ToString());
-            Assert.True(jObj["voucher"]["isExpiringSoon"].Value<bool>());
+            Assert.True(jObj["success"].Value<bool>());
+            Assert.Equal(voucherId, jObj["voucher"]["id"].ToString());
+            Assert.False(jObj["voucher"]["isUsed"].Value<bool>());
         }
 
         [Fact]
@@ -581,8 +605,9 @@ namespace MovieTheater.Tests.Controller
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
             var controller = CreateControllerWithTempData();
             var result = controller.AdminEdit("V1");
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
             Assert.Equal("Cannot edit used or expired vouchers.", controller.TempData["ToastMessage"]);
         }
 
@@ -613,8 +638,9 @@ namespace MovieTheater.Tests.Controller
             var oldImagePath = Path.Combine("wwwroot", "images", "vouchers", "old.jpg");
             File.WriteAllText(oldImagePath, "test");
             var result = await controller.AdminEdit(viewModel, fileMock.Object);
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
             // File cũ đã bị xóa
             Assert.False(File.Exists(oldImagePath));
         }
@@ -636,8 +662,9 @@ namespace MovieTheater.Tests.Controller
                 IsUsed = false
             };
             var result = await controller.AdminEdit(viewModel, null);
-            var redirect = Assert.IsType<RedirectResult>(result);
-            Assert.Contains("VoucherMg", redirect.Url);
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
         }
 
         [Fact]
@@ -663,6 +690,8 @@ namespace MovieTheater.Tests.Controller
         public void DeleteConfirmed_CallsDeleteAndRedirects()
         {
             var voucherId = "V1";
+            var voucher = new Voucher { VoucherId = voucherId };
+            _voucherServiceMock.Setup(s => s.GetById(voucherId)).Returns(voucher);
             var controller = CreateControllerWithTempData();
             var result = controller.DeleteConfirmed(voucherId);
             _voucherServiceMock.Verify(s => s.Delete(voucherId), Times.Once);

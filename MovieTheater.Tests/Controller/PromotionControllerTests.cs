@@ -178,7 +178,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void List_ReturnsIndexView_WithActivePromotions()
+        public void List_ReturnsListView_WithActivePromotions()
         {
             // Arrange
             var now = DateTime.Now;
@@ -196,7 +196,7 @@ namespace MovieTheater.Tests.Controller
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("Index", result.ViewName);
+            Assert.Equal("List", result.ViewName);
             var model = Assert.IsAssignableFrom<System.Collections.Generic.List<Promotion>>(result.Model);
             Assert.Equal(2, model.Count); // Only 2 active and not expired
             Assert.Contains(model, p => p.PromotionId == 1);
@@ -206,7 +206,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void List_ReturnsIndexView_WithNoActivePromotions()
+        public void List_ReturnsListView_WithNoActivePromotions()
         {
             // Arrange
             var now = DateTime.Now;
@@ -222,7 +222,7 @@ namespace MovieTheater.Tests.Controller
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("Index", result.ViewName);
+            Assert.Equal("List", result.ViewName);
             var model = Assert.IsAssignableFrom<System.Collections.Generic.List<Promotion>>(result.Model);
             Assert.Empty(model);
         }

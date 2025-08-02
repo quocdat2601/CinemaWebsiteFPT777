@@ -1024,8 +1024,10 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var movie1 = new Movie { MovieId = "MV001", MovieNameEnglish = "Currently Showing" };
             var movie2 = new Movie { MovieId = "MV002", MovieNameEnglish = "Coming Soon" };
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
+            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.AddRange(movie1, movie2);
+            context.CinemaRooms.Add(cinemaRoom);
             context.MovieShows.Add(movieShow);
             context.SaveChanges();
             var repo = CreateRepository(context);
@@ -1045,8 +1047,10 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var movie1 = new Movie { MovieId = "MV001", MovieNameEnglish = "Currently Showing" };
             var movie2 = new Movie { MovieId = "MV002", MovieNameEnglish = "Coming Soon" };
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
+            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.AddRange(movie1, movie2);
+            context.CinemaRooms.Add(cinemaRoom);
             context.MovieShows.Add(movieShow);
             context.SaveChanges();
             var repo = CreateRepository(context);
@@ -1069,8 +1073,10 @@ namespace MovieTheater.Tests.Repository
             // Arrange
             using var context = CreateInMemoryContext();
             var movie = new Movie { MovieId = "MV001", MovieNameEnglish = "Test Movie" };
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
+            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.Add(movie);
+            context.CinemaRooms.Add(cinemaRoom);
             context.MovieShows.Add(movieShow);
             context.SaveChanges();
             var repo = CreateRepository(context);
@@ -1090,8 +1096,10 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var movie1 = new Movie { MovieId = "MV001", MovieNameEnglish = "Currently Showing" };
             var movie2 = new Movie { MovieId = "MV002", MovieNameEnglish = "Coming Soon" };
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
+            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.AddRange(movie1, movie2);
+            context.CinemaRooms.Add(cinemaRoom);
             context.MovieShows.Add(movieShow);
             context.SaveChanges();
             var repo = CreateRepository(context);
@@ -1708,8 +1716,10 @@ namespace MovieTheater.Tests.Repository
             // Arrange
             using var context = CreateInMemoryContext();
             var movie = new Movie { MovieId = "MV001", MovieNameEnglish = "Test Movie" };
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
+            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.Add(movie);
+            context.CinemaRooms.Add(cinemaRoom);
             context.MovieShows.Add(movieShow);
             context.SaveChanges();
             var repo = CreateRepository(context);
@@ -1746,8 +1756,10 @@ namespace MovieTheater.Tests.Repository
             // Arrange
             using var context = CreateInMemoryContext();
             var movie = new Movie { MovieId = "MV001", MovieNameEnglish = "Test Movie" };
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)) };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
+            var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.Add(movie);
+            context.CinemaRooms.Add(cinemaRoom);
             context.MovieShows.Add(movieShow);
             context.SaveChanges();
             var repo = CreateRepository(context);
