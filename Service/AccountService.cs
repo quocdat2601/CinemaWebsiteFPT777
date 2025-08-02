@@ -518,6 +518,44 @@ namespace MovieTheater.Service
         {
             await httpContext.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
         }
+
+        /// <summary>
+        /// Kiểm tra và sửa các avatar bị thiếu trong database
+        /// </summary>
+        /// <returns>Số lượng avatar đã được sửa</returns>
+        public async Task<int> FixMissingAvatarsAsync()
+        {
+            try
+            {
+                var accountsWithMissingAvatars = await _context.Accounts
+                    .Where(a => a.Image != null && a.Image.Contains("/images/avatars/"))
+                    .ToListAsync();
+
+                int fixedCount = 0;
+                foreach (var account in accountsWithMissingAvatars)
+                {
+                    var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", account.Image.TrimStart('/'));
+                    if (!File.Exists(imagePath))
+                    {
+                        account.Image = "/image/avatar.jpg";
+                        fixedCount++;
+                    }
+                }
+
+                if (fixedCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Fixed {fixedCount} missing avatars");
+                }
+
+                return fixedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fixing missing avatars");
+                return 0;
+            }
+        }
     }
 }
 
