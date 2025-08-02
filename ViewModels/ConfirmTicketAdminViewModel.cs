@@ -19,6 +19,10 @@ namespace MovieTheater.ViewModels
         public int MemberScore { get; set; }
         public string MemberEmail { get; set; }
         public string MemberPhone { get; set; }
+        public string? EmployeeId { get; set; }
+        public string? EmployeeName { get; set; }
+        public string? EmployeePhone { get; set; }
+        public DateOnly? DateofBirth { get; set; }
 
         // Ticket conversion
         public int TicketsToConvert { get; set; }

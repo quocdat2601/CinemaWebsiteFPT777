@@ -60,18 +60,28 @@ namespace MovieTheater.Repository
         public void Update(Employee employee)
         {
             _context.Employees.Update(employee);
-            _context.SaveChanges();
         }
 
         public void Delete(string employeeId)
         {
             var employee = _context.Employees.Find(employeeId);
-            var account = _context.Accounts.Find(employee.AccountId);
             if (employee != null)
             {
-                _context.Employees.Remove(employee);
-                _context.Accounts.Remove(account);
-                _context.SaveChanges();
+                var account = _context.Accounts.Find(employee.AccountId);
+                if (account != null)
+                {
+                    _context.Employees.Remove(employee);
+                    _context.Accounts.Remove(account);
+                }
+            }
+        }
+
+        public void ToggleStatus(string employeeId)
+        {
+            var employee = _context.Employees.Find(employeeId);
+            if (employee != null)
+            {
+                employee.Status = !employee.Status;
             }
         }
 

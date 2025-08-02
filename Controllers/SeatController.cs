@@ -3,6 +3,7 @@ using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -40,6 +41,7 @@ namespace MovieTheater.Controllers
         /// Trang danh sách ghế
         /// </summary>
         /// <remarks>url: /Seat/Index (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Index()
         {
             return View();
@@ -49,6 +51,7 @@ namespace MovieTheater.Controllers
         /// Xem chi tiết ghế
         /// </summary>
         /// <remarks>url: /Seat/Details (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Details(int id)
         {
             return View();
@@ -58,6 +61,7 @@ namespace MovieTheater.Controllers
         /// Trang tạo ghế mới
         /// </summary>
         /// <remarks>url: /Seat/Create (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Create()
         {
             return View();
@@ -69,6 +73,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Create(IFormCollection collection)
         {
             try
@@ -86,6 +91,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Seat/Edit/{cinemaId} (GET)</remarks>
         [HttpGet("Seat/Edit/{cinemaId}")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Edit(int cinemaId)
         {
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
@@ -116,6 +122,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /Seat/View/{cinemaId} (GET)</remarks>
         [HttpGet("Seat/View/{cinemaId}")]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> View(int cinemaId)
         {
             var seats = await _seatService.GetSeatsByRoomIdAsync(cinemaId);
@@ -160,7 +167,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/Select (GET)</remarks>
         [HttpGet]
         [Route("Seat/Select")]
-        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId)
+        public async Task<IActionResult> Select([FromQuery] string movieId, [FromQuery] string date, [FromQuery] string time, [FromQuery] int? versionId, [FromQuery] string returnUrl = null)
         {
             var movie = _movieService.GetById(movieId);
             if (movie == null)
@@ -230,6 +237,9 @@ namespace MovieTheater.Controllers
             string genre = movie.Types != null && movie.Types.Any() ? string.Join(", ", movie.Types.Select(t => t.TypeName)) : string.Empty;
             // Lấy poster
             string poster = movie.SmallImage;
+            // Lấy đạo diễn và diễn viên
+            string movieDirector = movie.People != null ? string.Join(", ", movie.People.Where(p => p.IsDirector == true).Select(p => p.Name)) : string.Empty;
+            string movieActor = movie.People != null ? string.Join(", ", movie.People.Where(p => p.IsDirector == false).Select(p => p.Name)) : string.Empty;
 
             var viewModel = new SeatSelectionViewModel
             {
@@ -250,7 +260,10 @@ namespace MovieTheater.Controllers
                 MovieContent = movie.Content,
                 MovieGenre = genre,
                 MovieFromDate = movie.FromDate,
-                MovieDuration = movie.Duration
+                MovieDuration = movie.Duration,
+                MovieDirector = movieDirector,
+                MovieActor = movieActor,
+                ReturnUrl = returnUrl
             };
 
             return View("View", viewModel);
@@ -262,6 +275,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/UpdateSeatTypes (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> UpdateSeatTypes([FromBody] List<SeatTypeUpdateModel> updates)
         {
             foreach (var update in updates)
@@ -283,6 +297,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/CreateCoupleSeat (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> CreateCoupleSeat([FromBody] CoupleSeat coupleSeat)
         {
             try
@@ -300,6 +315,7 @@ namespace MovieTheater.Controllers
         /// Trang xóa ghế
         /// </summary>
         /// <remarks>url: /Seat/Delete (GET)</remarks>
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Delete(int id)
         {
             return View();
@@ -311,6 +327,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/Delete (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public ActionResult Delete(int id, IFormCollection collection)
         {
             try
@@ -328,6 +345,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/DeleteCoupleSeat (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> DeleteCoupleSeat([FromBody] SeatIdsRequest request)
         {
             if (request.SeatIds == null || request.SeatIds.Count != 2)
@@ -343,6 +361,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Seat/CreateCoupleSeatsBatch (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeat> coupleSeats)
         {
             if (coupleSeats == null || coupleSeats.Count == 0)

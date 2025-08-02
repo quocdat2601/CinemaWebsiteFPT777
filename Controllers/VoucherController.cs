@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.SignalR;
-using MovieTheater.Hubs;
+using System.Data;
+using System.Security.Claims;
+using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {
@@ -13,102 +16,137 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
+        
+        // Constants for string literals
+        private const string TOAST_MESSAGE = "ToastMessage";
+        private const string ERROR_MESSAGE = "ErrorMessage";
+        private const string MAIN_PAGE = "MainPage";
+        private const string ADMIN_CONTROLLER = "Admin";
+        private const string EMPLOYEE_CONTROLLER = "Employee";
+        private const string VOUCHER_MG_TAB = "VoucherMg";
+        private const string INDEX_ACTION = "Index";
+        
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _voucherService = voucherService;
             _webHostEnvironment = webHostEnvironment;
-            _dashboardHubContext = dashboardHubContext;
+            _dashboardHubContext = dashboardHubContext;            
         }
 
         /// <summary>
         /// Trang danh sách voucher
         /// </summary>
         /// <remarks>url: /Voucher/Index (GET)</remarks>
+        [Authorize]
         public IActionResult Index()
         {
-            var vouchers = _voucherService.GetAll();
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+                return RedirectToAction("Login", "Account");
+
+            var vouchers = _voucherService.GetAvailableVouchers(accountId);
             return View(vouchers);
         }
 
         /// <summary>
-        /// Trang quản lý voucher cho admin
+        /// Trang quản lý voucher (admin)
         /// </summary>
         /// <remarks>url: /Voucher/AdminIndex (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult AdminIndex(string keyword = "", string statusFilter = "", string expiryFilter = "")
         {
-            var filter = new MovieTheater.Service.VoucherFilterModel
+            var vouchers = _voucherService.GetAll();
+
+            if (!string.IsNullOrEmpty(keyword))
             {
-                Keyword = keyword,
-                StatusFilter = statusFilter,
-                ExpiryFilter = expiryFilter
-            };
-            var vouchers = _voucherService.GetFilteredVouchers(filter);
-            ViewBag.Keyword = keyword;
-            ViewBag.StatusFilter = statusFilter;
-            ViewBag.ExpiryFilter = expiryFilter;
-            return View("VoucherMg", vouchers);
+                vouchers = vouchers.Where(v => v.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                                               v.Account?.FullName.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                bool isUsed = statusFilter.ToLower() == "used";
+                vouchers = vouchers.Where(v => v.IsUsed == isUsed).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(expiryFilter))
+            {
+                DateTime now = DateTime.Now;
+                switch (expiryFilter.ToLower())
+                {
+                    case "expired":
+                        vouchers = vouchers.Where(v => v.ExpiryDate < now).ToList();
+                        break;
+                    case "expiring_soon":
+                        vouchers = vouchers.Where(v => v.ExpiryDate >= now && v.ExpiryDate <= now.AddDays(7)).ToList();
+                        break;
+                    case "valid":
+                        vouchers = vouchers.Where(v => v.ExpiryDate > now.AddDays(7)).ToList();
+                        break;
+                }
+            }
+
+            return View(vouchers);
         }
 
         /// <summary>
         /// Xem chi tiết voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Details (GET)</remarks>
+        /// <remarks>url: /Voucher/Details/{id} (GET)</remarks>
+        [Authorize]
         public IActionResult Details(string id)
         {
             var voucher = _voucherService.GetById(id);
-            if (voucher == null) return NotFound();
+            if (voucher == null)
+                return NotFound();
+
             return View(voucher);
         }
 
         /// <summary>
         /// Lấy chi tiết voucher (admin, ajax)
         /// </summary>
-        /// <remarks>url: /Voucher/GetVoucherDetails (GET)</remarks>
+        /// <remarks>url: /Voucher/GetVoucherDetails/{id} (GET)</remarks>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult GetVoucherDetails(string id)
         {
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
-            {
-                return Json(new { success = false, message = "Voucher not found" });
-            }
+                return Json(new { success = false, message = "Voucher not found." });
 
-            var now = DateTime.Now;
-            var isExpired = voucher.ExpiryDate <= now;
-            var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
-            var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
-
-            var details = new
+            var result = new
             {
                 success = true,
                 voucher = new
                 {
                     id = voucher.VoucherId,
                     code = voucher.Code,
-                    accountId = voucher.AccountId,
                     value = voucher.Value,
-                    createdDate = voucher.CreatedDate.ToString("dd/MM/yyyy HH:mm"),
-                    expiryDate = voucher.ExpiryDate.ToString("dd/MM/yyyy HH:mm"),
+                    expiryDate = voucher.ExpiryDate.ToString("yyyy-MM-dd"),
                     isUsed = voucher.IsUsed,
-                    image = voucher.Image,
-                    status = isUsed ? "Used" : isExpired ? "Expired" : "Active",
-                    daysUntilExpiry = daysUntilExpiry,
-                    isExpiringSoon = daysUntilExpiry <= 7 && daysUntilExpiry > 0
+                    account = voucher.Account != null ? new
+                    {
+                        accountId = voucher.Account.AccountId,
+                        fullName = voucher.Account.FullName,
+                        email = voucher.Account.Email,
+                        phoneNumber = voucher.Account.PhoneNumber
+                    } : null,
+                    image = voucher.Image
                 }
             };
 
-            return Json(details);
+            return Json(result);
         }
 
         /// <summary>
         /// Trang tạo voucher mới
         /// </summary>
         /// <remarks>url: /Voucher/Create (GET)</remarks>
-        [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
@@ -118,66 +156,73 @@ namespace MovieTheater.Controllers
         /// Tạo voucher mới
         /// </summary>
         /// <remarks>url: /Voucher/Create (POST)</remarks>
-        [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create(Voucher voucher)
         {
-            if (!ModelState.IsValid) return View(voucher);
-            voucher.VoucherId = _voucherService.GenerateVoucherId();
-            voucher.Code = "VOUCHER";
-            voucher.CreatedDate = DateTime.Now;
-            voucher.ExpiryDate = DateTime.Now.AddDays(30);
-            voucher.Value = voucher.Value;
-            voucher.IsUsed = false;
-            voucher.Image = "/voucher-img/voucher.jpg";
-            _voucherService.Add(voucher);
-            return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _voucherService.Add(voucher);
+                return RedirectToAction(nameof(Index));
+            }
+            return View(voucher);
         }
 
         /// <summary>
         /// Trang sửa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Edit (GET)</remarks>
-        [HttpGet]
+        /// <remarks>url: /Voucher/Edit/{id} (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult Edit(string id)
         {
             var voucher = _voucherService.GetById(id);
-            if (voucher == null) return NotFound();
+            if (voucher == null)
+                return NotFound();
+
             return View(voucher);
         }
 
         /// <summary>
         /// Sửa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Edit (POST)</remarks>
-        [HttpPost]
+        /// <remarks>url: /Voucher/Edit/{id} (POST)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult Edit(Voucher voucher)
         {
-            if (!ModelState.IsValid) return View(voucher);
-            _voucherService.Update(voucher);
-            return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _voucherService.Update(voucher);
+                return RedirectToAction(nameof(Index));
+            }
+            return View(voucher);
         }
 
         /// <summary>
         /// Trang xóa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Delete (GET)</remarks>
-        [HttpGet]
+        /// <remarks>url: /Voucher/Delete/{id} (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult Delete(string id)
         {
             var voucher = _voucherService.GetById(id);
-            if (voucher == null) return NotFound();
+            if (voucher == null)
+                return NotFound();
+
             return View(voucher);
         }
 
         /// <summary>
         /// Xóa voucher
         /// </summary>
-        /// <remarks>url: /Voucher/Delete (POST)</remarks>
-        [HttpPost, ActionName("Delete")]
+        /// <remarks>url: /Voucher/Delete/{id} (POST)</remarks>
+        [Authorize(Roles = "Admin")]
         public IActionResult DeleteConfirmed(string id)
         {
-            _voucherService.Delete(id);
-            return RedirectToAction("Index");
+            var voucher = _voucherService.GetById(id);
+            if (voucher != null)
+            {
+                _voucherService.Delete(id);
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         /// <summary>
@@ -191,13 +236,16 @@ namespace MovieTheater.Controllers
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
             {
-                TempData["ToastMessage"] = "Voucher not found.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Voucher not found.";
+                return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
             }
             _voucherService.Delete(id);
             await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-            TempData["ToastMessage"] = "Voucher deleted successfully.";
-            return Redirect("/Admin/MainPage?tab=VoucherMg");
+            TempData[TOAST_MESSAGE] = "Voucher deleted successfully.";
+            if (role == "Admin")
+                return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+            else
+                return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
         }
 
         /// <summary>
@@ -211,19 +259,21 @@ namespace MovieTheater.Controllers
             var voucher = _voucherService.GetById(id);
             if (voucher == null)
             {
-                TempData["ToastMessage"] = "Voucher not found.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Voucher not found.";
+                return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
             }
 
             // Check if voucher can be edited
             var now = DateTime.Now;
             var isExpired = voucher.ExpiryDate <= now;
             var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
-
             if (isUsed || isExpired)
             {
-                TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Cannot edit used or expired vouchers.";
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
             }
 
             var viewModel = new VoucherViewModel
@@ -250,14 +300,13 @@ namespace MovieTheater.Controllers
         public async Task<IActionResult> AdminEdit(VoucherViewModel viewModel, IFormFile? imageFile)
         {
             if (!ModelState.IsValid) return View(viewModel);
-
             try
             {
                 var voucher = _voucherService.GetById(viewModel.VoucherId);
                 if (voucher == null)
                 {
-                    TempData["ToastMessage"] = "Voucher not found.";
-                    return Redirect("/Admin/MainPage?tab=VoucherMg");
+                    TempData[TOAST_MESSAGE] = "Voucher not found.";
+                    return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
                 }
 
                 // Check if voucher can be edited
@@ -267,8 +316,11 @@ namespace MovieTheater.Controllers
 
                 if (isUsed || isExpired)
                 {
-                    TempData["ToastMessage"] = "Cannot edit used or expired vouchers.";
-                    return Redirect("/Admin/MainPage?tab=VoucherMg");
+                    TempData[TOAST_MESSAGE] = "Cannot edit used or expired vouchers.";
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
                 }
 
                 voucher.AccountId = viewModel.AccountId;
@@ -296,10 +348,17 @@ namespace MovieTheater.Controllers
                         }
                     }
 
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                    
+                    string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                    if (secureFilePath == null)
+                    {
+                        TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                        return View(viewModel);
+                    }
+                    
+                    using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                     {
                         await imageFile.CopyToAsync(fileStream);
                     }
@@ -309,11 +368,15 @@ namespace MovieTheater.Controllers
 
                 _voucherService.Update(voucher);
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                TempData["ToastMessage"] = "Voucher updated successfully.";
-                return Redirect("/Admin/MainPage?tab=VoucherMg");
+                TempData[TOAST_MESSAGE] = "Voucher updated successfully.";
+                if (role == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
             }
             catch (Exception ex)
             {
+                Serilog.Log.Error(ex, "[Voucher AdminCreate] Exception: {Message}", ex.Message);
                 ModelState.AddModelError("", "Error updating voucher: " + ex.Message);
                 return View(viewModel);
             }
@@ -367,10 +430,17 @@ namespace MovieTheater.Controllers
                             Directory.CreateDirectory(uploadsFolder);
                         }
 
-                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
+                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                        
+                        string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                        if (secureFilePath == null)
+                        {
+                            TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                            return View(viewModel);
+                        }
+                        
+                        using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                         {
                             await imageFile.CopyToAsync(fileStream);
                         }
@@ -384,8 +454,11 @@ namespace MovieTheater.Controllers
 
                     _voucherService.Add(voucher);
                     await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                    TempData["ToastMessage"] = "Voucher created successfully!";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    TempData[TOAST_MESSAGE] = "Voucher created successfully!";
+                    if (role == "Admin")
+                        return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
+                    else
+                        return RedirectToAction("MainPage", "Employee", new { tab = "VoucherMg" });
                 }
                 catch (Exception ex)
                 {

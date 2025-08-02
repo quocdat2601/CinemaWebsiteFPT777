@@ -36,20 +36,38 @@
 </ul>
 
 <div class="tab-content" id="showroomTabsContent">
-    <!-- Active Tab -->
+    @{
+        // Define column headers for Active tab
+        List<string> activeColumnHeaders = new List<string> { "ID", "Cinema Room Name", "Version", "Seat Quantity", "Actions" };
+
+        // Define column headers for Hidden tab
+        List<string> hiddenColumnHeaders = new List<string> { "ID", "Cinema Room Name", "Reason", "From Date", "To Date", "Actions" };
+    }
+
     <div class="tab-pane fade show active" id="active" role="tabpanel">
-        @Html.Partial("_CinemaRoomTable", ViewBag.ActiveRooms as List<CinemaRoom>)
+        @Html.Partial("_CinemaRoomTable", 
+                      ViewBag.ActiveRooms as List<CinemaRoom>, 
+                      new ViewDataDictionary(ViewData) 
+                      { 
+                          { "TableType", "Active" },
+                          { "ColumnHeaders", activeColumnHeaders } // Pass the active column headers
+                      })
     </div>
 
-    <!-- Hidden Tab -->
     <div class="tab-pane fade" id="hidden" role="tabpanel">
-        @Html.Partial("_CinemaRoomTable", ViewBag.HiddenRooms as List<CinemaRoom>)
+        @Html.Partial("_CinemaRoomTable", 
+                      ViewBag.HiddenRooms as List<CinemaRoom>, 
+                      new ViewDataDictionary(ViewData) 
+                      { 
+                          { "TableType", "Hidden" },
+                          { "ColumnHeaders", hiddenColumnHeaders } // Pass the hidden column headers
+                      })
     </div>
 </div>
 
 <div class="modal fade" id="addShowroomModal" tabindex="-1" aria-labelledby="addShowroomModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content text-black">
             <form asp-action="Create" asp-controller="Cinema" method="post">
 
                 <div class="modal-header">

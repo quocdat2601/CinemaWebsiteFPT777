@@ -1,12 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Repository;
 using Version = MovieTheater.Models.Version;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class VersionController : Controller
     {
         private readonly IVersionRepository _versionRepo;
+
+        // Constants for string literals
+        private const string TOAST_MESSAGE = "ToastMessage";
+        private const string ERROR_MESSAGE = "ErrorMessage";
+        private const string MAIN_PAGE = "MainPage";
+        private const string ADMIN_CONTROLLER = "Admin";
+        private const string VERSION_MG_TAB = "VersionMg";
 
         public VersionController(IVersionRepository versionRepo)
         {
@@ -21,12 +30,12 @@ namespace MovieTheater.Controllers
             {
                 _versionRepo.Add(model);
                 _versionRepo.Save();
-                TempData["ToastMessage"] = "Version created successfully!";
+                TempData[TOAST_MESSAGE] = "Version created successfully!";
                 // Redirect to the page that shows the version list
-                return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
+                return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
             }
-            TempData["ErrorMessage"] = "Invalid data!";
-            return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
+            TempData[ERROR_MESSAGE] = "Invalid data!";
+            return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
         }
 
         [HttpPost]
@@ -35,10 +44,10 @@ namespace MovieTheater.Controllers
             if (ModelState.IsValid)
             {
                 _versionRepo.Update(model);
-                TempData["ToastMessage"] = "Version updated successfully!";
+                TempData[TOAST_MESSAGE] = "Version updated successfully!";
                 return Json(new { success = true });
             }
-            TempData["ErrorMessage"] = "Version update unsuccessful!";
+            TempData[ERROR_MESSAGE] = "Version update unsuccessful!";
             return Json(new { success = false, error = "Invalid data" });
         }
 
@@ -52,25 +61,25 @@ namespace MovieTheater.Controllers
                 var version = _versionRepo.GetById(id);
                 if (version == null)
                 {
-                    TempData["ToastMessage"] = "Version not found.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
+                    TempData[TOAST_MESSAGE] = "Version not found.";
+                    return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
                 }
 
                 bool success = _versionRepo.Delete(id);
 
                 if (!success)
                 {
-                    TempData["ErrorMessage"] = "Failed to delete version.";
-                    return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
+                    TempData[ERROR_MESSAGE] = "Failed to delete version.";
+                    return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
                 }
 
-                TempData["ToastMessage"] = "Version deleted successfully!";
-                return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
+                TempData[TOAST_MESSAGE] = "Version deleted successfully!";
+                return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
             }
             catch (Exception ex)
             {
-                TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
-                return RedirectToAction("MainPage", "Admin", new { tab = "VersionMg" });
+                TempData[TOAST_MESSAGE] = $"An error occurred during deletion: {ex.Message}";
+                return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
             }
         }
 

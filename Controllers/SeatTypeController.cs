@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class SeatTypeController : Controller
     {
         private readonly ISeatTypeService _seatTypeService;
@@ -57,16 +59,6 @@ namespace MovieTheater.Controllers
             }
         }
 
-        //GET: SeatTypeController/Edit/5
-        //public ActionResult Edit(int id)
-        //{
-        //    return View();
-        //}
-
-        /// <summary>
-        /// Sửa loại ghế
-        /// </summary>
-        /// <remarks>url: /SeatType/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit([FromForm] List<SeatType> seatTypes)

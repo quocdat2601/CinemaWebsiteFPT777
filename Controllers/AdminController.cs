@@ -1,10 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Security.Claims;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
@@ -69,7 +75,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly")
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null)
         {
             switch (tab)
             {
@@ -149,6 +155,20 @@ namespace MovieTheater.Controllers
                         else if (statusFilter == "notpaid")
                             invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
                     }
+
+                    // Bổ sung filter booking type (all vs normal vs employee)
+                    if (!string.IsNullOrEmpty(bookingTypeFilter))
+                    {
+                        if (bookingTypeFilter == "normal")
+                            invoices = invoices.Where(i => i.EmployeeId == null).ToList();
+                        else if (bookingTypeFilter == "employee")
+                            invoices = invoices.Where(i => i.EmployeeId != null).ToList();
+                        // If bookingTypeFilter is "all" or any other value, don't filter (show all)
+                    }
+                    
+                    // Set the current booking type filter for the view
+                    ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
+                    ViewBag.StatusFilter = statusFilter;
 
                     // Bổ sung sort
                     var sortBy = Request.Query["sortBy"].ToString();
@@ -385,7 +405,11 @@ namespace MovieTheater.Controllers
 
                 // Redirect back to the member list on success
                 TempData["ToastMessage"] = "Member updated successfully!"; // Optional success message
-                return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (userRole == "Admin")
+                    return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+                else
+                    return RedirectToAction("MainPage", "Employee", new { tab = "MemberMg" });
             }
             catch (Exception)
             {
@@ -482,6 +506,7 @@ namespace MovieTheater.Controllers
                 var result = _rankService.Create(infoModel);
                 TempData["ToastMessage"] = "Rank created successfully!";
                 return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+
             }
             catch (InvalidOperationException ex)
             {
@@ -553,6 +578,160 @@ namespace MovieTheater.Controllers
             _rankService.Delete(id);
             TempData["ToastMessage"] = "Rank deleted successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin, Employee")]
+        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, int page = 1, int pageSize = 10)
+        {
+            var invoices = _invoiceService.GetAll();
+
+            // Apply keyword filter
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim().ToLower();
+                invoices = invoices.Where(i =>
+                    (!string.IsNullOrEmpty(i.InvoiceId) && i.InvoiceId.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrEmpty(i.AccountId) && i.AccountId.ToLower().Contains(keyword)) ||
+                    (i.Account != null && (
+                        (!string.IsNullOrEmpty(i.Account.PhoneNumber) && i.Account.PhoneNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrEmpty(i.Account.IdentityCard) && i.Account.IdentityCard.ToLower().Contains(keyword))
+                    ))
+                ).ToList();
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                if (statusFilter == "completed")
+                    invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && !b.Cancel).ToList();
+                else if (statusFilter == "cancelled")
+                    invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && b.Cancel).ToList();
+                else if (statusFilter == "notpaid")
+                    invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
+            }
+
+            // Apply booking type filter
+            if (!string.IsNullOrEmpty(bookingTypeFilter))
+            {
+                if (bookingTypeFilter == "normal")
+                    invoices = invoices.Where(i => i.EmployeeId == null).ToList();
+                else if (bookingTypeFilter == "employee")
+                    invoices = invoices.Where(i => i.EmployeeId != null).ToList();
+            }
+
+            // Sort by booking date (newest first) - using InvoiceId as proxy for booking date
+            invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+
+            // Calculate pagination
+            var totalCount = invoices.Count();
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            var skip = (page - 1) * pageSize;
+            var pagedInvoices = invoices.Skip(skip).Take(pageSize).ToList();
+
+            // Calculate statistics
+            var totalBookings = totalCount;
+            var completed = invoices.Count(b => b.Status == InvoiceStatus.Completed && !b.Cancel);
+            var cancelled = invoices.Count(b => b.Status == InvoiceStatus.Completed && b.Cancel);
+            var notPaid = invoices.Count(b => b.Status != InvoiceStatus.Completed);
+
+            var result = pagedInvoices.Select(i => new
+            {
+                invoiceId = i.InvoiceId,
+                accountId = i.AccountId,
+                movieName = i.MovieShow?.Movie?.MovieNameEnglish ?? "N/A",
+                identityCard = i.Account?.IdentityCard ?? "N/A",
+                phoneNumber = i.Account?.PhoneNumber ?? "N/A",
+                scheduleTime = i.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A",
+                status = i.Status,
+                cancel = i.Cancel,
+                employeeId = i.EmployeeId
+            }).ToList();
+
+            return Json(new
+            {
+                success = true,
+                data = result,
+                pagination = new
+                {
+                    currentPage = page,
+                    totalPages = totalPages,
+                    totalCount = totalCount,
+                    pageSize = pageSize,
+                    hasNextPage = page < totalPages,
+                    hasPreviousPage = page > 1
+                },
+                statistics = new
+                {
+                    totalBookings = totalBookings,
+                    completed = completed,
+                    cancelled = cancelled,
+                    notPaid = notPaid
+                }
+            });
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult VoucherMgPartial(string keyword = null, string statusFilter = null, string expiryFilter = null, int page = 1, int pageSize = 10)
+        {
+            var filter = new Service.VoucherFilterModel
+            {
+                Keyword = keyword,
+                StatusFilter = statusFilter,
+                ExpiryFilter = expiryFilter
+            };
+            var vouchers = _voucherService.GetFilteredVouchers(filter).ToList();
+
+            // Calculate pagination
+            var totalCount = vouchers.Count();
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            var skip = (page - 1) * pageSize;
+            var pagedVouchers = vouchers.Skip(skip).Take(pageSize).ToList();
+
+            // Calculate statistics
+            var now = DateTime.Now;
+            var totalVouchers = totalCount;
+            var active = vouchers.Count(v => !v.IsUsed.HasValue || !v.IsUsed.Value && v.ExpiryDate > now);
+            var used = vouchers.Count(v => v.IsUsed.HasValue && v.IsUsed.Value);
+            var expired = vouchers.Count(v => v.ExpiryDate <= now);
+
+            var result = pagedVouchers.Select(v => new
+            {
+                voucherId = v.VoucherId,
+                code = v.Code,
+                accountId = v.AccountId,
+                value = v.Value,
+                createdDate = v.CreatedDate.ToString("dd/MM/yyyy"),
+                expiryDate = v.ExpiryDate.ToString("dd/MM/yyyy"),
+                isUsed = v.IsUsed,
+                isExpired = v.ExpiryDate <= now,
+                image = v.Image,
+                daysUntilExpiry = (v.ExpiryDate - now).Days,
+                isExpiringSoon = (v.ExpiryDate - now).Days <= 7 && (v.ExpiryDate - now).Days > 0
+            }).ToList();
+
+            return Json(new
+            {
+                success = true,
+                data = result,
+                pagination = new
+                {
+                    currentPage = page,
+                    totalPages = totalPages,
+                    totalCount = totalCount,
+                    pageSize = pageSize,
+                    hasNextPage = page < totalPages,
+                    hasPreviousPage = page > 1
+                },
+                statistics = new
+                {
+                    totalVouchers = totalVouchers,
+                    active = active,
+                    used = used,
+                    expired = expired
+                }
+            });
         }
     }
 }

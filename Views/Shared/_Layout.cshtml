@@ -29,7 +29,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/navbar.css" />
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
@@ -74,27 +74,32 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Promotion" asp-action="List">Promotions</a>
                         </li>
-                        @if (userRole == "Member")
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Booking" asp-action="TicketBooking">Booking</a>
-                            </li>
-                        }
                     </ul>
                     <ul class="navbar-nav align-items-center">
-
                         @if (userRole == "Admin")
                         {
                             <li class="nav-item me-2">
+                                <a class="nav-link" href="@Url.Action("QuickBook", "Booking")">
+                                    <i class="fas fa-ticket-alt me-1"></i>Quick Book
+                                </a>
+                            </li>
+                            <li class="nav-item me-2">
                                 <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
                             </li>
-
                             <li class="nav-item me-2">
                                 <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
                             </li>
                         }
                         else if (userRole == "Employee")
                         {
+                            <li class="nav-item me-2">
+                                <a class="nav-link" href="@Url.Action("QuickBook", "Booking")">
+                                    <i class="fas fa-ticket-alt me-1"></i>Quick Book
+                                </a>
+                            </li>
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
+                            </li>
                             <li class="nav-item me-2">
                                 <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
                             </li>
@@ -308,7 +313,7 @@
     if (retryBtn) {
       retryBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        window.location.href = '/Booking/TicketBooking';
+                        window.location.href = '/#booking-widget';
       });
     }
   });
@@ -344,7 +349,7 @@
                 </ul>
             </div>
                 <div class="col-lg-4 d-flex flex-column align-items-start mb-4" style="
-    padding-left: 250px;">
+    padding-left: 100px;">
                 <h5 class="fw-bold mb-3">CUSTOMER SERVICES</h5>
                 <div class="footer-underline mb-2"></div>
                 <p class="mb-1"><b>Hotline:</b> 19002099</p>

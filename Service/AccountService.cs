@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
+using MovieTheater.Helpers;
 using System.Collections.Concurrent;
 using System.Security.Claims;
 
@@ -36,6 +37,9 @@ namespace MovieTheater.Service
         public bool Register(RegisterViewModel model)
         {
             if (_repository.GetByUsername(model.Username) != null)
+                return false;
+
+            if (_repository.GetAccountByEmail(model.Email) != null)
                 return false;
 
             var hasher = new PasswordHasher<Account>();
@@ -121,17 +125,20 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            if (model.Status.HasValue)
-            {
-                account.Status = model.Status;
-            }
 
             if (model.ImageFile != null && model.ImageFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
-                var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.ImageFile.FileName;
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.ImageFile.FileName);
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    return false; // Invalid file path
+                }
+                
+                using (var stream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     model.ImageFile.CopyTo(stream);
                 }
@@ -509,6 +516,154 @@ namespace MovieTheater.Service
         public async Task SignOutUserAsync(HttpContext httpContext)
         {
             await httpContext.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        // --- Forget Password Methods ---
+        public bool SendForgetPasswordOtp(string email)
+        {
+            try
+            {
+                var account = _repository.GetAccountByEmail(email);
+                if (account == null)
+                {
+                    _logger.LogWarning($"Attempted to send OTP to non-existent email: {email}");
+                    return false;
+                }
+
+                var otp = GenerateOtp();
+                var expiry = DateTime.UtcNow.AddMinutes(10);
+
+                // Store OTP with email as key instead of accountId
+                _otpStore[email] = (otp, expiry);
+
+                var subject = "Mã OTP Đặt Lại Mật Khẩu - FPT 777 Cinema";
+                var body = $@"
+                    <html>
+                        <body style='font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa;'>
+                            <div style='max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);'>
+                                <div style='text-align: center; margin-bottom: 30px;'>
+                                    <h1 style='color: #333; margin-bottom: 10px;'>FPT 777 Cinema</h1>
+                                    <h2 style='color: #007bff; margin: 0;'>Đặt Lại Mật Khẩu</h2>
+                                </div>
+                                
+                                <p style='color: #666; font-size: 16px; line-height: 1.6;'>
+                                    Xin chào <strong>{account.FullName}</strong>,
+                                </p>
+                                
+                                <p style='color: #666; font-size: 16px; line-height: 1.6;'>
+                                    Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. 
+                                    Vui lòng sử dụng mã OTP dưới đây để tiếp tục:
+                                </p>
+                                
+                                <div style='background: linear-gradient(135deg, #007bff, #0056b3); padding: 20px; border-radius: 10px; margin: 30px 0; text-align: center;'>
+                                    <h1 style='color: white; margin: 0; font-size: 32px; letter-spacing: 5px; font-weight: bold;'>{otp}</h1>
+                                </div>
+                                
+                                <div style='background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;'>
+                                    <p style='color: #856404; margin: 0; font-size: 14px;'>
+                                        <strong>⚠️ Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.
+                                    </p>
+                                </div>
+                                
+                                <p style='color: #666; font-size: 16px; line-height: 1.6;'>
+                                    Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.
+                                </p>
+                                
+                                <hr style='margin: 30px 0; border: none; border-top: 1px solid #eee;'>
+                                
+                                <div style='text-align: center; color: #999; font-size: 12px;'>
+                                    <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+                                    <p>© 2024 FPT 777 Cinema. All rights reserved.</p>
+                                </div>
+                            </div>
+                        </body>
+                    </html>";
+
+                var result = _emailService.SendEmail(email, subject, body);
+                if (result)
+                {
+                    _logger.LogInformation($"Forget password OTP sent successfully to {email}");
+                }
+                else
+                {
+                    _logger.LogError($"Failed to send forget password OTP to {email}");
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception while sending forget password OTP to {email}: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool VerifyForgetPasswordOtp(string email, string otp)
+        {
+            if (!_otpStore.TryGetValue(email, out var otpData))
+                return false;
+
+            if (DateTime.UtcNow > otpData.Expiry)
+            {
+                _otpStore.TryRemove(email, out _);
+                return false;
+            }
+
+            var isValid = otpData.Otp == otp;
+            if (isValid)
+            {
+                _logger.LogInformation($"Forget password OTP verified successfully for {email}");
+            }
+            else
+            {
+                _logger.LogWarning($"Invalid forget password OTP attempt for {email}");
+            }
+            return isValid;
+        }
+
+        public bool ResetPassword(string email, string newPassword)
+        {
+            try
+            {
+                var account = _repository.GetAccountByEmail(email);
+                if (account == null)
+                {
+                    _logger.LogWarning($"Attempted to reset password for non-existent email: {email}");
+                    return false;
+                }
+
+                var hasher = new PasswordHasher<Account>();
+                account.Password = hasher.HashPassword(null, newPassword);
+
+                _repository.Update(account);
+                _repository.Save();
+
+                // Clear OTP after successful password reset
+                _otpStore.TryRemove(email, out _);
+
+                _logger.LogInformation($"Password reset successfully for {email}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception while resetting password for {email}: {ex.Message}");
+                return false;
+            }
+        }
+
+        public Account? GetAccountByEmail(string email)
+        {
+            return _repository.GetAccountByEmail(email);
+        }
+
+        private string GenerateOtp()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();
+        }
+
+        public void ToggleStatus(string accountId)
+        {
+            _repository.ToggleStatus(accountId);
         }
     }
 }

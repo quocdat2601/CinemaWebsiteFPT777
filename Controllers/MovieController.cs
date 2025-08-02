@@ -9,6 +9,7 @@ using MovieTheater.Repository;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
 using Microsoft.AspNetCore.Hosting;
+using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {//movie
@@ -21,6 +22,14 @@ namespace MovieTheater.Controllers
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IPersonRepository _personRepository;
 
+        // Constants for string literals
+        private const string ERROR_MESSAGE = "ErrorMessage";
+        private const string TOAST_MESSAGE = "ToastMessage";
+        private const string MAIN_PAGE = "MainPage";
+        private const string ADMIN_CONTROLLER = "Admin";
+        private const string EMPLOYEE_CONTROLLER = "Employee";
+        private const string MOVIE_MG_TAB = "MovieMg";
+
         public MovieController(IMovieService movieService, ICinemaService cinemaService, ILogger<MovieController> logger, IHubContext<DashboardHub> dashboardHubContext, IWebHostEnvironment webHostEnvironment, IPersonRepository personRepository)
         {
             _movieService = movieService;
@@ -30,14 +39,7 @@ namespace MovieTheater.Controllers
             _webHostEnvironment = webHostEnvironment;
             _personRepository = personRepository;
         }
-
-        /// <summary>
-        /// Lấy role người dùng hiện tại từ JWT Claims.
-        /// </summary>
-        private string GetUserRole()
-        {
-            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-        }
+        public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         /// <summary>
         /// [GET] api/movie/movielist
@@ -50,7 +52,26 @@ namespace MovieTheater.Controllers
             var selectedTypeIds = string.IsNullOrEmpty(typeIds) ? new List<int>() : typeIds.Split(',').Select(int.Parse).ToList();
             var selectedVersionIds = string.IsNullOrEmpty(versionIds) ? new List<int>() : versionIds.Split(',').Select(int.Parse).ToList();
 
-            var movies = _movieService.SearchMovies(searchTerm)
+            // Get ongoing and incoming movies
+            var ongoingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails();
+            var incomingMovies = _movieService.GetComingSoonMoviesWithDetails();
+            
+            // Filter by search term first
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                ongoingMovies = ongoingMovies.Where(m => 
+                    m.MovieNameEnglish?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                    m.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
+                
+                incomingMovies = incomingMovies.Where(m => 
+                    m.MovieNameEnglish?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                    m.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            }
+
+            // Separate ongoing and incoming movies after filtering
+            var ongoingMoviesFiltered = ongoingMovies
+                .Where(m => (selectedTypeIds.Count == 0 || (m.Types ?? new List<Models.Type>()).Any(t => selectedTypeIds.Contains(t.TypeId))) &&
+                            (selectedVersionIds.Count == 0 || (m.Versions ?? new List<Models.Version>()).Any(v => selectedVersionIds.Contains(v.VersionId))))
                 .Select(m => new MovieViewModel
                 {
                     MovieId = m.MovieId,
@@ -58,11 +79,27 @@ namespace MovieTheater.Controllers
                     Duration = m.Duration,
                     SmallImage = m.SmallImage,
                     Types = m.Types.ToList(),
-                    Versions = m.Versions.ToList()
+                    Versions = m.Versions.ToList(),
+                    IsOngoing = true
                 })
+                .ToList();
+
+            var incomingMoviesFiltered = incomingMovies
                 .Where(m => (selectedTypeIds.Count == 0 || (m.Types ?? new List<Models.Type>()).Any(t => selectedTypeIds.Contains(t.TypeId))) &&
                             (selectedVersionIds.Count == 0 || (m.Versions ?? new List<Models.Version>()).Any(v => selectedVersionIds.Contains(v.VersionId))))
+                .Select(m => new MovieViewModel
+                {
+                    MovieId = m.MovieId,
+                    MovieNameEnglish = m.MovieNameEnglish,
+                    Duration = m.Duration,
+                    SmallImage = m.SmallImage,
+                    Types = m.Types.ToList(),
+                    Versions = m.Versions.ToList(),
+                    IsOngoing = false
+                })
                 .ToList();
+
+            var movies = ongoingMoviesFiltered.Concat(incomingMoviesFiltered).ToList();
 
             ViewBag.AllTypes = _movieService.GetAllTypes();
             ViewBag.AllVersions = _movieService.GetAllVersions();
@@ -118,6 +155,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/Create")]
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Create()
         {
             var model = new MovieDetailViewModel
@@ -135,6 +173,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Create")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Create(MovieDetailViewModel model)
         {
             if (!ModelState.IsValid)
@@ -146,7 +185,7 @@ namespace MovieTheater.Controllers
 
             if (model.FromDate >= model.ToDate)
             {
-                TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
+                TempData[ERROR_MESSAGE] = "Invalid date range. From date must be before To date.";
                 model.AvailableTypes = _movieService.GetAllTypes();
                 model.AvailableVersions = _movieService.GetAllVersions();
                 return View(model);
@@ -163,9 +202,19 @@ namespace MovieTheater.Controllers
 
             if (model.LargeImageFile != null && model.LargeImageFile.Length > 0)
             {
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LargeImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    model.AvailableVersions = _movieService.GetAllVersions();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LargeImageFile.CopyToAsync(fileStream);
                 }
@@ -178,9 +227,19 @@ namespace MovieTheater.Controllers
 
             if (model.SmallImageFile != null && model.SmallImageFile.Length > 0)
             {
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.SmallImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    model.AvailableVersions = _movieService.GetAllVersions();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.SmallImageFile.CopyToAsync(fileStream);
                 }
@@ -193,11 +252,21 @@ namespace MovieTheater.Controllers
 
             if (model.LogoFile != null && model.LogoFile.Length > 0)
             {
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LogoFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
                 {
-                    await model.SmallImageFile.CopyToAsync(fileStream);
+                    TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    model.AvailableVersions = _movieService.GetAllVersions();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
+                {
+                    await model.LogoFile.CopyToAsync(fileStream);
                 }
                 logoPath = "/images/movies/" + uniqueFileName;
             }
@@ -252,16 +321,15 @@ namespace MovieTheater.Controllers
 
             if (_movieService.AddMovie(movie))
             {
-                TempData["ToastMessage"] = "Movie created successfully!";
+                TempData[TOAST_MESSAGE] = "Movie created successfully!";
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                string role = GetUserRole();
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
             }
 
-            TempData["ErrorMessage"] = "Failed to create movie.";
+            TempData[ERROR_MESSAGE] = "Failed to create movie.";
             model.AvailableTypes = _movieService.GetAllTypes();
             model.AvailableVersions = _movieService.GetAllVersions();
             return View(model);
@@ -273,6 +341,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/Edit/{id}")]
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Edit(string id)
         {
             var movie = _movieService.GetById(id);
@@ -316,6 +385,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Edit/{id}")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Edit(string id, MovieDetailViewModel model)
         {
             if (id != model.MovieId)
@@ -331,7 +401,7 @@ namespace MovieTheater.Controllers
 
             if (model.FromDate >= model.ToDate)
             {
-                TempData["ErrorMessage"] = "Invalid date range. From date must be before To date.";
+                TempData[ERROR_MESSAGE] = "Invalid date range. From date must be before To date.";
                 model.AvailableTypes = _movieService.GetAllTypes();
                 return View(model);
             }
@@ -360,9 +430,18 @@ namespace MovieTheater.Controllers
                     if (System.IO.File.Exists(oldImagePath))
                         System.IO.File.Delete(oldImagePath);
                 }
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LargeImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LargeImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LargeImageFile.CopyToAsync(fileStream);
                 }
@@ -378,9 +457,18 @@ namespace MovieTheater.Controllers
                     if (System.IO.File.Exists(oldImagePath))
                         System.IO.File.Delete(oldImagePath);
                 }
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.SmallImageFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.SmallImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.SmallImageFile.CopyToAsync(fileStream);
                 }
@@ -395,9 +483,18 @@ namespace MovieTheater.Controllers
                     if (System.IO.File.Exists(oldImagePath))
                         System.IO.File.Delete(oldImagePath);
                 }
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.LogoFile.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LogoFile.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
+                
+                string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
+                if (secureFilePath == null)
+                {
+                    TempData[ERROR_MESSAGE] = "Invalid file path detected.";
+                    model.AvailableTypes = _movieService.GetAllTypes();
+                    return View(model);
+                }
+                
+                using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LogoFile.CopyToAsync(fileStream);
                 }
@@ -438,7 +535,7 @@ namespace MovieTheater.Controllers
                         // Check for overlap (including buffer)
                         if (start < otherEnd && newEnd > otherStart)
                         {
-                            TempData["ErrorMessage"] = $"Duration update causes conflict on {show.ShowDate:dd/MM/yyyy} in room {show.CinemaRoom.CinemaRoomName} with another movie show ({other.Movie.MovieNameEnglish}) between {otherStart:HH\\:mm} and {otherEnd:HH\\:mm}. Consider updating movie show before changing duration.";
+                            TempData[ERROR_MESSAGE] = $"Duration update causes conflict on {show.ShowDate:dd/MM/yyyy} in room {show.CinemaRoom.CinemaRoomName} with another movie show ({other.Movie.MovieNameEnglish}) between {otherStart:HH\\:mm} and {otherEnd:HH\\:mm}. Consider updating movie show before changing duration.";
                             model.AvailableTypes = _movieService.GetAllTypes();
                             return View(model);
                         }
@@ -490,16 +587,15 @@ namespace MovieTheater.Controllers
 
             if (_movieService.UpdateMovie(movie))
             {
-                TempData["ToastMessage"] = "Movie updated successfully!";
+                TempData[TOAST_MESSAGE] = "Movie updated successfully!";
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-                string role = GetUserRole();
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
             }
 
-            TempData["ErrorMessage"] = "Failed to update movie.";
+            TempData[ERROR_MESSAGE] = "Failed to update movie.";
             model.AvailableTypes = _movieService.GetAllTypes();
             model.AvailableVersions = _movieService.GetAllVersions();
             return View(model);
@@ -512,28 +608,28 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [Route("Movie/Delete/{id}")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Employee")]
         public IActionResult Delete(string id, IFormCollection collection)
         {
-            string role = GetUserRole();
             try
             {
                 if (string.IsNullOrEmpty(id))
                 {
-                    TempData["ToastMessage"] = "Invalid movie ID.";
+                    TempData[TOAST_MESSAGE] = "Invalid movie ID.";
                     if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                        return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                     else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                        return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 }
 
                 var movie = _movieService.GetById(id);
                 if (movie == null)
                 {
-                    TempData["ToastMessage"] = "Movie not found.";
+                    TempData[TOAST_MESSAGE] = "Movie not found.";
                     if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                        return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                     else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                        return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 }
 
                 movie.Types?.Clear();
@@ -543,27 +639,27 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
-                    TempData["ToastMessage"] = "Failed to delete movie.";
+                    TempData[TOAST_MESSAGE] = "Failed to delete movie.";
                     if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                        return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                     else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                        return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 }
 
-                TempData["ToastMessage"] = "Movie deleted successfully!";
+                TempData[TOAST_MESSAGE] = "Movie deleted successfully!";
                 _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
             }
             catch (Exception ex)
             {
-                TempData["ToastMessage"] = $"An error occurred during deletion: {ex.Message}";
+                TempData[TOAST_MESSAGE] = $"An error occurred during deletion: {ex.Message}";
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = MOVIE_MG_TAB });
                 else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "MovieMg" });
+                    return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER, new { tab = MOVIE_MG_TAB });
             }
         }
 
@@ -574,10 +670,12 @@ namespace MovieTheater.Controllers
                 .Select(ms => new {
                     ms.MovieShowId,
                     ms.MovieId,
-                    ms.ShowDate,
-                    ScheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
-                    VersionName = ms.Version?.VersionName,
-                    VersionId = ms.VersionId
+                    showDate = ms.ShowDate.ToString("yyyy-MM-dd"),
+                    scheduleTime = ms.Schedule.ScheduleTime.Value.ToString("HH:mm"),
+                    versionName = ms.Version?.VersionName,
+                    versionId = ms.VersionId,
+                    CinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1, // Include room status for backward compatibility
+                    IsAvailable = true // Since GetMovieShowsByMovieId already filters, all returned shows are available
                 }).ToList();
             return Json(movieShows);
         }
@@ -613,6 +711,7 @@ namespace MovieTheater.Controllers
                     scheduleTime = ms.Schedule?.ScheduleTime.HasValue == true ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null,
                     ms.CinemaRoomId,
                     cinemaRoomName = ms.CinemaRoom?.CinemaRoomName,
+                    cinemaRoomStatus = ms.CinemaRoom?.StatusId ?? 1, // Include room status
                     ms.VersionId,
                     versionName = ms.Version?.VersionName
                 }).ToList();

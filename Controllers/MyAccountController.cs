@@ -142,6 +142,31 @@ namespace MovieTheater.Controllers
                 Image = user.Image
             };
 
+            // If we have cropped image data, save it as a file
+            if (!string.IsNullOrEmpty(model.Profile.CroppedImageData))
+            {
+                try
+                {
+                    var base64Data = model.Profile.CroppedImageData.Replace("data:image/jpeg;base64,", "")
+                                                                   .Replace("data:image/png;base64,", "")
+                                                                   .Replace("data:image/gif;base64,", "");
+                    var imageBytes = Convert.FromBase64String(base64Data);
+                    
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_avatar.jpg";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    
+                    System.IO.File.WriteAllBytes(filePath, imageBytes);
+                    registerModel.Image = $"/images/avatars/{uniqueFileName}";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error saving cropped image");
+                    TempData["ErrorMessage"] = "Error processing image. Please try again.";
+                    return RedirectToAction("MainPage", new { tab = "Profile" });
+                }
+            }
+
             var success = _service.Update(user.AccountId, registerModel);
             if (success)
             {
@@ -175,6 +200,15 @@ namespace MovieTheater.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Remove validation for fields that might be empty during update
+            ModelState.Remove("Profile.FullName");
+            ModelState.Remove("Profile.DateOfBirth");
+            ModelState.Remove("Profile.Gender");
+            ModelState.Remove("Profile.IdentityCard");
+            ModelState.Remove("Profile.Email");
+            ModelState.Remove("Profile.Address");
+            ModelState.Remove("Profile.PhoneNumber");
+            
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -195,7 +229,7 @@ namespace MovieTheater.Controllers
                 Address = model.Profile.Address,
                 PhoneNumber = model.Profile.PhoneNumber,
                 Image = user.Image, // Preserve the existing image
-                ImageFile = null    // Ensure we do not process a file
+                ImageFile = model.Profile.ImageFile // Allow image upload
             };
 
             var success = _service.Update(user.AccountId, registerModel);

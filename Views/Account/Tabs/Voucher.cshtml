@@ -13,24 +13,85 @@
     var expiredOrUsedVouchers = Model?.Where(v => (v.IsUsed.HasValue && v.IsUsed.Value) || v.ExpiryDate <= now)
                                       .OrderByDescending(v => v.ExpiryDate)
                                       .ToList() ?? new List<Voucher>();
+
+    // Thống kê
+    var totalValue = activeVouchers.Sum(v => v.Value);
+    var expiringSoonCount = activeVouchers.Count(v => (v.ExpiryDate - now).Days <= 7);
+    var totalVouchers = Model?.Count() ?? 0;
 }
+
 <div class="container mt-4">
+    <!-- Header Section -->
     <div class="text-center mb-5">
-        <h1 class="display-4 text-primary">My Vouchers</h1>
-        <p style="color:red">Manage your available and used vouchers</p>
+        <h1 class="display-4 text-primary">
+            <i class="fas fa-ticket-alt me-3"></i>
+            My Vouchers
+        </h1>
+        <p class="text-muted">Manage your available and used vouchers</p>
     </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="stat-card stat-active">
+                <div class="stat-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@activeVouchers.Count</h3>
+                    <p>Active Vouchers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-value">
+                <div class="stat-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@totalValue.ToString("N0")</h3>
+                    <p>Total Value (VND)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-expiring">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@expiringSoonCount</h3>
+                    <p>Expiring Soon</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-total">
+                <div class="stat-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@totalVouchers</h3>
+                    <p>Total Vouchers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+         <!-- Filter and sort controls removed -->
 
     <!-- Active Vouchers Section -->
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h3 text-success">
-                <i class="fas fa-ticket-alt me-2"></i>
-                Active Vouchers (@activeVouchers.Count)
+                <i class="fas fa-star me-2"></i>
+                Active Vouchers
+                <span class="badge bg-success ms-2">@activeVouchers.Count</span>
             </h2>
             @if (activeVouchers.Any())
             {
-                <div style="color:red">
-                    <i class="fas fa-info-circle me-1" style="color:red"></i>
+                <div class="text-muted" style="color: rgba(255, 255, 255, 0.7) !important; text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);">
+                    <i class="fas fa-info-circle me-1"></i>
                     Ordered by expiration date (soonest first)
                 </div>
             }
@@ -38,90 +99,96 @@
 
         @if (!activeVouchers.Any())
         {
-            <div class="alert alert-info text-center" role="alert">
-                <div class="d-flex align-items-center justify-content-center mb-3">
-                    <i class="fas fa-ticket-alt fa-3x text-info me-3"></i>
-                    <div>
-                        <h4 class="alert-heading mb-1">No Active Vouchers</h4>
-                        <p class="mb-0">You don't have any active vouchers at the moment.</p>
-                    </div>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-ticket-alt"></i>
                 </div>
-                <hr>
-                <p class="mb-0">Earn vouchers by booking and cancelling tickets!</p>
+                <h3>No Active Vouchers</h3>
+                <p>You don't have any active vouchers at the moment. Earn vouchers by booking and cancelling tickets!</p>
+                <button class="btn btn-primary" onclick="window.location.href='/'">
+                    <i class="fas fa-film me-2"></i>
+                    Book Tickets Now
+                </button>
             </div>
         }
         else
         {
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <div id="activeVouchersGrid" class="voucher-grid">
                 @foreach (var voucher in activeVouchers)
                 {
                     var daysUntilExpiry = (voucher.ExpiryDate - now).Days;
                     var isExpiringSoon = daysUntilExpiry <= 7;
+                    var expiryPercentage = Math.Max(0, Math.Min(100, (30 - daysUntilExpiry) * 100 / 30));
                     
-                    <div class="col">
-                        <div class="card h-100 shadow-sm border-0 position-relative @(isExpiringSoon ? "border-warning" : "")">
-                            @if (isExpiringSoon)
-                            {
-                                <div class="position-absolute top-0 start-0 w-100">
-                                    <div class="bg-warning text-dark text-center py-1 small fw-bold">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Expires in @daysUntilExpiry day@(daysUntilExpiry == 1 ? "" : "s")
-                                    </div>
-                                </div>
-                            }
-                            
+                    <div class="voucher-card active @(isExpiringSoon ? "expiring" : "")" 
+                         data-code="@voucher.Code" 
+                         data-value="@voucher.Value"
+                         data-expiry="@voucher.ExpiryDate.ToString("yyyy-MM-dd")"
+                         data-created="@voucher.CreatedDate.ToString("yyyy-MM-dd")">
+                        
+                        @if (isExpiringSoon)
+                        {
+                            <div class="expiry-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Expires in @daysUntilExpiry day@(daysUntilExpiry == 1 ? "" : "s")
+                            </div>
+                        }
+                        
+                        <div class="voucher-image">
                             @if (!string.IsNullOrEmpty(voucher.Image))
                             {
-                                <img src="@voucher.Image" class="card-img-top" alt="Voucher Image" 
-                                     style="height: 200px; object-fit: cover; @(isExpiringSoon ? "filter: brightness(0.9);" : "")">
+                                <img src="@voucher.Image" alt="Voucher Image">
                             }
                             else
                             {
-                                <div class="d-flex align-items-center justify-content-center bg-gradient-primary text-white" 
-                                     style="height: 200px; @(isExpiringSoon ? "opacity: 0.9;" : "")">
-                                    <i class="fas fa-ticket-alt fa-4x"></i>
+                                <div class="voucher-placeholder">
+                                    <i class="fas fa-ticket-alt"></i>
+                                </div>
+                            }
+                            <div class="voucher-overlay">
+                                <!-- Overlay removed - functionality simplified -->
+                            </div>
+                        </div>
+                        
+                        <div class="voucher-content">
+                            <div class="voucher-header">
+                                <div class="voucher-code">
+                                    <span class="code-label">CODE</span>
+                                    <span class="code-value">@voucher.Code</span>
+                                </div>
+                                <div class="voucher-value">
+                                    <i class="fas fa-coins"></i>
+                                    <span>@voucher.Value.ToString("N0") VND</span>
+                                </div>
+                            </div>
+                            
+                            <div class="voucher-dates">
+                                <div class="date-item">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <span>Created: @voucher.CreatedDate.ToString("dd/MM/yyyy")</span>
+                                </div>
+                                <div class="date-item">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <span>Expires: @voucher.ExpiryDate.ToString("dd/MM/yyyy")</span>
+                                </div>
+                            </div>
+                            
+                            @if (isExpiringSoon)
+                            {
+                                <div class="expiry-progress">
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" 
+                                             style="width: @expiryPercentage%"></div>
+                                    </div>
+                                    <small class="text-warning">@daysUntilExpiry days remaining</small>
                                 </div>
                             }
                             
-                            <div class="card-body d-flex flex-column">
-                                <div class="mb-3">
-                                    <h5 class="card-title mb-2">
-                                        <span class="badge bg-primary me-2">CODE</span>
-                                        <span class="fw-bold text-primary font-monospace">@voucher.Code</span>
-                                    </h5>
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-coins text-warning me-2"></i>
-                                        <span class="fw-bold fs-5 text-success">@voucher.Value.ToString("N0") VND</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="mt-auto">
-                                    <div class="row text-muted small mb-2">
-                                        <div class="col-6">
-                                            <i class="fas fa-calendar-plus me-1"></i>
-                                            Created
-                                        </div>
-                                        <div class="col-6 text-end">
-                                            @voucher.CreatedDate.ToString("dd/MM/yyyy")
-                                        </div>
-                                    </div>
-                                    <div class="row text-muted small mb-3">
-                                        <div class="col-6">
-                                            <i class="fas fa-calendar-times me-1"></i>
-                                            Expires
-                                        </div>
-                                        <div class="col-6 text-end @(isExpiringSoon ? "text-warning fw-bold" : "")">
-                                            @voucher.ExpiryDate.ToString("dd/MM/yyyy")
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="d-grid">
-                                        <span class="badge bg-success fs-6 py-2">
-                                            <i class="fas fa-check-circle me-1"></i>
-                                            Active & Ready to Use
-                                        </span>
-                                    </div>
-                                </div>
+                            <div class="voucher-status">
+                                <span class="status-badge active">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Ready to Use
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -137,85 +204,83 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="h3 text-secondary">
                     <i class="fas fa-history me-2"></i>
-                    Used or Expired Vouchers (@expiredOrUsedVouchers.Count)
+                    Used or Expired Vouchers
+                    <span class="badge bg-secondary ms-2">@expiredOrUsedVouchers.Count</span>
                 </h2>
-                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#expiredVouchers">
+                <button class="btn btn-outline-secondary btn-sm" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#expiredVouchers">
                     <i class="fas fa-chevron-down me-1"></i>
                     Toggle View
                 </button>
             </div>
 
             <div class="collapse show" id="expiredVouchers">
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <div class="voucher-grid">
                     @foreach (var voucher in expiredOrUsedVouchers)
                     {
                         var isExpired = voucher.ExpiryDate <= now;
                         var isUsed = voucher.IsUsed.HasValue && voucher.IsUsed.Value;
                         
-                        <div class="col">
-                            <div class="card h-100 shadow-sm border-0 opacity-75">
+                        <div class="voucher-card inactive" 
+                             data-code="@voucher.Code" 
+                             data-value="@voucher.Value"
+                             data-expiry="@voucher.ExpiryDate.ToString("yyyy-MM-dd")"
+                             data-created="@voucher.CreatedDate.ToString("yyyy-MM-dd")">
+                            
+                            <div class="voucher-image">
                                 @if (!string.IsNullOrEmpty(voucher.Image))
                                 {
-                                    <img src="@voucher.Image" class="card-img-top" alt="Voucher Image" 
-                                         style="height: 200px; object-fit: cover; filter: grayscale(100%);">
+                                    <img src="@voucher.Image" alt="Voucher Image" class="grayscale">
                                 }
                                 else
                                 {
-                                    <div class="d-flex align-items-center justify-content-center bg-secondary text-white" 
-                                         style="height: 200px;">
-                                        <i class="fas fa-ticket-alt fa-4x"></i>
+                                    <div class="voucher-placeholder inactive">
+                                        <i class="fas fa-ticket-alt"></i>
                                     </div>
                                 }
+                                <div class="voucher-overlay">
+                                    <!-- Overlay removed - functionality simplified -->
+                                </div>
+                            </div>
+                            
+                            <div class="voucher-content">
+                                <div class="voucher-header">
+                                    <div class="voucher-code">
+                                        <span class="code-label">CODE</span>
+                                        <span class="code-value">@voucher.Code</span>
+                                    </div>
+                                    <div class="voucher-value">
+                                        <i class="fas fa-coins"></i>
+                                        <span>@voucher.Value.ToString("N0") VND</span>
+                                    </div>
+                                </div>
                                 
-                                <div class="card-body d-flex flex-column">
-                                    <div class="mb-3">
-                                        <h5 class="card-title mb-2">
-                                            <span class="badge bg-secondary me-2">CODE</span>
-                                            <span class="fw-bold text-muted font-monospace">@voucher.Code</span>
-                                        </h5>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="fas fa-coins text-muted me-2"></i>
-                                            <span class="fw-bold fs-5 text-muted">@voucher.Value.ToString("N0") VND</span>
-                                        </div>
+                                <div class="voucher-dates">
+                                    <div class="date-item">
+                                        <i class="fas fa-calendar-plus"></i>
+                                        <span>Created: @voucher.CreatedDate.ToString("dd/MM/yyyy")</span>
                                     </div>
-                                    
-                                    <div class="mt-auto">
-                                        <div class="row text-muted small mb-2">
-                                            <div class="col-6">
-                                                <i class="fas fa-calendar-plus me-1"></i>
-                                                Created
-                                            </div>
-                                            <div class="col-6 text-end">
-                                                @voucher.CreatedDate.ToString("dd/MM/yyyy")
-                                            </div>
-                                        </div>
-                                        <div class="row text-muted small mb-3">
-                                            <div class="col-6">
-                                                <i class="fas fa-calendar-times me-1"></i>
-                                                Expired
-                                            </div>
-                                            <div class="col-6 text-end">
-                                                @voucher.ExpiryDate.ToString("dd/MM/yyyy")
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="d-grid">
-                                            @if (isUsed)
-                                            {
-                                                <span class="badge bg-secondary fs-6 py-2">
-                                                    <i class="fas fa-check-double me-1"></i>
-                                                    Used
-                                                </span>
-                                            }
-                                            else if (isExpired)
-                                            {
-                                                <span class="badge bg-danger fs-6 py-2">
-                                                    <i class="fas fa-times-circle me-1"></i>
-                                                    Expired
-                                                </span>
-                                            }
-                                        </div>
+                                    <div class="date-item">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <span>Expired: @voucher.ExpiryDate.ToString("dd/MM/yyyy")</span>
                                     </div>
+                                </div>
+                                
+                                <div class="voucher-status">
+                                    @if (isUsed)
+                                    {
+                                        <span class="status-badge used">
+                                            <i class="fas fa-check-double me-1"></i>
+                                            Used
+                                        </span>
+                                    }
+                                    else if (isExpired)
+                                    {
+                                        <span class="status-badge expired">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Expired
+                                        </span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -226,54 +291,841 @@
     }
 </div>
 
+<!-- Modal and Toast removed - functionality simplified -->
+
 <style>
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+/* Modern Voucher Theme */
+.voucher-container {
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated Background */
+.voucher-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(244, 208, 63, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(40, 167, 69, 0.05) 0%, transparent 50%);
+    animation: backgroundShift 20s ease-in-out infinite;
+    z-index: 0;
+}
+
+@@keyframes backgroundShift {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(-10px) translateY(-10px); }
+    50% { transform: translateX(10px) translateY(-5px); }
+    75% { transform: translateX(-5px) translateY(10px); }
+}
+
+/* Container background */
+.container {
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    padding: 0 15px;
+}
+
+/* Header section improvements */
+.text-center.mb-5 {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 3rem !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.row {
+    background: transparent;
+}
+
+.col, .col-lg-10 {
+    background: transparent;
+}
+
+/* Header Styles */
+.display-4 {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+    margin-bottom: 1rem;
+    animation: gradientShift 3s ease infinite;
+}
+
+@@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+
+
+
+
+.stat-active {
+    border-color: #28a745;
+}
+
+.stat-value {
+    border-color: #ffc107;
+}
+
+.stat-expiring {
+    border-color: #fd7e14;
+}
+
+.stat-total {
+    border-color: #6c757d;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-active .stat-icon {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.stat-value .stat-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.stat-expiring .stat-icon {
+    background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%);
+}
+
+.stat-total .stat-icon {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #fff;
+}
+
+.stat-content p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+ /* Filter and sort controls removed */
+
+/* Section Headers */
+.h3 {
+    color: #d4af37;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+/* Voucher Grid */
+.voucher-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    transition: all 0.3s ease;
+    margin-bottom: 2rem;
+}
+
+.voucher-grid.list-view {
+    grid-template-columns: 1fr;
+}
+
+/* Voucher Cards */
+.voucher-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+
+
+.voucher-card:focus,
+.voucher-card:active,
+.voucher-card:focus-visible {
+    outline: none !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Ghi đè CSS từ site.css */
+.voucher-card:hover,
+.voucher-card.selected {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+.voucher-card.active {
+    border-color: rgba(40, 167, 69, 0.3);
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.1);
+}
+
+.voucher-card.expiring {
+    border-color: rgba(255, 193, 7, 0.5);
+    box-shadow: 0 0 30px rgba(255, 193, 7, 0.2);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.voucher-card.inactive {
+    opacity: 0.7;
+    filter: grayscale(30%);
+}
+
+.voucher-card.inactive:hover {
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+/* Voucher Image */
+.voucher-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.voucher-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+    filter: brightness(0.9) contrast(1.1);
+}
+
+.voucher-image img.grayscale {
+    filter: grayscale(100%);
+}
+
+.voucher-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    color: #000;
+    font-size: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.voucher-placeholder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+}
+
+@@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.voucher-placeholder.inactive {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: #fff;
+}
+
+/* Voucher overlay removed - functionality simplified */
+
+/* Voucher Content */
+.voucher-content {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.voucher-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.voucher-code {
+    flex: 1;
+}
+
+.code-label {
+    display: block;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.code-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #d4af37;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.voucher-value {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #28a745;
+    text-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+.voucher-value i {
+    color: #ffc107;
+    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.5));
+}
+
+/* Voucher Dates */
+.voucher-dates {
+    margin-bottom: 1rem;
+}
+
+.date-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.date-item i {
+    width: 16px;
+    color: #d4af37;
+    filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.3));
+}
+
+/* Expiry Progress */
+.expiry-progress {
+    margin-bottom: 1rem;
+}
+
+.expiry-progress .progress {
+    height: 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.expiry-progress .progress-bar {
+    border-radius: 10px;
+    background: linear-gradient(90deg, #ffc107 0%, #fd7e14 100%);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.expiry-progress .progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: progressShimmer 2s infinite;
+}
+
+@@keyframes progressShimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.expiry-warning {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%);
+    color: #fff;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 10;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 2px 10px rgba(220, 53, 69, 0.3);
+    animation: warningPulse 2s ease-in-out infinite;
+}
+
+@@keyframes warningPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* Status Badges */
+.voucher-status {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.status-badge.active {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.status-badge.used {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: #fff;
+}
+
+.status-badge.expired {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    color: #fff;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #d4af37;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+}
+
+.empty-state h3 {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 2rem;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn:focus,
+.btn:active,
+.btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary:focus-visible {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%) !important;
+    border: none !important;
+    color: #000 !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    border: none;
+    color: #000;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #f4d03f 0%, #d4af37 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
+    color: #000;
+}
+
+.btn-outline-primary {
+    border-color: #d4af37;
+    color: #d4af37;
+}
+
+.btn-outline-primary:hover {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #000;
+}
+
+.btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.btn-light {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #000;
+}
+
+.btn-light:hover {
+    background: #fff;
+    transform: translateY(-2px);
+}
+
+.btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.9);
+    color: #000;
+}
+
+/* Modal Styles */
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+}
+
+.modal-title {
+    color: #d4af37;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Toast Styles */
+.toast {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.toast-header {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2.5rem;
     }
     
-    .card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    .text-muted {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.8) !important;
+        text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
     }
     
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    .text-center.mb-5 {
+        padding: 1.5rem;
+        margin-bottom: 2rem !important;
     }
     
-    .font-monospace {
-        font-family: 'Courier New', monospace;
+    .voucher-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
     
-    .opacity-75 {
-        opacity: 0.75;
+    .stat-card {
+        padding: 1rem;
     }
     
-    .border-warning {
-        border: 2px solid #ffc107 !important;
+    .stat-content h3 {
+        font-size: 1.5rem;
     }
     
-    .text-warning {
-        color: #ffc107 !important;
+    .voucher-content {
+        padding: 1rem;
     }
     
-    .badge {
-        border-radius: 8px;
+    .voucher-header {
+        flex-direction: column;
+        gap: 1rem;
     }
     
-    .card-img-top {
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
+    .voucher-value {
+        align-self: flex-start;
     }
-    
-    .alert {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Animations */
+@@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
     }
-    
-    .btn-outline-secondary:hover {
-        background-color: #6c757d;
-        border-color: #6c757d;
-        color: white;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
+}
+
+.voucher-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.voucher-card:nth-child(1) { animation-delay: 0.1s; }
+.voucher-card:nth-child(2) { animation-delay: 0.2s; }
+.voucher-card:nth-child(3) { animation-delay: 0.3s; }
+.voucher-card:nth-child(4) { animation-delay: 0.4s; }
+.voucher-card:nth-child(5) { animation-delay: 0.5s; }
+.voucher-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Loading Animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #d4af37;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Enhanced Animations */
+@@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@@keyframes shimmer {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+/* Apply animations */
+.voucher-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.voucher-card:nth-child(1) { animation-delay: 0.1s; }
+.voucher-card:nth-child(2) { animation-delay: 0.2s; }
+.voucher-card:nth-child(3) { animation-delay: 0.3s; }
+.voucher-card:nth-child(4) { animation-delay: 0.4s; }
+.voucher-card:nth-child(5) { animation-delay: 0.5s; }
+.voucher-card:nth-child(6) { animation-delay: 0.6s; }
+
+
+
+/* Enhanced hover effects */
+
+
+
+
+/* Shimmer effect for loading states */
+.shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Enhanced button effects */
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced hover effects for section headers */
+
+
+/* Improved text colors for better readability */
+
+
+
+/* Floating animation for icons */
+@@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.stat-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+.stat-icon:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.stat-icon:nth-child(3) {
+    animation-delay: 1s;
+}
+
+.stat-icon:nth-child(4) {
+    animation-delay: 1.5s;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter, sort, and toggle functionality removed
+    const voucherCards = document.querySelectorAll('.voucher-card');
+    
+    console.log('Voucher cards found:', voucherCards.length);
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Page load verification
+    console.log('=== Voucher Page Load Summary ===');
+    console.log('Voucher cards found:', document.querySelectorAll('.voucher-card').length);
+    console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+    console.log('jQuery available:', typeof $ !== 'undefined');
+    console.log('=== End Summary ===');
+    
+    console.log('Voucher page loaded successfully with simplified UI!');
+});
+</script>

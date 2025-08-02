@@ -1,137 +1,135 @@
+@using System.Security.Claims
 @model MovieTheater.ViewModels.RegisterViewModel
 
 @{
-	ViewData["Title"] = "Edit Member";
+    ViewData["Title"] = "Edit Member";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
+
+@if (userRole == "Admin")
+{
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary">
+        &larr; Return
+    </a>
+}
+else
+{
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary">
+        &larr; Return
+    </a>
 }
 
 <link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" /> <!-- Assuming movieedit.css is relevant for form styling -->
 
 <div class="signup-wrapper">
-	<div class="signup-card">
-		<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary">
-			&larr; Return to Member List
-		</a>
-		<h2 class="signup-title">Edit Member</h2>
-		<!-- Use AccountId from the model for the route parameter in the form tag helper -->
-		<form asp-controller="Admin" asp-action="Edit" method="post" enctype="multipart/form-data">
-			<div asp-validation-summary="All" class="text-danger"></div>
+    <div class="signup-card">
 
-			<div class="row">
-				<!-- Left Column: Image Uploads -->
-				<div class="col">
-					<div class="form-group mb-3">
-						<label asp-for="ImageFile">Profile Image</label>
-						@if (!string.IsNullOrEmpty(Model.Image))
-						{
-							<img id="smallImagePreview" src="@Url.Content(Model.Image)" width="200" height="180" style="display:block; margin-bottom:10px" />
-						}
-						else
-						{
-							<img id="smallImagePreview" src="#" alt="No image" width="200" height="180" style="display:none; margin-bottom:10px;" />
-						}
-						<input type="file" class="form-control" asp-for="ImageFile" onchange="previewImage(this, 'smallImagePreview')" />
-						<span asp-validation-for="ImageFile" class="text-danger"></span>
+        <h2 class="signup-title">Edit Member</h2>
+        <!-- Use AccountId from the model for the route parameter in the form tag helper -->
+        <form asp-controller="Admin" asp-action="Edit" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="All" class="text-danger"></div>
 
-					</div>
-				</div>
+            <div class="row">
+                <!-- Left Column: Image Uploads -->
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="ImageFile">Profile Image</label>
+                        @if (!string.IsNullOrEmpty(Model.Image))
+                        {
+                            <img id="smallImagePreview" src="@Url.Content(Model.Image)" width="200" height="180" style="display:block; margin-bottom:10px" />
+                        }
+                        else
+                        {
+                            <img id="smallImagePreview" src="#" alt="No image" width="200" height="180" style="display:none; margin-bottom:10px;" />
+                        }
+                        <input type="file" class="form-control" asp-for="ImageFile" onchange="previewImage(this, 'smallImagePreview')" />
+                        <span asp-validation-for="ImageFile" class="text-danger"></span>
 
-				<div class="col">
-					<div class="form-group mb-3">
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
                         <label asp-for="Username">Username</label>
-						<input type="text" class="form-control" asp-for="Username" placeholder="Username" readonly /> <!-- Username likely should not be editable -->
-						<span asp-validation-for="Username" class="text-danger"></span>
-					</div>
+                        <input type="text" class="form-control" asp-for="Username" placeholder="Username" readonly /> <!-- Username likely should not be editable -->
+                        <span asp-validation-for="Username" class="text-danger"></span>
+                    </div>
 
-					<div class="form-group mb-3">
-                         <label asp-for="FullName">Full Name</label>
-						<input type="text" class="form-control" asp-for="FullName" placeholder="Full Name" />
-						<span asp-validation-for="FullName" class="text-danger"></span>
-						<input type="hidden" asp-for="AccountId" /> <!-- Keep AccountId to pass back in POST request -->
-					</div>
+                    <div class="form-group mb-3">
+                        <label asp-for="FullName">Full Name</label>
+                        <input type="text" class="form-control" asp-for="FullName" placeholder="Full Name" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                        <input type="hidden" asp-for="AccountId" /> <!-- Keep AccountId to pass back in POST request -->
+                    </div>
 
-					<div class="form-group mb-3">
-                         <label asp-for="DateOfBirth">Date of Birth</label>
-						<input type="date" class="form-control" asp-for="DateOfBirth" placeholder="Date of Birth" />
-						<span asp-validation-for="DateOfBirth" class="text-danger"></span>
-					</div>
+                    <div class="form-group mb-3">
+                        <label asp-for="DateOfBirth">Date of Birth</label>
+                        <input type="date" class="form-control" asp-for="DateOfBirth" placeholder="Date of Birth" />
+                        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                    </div>
 
-					<div class="row mb-3">
+                    <div class="row mb-3">
                         <label>Gender</label>
-						<div class="col">
-							<label class="radio-label">
-								<input type="radio" asp-for="Gender" value="male" /> Male
-							</label>
-						</div>
+                        <div class="col">
+                            <label class="radio-label">
+                                <input type="radio" asp-for="Gender" value="male" /> Male
+                            </label>
+                        </div>
 
-						<div class="col">
-							<label class="radio-label">
-								<input type="radio" asp-for="Gender" value="female" /> Female
-							</label>
-							<span asp-validation-for="Gender" class="text-danger"></span>
-						</div>
-					</div>
-
-					<div class="form-group mb-3">
-                         <label asp-for="IdentityCard">Identity Card</label>
-						<input type="text" class="form-control" asp-for="IdentityCard" placeholder="Identity Card" />
-						<span asp-validation-for="IdentityCard" class="text-danger"></span>
-					</div>
-
-					<div class="form-group mb-3">
-                         <label asp-for="Email">Email</label>
-						<input type="email" class="form-control" asp-for="Email" placeholder="Email" />
-						<span asp-validation-for="Email" class="text-danger"></span>
-					</div>
-
-					<div class="form-group mb-3">
-                         <label asp-for="Address">Address</label>
-						<input type="text" class="form-control" asp-for="Address" placeholder="Address" />
-						<span asp-validation-for="Address" class="text-danger"></span>
-					</div>
-
-					<div class="form-group mb-3">
-                         <label asp-for="PhoneNumber">Phone Number</label>
-						<input type="tel" class="form-control" asp-for="PhoneNumber" placeholder="Phone Number" />
-						<span asp-validation-for="PhoneNumber" class="text-danger"></span>
-					</div>
-
-                    <!-- Add fields for Rank and Score if they are editable -->
-							<!-- <div class="form-group mb-3">
-                        <label asp-for="RankId">Rank</label>
-                        <select asp-for="RankId" class="form-select">
-                            // Populate with available ranks
-                        </select>
-                        <span asp-validation-for="RankId" class="text-danger"></span>
+                        <div class="col">
+                            <label class="radio-label">
+                                <input type="radio" asp-for="Gender" value="female" /> Female
+                            </label>
+                            <span asp-validation-for="Gender" class="text-danger"></span>
+                        </div>
                     </div>
-                     <div class="form-group mb-3">
-                        <label asp-for="Score">Score</label>
-                        <input type="number" class="form-control" asp-for="Score" placeholder="Score" />
-                        <span asp-validation-for="Score" class="text-danger"></span>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="IdentityCard">Identity Card</label>
+                        <input type="text" class="form-control" asp-for="IdentityCard" placeholder="Identity Card" />
+                        <span asp-validation-for="IdentityCard" class="text-danger"></span>
                     </div>
-                     -->
-			</div>
 
-			<div class="text-center mt-4">
-				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Save Changes</button> <!-- Updated button text -->
-			</div>
-		</form>
+                    <div class="form-group mb-3">
+                        <label asp-for="Email">Email</label>
+                        <input type="email" class="form-control" asp-for="Email" placeholder="Email" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
 
-	</div>
+                    <div class="form-group mb-3">
+                        <label asp-for="Address">Address</label>
+                        <input type="text" class="form-control" asp-for="Address" placeholder="Address" />
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="PhoneNumber">Phone Number</label>
+                        <input type="tel" class="form-control" asp-for="PhoneNumber" placeholder="Phone Number" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded">Save Changes</button> <!-- Updated button text -->
+                </div>
+        </form>
+
+    </div>
 </div>
 
 <script>
-	function previewImage(input, previewId) {
-		var preview = document.getElementById(previewId);
-		if (input.files && input.files[0]) {
-			var reader = new FileReader();
-			reader.onload = function (e) {
-				preview.src = e.target.result;
-				preview.style.display = "block";
-			}
-			reader.readAsDataURL(input.files[0]);
-		} else {
-			preview.src = "#";
-			preview.style.display = "none";
-		}
-	}
+    function previewImage(input, previewId) {
+        var preview = document.getElementById(previewId);
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = "#";
+            preview.style.display = "none";
+        }
+    }
 </script> 

@@ -32,6 +32,30 @@
 <link rel="stylesheet" href="~/css/movie-section.css" />
 <link rel="stylesheet" href="~/css/promotions.css" />
 <link rel="stylesheet" href="~/css/booking-modal.css" />
+<link rel="stylesheet" href="~/css/booking-widget.css" />
+
+<style>
+    /* Ẩn nút learn more và thêm cursor pointer cho promotion card */
+    .promotion-actions {
+        display: none !important;
+    }
+    
+    .btn-learn-more {
+        display: none !important;
+    }
+    
+    .promotion-card {
+        cursor: pointer;
+    }
+    
+    .promotion-content {
+        cursor: pointer;
+    }
+    
+    .promotion-image {
+        cursor: pointer;
+    }
+</style>
 
 <!-- ===== HERO SECTION PLACEHOLDER ===== -->
 <!-- HERO SECTION (dùng SwiperJS) -->
@@ -172,6 +196,48 @@
 </section>
 <!-- ===== END HERO SECTION PLACEHOLDER ===== -->
 
+<!-- QUICK BOOKING WIDGET -->
+<section class="booking-widget-section" id="booking-widget">
+    <div class="booking-widget">
+        <div class="booking-widget-header">
+            <h2 class="booking-widget-title">Quick Booking</h2>
+        </div>
+        <div class="booking-widget-form">
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">1. Select Movie</label>
+                <select class="booking-widget-select" id="movieSelect" onchange="window.updateBookingDates()">
+                    <option value="">1. Select Movie</option>
+                    @foreach (var movie in currentlyShowingMovies ?? Enumerable.Empty<MovieTheater.Models.Movie>())
+                    {
+                        <option value="@movie.MovieId">@movie.MovieNameEnglish</option>
+                    }
+                </select>
+            </div>
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">2. Select Date</label>
+                <select class="booking-widget-select" id="widgetDateSelect" disabled onchange="window.updateWidgetVersions()">
+                    <option value="">2. Select Date</option>
+                </select>
+            </div>
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">3. Select Version</label>
+                <select class="booking-widget-select" id="widgetVersionSelect" disabled onchange="window.updateWidgetTimes()">
+                    <option value="">3. Select Version</option>
+                </select>
+            </div>
+            <div class="booking-widget-step">
+                <label class="booking-widget-label">4. Select Time</label>
+                <select class="booking-widget-select" id="widgetTimeSelect" disabled onchange="window.updateWidgetButtonState()">
+                    <option value="">4. Select Time</option>
+                </select>
+            </div>
+            <button class="booking-widget-btn" id="bookNowBtn" onclick="window.continueToSeatSelection()" disabled>
+                Book Now
+            </button>
+        </div>
+    </div>
+</section>
+
 <!-- NOW SHOWING SECTION -->
 <section class="now-showing-section" id="nowShowingSection">
     <div class="section-header-modern">
@@ -190,7 +256,12 @@
                     <div class="swiper-slide">
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
-                                <div class="hover-overlay"></div>
+                                <div class="hover-overlay">
+                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="detail-btn">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Detail</span>
+                                    </a>
+                                </div>
                                 <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge">HD</div>
                             </div>
@@ -274,7 +345,12 @@
                     <div class="swiper-slide">
                         <div class="movie-card-enhanced" data-movie-id="@movie.MovieId">
                             <div class="movie-poster-container">
-                                <div class="hover-overlay"></div>
+                                <div class="hover-overlay">
+                                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="detail-btn">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Detail</span>
+                                    </a>
+                                </div>
                                 <img src="@movie.SmallImage" alt="@movie.MovieNameEnglish" loading="lazy" class="movie-poster" decoding="async">
                                 <div class="movie-rating-badge coming-soon-badge">Soon</div>
                             </div>
@@ -360,26 +436,22 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="discount-badge">
-                                        <span>50% OFF</span>
-                                    </div>
+                                    @if (promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > 0)
+                                    {
+                                        <div class="discount-badge">
+                                            <span>@promo.DiscountLevel.Value% OFF</span>
+                                        </div>
+                                    }
                                 </div>
                                 
-                                <div class="promotion-content">
+                                <div class="promotion-content"
+                                     data-image="@promo.Image"
+                                     data-title="@promo.Title"
+                                     data-discount="@(promo.DiscountLevel?.ToString() ?? "0")% OFF"
+                                     data-detail="@promo.Detail"
+                                     data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
                                     <h3 class="promotion-title">@promo.Title</h3>
                                     <p class="promotion-description">@promo.Detail</p>
-                                    
-                                    <div class="promotion-actions">
-                                        <button class="btn-learn-more"
-                                            data-image="@promo.Image"
-                                            data-title="@promo.Title"
-                                            data-discount="@promo.DiscountLevel%"
-                                            data-detail="@promo.Detail"
-                                            data-time="@promo.StartTime?.ToString("dd/MM/yyyy") - @promo.EndTime?.ToString("dd/MM/yyyy")">
-                                            <i class="fas fa-info-circle"></i>
-                                            <span>Learn More</span>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -423,397 +495,37 @@
     <script src="/js/trailer-modal.js?v=@DateTime.Now.Ticks" defer></script>
     <script src="~/js/movie-sections.js?v=@DateTime.Now.Ticks" defer></script>
     <script src="/js/home-page.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/booking-modal.js?v=@DateTime.Now.Ticks" defer></script>
+    <script src="/js/booking-widget.js?v=@DateTime.Now.Ticks" defer></script>
     
 
 
     <script>
-        // Disable console.log in production and development for cleaner console
-        console.log = function() {};
-        console.warn = function() {};
-        console.info = function() {};
+        // Enable console logging for debugging
+        // console.log = function() {};
+        // console.warn = function() {};
+        // console.info = function() {};
         // Keep console.error for actual error handling
         
-        // Global variables
-        window.movieShowsCache = new Map(); // Cache for movie shows
-        window.currentMovieShows = [];
 
 
 
-        // Function to open booking modal for selected movie
-        window.openBookingModal = function(movieId, movieName, movieLogo) {
-            // Set the movie ID in the hidden input
-            const movieIdInput = document.getElementById('movieId');
-            if (movieIdInput) {
-                movieIdInput.value = movieId;
-            }
 
-            // Update the movie name in the summary
-            const movieNameElem = document.getElementById('summaryMovieName');
-            if (movieNameElem && movieName) {
-                movieNameElem.textContent = movieName;
-            }
 
-            // Update the movie logo
-            const movieLogoElem = document.getElementById('selectedMovieLogo');
-            if (movieLogoElem && movieLogo) {
-                movieLogoElem.src = movieLogo;
-                movieLogoElem.style.display = 'block';
-            } else if (movieLogoElem) {
-                movieLogoElem.style.display = 'none';
-            }
 
-            // Reset form selections
-            const dateSelect = document.getElementById('dateSelect');
-            const versionSelect = document.getElementById('versionSelect');
-            const timeSelect = document.getElementById('timeSelect');
 
-            if (dateSelect) {
-                dateSelect.innerHTML = '<option value="">Loading dates...</option>';
-                dateSelect.disabled = true;
-            }
-            if (versionSelect) {
-                versionSelect.innerHTML = '<option value="">— Select Version —</option>';
-                versionSelect.disabled = true;
-            }
-            if (timeSelect) {
-                timeSelect.innerHTML = '<option value="">— Select Time —</option>';
-                timeSelect.disabled = true;
-            }
 
-            // Reset summary
-            resetBookingSummary();
 
-            // Load movie shows for this specific movie
-            window.loadMovieShowsForMovie(movieId, movieName);
-        };
 
-        // Function to load movie shows for a specific movie
-        window.loadMovieShowsForMovie = function(movieId, movieName) {
-            // Check if we already have this movie's shows cached
-            if (window.movieShowsCache.has(movieId)) {
-                window.currentMovieShows = window.movieShowsCache.get(movieId);
-                window.populateDateDropdown();
-                window.showBookingModal();
-                return;
-            }
 
-            // Fetch movie shows for this specific movie
-            fetch(`/Movie/GetMovieShows?movieId=${movieId}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error('Failed to load movie shows');
-                    return response.json();
-                })
-                .then(shows => {
-                    // Cache the results
-                    window.movieShowsCache.set(movieId, shows);
-                    window.currentMovieShows = shows;
-                    window.populateDateDropdown();
-                    window.showBookingModal();
-                })
-                .catch(error => {
-                    console.error('Error loading movie shows:', error);
-                    // Show error state
-                    const dateSelect = document.getElementById('dateSelect');
-                    if (dateSelect) {
-                        dateSelect.innerHTML = '<option value="">Error loading dates</option>';
-                        dateSelect.disabled = true;
-                    }
-                    
-                    // Show user-friendly error message
-                    const modalBody = document.querySelector('#addBookingModal .modal-body');
-                    if (modalBody) {
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'alert alert-danger mt-3';
-                        errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Unable to load showtimes. Please try again later.';
-                        modalBody.appendChild(errorDiv);
-                    }
-                });
-        }
 
-        window.populateDateDropdown = function () {
-            const dateSelect = document.getElementById('dateSelect');
-            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
-            dateSelect.disabled = true;
 
-            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // normalize time
 
-            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
 
-            uniqueDates.forEach(dateStr => {
-                const showDate = new Date(dateStr);
-                showDate.setHours(0, 0, 0, 0); // normalize show date
 
-                if (showDate >= today) {
-                    const [year, month, day] = dateStr.split('-');
-                    const displayDate = `${day}/${month}/${year}`;
-                    const option = document.createElement('option');
-                    option.value = dateStr;
-                    option.textContent = displayDate;
-                    dateSelect.appendChild(option);
-                }
-            });
 
-            if (dateSelect.options.length > 1) {
-                dateSelect.disabled = false;
-            }
-            
-            // Reset step status when loading new movie
-            resetModalState();
-        };
 
-        // Populate version dropdown
-        window.updateVersions = function() {
-            const date = document.getElementById('dateSelect').value;
-            const versionSelect = document.getElementById('versionSelect');
-            const timeSelect = document.getElementById('timeSelect');
-            
-            versionSelect.innerHTML = '<option value="">— Select Version —</option>';
-            versionSelect.disabled = true;
-            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
-            timeSelect.disabled = true;
-            
-            if (!date) return;
-            
-            const filtered = window.currentMovieShows.filter(show => show.showDate === date);
-            // Use a Map to ensure unique versionId-versionName pairs
-            const versionMap = new Map();
-            filtered.forEach(show => {
-                if (show.versionId && show.versionName && !versionMap.has(show.versionId)) {
-                    versionMap.set(show.versionId, show.versionName);
-                }
-            });
-            
-            versionMap.forEach((name, id) => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = name;
-                versionSelect.appendChild(option);
-            });
-            
-            versionSelect.disabled = false;
-            
-            // Update step status
-            updateStepStatus(1, true);
-            updateStepStatus(2, false);
-            updateStepStatus(3, false);
-            
-            // Update booking summary - reset version and time
-            updateBookingSummary();
-        }
-
-        // Populate time dropdown
-        window.updateTimes = function() {
-            const date = document.getElementById('dateSelect').value;
-            const versionId = document.getElementById('versionSelect').value;
-            const timeSelect = document.getElementById('timeSelect');
-            
-            timeSelect.innerHTML = '<option value="">— Select Time —</option>';
-            timeSelect.disabled = true;
-            
-            if (!date || !versionId) return;
-            
-            const filtered = window.currentMovieShows.filter(show => show.showDate === date && String(show.versionId) === String(versionId));
-            // Use a Set to ensure unique times
-            const timeSet = new Set();
-            filtered.forEach(show => {
-                if (show.scheduleTime && !timeSet.has(show.scheduleTime)) {
-                    const option = document.createElement('option');
-                    option.value = show.scheduleTime;
-                    option.textContent = show.scheduleTime;
-                    timeSelect.appendChild(option);
-                    timeSet.add(show.scheduleTime);
-                }
-            });
-            
-            timeSelect.disabled = false;
-            
-            // Update step status
-            updateStepStatus(2, true);
-            updateStepStatus(3, false);
-            
-            // Update booking summary - reset time
-            updateBookingSummary();
-        }
-
-        window.continueToSeats = function() {
-            const movieId = document.getElementById('movieId').value;
-            const date = document.getElementById('dateSelect').value;
-            const versionId = document.getElementById('versionSelect').value;
-            const time = document.getElementById('timeSelect').value;
-
-            if (!movieId || !date || !versionId || !time) {
-                // Show error message in modal instead of alert
-                const errorMessage = document.createElement('div');
-                errorMessage.className = 'step-helper error';
-                errorMessage.textContent = 'Please complete all selections before continuing';
-                
-                // Remove any existing error messages
-                const existingError = document.querySelector('.step-helper.error');
-                if (existingError) {
-                    existingError.remove();
-                }
-                
-                // Add error message after the button
-                const bookBtn = document.getElementById('bookBtn');
-                bookBtn.parentNode.insertBefore(errorMessage, bookBtn.nextSibling);
-                
-                // Remove error message after 3 seconds
-                setTimeout(() => {
-                    if (errorMessage.parentNode) {
-                        errorMessage.remove();
-                    }
-                }, 3000);
-                
-                return;
-            }
-
-            const [year, month, day] = date.split('-');
-            const formattedDate = `${day}/${month}/${year}`;
-
-            // Show loading state
-            const bookBtn = document.getElementById('bookBtn');
-            const originalText = bookBtn.innerHTML;
-            bookBtn.innerHTML = '<span>Loading...</span> <i class="fas fa-spinner fa-spin"></i>';
-            bookBtn.disabled = true;
-
-            // Redirect to seat selection
-            window.location.href = `/Seat/Select?movieId=${movieId}&date=${formattedDate}&versionId=${encodeURIComponent(versionId)}&time=${encodeURIComponent(time)}`;
-        }
-
-        // Function to show the booking modal
-        window.showBookingModal = function() {
-            const modalElement = document.getElementById('addBookingModal');
-            if (modalElement && typeof bootstrap !== 'undefined') {
-                const bookingModal = new bootstrap.Modal(modalElement);
-                bookingModal.show();
-                
-                // Reset modal state
-                resetModalState();
-                
-                // Focus management for accessibility
-                modalElement.addEventListener('shown.bs.modal', function() {
-                    const dateSelect = document.getElementById('dateSelect');
-                    if (dateSelect) {
-                        dateSelect.focus();
-                    }
-                });
-            }
-        }
-
-        // Function to reset modal state
-        function resetModalState() {
-            // Reset all steps
-            updateStepStatus(1, false);
-            updateStepStatus(2, false);
-            updateStepStatus(3, false);
-            
-            // Set first step as active
-            updateStepStatus(1, true);
-        }
-
-        // Function to update step status
-        function updateStepStatus(stepNumber, isActive) {
-            const stepElement = document.querySelector(`.booking-step[data-step="${stepNumber}"]`);
-            
-            if (stepElement) {
-                stepElement.classList.remove('active', 'completed');
-                if (isActive) {
-                    stepElement.classList.add('active');
-                } else if (stepNumber < getCurrentStep()) {
-                    stepElement.classList.add('completed');
-                }
-            }
-        }
-
-        // Function to get current step
-        function getCurrentStep() {
-            const dateSelect = document.getElementById('dateSelect');
-            const versionSelect = document.getElementById('versionSelect');
-            const timeSelect = document.getElementById('timeSelect');
-            
-            if (dateSelect.value && versionSelect.value && timeSelect.value) {
-                return 4; // All steps completed
-            } else if (dateSelect.value && versionSelect.value) {
-                return 3;
-            } else if (dateSelect.value) {
-                return 2;
-            } else {
-                return 1;
-            }
-        }
-
-        // Function to reset booking summary
-        function resetBookingSummary() {
-            document.getElementById('summaryDate').textContent = '-';
-            document.getElementById('summaryVersion').textContent = '-';
-            document.getElementById('summaryTime').textContent = '-';
-        }
-
-        // Function to update booking summary
-        function updateBookingSummary() {
-            const dateSelect = document.getElementById('dateSelect');
-            const versionSelect = document.getElementById('versionSelect');
-            const timeSelect = document.getElementById('timeSelect');
-
-            if (dateSelect.value) {
-                const [year, month, day] = dateSelect.value.split('-');
-                document.getElementById('summaryDate').textContent = `${day}/${month}/${year}`;
-            } else {
-                document.getElementById('summaryDate').textContent = '-';
-            }
-
-            if (versionSelect.value) {
-                const selectedOption = versionSelect.options[versionSelect.selectedIndex];
-                document.getElementById('summaryVersion').textContent = selectedOption.textContent;
-            } else {
-                document.getElementById('summaryVersion').textContent = '-';
-            }
-
-            if (timeSelect.value) {
-                document.getElementById('summaryTime').textContent = timeSelect.value;
-            } else {
-                document.getElementById('summaryTime').textContent = '-';
-            }
-        }
-
-        // Function to populate date dropdown
-        window.populateDateDropdown = function () {
-            const dateSelect = document.getElementById('dateSelect');
-            dateSelect.innerHTML = '<option value="">— Select Date —</option>';
-            dateSelect.disabled = true;
-
-            if (!window.currentMovieShows || window.currentMovieShows.length === 0) return;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // normalize time
-
-            const uniqueDates = [...new Set(window.currentMovieShows.map(show => show.showDate))];
-
-            uniqueDates.forEach(dateStr => {
-                const showDate = new Date(dateStr);
-                showDate.setHours(0, 0, 0, 0); // normalize show date
-
-                if (showDate >= today) {
-                    const [year, month, day] = dateStr.split('-');
-                    const displayDate = `${day}/${month}/${year}`;
-                    const option = document.createElement('option');
-                    option.value = dateStr;
-                    option.textContent = displayDate;
-                    dateSelect.appendChild(option);
-                }
-            });
-
-            if (dateSelect.options.length > 1) {
-                dateSelect.disabled = false;
-            }
-        };
 
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function () {
@@ -868,8 +580,8 @@
             if (timeSelect) {
                 timeSelect.addEventListener('change', function() {
                     if (this.value) {
-                        updateStepStatus(3, true);
-                        updateBookingSummary();
+                        window.updateStepStatus(3, true);
+                        window.updateBookingSummary();
                     }
                 });
             }
@@ -895,7 +607,7 @@
                                     <span class="label-icon">🗓️</span> 
                                     <strong>Select Date</strong>
                                 </label>
-                                <select id="dateSelect" class="booking-select" onchange="updateVersions()">
+                                <select id="dateSelect" class="booking-select" onchange="window.modalUpdateBookingVersions();">
                                     <option value="">— Select Date —</option>
                                     <!-- Dates will be populated by JavaScript -->
                                 </select>
@@ -907,7 +619,7 @@
                                     <span class="label-icon">🎞️</span> 
                                     <strong>Select Version</strong>
                                 </label>
-                                <select id="versionSelect" class="booking-select" disabled onchange="updateTimes()">
+                                <select id="versionSelect" class="booking-select" disabled onchange="window.modalUpdateBookingTimes()">
                                     <option value="">— Select Version —</option>
                                 </select>
                                 <div class="step-helper">Choose your preferred movie version (2D, 3D, etc.)</div>
@@ -918,16 +630,18 @@
                                     <span class="label-icon">⏰</span> 
                                     <strong>Select Time</strong>
                                 </label>
-                                <select id="timeSelect" class="booking-select" disabled>
+                                <select id="timeSelect" class="booking-select" disabled onchange="window.modalUpdateBookingButton()">
                                     <option value="">— Select Time —</option>
                                 </select>
                                 <div class="step-helper">Choose your preferred showtime</div>
                             </div>
                             
-                            <button type="button" id="bookBtn" class="booking-btn-gradient" onclick="continueToSeats()">
+                            <button type="button" id="bookBtn" class="booking-btn-gradient" onclick="console.log('Button clicked!'); console.log('About to call modalContinueToSeatSelection...'); console.log('Function exists:', typeof window.modalContinueToSeatSelection); try { window.modalContinueToSeatSelection(); } catch(e) { console.error('Error calling modalContinueToSeatSelection:', e); }" disabled>
                                 <span>Continue to Seat Selection</span> 
                                 <i class="fas fa-arrow-right"></i>
                             </button>
+                            
+
                         </div>
                         
                         <!-- Booking Summary -->
@@ -997,14 +711,16 @@ document.getElementById('promotionModalClose').onclick = closePromotionModal;
 document.getElementById('promotionModalOverlay').onclick = function(e) {
   if (e.target === this) closePromotionModal();
 };
-document.querySelectorAll('.btn-learn-more').forEach(btn => {
-  btn.addEventListener('click', function() {
+// Thêm click event cho promotion card (cả image và content)
+document.querySelectorAll('.promotion-card').forEach(card => {
+  card.addEventListener('click', function() {
+    const contentElement = this.querySelector('.promotion-content');
     openPromotionModal({
-      image: btn.dataset.image || '',
-      title: btn.dataset.title || '',
-      discount: btn.dataset.discount || '',
-      detail: btn.dataset.detail || '',
-      time: btn.dataset.time || ''
+      image: contentElement.dataset.image || '',
+      title: contentElement.dataset.title || '',
+      discount: contentElement.dataset.discount || '',
+      detail: contentElement.dataset.detail || '',
+      time: contentElement.dataset.time || ''
     });
   });
 });

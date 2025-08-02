@@ -1,78 +1,40 @@
 ﻿@{
-    ViewData["Title"] = "Employee Main Page";
+    ViewData["Title"] = "Admin Main Page";
 }
+
+<!-- CDN Resources -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 min-vh-100 border-end" id="account-sidebar">
-            <ul class="nav flex-column nav-pills" id="employeeTabs">
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "MemberMg" ? "active" : "text-dark")" data-tab="MemberMg" href="#">Member Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "MovieMg" ? "active" : "text-dark")" data-tab="MovieMg" href="#">Movie Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "ShowroomMg" ? "active" : "text-dark")" data-tab="ShowroomMg" href="#">Showroom Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "ScheduleMg" ? "active" : "text-dark")" data-tab="ScheduleMg" href="#">Schedule Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewData["ActiveTab"]?.ToString() == "BookingMg" ? "active" : "text-dark")" data-tab="BookingMg" href="#">Booking Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="@Url.Action("Scanner", "QRCode")" style="background-color: #28a745; color: white;" target="_self">
-                        <i class="fas fa-qrcode me-2"></i>QR Scanner
-                    </a>
-                </li>
+            <ul class="nav flex-column nav-pills" id="adminTabs">
+                <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">Movie Management</a>
+                <a class="nav-link admin-tab" data-tab="CastMg" href="javascript:void(0)">Cast/Director Management</a>
+                <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)"> Food & Drink</a>
+                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">Booking Management</a>
+                <a class="nav-link admin-tab" data-tab="QRCode" href="javascript:void(0)" style="background-color: #28a745; color: white;">
+                    <i class="fas fa-qrcode me-2"></i>QR Scanner
+                </a>
             </ul>
         </div>
-
-        <!-- Tab Content -->
         <div class="col-md-9 col-lg-10 p-4">
-            <div id="tabContent">
-                Loading...
-            </div>
+            <div id="tabContent"></div>
         </div>
     </div>
 </div>
 
+
+<!-- Pass data from Razor to JavaScript -->
 <script>
-    function loadTab(tabName, keyword = '') {
-        // Show loading
-        $('#tabContent').html('Loading...');
-
-        // Update active tab
-        $('#employeeTabs .nav-link').removeClass('active');
-        $(`#employeeTabs .nav-link[data-tab="${tabName}"]`).addClass('active');
-
-        let url = `/Employee/LoadTab?tab=${tabName}`;
-        if (keyword) {
-            url += `&keyword=${encodeURIComponent(keyword)}`;
-        }
-        $('#tabContent').load(url);
-    }
-
-    $(document).ready(function () {
-        // Handle tab clicks
-        $('#employeeTabs .nav-link').click(function (e) {
-            // Nếu là QR Scanner thì không ngăn chặn mặc định
-            if ($(this).text().includes('QR Scanner')) return;
-            e.preventDefault();
-            loadTab($(this).data('tab'));
-        });
-
-        // Load initial tab
-        var tabToLoad = '@ViewData["ActiveTab"]' || 'MovieMg';
-        loadTab(tabToLoad);
-    });
-
-    function searchBooking() {
-        const keyword = document.getElementById('searchKeyword')?.value ?? '';
-        loadTab('BookingMg', keyword);
-    }
+    // Set global variables for the JavaScript file to use
+    window.initialTab = '@ViewData["ActiveTab"]';
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="~/js/loadtab.js" asp-append-version="true"></script>
+<script src="~/js/admin-sorting.js"></script>
 
+<partial name="_ToastMessages" />
 

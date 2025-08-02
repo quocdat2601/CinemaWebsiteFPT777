@@ -4,6 +4,7 @@ using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
@@ -30,13 +31,14 @@ namespace MovieTheater.Controllers
                 .Where(p => p.IsActive && p.EndTime >= DateTime.Now)
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
-            return View("Index", promotions);
+            return View("List", promotions);
         }
 
         /// <summary>
         /// Trang quản lý khuyến mãi
         /// </summary>
         /// <remarks>url: /Promotion/Index (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public ActionResult Index()
         {
             return View();
@@ -46,6 +48,7 @@ namespace MovieTheater.Controllers
         /// Trang tạo khuyến mãi mới
         /// </summary>
         /// <remarks>url: /Promotion/Create (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public ActionResult Create()
         {
             return View(new PromotionViewModel
@@ -62,6 +65,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Promotion/Create (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Create(PromotionViewModel viewModel, IFormFile? imageFile)
         {
             if (ModelState.IsValid)
@@ -180,6 +184,7 @@ namespace MovieTheater.Controllers
         /// Trang sửa khuyến mãi
         /// </summary>
         /// <remarks>url: /Promotion/Edit (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public ActionResult Edit(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -227,6 +232,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Promotion/Edit (POST)</remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Edit(int id, PromotionViewModel viewModel, IFormFile? imageFile)
         {
             if (id != viewModel.PromotionId)
@@ -364,6 +370,7 @@ namespace MovieTheater.Controllers
         /// Trang xóa khuyến mãi
         /// </summary>
         /// <remarks>url: /Promotion/Delete (GET)</remarks>
+        [Authorize(Roles = "Admin")]
         public ActionResult Delete(int id)
         {
             var promotion = _promotionService.GetById(id);
@@ -380,6 +387,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Promotion/Delete (POST)</remarks>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
             try

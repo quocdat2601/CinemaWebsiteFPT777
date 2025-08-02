@@ -14,11 +14,27 @@
     var seatString = invoice.Seat;
     var addScore = invoice.AddScore ?? 0;
     var useScore = invoice.UseScore ?? 0;
+
+    string reason = null;
+    var start = invoice.MovieShow.CinemaRoom.UnavailableStartDate;
+    var end = invoice.MovieShow.CinemaRoom.UnavailableEndDate;
+
+    if (showTime.HasValue)
+    {
+        var showDateTime = showDate.ToDateTime(showTime.Value);
+
+        if (start.HasValue && end.HasValue &&
+            showDateTime >= start.Value && showDateTime <= end.Value)
+        {
+            reason = invoice.MovieShow.CinemaRoom.DisableReason;
+        }
+    }
+
     var bookingDate = invoice.BookingDate?.ToString("yyyy-MM-dd HH:mm");
     var seatDetails = Model.SeatDetails ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
     var foodDetails = Model.FoodDetails ?? new List<MovieTheater.ViewModels.FoodViewModel>();
     decimal totalFoodPrice = Model.TotalFoodPrice;
-    
+
     // Use only invoice-time values for breakdown
     decimal subtotal = seatDetails?.Sum(s => s.PriceAfterPromotion ?? s.Price) ?? 0;
     decimal addedScoreValue = addScore * 1000;
@@ -67,12 +83,23 @@
                     <h1>Ticket Information</h1>
                     <p>Booking ID: @ticketId</p>
                 </div>
+
             </div>
             <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "status-completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "status-cancelled" : "status-secondary")">
                 @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Canceled" : "Not Paid")
             </span>
         </div>
+
     </div>
+
+    @if (reason != null)
+    {
+        <div class="alert alert-warning mb-3 ticket-warning role="alert">
+            <h5>
+                Unfortunately, your ticket has been canceled because of an emergency: <strong>@reason</strong>. We had to make this decision to prioritize your safety and overall experience. Please know that a voucher for the full ticket amount has been sent to your inventory. We deeply regret any inconvenience this may cause.
+            </h5>
+        </div>
+    }
 
     <!-- Main Layout Grid -->
     <div class="ticket-layout-grid">
@@ -217,7 +244,7 @@
                                         <td>
                                             @if (food.OriginalPrice > food.Price)
                                             {
-                                                <span style="text-decoration: line-through; color: #888;">@food.OriginalPrice.ToString("N0") VND</span>
+                                                <span style="text-decoration: line-through; color: #888;">(@food.OriginalPrice?.ToString("N0")  ?? "0") VND</span>
                                                 <span style="color: #38ef7d; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
                                             }
                                             else
@@ -255,7 +282,7 @@
                                 <span class="price-label">Seat Price</span>
                                 <span class="price-value">@subtotal.ToString("N0") VND</span>
                             </div>
-                            
+
                             <!-- Rank Discount -->
                             @if (rankDiscount > 0)
                             {
@@ -264,7 +291,7 @@
                                     <span class="price-value discount">-@rankDiscount.ToString("N0") VND</span>
                                 </div>
                             }
-                            
+
                             <!-- Points Used -->
                             @if (useScore > 0)
                             {
@@ -273,13 +300,13 @@
                                     <span class="price-value discount">-@useScore (@usedScoreValue.ToString("N0") VND)</span>
                                 </div>
                             }
-                            
+
                             <!-- Seat Total (after all seat discounts) -->
                             <div class="price-row">
                                 <span class="price-label">Seat Total</span>
                                 <span class="price-value">@seatTotalAfterRankAndScore.ToString("N0") VND</span>
                             </div>
-                            
+
                             <!-- Food & Drinks -->
                             @if (totalFoodPrice > 0)
                             {
@@ -288,7 +315,7 @@
                                     <span class="price-value addition">+@totalFoodPrice.ToString("N0") VND</span>
                                 </div>
                             }
-                            
+
                             <!-- Voucher -->
                             @if ((Model.VoucherAmount ?? 0m) > 0)
                             {
@@ -297,13 +324,13 @@
                                     <span class="price-value discount">-@((Model.VoucherAmount ?? 0m).ToString("N0")) VND</span>
                                 </div>
                             }
-                            
+
                             <!-- Total Amount -->
                             <div class="price-row total-row">
                                 <span class="price-label">Total Amount</span>
                                 <span class="price-value total">@runningTotal.ToString("N0") VND</span>
                             </div>
-                            
+
                             <!-- Points Earned -->
                             @if (addScore > 0)
                             {
