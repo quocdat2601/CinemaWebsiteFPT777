@@ -27,7 +27,7 @@ namespace MovieTheater.Service
                 // Tạo nội dung QR code theo chuẩn VietQR
                 var qrContent = $"https://api.vietqr.io/image/{_config.BankCode}/{_config.AccountNumber}?amount={amount}&addInfo={orderId}&accountName={_config.AccountName}";
                 
-                _logger.LogInformation($"QR code data generated for order {orderId}: {qrContent}");
+                _logger.LogInformation("QR code data generated for order {OrderId}", orderId);
                 return qrContent;
             }
             catch (Exception ex)
@@ -159,7 +159,7 @@ namespace MovieTheater.Service
             {
                 // Trong thực tế, bạn sẽ kiểm tra với ngân hàng
                 // Ở đây chỉ là demo
-                _logger.LogInformation($"Validating payment for order {orderId}, transaction {transactionId}");
+                _logger.LogInformation("Validating payment for order {OrderId}, transaction {TransactionId}", orderId, transactionId);
                 return true;
             }
             catch (Exception ex)
@@ -177,7 +177,7 @@ namespace MovieTheater.Service
                 var encodedData = Uri.EscapeDataString(qrData);
                 var qrUrl = $"https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl={encodedData}&chld=L|0";
                 
-                _logger.LogInformation($"QR code image URL generated: {qrUrl}");
+                _logger.LogInformation("QR code image URL generated successfully");
                 return qrUrl;
             }
             catch (Exception ex)
@@ -196,7 +196,7 @@ namespace MovieTheater.Service
                 var encodedText = Uri.EscapeDataString(text);
                 var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encodedText}";
                 
-                _logger.LogInformation($"Simple QR code generated for text: {text}");
+                _logger.LogInformation("Simple QR code generated successfully");
                 return qrUrl;
             }
             catch (Exception ex)
@@ -297,7 +297,7 @@ namespace MovieTheater.Service
                             return RenderQRCodeBase64(qrString);
                         }
                     }
-                    _logger.LogError($"PayOS response error (không có qrCode): {responseBody}");
+                    _logger.LogError("PayOS response error (không có qrCode)");
                     //return GenerateVietQRCode(amount, orderInfo, orderId);
                     return null; // Hoặc fallback sang QR khác
                 }

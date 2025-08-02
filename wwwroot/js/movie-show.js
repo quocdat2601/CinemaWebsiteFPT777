@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return acc;
             }, {});
 
-            Object.keys(groupedByDate).sort().forEach(dateId => {
+            Object.keys(groupedByDate).sort((a, b) => a.localeCompare(b)).forEach(dateId => {
                 const showsForDate = groupedByDate[dateId];
                 const dateText = new Date(dateId).toLocaleDateString('en-GB');
 

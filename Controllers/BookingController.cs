@@ -609,11 +609,11 @@ namespace MovieTheater.Controllers
            var result = await _bookingDomainService.ConfirmTicketForAdminAsync(model);
            if (!result.Success)
            {
-               _logger.LogWarning($"ConfirmTicketForAdmin failed: {result.ErrorMessage}");
+               _logger.LogWarning("ConfirmTicketForAdmin failed: {ErrorMessage}", result.ErrorMessage);
                return Json(new { success = false, message = result.ErrorMessage });
            }
            
-           _logger.LogInformation($"ConfirmTicketForAdmin successful, InvoiceId: {result.InvoiceId}");
+                       _logger.LogInformation("ConfirmTicketForAdmin successful, InvoiceId: {InvoiceId}", result.InvoiceId);
            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
            return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = result.InvoiceId }) });
        }

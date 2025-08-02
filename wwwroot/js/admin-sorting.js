@@ -239,7 +239,7 @@ window.resetFilters = function() {
         const keyword = document.getElementById('searchKeyword').value;
         const category = document.getElementById('categoryFilter').value;
         const status = document.getElementById('statusFilter').value;
-        loadTab('FoodMg', { keyword, categoryFilter: category, statusFilter: status, sortBy: currentSortFood.param });
+        window.loadTab('FoodMg', { keyword, categoryFilter: category, statusFilter: status, sortBy: currentSortFood.param });
     }
 
     function updateSortIconsFood() {
@@ -286,7 +286,7 @@ window.resetFilters = function() {
         const keyword = document.getElementById('searchKeyword').value;
         const status = document.getElementById('statusFilter').value;
         const expiry = document.getElementById('expiryFilter').value;
-        loadTab('VoucherMg', { keyword, statusFilter: status, expiryFilter: expiry, sortBy: currentSortVoucher.param });
+        window.loadTab('VoucherMg', { keyword, statusFilter: status, expiryFilter: expiry, sortBy: currentSortVoucher.param });
     }
 
     function updateSortIconsVoucher() {

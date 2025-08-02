@@ -182,7 +182,7 @@
                 groupDiv.appendChild(heading);
 
                 // Sort versions alphabetically
-                const sortedVersions = Object.keys(group.versions).sort();
+                const sortedVersions = Object.keys(group.versions).sort((a, b) => a.localeCompare(b));
 
                 sortedVersions.forEach(versionName => {
                     const versionDiv = document.createElement('div');

@@ -65,7 +65,7 @@ namespace MovieTheater.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to send email. Error: {ex.Message}");
+                _logger.LogError(ex, "Failed to send email");
                 return false;
             }
         }

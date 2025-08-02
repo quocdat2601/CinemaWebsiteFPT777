@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Cryptography;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -411,7 +410,7 @@ namespace MovieTheater.Controllers
 
             _logger.LogInformation("Forget password OTP send request initiated for email: {EmailHash}", GetEmailHash(req.Email));
 
-            var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+            var otp = new Random().Next(100000, 999999).ToString();
             var expiry = DateTime.UtcNow.AddMinutes(10);
 
             var otpStored = _service.StoreForgetPasswordOtp(req.Email, otp, expiry);
@@ -515,22 +514,6 @@ namespace MovieTheater.Controllers
             public string Otp { get; set; } = string.Empty;
         }
 
-        /// <summary>
-        /// Creates a secure hash of email for logging purposes to avoid logging user-controlled data
-        /// </summary>
-        /// <param name="email">The email to hash</param>
-        /// <returns>A SHA256 hash of the email or "null" if email is null/empty</returns>
-        private static string GetEmailHash(string? email)
-        {
-            if (string.IsNullOrEmpty(email))
-                return "null";
-
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
-            var bytes = System.Text.Encoding.UTF8.GetBytes(email);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
-        }
-
 
 
         [HttpPost]
@@ -566,6 +549,22 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
             }
             return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+        }
+
+        /// <summary>
+        /// Creates a secure hash of email for logging purposes to avoid logging user-controlled data
+        /// </summary>
+        /// <param name="email">The email to hash</param>
+        /// <returns>A SHA256 hash of the email or "null" if email is null/empty</returns>
+        private static string GetEmailHash(string? email)
+        {
+            if (string.IsNullOrEmpty(email))
+                return "null";
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(email);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
     }
 }

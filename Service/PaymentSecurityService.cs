@@ -63,7 +63,7 @@ namespace MovieTheater.Service
 
                 if (invoice.AccountId != userId)
                 {
-                    _logger.LogWarning($"User {userId} attempted to access invoice {model.InvoiceId} belonging to {invoice.AccountId}");
+                    _logger.LogWarning("User {UserId} attempted to access invoice {InvoiceId} belonging to {AccountId}", userId, model.InvoiceId, invoice.AccountId);
                     return new PaymentValidationResult
                     {
                         IsValid = false,
@@ -131,7 +131,7 @@ namespace MovieTheater.Service
                 // Allow small tolerance for rounding differences (0.01 VND)
                 if (Math.Abs(amount - expectedAmount) > 0.01m)
                 {
-                    _logger.LogWarning($"Amount mismatch for invoice {invoiceId}: Expected {expectedAmount}, Received {amount}");
+                    _logger.LogWarning("Amount mismatch for invoice {InvoiceId}: Expected {ExpectedAmount}, Received {Amount}", invoiceId, expectedAmount, amount);
                     return new PaymentValidationResult
                     {
                         IsValid = false,
@@ -183,7 +183,7 @@ namespace MovieTheater.Service
                 var vnpSecureHash = vnpayData["vnp_SecureHash"];
                 if (!_vnPayService.ValidateSignature(vnpayData, vnpSecureHash))
                 {
-                    _logger.LogWarning($"Invalid VNPay signature for transaction {vnpayData["vnp_TxnRef"]}");
+                    _logger.LogWarning("Invalid VNPay signature for transaction {TransactionRef}", vnpayData["vnp_TxnRef"]);
                     return new PaymentValidationResult
                     {
                         IsValid = false,

@@ -4,6 +4,7 @@ using MovieTheater.Service;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
@@ -63,8 +64,9 @@ namespace MovieTheater.Controllers
                 var headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
                 _logger.LogInformation("Request Headers: {Headers}", string.Join(", ", headers.Select(h => $"{h.Key}={h.Value}")));
 
-                // Log webhook body
-                _logger.LogInformation("Webhook body: {Body}", JsonSerializer.Serialize(body));
+                // Log webhook body (sanitized)
+                var sanitizedBody = SanitizeWebhookBody(body);
+                _logger.LogInformation("Webhook body received: {BodySize} bytes", JsonSerializer.Serialize(body).Length);
 
                 // 1. KHÔNG kiểm tra Secure-Token nếu không có, chỉ log warning
                 if (!Request.Headers.TryGetValue("Secure-Token", out var tokenValues))
@@ -437,6 +439,44 @@ namespace MovieTheater.Controllers
             {
                 _logger.LogError(ex, "Error updating seat status to booked for invoice {InvoiceId}", invoice.InvoiceId);
                 // Không throw exception để không ảnh hưởng đến việc cập nhật invoice
+            }
+        }
+
+        /// <summary>
+        /// Sanitize webhook body to remove sensitive information before logging
+        /// </summary>
+        private JsonElement SanitizeWebhookBody(JsonElement body)
+        {
+            try
+            {
+                // Create a sanitized version of the body for logging
+                var sanitizedObject = new JsonObject();
+                
+                if (body.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var property in body.EnumerateObject())
+                    {
+                        // Only log non-sensitive fields
+                        if (property.Name == "data" || property.Name == "error" || property.Name == "message")
+                        {
+                            sanitizedObject.Add(property.Name, JsonValue.Create(property.Value.GetRawText()));
+                        }
+                        else
+                        {
+                            // For sensitive fields, just log the field name
+                            sanitizedObject.Add(property.Name, JsonValue.Create("[REDACTED]"));
+                        }
+                    }
+                }
+                
+                // Convert JsonObject to JsonElement using JsonSerializer
+                var jsonString = sanitizedObject.ToJsonString();
+                return JsonSerializer.Deserialize<JsonElement>(jsonString);
+            }
+            catch
+            {
+                // If sanitization fails, return a simple object
+                return JsonSerializer.Deserialize<JsonElement>("{\"sanitized\": true}");
             }
         }
     }

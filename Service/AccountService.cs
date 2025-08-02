@@ -261,7 +261,7 @@ namespace MovieTheater.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error verifying password for user: {ex.Message}");
+                _logger.LogError(ex, "Error verifying password for user");
                 return false;
             }
         }
@@ -296,7 +296,7 @@ namespace MovieTheater.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while sending OTP email: {ex.Message}");
+                _logger.LogError(ex, "Exception while sending OTP email");
                 return false;
             }
         }
@@ -612,11 +612,11 @@ namespace MovieTheater.Service
                 var account = _repository.GetAccountByEmail(email);
                 if (account == null)
                 {
-                    _logger.LogWarning("Attempted to send OTP to non-existent email: {Email}", email);
+                    _logger.LogWarning("Attempted to send OTP to non-existent email: {EmailHash}", GetEmailHash(email));
                     return false;
                 }
 
-                _logger.LogInformation("Sending forget password OTP email to: {Email}, OTP: {Otp}", email, otp);
+                _logger.LogInformation("Sending forget password OTP email to: {EmailHash}", GetEmailHash(email));
 
                 var subject = "Your Password Reset OTP Code";
                 var body = $@"
@@ -637,17 +637,17 @@ namespace MovieTheater.Service
                 var result = _emailService.SendEmail(email, subject, body);
                 if (result)
                 {
-                    _logger.LogInformation("Forget password OTP email sent successfully to: {Email}", email);
+                    _logger.LogInformation("Forget password OTP email sent successfully to: {EmailHash}", GetEmailHash(email));
                 }
                 else
                 {
-                    _logger.LogError("Failed to send forget password OTP email to: {Email}", email);
+                    _logger.LogError("Failed to send forget password OTP email to: {EmailHash}", GetEmailHash(email));
                 }
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while sending forget password OTP email to {email}: {ex.Message}");
+                _logger.LogError(ex, "Exception while sending forget password OTP email to {EmailHash}", GetEmailHash(email));
                 return false;
             }
         }

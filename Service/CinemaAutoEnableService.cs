@@ -59,7 +59,7 @@ namespace MovieTheater.Service
                     var roomToEnable = roomCinemaService.GetById(room.CinemaRoomId);
                     if (roomToEnable == null)
                     {
-                        _logger.LogWarning($"Room {room.CinemaRoomName} (ID: {room.CinemaRoomId}) not found in new scope");
+                        _logger.LogWarning("Room {RoomName} (ID: {RoomId}) not found in new scope", room.CinemaRoomName, room.CinemaRoomId);
                         continue;
                     }
 
@@ -68,7 +68,7 @@ namespace MovieTheater.Service
 
                     if (success)
                     {
-                        _logger.LogInformation($"Auto-enabled cinema room {room.CinemaRoomName} (ID: {room.CinemaRoomId})");
+                        _logger.LogInformation("Auto-enabled cinema room {RoomName} (ID: {RoomId})", room.CinemaRoomName, room.CinemaRoomId);
                         
                         // Notify via SignalR
                         await CinemaHub.NotifyRoomEnabled(hubContext, room.CinemaRoomId, room.CinemaRoomName);
@@ -78,12 +78,12 @@ namespace MovieTheater.Service
                     }
                     else
                     {
-                        _logger.LogWarning($"Failed to auto-enable cinema room {room.CinemaRoomName} (ID: {room.CinemaRoomId})");
+                        _logger.LogWarning("Failed to auto-enable cinema room {RoomName} (ID: {RoomId})", room.CinemaRoomName, room.CinemaRoomId);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Error auto-enabling cinema room {room.CinemaRoomName} (ID: {room.CinemaRoomId})");
+                    _logger.LogError(ex, "Error auto-enabling cinema room {RoomName} (ID: {RoomId})", room.CinemaRoomName, room.CinemaRoomId);
                 }
             }
         }
