@@ -58,7 +58,7 @@ namespace MovieTheater.Tests.Service
             };
 
             _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
-            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
 
             // Act
             var result = _accountService.SendForgetPasswordOtp(email);
@@ -66,7 +66,7 @@ namespace MovieTheater.Tests.Service
             // Assert
             Assert.True(result);
             _accountRepositoryMock.Verify(r => r.GetAccountByEmail(email), Times.Once);
-            _emailServiceMock.Verify(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            _emailServiceMock.Verify(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace MovieTheater.Tests.Service
             // Assert
             Assert.False(result);
             _accountRepositoryMock.Verify(r => r.GetAccountByEmail(email), Times.Once);
-            _emailServiceMock.Verify(e => e.SendEmail(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _emailServiceMock.Verify(e => e.SendEmail(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
@@ -95,7 +95,7 @@ namespace MovieTheater.Tests.Service
             // First send OTP to store it
             var account = new Account { AccountId = "1", Email = email, FullName = "Test User", Status = 1 };
             _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
-            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
 
             _accountService.SendForgetPasswordOtp(email);
 
@@ -168,14 +168,14 @@ namespace MovieTheater.Tests.Service
             var account = new Account { AccountId = "1", Email = email, FullName = "Test User", Status = 1 };
 
             _accountRepositoryMock.Setup(r => r.GetAccountByEmail(email)).Returns(account);
-            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _emailServiceMock.Setup(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
 
             // Act
             var result = _accountService.SendForgetPasswordOtpEmail(email, otp);
 
             // Assert
             Assert.True(result);
-            _emailServiceMock.Verify(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            _emailServiceMock.Verify(e => e.SendEmail(email, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
