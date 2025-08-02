@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -397,6 +398,7 @@ namespace MovieTheater.Controllers
         // --- New Forget Password Actions (AJAX-based) ---
         [HttpPost]
         [Route("Account/SendForgetPasswordOtp")]
+        [ValidateAntiForgeryToken]
         public IActionResult SendForgetPasswordOtp([FromBody] SendForgetPasswordOtpRequest req)
         {
             if (string.IsNullOrEmpty(req.Email))
@@ -423,6 +425,8 @@ namespace MovieTheater.Controllers
         }
 
         [HttpPost]
+        [Route("Account/VerifyForgetPasswordOtp")]
+        [ValidateAntiForgeryToken]
         public IActionResult VerifyForgetPasswordOtp([FromBody] VerifyForgetPasswordOtpViewModel model)
         {
             if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Otp))
@@ -440,6 +444,7 @@ namespace MovieTheater.Controllers
 
         [HttpPost]
         [Route("Account/ResetPasswordAsync")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPasswordAsync(string email, string newPassword, string confirmPassword, string otp)
         {
             _logger.LogInformation("ResetPasswordAsync endpoint hit with email: {Email}", email ?? "null");
@@ -457,6 +462,19 @@ namespace MovieTheater.Controllers
                 {
                     _logger.LogWarning("ResetPasswordAsync validation failed: passwords do not match");
                     return Json(new { success = false, error = "Passwords do not match." });
+                }
+
+                // Check if new password is different from current password
+                var account = _service.GetAccountByEmail(email);
+                if (account != null)
+                {
+                    var hasher = new PasswordHasher<Account>();
+                    var passwordVerificationResult = hasher.VerifyHashedPassword(null, account.Password, newPassword);
+                    if (passwordVerificationResult == PasswordVerificationResult.Success)
+                    {
+                        _logger.LogWarning("ResetPasswordAsync validation failed: new password is same as current password for email: {Email}", email);
+                        return Json(new { success = false, error = "New password must be different from current password." });
+                    }
                 }
 
                 // Check OTP
@@ -496,23 +514,7 @@ namespace MovieTheater.Controllers
             public string Otp { get; set; } = string.Empty;
         }
 
-        // Test endpoint to verify routing
-        [HttpGet]
-        [Route("Account/TestResetPasswordAsync")]
-        public IActionResult TestResetPasswordAsync()
-        {
-            _logger.LogInformation("TestResetPasswordAsync endpoint hit");
-            return Json(new { success = true, message = "ResetPasswordAsync endpoint is accessible" });
-        }
 
-        // Test POST endpoint without validation
-        [HttpPost]
-        [Route("Account/TestResetPasswordAsyncPost")]
-        public IActionResult TestResetPasswordAsyncPost()
-        {
-            _logger.LogInformation("TestResetPasswordAsyncPost endpoint hit");
-            return Json(new { success = true, message = "POST endpoint is accessible" });
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
+using MovieTheater.Models;
 
 namespace MovieTheater.Controllers
 {
@@ -335,8 +337,17 @@ namespace MovieTheater.Controllers
             if (newPassword != confirmPassword)
                 return Json(new { success = false, error = "Passwords do not match." });
 
-            if (currentPassword == newPassword)
-                return Json(new { success = false, error = "New password must be different from current password." });
+            // Check if new password is different from current password (more secure check)
+            var account = _service.GetById(user.AccountId);
+            if (account != null)
+            {
+                var hasher = new PasswordHasher<Account>();
+                var passwordVerificationResult = hasher.VerifyHashedPassword(null, account.Password, newPassword);
+                if (passwordVerificationResult == PasswordVerificationResult.Success)
+                {
+                    return Json(new { success = false, error = "New password must be different from current password." });
+                }
+            }
 
             // Check OTP
             if (!_service.VerifyOtp(user.AccountId, otp))
