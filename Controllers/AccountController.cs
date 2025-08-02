@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -410,7 +411,7 @@ namespace MovieTheater.Controllers
 
             _logger.LogInformation("Forget password OTP send request initiated for email: {EmailHash}", GetEmailHash(req.Email));
 
-            var otp = new Random().Next(100000, 999999).ToString();
+            var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
             var expiry = DateTime.UtcNow.AddMinutes(10);
 
             var otpStored = _service.StoreForgetPasswordOtp(req.Email, otp, expiry);

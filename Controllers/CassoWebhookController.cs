@@ -163,7 +163,7 @@ namespace MovieTheater.Controllers
                 if (invoice == null)
                 {
                     // Tìm pattern QADOBFxxxx từ description
-                    var patternMatch = System.Text.RegularExpressions.Regex.Match(description, @"QADOBF\d+");
+                    var patternMatch = System.Text.RegularExpressions.Regex.Match(description, @"QADOBF\d+", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromSeconds(5));
                     if (patternMatch.Success)
                     {
                         var patternId = patternMatch.Value;
@@ -281,7 +281,7 @@ namespace MovieTheater.Controllers
             if (string.IsNullOrEmpty(description)) return "";
 
             // Look for DH pattern (from PHP sample) - không phân biệt hoa thường
-            var dhMatch = System.Text.RegularExpressions.Regex.Match(description, $@"{MEMO_PREFIX}\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var dhMatch = System.Text.RegularExpressions.Regex.Match(description, $@"{MEMO_PREFIX}\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
             if (dhMatch.Success)
             {
                 var orderId = dhMatch.Value;
@@ -290,7 +290,7 @@ namespace MovieTheater.Controllers
             }
 
             // Fallback: Look for INV pattern (original logic)
-            var invMatch = System.Text.RegularExpressions.Regex.Match(description, @"INV\d+");
+            var invMatch = System.Text.RegularExpressions.Regex.Match(description, @"INV\d+", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromSeconds(5));
             if (invMatch.Success)
             {
                 var orderId = invMatch.Value;
