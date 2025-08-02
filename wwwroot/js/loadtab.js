@@ -305,11 +305,15 @@ function initializeBookingPagination() {
             bookingData.forEach(function(booking) {
                 let statusBadge = '';
                 if (booking.status === 'Completed' && !booking.cancel) {
-                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Completed</span>';
+                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Paid</span>';
                 } else if (booking.status === 'Completed' && booking.cancel) {
                     statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled</span>';
+                } else if (booking.status === null || booking.status === 'null') {
+                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled</span>';
+                } else if (booking.status === 'Incomplete') {
+                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Unpaid</span>';
                 } else {
-                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Not Paid</span>';
+                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Unpaid</span>';
                 }
 
                 html += '<tr class="text-center booking-row">';
@@ -338,9 +342,9 @@ function initializeBookingPagination() {
     function updateBookingStatistics(statistics) {
         console.log('Updating booking statistics:', statistics);
         $('#totalBookingsCount').text(statistics.totalBookings);
-        $('#completedCount').text(statistics.completed);
+        $('#paidCount').text(statistics.paid);
         $('#cancelledCount').text(statistics.cancelled);
-        $('#notPaidCount').text(statistics.notPaid);
+        $('#unpaidCount').text(statistics.unpaid);
     }
 
     // Initialize booking pagination

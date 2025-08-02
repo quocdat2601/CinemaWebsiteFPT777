@@ -56,7 +56,7 @@ namespace MovieTheater.Controllers
             // Remove ImageFile from validation since it's optional
             ModelState.Remove("ImageFile");
             
-            // Debug: Check what validation errors exist
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState

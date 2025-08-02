@@ -801,7 +801,7 @@ namespace MovieTheater.Controllers
 
                 var orderInfo = $"Ve xem phim - {movieName}";
                 
-                // Debug: Log thông tin đầu vào
+    
                 _logger.LogInformation("DisplayQR input - Amount: {Amount}, OrderInfo: {OrderInfo}, OrderId: {OrderId}", amount, orderInfo, orderId);
                 
                 // Chỉ tạo QR PayOS

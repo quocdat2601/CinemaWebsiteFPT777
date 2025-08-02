@@ -813,7 +813,7 @@ namespace MovieTheater.Service
             var account = GetCurrentUser();
             var employee = account?.Employees
                 .FirstOrDefault(e => e.AccountId == account.AccountId);
-            // Debug logging
+
             Console.WriteLine($"[BookingDomainService] Server calculated TotalPrice: {priceResult.TotalPrice}");
             Console.WriteLine($"[BookingDomainService] Server calculated PromotionDiscountPercent: {promotionDiscountPercent}");
             Console.WriteLine($"[BookingDomainService] Final TotalPrice: {finalTotalPrice}");

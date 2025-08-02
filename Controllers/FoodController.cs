@@ -36,7 +36,7 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin, Employee")]
         public async Task<IActionResult> Create(FoodViewModel model)
         {
-            // Debug: Check if ModelState is valid
+
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values
@@ -48,7 +48,7 @@ namespace MovieTheater.Controllers
             
             if (ModelState.IsValid)
             {
-                // Debug: Log received values
+    
                 
                 // Làm sạch dữ liệu đầu vào
                 model.Name = model.Name?.Trim();
@@ -70,7 +70,7 @@ namespace MovieTheater.Controllers
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.CreateAsync(model, webRootPath);
 
-                // Debug: Log service result
+    
 
                 if (result)
                 {

@@ -89,7 +89,7 @@ namespace MovieTheater.Service
         {
             if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) return true;
             
-            // Debug log để theo dõi
+
             Console.WriteLine($"[PromotionService] Checking promotion: {promotion.Title}");
             Console.WriteLine($"[PromotionService] Context - SeatTypeNames: [{string.Join(", ", context.SelectedSeatTypeNames)}]");
             

@@ -227,7 +227,7 @@ namespace MovieTheater.Controllers
                return View("ConfirmBooking", model);
            }
 
-           // Debug log for IsTestSuccess value
+           
            Console.WriteLine($"[BookingController.Confirm] IsTestSuccess: '{IsTestSuccess}', TotalPrice: {result.TotalPrice}");
 
            if (IsTestSuccess == "true" || Math.Abs(result.TotalPrice) < 0.01m)

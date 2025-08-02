@@ -86,7 +86,7 @@
 
             </div>
             <span class="status-badge @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "status-completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "status-cancelled" : "status-secondary")">
-                @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Completed" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Canceled" : "Not Paid")
+                @(invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && !invoice.Cancel ? "Paid" : invoice.Status == MovieTheater.Models.InvoiceStatus.Completed && invoice.Cancel ? "Cancelled" : invoice.Status == null ? "Cancelled" : "Unpaid")
             </span>
         </div>
 
