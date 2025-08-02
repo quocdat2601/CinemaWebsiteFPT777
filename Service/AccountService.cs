@@ -532,7 +532,7 @@ namespace MovieTheater.Service
                 var account = _repository.GetAccountByEmail(email);
                 if (account == null)
                 {
-                    _logger.LogWarning("Attempted to send OTP to non-existent email");
+                    _logger.LogWarning("Attempted to send OTP to non-existent email: {EmailHash}", GetEmailHash(email));
                     return false;
                 }
 
@@ -588,17 +588,17 @@ namespace MovieTheater.Service
                 var result = _emailService.SendEmail(email, subject, body);
                 if (result)
                 {
-                    _logger.LogInformation("Forget password OTP sent successfully");
+                    _logger.LogInformation("Forget password OTP sent successfully for email: {EmailHash}", GetEmailHash(email));
                 }
                 else
                 {
-                    _logger.LogError("Failed to send forget password OTP");
+                    _logger.LogError("Failed to send forget password OTP for email: {EmailHash}", GetEmailHash(email));
                 }
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while sending forget password OTP: {ex.Message}");
+                _logger.LogError(ex, "Exception while sending forget password OTP for email: {EmailHash}", GetEmailHash(email));
                 return false;
             }
         }
@@ -656,12 +656,12 @@ namespace MovieTheater.Service
             try
             {
                 _otpStore[email] = (otp, expiry);
-                _logger.LogInformation("Forget password OTP stored for email: {Email}", email);
+                _logger.LogInformation("Forget password OTP stored for email: {EmailHash}", GetEmailHash(email));
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while storing forget password OTP: {ex.Message}");
+                _logger.LogError(ex, "Exception while storing forget password OTP for email: {EmailHash}", GetEmailHash(email));
                 return false;
             }
         }
@@ -671,11 +671,11 @@ namespace MovieTheater.Service
             try
             {
                 _otpStore.TryRemove(email, out _);
-                _logger.LogInformation("Forget password OTP cleared for email: {Email}", email);
+                _logger.LogInformation("Forget password OTP cleared for email: {EmailHash}", GetEmailHash(email));
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Exception while clearing forget password OTP: {ex.Message}");
+                _logger.LogError(ex, "Exception while clearing forget password OTP for email: {EmailHash}", GetEmailHash(email));
             }
         }
 
@@ -706,16 +706,16 @@ namespace MovieTheater.Service
         {
             try
             {
-                _logger.LogInformation("ResetPassword called for email: {Email}", email);
+                _logger.LogInformation("ResetPassword called for email: {EmailHash}", GetEmailHash(email));
                 
                 var account = _repository.GetAccountByEmail(email);
                 if (account == null)
                 {
-                    _logger.LogWarning("Attempted to reset password for non-existent email: {Email}", email);
+                    _logger.LogWarning("Attempted to reset password for non-existent email: {EmailHash}", GetEmailHash(email));
                     return false;
                 }
 
-                _logger.LogInformation("Found account for password reset: AccountId={AccountId}, Email={Email}", account.AccountId, email);
+                _logger.LogInformation("Found account for password reset: AccountId={AccountId}, EmailHash={EmailHash}", account.AccountId, GetEmailHash(email));
 
                 var hasher = new PasswordHasher<Account>();
                 account.Password = hasher.HashPassword(null, newPassword);
@@ -726,12 +726,12 @@ namespace MovieTheater.Service
                 // Clear OTP after successful password reset
                 _otpStore.TryRemove(email, out _);
 
-                _logger.LogInformation("Password reset successfully for email: {Email}, AccountId: {AccountId}", email, account.AccountId);
+                _logger.LogInformation("Password reset successfully for email: {EmailHash}, AccountId: {AccountId}", GetEmailHash(email), account.AccountId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while resetting password for email: {Email}", email);
+                _logger.LogError(ex, "Exception while resetting password for email: {EmailHash}", GetEmailHash(email));
                 return false;
             }
         }
@@ -750,6 +750,22 @@ namespace MovieTheater.Service
         public void ToggleStatus(string accountId)
         {
             _repository.ToggleStatus(accountId);
+        }
+
+        /// <summary>
+        /// Creates a secure hash of email for logging purposes to avoid logging user-controlled data
+        /// </summary>
+        /// <param name="email">The email to hash</param>
+        /// <returns>A SHA256 hash of the email or "null" if email is null/empty</returns>
+        private static string GetEmailHash(string? email)
+        {
+            if (string.IsNullOrEmpty(email))
+                return "null";
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(email);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
     }
 }

@@ -408,7 +408,7 @@ namespace MovieTheater.Controllers
             if (account == null)
                 return Json(new { success = false, error = "Email không tồn tại trong hệ thống." });
 
-            _logger.LogInformation("Forget password OTP send request initiated for email: {Email}", req.Email);
+            _logger.LogInformation("Forget password OTP send request initiated for email: {EmailHash}", GetEmailHash(req.Email));
 
             var otp = new Random().Next(100000, 999999).ToString();
             var expiry = DateTime.UtcNow.AddMinutes(10);
@@ -432,7 +432,7 @@ namespace MovieTheater.Controllers
             if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Otp))
                 return Json(new { success = false, error = "Email and OTP are required." });
 
-            _logger.LogInformation("Forget password OTP verification request initiated for email: {Email}", model.Email);
+            _logger.LogInformation("Forget password OTP verification request initiated for email: {EmailHash}", GetEmailHash(model.Email));
 
             var receivedOtp = model.Otp?.Trim();
             var otpValid = _service.VerifyForgetPasswordOtp(model.Email, receivedOtp);
@@ -447,10 +447,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPasswordAsync(string email, string newPassword, string confirmPassword, string otp)
         {
-            _logger.LogInformation("ResetPasswordAsync endpoint hit with email: {Email}", email ?? "null");
+            _logger.LogInformation("ResetPasswordAsync endpoint hit with email: {EmailHash}", GetEmailHash(email));
             try
             {
-                _logger.LogInformation("ResetPasswordAsync called for email: {Email}", email);
+                _logger.LogInformation("ResetPasswordAsync called for email: {EmailHash}", GetEmailHash(email));
 
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
                 {
@@ -472,7 +472,7 @@ namespace MovieTheater.Controllers
                     var passwordVerificationResult = hasher.VerifyHashedPassword(null, account.Password, newPassword);
                     if (passwordVerificationResult == PasswordVerificationResult.Success)
                     {
-                        _logger.LogWarning("ResetPasswordAsync validation failed: new password is same as current password for email: {Email}", email);
+                        _logger.LogWarning("ResetPasswordAsync validation failed: new password is same as current password for email: {EmailHash}", GetEmailHash(email));
                         return Json(new { success = false, error = "New password must be different from current password." });
                     }
                 }
@@ -480,7 +480,7 @@ namespace MovieTheater.Controllers
                 // Check OTP
                 if (!_service.VerifyForgetPasswordOtp(email, otp))
                 {
-                    _logger.LogWarning("ResetPasswordAsync validation failed: invalid OTP for email: {Email}", email);
+                    _logger.LogWarning("ResetPasswordAsync validation failed: invalid OTP for email: {EmailHash}", GetEmailHash(email));
                     return Json(new { success = false, error = "Invalid or expired OTP." });
                 }
 
@@ -489,16 +489,16 @@ namespace MovieTheater.Controllers
 
                 if (!result)
                 {
-                    _logger.LogError("ResetPasswordAsync failed to reset password for email: {Email}", email);
+                    _logger.LogError("ResetPasswordAsync failed to reset password for email: {EmailHash}", GetEmailHash(email));
                     return Json(new { success = false, error = "Failed to reset password." });
                 }
 
-                _logger.LogInformation("ResetPasswordAsync successful for email: {Email}", email);
+                _logger.LogInformation("ResetPasswordAsync successful for email: {EmailHash}", GetEmailHash(email));
                 return Json(new { success = true });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception in ResetPasswordAsync for email: {Email}", email);
+                _logger.LogError(ex, "Exception in ResetPasswordAsync for email: {EmailHash}", GetEmailHash(email));
                 return Json(new { success = false, error = "An unexpected error occurred." });
             }
         }
@@ -512,6 +512,22 @@ namespace MovieTheater.Controllers
         {
             public string Email { get; set; } = string.Empty;
             public string Otp { get; set; } = string.Empty;
+        }
+
+        /// <summary>
+        /// Creates a secure hash of email for logging purposes to avoid logging user-controlled data
+        /// </summary>
+        /// <param name="email">The email to hash</param>
+        /// <returns>A SHA256 hash of the email or "null" if email is null/empty</returns>
+        private static string GetEmailHash(string? email)
+        {
+            if (string.IsNullOrEmpty(email))
+                return "null";
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(email);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
 
 
