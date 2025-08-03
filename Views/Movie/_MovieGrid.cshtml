@@ -18,7 +18,7 @@ else
     <!-- Row 1: Currently Showing -->
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="section-title">🎬 Currently Showing</h2>
+            <h2 class="section-title text-white">🎬 Currently Showing</h2>
         </div>
         @if (ongoingMovies.Any())
         {
@@ -31,8 +31,8 @@ else
                                 <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
                                 <div class="ongoing-badge">Now Showing</div>
                             </div>
-                            <div class="movie-info">
-                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+                            <div class="movie-info" style="background-color: transparent !important">
+                                <h3 class="movie-title text-white">@movie.MovieNameEnglish</h3>
                                 <div class="movie-tags">
                                     @if (movie.Types != null)
                                     {
@@ -68,7 +68,7 @@ else
     <!-- Row 2: Coming Soon -->
     <div class="row">
         <div class="col-12">
-            <h2 class="section-title">📅 Coming Soon</h2>
+            <h2 class="section-title text-white">📅 Coming Soon</h2>
         </div>
         @if (incomingMovies.Any())
         {
@@ -81,8 +81,8 @@ else
                                 <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
                                 <div class="coming-soon-badge">Coming Soon</div>
                             </div>
-                            <div class="movie-info">
-                                <h3 class="movie-title">@movie.MovieNameEnglish</h3>
+                            <div class="movie-info" style="background-color: transparent !important">
+                                <h3 class="movie-title text-white">@movie.MovieNameEnglish</h3>
                                 <div class="movie-tags">
                                     @if (movie.Types != null)
                                     {
