@@ -48,6 +48,7 @@ Thumbs.db
 
 # Coverage reports
 coverage-report/
+coverage-history/
 
 # Windows system files
 Thumbs.db
@@ -57,14 +58,17 @@ Thumbs.db
 TestResults/
 MovieTheater.Tests/TestResults/
 
-# SonarCloud analysis files
+# SonarQube analysis files
 .sonar/
+.sonarqube/
 coverage-report/
+coverage-history/
 
 # Coverage files
 *.coverage
 *.coveragexml
 *.opencover.xml
+*.cobertura.xml
 
 # Temporary files
 *.tmp
@@ -72,3 +76,9 @@ coverage-report/
 
 # Ignore coverage reports
 coverage-report/
+coverage-history/
+
+# SonarQube specific
+.sonar/
+.sonarqube/
+sonar-project.properties.local
