@@ -134,17 +134,6 @@ namespace MovieTheater.Controllers
                 .OrderBy(d => d)
                 .ToList();
 
-            if (!availableDates.Any())
-            {
-                var emptyModel = new ShowtimeSelectionViewModel
-                {
-                    AvailableDates = new List<DateOnly>(),
-                    SelectedDate = today,
-                    Movies = new List<MovieShowtimeInfo>()
-                };
-                return View("~/Views/Showtime/Select.cshtml", emptyModel);
-            }
-
             // Parse the date from dd/MM/yyyy format
             DateOnly selectedDateOnly;
             if (!string.IsNullOrEmpty(date))
@@ -152,6 +141,11 @@ namespace MovieTheater.Controllers
                 try
                 {
                     selectedDateOnly = DateOnly.ParseExact(date, "dd/MM/yyyy");
+                    // Ensure the selected date is today or in the future
+                    if (selectedDateOnly < today)
+                    {
+                        selectedDateOnly = today;
+                    }
                 }
                 catch
                 {
