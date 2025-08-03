@@ -1,0 +1,19 @@
+# ReportGenerator Configuration
+# Sử dụng để tạo HTML coverage reports từ OpenCover files
+
+# Cú pháp cơ bản:
+# reportgenerator -reports:"TestResults/**/coverage.opencover.xml" -targetdir:"coverage-report" -reporttypes:Html;TextSummary
+
+# Các options hữu ích:
+# -reports: Đường dẫn đến file coverage (OpenCover hoặc Cobertura)
+# -targetdir: Thư mục output cho report
+# -reporttypes: Loại report (Html, TextSummary, Cobertura, etc.)
+# -sourcedirs: Thư mục source code (để hiển thị source code trong report)
+# -historydir: Thư mục lưu lịch sử coverage
+# -verbosity: Mức độ chi tiết (Quiet, Minimal, Normal, Verbose)
+
+# Ví dụ cấu hình đầy đủ:
+# reportgenerator -reports:"TestResults/**/coverage.opencover.xml" -targetdir:"coverage-report" -reporttypes:Html;TextSummary -sourcedirs:"." -historydir:"coverage-history" -verbosity:Normal
+
+# Cài đặt ReportGenerator:
+# dotnet tool install --global dotnet-reportgenerator-globaltool 
