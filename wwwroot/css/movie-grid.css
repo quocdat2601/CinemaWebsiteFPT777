@@ -2,10 +2,6 @@
     margin: 20px 100px 20px 100px !important;
 }
 
-.search-input::-webkit-input-placeholder { 
-    color: white;
-}
-
 .movie-card {
     position: relative;
     border-radius: 8px;

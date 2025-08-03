@@ -3,15 +3,18 @@
 <div class="text-center mb-2">
     <h2>Employee List</h2>
 </div>
-
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <a asp-controller="Employee" asp-action="Create" class="btn btn-sm btn-primary">
-        Create an Employee
-    </a>
-
-    <div class="input-group" style="width: 400px;">
-        <input type="text" id="searchBox" maxlength="50"
-               class="form-control" placeholder="🔍 Search by name, email, phone, and ID" />
+<div class="row">
+    <div class="col">
+        <a asp-controller="Employee" asp-action="Create" class="btn btn-sm btn-primary">Create an Employee</a>
+    </div>
+    <div class="col">
+        <form id="searchForm" class="mb-4 d-flex justify-content-center" onsubmit="event.preventDefault(); searchEmployees();">
+            <input type="hidden" name="tab" value="EmployeeMg" />
+            <div class="input-group" style="max-width: 600px;">
+                <input type="text" id="searchKeyword" name="keyword" value="@ViewBag.Keyword" maxlength="50" class="form-control" placeholder="🔍 Search by name, email, phone, etc..." />
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -75,34 +78,3 @@
 </table>
 
 <partial name="_ToastMessages" />
-
-<script>
-    document.getElementById("searchBox").addEventListener("input", function () {
-        const filter = this.value.toLowerCase();
-        const rows = document.querySelectorAll("tbody tr");
-        
-        rows.forEach(row => {
-            // Skip the "No employees found" row
-            if (row.cells.length === 1) {
-                row.style.display = "none";
-                return;
-            }
-            
-            // Get text from relevant columns (name, email, phone, etc.)
-            const nameCell = row.cells[1]; // FULL NAME
-            const identityCell = row.cells[2]; // IDENTITY CARD
-            const emailCell = row.cells[3]; // EMAIL
-            const phoneCell = row.cells[4]; // PHONE
-            const addressCell = row.cells[5]; // ADDRESS
-            
-            const searchText = (
-                (nameCell?.textContent || "") +
-                (identityCell?.textContent || "") +
-                (emailCell?.textContent || "") +
-                (phoneCell?.textContent || "")
-            ).toLowerCase();
-            
-            row.style.display = searchText.includes(filter) ? "" : "none";
-        });
-    });
-</script>

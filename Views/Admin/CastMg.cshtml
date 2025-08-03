@@ -17,15 +17,10 @@
     <h2>List of Persons</h2>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+<div class="text-center mb-2">
     <a asp-action="Create" asp-controller="Cast" class="btn btn-sm btn-primary">
         Create a cast/director
     </a>
-
-    <div class="input-group" style="width: 400px;">
-        <input type="text" id="searchBox" maxlength="50"
-               class="form-control" placeholder="🔍 Search by name..." />
-    </div>
 </div>
 
 <ul class="nav nav-tabs mb-3" id="personTabs" role="tablist">
@@ -46,18 +41,3 @@
     </div>
 </div>
 <partial name="_ToastMessages" />
-
-<script>
-    document.getElementById("searchBox").addEventListener("input", function () {
-        const filter = this.value.toLowerCase();
-        // Only filter visible tab
-        const activeTab = document.querySelector('.tab-pane.active');
-        if (!activeTab) return;
-        const rows = activeTab.querySelectorAll("tbody tr");
-        rows.forEach(row => {
-            const nameCell = row.cells[1]; // second column: name
-            const nameText = nameCell.textContent.toLowerCase();
-            row.style.display = nameText.includes(filter) ? "" : "none";
-        });
-    });
-</script>
