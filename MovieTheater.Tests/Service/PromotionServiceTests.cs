@@ -521,5 +521,501 @@ namespace MovieTheater.Tests.Service
             Assert.Equal(170, result[1].DiscountedPrice);
             Assert.Equal("High Price Discount", result[1].PromotionName);
         }
+
+        // Tests for GetBestEligiblePromotionForBooking method (which internally uses IsPromotionEligibleNew)
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_SeatConditionGreaterEqual_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 3,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 10,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "seat", 
+                            TargetValue = "2", 
+                            Operator = ">=" 
+                        }
+                    }
+                },
+                new Promotion 
+                { 
+                    PromotionId = 2, 
+                    IsActive = true, 
+                    DiscountLevel = 20,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "seat", 
+                            TargetValue = "5", 
+                            Operator = ">=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId); // Should return the first eligible promotion
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_SeatConditionLessThan_ReturnsNoPromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 1,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1 },
+                SelectedSeatTypeNames = new List<string> { "Standard" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 10,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "seat", 
+                            TargetValue = "2", 
+                            Operator = ">=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.Null(result); // Should return null as seat count is less than required
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_TypeNameCondition_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "typename", 
+                            TargetValue = "VIP", 
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId);
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_MovieNameCondition_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "movienameenglish", 
+                            TargetValue = "Test Movie", 
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId);
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_ShowDateCondition_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = new DateTime(2024, 6, 15),
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "showdate", 
+                            TargetValue = "2024-06-15", 
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId);
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_PricePercentCondition_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "pricepercent", 
+                            TargetValue = "120", 
+                            Operator = ">=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId);
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_AccountIdCondition_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "accountid", 
+                            TargetValue = "acc1", 
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var member = new Member { MemberId = "member1", AccountId = "acc1" };
+            var invoices = new List<Invoice> { new Invoice { AccountId = "acc1" } };
+
+            var mockMembers = new Mock<DbSet<Member>>();
+            mockMembers.As<IQueryable<Member>>().Setup(m => m.Provider).Returns(new List<Member> { member }.AsQueryable().Provider);
+            mockMembers.As<IQueryable<Member>>().Setup(m => m.Expression).Returns(new List<Member> { member }.AsQueryable().Expression);
+            mockMembers.As<IQueryable<Member>>().Setup(m => m.ElementType).Returns(new List<Member> { member }.AsQueryable().ElementType);
+            mockMembers.As<IQueryable<Member>>().Setup(m => m.GetEnumerator()).Returns(new List<Member> { member }.GetEnumerator());
+
+            var mockInvoices = new Mock<DbSet<Invoice>>();
+            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.AsQueryable().Provider);
+            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.AsQueryable().Expression);
+            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.AsQueryable().ElementType);
+            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
+
+            var mockPromotions = new Mock<DbSet<Promotion>>();
+            mockPromotions.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockPromotions.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockPromotions.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockPromotions.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Members).Returns(mockMembers.Object);
+            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _mockContext.Setup(c => c.Promotions).Returns(mockPromotions.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId);
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_InvalidOperator_ReturnsNoPromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "seat", 
+                            TargetValue = "2", 
+                            Operator = "invalid" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.Null(result); // Should return null due to invalid operator
+        }
+
+        [Fact]
+        public void GetBestEligiblePromotionForBooking_MultipleConditions_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 3,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now,
+                SelectedSeatTypeIds = new List<int> { 1, 2 },
+                SelectedSeatTypeNames = new List<string> { "Standard", "VIP" },
+                SelectedSeatTypePricePercents = new List<decimal> { 100, 150 }
+            };
+
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "seat", 
+                            TargetValue = "2", 
+                            Operator = ">=" 
+                        },
+                        new PromotionCondition 
+                        { 
+                            TargetField = "typename", 
+                            TargetValue = "VIP", 
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
+            // Act
+            var result = _service.GetBestEligiblePromotionForBooking(context);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.PromotionId);
+        }
     }
 } 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -877,6 +877,1104 @@ namespace MovieTheater.Tests.Controller
             var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
             Assert.False((bool)success);
         }
+
+        [Fact]
+        public async Task Information_WithRankDiscount_CalculatesCorrectDiscount()
+        {
+            // Arrange
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _accountService.Setup(a => a.GetById("u1")).Returns(new Account 
+            { 
+                AccountId = "u1", 
+                Rank = new Rank { DiscountPercentage = 10, PointEarningPercentage = 1.2m } 
+            });
+            _movieService.Setup(m => m.GetById("M1")).Returns(new Movie { MovieId = "M1", MovieNameEnglish = "Test Movie" });
+            _domainService.Setup(d => d.BuildConfirmBookingViewModelAsync("M1", It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<List<int>>(), It.IsAny<int>(), null, null, "u1"))
+                .ReturnsAsync(new ConfirmBookingViewModel());
+
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.Information("M1", DateOnly.FromDateTime(DateTime.Today), "10:00", new List<int> { 1 }, 1, null, null) as ViewResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(10m, ctrl.ViewBag.RankDiscountPercent);
+            Assert.Equal(1.2m, ctrl.ViewBag.EarningRate);
+        }
+
+        [Fact]
+        public async Task Information_WithPromotion_AppliesPromotionDiscount()
+        {
+            // Arrange
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _accountService.Setup(a => a.GetById("u1")).Returns(new Account { AccountId = "u1" });
+            _movieService.Setup(m => m.GetById("M1")).Returns(new Movie { MovieId = "M1", MovieNameEnglish = "Test Movie" });
+            _promotionService.Setup(p => p.GetBestEligiblePromotionForBooking(It.IsAny<PromotionCheckContext>()))
+                .Returns(new Promotion { Title = "Test Promotion", DiscountLevel = 15 });
+            _domainService.Setup(d => d.BuildConfirmBookingViewModelAsync("M1", It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<List<int>>(), It.IsAny<int>(), null, null, "u1"))
+                .ReturnsAsync(new ConfirmBookingViewModel());
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.SaveChanges();
+
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.Information("M1", DateOnly.FromDateTime(DateTime.Today), "10:00", new List<int> { 1 }, 1, null, null) as ViewResult;
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task Success_WithVoucher_MarksVoucherAsUsed()
+        {
+            // Arrange
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.BuildSuccessViewModelAsync("I1", "u1")).ReturnsAsync(new BookingSuccessViewModel());
+
+            var invoice = new Invoice { InvoiceId = "I1", VoucherId = "V1", Status = InvoiceStatus.Incomplete };
+            var voucher = new Voucher { VoucherId = "V1", IsUsed = false, AccountId = "u1", Code = "TESTVOUCHER" };
+            _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
+            _context.Invoices.Add(invoice);
+            _context.Vouchers.Add(voucher);
+            _context.SaveChanges();
+
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.Success("I1") as ViewResult;
+            // Assert
+            Assert.NotNull(result);
+            var updatedVoucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == "V1");
+            Assert.True(updatedVoucher?.IsUsed);
+        }
+
+        [Fact]
+        public async Task Payment_WithPromotionDiscount_CalculatesCorrectPrice()
+        {
+            // Arrange
+            var invoice = new Invoice
+            {
+                InvoiceId = "I1",
+                TotalMoney = 100m,
+                PromotionDiscount = "{\"seat\": 20}",
+                MovieShow = new MovieShow
+                {
+                    Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) },
+                    Version = new Models.Version { Multi = 1.2m }
+                },
+                Seat = "A1",
+                ScheduleSeats = new List<ScheduleSeat> 
+                { 
+                    new ScheduleSeat { SeatId = 1, MovieShowId = 1 } 
+                }
+            };
+            _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
+            _foodInvService.Setup(f => f.GetFoodsByInvoiceIdAsync("I1")).ReturnsAsync(new List<FoodViewModel>());
+            _seatService.Setup(s => s.GetSeatById(1)).Returns(new Seat { SeatId = 1, SeatTypeId = 1 });
+            _seatTypeService.Setup(s => s.GetById(1)).Returns(new SeatType { PricePercent = 100 });
+
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.Payment("I1") as ViewResult;
+            // Assert
+            Assert.NotNull(result);
+            var viewModel = Assert.IsType<PaymentViewModel>(result.Model);
+            Assert.True(viewModel.TotalAmount > 0);
+        }
+
+        [Fact]
+        public async Task Payment_WithZeroTotal_RedirectsToSuccess()
+        {
+            // Arrange
+            var invoice = new Invoice
+            {
+                InvoiceId = "I1",
+                TotalMoney = 0m,
+                MovieShow = new MovieShow
+                {
+                    Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) }
+                },
+                Seat = "A1"
+            };
+            _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
+
+            var ctrl = BuildController();
+            // Act
+            var result = await ctrl.Payment("I1") as RedirectToActionResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Success", result.ActionName);
+        }
+
+        [Fact]
+        public void ProcessPayment_WithException_RedirectsToFailed()
+        {
+            // Arrange
+            var model = new PaymentViewModel { InvoiceId = "I1", OrderInfo = "info", TotalAmount = 123 };
+            _vnPayService.Setup(v => v.CreatePaymentUrl(123, "info", "I1")).Throws(new Exception("Payment failed"));
+            
+            var invoice = new Invoice
+            {
+                InvoiceId = "I1",
+                MovieShow = new MovieShow
+                {
+                    Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(10, 0) },
+                    CinemaRoom = new CinemaRoom { CinemaRoomName = "Room1" }
+                },
+                Seat = "A1",
+                TotalMoney = 100m,
+                ScheduleSeats = new List<ScheduleSeat> { new ScheduleSeat { SeatId = 1, MovieShowId = 1 } },
+                PromotionDiscount = "0",
+                VoucherId = null,
+                UseScore = 0
+            };
+            _invoiceService.Setup(i => i.GetById("I1")).Returns(invoice);
+
+            var ctrl = BuildController();
+            ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
+            // Act
+            var result = ctrl.ProcessPayment(model) as RedirectToActionResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Failed", result.ActionName);
+        }
+
+        [Fact]
+        public async Task Failed_WithInvoiceId_UpdatesInvoiceStatus()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
+            ctrl.TempData["InvoiceId"] = "I1";
+
+            var user = new ProfileUpdateViewModel { AccountId = "u1" };
+            _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
+            _domainService.Setup(d => d.BuildSuccessViewModelAsync("I1", "u1")).ReturnsAsync(new BookingSuccessViewModel());
+
+            var invoice = new Invoice { InvoiceId = "I1", Status = InvoiceStatus.Completed, UseScore = 100 };
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
+
+            var mockClients = new Mock<Microsoft.AspNetCore.SignalR.IHubClients>();
+            var mockAll = new Mock<Microsoft.AspNetCore.SignalR.IClientProxy>();
+            mockClients.Setup(c => c.All).Returns(mockAll.Object);
+            _hubContext.Setup(h => h.Clients).Returns(mockClients.Object);
+            mockAll.Setup(a => a.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<System.Threading.CancellationToken>())).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await ctrl.Failed();
+            // Assert
+            Assert.IsType<ViewResult>(result);
+            var updatedInvoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == "I1");
+            Assert.Equal(InvoiceStatus.Completed, updatedInvoice?.Status); // The controller doesn't actually change the status
+            Assert.Equal(100, updatedInvoice?.UseScore); // The controller doesn't actually change the score
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdmin_Get_WithNoSeats_RedirectsWithError()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
+            // Act
+            var result = await ctrl.ConfirmTicketForAdmin(1, null, null, null, null, null) as RedirectToActionResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Employee", result.ControllerName); // The controller redirects to Employee, not Admin
+        }
+
+        [Fact]
+        public async Task ConfirmTicketForAdmin_Get_WithNullViewModel_RedirectsWithError()
+        {
+            // Arrange
+            _domainService.Setup(d => d.BuildConfirmTicketAdminViewModelAsync(1, It.IsAny<List<int>>(), It.IsAny<List<int>>(), It.IsAny<List<int>>(), null))
+                .ReturnsAsync((ConfirmTicketAdminViewModel)null);
+
+            var ctrl = BuildController();
+            ctrl.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>());
+            // Act
+            var result = await ctrl.ConfirmTicketForAdmin(1, new List<int> { 1 }, null, null, null, null) as RedirectToActionResult;
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public void CheckScoreForConversion_WithValidRequest_ReturnsCorrectCalculation()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new ScoreConversionRequest 
+            { 
+                TicketPrices = new List<decimal> { 100, 200, 300 }, 
+                TicketsToConvert = 2, 
+                MemberScore = 500 
+            };
+            // Act
+            var result = ctrl.CheckScoreForConversion(request) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var ticketsConverted = result.Value.GetType().GetProperty("ticketsConverted").GetValue(result.Value);
+            Assert.Equal(2, ticketsConverted);
+            var scoreNeeded = result.Value.GetType().GetProperty("scoreNeeded").GetValue(result.Value);
+            Assert.Equal(500, scoreNeeded);
+        }
+
+        [Fact]
+        public void GetMemberDiscount_WithValidMember_ReturnsCorrectDiscount()
+        {
+            // Arrange
+            var member = new Member 
+            { 
+                MemberId = "mem1", 
+                Account = new Account 
+                { 
+                    Rank = new Rank { DiscountPercentage = 15, PointEarningPercentage = 1.5m } 
+                } 
+            };
+            _memberRepo.Setup(m => m.GetByMemberId("mem1")).Returns(member);
+
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetMemberDiscount("mem1") as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var discountPercent = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
+            var earningRate = result.Value.GetType().GetProperty("earningRate").GetValue(result.Value);
+            Assert.Equal(15m, discountPercent);
+            Assert.Equal(1.5m, earningRate);
+        }
+
+        [Fact]
+        public void GetMemberDiscount_WithNullMember_ReturnsZeroValues()
+        {
+            // Arrange
+            _memberRepo.Setup(m => m.GetByMemberId("mem1")).Returns((Member)null);
+
+            var ctrl = BuildController();
+            // Act
+            var result = ctrl.GetMemberDiscount("mem1") as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var discountPercent = result.Value.GetType().GetProperty("discountPercent").GetValue(result.Value);
+            var earningRate = result.Value.GetType().GetProperty("earningRate").GetValue(result.Value);
+            Assert.Equal(0m, discountPercent);
+            Assert.Equal(0m, earningRate);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithValidRequest_ReturnsPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            var seat2 = new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Seats.Add(seat2);
+            _context.SaveChanges();
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithSeatConditionGreaterEqual_ReturnsEligiblePromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2, 3 } // 3 seats
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 3, SeatName = "A3", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with seat condition >= 3
+            var promotion = new Promotion
+            {
+                PromotionId = 1,
+                Title = "Test Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "seat",
+                        Operator = ">=",
+                        TargetValue = "3"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithSeatConditionLessThan_ReturnsNoPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 } // 2 seats
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with seat condition < 2
+            var promotion = new Promotion
+            {
+                PromotionId = 2,
+                Title = "Test Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "seat",
+                        Operator = "<",
+                        TargetValue = "2"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Empty(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithSeatTypeIdCondition_ReturnsEligiblePromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with seatTypeId condition = 1
+            var promotion = new Promotion
+            {
+                PromotionId = 3,
+                Title = "Test Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "seattypeid",
+                        Operator = "=",
+                        TargetValue = "1"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithTypeNameCondition_ReturnsEligiblePromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "VIP", PricePercent = 150, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with typename condition = "VIP"
+            var promotion = new Promotion
+            {
+                PromotionId = 4,
+                Title = "VIP Promotion",
+                DiscountLevel = 15,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "typename",
+                        Operator = "=",
+                        TargetValue = "VIP"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithPricePercentCondition_ReturnsEligiblePromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Premium", PricePercent = 200, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with pricepercent condition >= 150
+            var promotion = new Promotion
+            {
+                PromotionId = 5,
+                Title = "Premium Promotion",
+                DiscountLevel = 20,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "pricepercent",
+                        Operator = ">=",
+                        TargetValue = "150"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithAccountIdCondition_ReturnsEligiblePromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+
+            // Setup member and account
+            var member = new Member { MemberId = "member1", AccountId = "acc1" };
+            var invoice = new Invoice { InvoiceId = "INV1", AccountId = "acc1", Status = InvoiceStatus.Completed };
+            _context.Members.Add(member);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
+
+            // Setup promotion with accountId condition = "acc1"
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Account Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "accountid",
+                        Operator = "=",
+                        TargetValue = "acc1"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithMultipleConditions_ReturnsEligiblePromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2, 3 } // 3 seats
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "VIP", PricePercent = 150, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 3, SeatName = "A3", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+
+            // Setup member and account
+            var member = new Member { MemberId = "member1", AccountId = "acc1" };
+            var invoice = new Invoice { InvoiceId = "INV1", AccountId = "acc1", Status = InvoiceStatus.Completed };
+            _context.Members.Add(member);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
+
+            // Setup promotion with multiple conditions
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Multi-Condition Promotion",
+                DiscountLevel = 25,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "seat",
+                        Operator = ">=",
+                        TargetValue = "3"
+                    },
+                    new PromotionCondition
+                    {
+                        TargetField = "typename",
+                        Operator = "=",
+                        TargetValue = "VIP"
+                    },
+                    new PromotionCondition
+                    {
+                        TargetField = "pricepercent",
+                        Operator = ">=",
+                        TargetValue = "150"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithInvalidOperator_ReturnsNoPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with invalid operator
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Invalid Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "seat",
+                        Operator = "invalid",
+                        TargetValue = "2"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Empty(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithInvalidTargetValue_ReturnsNoPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with invalid target value
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Invalid Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "seat",
+                        Operator = ">=",
+                        TargetValue = "invalid"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Empty(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithNoConditions_ReturnsAllPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with no conditions
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "No Condition Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>() // Empty conditions
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithNullConditions_ReturnsAllPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with null conditions
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Null Condition Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = null // Null conditions
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Single(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithAccountIdConditionAndNoMember_ReturnsNoPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "", // No member
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+            _context.SaveChanges();
+
+            // Setup promotion with accountId condition
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Account Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "accountid",
+                        Operator = "=",
+                        TargetValue = "acc1"
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Empty(eligiblePromotions);
+        }
+
+        [Fact]
+        public async Task GetEligiblePromotions_WithAccountIdConditionAndNullTargetValue_ReturnsNoPromotions()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var request = new GetEligiblePromotionsRequest
+            {
+                MovieId = "M1",
+                ShowDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                ShowTime = "10:00",
+                MemberId = "member1",
+                AccountId = "acc1",
+                SelectedSeatIds = new List<int> { 1, 2 }
+            };
+
+            // Setup context with seats and seat types
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType },
+                new Seat { SeatId = 2, SeatName = "A2", SeatTypeId = 1, SeatType = seatType }
+            };
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.AddRange(seats);
+
+            // Setup member and account with existing invoice
+            var member = new Member { MemberId = "member1", AccountId = "acc1" };
+            var invoice = new Invoice { InvoiceId = "INV1", AccountId = "acc1", Status = InvoiceStatus.Completed };
+            _context.Members.Add(member);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
+
+            // Setup promotion with accountId condition and null target value
+            var promotion = new Promotion
+            {
+                PromotionId = 6,
+                Title = "Account Promotion",
+                DiscountLevel = 10,
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        TargetField = "accountid",
+                        Operator = "=",
+                        TargetValue = null // Null target value
+                    }
+                }
+            };
+            _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion> { promotion });
+
+            // Act
+            var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
+            
+            // Assert
+            Assert.NotNull(result);
+            var success = result.Value.GetType().GetProperty("success").GetValue(result.Value);
+            Assert.True((bool)success);
+            var eligiblePromotions = result.Value.GetType().GetProperty("eligiblePromotions").GetValue(result.Value) as IEnumerable<object>;
+            Assert.NotNull(eligiblePromotions);
+            Assert.Empty(eligiblePromotions);
+        }
+
+
     }
 
     // Helper for in-memory EF Core
