@@ -12,6 +12,7 @@ using Xunit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -652,6 +653,427 @@ namespace MovieTheater.Tests.Controller
 
             // Assert
             Assert.IsType<ViewResult>(result);
+        }
+
+        [Fact]
+        public void ShowtimeMg_ReturnsView_WithValidDate()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>
+            {
+                new MovieShow 
+                { 
+                    MovieShowId = 1, 
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }
+                }
+            };
+            _movieSvc.Setup(s => s.GetMovieShow()).Returns(movieShows);
+            _movieSvc.Setup(s => s.GetAllSchedules()).Returns(new List<Schedule>());
+            
+            var ctrl = BuildController();
+            ctrl.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            var services = new ServiceCollection();
+            services.AddSingleton<IMovieRepository>(Mock.Of<IMovieRepository>());
+            services.AddMvc();
+            ctrl.ControllerContext.HttpContext.RequestServices = services.BuildServiceProvider();
+
+            // Act
+            var result = ctrl.ShowtimeMg("15/06/2024") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<ShowtimeManagementViewModel>(result.Model);
+        }
+
+        [Fact]
+        public void ShowtimeMg_ReturnsView_WithInvalidDate_UsesToday()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>();
+            _movieSvc.Setup(s => s.GetMovieShow()).Returns(movieShows);
+            _movieSvc.Setup(s => s.GetAllSchedules()).Returns(new List<Schedule>());
+            
+            var ctrl = BuildController();
+            ctrl.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            var services = new ServiceCollection();
+            services.AddSingleton<IMovieRepository>(Mock.Of<IMovieRepository>());
+            services.AddMvc();
+            ctrl.ControllerContext.HttpContext.RequestServices = services.BuildServiceProvider();
+
+            // Act
+            var result = ctrl.ShowtimeMg("invalid-date") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<ShowtimeManagementViewModel>(result.Model);
+        }
+
+        [Fact]
+        public void GetMovieShowSummary_ReturnsJson_WithValidParameters()
+        {
+            // Arrange
+            var summary = new Dictionary<DateOnly, List<string>>
+            {
+                { DateOnly.FromDateTime(DateTime.Today), new List<string> { "Movie1", "Movie2" } }
+            };
+            var mockRepo = new Mock<IMovieRepository>();
+            mockRepo.Setup(r => r.GetMovieShowSummaryByMonth(2024, 6)).Returns(summary);
+            
+            var ctrl = BuildController();
+            ctrl.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            ctrl.ControllerContext.HttpContext.RequestServices = new ServiceCollection()
+                .AddSingleton<IMovieRepository>(mockRepo.Object)
+                .BuildServiceProvider();
+
+            // Act
+            var result = ctrl.GetMovieShowSummary(2024, 6) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void GetMovieShowSummary_ReturnsEmptyJson_WhenRepositoryNotAvailable()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            ctrl.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            ctrl.ControllerContext.HttpContext.RequestServices = new ServiceCollection()
+                .BuildServiceProvider();
+
+            // Act
+            var result = ctrl.GetMovieShowSummary(2024, 6) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void EditRank_Get_ReturnsNotFound_WhenRankNull()
+        {
+            // Arrange
+            _rankSvc.Setup(s => s.GetById(1)).Returns((RankInfoViewModel)null);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.EditRank(1);
+
+            // Assert
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public void EditRank_Get_ReturnsView_WhenRankFound()
+        {
+            // Arrange
+            var rank = new RankInfoViewModel
+            {
+                CurrentRankId = 1,
+                CurrentRankName = "Gold",
+                RequiredPointsForCurrentRank = 1000,
+                CurrentDiscountPercentage = 10,
+                CurrentPointEarningPercentage = 5,
+                ColorGradient = "gold",
+                IconClass = "fas fa-crown"
+            };
+            _rankSvc.Setup(s => s.GetById(1)).Returns(rank);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.EditRank(1) as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("~/Views/Rank/Edit.cshtml", result.ViewName);
+            Assert.IsType<RankCreateViewModel>(result.Model);
+            Assert.Equal(1, result.ViewData["RankId"]);
+        }
+
+        [Fact]
+        public void BookingMgPartial_ReturnsJson_WithNoFilters()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice 
+                { 
+                    InvoiceId = "I1", 
+                    AccountId = "A1",
+                    Status = InvoiceStatus.Completed,
+                    BookingDate = DateTime.Today,
+                    MovieShow = new MovieShow 
+                    { 
+                        Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                        Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }
+                    },
+                    Account = new Account { PhoneNumber = "123456789", IdentityCard = "ID123" }
+                }
+            };
+            _invSvc.Setup(s => s.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial() as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void BookingMgPartial_ReturnsJson_WithKeywordFilter()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice 
+                { 
+                    InvoiceId = "I1", 
+                    AccountId = "A1",
+                    Status = InvoiceStatus.Completed,
+                    BookingDate = DateTime.Today,
+                    MovieShow = new MovieShow 
+                    { 
+                        Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                        Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }
+                    },
+                    Account = new Account { PhoneNumber = "123456789", IdentityCard = "ID123" }
+                }
+            };
+            _invSvc.Setup(s => s.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(keyword: "I1") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void BookingMgPartial_ReturnsJson_WithStatusFilter()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice 
+                { 
+                    InvoiceId = "I1", 
+                    AccountId = "A1",
+                    Status = InvoiceStatus.Completed,
+                    Cancel = false,
+                    BookingDate = DateTime.Today,
+                    MovieShow = new MovieShow 
+                    { 
+                        Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                        Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }
+                    },
+                    Account = new Account { PhoneNumber = "123456789", IdentityCard = "ID123" }
+                }
+            };
+            _invSvc.Setup(s => s.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(statusFilter: "completed") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void BookingMgPartial_ReturnsJson_WithBookingTypeFilter()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice 
+                { 
+                    InvoiceId = "I1", 
+                    AccountId = "A1",
+                    Status = InvoiceStatus.Completed,
+                    BookingDate = DateTime.Today,
+                    EmployeeId = null, // Normal booking
+                    MovieShow = new MovieShow 
+                    { 
+                        Movie = new Movie { MovieNameEnglish = "Test Movie" },
+                        Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }
+                    },
+                    Account = new Account { PhoneNumber = "123456789", IdentityCard = "ID123" }
+                }
+            };
+            _invSvc.Setup(s => s.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(bookingTypeFilter: "normal") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void VoucherMgPartial_ReturnsJson_WithNoFilters()
+        {
+            // Arrange
+            var vouchers = new List<Voucher>
+            {
+                new Voucher 
+                { 
+                    VoucherId = "1",
+                    Code = "TEST123",
+                    AccountId = "A1",
+                    Value = 100,
+                    CreatedDate = DateTime.Today,
+                    ExpiryDate = DateTime.Today.AddDays(30),
+                    IsUsed = false,
+                    Image = "voucher.jpg"
+                }
+            };
+            _vouchSvc.Setup(s => s.GetFilteredVouchers(It.IsAny<MovieTheater.Service.VoucherFilterModel>())).Returns(vouchers);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.VoucherMgPartial() as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void VoucherMgPartial_ReturnsJson_WithKeywordFilter()
+        {
+            // Arrange
+            var vouchers = new List<Voucher>
+            {
+                new Voucher 
+                { 
+                    VoucherId = "1",
+                    Code = "TEST123",
+                    AccountId = "A1",
+                    Value = 100,
+                    CreatedDate = DateTime.Today,
+                    ExpiryDate = DateTime.Today.AddDays(30),
+                    IsUsed = false,
+                    Image = "voucher.jpg"
+                }
+            };
+            _vouchSvc.Setup(s => s.GetFilteredVouchers(It.IsAny<MovieTheater.Service.VoucherFilterModel>())).Returns(vouchers);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.VoucherMgPartial(keyword: "TEST") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void VoucherMgPartial_ReturnsJson_WithStatusFilter()
+        {
+            // Arrange
+            var vouchers = new List<Voucher>
+            {
+                new Voucher 
+                { 
+                    VoucherId = "1",
+                    Code = "TEST123",
+                    AccountId = "A1",
+                    Value = 100,
+                    CreatedDate = DateTime.Today,
+                    ExpiryDate = DateTime.Today.AddDays(30),
+                    IsUsed = false,
+                    Image = "voucher.jpg"
+                }
+            };
+            _vouchSvc.Setup(s => s.GetFilteredVouchers(It.IsAny<MovieTheater.Service.VoucherFilterModel>())).Returns(vouchers);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.VoucherMgPartial(statusFilter: "active") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void VoucherMgPartial_ReturnsJson_WithExpiryFilter()
+        {
+            // Arrange
+            var vouchers = new List<Voucher>
+            {
+                new Voucher 
+                { 
+                    VoucherId = "1",
+                    Code = "TEST123",
+                    AccountId = "A1",
+                    Value = 100,
+                    CreatedDate = DateTime.Today,
+                    ExpiryDate = DateTime.Today.AddDays(30),
+                    IsUsed = false,
+                    Image = "voucher.jpg"
+                }
+            };
+            _vouchSvc.Setup(s => s.GetFilteredVouchers(It.IsAny<MovieTheater.Service.VoucherFilterModel>())).Returns(vouchers);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.VoucherMgPartial(expiryFilter: "valid") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void VoucherMgPartial_ReturnsJson_WithPagination()
+        {
+            // Arrange
+            var vouchers = new List<Voucher>
+            {
+                new Voucher 
+                { 
+                    VoucherId = "1",
+                    Code = "TEST123",
+                    AccountId = "A1",
+                    Value = 100,
+                    CreatedDate = DateTime.Today,
+                    ExpiryDate = DateTime.Today.AddDays(30),
+                    IsUsed = false,
+                    Image = "voucher.jpg"
+                }
+            };
+            _vouchSvc.Setup(s => s.GetFilteredVouchers(It.IsAny<MovieTheater.Service.VoucherFilterModel>())).Returns(vouchers);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.VoucherMgPartial(page: 1, pageSize: 5) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
         }
     }
 }

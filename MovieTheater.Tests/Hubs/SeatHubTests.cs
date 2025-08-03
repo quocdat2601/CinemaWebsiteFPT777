@@ -100,7 +100,7 @@ namespace MovieTheater.Tests.Hub
             var mockCallerAsClientProxy = Mock.Get((IClientProxy)hub.Clients.Caller);
             await hub.JoinShowtime(2);
             mockClients.Verify(c => c.Caller, Times.AtLeastOnce());
-
+            // Debug: In ra toàn bộ invocation
             foreach (var inv in mockCallerAsClientProxy.Invocations)
             {
                 Console.WriteLine($"{inv.Method.Name} - {string.Join(", ", inv.Arguments.Select(a => a?.ToString() ?? "null"))}");

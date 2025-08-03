@@ -182,7 +182,6 @@ namespace MovieTheater.Tests.Repository
         {
             // Arrange
             using var context = CreateContext();
-            SeedData(context);
             var repository = new CinemaRepository(context, _seatRepositoryMock.Object);
             var newCinemaRoom = new CinemaRoom
             {
@@ -488,7 +487,6 @@ namespace MovieTheater.Tests.Repository
         {
             // Arrange
             using var context = CreateContext();
-            SeedData(context);
             var repository = new CinemaRepository(context, _seatRepositoryMock.Object);
             var newRoom = new CinemaRoom
             {
