@@ -33,7 +33,15 @@
 
             <div class="profile-marquee">
                 <h1 class="name-display" data-auto-text-color>@profile.FullName</h1>
-                <div class="tier-badge @rank.CurrentRankName.ToLower()" onclick="showRankDetails()" style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");" data-auto-text-color>
+                <div class="tier-badge @rank.CurrentRankName.ToLower()" 
+                     onclick="showRankDetails()" 
+                     onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showRankDetails(); }" 
+                     onkeyup="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); }" 
+                     tabindex="0" 
+                     role="button" 
+                     aria-label="Show rank details for @rank.CurrentRankName" 
+                     style="cursor: pointer; background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");" 
+                     data-auto-text-color>
                     <span class="tier-icon">
                         @if (!string.IsNullOrEmpty(rank.IconClass))
                         {

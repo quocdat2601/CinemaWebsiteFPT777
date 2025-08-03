@@ -14,7 +14,6 @@ class PaginationManager {
 
     // Load data with pagination
     loadData(params = {}, page = 1) {
-        console.log('Loading data with params:', params, 'page:', page);
         
         const loadingButton = $(`#${this.containerId} button[type="submit"]`);
         if (loadingButton.length) {
@@ -30,14 +29,11 @@ class PaginationManager {
             pageSize: this.pageSize
         };
 
-        console.log('Making AJAX request to:', this.loadFunction.url, 'with data:', requestData);
-
         $.ajax({
             url: this.loadFunction.url,
             type: 'GET',
             data: requestData,
             success: (response) => {
-                console.log('AJAX response:', response);
                 if (response.success) {
                     this.currentPage = page;
                     this.renderFunction(response.data);

@@ -582,7 +582,7 @@ namespace MovieTheater.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Employee")]
-        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, int page = 1, int pageSize = 10)
+        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, string sortBy = null, int page = 1, int pageSize = 10)
         {
             var invoices = _invoiceService.GetAll();
 
@@ -620,8 +620,58 @@ namespace MovieTheater.Controllers
                     invoices = invoices.Where(i => i.EmployeeId != null).ToList();
             }
 
-            // Sort by booking date (newest first) - using InvoiceId as proxy for booking date
-            invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+            // Apply sorting
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                switch (sortBy)
+                {
+                    case "id_asc":
+                        invoices = invoices.OrderBy(i => i.InvoiceId).ToList();
+                        break;
+                    case "id_desc":
+                        invoices = invoices.OrderByDescending(i => i.InvoiceId).ToList();
+                        break;
+                    case "movie_az":
+                        invoices = invoices.OrderBy(i => i.MovieShow?.Movie?.MovieNameEnglish ?? "").ToList();
+                        break;
+                    case "movie_za":
+                        invoices = invoices.OrderByDescending(i => i.MovieShow?.Movie?.MovieNameEnglish ?? "").ToList();
+                        break;
+                    case "account_az":
+                        invoices = invoices.OrderBy(i => i.AccountId).ToList();
+                        break;
+                    case "account_za":
+                        invoices = invoices.OrderByDescending(i => i.AccountId).ToList();
+                        break;
+                    case "identity_az":
+                        invoices = invoices.OrderBy(i => i.Account?.IdentityCard ?? "").ToList();
+                        break;
+                    case "identity_za":
+                        invoices = invoices.OrderByDescending(i => i.Account?.IdentityCard ?? "").ToList();
+                        break;
+                    case "phone_az":
+                        invoices = invoices.OrderBy(i => i.Account?.PhoneNumber ?? "").ToList();
+                        break;
+                    case "phone_za":
+                        invoices = invoices.OrderByDescending(i => i.Account?.PhoneNumber ?? "").ToList();
+                        break;
+                    case "time_asc":
+                        invoices = invoices.OrderBy(i => i.MovieShow?.Schedule?.ScheduleTime).ToList();
+                        break;
+                    case "time_desc":
+                        invoices = invoices.OrderByDescending(i => i.MovieShow?.Schedule?.ScheduleTime).ToList();
+                        break;
+                    default:
+                        // Default sorting by booking date (newest first)
+                        invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+                        break;
+                }
+            }
+            else
+            {
+                // Default sorting by booking date (newest first)
+                invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+            }
 
             // Calculate pagination
             var totalCount = invoices.Count();
