@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 dateContainer.className = 'date-group mb-4 p-3 border rounded';
 
                 const dateHeader = document.createElement('h5');
-                dateHeader.className = 'date-header mb-3 border-bottom pb-2';
+                dateHeader.className = 'date-header mb-3 border-bottom pb-2 text-black';
                 dateHeader.textContent = `Date: ${dateText}`;
                 dateContainer.appendChild(dateHeader);
 

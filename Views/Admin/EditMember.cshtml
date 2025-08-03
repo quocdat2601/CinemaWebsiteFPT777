@@ -8,13 +8,13 @@
 
 @if (userRole == "Admin")
 {
-    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary">
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary mt-4">
         &larr; Return
     </a>
 }
 else
 {
-    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary">
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MemberMg" class="btn btn-secondary mt-4">
         &larr; Return
     </a>
 }

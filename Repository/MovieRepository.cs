@@ -393,9 +393,8 @@ namespace MovieTheater.Repository
         public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId)
         {
             return _context.Invoices
-                .Where(i => i.MovieShowId == movieShowId && 
-                           i.Status == InvoiceStatus.Completed && 
-                           i.Cancel == false)
+                .Include(i => i.Account)
+                .Where(i => i.MovieShowId == movieShowId && i.Status == InvoiceStatus.Completed)
                 .ToList();
         }
 
