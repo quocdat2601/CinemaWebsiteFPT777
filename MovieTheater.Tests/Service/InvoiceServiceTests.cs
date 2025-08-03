@@ -10,12 +10,14 @@ namespace MovieTheater.Tests.Service
     public class InvoiceServiceTests
     {
         private readonly Mock<IInvoiceRepository> _mockInvoiceRepository;
+        private readonly Mock<IVoucherRepository> _mockVoucherRepository;
         private readonly InvoiceService _service;
 
         public InvoiceServiceTests()
         {
             _mockInvoiceRepository = new Mock<IInvoiceRepository>();
-            _service = new InvoiceService(_mockInvoiceRepository.Object);
+            _mockVoucherRepository = new Mock<IVoucherRepository>();
+            _service = new InvoiceService(_mockInvoiceRepository.Object, _mockVoucherRepository.Object);
         }
 
         [Fact]

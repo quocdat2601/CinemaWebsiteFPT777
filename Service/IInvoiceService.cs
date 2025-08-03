@@ -8,5 +8,8 @@ namespace MovieTheater.Service
         Invoice? GetById(string invoiceId);
         void Update(Invoice invoice);
         void Save();
+        Task MarkInvoiceAsCompletedAsync(string invoiceId);
+        Task MarkVoucherAsUsedAsync(string voucherId);
+        Task UpdateInvoiceStatusAsync(string invoiceId, InvoiceStatus status);
     }
 }

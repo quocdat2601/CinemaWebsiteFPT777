@@ -13,6 +13,7 @@ namespace MovieTheater.Service
         public Task<List<SeatType>> GetSeatTypesAsync();
         Seat GetSeatByName(string seatName);
         Seat GetSeatById(int? id);
-        public Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2);   
+        public Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2);
+        public List<Seat> GetSeatsWithTypeByIds(List<int> seatIds);
     }
 }

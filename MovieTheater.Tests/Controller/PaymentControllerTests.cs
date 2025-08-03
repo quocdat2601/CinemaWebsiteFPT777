@@ -185,7 +185,29 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var invoiceServiceMock = new Mock<IInvoiceService>();
             invoiceServiceMock.Setup(s => s.GetById("INV1")).Returns((Invoice)null);
-            var controller = CreateController(invoiceServiceMock: invoiceServiceMock);
+            
+            // Create real context with proper setup
+            var options = new DbContextOptionsBuilder<MovieTheaterContext>()
+                .UseInMemoryDatabase(databaseName: "VNPayReturn_InvoiceNotFound_" + Guid.NewGuid().ToString())
+                .Options;
+            var context = new MovieTheaterContext(options);
+            
+            // Add some basic data to context to avoid null reference
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#000000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            context.SeatTypes.Add(seatType);
+            context.Seats.Add(seat);
+            context.SaveChanges();
+            
+            var controller = new PaymentController(
+                new Mock<IVNPayService>().Object,
+                new Mock<ILogger<PaymentController>>().Object,
+                new Mock<IAccountService>().Object,
+                context,
+                new Mock<IHubContext<DashboardHub>>().Object,
+                new Mock<IFoodInvoiceService>().Object,
+                invoiceServiceMock.Object
+            );
             
             // Setup HttpContext with proper session and TempData
             var httpContext = new DefaultHttpContext();

@@ -64,5 +64,10 @@ namespace MovieTheater.Service
         {
             await _repository.DeleteCoupleSeatBySeatIdsAsync(seatId1, seatId2);
         }
+
+        public List<Seat> GetSeatsWithTypeByIds(List<int> seatIds)
+        {
+            return _repository.GetSeatsWithTypeByIds(seatIds);
+        }
     }
 }

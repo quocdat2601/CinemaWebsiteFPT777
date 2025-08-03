@@ -302,6 +302,15 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void GetEligibleFoodPromotions_ReturnsEmptyList_WhenNoSelectedFoods()
         {
+            // Arrange - Setup mock context properly
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            var promotions = new List<Promotion>().AsQueryable();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
             // Act
             var result = _service.GetEligibleFoodPromotions(null);
 
@@ -312,6 +321,15 @@ namespace MovieTheater.Tests.Service
         [Fact]
         public void GetEligibleFoodPromotions_ReturnsEmptyList_WhenEmptySelectedFoods()
         {
+            // Arrange - Setup mock context properly
+            var mockDbSet = new Mock<DbSet<Promotion>>();
+            var promotions = new List<Promotion>().AsQueryable();
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.Provider);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.Expression);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.ElementType);
+            mockDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+            _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
+
             // Act
             var result = _service.GetEligibleFoodPromotions(new List<(int, int, decimal)>());
 

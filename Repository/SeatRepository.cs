@@ -78,6 +78,13 @@ namespace MovieTheater.Repository
                 await _context.SaveChangesAsync();
             }
         }
-        
+
+        public List<Seat> GetSeatsWithTypeByIds(List<int> seatIds)
+        {
+            return _context.Seats
+                .Include(s => s.SeatType)
+                .Where(s => seatIds.Contains(s.SeatId))
+                .ToList();
+        }
     }
 }
