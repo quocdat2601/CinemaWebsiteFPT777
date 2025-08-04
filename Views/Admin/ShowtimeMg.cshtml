@@ -5,87 +5,145 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
-<h2 class="text-center">Showtime List</h2>
+<div style="background-color: white !important; padding-bottom: 10px; padding-top: 10px">
+    <h2 class="text-center mb-3 text-black">Showtime List</h2>
 
-<div class="container-fluid">
-	<div class="row">
-	<!-- Movie Shows Table (Left Column) -->
-        <div class="col-lg-3">
-            <div class="selected-date-display text-center mb-2">
-                <strong>Selected date:</strong>
-                @Model.SelectedDate
-            </div>
-            <div class="showtime-list">
-                @if (Model.MovieShows == null || !Model.MovieShows.Any())
-                {
-                    <div class="alert alert-warning text-center">No showtime</div>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
-                            <thead class="table-dark">
-                                <tr class="text-center">
-                                    <th>Movie</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Screen</th>
-                                </tr>
-                            </thead>
-                            <tbody id="showtimeTableBody">
-                                @foreach (var show in Model.MovieShows)
-                                {
-                                    <tr>
-                                        <td>@show.Movie?.MovieNameEnglish</td>
-                                        <td class="text-center">@show.ShowDate.ToString("dd MMM yyyy")</td>
-                                        <td class="text-center">
-                                            @{
-                                                var start = show.Schedule?.ScheduleTime;
-                                                var duration = show.Movie?.Duration ?? 0;
-                                                string timeDisplay = "";
-                                                if (start != null && duration > 0)
-                                                {
-                                                    var end = start.Value.AddMinutes(duration);
-                                                    timeDisplay = $"[{start:HH\\:mm} ~ {end:HH\\:mm}]";
-                                                }
-                                                else if (start != null)
-                                                {
-                                                    timeDisplay = $"[{start:HH\\:mm}]";
-                                                }
-                                                @timeDisplay
-                                            }
-                                        </td>
-                                        <td class="text-center">@show.CinemaRoom?.CinemaRoomName</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                    <nav>
-                        <ul class="pagination justify-content-center" id="showtime-pagination">
-                        </ul>
-                    </nav>
-                }
-            </div>
-        </div>
+    <div class="container-fluid mb-5">
+        <div class="row">
+            <div class="col-3" style="margin-left: 3rem">
+                <div>
+                    <form method="get" asp-action="ShowtimeMg" asp-controller="Admin" class="mb-4 text-center" id="dateNavForm">
+                        <input type="hidden" id="calendarInput" name="date" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" />
+                        <div id="calendarContainer"></div>
+                    </form>
+                </div>
+                
+                <!-- Quick Actions Section -->
+                <div class="quick-actions mt-4" style="margin-right: 3rem">
+                    <h6 class="text-center mb-3 text-dark">Quick Actions</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="addNewShowtime()">
+                            <i class="fas fa-plus"></i> Add Showtime
+                        </button>
 
-        <!-- Calendar Section (Right Column) -->
-        <div class="col-lg-9">
-            <div class="calendar-section">
-                <form method="get" asp-action="ShowtimeMg" asp-controller="Admin" class="mb-4 text-center" id="dateNavForm">
-                    <input type="hidden" id="calendarInput" name="date" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" />
-                    <div id="calendarNav" class="mb-2 d-flex justify-content-center align-items-center">
-                        <button type="button" id="prevMonth" class="btn btn-outline-secondary btn-sm me-2"><i class="fa fa-chevron-left"></i></button>
-                        <span id="calendarMonthYear" class="fw-bold text-black"></span>
-                        <button type="button" id="nextMonth" class="btn btn-outline-secondary btn-sm ms-2"><i class="fa fa-chevron-right"></i></button>
                     </div>
-                    <div id="customCalendar"></div>
-                </form>
+                </div>
+                
+                <!-- Today's Summary -->
+                <div class="today-summary mt-4" style="margin-right: 3rem">
+                    <h6 class="text-center mb-3 text-dark">Today's Summary</h6>
+                    <div class="card">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Total Shows:</span>
+                                <span class="fw-bold" id="totalShows">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Screens Used:</span>
+                                <span class="fw-bold" id="screensUsed">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Duration:</span>
+                                <span class="fw-bold" id="totalDuration">0h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-8" style="overflow: hidden">
+                <div class="selected-date-display text-center mb-2" style="display: none;">
+                    <strong>Selected date:</strong>
+                    <span id="selectedDateDisplay">@Model.SelectedDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline">
+                        <!-- Time markers from 9:00 to 24:00 -->
+                        @for (int hour = 9; hour < 24; hour++)
+                        {
+                            <div class="time-marker" data-hour="@hour">
+                                <div class="time-label">@(hour.ToString("00")):00</div>
+                                <div class="timeline-events">
+                                    <!-- Screen columns will be created dynamically by JavaScript -->
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Quick Add Showtime Modal -->
+<div class="modal fade" id="quickAddShowtimeModal" tabindex="-1" aria-labelledby="quickAddShowtimeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered text-black">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddShowtimeModalLabel">Quick Add Showtime</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Movie Selection -->
+                <div class="row mb-3">
+                        <h6>Select Movie</h6>
+                        <div id="movieSelectionContainer">
+                            <!-- Movie selection will be loaded here -->
+                        </div>
+                </div>
+                <div class="row mb-3"> 
+                    <div class="col-md-6">
+                        <h6>Select Version</h6>
+                        <div id="versionSelectionContainer">
+                            <!-- Version selection will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6>Select Cinema Room</h6>
+                        <div id="cinemaRoomContainer">
+                            <select class="form-select" id="cinemaRoomSelect" disabled>
+                                <option value="">-- Select a Cinema Room --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Showtime Configuration -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="showDateSelect" class="form-label">Show Date</label>
+                        <select class="form-select" id="showDateSelect" disabled>
+                            <option value="">-- Select a Show Date --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="scheduleSelect" class="form-label">Schedule Time</label>
+                        <select class="form-select" id="scheduleSelect" disabled>
+                            <option value="">-- Select a Schedule --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Add Button -->
+                <div class="row">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-primary" id="addMovieShowBtn" disabled>
+                            <i class="fas fa-plus"></i> Add Showtime
+                        </button>
+                    </div>
+                    <div class="col-6 text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden inputs for movie data -->
+<input type="hidden" id="movieId" value="" />
+<input type="hidden" id="movieDuration" value="" />
 
 <!-- Pass data from Razor to JavaScript -->
 <script>
@@ -97,4 +155,5 @@
     const initialDate = new Date('@Model.SelectedDate.ToString("yyyy-MM-dd")');
     window.fetchedMonths[`${initialDate.getFullYear()}-${initialDate.getMonth()}`] = true;
 </script>
+<script src="~/js/movie-show.js" asp-append-version="true"></script>
 <script src="~/js/showtimemg.js" asp-append-version="true"></script>
