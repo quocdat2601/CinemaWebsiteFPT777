@@ -12,5 +12,7 @@ namespace MovieTheater.Repository
         string GenerateVoucherId();
         IEnumerable<Voucher> GetAvailableVouchers(string accountId);
         void Save();
+        bool CanDelete(string voucherId);
+        int GetInvoiceCountForVoucher(string voucherId);
     }
 }

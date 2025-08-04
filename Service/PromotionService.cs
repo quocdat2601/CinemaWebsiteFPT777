@@ -54,19 +54,6 @@ namespace MovieTheater.Service
             _promotionRepository.Save();
         }
 
-        public Promotion? GetBestPromotionForShowDate(DateOnly showDate)
-        {
-            var allPromotions = _promotionRepository.GetAll();
-            var validPromotions = allPromotions
-                .Where(p => p.IsActive &&
-                            DateOnly.FromDateTime((DateTime)p.StartTime) <= showDate &&
-                            DateOnly.FromDateTime((DateTime)p.EndTime) >= showDate &&
-                            p.DiscountLevel.HasValue)
-                .OrderByDescending(p => p.DiscountLevel)
-                .ToList();
-            return validPromotions.FirstOrDefault();
-        }
-
         public Promotion? GetBestEligiblePromotionForBooking(PromotionCheckContext context)
         {
             var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
@@ -79,13 +66,13 @@ namespace MovieTheater.Service
                 .ToList();
             foreach (var promotion in seatPromotions.OrderByDescending(p => p.DiscountLevel ?? 0))
             {
-                if (IsPromotionEligibleNew(promotion, context))
+                if (IsPromotionEligible(promotion, context))
                     return promotion;
             }
             return null;
         }
 
-        private bool IsPromotionEligibleNew(Promotion promotion, PromotionCheckContext context)
+        public bool IsPromotionEligible(Promotion promotion, PromotionCheckContext context)
         {
             if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) return true;
             
@@ -211,7 +198,6 @@ namespace MovieTheater.Service
                         var invoices = _context.Invoices.Where(i => i.AccountId == accountId);
                         if (string.IsNullOrEmpty(condition.TargetValue))
                         {
-                            // Nếu targetValue là null, kiểm tra có invoice nào có AccountId đúng bằng accountId không
                             if (invoices.Any(i => i.AccountId == accountId)) return false;
                             break;
                         }
@@ -244,111 +230,6 @@ namespace MovieTheater.Service
                 )
                 .ToList();
             return foodPromotions;
-        }
-
-        public bool IsPromotionEligible(Promotion promotion, PromotionCheckContext context)
-        {
-            if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) 
-                return true;
-
-            foreach (var condition in promotion.PromotionConditions)
-            {
-                switch (condition.TargetField?.ToLower())
-                {
-                    case "seat":
-                        if (!int.TryParse(condition.TargetValue, out int seatTarget)) return false;
-                        switch (condition.Operator)
-                        {
-                            case ">=": if (!(context.SeatCount >= seatTarget)) return false; break;
-                            case "==": case "=": if (!(context.SeatCount == seatTarget)) return false; break;
-                            case "<=": if (!(context.SeatCount <= seatTarget)) return false; break;
-                            case "<": if (!(context.SeatCount < seatTarget)) return false; break;
-                            case "!=": if (!(context.SeatCount != seatTarget)) return false; break;
-                            default: return false;
-                        }
-                        break;
-                    case "seattypeid":
-                        if (!int.TryParse(condition.TargetValue, out int seatTypeTarget)) return false;
-                        var selectedSeatTypes = context.SelectedSeatTypeIds ?? new List<int>();
-                        if (!selectedSeatTypes.Any()) return false;
-                        switch (condition.Operator)
-                        {
-                            case "=": case "==": 
-                                if (!selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
-                            case "!=": 
-                                if (selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
-                            default: return false;
-                        }
-                        break;
-                    case "typename":
-                        var selectedTypeNames = context.SelectedSeatTypeNames ?? new List<string>();
-                        if (!selectedTypeNames.Any()) return false;
-                        switch (condition.Operator)
-                        {
-                            case "=": case "==": 
-                                if (!selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
-                            case "!=": 
-                                if (selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
-                            default: return false;
-                        }
-                        break;
-                    case "pricepercent":
-                        var selectedPricePercents = context.SelectedSeatTypePricePercents ?? new List<decimal>();
-                        if (!selectedPricePercents.Any()) return false;
-                        if (!decimal.TryParse(condition.TargetValue, out decimal priceTarget)) return false;
-                        switch (condition.Operator)
-                        {
-                            case ">=": if (!selectedPricePercents.Any(pp => pp >= priceTarget)) return false; break;
-                            case ">": if (!selectedPricePercents.Any(pp => pp > priceTarget)) return false; break;
-                            case "<=": if (!selectedPricePercents.Any(pp => pp <= priceTarget)) return false; break;
-                            case "<": if (!selectedPricePercents.Any(pp => pp < priceTarget)) return false; break;
-                            case "=": case "==": if (!selectedPricePercents.Any(pp => pp == priceTarget)) return false; break;
-                            case "!=": if (!selectedPricePercents.Any(pp => pp != priceTarget)) return false; break;
-                            default: return false;
-                        }
-                        break;
-                    case "accountid":
-                        if (string.IsNullOrEmpty(context.MemberId)) return false;
-                        var member = _context.Members.FirstOrDefault(m => m.MemberId == context.MemberId);
-                        if (member == null || string.IsNullOrEmpty(member.AccountId)) return false;
-                        var accountId = member.AccountId;
-                        var invoices = _context.Invoices.Where(i => i.AccountId == accountId);
-                        if (string.IsNullOrEmpty(condition.TargetValue))
-                        {
-                            if (invoices.Any(i => i.AccountId == accountId)) return false;
-                            break;
-                        }
-                        switch (condition.Operator)
-                        {
-                            case "=": case "==":
-                                if (!invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
-                                break;
-                            case "!=":
-                                if (invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
-                                break;
-                            default:
-                                return false;
-                        }
-                        break;
-                }
-            }
-            return true;
-        }
-
-        public List<Promotion> GetEligiblePromotionsForMember(PromotionCheckContext context)
-        {
-            var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
-            var eligiblePromotions = new List<Promotion>();
-
-            foreach (var promotion in allPromotions)
-            {
-                if (IsPromotionEligible(promotion, context))
-                {
-                    eligiblePromotions.Add(promotion);
-                }
-            }
-
-            return eligiblePromotions;
         }
 
         // Áp dụng promotion cho từng món ăn riêng biệt, trả về danh sách món đã giảm giá và tên promotion
@@ -439,6 +320,22 @@ namespace MovieTheater.Service
                 result.Add((food.FoodId, food.Price, discountedPrice, promoName, discountLevel));
             }
             return result;
+        }
+
+        public List<Promotion> GetEligiblePromotionsForMember(PromotionCheckContext context)
+        {
+            var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
+            var eligiblePromotions = new List<Promotion>();
+            
+            foreach (var promotion in allPromotions)
+            {
+                if (IsPromotionEligible(promotion, context))
+                {
+                    eligiblePromotions.Add(promotion);
+                }
+            }
+            
+            return eligiblePromotions;
         }
     }
 

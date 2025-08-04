@@ -92,9 +92,25 @@ namespace MovieTheater.Service
             _voucherRepository.Update(voucher);
         }
 
-        public void Delete(string voucherId)
+        public bool Delete(string voucherId)
         {
-            _voucherRepository.Delete(voucherId);
+            try
+            {
+                _voucherRepository.Delete(voucherId);
+                return true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Log the error for debugging
+                Serilog.Log.Warning(ex, "Failed to delete voucher {VoucherId}: {Message}", voucherId, ex.Message);
+                throw; // Re-throw the exception to be handled by the controller
+            }
+            catch (Exception ex)
+            {
+                // Log unexpected errors
+                Serilog.Log.Error(ex, "Unexpected error deleting voucher {VoucherId}: {Message}", voucherId, ex.Message);
+                throw;
+            }
         }
 
         public string GenerateVoucherId()
@@ -155,6 +171,16 @@ namespace MovieTheater.Service
             }
 
             return vouchers;
+        }
+
+        public bool CanDelete(string voucherId)
+        {
+            return _voucherRepository.CanDelete(voucherId);
+        }
+
+        public int GetInvoiceCountForVoucher(string voucherId)
+        {
+            return _voucherRepository.GetInvoiceCountForVoucher(voucherId);
         }
 
         public async Task MarkVoucherAsUsedAsync(string voucherId)

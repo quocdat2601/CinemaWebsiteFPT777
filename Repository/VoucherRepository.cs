@@ -63,6 +63,16 @@ namespace MovieTheater.Repository
             var voucher = GetById(voucherId);
             if (voucher != null)
             {
+                // Kiểm tra xem voucher có được sử dụng trong invoice nào không
+                var invoicesUsingVoucher = _context.Invoices
+                    .Where(i => i.VoucherId == voucherId)
+                    .ToList();
+
+                if (invoicesUsingVoucher.Any())
+                {
+                    throw new InvalidOperationException($"Cannot delete voucher '{voucherId}' because it is being used by {invoicesUsingVoucher.Count} invoice(s).");
+                }
+
                 _context.Vouchers.Remove(voucher);
                 _context.SaveChanges();
             }
@@ -105,6 +115,23 @@ namespace MovieTheater.Repository
         public void Save()
         {
             _context.SaveChanges();
+        }
+
+        public bool CanDelete(string voucherId)
+        {
+            // Kiểm tra xem voucher có được sử dụng trong invoice nào không
+            var invoicesUsingVoucher = _context.Invoices
+                .Where(i => i.VoucherId == voucherId)
+                .Any();
+
+            return !invoicesUsingVoucher;
+        }
+
+        public int GetInvoiceCountForVoucher(string voucherId)
+        {
+            return _context.Invoices
+                .Where(i => i.VoucherId == voucherId)
+                .Count();
         }
     }
 }

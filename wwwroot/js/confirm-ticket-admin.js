@@ -762,7 +762,7 @@
                 type: bestPromotion.type,
                 value: bestPromotion.value
             };
-            $('#selectedPromotionId').val(selectedPromotion.id);
+
             updatePriceAll();
         }
     }

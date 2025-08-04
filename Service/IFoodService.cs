@@ -13,5 +13,6 @@ namespace MovieTheater.Service
         Task<bool> ToggleStatusAsync(int id);
         Task<List<string>> GetCategoriesAsync();
         Task<Food?> GetDomainByIdAsync(int id);
+        Task<bool> HasRelatedInvoicesAsync(int id);
     }
 }

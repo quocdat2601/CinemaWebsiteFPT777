@@ -175,8 +175,7 @@ namespace MovieTheater.Tests.Service
             _seatService.Setup(x => x.GetSeatTypesAsync())
                           .ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
             _accountService.Setup(x => x.GetById("u1")).Returns(user);
-            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>()))
-                         .Returns((Promotion)null);
+
 
             // Act
             var vm = await _svc.BuildConfirmBookingViewModelAsync(
@@ -391,7 +390,6 @@ namespace MovieTheater.Tests.Service
             _seatService.Setup(x => x.GetSeatById(5)).Returns(seatEntity);
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
             _accountService.Setup(x => x.GetById("u1")).Returns(user);
-            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
             _foodService.Setup(x => x.GetByIdAsync(10)).ReturnsAsync(food);
             _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>()))
                 .Returns(new List<Promotion>());
@@ -428,7 +426,6 @@ namespace MovieTheater.Tests.Service
             _seatService.Setup(x => x.GetSeatById(5)).Returns(seatEntity);
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
             _accountService.Setup(x => x.GetById("u1")).Returns(user);
-            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
             _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>()))
                 .Returns(new List<Promotion>());
             _promoService.Setup(x => x.ApplyFoodPromotionsToFoods(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<List<Promotion>>()))
@@ -583,7 +580,6 @@ namespace MovieTheater.Tests.Service
             _movieService.Setup(x => x.GetMovieShowById(1)).Returns(show);
             _seatService.Setup(x => x.GetSeatById(5)).Returns((Seat)null); // Seat not found
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType>());
-            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
 
             // Act
             var vm = await _svc.BuildConfirmTicketAdminViewModelAsync(1, new List<int> { 5 }, null, null);
@@ -605,7 +601,6 @@ namespace MovieTheater.Tests.Service
             _movieService.Setup(x => x.GetMovieShowById(1)).Returns(show);
             _seatService.Setup(x => x.GetSeatById(5)).Returns(new Seat { SeatId = 5, SeatTypeId = 2, SeatType = new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200, ColorHex = "#FFFFFF" } });
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200, ColorHex = "#FFFFFF" } });
-            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
             _foodService.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((FoodViewModel)null); // Food not found
 
             // Act
@@ -629,7 +624,6 @@ namespace MovieTheater.Tests.Service
             _movieService.Setup(x => x.GetMovieShowById(1)).Returns(show);
             _seatService.Setup(x => x.GetSeatById(5)).Returns(new Seat { SeatId = 5, SeatTypeId = 2, SeatType = new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200, ColorHex = "#FFFFFF" } });
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { new SeatType { SeatTypeId = 2, TypeName = "VIP", PricePercent = 200, ColorHex = "#FFFFFF" } });
-            _promoService.Setup(x => x.GetBestPromotionForShowDate(It.IsAny<DateOnly>())).Returns((Promotion)null);
 
             // Act
             var vm = await _svc.BuildConfirmTicketAdminViewModelAsync(1, new List<int> { 5 }, new List<int> { 10 }, new List<int> { 2, 3 });

@@ -239,9 +239,32 @@ namespace MovieTheater.Controllers
                 TempData[TOAST_MESSAGE] = "Voucher not found.";
                 return Redirect($"/{ADMIN_CONTROLLER}/{MAIN_PAGE}?tab={VOUCHER_MG_TAB}");
             }
-            _voucherService.Delete(id);
-            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
-            TempData[TOAST_MESSAGE] = "Voucher deleted successfully.";
+
+            try
+            {
+                bool deleteSuccess = _voucherService.Delete(id);
+                if (deleteSuccess)
+                {
+                    await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
+                    TempData[TOAST_MESSAGE] = "Voucher deleted successfully.";
+                }
+                else
+                {
+                    TempData[TOAST_MESSAGE] = "Failed to delete voucher.";
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Voucher đang được sử dụng trong invoice
+                TempData[ERROR_MESSAGE] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                // Lỗi khác
+                Serilog.Log.Error(ex, "Error deleting voucher {VoucherId}: {Message}", id, ex.Message);
+                TempData[ERROR_MESSAGE] = "An error occurred while deleting the voucher.";
+            }
+
             if (role == "Admin")
                 return RedirectToAction("MainPage", "Admin", new { tab = "VoucherMg" });
             else
@@ -520,6 +543,36 @@ namespace MovieTheater.Controllers
                 }).ToList();
 
             return Json(vouchers);
+        }
+
+        /// <summary>
+        /// Kiểm tra voucher có thể xóa được không (admin, ajax)
+        /// </summary>
+        /// <remarks>url: /Voucher/CheckVoucherDeletable/{id} (GET)</remarks>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult CheckVoucherDeletable(string id)
+        {
+            var voucher = _voucherService.GetById(id);
+            if (voucher == null)
+            {
+                return Json(new { success = false, message = "Voucher not found." });
+            }
+
+            bool canDelete = _voucherService.CanDelete(id);
+            int invoiceCount = _voucherService.GetInvoiceCountForVoucher(id);
+
+            var result = new
+            {
+                success = true,
+                canDelete = canDelete,
+                invoiceCount = invoiceCount,
+                message = canDelete 
+                    ? "Voucher can be deleted." 
+                    : $"Voucher cannot be deleted because it is being used by {invoiceCount} invoice(s)."
+            };
+
+            return Json(result);
         }
     }
 }
