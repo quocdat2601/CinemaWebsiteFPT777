@@ -76,6 +76,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public ActionResult Create(IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));
@@ -278,6 +282,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> UpdateSeatTypes([FromBody] List<SeatTypeUpdateModel> updates)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             foreach (var update in updates)
             {
                 var seat = _seatService.GetSeatById(update.SeatId);
@@ -300,6 +308,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> CreateCoupleSeat([FromBody] CoupleSeat coupleSeat)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 await _coupleSeatService.CreateCoupleSeatAsync(coupleSeat.FirstSeatId, coupleSeat.SecondSeatId);
@@ -330,6 +342,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public ActionResult Delete(int id, IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));
@@ -348,6 +364,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> DeleteCoupleSeat([FromBody] SeatIdsRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (request.SeatIds == null || request.SeatIds.Count != 2)
                 return BadRequest("Exactly two seat IDs required.");
 
@@ -364,6 +384,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeat> coupleSeats)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (coupleSeats == null || coupleSeats.Count == 0)
                 return BadRequest("No couple seat pairs provided.");
 

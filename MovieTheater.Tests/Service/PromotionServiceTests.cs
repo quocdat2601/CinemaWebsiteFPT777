@@ -2792,7 +2792,7 @@ namespace MovieTheater.Tests.Service
             var result = _service.IsPromotionEligible(promotion, context);
 
             // Assert
-            Assert.True(result); // Null movie name is ignored and returns true
+            Assert.False(result); // Null movie name makes promotion ineligible
         }
 
         [Fact]
@@ -2830,7 +2830,7 @@ namespace MovieTheater.Tests.Service
             var result = _service.IsPromotionEligible(promotion, context);
 
             // Assert
-            Assert.True(result); // Empty movie name is ignored and returns true
+            Assert.False(result); // Empty movie name makes promotion ineligible
         }
 
         [Fact]
@@ -2868,7 +2868,7 @@ namespace MovieTheater.Tests.Service
             var result = _service.IsPromotionEligible(promotion, context);
 
             // Assert
-            Assert.True(result); // Invalid date is ignored and returns true
+            Assert.False(result); // Invalid date makes promotion ineligible
         }
 
         [Fact]

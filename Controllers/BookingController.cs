@@ -208,6 +208,10 @@ namespace MovieTheater.Controllers
         [Authorize]
         public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
         {
+            if (!ModelState.IsValid)
+            {
+                return View("ConfirmBooking", model);
+            }
             var userId = _accountService.GetCurrentUser()?.AccountId;
             if (userId == null)
                 return RedirectToAction("Login", "Account");
@@ -403,6 +407,10 @@ namespace MovieTheater.Controllers
         [Authorize]
         public IActionResult ProcessPayment(PaymentViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("Failed");
+            }
             try
             {
                 var paymentUrl = _vnPayService.CreatePaymentUrl(

@@ -44,6 +44,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("ScoreHistory");
+            }
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
             {

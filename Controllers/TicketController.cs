@@ -79,6 +79,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(string id, string returnUrl)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("Index");
+            }
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
                 return RedirectToAction(LOGIN_ACTION, ACCOUNT_CONTROLLER);
@@ -114,6 +118,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin, Employee")]
         public async Task<IActionResult> CancelByAdmin(string id, string returnUrl)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("Index");
+            }
             var currentRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Admin";
             var (success, messages) = await _ticketService.CancelTicketByAdminAsync(id, currentRole);
             TempData[success ? TOAST_MESSAGE : ERROR_MESSAGE] = string.Join("<br/>", messages);

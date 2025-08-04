@@ -25,7 +25,6 @@ namespace MovieTheater.Controllers
         private readonly IMemberRepository _memberRepository;
         private readonly IAccountService _accountService;
         private readonly IInvoiceService _invoiceService;
-        private readonly ISeatService _seatService;
         private readonly IFoodService _foodService;
         private readonly IVoucherService _voucherService;
         private readonly IRankService _rankService;
@@ -40,7 +39,6 @@ namespace MovieTheater.Controllers
             ISeatTypeService seatTypeService,
             IMemberRepository memberRepository,
             IAccountService accountService,
-            ISeatService seatService,
             IInvoiceService invoiceService,
             IFoodService foodService, IPersonRepository personRepository,
             IVoucherService voucherService,
@@ -55,7 +53,6 @@ namespace MovieTheater.Controllers
             _memberRepository = memberRepository;
             _accountService = accountService;
             _invoiceService = invoiceService;
-            _seatService = seatService;
             _voucherService = voucherService;
             _foodService = foodService;
             _rankService = rankService;
@@ -313,6 +310,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));
@@ -334,6 +335,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));
@@ -576,6 +581,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteRank(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });
+            }
             _rankService.Delete(id);
             TempData["ToastMessage"] = "Rank deleted successfully!";
             return RedirectToAction("MainPage", "Admin", new { tab = "RankMg" });

@@ -52,6 +52,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult VerifyTicket([FromBody] VerifyTicketRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var result = _ticketVerificationService.VerifyTicket(request.InvoiceId);
             if (result.IsSuccess)
             {
@@ -125,6 +129,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult ConfirmCheckIn([FromBody] ConfirmCheckInRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var staffId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
             var result = _ticketVerificationService.ConfirmCheckIn(request.InvoiceId, staffId);
             if (result.IsSuccess)

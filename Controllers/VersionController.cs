@@ -56,6 +56,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER, new { tab = VERSION_MG_TAB });
+            }
             try
             {
                 var version = _versionRepo.GetById(id);

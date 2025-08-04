@@ -51,6 +51,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));
@@ -78,6 +82,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));
@@ -105,6 +113,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 return RedirectToAction(nameof(Index));

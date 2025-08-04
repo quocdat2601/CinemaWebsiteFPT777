@@ -41,6 +41,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> HandleWebhook([FromBody] JsonElement body)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var startTime = DateTime.UtcNow;
             
             try
