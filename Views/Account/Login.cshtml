@@ -30,14 +30,26 @@
             min-height: 100vh;
         }
 
+        /* Login Wrapper for better centering */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
         /* Left Side - Auth Form */
         .auth-left {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: 1rem;
             position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         .auth-left::before {
@@ -50,25 +62,29 @@
 
         .auth-form-container {
             width: 100%;
-            max-width: 80rem;
+            max-width: 800px;
             position: relative;
             z-index: 10;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .auth-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .logo-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .logo-image {
-            height: 80px;
+            height: 60px;
             width: auto;
             filter: drop-shadow(0 8px 20px rgba(255, 224, 102, 0.4));
             transition: all 0.3s ease;
@@ -91,15 +107,13 @@
             background: #000000;
             border-radius: 1rem;
             padding: 0.25rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
-            max-width: 280px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 2.5rem;
+            width: 240px;
+            height: 2.25rem;
         }
 
         .auth-tabs::before {
@@ -162,27 +176,21 @@
         /* Form Cards Container */
         .auth-cards-container {
             position: relative;
-            min-height: 800px !important;
-            height: auto !important;
-            width: auto !important;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Container for login - smaller */
         .auth-cards-container[data-active-tab="login"] {
-            min-width: 500px !important;
-            max-width: 600px !important;
-            min-height: 600px !important;
-            margin: 0 auto !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
+            min-height: 500px;
         }
 
         /* Container for signup - larger */
         .auth-cards-container[data-active-tab="signup"] {
-            min-width: 1200px !important;
-            max-width: 1400px !important;
+            min-height: 900px;
         }   
 
         /* Form Cards */
@@ -201,25 +209,21 @@
             left: 0;
             right: 0;
             visibility: hidden;
-            min-height: 900px;
-            width: auto !important;
+            width: 100%;
         }
 
         /* Login card - smaller width and height */
         .auth-card#loginCard {
-            min-width: 500px !important;
-            max-width: 600px !important;
-            min-height: 600px !important;
-            padding: 2.5rem !important;
-            margin: 0 auto !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
+            max-width: 450px;
+            min-height: 500px;
+            padding: 2rem;
         }
 
         /* Signup card - larger width */
         .auth-card#signupCard {
-            min-width: 1200px !important;
-            max-width: 1400px !important;
+            max-width: 1400px;
+            min-height: 900px;
+            padding: 3rem;
         }
 
         /* Hide spacer for login form */
@@ -232,28 +236,20 @@
             transform: translateY(0);
             visibility: visible;
             position: relative;
-            min-height: 900px;
-            height: auto;
-        }
-
-        /* Special centering for active login card */
-        .auth-card#loginCard.active {
-            transform: translateY(0) translateX(-50%) !important;
-            left: 50% !important;
         }
 
         .card-header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
 
         /* Smaller spacing for login form */
         .auth-card#loginCard .card-header {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .card-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
             color: white;
             margin-bottom: 0.5rem;
@@ -269,7 +265,7 @@
 
         /* Special spacing for form groups in signup */
         .auth-card .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
         }
 
         .auth-card .form-column .form-group {
@@ -283,10 +279,10 @@
 
         .form-label {
             display: block;
-            font-size: 0.875rem;
+            font-size: 0.95rem;
             font-weight: 500;
             color: #e2e8f0;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
         .form-input {
@@ -341,8 +337,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.875rem;
-            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
+            margin-bottom: 1.25rem;
         }
 
         .checkbox-label {
@@ -368,14 +364,14 @@
 
         .auth-btn {
             width: 100%;
-            max-width: 300px;
-            height: 3rem;
+            max-width: 280px;
+            height: 2.75rem;
             background: linear-gradient(135deg, #ffe66d 0%, #524a0e 100%);
             border: none;
             border-radius: 0.75rem;
             color: white;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -383,13 +379,13 @@
             justify-content: center;
             gap: 0.5rem;
             box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
-            margin: 2rem auto 0 auto;
+            margin: 1.5rem auto 0 auto;
         }
 
         /* Smaller margin for login button */
         .auth-card#loginCard .auth-btn {
-            margin: 1.5rem auto 0 auto;
-            max-width: 250px;
+            margin: 1.25rem auto 0 auto;
+            max-width: 220px;
         }
 
         /* Larger button for signup */
@@ -424,7 +420,7 @@
 
         .divider {
             position: relative;
-            margin: 1.5rem 0;
+            margin: 1.25rem 0;
         }
 
         .divider::before {
@@ -450,12 +446,12 @@
 
         .google-btn {
             width: 100%;
-            height: 3rem;
+            height: 2.75rem;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 0.75rem;
             color: white;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -610,8 +606,8 @@
         /* Three Column Layout for Signup */
         .form-row {
             display: flex;
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
         }
 
         /* Smaller spacing for login form */
@@ -623,16 +619,16 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 3rem;
+            gap: 2rem;
         }
 
         /* Column headers for better organization */
         .column-header {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #fbbf24;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
             border-bottom: 1px solid rgba(251, 191, 36, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -783,15 +779,17 @@
         }
 
         /* Responsive Design */
-        @@media (max-width: 1200px) {
-            .auth-cards-container {
-                min-width: 100% !important;
-                max-width: 100% !important;
+        @@media (max-width: 1400px) {
+            .auth-card#signupCard {
+                max-width: 100%;
+                padding: 2.5rem;
             }
-            
-            .auth-card {
-                min-width: 100% !important;
-                max-width: 100% !important;
+        }
+
+        @@media (max-width: 1200px) {
+            .auth-card#signupCard {
+                max-width: 100%;
+                padding: 2rem;
             }
             
             .form-row {
@@ -815,12 +813,18 @@
                 flex-direction: column;
             }
 
+            .login-wrapper {
+                padding: 0.5rem;
+                min-height: 100vh;
+            }
+
             .auth-left, .auth-right {
                 flex: none;
             }
 
             .auth-left {
                 min-height: 100vh;
+                padding: 0.5rem;
             }
 
             .auth-right {
@@ -828,10 +832,20 @@
             }
 
             .logo-image {
-                height: 60px;
+                height: 50px;
             }
 
             .auth-card {
+                padding: 1.25rem;
+            }
+
+            .auth-card#loginCard {
+                max-width: 100%;
+                padding: 1.5rem;
+            }
+
+            .auth-card#signupCard {
+                max-width: 100%;
                 padding: 1.5rem;
             }
 
@@ -854,29 +868,27 @@
 </head>
 <body>
     <div class="auth-container">
-        <!-- Left Side - Auth Form -->
-        <div class="auth-left">
-            <div class="auth-form-container">
-                <!-- Header -->
-                <div class="auth-header" style="
-    padding-left: 120px;
-">
-                    <div class="logo-container">
-                        <img src="~/image/logo.png" alt="FPT 777 Logo" class="logo-image">
+        <!-- Login Wrapper for better centering -->
+        <div class="login-wrapper">
+            <!-- Left Side - Auth Form -->
+            <div class="auth-left">
+                <div class="auth-form-container">
+                    <!-- Header -->
+                    <div class="auth-header">
+                        <div class="logo-container">
+                            <img src="~/image/logo.png" alt="FPT 777 Logo" class="logo-image">
+                        </div>
+                        <p class="brand-subtitle">Your gateway to endless entertainment</p>
                     </div>
-                    <p class="brand-subtitle">Your gateway to endless entertainment</p>
-                </div>
 
-                <!-- Tab Navigation -->
-                <div class="auth-tabs" data-active-tab="login" style="
-    margin-left: 550px;
-">
-                    <button class="auth-tab active" data-tab="login">Login</button>
-                    <button class="auth-tab" data-tab="signup">Sign Up</button>
-                </div>
+                    <!-- Tab Navigation -->
+                    <div class="auth-tabs" data-active-tab="login">
+                        <button class="auth-tab active" data-tab="login">Login</button>
+                        <button class="auth-tab" data-tab="signup">Sign Up</button>
+                    </div>
 
-                <!-- Form Cards Container -->
-                <div class="auth-cards-container" style="min-height: 900px;" data-active-tab="login">
+                    <!-- Form Cards Container -->
+                    <div class="auth-cards-container" data-active-tab="login">
                     <!-- Login Form -->
                     <div class="auth-card active" id="loginCard">
                     <div class="card-header">
@@ -1063,11 +1075,11 @@
                     <!-- Spacer to increase form height - only for signup -->
                     <div class="signup-spacer" style="height: 3rem;"></div>
                 </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-      
+        <!-- End of Login Wrapper -->
     </div>
 
     <script>

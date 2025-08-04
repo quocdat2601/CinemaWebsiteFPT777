@@ -253,19 +253,34 @@
                         </button>
                     </div>
 
-                    <div class="food-grid">
+                    <!-- Category Tabs -->
+                    <div class="food-categories" id="foodCategories">
+                        <div class="category-tab active" data-category="all">All</div>
                         @if (ViewBag.Foods != null)
-
                         {
-
-                            foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
-
+                            var categories = ((List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
+                                .Select(f => f.Category)
+                                .Distinct()
+                                .OrderBy(c => c);
+                            
+                            foreach (var category in categories)
                             {
-                                <div class="food-item" data-food-id="@food.FoodId">
+                                <div class="category-tab" data-category="@category.ToLower()">@category</div>
+                            }
+                        }
+                    </div>
+
+                    <div class="food-grid" id="foodGrid">
+                        @if (ViewBag.Foods != null)
+                        {
+                            foreach (var food in (List<MovieTheater.ViewModels.FoodViewModel>)ViewBag.Foods)
+                            {
+                                <div class="food-item" data-food-id="@food.FoodId" data-category="@food.Category.ToLower()">
                                     <div class="food-image">
                                         <img src="@food.Image" alt="@food.Name" />
                                     </div>
                                     <div class="food-info">
+                                        <div class="food-category">@food.Category</div>
                                         <h3 class="food-name">@food.Name</h3>
                                         <p class="food-description">@food.Description</p>
                                         <div class="food-price">@food.Price.ToString("N0") VND</div>
@@ -277,7 +292,6 @@
                                     </div>
                                 </div>
                             }
-
                         }
                     </div>
                 </div>
@@ -387,22 +401,7 @@
     </div>
 </div>
 
-<!-- Timeout Modal -->
-<div id="timeoutModal" class="modal-overlay" style="display:none;">
-    <div class="modal-content timeout-modal">
-        <div class="modal-icon timeout">
-            <span class="material-icons">timer_off</span>
-        </div>
-        <h3>Time Expired</h3>
-        <p>Your seat selection time has expired. Please select your seats again.</p>
-        <div class="modal-actions">
-            <a href="https://localhost:7201/Booking/TicketBooking" class="btn primary">
-                <span class="material-icons">refresh</span>
-                Return to Booking
-            </a>
-        </div>
-    </div>
-</div>
+
 
 <!-- Pass data from Razor to JavaScript -->
 <script>
