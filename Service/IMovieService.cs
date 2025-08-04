@@ -26,6 +26,7 @@ namespace MovieTheater.Service
         public Task<List<Schedule>> GetAvailableSchedulesAsync(DateOnly showDate, int cinemaRoomId);
         public List<DateOnly> GetShowDates(string movieId);
         public List<MovieShow> GetMovieShowsByRoomAndDate(int cinemaRoomId, DateOnly showDate);
+        public List<MovieShow> GetMovieShowsByMovieVersionDate(string movieId, int versionId, DateOnly showDate);
         public List<MovieShow> GetMovieShow();
         public MovieShow? GetMovieShowById(int id);
         public List<MovieShow> GetMovieShowsByMovieId(string movieId);

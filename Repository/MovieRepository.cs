@@ -453,6 +453,18 @@ namespace MovieTheater.Repository
                 .ToList();
         }
 
+        public List<MovieShow> GetMovieShowsByMovieVersionDate(string movieId, int versionId, DateOnly showDate)
+        {
+            return _context.MovieShows
+                .Include(ms => ms.Schedule)
+                .Include(ms => ms.Movie)
+                .Include(ms => ms.CinemaRoom)
+                .Include(ms => ms.Version)
+                .Where(ms => ms.MovieId == movieId && ms.VersionId == versionId && ms.ShowDate == showDate)
+                .OrderBy(ms => ms.Schedule.ScheduleTime)
+                .ToList();
+        }
+
         /// <summary>
         /// Gets a summary of unique movie names for each date in a given month.
         /// </summary>

@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Get the selected version ID
+        const selectedVersionRadio = document.querySelector('input[name="SelectedVersionIds"]:checked');
+        const versionId = selectedVersionRadio ? parseInt(selectedVersionRadio.value) : null;
+
         // 1. Fetch backend schedules and shows
         const response = await fetch(`/Movie/GetAvailableScheduleTimes?cinemaRoomId=${selectedRoom}&showDate=${selectedDate}&movieDurationMinutes=${movieDuration}&cleaningTimeMinutes=${cleaningTime}`);
         const result = await response.json();
@@ -45,15 +49,37 @@ document.addEventListener('DOMContentLoaded', function () {
         // 3. Get UI shows for this room/date
         const uiShows = movieShowItems.filter(item => item.roomId === selectedRoom && item.dateId === selectedDate);
 
-        // 4. Merge shows
+        // 4. Merge shows for room-specific conflicts
         const allShows = [...backendShows, ...uiShows];
 
-        // 5. Filter available schedules to hide conflicts
+        // 5. Fetch ALL shows for this movie + version + date (across all rooms)
+        let allMovieShows = [];
+        try {
+            const movieResp = await fetch(`/Movie/GetMovieShowsByMovieVersionDate?movieId=${movieId}&versionId=${versionId}&showDate=${selectedDate}`);
+            if (movieResp.ok) {
+                allMovieShows = await movieResp.json();
+            }
+        } catch (e) {
+            console.error('Failed to fetch movie shows', e);
+        }
+
+        // 6. Get UI shows for this movie + version + date (across all rooms)
+        const uiMovieShows = movieShowItems.filter(item => 
+            item.dateId === selectedDate && 
+            item.versionId === versionId
+        );
+
+        // 7. Merge all movie shows
+        const allMovieShowsMerged = [...allMovieShows, ...uiMovieShows];
+
+        // 8. Filter available schedules to hide conflicts
         const filteredSchedules = availableSchedules.filter(schedule => {
-            return !isScheduleConflicting(schedule.scheduleTime, allShows, movieDuration, cleaningTime);
+            const roomConflict = isScheduleConflicting(schedule.scheduleTime, allShows, movieDuration, cleaningTime);
+            const movieConflict = isMovieTimeConflict(schedule.scheduleTime, allMovieShowsMerged);
+            return !roomConflict && !movieConflict;
         });
 
-        // 6. Update dropdown
+        // 9. Update dropdown
         scheduleSelect.innerHTML = '<option value="">-- Select a Schedule --</option>';
         filteredSchedules.forEach(schedule => {
             const option = document.createElement('option');
@@ -62,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
             scheduleSelect.appendChild(option);
         });
 
-        // 7. Update next available time hint
+        // 10. Update next available time hint
         if (allShows.length > 0) {
             // Find latest end time
             let latestEnd = null;
@@ -562,6 +588,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (newStart < showEnd && newEnd > showStart) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    function isMovieTimeConflict(scheduleTime, allMovieShows) {
+        // Check if this exact time is already used by the same movie + version + date
+        for (const show of allMovieShows) {
+            if (!show.scheduleText) continue;
+            if (show.scheduleText === scheduleTime) {
+                return true; // This exact time is already used by this movie
             }
         }
         return false;
