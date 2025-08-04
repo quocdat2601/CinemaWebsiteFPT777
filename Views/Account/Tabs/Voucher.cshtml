@@ -26,14 +26,6 @@
         </div>
 
     <div class="card-body">
-        <!-- Current Value Display -->
-        <div class="text-center mb-4" id="currentVoucherDisplay">
-            <div class="alert alert-info d-inline-block p-3 rounded-pill">
-                <i class="fas fa-coins text-warning"></i>
-                <strong class="fs-4">Total Value: <span id="totalValueDisplay">@totalValue.ToString("N0")</span> VND</strong>
-                </div>
-            </div>
-
         <!-- Filter Form -->
         <form id="voucherFilterForm" class="row g-3 p-4 bg-light rounded-3 shadow-sm mb-4">
             <div class="col-md-4">
@@ -146,6 +138,19 @@
     transition: all 0.3s ease;
 }
 
+/* Ensure better contrast for select elements */
+select.form-control {
+    background: rgba(44, 62, 80, 0.8);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+select.form-control option {
+    background: #2c3e50;
+    color: #fff;
+    text-shadow: none;
+}
+
 .form-control:focus {
     background: rgba(255, 255, 255, 0.15);
     border-color: #d4af37;
@@ -153,8 +158,30 @@
     color: #fff;
 }
 
+select.form-control:focus {
+    background: rgba(52, 73, 94, 0.9);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
 .form-control::placeholder {
     color: rgba(255, 255, 255, 0.6);
+}
+
+/* Style for select options */
+.form-control option {
+    background: #2c3e50;
+    color: #fff;
+    padding: 8px;
+}
+
+.form-control option:hover {
+    background: #34495e;
+}
+
+.form-control option:checked {
+    background: #d4af37;
+    color: #000;
 }
 
 .form-label {
