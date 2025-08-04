@@ -281,6 +281,11 @@ namespace MovieTheater.Service
             return _movieRepository.GetMovieShowsByRoomAndDate(cinemaRoomId, showDate);
         }
 
+        public List<MovieShow> GetMovieShowsByMovieVersionDate(string movieId, int versionId, DateOnly showDate)
+        {
+            return _movieRepository.GetMovieShowsByMovieVersionDate(movieId, versionId, showDate);
+        }
+
         public List<MovieShow> GetMovieShowsByMovieId(string movieId)
         {
             return _movieRepository.GetMovieShowsByMovieId(movieId);

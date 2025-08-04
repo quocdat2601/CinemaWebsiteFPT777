@@ -8,13 +8,13 @@
 
 @if (userRole == "Admin")
 {
-    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="ShowroomMg" class="btn btn-secondary">
         &larr; Return
     </a>
 }
 else
 {
-    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary">
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="ShowroomMg" class="btn btn-secondary">
         &larr; Return
     </a>
 }
@@ -36,13 +36,13 @@ else
             </div>
 
             <div class="mb-3">
-                <label asp-for="SeatWidth" class="form-label">Seat Width</label>
+                <label asp-for="SeatWidth" class="form-label">Seat Columns</label>
                 <input asp-for="SeatWidth" class="form-control" />
                 <span asp-validation-for="SeatWidth" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
-                <label asp-for="SeatLength" class="form-label">Seat Length</label>
+                <label asp-for="SeatLength" class="form-label">Seat Rows</label>
                 <input asp-for="SeatLength" class="form-control" />
                 <span asp-validation-for="SeatLength" class="text-danger"></span>
             </div>

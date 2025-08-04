@@ -905,6 +905,23 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetMovieShowsByMovieVersionDate(string movieId, int versionId, string showDate)
+        {
+            if (!DateOnly.TryParse(showDate, out var parsedDate))
+                return BadRequest("Invalid date format.");
+
+            var shows = _movieService.GetMovieShowsByMovieVersionDate(movieId, versionId, parsedDate)
+                .Select(ms => new {
+                    scheduleText = ms.Schedule?.ScheduleTime?.ToString("HH:mm"),
+                    roomId = ms.CinemaRoomId,
+                    dateId = ms.ShowDate.ToString("yyyy-MM-dd"),
+                    versionId = ms.VersionId,
+                }).ToList();
+
+            return Json(shows);
+        }
+
+        [HttpGet]
         [Route("Movie/ViewShow/{id}")]
         public IActionResult ViewShow(string id)
         {
