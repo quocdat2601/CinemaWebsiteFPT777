@@ -76,5 +76,10 @@ namespace MovieTheater.Repository
         {
             return await _context.Foods.AnyAsync(f => f.FoodId == id);
         }
+
+        public async Task<bool> HasRelatedInvoicesAsync(int id)
+        {
+            return await _context.FoodInvoices.AnyAsync(fi => fi.FoodId == id);
+        }
     }
 }

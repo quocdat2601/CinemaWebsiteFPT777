@@ -204,46 +204,52 @@ window.resetFilters = function() {
 
 // Food table sorting (from FoodMg.cshtml)
 (function() {
-    let currentSortFood = { by: '', dir: 'asc', param: '' };
+    window.currentSortFood = { by: '', dir: 'asc', param: '' };
 
     $(document).on('click', '#food-table .sortable', function() {
         const sortBy = $(this).data('sort');
-        if (currentSortFood.by === sortBy) {
-            currentSortFood.dir = currentSortFood.dir === 'asc' ? 'desc' : 'asc';
+        if (window.currentSortFood.by === sortBy) {
+            window.currentSortFood.dir = window.currentSortFood.dir === 'asc' ? 'desc' : 'asc';
         } else {
-            currentSortFood.by = sortBy;
-            currentSortFood.dir = 'asc';
+            window.currentSortFood.by = sortBy;
+            window.currentSortFood.dir = 'asc';
         }
         let sortParam = '';
-        if (sortBy === 'name') sortParam = currentSortFood.dir === 'asc' ? 'name_az' : 'name_za';
-        if (sortBy === 'category') sortParam = currentSortFood.dir === 'asc' ? 'category_az' : 'category_za';
-        if (sortBy === 'price') sortParam = currentSortFood.dir === 'asc' ? 'price_asc' : 'price_desc';
-        if (sortBy === 'created') sortParam = currentSortFood.dir === 'asc' ? 'created_asc' : 'created_desc';
-        currentSortFood.param = sortParam;
-        window.searchFood();
+        if (sortBy === 'name') sortParam = window.currentSortFood.dir === 'asc' ? 'name_az' : 'name_za';
+        if (sortBy === 'category') sortParam = window.currentSortFood.dir === 'asc' ? 'category_az' : 'category_za';
+        if (sortBy === 'price') sortParam = window.currentSortFood.dir === 'asc' ? 'price_asc' : 'price_desc';
+        if (sortBy === 'created') sortParam = window.currentSortFood.dir === 'asc' ? 'created_asc' : 'created_desc';
+        window.currentSortFood.param = sortParam;
+        window.searchFoodWithSort();
         window.updateSortIconsFood();
     });
 
-    window.searchFood = function() {
+    window.searchFoodWithSort = function() {
         const keyword = document.getElementById('searchKeyword').value;
         const category = document.getElementById('categoryFilter').value;
-        const status = document.getElementById('statusFilter').value;
-        window.loadTab('FoodMg', { keyword, categoryFilter: category, statusFilter: status, sortBy: currentSortFood.param });
+        const status = document.querySelector('input[name="statusFilter"]:checked')?.value || 'true';
+        const params = {};
+        if (keyword) params.keyword = keyword;
+        if (category) params.categoryFilter = category;
+        // Always include statusFilter, default to 'true' (Active)
+        params.statusFilter = status;
+        if (window.currentSortFood.param) params.sortBy = window.currentSortFood.param;
+        window.loadTab('FoodMg', params);
     }
 
     window.updateSortIconsFood = function() {
         $('#sortIconName, #sortIconCategory, #sortIconPrice, #sortIconCreated').html('');
-        if (currentSortFood.by === 'name') {
-            $('#sortIconName').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        if (window.currentSortFood.by === 'name') {
+            $('#sortIconName').html(window.currentSortFood.dir === 'asc' ? '▲' : '▼');
         }
-        if (currentSortFood.by === 'category') {
-            $('#sortIconCategory').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        if (window.currentSortFood.by === 'category') {
+            $('#sortIconCategory').html(window.currentSortFood.dir === 'asc' ? '▲' : '▼');
         }
-        if (currentSortFood.by === 'price') {
-            $('#sortIconPrice').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        if (window.currentSortFood.by === 'price') {
+            $('#sortIconPrice').html(window.currentSortFood.dir === 'asc' ? '▲' : '▼');
         }
-        if (currentSortFood.by === 'created') {
-            $('#sortIconCreated').html(currentSortFood.dir === 'asc' ? '▲' : '▼');
+        if (window.currentSortFood.by === 'created') {
+            $('#sortIconCreated').html(window.currentSortFood.dir === 'asc' ? '▲' : '▼');
         }
     }
 })();

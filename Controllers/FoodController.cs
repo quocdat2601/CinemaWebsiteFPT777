@@ -140,6 +140,30 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> Delete(int id)
         {
+            // Check if food has related invoices
+            var food = await _foodService.GetByIdAsync(id);
+            if (food == null)
+            {
+                TempData["ErrorMessage"] = "Food not found.";
+                if (role == "Admin")
+                {
+                    return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                }
+                else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
+            }
+
+            // Check if food has related invoices
+            var hasInvoices = await _foodService.HasRelatedInvoicesAsync(id);
+            if (hasInvoices)
+            {
+                TempData["ErrorMessage"] = "Cannot delete food that has been sold. Please deactivate it instead.";
+                if (role == "Admin")
+                {
+                    return RedirectToAction("MainPage", "Admin", new { tab = "FoodMg" });
+                }
+                else return RedirectToAction("MainPage", "Employee", new { tab = "FoodMg" });
+            }
+
             var result = await _foodService.DeleteAsync(id);
 
             if (result)

@@ -314,14 +314,8 @@ function startCountdown() {
             updateSelectionSummary();
             updateBookButtonState();
 
-            // Show full-screen timeout modal
-            const timeoutModal = document.getElementById('timeoutModal');
-            if (timeoutModal) {
-                timeoutModal.style.display = 'flex';
-                // Disable the main content
-                document.getElementById('mainBookingArea').style.pointerEvents = 'none';
-                document.getElementById('mainBookingArea').style.opacity = '0.4';
-            }
+            // Show full-screen timeout notification
+            showTimeoutNotification();
         } else {
             const min = Math.floor(secondsLeft / 60);
             const sec = secondsLeft % 60;
@@ -430,6 +424,28 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('seatSelectionArea').style.display = 'block';
     });
 
+    // Category filtering
+    document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            const selectedCategory = this.getAttribute('data-category');
+            
+            // Update active tab
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter food items
+            const foodItems = document.querySelectorAll('.food-item');
+            foodItems.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+
     // Continue button
     document.getElementById('bookButton').addEventListener('click', function () {
         if (this.disabled || selectedSeats.size === 0) return;
@@ -479,3 +495,96 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSelectionSummary();
     updateFoodTotal();
 });
+
+// Function to show timeout notification
+function showTimeoutNotification() {
+    // Create full-screen overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.3s ease-out;
+    `;
+    
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 3rem;
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: var(--shadow-xl);
+        animation: scaleIn 0.3s ease-out;
+    `;
+    
+    modal.innerHTML = `
+        <div style="margin-bottom: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⏰</div>
+            <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Time Expired!</h2>
+            <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.6;">
+                Your seat selection time has expired. Please click the button below to return to the home page.
+            </p>
+        </div>
+        <button id="goHomeBtn" style="
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.875rem 1.75rem;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 auto;
+        " onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary-color)'">
+            <span>🏠</span>
+            Go to Home
+        </button>
+    `;
+    
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { 
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add to page
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Add click event to button
+    document.getElementById('goHomeBtn').addEventListener('click', function() {
+        window.location.href = '/';
+    });
+    
+    // Prevent scrolling on body
+    document.body.style.overflow = 'hidden';
+}

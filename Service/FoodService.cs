@@ -243,5 +243,17 @@ namespace MovieTheater.Service
             var foods = await _foodRepository.GetAllAsync();
             return foods.Select(f => f.Category).Distinct().ToList();
         }
+
+        public async Task<bool> HasRelatedInvoicesAsync(int id)
+        {
+            try
+            {
+                return await _foodRepository.HasRelatedInvoicesAsync(id);
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

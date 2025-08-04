@@ -111,9 +111,21 @@ function searchBooking() {
 
 function searchFood() {
     const keyword = document.getElementById('searchKeyword').value;
-    const category = document.getElementById('categoryFilter').value;
-    const status = document.getElementById('statusFilter').value;
-    loadTab('FoodMg', keyword, category, status);
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const statusFilter = document.querySelector('input[name="statusFilter"]:checked')?.value || 'true';
+    
+    const params = {};
+    if (keyword) params.keyword = keyword;
+    if (categoryFilter) params.categoryFilter = categoryFilter;
+    // Always include statusFilter, default to 'true' (Active)
+    params.statusFilter = statusFilter;
+    
+    // Check if there's an active sort
+    if (window.currentSortFood && window.currentSortFood.param) {
+        params.sortBy = window.currentSortFood.param;
+    }
+    
+    loadTab('FoodMg', params);
 }
 
 // Initialize SignalR for cinema room notifications

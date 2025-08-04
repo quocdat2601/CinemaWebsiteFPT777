@@ -133,8 +133,8 @@ namespace MovieTheater.Controllers
                     var searchKeyword = keyword ?? string.Empty;
                     var categoryFilter = Request.Query["categoryFilter"].ToString();
                     string statusFilterStr = Request.Query["statusFilter"].ToString();
-                    bool? foodStatusFilter = null;
-                    if (!string.IsNullOrEmpty(statusFilterStr))
+                    bool? foodStatusFilter = true; // Default to Active
+                    if (!string.IsNullOrEmpty(statusFilterStr) && statusFilterStr != "")
                     {
                         if (bool.TryParse(statusFilterStr, out var parsedBool))
                             foodStatusFilter = parsedBool;
@@ -170,7 +170,7 @@ namespace MovieTheater.Controllers
 
                     ViewBag.Keyword = searchKeyword;
                     ViewBag.CategoryFilter = categoryFilter;
-                    ViewBag.StatusFilter = statusFilterStr;
+                    ViewBag.StatusFilter = string.IsNullOrEmpty(statusFilterStr) ? "true" : statusFilterStr;
 
                     return PartialView("FoodMg", foods);
                 case "VoucherMg":
