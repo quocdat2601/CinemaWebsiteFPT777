@@ -331,7 +331,7 @@ namespace MovieTheater.Tests.Service
             _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
 
             // Act
-            var result = _service.GetEligibleFoodPromotions(new List<(int, int, decimal)>());
+            var result = _service.GetEligibleFoodPromotions(new List<(int, int, decimal, string)>());
 
             // Assert
             Assert.Empty(result);
@@ -341,7 +341,7 @@ namespace MovieTheater.Tests.Service
         public void GetEligibleFoodPromotions_ReturnsFoodPromotions()
         {
             // Arrange
-            var selectedFoods = new List<(int, int, decimal)> { (1, 2, 100) };
+            var selectedFoods = new List<(int, int, decimal, string)> { (1, 2, 100, "Pizza") };
             var promotions = new List<Promotion>
             {
                 new Promotion 
@@ -375,10 +375,10 @@ namespace MovieTheater.Tests.Service
         public void ApplyFoodPromotionsToFoods_ReturnsCorrectResults()
         {
             // Arrange
-            var selectedFoods = new List<(int, int, decimal)> 
+            var selectedFoods = new List<(int, int, decimal, string)> 
             { 
-                (1, 2, 100), 
-                (2, 1, 150) 
+                (1, 2, 100, "Pizza"), 
+                (2, 1, 150, "Burger") 
             };
 
             var eligiblePromotions = new List<Promotion>
@@ -417,10 +417,10 @@ namespace MovieTheater.Tests.Service
         public void ApplyFoodPromotionsToFoods_ReturnsOriginalPrices_WhenNoEligiblePromotions()
         {
             // Arrange
-            var selectedFoods = new List<(int, int, decimal)> 
+            var selectedFoods = new List<(int, int, decimal, string)> 
             { 
-                (1, 2, 100), 
-                (2, 1, 150) 
+                (1, 2, 100, "Pizza"), 
+                (2, 1, 150, "Burger") 
             };
 
             var eligiblePromotions = new List<Promotion>();
@@ -441,9 +441,9 @@ namespace MovieTheater.Tests.Service
         public void ApplyFoodPromotionsToFoods_HandlesInvalidPriceConditions()
         {
             // Arrange
-            var selectedFoods = new List<(int, int, decimal)> 
+            var selectedFoods = new List<(int, int, decimal, string)> 
             { 
-                (1, 2, 100)
+                (1, 2, 100, "Pizza")
             };
 
             var eligiblePromotions = new List<Promotion>
@@ -483,10 +483,10 @@ namespace MovieTheater.Tests.Service
         public void ApplyFoodPromotionsToFoods_HandlesMultipleOperators()
         {
             // Arrange
-            var selectedFoods = new List<(int, int, decimal)> 
+            var selectedFoods = new List<(int, int, decimal, string)> 
             { 
-                (1, 2, 100),
-                (2, 1, 200)
+                (1, 2, 100, "Pizza"),
+                (2, 1, 200, "Burger")
             };
 
             var eligiblePromotions = new List<Promotion>
@@ -538,6 +538,72 @@ namespace MovieTheater.Tests.Service
             Assert.Equal(2, result[1].FoodId);
             Assert.Equal(170, result[1].DiscountedPrice);
             Assert.Equal("High Price Discount", result[1].PromotionName);
+        }
+
+        [Fact]
+        public void ApplyFoodPromotionsToFoods_HandlesFoodNameConditions()
+        {
+            // Arrange
+            var selectedFoods = new List<(int, int, decimal, string)> 
+            { 
+                (1, 2, 100, "Pizza"),
+                (2, 1, 200, "Burger"),
+                (3, 1, 150, "Nachos")
+            };
+
+            var eligiblePromotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    Title = "Pizza Discount",
+                    DiscountLevel = 20,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetEntity = "food", 
+                            TargetField = "foodname", 
+                            TargetValue = "Pizza", 
+                            Operator = "=" 
+                        }
+                    }
+                },
+                new Promotion 
+                { 
+                    PromotionId = 2, 
+                    Title = "Burger Discount",
+                    DiscountLevel = 15,
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetEntity = "food", 
+                            TargetField = "foodname", 
+                            TargetValue = "Burger", 
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            // Act
+            var result = _service.ApplyFoodPromotionsToFoods(selectedFoods, eligiblePromotions);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+            // Pizza should get 20% discount
+            Assert.Equal(1, result[0].FoodId);
+            Assert.Equal(80, result[0].DiscountedPrice); // 100 * 0.8
+            Assert.Equal("Pizza Discount", result[0].PromotionName);
+            // Burger should get 15% discount
+            Assert.Equal(2, result[1].FoodId);
+            Assert.Equal(170, result[1].DiscountedPrice); // 200 * 0.85
+            Assert.Equal("Burger Discount", result[1].PromotionName);
+            // Nachos should get no discount
+            Assert.Equal(3, result[2].FoodId);
+            Assert.Equal(150, result[2].DiscountedPrice);
+            Assert.Null(result[2].PromotionName);
         }
 
         // Tests for GetBestEligiblePromotionForBooking method (which internally uses IsPromotionEligibleNew)
