@@ -361,6 +361,7 @@ namespace MovieTheater.Service
                 decimal bestDiscount = 0;
                 string promoName = null;
                 decimal discountLevel = 0;
+                bool foundEligiblePromotion = false;
                 foreach (var promo in eligiblePromotions)
                 {
                     // Kiểm tra điều kiện cho từng promotion
@@ -417,11 +418,17 @@ namespace MovieTheater.Service
                         }
                         if (!eligible) break;
                     }
-                    if (eligible && promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > bestDiscount)
+                    if (eligible && promo.DiscountLevel.HasValue)
                     {
-                        bestDiscount = promo.DiscountLevel.Value;
-                        promoName = promo.Title;
-                        discountLevel = promo.DiscountLevel.Value;
+                        // For negative discount levels, we still want to record them but not apply the discount
+                        if (promo.DiscountLevel.Value > bestDiscount || (promo.DiscountLevel.Value <= 0 && !foundEligiblePromotion))
+                        {
+                            bestDiscount = promo.DiscountLevel.Value;
+                            // Only set promotion name for positive discount levels
+                            promoName = promo.DiscountLevel.Value > 0 ? promo.Title : null;
+                            discountLevel = promo.DiscountLevel.Value;
+                            foundEligiblePromotion = true;
+                        }
                     }
                 }
                 decimal discountedPrice = food.Price;

@@ -1006,56 +1006,56 @@ namespace MovieTheater.Controllers
                                 }
                             }
                         }
-                        
-                        // 3. Cập nhật điểm cho member nếu có
-                        if (!string.IsNullOrEmpty(invoice.AccountId) && invoice.AccountId != "GUEST")
+                    }
+                    
+                    // 3. Cập nhật điểm cho member nếu có
+                    if (!string.IsNullOrEmpty(invoice.AccountId) && invoice.AccountId != "GUEST")
+                    {
+                        var member = _context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                        if (member != null)
                         {
-                            var member = _context.Members.FirstOrDefault(m => m.AccountId == invoice.AccountId);
-                            if (member != null)
+                            _logger.LogInformation("Found member {AccountId} with current TotalPoints: {CurrentPoints}", 
+                                invoice.AccountId, member.TotalPoints);
+                            
+                            // Trừ điểm đã sử dụng
+                            if (invoice.UseScore > 0)
                             {
-                                _logger.LogInformation("Found member {AccountId} with current TotalPoints: {CurrentPoints}", 
-                                    invoice.AccountId, member.TotalPoints);
-                                
-                                // Trừ điểm đã sử dụng
-                                if (invoice.UseScore > 0)
-                                {
-                                    member.TotalPoints -= invoice.UseScore.Value;
-                                    _logger.LogInformation("Deducted {UseScore} points from account {AccountId}. New TotalPoints: {NewPoints}", 
-                                        invoice.UseScore, invoice.AccountId, member.TotalPoints);
-                                }
-                                
-                                // Cộng điểm thưởng
-                                if (invoice.AddScore > 0)
-                                {
-                                    member.TotalPoints += invoice.AddScore.Value;
-                                    _logger.LogInformation("Added {AddScore} points to account {AccountId}. New TotalPoints: {NewPoints}", 
-                                        invoice.AddScore, invoice.AccountId, member.TotalPoints);
-                                }
-                                else
-                                {
-                                    _logger.LogWarning("AddScore is 0 or null for invoice {InvoiceId}. AddScore value: {AddScore}", 
-                                        invoiceId, invoice.AddScore);
-                                }
+                                member.TotalPoints -= invoice.UseScore.Value;
+                                _logger.LogInformation("Deducted {UseScore} points from account {AccountId}. New TotalPoints: {NewPoints}", 
+                                    invoice.UseScore, invoice.AccountId, member.TotalPoints);
+                            }
+                            
+                            // Cộng điểm thưởng
+                            if (invoice.AddScore > 0)
+                            {
+                                member.TotalPoints += invoice.AddScore.Value;
+                                _logger.LogInformation("Added {AddScore} points to account {AccountId}. New TotalPoints: {NewPoints}", 
+                                    invoice.AddScore, invoice.AccountId, member.TotalPoints);
                             }
                             else
                             {
-                                _logger.LogWarning("Member not found for AccountId: {AccountId}", invoice.AccountId);
+                                _logger.LogWarning("AddScore is 0 or null for invoice {InvoiceId}. AddScore value: {AddScore}", 
+                                    invoiceId, invoice.AddScore);
                             }
                         }
                         else
                         {
-                            _logger.LogInformation("Skipping member points update - AccountId: {AccountId}", invoice.AccountId);
+                            _logger.LogWarning("Member not found for AccountId: {AccountId}", invoice.AccountId);
                         }
-                        
-                        // 4. Cập nhật voucher status nếu có
-                        if (!string.IsNullOrEmpty(invoice.VoucherId))
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Skipping member points update - AccountId: {AccountId}", invoice.AccountId);
+                    }
+                    
+                    // 4. Cập nhật voucher status nếu có
+                    if (!string.IsNullOrEmpty(invoice.VoucherId))
+                    {
+                        var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
+                        if (voucher != null)
                         {
-                            var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
-                            if (voucher != null)
-                            {
-                                voucher.IsUsed = true;
-                                _logger.LogInformation("Marked voucher {VoucherId} as used", invoice.VoucherId);
-                            }
+                            voucher.IsUsed = true;
+                            _logger.LogInformation("Marked voucher {VoucherId} as used", invoice.VoucherId);
                         }
                     }
                     
