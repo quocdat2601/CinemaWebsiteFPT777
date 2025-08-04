@@ -143,10 +143,10 @@
         const tableColumns = {
             Invoice: [   "MovieName", "ScheduleShow", "Seat"],
             Member: [ "Score"],
-            Movie: [ "Actor", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish"],
+            Movie: [ "Director", "FromDate", "ToDate", "MovieNameEnglish"],
             SeatType: ["TypeName", "PricePercent"],
             Type: [ "TypeName"],
-            Food: [ "FoodName", "Price", "Status", "Category"]
+            Food: [ "FoodName", "Price"]
         };
 
         // Display names mapping for better user experience
@@ -160,14 +160,9 @@
                 Score: "Score"
             },
             Movie: {
-                Actor: "Actor",
-                Content: "Content",
                 Director: "Director",
-                Duration: "Duration",
                 FromDate: "From Date",
-                MovieProductionCompany: "Movie Production Company",
                 ToDate: "To Date",
-                Version: "Version",
                 MovieNameEnglish: "Movie Name English"
             },
             SeatType: {
@@ -179,9 +174,7 @@
             },
             Food: {
                 FoodName: "Food Name",
-                Price: "Price",
-                Status: "Status",
-                Category: "Category"
+                Price: "Price"
             }
         };
 
@@ -196,14 +189,9 @@
                 Score: "number"
             },
             Movie: {
-                Actor: "string",
-                Content: "string",
                 Director: "string",
-                Duration: "number",
                 FromDate: "date",
-                MovieProductionCompany: "string",
                 ToDate: "date",
-                Version: "string",
                 MovieNameEnglish: "string"
             },
             SeatType: {
@@ -215,9 +203,7 @@
             },
             Food: {
                 FoodName: "string",
-                Price: "number",
-                Status: "number",
-                Category: "string"
+                Price: "number"
             }
         };
 
