@@ -12,5 +12,6 @@ namespace MovieTheater.Repository
         IEnumerable<ScheduleSeat> GetByInvoiceId(string invoiceId);
         void Update(ScheduleSeat seat);
         void Save();
+        Task UpdateScheduleSeatsToBookedAsync(string invoiceId, int movieShowId, List<int> seatIds);
     }
 }

@@ -74,5 +74,15 @@ namespace MovieTheater.Service
         {
             return _repository.GetSeatsByNames(seatNames);
         }
+
+        public async Task UpdateSeatsStatusToBookedAsync(List<int> seatIds)
+        {
+            await _repository.UpdateSeatsStatusToBookedAsync(seatIds);
+        }
+
+        public SeatStatus? GetSeatStatusByName(string statusName)
+        {
+            return _repository.GetSeatStatusByName(statusName);
+        }
     }
 }

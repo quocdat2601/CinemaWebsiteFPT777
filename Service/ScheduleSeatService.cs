@@ -73,5 +73,10 @@ namespace MovieTheater.Service
             }
             Save();
         }
+
+        public async Task UpdateScheduleSeatsToBookedAsync(string invoiceId, int movieShowId, List<int> seatIds)
+        {
+            await _scheduleSeatRepository.UpdateScheduleSeatsToBookedAsync(invoiceId, movieShowId, seatIds);
+        }
     }
 } 

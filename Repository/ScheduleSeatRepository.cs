@@ -143,5 +143,27 @@ namespace MovieTheater.Repository
         {
             _context.SaveChanges();
         }
+
+        public async Task UpdateScheduleSeatsToBookedAsync(string invoiceId, int movieShowId, List<int> seatIds)
+        {
+            // Tìm SeatStatusId cho trạng thái "Booked"
+            var bookedStatus = _context.SeatStatuses.FirstOrDefault(s => s.StatusName == "Booked");
+            if (bookedStatus == null)
+            {
+                throw new InvalidOperationException("SeatStatus 'Booked' not found in database");
+            }
+
+            // Cập nhật ScheduleSeat nếu có
+            var scheduleSeats = _context.ScheduleSeats
+                .Where(ss => ss.MovieShowId == movieShowId && seatIds.Contains(ss.SeatId.Value))
+                .ToList();
+
+            foreach (var scheduleSeat in scheduleSeats)
+            {
+                scheduleSeat.SeatStatusId = bookedStatus.SeatStatusId;
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -14,5 +14,6 @@ namespace MovieTheater.Service
         void Save();
         Task UpdateScheduleSeatsStatusAsync(string invoiceId, int statusId);
         Task UpdateScheduleSeatsBookedPriceAsync(string invoiceId, decimal bookedPrice);
+        Task UpdateScheduleSeatsToBookedAsync(string invoiceId, int movieShowId, List<int> seatIds);
     }
 } 

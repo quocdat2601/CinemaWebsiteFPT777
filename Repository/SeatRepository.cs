@@ -88,5 +88,30 @@ namespace MovieTheater.Repository
         {
             return _context.Seats.Include(s => s.SeatType).Where(s => seatNames.Contains(s.SeatName)).ToList();
         }
+
+        public async Task UpdateSeatsStatusToBookedAsync(List<int> seatIds)
+        {
+            // Tìm SeatStatusId cho trạng thái "Booked"
+            var bookedStatus = _context.SeatStatuses.FirstOrDefault(s => s.StatusName == "Booked");
+            if (bookedStatus == null)
+            {
+                throw new InvalidOperationException("SeatStatus 'Booked' not found in database");
+            }
+
+            // Tìm và cập nhật trạng thái seat
+            var seats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
+            
+            foreach (var seat in seats)
+            {
+                seat.SeatStatusId = bookedStatus.SeatStatusId; // Chuyển từ BeingHeld thành Booked
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public SeatStatus? GetSeatStatusByName(string statusName)
+        {
+            return _context.SeatStatuses.FirstOrDefault(s => s.StatusName == statusName);
+        }
     }
 }
