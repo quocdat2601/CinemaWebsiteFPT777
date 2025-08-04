@@ -10,8 +10,6 @@ namespace MovieTheater.Service
        public bool Update(Promotion promotion);
         public bool Delete(int id);
         public void Save();
-
-        Promotion? GetBestPromotionForShowDate(DateOnly showDate);
         Promotion? GetBestEligiblePromotionForBooking(PromotionCheckContext context);
         List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)> ApplyFoodPromotionsToFoods(List<(int FoodId, int Quantity, decimal Price, string FoodName)> selectedFoods, List<Promotion> eligiblePromotions);
         List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price, string FoodName)> selectedFoods);
