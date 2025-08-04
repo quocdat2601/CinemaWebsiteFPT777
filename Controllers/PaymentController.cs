@@ -235,20 +235,23 @@ namespace MovieTheater.Controllers
                 }
 
                 // --- Lưu food orders nếu có ---
-                var selectedFoods = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
-                if (!string.IsNullOrEmpty(selectedFoods))
+                if (invoice != null)
                 {
-                    try
+                    var selectedFoods = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
+                    if (!string.IsNullOrEmpty(selectedFoods))
                     {
-                        var foods = JsonConvert.DeserializeObject<List<FoodViewModel>>(selectedFoods);
-                        if (foods != null && foods.Any())
+                        try
                         {
-                            await _foodInvoiceService.SaveFoodOrderAsync(invoice.InvoiceId, foods);
+                            var foods = JsonConvert.DeserializeObject<List<FoodViewModel>>(selectedFoods);
+                            if (foods != null && foods.Any())
+                            {
+                                await _foodInvoiceService.SaveFoodOrderAsync(invoice.InvoiceId, foods);
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error saving food orders for invoice {InvoiceId}", invoice.InvoiceId);
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error saving food orders for invoice {InvoiceId}", invoice.InvoiceId);
+                        }
                     }
                 }
 
@@ -267,36 +270,39 @@ namespace MovieTheater.Controllers
                         .Select(id => int.Parse(id.Trim()))
                         .ToList();
                     var allSeats = _seatService.GetSeatsWithTypeByIds(seatIds);
-                    var seatDetails = allSeats.Select(seat =>
+                    if (allSeats != null)
                     {
-                        var seatType = seat.SeatType;
-                        decimal basePrice = seatType?.PricePercent ?? 0;
-                        if (invoice.MovieShow?.Version != null)
-                            basePrice *= (decimal)invoice.MovieShow.Version.Multi;
-                        int promotionDiscount = 0;
-                        if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
+                        var seatDetails = allSeats.Select(seat =>
                         {
-                            try
+                            var seatType = seat.SeatType;
+                            decimal basePrice = seatType?.PricePercent ?? 0;
+                            if (invoice.MovieShow?.Version != null)
+                                basePrice *= (decimal)invoice.MovieShow.Version.Multi;
+                            int promotionDiscount = 0;
+                            if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
                             {
-                                var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
-                                promotionDiscount = (int)(promoObj.seat ?? 0);
+                                try
+                                {
+                                    var promoObj = JsonConvert.DeserializeObject<dynamic>(invoice.PromotionDiscount);
+                                    promotionDiscount = (int)(promoObj.seat ?? 0);
+                                }
+                                catch { promotionDiscount = 0; }
                             }
-                            catch { promotionDiscount = 0; }
-                        }
-                        decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
-                        decimal priceAfterPromotion = basePrice - discount;
-                        return new MovieTheater.ViewModels.SeatDetailViewModel
-                        {
-                            SeatId = seat.SeatId,
-                            SeatName = seat.SeatName,
-                            SeatType = seatType?.TypeName ?? "N/A",
-                            Price = priceAfterPromotion,
-                            OriginalPrice = basePrice,
-                            PromotionDiscount = promotionDiscount,
-                            PriceAfterPromotion = priceAfterPromotion
-                        };
-                    }).ToList();
-                    TempData["SeatDetails"] = JsonConvert.SerializeObject(seatDetails);
+                            decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
+                            decimal priceAfterPromotion = basePrice - discount;
+                            return new MovieTheater.ViewModels.SeatDetailViewModel
+                            {
+                                SeatId = seat.SeatId,
+                                SeatName = seat.SeatName,
+                                SeatType = seatType?.TypeName ?? "N/A",
+                                Price = priceAfterPromotion,
+                                OriginalPrice = basePrice,
+                                PromotionDiscount = promotionDiscount,
+                                PriceAfterPromotion = priceAfterPromotion
+                            };
+                        }).ToList();
+                        TempData["SeatDetails"] = JsonConvert.SerializeObject(seatDetails);
+                    }
                 }
                 TempData["OriginalPrice"] = invoice?.ScheduleSeats?.Sum(ss => ss.BookedPrice ?? 0).ToString() ?? "0";
                 TempData["UsedScore"] = invoice?.UseScore ?? 0;
