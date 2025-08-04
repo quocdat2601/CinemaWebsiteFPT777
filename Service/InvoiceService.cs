@@ -67,5 +67,15 @@ namespace MovieTheater.Service
                 _invoiceRepository.Save();
             }
         }
+
+        public Invoice? FindInvoiceByOrderId(string orderId)
+        {
+            return _invoiceRepository.FindInvoiceByOrderId(orderId);
+        }
+
+        public Invoice? FindInvoiceByAmountAndTime(decimal amount, DateTime? recentTime = null)
+        {
+            return _invoiceRepository.FindInvoiceByAmountAndTime(amount, recentTime);
+        }
     }
 }

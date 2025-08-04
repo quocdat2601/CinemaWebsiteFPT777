@@ -177,13 +177,13 @@ namespace MovieTheater.Service
             decimal totalFoodPrice = 0;
             if (foodIds != null && foodQtys != null && foodIds.Count == foodQtys.Count)
             {
-                var foodTuples = new List<(int FoodId, int Quantity, decimal Price)>();
+                var foodTuples = new List<(int FoodId, int Quantity, decimal Price, string FoodName)>();
                 for (int i = 0; i < foodIds.Count; i++)
                 {
                     var food = await _foodService.GetByIdAsync(foodIds[i]);
                     if (food != null)
                     {
-                        foodTuples.Add((food.FoodId, foodQtys[i], food.Price));
+                        foodTuples.Add((food.FoodId, foodQtys[i], food.Price, food.Name));
                     }
                 }
                 var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
@@ -634,13 +634,13 @@ namespace MovieTheater.Service
             List<Promotion> eligibleFoodPromotions = new List<Promotion>();
             if (foodIds != null && foodQtys != null && foodIds.Count == foodQtys.Count)
             {
-                var foodTuples = new List<(int FoodId, int Quantity, decimal Price)>();
+                var foodTuples = new List<(int FoodId, int Quantity, decimal Price, string FoodName)>();
                 for (int i = 0; i < foodIds.Count; i++)
                 {
                     var food = await _foodService.GetByIdAsync(foodIds[i]);
                     if (food != null)
                     {
-                        foodTuples.Add((food.FoodId, foodQtys[i], food.Price));
+                        foodTuples.Add((food.FoodId, foodQtys[i], food.Price, food.Name));
                     }
                 }
                 eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
@@ -1036,7 +1036,10 @@ namespace MovieTheater.Service
             var foodInvoices = _context.FoodInvoices.Where(f => f.InvoiceId == invoiceId).ToList();
             var foodIds = foodInvoices.Select(f => f.FoodId).ToList();
             var foods = await GetFoodsByIdsAsync(foodIds);
-            var foodTuples = foodInvoices.Select(f => (f.FoodId, f.Quantity, f.Price)).ToList();
+            var foodTuples = foodInvoices.Select(f => {
+                var food = foods.FirstOrDefault(food => food.FoodId == f.FoodId);
+                return (f.FoodId, f.Quantity, f.Price, food?.Name ?? "N/A");
+            }).ToList();
             var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
             var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
             var selectedFoods = foodInvoices.Select(f => {

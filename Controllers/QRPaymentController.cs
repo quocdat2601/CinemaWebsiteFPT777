@@ -149,6 +149,9 @@ namespace MovieTheater.Controllers
                     ShowTime = $"{model.BookingDetails.ShowDate:dd/MM/yyyy} {model.BookingDetails.ShowTime}",
                     SeatInfo = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName))
                 };
+                // Lưu đường dẫn trước đó vào TempData
+                TempData["ReturnUrl"] = Request.Headers["Referer"].ToString();
+                
                 return RedirectToAction("DisplayQR", "QRPayment", new {
                     orderId = invoiceId,
                     amount = totalAmount,
@@ -692,6 +695,10 @@ namespace MovieTheater.Controllers
                     ShowTime = $"{model.BookingDetails.ShowDate:dd/MM/yyyy} {model.BookingDetails.ShowTime}",
                     SeatInfo = string.Join(", ", model.BookingDetails.SelectedSeats.Select(s => s.SeatName))
                 };
+                
+                // Lưu đường dẫn trước đó vào TempData
+                TempData["ReturnUrl"] = Request.Headers["Referer"].ToString();
+                
                 return RedirectToAction("DisplayQR", "QRPayment", new {
                     orderId = invoiceId,
                     amount = totalAmount,

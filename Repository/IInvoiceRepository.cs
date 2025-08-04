@@ -13,5 +13,7 @@ namespace MovieTheater.Repository
         Task<IEnumerable<Invoice>> GetByDateRangeAsync(string accountId, DateTime? fromDate, DateTime? toDate);
         void Update(Invoice invoice);
         void Save();
+        Invoice? FindInvoiceByOrderId(string orderId);
+        Invoice? FindInvoiceByAmountAndTime(decimal amount, DateTime? recentTime = null);
     }
 }

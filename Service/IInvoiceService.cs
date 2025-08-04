@@ -11,5 +11,7 @@ namespace MovieTheater.Service
         Task MarkInvoiceAsCompletedAsync(string invoiceId);
         Task MarkVoucherAsUsedAsync(string voucherId);
         Task UpdateInvoiceStatusAsync(string invoiceId, InvoiceStatus status);
+        Invoice? FindInvoiceByOrderId(string orderId);
+        Invoice? FindInvoiceByAmountAndTime(decimal amount, DateTime? recentTime = null);
     }
 }

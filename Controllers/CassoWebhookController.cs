@@ -13,9 +13,10 @@ namespace MovieTheater.Controllers
     [Route("api/casso/webhook")]
     public class CassoWebhookController : ControllerBase
     {
-        private readonly MovieTheaterContext _context;
         private readonly ILogger<CassoWebhookController> _logger;
         private readonly IInvoiceService _invoiceService;
+        private readonly ISeatService _seatService;
+        private readonly IScheduleSeatService _scheduleSeatService;
         private const string SECURE_TOKEN = "AK_CS.0eafb1406d2811f0b7f9c39f1519547d.SgAfzKpqf62yKUOnIl5qG4z4heJhXAy0oo5UtfrcSBEaMKmzGcz2w56HEyGF1e9xqwiAWqwB";
 
         // Constants from PHP sample
@@ -29,11 +30,12 @@ namespace MovieTheater.Controllers
         private const int MAX_PROCESSING_TIME_SECONDS = 60;
         private const int MAX_WEBHOOK_SIZE_BYTES = 1024 * 1024; // 1MB
 
-        public CassoWebhookController(MovieTheaterContext context, ILogger<CassoWebhookController> logger, IInvoiceService invoiceService)
+        public CassoWebhookController(ILogger<CassoWebhookController> logger, IInvoiceService invoiceService, ISeatService seatService, IScheduleSeatService scheduleSeatService)
         {
-            _context = context;
             _logger = logger;
             _invoiceService = invoiceService;
+            _seatService = seatService;
+            _scheduleSeatService = scheduleSeatService;
         }
 
         [HttpPost]
@@ -154,12 +156,7 @@ namespace MovieTheater.Controllers
                 }
 
                 // 3. Tìm invoice và kiểm tra trạng thái (logic tìm kiếm linh hoạt nâng cao)
-                var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == orderId) // Tìm chính xác
-                    ?? _context.Invoices.FirstOrDefault(i => i.InvoiceId.ToString() == orderId) // Chuyển số thành chuỗi
-                    ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId.ToString())) // Tìm trong chuỗi
-                    ?? _context.Invoices.Where(i => orderId.Contains(i.InvoiceId.ToString())).OrderByDescending(i => i.BookingDate).FirstOrDefault() // Tìm theo thời gian gần nhất
-                    ?? _context.Invoices.FirstOrDefault(i => orderId.Contains(i.InvoiceId)) // Tìm theo pattern linh hoạt hơn
-                    ?? _context.Invoices.Where(i => i.InvoiceId.Contains(orderId)).OrderByDescending(i => i.BookingDate).FirstOrDefault(); // Tìm ngược lại
+                var invoice = _invoiceService.FindInvoiceByOrderId(orderId);
 
                 // Nếu vẫn không tìm thấy, thử tìm theo pattern từ description
                 if (invoice == null)
@@ -170,7 +167,7 @@ namespace MovieTheater.Controllers
                     {
                         var patternId = patternMatch.Value;
                         _logger.LogInformation("Trying to find invoice by pattern: {PatternId}", patternId);
-                        invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId.Contains(patternId));
+                        invoice = _invoiceService.FindInvoiceByOrderId(patternId);
                     }
                 }
 
@@ -182,29 +179,13 @@ namespace MovieTheater.Controllers
                     {
                         _logger.LogInformation("Trying to find invoice by amount: {Amount}", paidAmount);
                         // Tìm theo số tiền chính xác
-                        invoice = _context.Invoices
-                            .Where(i => i.TotalMoney == paidAmount && i.Status != InvoiceStatus.Completed)
-                            .OrderByDescending(i => i.BookingDate)
-                            .FirstOrDefault();
-                        
-                        // Nếu không tìm thấy, tìm theo số tiền gần đúng (tolerance)
-                        if (invoice == null)
-                        {
-                            var tolerance = Math.Max(paidAmount * 0.1m, 1000m); // 10% hoặc 1000 VND
-                            invoice = _context.Invoices
-                                .Where(i => Math.Abs(i.TotalMoney.Value - paidAmount) <= tolerance && i.Status != InvoiceStatus.Completed)
-                                .OrderByDescending(i => i.BookingDate)
-                                .FirstOrDefault();
-                        }
+                        invoice = _invoiceService.FindInvoiceByAmountAndTime(paidAmount);
                         
                         // Nếu vẫn không tìm thấy, tìm invoice gần nhất trong 24h
                         if (invoice == null)
                         {
                             var recentTime = DateTime.Now.AddHours(-24);
-                            invoice = _context.Invoices
-                                .Where(i => i.BookingDate >= recentTime && i.Status != InvoiceStatus.Completed)
-                                .OrderByDescending(i => i.BookingDate)
-                                .FirstOrDefault();
+                            invoice = _invoiceService.FindInvoiceByAmountAndTime(paidAmount, recentTime);
                         }
                     }
                 }
@@ -399,41 +380,17 @@ namespace MovieTheater.Controllers
                     return;
                 }
 
-                // Tìm SeatStatusId cho trạng thái "Booked"
-                var bookedStatus = _context.SeatStatuses.FirstOrDefault(s => s.StatusName == "Booked");
-                if (bookedStatus == null)
-                {
-                    _logger.LogError("SeatStatus 'Booked' not found in database");
-                    return;
-                }
-
-                // Tìm và cập nhật trạng thái seat
-                var seats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
-                
-                foreach (var seat in seats)
-                {
-                    seat.SeatStatusId = bookedStatus.SeatStatusId; // Chuyển từ BeingHeld thành Booked
-                    _logger.LogInformation("Updated seat {SeatId} status from BeingHeld to Booked for invoice {InvoiceId}", 
-                        seat.SeatId, invoice.InvoiceId);
-                }
+                // Cập nhật trạng thái seat
+                await _seatService.UpdateSeatsStatusToBookedAsync(seatIds);
 
                 // Cập nhật ScheduleSeat nếu có
                 if (invoice.MovieShowId.HasValue)
                 {
-                    var scheduleSeats = _context.ScheduleSeats
-                        .Where(ss => ss.MovieShowId == invoice.MovieShowId.Value && seatIds.Contains(ss.SeatId.Value))
-                        .ToList();
-
-                    foreach (var scheduleSeat in scheduleSeats)
-                    {
-                        scheduleSeat.SeatStatusId = bookedStatus.SeatStatusId;
-                        _logger.LogInformation("Updated ScheduleSeat {SeatId} status to Booked for MovieShow {MovieShowId}", 
-                            scheduleSeat.SeatId, invoice.MovieShowId.Value);
-                    }
+                    await _scheduleSeatService.UpdateScheduleSeatsToBookedAsync(invoice.InvoiceId, invoice.MovieShowId.Value, seatIds);
                 }
 
                 _logger.LogInformation("Successfully updated {SeatCount} seats to Booked status for invoice {InvoiceId}", 
-                    seats.Count, invoice.InvoiceId);
+                    seatIds.Count, invoice.InvoiceId);
             }
             catch (Exception ex)
             {

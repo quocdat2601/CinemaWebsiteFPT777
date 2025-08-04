@@ -234,7 +234,7 @@ namespace MovieTheater.Service
         }
 
         // Lấy danh sách promotion hợp lệ cho food (chỉ xét TargetEntity)
-        public List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price)> selectedFoods)
+        public List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price, string FoodName)> selectedFoods)
         {
             var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
             var foodPromotions = allPromotions
@@ -353,7 +353,7 @@ namespace MovieTheater.Service
 
         // Áp dụng promotion cho từng món ăn riêng biệt, trả về danh sách món đã giảm giá và tên promotion
         public List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)> ApplyFoodPromotionsToFoods(
-            List<(int FoodId, int Quantity, decimal Price)> selectedFoods, List<Promotion> eligiblePromotions)
+            List<(int FoodId, int Quantity, decimal Price, string FoodName)> selectedFoods, List<Promotion> eligiblePromotions)
         {
             var result = new List<(int FoodId, decimal OriginalPrice, decimal DiscountedPrice, string PromotionName, decimal DiscountLevel)>();
             foreach (var food in selectedFoods)
@@ -367,35 +367,54 @@ namespace MovieTheater.Service
                     bool eligible = true;
                     foreach (var cond in promo.PromotionConditions)
                     {
-                        if (cond.TargetEntity?.ToLower() == "food" && cond.TargetField?.ToLower() == "price")
+                        if (cond.TargetEntity?.ToLower() == "food")
                         {
-                            if (decimal.TryParse(cond.TargetValue, out decimal targetValue))
+                            switch (cond.TargetField?.ToLower())
                             {
-                                switch (cond.Operator)
-                                {
-                                    case ">=":
-                                        if (!(food.Price >= targetValue)) eligible = false;
-                                        break;
-                                    case ">":
-                                        if (!(food.Price > targetValue)) eligible = false;
-                                        break;
-                                    case "<=":
-                                        if (!(food.Price <= targetValue)) eligible = false;
-                                        break;
-                                    case "<":
-                                        if (!(food.Price < targetValue)) eligible = false;
-                                        break;
-                                    case "==":
-                                    case "=":
-                                        if (!(food.Price == targetValue)) eligible = false;
-                                        break;
-                                    case "!=":
-                                        if (!(food.Price != targetValue)) eligible = false;
-                                        break;
-                                }
+                                case "price":
+                                    if (decimal.TryParse(cond.TargetValue, out decimal targetValue))
+                                    {
+                                        switch (cond.Operator)
+                                        {
+                                            case ">=":
+                                                if (!(food.Price >= targetValue)) eligible = false;
+                                                break;
+                                            case ">":
+                                                if (!(food.Price > targetValue)) eligible = false;
+                                                break;
+                                            case "<=":
+                                                if (!(food.Price <= targetValue)) eligible = false;
+                                                break;
+                                            case "<":
+                                                if (!(food.Price < targetValue)) eligible = false;
+                                                break;
+                                            case "==":
+                                            case "=":
+                                                if (!(food.Price == targetValue)) eligible = false;
+                                                break;
+                                            case "!=":
+                                                if (!(food.Price != targetValue)) eligible = false;
+                                                break;
+                                        }
+                                    }
+                                    break;
+                                case "foodname":
+                                    switch (cond.Operator)
+                                    {
+                                        case "==":
+                                        case "=":
+                                            if (!food.FoodName.Equals(cond.TargetValue, StringComparison.OrdinalIgnoreCase)) eligible = false;
+                                            break;
+                                        case "!=":
+                                            if (food.FoodName.Equals(cond.TargetValue, StringComparison.OrdinalIgnoreCase)) eligible = false;
+                                            break;
+                                        default:
+                                            eligible = false;
+                                            break;
+                                    }
+                                    break;
                             }
                         }
-                        // Có thể bổ sung điều kiện khác nếu cần
                         if (!eligible) break;
                     }
                     if (eligible && promo.DiscountLevel.HasValue && promo.DiscountLevel.Value > bestDiscount)
