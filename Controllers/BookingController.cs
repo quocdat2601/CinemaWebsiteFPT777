@@ -267,7 +267,7 @@ namespace MovieTheater.Controllers
                return NotFound();
 
            return View("Success", viewModel);
-        }
+       }
 
         /// <summary>
         /// Trang thanh toán VNPay

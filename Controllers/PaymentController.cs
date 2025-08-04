@@ -16,28 +16,37 @@ namespace MovieTheater.Controllers
         private readonly IVNPayService _vnPayService;
         private readonly ILogger<PaymentController> _logger;
         private readonly IAccountService _accountService;
-        private readonly MovieTheater.Models.MovieTheaterContext _context;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
         private readonly IFoodInvoiceService _foodInvoiceService;
         private readonly IInvoiceService _invoiceService;
+        private readonly IVoucherService _voucherService;
+        private readonly ISeatService _seatService;
+        private readonly IScheduleSeatService _scheduleSeatService;
+        private readonly IMemberService _memberService;
 
         public PaymentController(
             IVNPayService vnPayService,
             ILogger<PaymentController> logger,
             IAccountService accountService,
-            MovieTheater.Models.MovieTheaterContext context,
             IHubContext<DashboardHub> dashboardHubContext,
             IFoodInvoiceService foodInvoiceService,
-            IInvoiceService invoiceService
+            IInvoiceService invoiceService,
+            IVoucherService voucherService,
+            ISeatService seatService,
+            IScheduleSeatService scheduleSeatService,
+            IMemberService memberService
         )
         {
             _vnPayService = vnPayService;
             _logger = logger;
             _accountService = accountService;
-            _context = context;
             _dashboardHubContext = dashboardHubContext;
             _foodInvoiceService = foodInvoiceService;
             _invoiceService = invoiceService;
+            _voucherService = voucherService;
+            _seatService = seatService;
+            _scheduleSeatService = scheduleSeatService;
+            _memberService = memberService;
         }
 
         /// <summary>
@@ -97,24 +106,18 @@ namespace MovieTheater.Controllers
                 // Thanh toán thành công
                 if (invoice != null)
                 {
-                    invoice.Status = MovieTheater.Models.InvoiceStatus.Completed;
+                    invoice.Status = Models.InvoiceStatus.Completed;
                     // Mark voucher as used if present and not already used
                     if (!string.IsNullOrEmpty(invoice.VoucherId))
                     {
-                        var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
-                        if (voucher != null && (voucher.IsUsed == false))
-                        {
-                            voucher.IsUsed = true;
-                            _context.Vouchers.Update(voucher);
-                        }
+                        await _voucherService.MarkVoucherAsUsedAsync(invoice.VoucherId);
                     }
                     // If no ScheduleSeat records exist, create them (like admin flow)
                     var seatNames = (invoice.Seat ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(s => s.Trim())
                         .ToList();
-                    var allSeats = _context.Seats.Where(s => seatNames.Contains(s.SeatName)).ToList();
-                    var existingScheduleSeats = _context.ScheduleSeats
-                        .Where(ss => ss.InvoiceId == invoice.InvoiceId)
+                    var allSeats = _seatService.GetSeatsByNames(seatNames);
+                    var existingScheduleSeats = _scheduleSeatService.GetByInvoiceId(invoice.InvoiceId)
                         .Select(ss => ss.SeatId)
                         .ToHashSet();
 
@@ -122,7 +125,7 @@ namespace MovieTheater.Controllers
                         .Where(seat => !existingScheduleSeats.Contains(seat.SeatId))
                         .Select(seat =>
                         {
-                            var seatType = _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+                            var seatType = seat.SeatType;
                             decimal basePrice = seatType?.PricePercent ?? 0;
                             if (invoice.MovieShow?.Version != null)
                                 basePrice *= (decimal)invoice.MovieShow.Version.Multi;
@@ -149,13 +152,11 @@ namespace MovieTheater.Controllers
 
                     if (newScheduleSeats.Any())
                     {
-                        _context.ScheduleSeats.AddRange(newScheduleSeats);
-                        _context.SaveChanges();
-                        // Reload invoice.ScheduleSeats for further processing
-                        _context.Entry(invoice).Collection(i => i.ScheduleSeats).Load();
+                        await _scheduleSeatService.CreateMultipleScheduleSeatsAsync(newScheduleSeats);
                     }
                     // Update BookedPrice for all ScheduleSeat records after VNPay payment
-                    if (invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
+                    var scheduleSeats = _scheduleSeatService.GetByInvoiceId(invoice.InvoiceId);
+                    if (scheduleSeats != null && scheduleSeats.Any())
                     {
                         int promotionDiscount = 0;
                         if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
@@ -167,7 +168,7 @@ namespace MovieTheater.Controllers
                             }
                             catch { promotionDiscount = 0; }
                         }
-                        foreach (var scheduleSeat in invoice.ScheduleSeats)
+                        foreach (var scheduleSeat in scheduleSeats)
                         {
                             var seatType = scheduleSeat.Seat.SeatType;
                             if (seatType != null)
@@ -178,14 +179,15 @@ namespace MovieTheater.Controllers
                                 decimal discount = Math.Round(basePrice * (promotionDiscount / 100m));
                                 decimal priceAfterPromotion = basePrice - discount;
                                 scheduleSeat.BookedPrice = priceAfterPromotion;
+                                _scheduleSeatService.Update(scheduleSeat);
                             }
                         }
-                        _context.SaveChanges();
+                        _scheduleSeatService.Save();
                     }
                     if (invoice.AddScore == 0)
                     {
                         // Fetch member's earning rate
-                        var member = _context.Members.Include(m => m.Account).ThenInclude(a => a.Rank).FirstOrDefault(m => m.AccountId == invoice.AccountId);
+                        var member = _memberService.GetByIdWithAccountAndRank(invoice.AccountId);
                         decimal earningRate = 1;
                         if (member?.Account?.Rank != null)
                             earningRate = member.Account.Rank.PointEarningPercentage ?? 1;
@@ -210,32 +212,19 @@ namespace MovieTheater.Controllers
                         int addScore = new MovieTheater.Service.PointService().CalculatePointsToEarn(seatOnlyPrice, earningRate);
                         invoice.AddScore = addScore;
                     }
-                    // --- NEW: Mark voucher as used if present ---
-                    //if (!string.IsNullOrEmpty(invoice.VoucherId))
-                    //{
-                    //    var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
-                    //    if (voucher != null)
-                    //    {
-                    //        voucher.IsUsed = true;
-                    //        _context.Vouchers.Update(voucher);
-                    //    }
-                    //}
                     _invoiceService.Update(invoice);
                     _invoiceService.Save();
                     _accountService.CheckAndUpgradeRank(invoice.AccountId);
                     _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated").GetAwaiter().GetResult();
                 }
-                if (invoice != null && invoice.ScheduleSeats != null && invoice.ScheduleSeats.Any())
+                if (invoice != null)
                 {
                     // Cập nhật trạng thái ghế thành booked (SeatStatusId = 2)
-                    foreach (var scheduleSeat in invoice.ScheduleSeats)
-                    {
-                        scheduleSeat.SeatStatusId = 2;
-                    }
-                    _context.SaveChanges();
+                    await _scheduleSeatService.UpdateScheduleSeatsStatusAsync(invoice.InvoiceId, 2);
 
                     var seatHubContext = (IHubContext<MovieTheater.Hubs.SeatHub>)HttpContext.RequestServices.GetService(typeof(IHubContext<MovieTheater.Hubs.SeatHub>));
-                    foreach (var scheduleSeat in invoice.ScheduleSeats)
+                    var scheduleSeats = _scheduleSeatService.GetByInvoiceId(invoice.InvoiceId);
+                    foreach (var scheduleSeat in scheduleSeats)
                     {
                         // Gửi thông báo realtime cập nhật trạng thái ghế
                         if (seatHubContext != null && scheduleSeat.SeatId.HasValue)
@@ -244,8 +233,6 @@ namespace MovieTheater.Controllers
                         }
                     }
                 }
-
-                // --- KẾT THÚC: Thêm bản ghi vào Schedule_Seat nếu chưa có ---
 
                 // --- Lưu food orders nếu có ---
                 var selectedFoods = HttpContext.Session.GetString("SelectedFoods_" + invoice.InvoiceId);
@@ -279,10 +266,10 @@ namespace MovieTheater.Controllers
                     var seatIds = invoice.SeatIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(id => int.Parse(id.Trim()))
                         .ToList();
-                    var allSeats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
+                    var allSeats = _seatService.GetSeatsWithTypeByIds(seatIds);
                     var seatDetails = allSeats.Select(seat =>
                     {
-                        var seatType = _context.SeatTypes.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+                        var seatType = seat.SeatType;
                         decimal basePrice = seatType?.PricePercent ?? 0;
                         if (invoice.MovieShow?.Version != null)
                             basePrice *= (decimal)invoice.MovieShow.Version.Multi;

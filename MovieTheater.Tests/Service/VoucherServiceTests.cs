@@ -336,15 +336,18 @@ namespace MovieTheater.Tests.Service
             var service = CreateServiceWithData(GetSampleVouchers());
             var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "A1" });
             Assert.Equal(2, result.Count());
+            Assert.Contains(result, v => v.VoucherId == "V1");
+            Assert.Contains(result, v => v.VoucherId == "V3");
         }
 
         [Fact]
-        public void GetFilteredVouchers_FilterByStatus_Active()
+        public void GetFilteredVouchers_FilterByStatus_Unused()
         {
             var service = CreateServiceWithData(GetSampleVouchers());
-            var result = service.GetFilteredVouchers(new VoucherFilterModel { StatusFilter = "active" });
-            Assert.Single(result);
-            Assert.Equal("V1", result.First().VoucherId);
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { StatusFilter = "unused" });
+            Assert.Equal(2, result.Count());
+            Assert.Contains(result, v => v.VoucherId == "V1");
+            Assert.Contains(result, v => v.VoucherId == "V2");
         }
 
         [Fact]
@@ -366,10 +369,10 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
-        public void GetFilteredVouchers_FilterByExpiry_ExpiringSoon()
+        public void GetFilteredVouchers_FilterByExpiry_Week()
         {
             var service = CreateServiceWithData(GetSampleVouchers());
-            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "expiring-soon" });
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "week" });
             Assert.Single(result);
             Assert.Equal("V1", result.First().VoucherId);
         }
@@ -378,16 +381,16 @@ namespace MovieTheater.Tests.Service
         public void GetFilteredVouchers_FilterByExpiry_Expired()
         {
             var service = CreateServiceWithData(GetSampleVouchers());
-            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "expired" });
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { StatusFilter = "expired" });
             Assert.Single(result);
             Assert.Equal("V2", result.First().VoucherId);
         }
 
         [Fact]
-        public void GetFilteredVouchers_FilterByExpiry_Valid()
+        public void GetFilteredVouchers_FilterByExpiry_Month()
         {
             var service = CreateServiceWithData(GetSampleVouchers());
-            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "valid" });
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { ExpiryFilter = "month" });
             Assert.Equal(2, result.Count());
             Assert.Contains(result, v => v.VoucherId == "V1");
             Assert.Contains(result, v => v.VoucherId == "V3");
@@ -397,7 +400,7 @@ namespace MovieTheater.Tests.Service
         public void GetFilteredVouchers_CombinedFilters()
         {
             var service = CreateServiceWithData(GetSampleVouchers());
-            var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "A1", StatusFilter = "active", ExpiryFilter = "expiring-soon" });
+            var result = service.GetFilteredVouchers(new VoucherFilterModel { Keyword = "A1", StatusFilter = "unused", ExpiryFilter = "week" });
             Assert.Single(result);
             Assert.Equal("V1", result.First().VoucherId);
         }

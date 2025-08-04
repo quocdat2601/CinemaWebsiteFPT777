@@ -114,50 +114,58 @@ namespace MovieTheater.Service
 
         public IEnumerable<Voucher> GetFilteredVouchers(VoucherFilterModel filter)
         {
-            var vouchers = _voucherRepository.GetAll().AsQueryable();
-            var now = DateTime.Now;
-            if (filter != null)
+            var vouchers = _voucherRepository.GetAll();
+
+            if (!string.IsNullOrEmpty(filter.Keyword))
             {
-                if (!string.IsNullOrEmpty(filter.Keyword))
+                vouchers = vouchers.Where(v => v.VoucherId.Contains(filter.Keyword) || v.AccountId.Contains(filter.Keyword) || v.Code.Contains(filter.Keyword));
+            }
+
+            if (!string.IsNullOrEmpty(filter.StatusFilter))
+            {
+                switch (filter.StatusFilter.ToLower())
                 {
-                    vouchers = vouchers.Where(v =>
-                        (v.VoucherId != null && v.VoucherId.ToLower().Contains(filter.Keyword.ToLower())) ||
-                        (v.Code != null && v.Code.ToLower().Contains(filter.Keyword.ToLower())) ||
-                        (v.AccountId != null && v.AccountId.ToLower().Contains(filter.Keyword.ToLower())));
-                }
-                if (!string.IsNullOrEmpty(filter.StatusFilter))
-                {
-                    switch (filter.StatusFilter.ToLower())
-                    {
-                        case "active":
-                            vouchers = vouchers.Where(v => (!v.IsUsed.HasValue || !v.IsUsed.Value) && v.ExpiryDate > now);
-                            break;
-                        case "used":
-                            vouchers = vouchers.Where(v => v.IsUsed.HasValue && v.IsUsed.Value);
-                            break;
-                        case "expired":
-                            vouchers = vouchers.Where(v => v.ExpiryDate <= now);
-                            break;
-                    }
-                }
-                if (!string.IsNullOrEmpty(filter.ExpiryFilter))
-                {
-                    switch (filter.ExpiryFilter.ToLower())
-                    {
-                        case "expiring-soon":
-                            var sevenDaysFromNow = now.AddDays(7);
-                            vouchers = vouchers.Where(v => v.ExpiryDate > now && v.ExpiryDate <= sevenDaysFromNow);
-                            break;
-                        case "expired":
-                            vouchers = vouchers.Where(v => v.ExpiryDate <= now);
-                            break;
-                        case "valid":
-                            vouchers = vouchers.Where(v => v.ExpiryDate > now);
-                            break;
-                    }
+                    case "used":
+                        vouchers = vouchers.Where(v => v.IsUsed == true);
+                        break;
+                    case "unused":
+                        vouchers = vouchers.Where(v => v.IsUsed == false);
+                        break;
+                    case "expired":
+                        vouchers = vouchers.Where(v => v.ExpiryDate <= DateTime.Now);
+                        break;
                 }
             }
-            return vouchers.ToList();
+
+            if (!string.IsNullOrEmpty(filter.ExpiryFilter))
+            {
+                var today = DateTime.Today;
+                switch (filter.ExpiryFilter.ToLower())
+                {
+                    case "today":
+                        vouchers = vouchers.Where(v => v.ExpiryDate.Date == today);
+                        break;
+                    case "week":
+                        vouchers = vouchers.Where(v => v.ExpiryDate.Date >= today && v.ExpiryDate.Date <= today.AddDays(7));
+                        break;
+                    case "month":
+                        vouchers = vouchers.Where(v => v.ExpiryDate.Date >= today && v.ExpiryDate.Date <= today.AddMonths(1));
+                        break;
+                }
+            }
+
+            return vouchers;
+        }
+
+        public async Task MarkVoucherAsUsedAsync(string voucherId)
+        {
+            var voucher = _voucherRepository.GetById(voucherId);
+            if (voucher != null && voucher.IsUsed != true)
+            {
+                voucher.IsUsed = true;
+                _voucherRepository.Update(voucher);
+                _voucherRepository.Save();
+            }
         }
     }
 }

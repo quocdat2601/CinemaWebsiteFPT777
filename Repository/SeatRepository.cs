@@ -81,10 +81,12 @@ namespace MovieTheater.Repository
 
         public List<Seat> GetSeatsWithTypeByIds(List<int> seatIds)
         {
-            return _context.Seats
-                .Include(s => s.SeatType)
-                .Where(s => seatIds.Contains(s.SeatId))
-                .ToList();
+            return _context.Seats.Include(s => s.SeatType).Where(s => seatIds.Contains(s.SeatId)).ToList();
+        }
+
+        public List<Seat> GetSeatsByNames(List<string> seatNames)
+        {
+            return _context.Seats.Include(s => s.SeatType).Where(s => seatNames.Contains(s.SeatName)).ToList();
         }
     }
 }

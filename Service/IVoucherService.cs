@@ -21,6 +21,7 @@ namespace MovieTheater.Service
         IEnumerable<Member> GetAllMembers();
         IEnumerable<Voucher> GetAvailableVouchers(string accountId);
         IEnumerable<Voucher> GetFilteredVouchers(VoucherFilterModel filter);
+        Task MarkVoucherAsUsedAsync(string voucherId);
 
         // Validate voucher và trả về kết quả với giá trị thực tế có thể sử dụng
         VoucherValidationResult ValidateVoucherUsage(string voucherId, string accountId, decimal orderTotal);

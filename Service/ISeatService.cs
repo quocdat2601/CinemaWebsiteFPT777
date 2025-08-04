@@ -15,5 +15,6 @@ namespace MovieTheater.Service
         Seat GetSeatById(int? id);
         public Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2);
         public List<Seat> GetSeatsWithTypeByIds(List<int> seatIds);
+        public List<Seat> GetSeatsByNames(List<string> seatNames);
     }
 }
