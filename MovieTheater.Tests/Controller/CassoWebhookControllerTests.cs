@@ -5,52 +5,34 @@ using Moq;
 using MovieTheater.Controllers;
 using MovieTheater.Models;
 using MovieTheater.Service;
-using System.Security.Claims;
 using System.Text.Json;
 using Xunit;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Linq.Expressions;
 using System;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace MovieTheater.Tests.Controller
 {
     public class CassoWebhookControllerTests
     {
         private readonly Mock<IInvoiceService> _invoiceService = new();
+        private readonly Mock<ISeatService> _seatService = new();
+        private readonly Mock<IScheduleSeatService> _scheduleSeatService = new();
         private readonly Mock<ILogger<CassoWebhookController>> _logger = new();
-        private readonly Mock<MovieTheaterContext> _context = new();
 
         private CassoWebhookController BuildController()
         {
             var ctrl = new CassoWebhookController(
-                _context.Object,
                 _logger.Object,
-                _invoiceService.Object
+                _invoiceService.Object,
+                _seatService.Object,
+                _scheduleSeatService.Object
             );
 
             var httpContext = new DefaultHttpContext();
-            var serviceProvider = new Mock<IServiceProvider>();
-            serviceProvider.Setup(x => x.GetService(typeof(MovieTheaterContext))).Returns(_context.Object);
-            httpContext.RequestServices = serviceProvider.Object;
-
             ctrl.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
             return ctrl;
-        }
-
-        private Mock<DbSet<T>> CreateMockDbSet<T>(List<T> list) where T : class
-        {
-            var mockSet = new Mock<DbSet<T>>();
-            var queryable = list.AsQueryable();
-            mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
-            mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
-            mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(queryable.GetEnumerator());
-            return mockSet;
         }
 
         private bool GetJsonPropertyBool(object value, string property)
@@ -104,14 +86,7 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(orderId)).Returns(invoice);
 
             // Act
             var result = await ctrl.TestPayment(orderId, amount);
@@ -128,7 +103,7 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var ctrl = BuildController();
 
-            _context.Setup(c => c.Invoices).Throws(new Exception("Database error"));
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(It.IsAny<string>())).Throws(new Exception("Database error"));
 
             // Act
             var result = await ctrl.TestPayment("DH123456", 100000m);
@@ -166,14 +141,10 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -214,14 +185,10 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -259,14 +226,10 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -296,9 +259,7 @@ namespace MovieTheater.Tests.Controller
             var jsonString = JsonSerializer.Serialize(webhookData);
             var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice>());
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(It.IsAny<string>())).Returns((Invoice?)null);
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -336,9 +297,7 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -376,9 +335,7 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -416,14 +373,10 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -453,7 +406,7 @@ namespace MovieTheater.Tests.Controller
             var jsonString = JsonSerializer.Serialize(webhookData);
             var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
-            _context.Setup(c => c.Invoices).Throws(new Exception("Database error"));
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(It.IsAny<string>())).Throws(new Exception("Database error"));
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -464,115 +417,25 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenInvalidJsonStructure()
+        public async Task HandleWebhook_ReturnsBadRequest_WhenRequestTooLarge()
         {
             // Arrange
             var ctrl = BuildController();
-            var webhookData = new
-            {
-                invalid = "structure"
-            };
-
+            var webhookData = new { data = "large_data" };
             var jsonString = JsonSerializer.Serialize(webhookData);
             var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            // Simulate large request
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.ContentLength = 2 * 1024 * 1024; // 2MB > 1MB limit
+            ctrl.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
-        }
-
-        [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenOrderIdExtractedFromDescription()
-        {
-            // Arrange
-            var ctrl = BuildController();
-            var webhookData = new
-            {
-                data = new
-                {
-                    id = 12345,
-                    description = "Thanh toan DH123456 cho ve xem phim",
-                    amount = 100000m,
-                    type = "IN",
-                    accountNumber = "1234567890"
-                }
-            };
-
-            var jsonString = JsonSerializer.Serialize(webhookData);
-            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
-
-            var invoice = new Invoice
-            {
-                InvoiceId = "DH123456",
-                Status = InvoiceStatus.Incomplete,
-                TotalMoney = 100000m,
-                BookingDate = DateTime.Now
-            };
-
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
-
-            // Act
-            var result = await ctrl.HandleWebhook(jsonElement);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
-        }
-
-        [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenOrderIdExtractedFromReference()
-        {
-            // Arrange
-            var ctrl = BuildController();
-            var webhookData = new
-            {
-                data = new
-                {
-                    id = 12345,
-                    description = "Thanh toan cho ve xem phim",
-                    reference = "DH123456",
-                    amount = 100000m,
-                    type = "IN",
-                    accountNumber = "1234567890"
-                }
-            };
-
-            var jsonString = JsonSerializer.Serialize(webhookData);
-            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
-
-            var invoice = new Invoice
-            {
-                InvoiceId = "DH123456",
-                Status = InvoiceStatus.Incomplete,
-                TotalMoney = 100000m,
-                BookingDate = DateTime.Now
-            };
-
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
-
-            // Act
-            var result = await ctrl.HandleWebhook(jsonElement);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(1, GetJsonPropertyInt(badRequestResult.Value, "error"));
         }
 
         [Fact]
@@ -597,20 +460,16 @@ namespace MovieTheater.Tests.Controller
 
             var invoice = new Invoice
             {
-                InvoiceId = "DH123456",
+                InvoiceId = "QADOBF123456",
                 Status = InvoiceStatus.Incomplete,
                 TotalMoney = 100000m,
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("QADOBF123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("QADOBF123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -648,14 +507,11 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(It.IsAny<string>())).Returns((Invoice?)null);
+            _invoiceService.Setup(x => x.FindInvoiceByAmountAndTime(100000m, null)).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -666,7 +522,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenInvoiceFoundByRecentTime()
+        public async Task HandleWebhook_ReturnsOk_WhenInvoiceFoundByAmountAndRecentTime()
         {
             // Arrange
             var ctrl = BuildController();
@@ -690,17 +546,15 @@ namespace MovieTheater.Tests.Controller
                 InvoiceId = "DH123456",
                 Status = InvoiceStatus.Incomplete,
                 TotalMoney = 100000m,
-                BookingDate = DateTime.Now.AddHours(-1) // Recent invoice
+                BookingDate = DateTime.Now.AddHours(-1)
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(It.IsAny<string>())).Returns((Invoice?)null);
+            _invoiceService.Setup(x => x.FindInvoiceByAmountAndTime(100000m, null)).Returns((Invoice?)null);
+            _invoiceService.Setup(x => x.FindInvoiceByAmountAndTime(100000m, It.IsAny<DateTime?>())).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -711,7 +565,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenInvoiceHasSeatIds()
+        public async Task HandleWebhook_ReturnsOk_WhenSeatsUpdatedToBooked()
         {
             // Arrange
             var ctrl = BuildController();
@@ -740,28 +594,12 @@ namespace MovieTheater.Tests.Controller
                 MovieShowId = 1
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-            var mockSeats = CreateMockDbSet(new List<Seat> 
-            { 
-                new Seat { SeatId = 1 },
-                new Seat { SeatId = 2 },
-                new Seat { SeatId = 3 }
-            });
-            var mockScheduleSeats = CreateMockDbSet(new List<ScheduleSeat> 
-            { 
-                new ScheduleSeat { SeatId = 1, MovieShowId = 1 },
-                new ScheduleSeat { SeatId = 2, MovieShowId = 1 },
-                new ScheduleSeat { SeatId = 3, MovieShowId = 1 }
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
-            _context.Setup(c => c.Seats).Returns(mockSeats.Object);
-            _context.Setup(c => c.ScheduleSeats).Returns(mockScheduleSeats.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
+            _seatService.Setup(x => x.UpdateSeatsStatusToBookedAsync(It.IsAny<List<int>>())).Returns(Task.CompletedTask);
+            _scheduleSeatService.Setup(x => x.UpdateScheduleSeatsToBookedAsync("DH123456", 1, It.IsAny<List<int>>())).Returns(Task.CompletedTask);
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -772,7 +610,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenInvoiceHasNullTotalMoney()
+        public async Task HandleWebhook_ReturnsOk_WhenInvoiceHasNullSeatIds()
         {
             // Arrange
             var ctrl = BuildController();
@@ -795,13 +633,15 @@ namespace MovieTheater.Tests.Controller
             {
                 InvoiceId = "DH123456",
                 Status = InvoiceStatus.Incomplete,
-                TotalMoney = null, // Null total money
-                BookingDate = DateTime.Now
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now,
+                SeatIds = null
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -812,39 +652,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenNoOrderIdFound()
-        {
-            // Arrange
-            var ctrl = BuildController();
-            var webhookData = new
-            {
-                data = new
-                {
-                    id = 12345,
-                    description = "Thanh toan cho ve xem phim", // No order ID in description
-                    amount = 100000m,
-                    type = "IN",
-                    accountNumber = "1234567890"
-                }
-            };
-
-            var jsonString = JsonSerializer.Serialize(webhookData);
-            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
-
-            var mockInvoices = CreateMockDbSet(new List<Invoice>());
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-
-            // Act
-            var result = await ctrl.HandleWebhook(jsonElement);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
-        }
-
-        [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenInvalidSecureToken()
+        public async Task HandleWebhook_ReturnsOk_WhenInvoiceHasEmptySeatIds()
         {
             // Arrange
             var ctrl = BuildController();
@@ -863,10 +671,204 @@ namespace MovieTheater.Tests.Controller
             var jsonString = JsonSerializer.Serialize(webhookData);
             var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
-            // Set invalid secure token in headers
-            var httpContext = new DefaultHttpContext();
-            httpContext.Request.Headers["Secure-Token"] = "invalid_token";
-            ctrl.ControllerContext = new ControllerContext { HttpContext = httpContext };
+            var invoice = new Invoice
+            {
+                InvoiceId = "DH123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now,
+                SeatIds = ""
+            };
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenInvoiceHasInvalidSeatIds()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    id = 12345,
+                    description = "Thanh toan DH123456",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            var invoice = new Invoice
+            {
+                InvoiceId = "DH123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now,
+                SeatIds = "invalid,seat,ids"
+            };
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenSeatServiceThrowsException()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    id = 12345,
+                    description = "Thanh toan DH123456",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            var invoice = new Invoice
+            {
+                InvoiceId = "DH123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now,
+                SeatIds = "1,2,3",
+                MovieShowId = 1
+            };
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
+            _seatService.Setup(x => x.UpdateSeatsStatusToBookedAsync(It.IsAny<List<int>>())).Throws(new Exception("Seat service error"));
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenDatabaseTimeout()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    id = 12345,
+                    description = "Thanh toan DH123456",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId(It.IsAny<string>())).Throws(new TaskCanceledException("Database timeout"));
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenInvalidJsonStructure()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                invalid = "structure"
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenEmptyDataArray()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new object[] { }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenNoCassoId()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    description = "Thanh toan DH123456",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
             var invoice = new Invoice
             {
@@ -876,53 +878,10 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-
-            // Act
-            var result = await ctrl.HandleWebhook(jsonElement);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
-        }
-
-        [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenNoSecureTokenHeader()
-        {
-            // Arrange
-            var ctrl = BuildController();
-            var webhookData = new
-            {
-                data = new
-                {
-                    id = 12345,
-                    description = "Thanh toan DH123456",
-                    amount = 100000m,
-                    type = "IN",
-                    accountNumber = "1234567890"
-                }
-            };
-
-            var jsonString = JsonSerializer.Serialize(webhookData);
-            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
-
-            // No secure token header
-            var httpContext = new DefaultHttpContext();
-            ctrl.ControllerContext = new ControllerContext { HttpContext = httpContext };
-
-            var invoice = new Invoice
-            {
-                InvoiceId = "DH123456",
-                Status = InvoiceStatus.Incomplete,
-                TotalMoney = 100000m,
-                BookingDate = DateTime.Now
-            };
-
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -933,7 +892,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task HandleWebhook_ReturnsOk_WhenValidSecureToken()
+        public async Task HandleWebhook_ReturnsOk_WhenReferenceTakesPriority()
         {
             // Arrange
             var ctrl = BuildController();
@@ -942,7 +901,8 @@ namespace MovieTheater.Tests.Controller
                 data = new
                 {
                     id = 12345,
-                    description = "Thanh toan DH123456",
+                    description = "Thanh toan cho ve xem phim",
+                    reference = "DH123456",
                     amount = 100000m,
                     type = "IN",
                     accountNumber = "1234567890"
@@ -952,10 +912,46 @@ namespace MovieTheater.Tests.Controller
             var jsonString = JsonSerializer.Serialize(webhookData);
             var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
-            // Set valid secure token in headers
-            var httpContext = new DefaultHttpContext();
-            httpContext.Request.Headers["Secure-Token"] = "AK_CS.0eafb1406d2811f0b7f9c39f1519547d.SgAfzKpqf62yKUOnIl5qG4z4heJhXAy0oo5UtfrcSBEaMKmzGcz2w56HEyGF1e9xqwiAWqwB";
-            ctrl.ControllerContext = new ControllerContext { HttpContext = httpContext };
+            var invoice = new Invoice
+            {
+                InvoiceId = "DH123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now
+            };
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenExtractOrderIdFromDescription()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    id = 12345,
+                    description = "Thanh toan DH123456 cho ve xem phim",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
             var invoice = new Invoice
             {
@@ -965,14 +961,92 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenExtractOrderIdFromInvPattern()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    id = 12345,
+                    description = "Thanh toan INV123456 cho ve xem phim",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            var invoice = new Invoice
+            {
+                InvoiceId = "INV123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now
+            };
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("INV123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("INV123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
+
+            // Act
+            var result = await ctrl.HandleWebhook(jsonElement);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(0, GetJsonPropertyInt(okResult.Value, "error"));
+        }
+
+        [Fact]
+        public async Task HandleWebhook_ReturnsOk_WhenCaseInsensitiveOrderId()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var webhookData = new
+            {
+                data = new
+                {
+                    id = 12345,
+                    description = "Thanh toan dh123456 cho ve xem phim",
+                    amount = 100000m,
+                    type = "IN",
+                    accountNumber = "1234567890"
+                }
+            };
+
+            var jsonString = JsonSerializer.Serialize(webhookData);
+            var jsonElement = JsonDocument.Parse(jsonString).RootElement;
+
+            var invoice = new Invoice
+            {
+                InvoiceId = "DH123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now
+            };
+
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("dh123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -1013,32 +1087,28 @@ namespace MovieTheater.Tests.Controller
             var jsonString = JsonSerializer.Serialize(webhookData);
             var jsonElement = JsonDocument.Parse(jsonString).RootElement;
 
-            var invoices = new List<Invoice>
+            var invoice1 = new Invoice
             {
-                new Invoice
-                {
-                    InvoiceId = "DH123456",
-                    Status = InvoiceStatus.Incomplete,
-                    TotalMoney = 100000m,
-                    BookingDate = DateTime.Now
-                },
-                new Invoice
-                {
-                    InvoiceId = "DH123457",
-                    Status = InvoiceStatus.Incomplete,
-                    TotalMoney = 150000m,
-                    BookingDate = DateTime.Now
-                }
+                InvoiceId = "DH123456",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 100000m,
+                BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(invoices);
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
+            var invoice2 = new Invoice
+            {
+                InvoiceId = "DH123457",
+                Status = InvoiceStatus.Incomplete,
+                TotalMoney = 150000m,
+                BookingDate = DateTime.Now
+            };
 
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice1);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123457")).Returns(invoice2);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice1);
+            _invoiceService.Setup(x => x.GetById("DH123457")).Returns(invoice2);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -1076,14 +1146,10 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-            var mockSeatStatuses = CreateMockDbSet(new List<SeatStatus> 
-            { 
-                new SeatStatus { SeatStatusId = 2, StatusName = "Booked" } 
-            });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _context.Setup(c => c.SeatStatuses).Returns(mockSeatStatuses.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.GetById("DH123456")).Returns(invoice);
+            _invoiceService.Setup(x => x.Update(It.IsAny<Invoice>()));
+            _invoiceService.Setup(x => x.Save());
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
@@ -1121,9 +1187,7 @@ namespace MovieTheater.Tests.Controller
                 BookingDate = DateTime.Now
             };
 
-            var mockInvoices = CreateMockDbSet(new List<Invoice> { invoice });
-
-            _context.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _invoiceService.Setup(x => x.FindInvoiceByOrderId("DH123456")).Returns(invoice);
 
             // Act
             var result = await ctrl.HandleWebhook(jsonElement);
