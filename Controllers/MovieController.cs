@@ -1015,6 +1015,54 @@ namespace MovieTheater.Controllers
                 image = a.Image 
             }));
         }
+
+        [HttpGet]
+        public IActionResult GetAllMovies()
+        {
+            var movies = _movieService.GetCurrentlyShowingMoviesWithDetails()
+                .Select(m => new {
+                    movieId = m.MovieId,
+                    movieNameEnglish = m.MovieNameEnglish,
+                    duration = m.Duration,
+                    fromDate = m.FromDate,
+                    toDate = m.ToDate
+                }).ToList();
+            return Json(movies);
+        }
+
+        [HttpGet]
+        public IActionResult GetVersionsByMovie(string movieId)
+        {
+            var movie = _movieService.GetById(movieId);
+            if (movie == null)
+                return NotFound();
+
+            var versions = movie.Versions.Select(v => new {
+                versionId = v.VersionId,
+                versionName = v.VersionName
+            }).ToList();
+            return Json(versions);
+        }
+
+        [HttpGet]
+        public IActionResult GetAvailableMovies()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var movies = _movieService.GetCurrentlyShowingMoviesWithDetails()
+                .Where(m => m.ToDate.HasValue && m.ToDate.Value > today)
+                .Select(m => new {
+                    movieId = m.MovieId,
+                    movieNameEnglish = m.MovieNameEnglish,
+                    duration = m.Duration,
+                    fromDate = m.FromDate,
+                    toDate = m.ToDate,
+                    versions = m.Versions.Select(v => new {
+                        versionId = v.VersionId,
+                        versionName = v.VersionName
+                    }).ToList()
+                }).ToList();
+            return Json(movies);
+        }
     }
 }
 

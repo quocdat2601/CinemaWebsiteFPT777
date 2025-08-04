@@ -784,5 +784,36 @@ namespace MovieTheater.Controllers
                 }
             });
         }
+
+        [Authorize(Roles = "Admin,Employee")]
+        [HttpGet]
+        public IActionResult GetMovieShowsByDate(string date)
+        {
+            if (!DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var selectedDate))
+            {
+                return BadRequest("Invalid date format");
+            }
+
+            var allMovieShows = _movieService.GetMovieShow();
+            var filteredMovieShows = allMovieShows
+                .Where(ms => ms.ShowDate == selectedDate).ToList();
+
+            var movieShowsWithTimeInfo = filteredMovieShows.Select(ms => new
+            {
+                movieShowId = ms.MovieShowId,
+                movieName = ms.Movie?.MovieNameEnglish ?? "Unknown Movie",
+                startTime = ms.Schedule?.ScheduleTime?.ToString("HH:mm") ?? "00:00",
+                endTime = ms.Schedule?.ScheduleTime?.AddMinutes(ms.Movie?.Duration ?? 0).ToString("HH:mm") ?? "00:00",
+                duration = ms.Movie?.Duration ?? 0,
+                cinemaRoom = ms.CinemaRoom?.CinemaRoomName ?? "Unknown Room",
+                version = ms.Version?.VersionName ?? "Standard",
+                startHour = ms.Schedule?.ScheduleTime?.Hour ?? 0,
+                endHour = ms.Schedule?.ScheduleTime?.AddMinutes(ms.Movie?.Duration ?? 0).Hour ?? 0,
+                startMinute = ms.Schedule?.ScheduleTime?.Minute ?? 0,
+                endMinute = ms.Schedule?.ScheduleTime?.AddMinutes(ms.Movie?.Duration ?? 0).Minute ?? 0
+            }).ToList();
+
+            return Json(movieShowsWithTimeInfo);
+        }
     }
 }
