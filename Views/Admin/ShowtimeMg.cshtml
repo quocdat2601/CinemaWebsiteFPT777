@@ -5,7 +5,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
-<h2 class="text-center">Showtime Management</h2>
+<h2 class="text-center">Showtime List</h2>
 
 <div class="container-fluid">
 	<div class="row">
@@ -76,7 +76,7 @@
                     <input type="hidden" id="calendarInput" name="date" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" />
                     <div id="calendarNav" class="mb-2 d-flex justify-content-center align-items-center">
                         <button type="button" id="prevMonth" class="btn btn-outline-secondary btn-sm me-2"><i class="fa fa-chevron-left"></i></button>
-                        <span id="calendarMonthYear" class="fw-bold"></span>
+                        <span id="calendarMonthYear" class="fw-bold text-black"></span>
                         <button type="button" id="nextMonth" class="btn btn-outline-secondary btn-sm ms-2"><i class="fa fa-chevron-right"></i></button>
                     </div>
                     <div id="customCalendar"></div>
