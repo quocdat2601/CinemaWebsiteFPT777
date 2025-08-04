@@ -26,7 +26,6 @@ namespace MovieTheater.Tests.Controller
         private readonly Mock<IMemberRepository> _memberRepo = new();
         private readonly Mock<IAccountService> _acctSvc = new();
         private readonly Mock<IInvoiceService> _invSvc = new();
-        private readonly Mock<ISeatService> _seatSvc = new();
         private readonly Mock<IFoodService> _foodSvc = new();
         private readonly Mock<IPersonRepository> _personRepo = new();
         private readonly Mock<IVoucherService> _vouchSvc = new();
@@ -43,7 +42,6 @@ namespace MovieTheater.Tests.Controller
                 _seatType.Object,
                 _memberRepo.Object,
                 _acctSvc.Object,
-                _seatSvc.Object,
                 _invSvc.Object,
                 _foodSvc.Object,
                 _personRepo.Object,
@@ -62,9 +60,6 @@ namespace MovieTheater.Tests.Controller
                 new() { InvoiceId="I2", Status=InvoiceStatus.Completed, BookingDate=DateTime.Today, Seat="B1", TotalMoney=50, MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Movie2" } } }
             };
             _invSvc.Setup(x => x.GetAll()).Returns(invoices);
-            _seatSvc.Setup(x => x.GetAllSeatsAsync()).ReturnsAsync(new List<Seat> {
-                new() { SeatId=1 }, new() { SeatId=2 }, new() { SeatId=3 }
-            });
             _memberRepo.Setup(x => x.GetAll()).Returns(new List<Member> {
                 new() { MemberId="M1", Account=new Account{FullName="X", RegisterDate = DateOnly.FromDateTime(DateTime.Today)} }
             });
@@ -462,7 +457,7 @@ namespace MovieTheater.Tests.Controller
             var ctrl = BuildController();
             var form = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
             // Simulate exception by throwing in RedirectToAction
-            var controller = new TestableAdminController(_movieSvc.Object, _empSvc.Object, _promoSvc.Object, _cinemaSvc.Object, _seatType.Object, _memberRepo.Object, _acctSvc.Object, _seatSvc.Object, _invSvc.Object, _foodSvc.Object, _personRepo.Object, _vouchSvc.Object, _rankSvc.Object, _versionRepo.Object, _dashboardSvc.Object);
+            var controller = new TestableAdminController(_movieSvc.Object, _empSvc.Object, _promoSvc.Object, _cinemaSvc.Object, _seatType.Object, _memberRepo.Object, _acctSvc.Object, _invSvc.Object, _foodSvc.Object, _personRepo.Object, _vouchSvc.Object, _rankSvc.Object, _versionRepo.Object, _dashboardSvc.Object);
             controller.ThrowOnRedirect = true;
 
             // Act
@@ -476,8 +471,8 @@ namespace MovieTheater.Tests.Controller
         {
             public bool ThrowOnRedirect { get; set; }
             public TestableAdminController(
-                IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService, ISeatService seatService, IInvoiceService invoiceService, IFoodService foodService, IPersonRepository personRepository, IVoucherService voucherService, IRankService rankService, IVersionRepository versionRepository, IDashboardService dashboardService
-            ) : base(movieService, employeeService, promotionService, cinemaService, seatTypeService, memberRepository, accountService, seatService, invoiceService, foodService, personRepository, voucherService, rankService, versionRepository, dashboardService) { }
+                IMovieService movieService, IEmployeeService employeeService, IPromotionService promotionService, ICinemaService cinemaService, ISeatTypeService seatTypeService, IMemberRepository memberRepository, IAccountService accountService, IInvoiceService invoiceService, IFoodService foodService, IPersonRepository personRepository, IVoucherService voucherService, IRankService rankService, IVersionRepository versionRepository, IDashboardService dashboardService
+            ) : base(movieService, employeeService, promotionService, cinemaService, seatTypeService, memberRepository, accountService, invoiceService, foodService, personRepository, voucherService, rankService, versionRepository, dashboardService) { }
             public override RedirectToActionResult RedirectToAction(string actionName)
             {
                 if (ThrowOnRedirect) throw new Exception();
@@ -518,7 +513,7 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var ctrl = BuildController();
             var form = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
-            var controller = new TestableAdminController(_movieSvc.Object, _empSvc.Object, _promoSvc.Object, _cinemaSvc.Object, _seatType.Object, _memberRepo.Object, _acctSvc.Object, _seatSvc.Object, _invSvc.Object, _foodSvc.Object, _personRepo.Object, _vouchSvc.Object, _rankSvc.Object, _versionRepo.Object, _dashboardSvc.Object);
+            var controller = new TestableAdminController(_movieSvc.Object, _empSvc.Object, _promoSvc.Object, _cinemaSvc.Object, _seatType.Object, _memberRepo.Object, _acctSvc.Object, _invSvc.Object, _foodSvc.Object, _personRepo.Object, _vouchSvc.Object, _rankSvc.Object, _versionRepo.Object, _dashboardSvc.Object);
             controller.ThrowOnRedirect = true;
 
             // Act
@@ -645,7 +640,7 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var ctrl = BuildController();
             var model = new RegisterViewModel { AccountId = "id" };
-            var controller = new TestableAdminController(_movieSvc.Object, _empSvc.Object, _promoSvc.Object, _cinemaSvc.Object, _seatType.Object, _memberRepo.Object, _acctSvc.Object, _seatSvc.Object, _invSvc.Object, _foodSvc.Object, _personRepo.Object, _vouchSvc.Object, _rankSvc.Object, _versionRepo.Object, _dashboardSvc.Object);
+            var controller = new TestableAdminController(_movieSvc.Object, _empSvc.Object, _promoSvc.Object, _cinemaSvc.Object, _seatType.Object, _memberRepo.Object, _acctSvc.Object, _invSvc.Object, _foodSvc.Object, _personRepo.Object, _vouchSvc.Object, _rankSvc.Object, _versionRepo.Object, _dashboardSvc.Object);
             controller.ThrowOnRedirect = true;
 
             // Act

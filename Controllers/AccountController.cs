@@ -308,6 +308,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult History(DateTime fromDate, DateTime toDate, int? status)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER);
+            }
             // This action is obsolete since history is now in the profile tab
             return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER);
         }
@@ -401,6 +405,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SendForgetPasswordOtp([FromBody] SendForgetPasswordOtpRequest req)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (string.IsNullOrEmpty(req.Email))
                 return Json(new { success = false, error = "Email is required." });
 
@@ -429,6 +437,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult VerifyForgetPasswordOtp([FromBody] VerifyForgetPasswordOtpViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Otp))
                 return Json(new { success = false, error = "Email and OTP are required." });
 
@@ -447,6 +459,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPasswordAsync(string email, string newPassword, string confirmPassword, string otp)
         {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, error = "Invalid model state." });
+            }
             _logger.LogInformation("ResetPasswordAsync endpoint hit with email: {EmailHash}", GetEmailHash(email));
             try
             {
@@ -521,6 +537,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult ToggleStatus(string id)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+            }
             try
             {
                 if (string.IsNullOrEmpty(id))

@@ -435,6 +435,10 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Delete(string id, IFormCollection collection)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
             try
             {
                 if (string.IsNullOrEmpty(id))
@@ -473,6 +477,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult ToggleStatus(string id)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("MainPage", "Admin", new { tab = "EmployeeMg" });
+            }
             try
             {
                 if (string.IsNullOrEmpty(id))

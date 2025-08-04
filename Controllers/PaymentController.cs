@@ -64,6 +64,10 @@ namespace MovieTheater.Controllers
         [ProducesResponseType(typeof(object), 400)]
         public IActionResult CreatePayment([FromBody] PaymentRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var paymentUrl = _vnPayService.CreatePaymentUrl(

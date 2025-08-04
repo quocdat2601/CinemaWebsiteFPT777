@@ -271,6 +271,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult SendOtp([FromBody] SendOtpRequest req)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var user = _service.GetCurrentUser();
             if (user == null || string.IsNullOrEmpty(user.Email))
                 return Json(new OtpResponse { Success = false, Error = "User email not found." });
@@ -303,6 +307,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public IActionResult VerifyOtp([FromBody] VerifyOtpViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var user = _service.GetCurrentUser();
             if (user == null)
                 return Json(new { success = false, error = "User not found." });
@@ -324,6 +332,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword, string otp)
         {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, error = "Invalid model state." });
+            }
             var user = _service.GetCurrentUser();
             if (user == null)
                 return Json(new { success = false, error = "User session expired. Please log in again." });
@@ -391,6 +403,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateProfile(ProfileUpdateViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return View("~/Views/Account/MainPage.cshtml", _service.GetCurrentUser());
+            }
             // Implementation of the method
             // This method should be implemented to handle the update of the profile
             return View("~/Views/Account/MainPage.cshtml", _service.GetCurrentUser());

@@ -35,6 +35,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateQRCode(string modelData)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var model = JsonSerializer.Deserialize<ConfirmTicketAdminViewModel>(modelData);
@@ -175,6 +179,10 @@ namespace MovieTheater.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateQRCodeForMember(string modelData)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var model = JsonSerializer.Deserialize<ConfirmTicketAdminViewModel>(modelData);
@@ -877,6 +885,10 @@ namespace MovieTheater.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CheckPaymentStatus([FromBody] CheckPaymentRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 _logger.LogInformation("CheckPaymentStatus called with orderId: {OrderId}", request.orderId);

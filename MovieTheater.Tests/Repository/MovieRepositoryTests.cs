@@ -343,8 +343,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            repo.Delete("NONEXISTENT"); // Should not throw
+            // Act
+            repo.Delete("NONEXISTENT");
+
+            // Assert
+            // Should not throw - no exception means the test passes
         }
 
         [Fact]
@@ -396,8 +399,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            repo.DeleteMovieShow(999); // Should not throw
+            // Act
+            repo.DeleteMovieShow(999);
+
+            // Assert
+            // Should not throw - no exception means the test passes
         }
 
         #endregion
@@ -1271,8 +1277,11 @@ namespace MovieTheater.Tests.Repository
             // Simulate exception by disposing context
             context.Dispose();
 
-            // Act & Assert
-            Assert.Throws<ObjectDisposedException>(() => repo.Delete("MV001"));
+            // Act
+            var exception = Assert.Throws<ObjectDisposedException>(() => repo.Delete("MV001"));
+
+            // Assert
+            Assert.NotNull(exception);
         }
 
         [Fact]
@@ -1367,8 +1376,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            Assert.Throws<NullReferenceException>(() => repo.Add(null));
+            // Act
+            var exception = Assert.Throws<NullReferenceException>(() => repo.Add(null));
+
+            // Assert
+            Assert.NotNull(exception);
         }
 
         [Fact]
@@ -1378,8 +1390,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            Assert.Throws<NullReferenceException>(() => repo.Update(null));
+            // Act
+            var exception = Assert.Throws<NullReferenceException>(() => repo.Update(null));
+
+            // Assert
+            Assert.NotNull(exception);
         }
 
         [Fact]
@@ -1403,8 +1418,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            repo.Delete(null); // Should not throw
+            // Act
+            repo.Delete(null);
+
+            // Assert
+            // Should not throw - no exception means the test passes
         }
 
         [Fact]
@@ -1414,8 +1432,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            repo.DeleteMovieShow(0); // Should not throw
+            // Act
+            repo.DeleteMovieShow(0);
+
+            // Assert
+            // Should not throw - no exception means the test passes
         }
 
         [Fact]
@@ -1524,8 +1545,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateInMemoryContext();
             var repo = CreateRepository(context);
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => repo.AddMovieShows(null));
+            // Act
+            var exception = Assert.Throws<ArgumentNullException>(() => repo.AddMovieShows(null));
+
+            // Assert
+            Assert.NotNull(exception);
         }
 
         [Fact]

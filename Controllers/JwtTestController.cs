@@ -25,6 +25,10 @@ namespace MovieTheater.Controllers
         [HttpPost("test-generate")]
         public IActionResult TestGenerateToken([FromBody] LoginViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (_accountService.Authenticate(model.Username, model.Password, out var account))
             {
                 var token = _jwtService.GenerateToken(account);
