@@ -45,7 +45,7 @@ function renderCalendar(year, month, selectedDate) {
             try { uniqueMovieNames = JSON.parse(uniqueMovieNames); } catch (e) { uniqueMovieNames = []; }
         }
         if (!Array.isArray(uniqueMovieNames)) uniqueMovieNames = [];
-        console.log(key, uniqueMovieNames, uniqueMovieNames.length); // Debug log
+
         if (uniqueMovieNames.length > 0) {
             let movieList = uniqueMovieNames.slice(0, 2).map(name => `<div class='calendar-movie-title'>${name}</div>`).join('');
             if (uniqueMovieNames.length > 2) {

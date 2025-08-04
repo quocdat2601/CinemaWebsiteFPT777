@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -76,9 +77,6 @@ namespace MovieTheater.Controllers
 
             // Refactor: Đẩy logic tạo user/member mới vào service
             var user = _service.GetOrCreateGoogleAccount(email, name, givenName, surname, picture);
-
-            // Log fields for debugging
-            _logger.LogInformation("[GoogleLoginDebug] Email: {Email}, Address: '{Address}', DateOfBirth: '{DateOfBirth}', Gender: '{Gender}', IdentityCard: '{IdentityCard}', PhoneNumber: '{PhoneNumber}'", user.Email, user.Address, user.DateOfBirth, user.Gender, user.IdentityCard, user.PhoneNumber);
 
             // Refactor: Đẩy logic kiểm tra thông tin thiếu vào service
             bool missingInfo = _service.HasMissingProfileInfo(user);
@@ -193,23 +191,23 @@ namespace MovieTheater.Controllers
 
                 if (!success)
                 {
-                    _logger.LogWarning("Registration failed for username: {Username} at {Time}. Reason: Username already exists",
-                        model.Username, DateTime.UtcNow);
+                    _logger.LogWarning("Registration failed at {Time}. Reason: Username already exists",
+                        DateTime.UtcNow);
 
                     TempData[ERROR_MESSAGE] = "Registration failed - Username already exists";
                     return RedirectToAction(LOGIN_ACTION);
                 }
 
-                _logger.LogInformation("New account registered: {Username} at {Time}",
-                    model.Username, DateTime.UtcNow);
+                _logger.LogInformation("New account registered at {Time}",
+                    DateTime.UtcNow);
 
                 TempData[TOAST_MESSAGE] = "Sign up successful! Redirecting to log in..";
                 return RedirectToAction(LOGIN_ACTION);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception occurred during registration for {Username} at {Time}",
-                    model.Username, DateTime.UtcNow);
+                _logger.LogError(ex, "Exception occurred during registration at {Time}",
+                    DateTime.UtcNow);
 
                 TempData[ERROR_MESSAGE] = $"Error during registration: {ex.Message}";
                 if (ex.InnerException != null)
@@ -397,6 +395,127 @@ namespace MovieTheater.Controllers
             }
         }
 
+        // --- New Forget Password Actions (AJAX-based) ---
+        [HttpPost]
+        [Route("Account/SendForgetPasswordOtp")]
+        [ValidateAntiForgeryToken]
+        public IActionResult SendForgetPasswordOtp([FromBody] SendForgetPasswordOtpRequest req)
+        {
+            if (string.IsNullOrEmpty(req.Email))
+                return Json(new { success = false, error = "Email is required." });
+
+            var account = _service.GetAccountByEmail(req.Email);
+            if (account == null)
+                return Json(new { success = false, error = "Email không tồn tại trong hệ thống." });
+
+            _logger.LogInformation("Forget password OTP send request initiated for email: {EmailHash}", GetEmailHash(req.Email));
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            var expiry = DateTime.UtcNow.AddMinutes(10);
+
+            var otpStored = _service.StoreForgetPasswordOtp(req.Email, otp, expiry);
+            if (!otpStored)
+                return Json(new { success = false, error = "Failed to store OTP. Please try again later." });
+
+            var emailSent = _service.SendForgetPasswordOtpEmail(req.Email, otp);
+            if (!emailSent)
+                return Json(new { success = false, error = "Failed to send OTP email. Please try again later." });
+
+            return Json(new { success = true, message = "OTP sent to your email." });
+        }
+
+        [HttpPost]
+        [Route("Account/VerifyForgetPasswordOtp")]
+        [ValidateAntiForgeryToken]
+        public IActionResult VerifyForgetPasswordOtp([FromBody] VerifyForgetPasswordOtpViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Otp))
+                return Json(new { success = false, error = "Email and OTP are required." });
+
+            _logger.LogInformation("Forget password OTP verification request initiated for email: {EmailHash}", GetEmailHash(model.Email));
+
+            var receivedOtp = model.Otp?.Trim();
+            var otpValid = _service.VerifyForgetPasswordOtp(model.Email, receivedOtp);
+            if (!otpValid)
+                return Json(new { success = false, error = "Invalid or expired OTP." });
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [Route("Account/ResetPasswordAsync")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPasswordAsync(string email, string newPassword, string confirmPassword, string otp)
+        {
+            _logger.LogInformation("ResetPasswordAsync endpoint hit with email: {EmailHash}", GetEmailHash(email));
+            try
+            {
+                _logger.LogInformation("ResetPasswordAsync called for email: {EmailHash}", GetEmailHash(email));
+
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(newPassword) || string.IsNullOrEmpty(confirmPassword))
+                {
+                    _logger.LogWarning("ResetPasswordAsync validation failed: missing required fields");
+                    return Json(new { success = false, error = "All fields are required." });
+                }
+
+                if (newPassword != confirmPassword)
+                {
+                    _logger.LogWarning("ResetPasswordAsync validation failed: passwords do not match");
+                    return Json(new { success = false, error = "Passwords do not match." });
+                }
+
+                // Check if new password is different from current password
+                var account = _service.GetAccountByEmail(email);
+                if (account != null)
+                {
+                    var hasher = new PasswordHasher<Account>();
+                    var passwordVerificationResult = hasher.VerifyHashedPassword(null, account.Password, newPassword);
+                    if (passwordVerificationResult == PasswordVerificationResult.Success)
+                    {
+                        _logger.LogWarning("ResetPasswordAsync validation failed: new password is same as current password for email: {EmailHash}", GetEmailHash(email));
+                        return Json(new { success = false, error = "New password must be different from current password." });
+                    }
+                }
+
+                // Check OTP
+                if (!_service.VerifyForgetPasswordOtp(email, otp))
+                {
+                    _logger.LogWarning("ResetPasswordAsync validation failed: invalid OTP for email: {EmailHash}", GetEmailHash(email));
+                    return Json(new { success = false, error = "Invalid or expired OTP." });
+                }
+
+                var result = _service.ResetPassword(email, newPassword);
+                _service.ClearForgetPasswordOtp(email);
+
+                if (!result)
+                {
+                    _logger.LogError("ResetPasswordAsync failed to reset password for email: {EmailHash}", GetEmailHash(email));
+                    return Json(new { success = false, error = "Failed to reset password." });
+                }
+
+                _logger.LogInformation("ResetPasswordAsync successful for email: {EmailHash}", GetEmailHash(email));
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception in ResetPasswordAsync for email: {EmailHash}", GetEmailHash(email));
+                return Json(new { success = false, error = "An unexpected error occurred." });
+            }
+        }
+        // Request/Response models for AJAX calls
+        public class SendForgetPasswordOtpRequest
+        {
+            public string Email { get; set; } = string.Empty;
+        }
+
+        public class VerifyForgetPasswordOtpViewModel
+        {
+            public string Email { get; set; } = string.Empty;
+            public string Otp { get; set; } = string.Empty;
+        }
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -430,6 +549,22 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
             }
             return RedirectToAction("MainPage", "Admin", new { tab = "MemberMg" });
+        }
+
+        /// <summary>
+        /// Creates a secure hash of email for logging purposes to avoid logging user-controlled data
+        /// </summary>
+        /// <param name="email">The email to hash</param>
+        /// <returns>A SHA256 hash of the email or "null" if email is null/empty</returns>
+        private static string GetEmailHash(string? email)
+        {
+            if (string.IsNullOrEmpty(email))
+                return "null";
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(email);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
     }
 }

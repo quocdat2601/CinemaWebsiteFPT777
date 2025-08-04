@@ -26,13 +26,13 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
             @if (userRole == "Admin")
             {
-                <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-secondary">
+                <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-light mt-3">
                     &larr; Return
                 </a>
             }
             else
             {
-                <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-secondary">
+                <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-light mt-3">
                     &larr; Return
                 </a>
             }
@@ -40,14 +40,14 @@
 
         <h2 class="schedule-page-title text-center">Movie Schedule</h2>
 
-        <div class="movie-info mb-2" style="font-size: large">
-            <p class="text-muted mb-1">
+        <div class="movie-info mb-2" style="font-size: large; background-color: transparent !important">
+            <p class="text-muted mb-1" style="color: white !important">
                 <span class="fw-bold">Movie Name:</span> @Model.MovieNameEnglish
             </p>
-             <p class="text-muted mb-1">
+             <p class="text-muted mb-1" style="color: white !important">
                 <span class="fw-bold">Duration:</span> @Model.Duration minutes
             </p>
-            <input type="hidden" id="movieDuration" value="@Model.Duration" />
+            <input type="hidden" id="movieDuration" value="@Model.Duration" style="color: white !important"/>
         </div>
 
         <div class="schedule-form">
@@ -56,7 +56,7 @@
 
             <!-- Version Selection (First) -->
             <div class="form-group mb-2">
-                <label class="section-title">Version</label>
+                <label class="section-title text-white">Version</label>
                 <div id="versionRadioGroup" class="d-flex justify-content-center">
                     @foreach (var version in Model.AvailableVersions)
                     {
@@ -75,7 +75,7 @@
 
             <!-- Cinema Room Selection (Second) -->
             <div class="form-group mb-2">
-                <label for="cinemaRoomSelect" class="section-title">Cinema Room</label>
+                <label for="cinemaRoomSelect" class="section-title text-white">Cinema Room</label>
                 <div class="d-flex justify-content-center">
                     <select class="form-control w-75" id="cinemaRoomSelect" disabled>
                         <option value="">-- Select a Cinema Room --</option>
@@ -86,7 +86,7 @@
 
             <!-- Show Dates (Third) -->
             <div class="form-group mb-2">
-                <label class="section-title">Show Date</label>
+                <label class="section-title text-white">Show Date</label>
                 <div class="d-flex justify-content-center">
                     <select class="form-control w-75" id="showDateSelect" disabled>
                         <option value="">-- Select a Show Date --</option>
@@ -97,8 +97,8 @@
 
             <!-- Schedules (Fourth) -->
             <div class="form-group mb-2">
-                <label class="section-title">Available Schedules</label>
-                <div id="lastShowEndTime" class="text-muted text-center" style="font-size: 0.9em; margin-bottom: 5px;"></div>
+                <label class="section-title text-white">Available Schedules</label>
+                <div id="lastShowEndTime" class="text-muted text-center" style="font-size: 0.9em; margin-bottom: 5px; color: white !important"></div>
                 <div class="d-flex justify-content-center">
                     <select class="form-control w-75" id="scheduleSelect" disabled>
                         <option value="">-- Select a Schedule --</option>
@@ -107,7 +107,7 @@
                 <span class="text-danger" id="scheduleError"></span>
             </div>
              <div class="text-center">
-                <button type="button" class="btn btn-outline-primary mt-3 mb-3" id="addMovieShowBtn" disabled>
+                <button type="button" class="btn btn-outline-light mt-3 mb-3" id="addMovieShowBtn" disabled>
                     Add Movie Show
                 </button>
             </div>

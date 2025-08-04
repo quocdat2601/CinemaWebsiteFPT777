@@ -89,7 +89,7 @@ namespace MovieTheater.Service
         {
             if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) return true;
             
-            // Debug log để theo dõi
+
             Console.WriteLine($"[PromotionService] Checking promotion: {promotion.Title}");
             Console.WriteLine($"[PromotionService] Context - SeatTypeNames: [{string.Join(", ", context.SelectedSeatTypeNames)}]");
             
@@ -236,26 +236,118 @@ namespace MovieTheater.Service
         // Lấy danh sách promotion hợp lệ cho food (chỉ xét TargetEntity)
         public List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price)> selectedFoods)
         {
-            if (selectedFoods == null || selectedFoods.Count == 0) return new List<Promotion>();
             var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
-            var foodPromotions = allPromotions.Where(p =>
-                p.PromotionConditions != null &&
-                p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food")
-            ).ToList();
-            var eligiblePromotions = new List<Promotion>();
-            foreach (var promotion in foodPromotions)
+            var foodPromotions = allPromotions
+                .Where(p =>
+                    p.PromotionConditions != null &&
+                    p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food")
+                )
+                .ToList();
+            return foodPromotions;
+        }
+
+        public bool IsPromotionEligible(Promotion promotion, PromotionCheckContext context)
+        {
+            if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) 
+                return true;
+
+            foreach (var condition in promotion.PromotionConditions)
             {
-                bool eligible = true;
-                foreach (var condition in promotion.PromotionConditions)
+                switch (condition.TargetField?.ToLower())
                 {
-                    if (condition.TargetEntity != null && condition.TargetEntity.ToLower() == "food")
-                    {
-                        // Có thể mở rộng logic điều kiện cho food ở đây nếu cần
-                        // Ví dụ: tổng giá, số lượng, loại món ăn...
-                    }
+                    case "seat":
+                        if (!int.TryParse(condition.TargetValue, out int seatTarget)) return false;
+                        switch (condition.Operator)
+                        {
+                            case ">=": if (!(context.SeatCount >= seatTarget)) return false; break;
+                            case "==": case "=": if (!(context.SeatCount == seatTarget)) return false; break;
+                            case "<=": if (!(context.SeatCount <= seatTarget)) return false; break;
+                            case "<": if (!(context.SeatCount < seatTarget)) return false; break;
+                            case "!=": if (!(context.SeatCount != seatTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "seattypeid":
+                        if (!int.TryParse(condition.TargetValue, out int seatTypeTarget)) return false;
+                        var selectedSeatTypes = context.SelectedSeatTypeIds ?? new List<int>();
+                        if (!selectedSeatTypes.Any()) return false;
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": 
+                                if (!selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
+                            case "!=": 
+                                if (selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "typename":
+                        var selectedTypeNames = context.SelectedSeatTypeNames ?? new List<string>();
+                        if (!selectedTypeNames.Any()) return false;
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==": 
+                                if (!selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
+                            case "!=": 
+                                if (selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "pricepercent":
+                        var selectedPricePercents = context.SelectedSeatTypePricePercents ?? new List<decimal>();
+                        if (!selectedPricePercents.Any()) return false;
+                        if (!decimal.TryParse(condition.TargetValue, out decimal priceTarget)) return false;
+                        switch (condition.Operator)
+                        {
+                            case ">=": if (!selectedPricePercents.Any(pp => pp >= priceTarget)) return false; break;
+                            case ">": if (!selectedPricePercents.Any(pp => pp > priceTarget)) return false; break;
+                            case "<=": if (!selectedPricePercents.Any(pp => pp <= priceTarget)) return false; break;
+                            case "<": if (!selectedPricePercents.Any(pp => pp < priceTarget)) return false; break;
+                            case "=": case "==": if (!selectedPricePercents.Any(pp => pp == priceTarget)) return false; break;
+                            case "!=": if (!selectedPricePercents.Any(pp => pp != priceTarget)) return false; break;
+                            default: return false;
+                        }
+                        break;
+                    case "accountid":
+                        if (string.IsNullOrEmpty(context.MemberId)) return false;
+                        var member = _context.Members.FirstOrDefault(m => m.MemberId == context.MemberId);
+                        if (member == null || string.IsNullOrEmpty(member.AccountId)) return false;
+                        var accountId = member.AccountId;
+                        var invoices = _context.Invoices.Where(i => i.AccountId == accountId);
+                        if (string.IsNullOrEmpty(condition.TargetValue))
+                        {
+                            if (invoices.Any(i => i.AccountId == accountId)) return false;
+                            break;
+                        }
+                        switch (condition.Operator)
+                        {
+                            case "=": case "==":
+                                if (!invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
+                                break;
+                            case "!=":
+                                if (invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
+                                break;
+                            default:
+                                return false;
+                        }
+                        break;
                 }
-                if (eligible) eligiblePromotions.Add(promotion);
             }
+            return true;
+        }
+
+        public List<Promotion> GetEligiblePromotionsForMember(PromotionCheckContext context)
+        {
+            var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
+            var eligiblePromotions = new List<Promotion>();
+
+            foreach (var promotion in allPromotions)
+            {
+                if (IsPromotionEligible(promotion, context))
+                {
+                    eligiblePromotions.Add(promotion);
+                }
+            }
+
             return eligiblePromotions;
         }
 

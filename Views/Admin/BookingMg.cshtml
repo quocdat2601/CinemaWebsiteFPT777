@@ -7,11 +7,11 @@
 
     var totalBookings = Model.Count();
 
-    var completed = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && !b.Cancel);
+    var paid = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && !b.Cancel);
 
-    var cancelled = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Completed && b.Cancel);
+    var cancelled = Model.Count(b => (b.Status == MovieTheater.Models.InvoiceStatus.Completed && b.Cancel) || b.Status == null);
 
-    var notPaid = Model.Count(b => b.Status != MovieTheater.Models.InvoiceStatus.Completed);
+    var unpaid = Model.Count(b => b.Status == MovieTheater.Models.InvoiceStatus.Incomplete);
 }
 
 <div class="container-fluid">
@@ -25,7 +25,7 @@
     <!-- Search and Filter Section -->
     <div class="card mb-4">
         <div class="card-body">
-            <form id="bookingSearchForm" onsubmit="searchBookings(); return false;">
+            <form id="bookingSearchForm" onsubmit="searchBookingsFromForm(); return false;">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <input type="text" class="form-control" id="searchKeyword" name="keyword"
@@ -41,13 +41,13 @@
                             {
                                 <option value="">All Status</option>
                             }
-                            @if (ViewBag.StatusFilter?.ToString() == "completed")
+                            @if (ViewBag.StatusFilter?.ToString() == "paid")
                             {
-                                <option value="completed" selected>Completed</option>
+                                <option value="paid" selected>Paid</option>
                             }
                             else
                             {
-                                <option value="completed">Completed</option>
+                                <option value="paid">Paid</option>
                             }
                             @if (ViewBag.StatusFilter?.ToString() == "cancelled")
                             {
@@ -57,13 +57,13 @@
                             {
                                 <option value="cancelled">Cancelled</option>
                             }
-                            @if (ViewBag.StatusFilter?.ToString() == "notpaid")
+                            @if (ViewBag.StatusFilter?.ToString() == "unpaid")
                             {
-                                <option value="notpaid" selected>Not Paid</option>
+                                <option value="unpaid" selected>Unpaid</option>
                             }
                             else
                             {
-                                <option value="notpaid">Not Paid</option>
+                                <option value="unpaid">Unpaid</option>
                             }
                         </select>
                     </div>
@@ -120,8 +120,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0" id="completedCount">@completed</h4>
-                            <p class="mb-0">Completed</p>
+                            <h4 class="mb-0" id="paidCount">@paid</h4>
+                            <p class="mb-0">Paid</p>
                         </div>
                         <div class="align-self-center">
                             <i class="bi bi-check-circle fa-2x"></i>
@@ -150,8 +150,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="mb-0" id="notPaidCount">@notPaid</h4>
-                            <p class="mb-0">Not Paid</p>
+                            <h4 class="mb-0" id="unpaidCount">@unpaid</h4>
+                            <p class="mb-0">Unpaid</p>
                         </div>
                         <div class="align-self-center">
                             <i class="bi bi-hourglass-split fa-2x"></i>

@@ -178,13 +178,7 @@ namespace MovieTheater.Controllers
                 var context = (MovieTheaterContext)HttpContext.RequestServices.GetService(typeof(MovieTheaterContext));
                 var bookingService = (IBookingService)HttpContext.RequestServices.GetService(typeof(IBookingService));
 
-                _logger.LogInformation("CreateQRCodeForMember called with AccountId: {AccountId}, SelectedVoucherId: {SelectedVoucherId}", 
-                    model.AccountId, model.SelectedVoucherId);
-                _logger.LogInformation("TotalPrice from frontend: {TotalPrice}", model.TotalPrice);
-                _logger.LogInformation("BookingDetails.TotalPrice: {BookingTotalPrice}", model.BookingDetails?.TotalPrice);
-                _logger.LogInformation("TotalFoodPrice: {TotalFoodPrice}", model.TotalFoodPrice);
-                _logger.LogInformation("AddedScore from frontend: {AddedScore}", model.AddedScore);
-                _logger.LogInformation("UsedScore from frontend: {UsedScore}", model.UsedScore);
+                _logger.LogInformation("CreateQRCodeForMember called with AccountId: {AccountId}", model.AccountId);
 
                 // Validate AccountId is not null or empty
                 if (string.IsNullOrEmpty(model.AccountId))
@@ -807,7 +801,7 @@ namespace MovieTheater.Controllers
 
                 var orderInfo = $"Ve xem phim - {movieName}";
                 
-                // Debug: Log thông tin đầu vào
+    
                 _logger.LogInformation("DisplayQR input - Amount: {Amount}, OrderInfo: {OrderInfo}, OrderId: {OrderId}", amount, orderInfo, orderId);
                 
                 // Chỉ tạo QR PayOS

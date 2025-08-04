@@ -74,7 +74,7 @@ namespace MovieTheater.Service
             decimal baseForEarning = promoSubtotal - rankDiscount - usedScoreValue;
             int addScore = (int)Math.Floor(baseForEarning * earningRate / 100 / 1000);
             
-            // Debug logging
+
             System.Diagnostics.Debug.WriteLine($"AddScore calculation: promoSubtotal={promoSubtotal}, rankDiscount={rankDiscount}, usedScoreValue={usedScoreValue}, baseForEarning={baseForEarning}, earningRate={earningRate}, addScore={addScore}");
             
             return new BookingPriceResult

@@ -12,7 +12,7 @@
 
 <div class="container-fluid px-4 py-3" style="font-size: 20px">
     <div class="mb-3">
-        <a asp-controller="Movie" asp-action="MovieList" class="btn btn-outline-secondary">
+        <a asp-controller="Movie" asp-action="MovieList" class="btn btn-outline-light">
             &larr; Return
         </a>
     </div>
@@ -28,7 +28,7 @@
             <div style="font-size: 20px">
                 <!-- Title and Director -->
                 <span class="mb-4" style="font-size: 60px; font-family: 'Segoe UI'; font-weight: bold; margin-right: 20px">@Model.MovieNameEnglish</span>
-                <h5 class="text-muted mb-4">
+                <h5 class="text-muted mb-4 text-white" style="color: white !important">
                     by @Html.Raw(string.Join(", ", Model.People?.Where(p => p.IsDirector == true).Select(d =>
                                         $"<a href='javascript:void(0);' class='person-link' " +
                                         $"data-name='{d.Name}' " +
@@ -50,14 +50,14 @@
                         }
                         @foreach (var type in Model.AvailableTypes)
                         {
-                            <span class="badge" style="border-radius: 20px; border: 1px solid black; color: black;">@type.TypeName</span>
+                            <span class="badge" style="border-radius: 20px; border: 1px solid white; color: white;">@type.TypeName</span>
                         }
                     </div>
                 </div>
 
                 <!-- Duration and Year -->
                 <div class="mb-4">
-                    <span class="text-muted">
+                    <span class="text-muted" style="color: white !important">
                         @Model.Duration min • @(Model.FromDate?.Year ?? DateTime.Now.Year)
                     </span>
                 </div>
@@ -81,7 +81,7 @@
                                              class="rounded-circle shadow-sm"
                                              style="width: 60px; height: 60px; object-fit: cover;" />
                                     </a>
-                                    <p class="small text-muted mt-2 mb-0">@actor.Name</p>
+                                    <p class="small text-muted mt-2 mb-0 text-white" style="color: white !important">@actor.Name</p>
                                 </div>
                             }
                         </div>
@@ -100,7 +100,7 @@
                         </button>
                     </div>
                     <div class="col-md-6 text-start">
-                        <button class="btn btn-outline-primary btn-lg" style="width: 200px; border-radius: 20px" data-bs-toggle="modal" data-bs-target="#trailerModal">
+                        <button class="btn btn-outline-light btn-lg" style="width: 200px; border-radius: 20px" data-bs-toggle="modal" data-bs-target="#trailerModal">
                             Watch Trailer
                         </button>
                     </div>
@@ -168,7 +168,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+<div class="modal fade text-black" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">

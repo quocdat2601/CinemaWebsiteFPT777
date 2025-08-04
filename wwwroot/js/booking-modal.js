@@ -152,7 +152,7 @@
     // Modal-specific continue to seat selection
     window.modalContinueToSeatSelection = function() {
         console.log('modalContinueToSeatSelection function called!');
-        console.log('=== MODAL DEBUGGING START ===');
+
         
         try {
             const modalMovieId = document.getElementById('movieId');
@@ -169,7 +169,7 @@
                 bookBtn: !!bookBtn
             });
 
-            // Debug: Log actual values
+    
             console.log('Modal actual values:', {
                 modalMovieIdValue: modalMovieId?.value,
                 modalDateSelectValue: modalDateSelect?.value,

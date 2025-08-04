@@ -57,7 +57,6 @@ namespace MovieTheater.Controllers
         private readonly ILogger<BookingController> _logger;
         private readonly IVNPayService _vnPayService;
         private readonly IVoucherService _voucherService;
-        private readonly MovieTheaterContext _context;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
         private readonly IFoodService _foodService;
         private readonly IFoodInvoiceService _foodInvoiceService;
@@ -75,7 +74,6 @@ namespace MovieTheater.Controllers
             IVNPayService vnPayService,
             IVoucherService voucherService,
             IHubContext<DashboardHub> dashboardHubContext,
-            MovieTheaterContext context,
             IFoodService foodService,
             IFoodInvoiceService foodInvoiceService,
             IBookingDomainService bookingDomainService,
@@ -92,7 +90,6 @@ namespace MovieTheater.Controllers
             _vnPayService = vnPayService;
             _voucherService = voucherService;
             _dashboardHubContext = dashboardHubContext;
-            _context = context;
             _foodService = foodService;
             _foodInvoiceService = foodInvoiceService;
             _bookingDomainService = bookingDomainService;
@@ -151,10 +148,7 @@ namespace MovieTheater.Controllers
             // Thêm thông tin SeatType cho promotion context
             if (selectedSeatIds != null)
             {
-                var selectedSeats = _context.Seats
-                    .Include(s => s.SeatType)
-                    .Where(s => selectedSeatIds.Contains(s.SeatId))
-                    .ToList();
+                var selectedSeats = _seatService.GetSeatsWithTypeByIds(selectedSeatIds);
                 context.SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList();
                 context.SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
                 context.SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList();
@@ -227,7 +221,7 @@ namespace MovieTheater.Controllers
                return View("ConfirmBooking", model);
            }
 
-           // Debug log for IsTestSuccess value
+           
            Console.WriteLine($"[BookingController.Confirm] IsTestSuccess: '{IsTestSuccess}', TotalPrice: {result.TotalPrice}");
 
            if (IsTestSuccess == "true" || Math.Abs(result.TotalPrice) < 0.01m)
@@ -259,19 +253,11 @@ namespace MovieTheater.Controllers
                // Ensure status is set to Completed for 0 VND bookings
                if (invoice.Status != InvoiceStatus.Completed)
                {
-                   invoice.Status = InvoiceStatus.Completed;
-                   _context.Invoices.Update(invoice);
-                   _context.SaveChanges();
+                   await _invoiceService.MarkInvoiceAsCompletedAsync(invoiceId);
                }
                if (!string.IsNullOrEmpty(invoice.VoucherId))
                {
-                   var voucher = _context.Vouchers.FirstOrDefault(v => v.VoucherId == invoice.VoucherId);
-                   if (voucher != null && (voucher.IsUsed == false))
-                   {
-                       voucher.IsUsed = true;
-                       _context.Vouchers.Update(voucher);
-                       _context.SaveChanges();
-                   }
+                   await _invoiceService.MarkVoucherAsUsedAsync(invoice.VoucherId);
                }
            }
 
@@ -281,7 +267,7 @@ namespace MovieTheater.Controllers
                return NotFound();
 
            return View("Success", viewModel);
-       }
+        }
 
         /// <summary>
         /// Trang thanh toán VNPay
@@ -509,10 +495,7 @@ namespace MovieTheater.Controllers
                 var invoice = _invoiceService.GetById(invoiceId);
                 if (invoice != null && invoice.Status != InvoiceStatus.Incomplete)
                 {
-                    invoice.Status = InvoiceStatus.Incomplete;
-                    invoice.UseScore = 0;
-                    _context.Invoices.Update(invoice);
-                    _context.SaveChanges();
+                    await _invoiceService.UpdateInvoiceStatusAsync(invoiceId, InvoiceStatus.Incomplete);
                 }
                 await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
                 var viewModel = await _bookingDomainService.BuildSuccessViewModelAsync(invoiceId, userId);
@@ -554,7 +537,7 @@ namespace MovieTheater.Controllers
            // Nếu có memberId, cập nhật thông tin member
            if (!string.IsNullOrEmpty(memberId))
            {
-               var member = _context.Members.Include(m => m.Account).FirstOrDefault(m => m.MemberId == memberId);
+               var member = _memberRepository.GetByIdWithAccount(memberId);
                if (member != null)
                {
                    viewModel.MemberId = member.MemberId;
@@ -609,11 +592,11 @@ namespace MovieTheater.Controllers
            var result = await _bookingDomainService.ConfirmTicketForAdminAsync(model);
            if (!result.Success)
            {
-               _logger.LogWarning($"ConfirmTicketForAdmin failed: {result.ErrorMessage}");
+               _logger.LogWarning("ConfirmTicketForAdmin failed: {ErrorMessage}", result.ErrorMessage);
                return Json(new { success = false, message = result.ErrorMessage });
            }
            
-           _logger.LogInformation($"ConfirmTicketForAdmin successful, InvoiceId: {result.InvoiceId}");
+                       _logger.LogInformation("ConfirmTicketForAdmin successful, InvoiceId: {InvoiceId}", result.InvoiceId);
            await _dashboardHubContext.Clients.All.SendAsync("DashboardUpdated");
            return Json(new { success = true, redirectUrl = Url.Action("TicketBookingConfirmed", "Booking", new { invoiceId = result.InvoiceId }) });
        }
@@ -856,10 +839,7 @@ namespace MovieTheater.Controllers
               var selectedSeatIds = request.SelectedSeatIds ?? new List<int>();
               
               // Lấy thông tin SeatType từ các ghế đã chọn
-              var selectedSeats = _context.Seats
-                  .Include(s => s.SeatType)
-                  .Where(s => selectedSeatIds.Contains(s.SeatId))
-                  .ToList();
+              var selectedSeats = _seatService.GetSeatsWithTypeByIds(selectedSeatIds);
 
               var promotionContext = new PromotionCheckContext
               {
@@ -893,7 +873,7 @@ namespace MovieTheater.Controllers
                   };
 
                   // Sử dụng logic từ PromotionService để kiểm tra
-                  if (IsPromotionEligible(promotion, context))
+                  if (_promotionService.IsPromotionEligible(promotion, context))
                   {
                       eligiblePromotions.Add(new
                       {
@@ -919,102 +899,6 @@ namespace MovieTheater.Controllers
                   message = "Error getting eligible promotions" 
               });
           }
-      }
-
-      private bool IsPromotionEligible(Promotion promotion, PromotionCheckContext context)
-      {
-          if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) 
-              return true;
-
-          foreach (var condition in promotion.PromotionConditions)
-          {
-              switch (condition.TargetField?.ToLower())
-              {
-                  case "seat":
-                      if (!int.TryParse(condition.TargetValue, out int seatTarget)) return false;
-                      switch (condition.Operator)
-                      {
-                          case ">=": if (!(context.SeatCount >= seatTarget)) return false; break;
-                          case "==": case "=": if (!(context.SeatCount == seatTarget)) return false; break;
-                          case "<=": if (!(context.SeatCount <= seatTarget)) return false; break;
-                          case "<": if (!(context.SeatCount < seatTarget)) return false; break;
-                          case "!=": if (!(context.SeatCount != seatTarget)) return false; break;
-                          default: return false;
-                      }
-                      break;
-                  case "seattypeid":
-                      // Kiểm tra SeatTypeId của các ghế đã chọn
-                      if (!int.TryParse(condition.TargetValue, out int seatTypeTarget)) return false;
-                      var selectedSeatTypes = context.SelectedSeatTypeIds ?? new List<int>();
-                      if (!selectedSeatTypes.Any()) return false;
-                      switch (condition.Operator)
-                      {
-                          case "=": case "==": 
-                              if (!selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
-                          case "!=": 
-                              if (selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
-                          default: return false;
-                      }
-                      break;
-                  case "typename":
-                      // Kiểm tra TypeName của các ghế đã chọn
-                      var selectedTypeNames = context.SelectedSeatTypeNames ?? new List<string>();
-                      if (!selectedTypeNames.Any()) return false;
-                      switch (condition.Operator)
-                      {
-                          case "=": case "==": 
-                              if (!selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
-                          case "!=": 
-                              if (selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false; break;
-                          default: return false;
-                      }
-                      break;
-                  case "pricepercent":
-                      // Kiểm tra PricePercent của các ghế đã chọn
-                      var selectedPricePercents = context.SelectedSeatTypePricePercents ?? new List<decimal>();
-                      if (!selectedPricePercents.Any()) return false;
-                      if (!decimal.TryParse(condition.TargetValue, out decimal priceTarget)) return false;
-                      switch (condition.Operator)
-                      {
-                          case ">=": if (!selectedPricePercents.Any(pp => pp >= priceTarget)) return false; break;
-                          case ">": if (!selectedPricePercents.Any(pp => pp > priceTarget)) return false; break;
-                          case "<=": if (!selectedPricePercents.Any(pp => pp <= priceTarget)) return false; break;
-                          case "<": if (!selectedPricePercents.Any(pp => pp < priceTarget)) return false; break;
-                          case "=": case "==": if (!selectedPricePercents.Any(pp => pp == priceTarget)) return false; break;
-                          case "!=": if (!selectedPricePercents.Any(pp => pp != priceTarget)) return false; break;
-                          default: return false;
-                      }
-                      break;
-                  case "accountid":
-                      // Nếu chưa chọn member, loại bỏ promotion này
-                      if (string.IsNullOrEmpty(context.MemberId)) return false;
-                      // Lấy accountId từ memberId
-                      var member = _context.Members.FirstOrDefault(m => m.MemberId == context.MemberId);
-                      if (member == null || string.IsNullOrEmpty(member.AccountId)) return false;
-                      var accountId = member.AccountId;
-                      // Kiểm tra trong bảng Invoice
-                      var invoices = _context.Invoices.Where(i => i.AccountId == accountId);
-                      if (string.IsNullOrEmpty(condition.TargetValue))
-                      {
-                          // Nếu targetValue là null, kiểm tra có invoice nào có AccountId đúng bằng accountId không
-                          if (invoices.Any(i => i.AccountId == accountId)) return false;
-                          break;
-                      }
-                      switch (condition.Operator)
-                      {
-                          case "=": case "==":
-                              if (!invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
-                              break;
-                          case "!=":
-                              if (invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
-                              break;
-                          default:
-                              return false;
-                      }
-                      break;
-              }
-          }
-          return true;
       }
 
       [HttpGet]

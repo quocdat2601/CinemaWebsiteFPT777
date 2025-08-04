@@ -25,12 +25,24 @@ namespace MovieTheater.Tests.Repository
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            context.Ranks.Add(new Rank { RankId = 1, RankName = "Bronze" });
-            context.Ranks.Add(new Rank { RankId = 2, RankName = "Silver" });
+            context.Ranks.Add(new Rank { 
+                RankId = 1, 
+                RankName = "Bronze",
+                ColorGradient = "linear-gradient(135deg, #cd7f32 0%, #daa520 100%)",
+                IconClass = "fa-medal"
+            });
+            context.Ranks.Add(new Rank { 
+                RankId = 2, 
+                RankName = "Silver",
+                ColorGradient = "linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%)",
+                IconClass = "fa-medal"
+            });
             context.SaveChanges();
             var repo = new RankRepository(context);
+
             // Act
             var result = await repo.GetAllRanksAsync();
+
             // Assert
             Assert.Equal(2, result.Count);
             Assert.Contains(result, r => r.RankName == "Bronze");
@@ -42,12 +54,24 @@ namespace MovieTheater.Tests.Repository
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            context.Ranks.Add(new Rank { RankId = 1, RankName = "Bronze" });
-            context.Ranks.Add(new Rank { RankId = 2, RankName = "Silver" });
+            context.Ranks.Add(new Rank { 
+                RankId = 1, 
+                RankName = "Bronze",
+                ColorGradient = "linear-gradient(135deg, #cd7f32 0%, #daa520 100%)",
+                IconClass = "fa-medal"
+            });
+            context.Ranks.Add(new Rank { 
+                RankId = 2, 
+                RankName = "Silver",
+                ColorGradient = "linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%)",
+                IconClass = "fa-medal"
+            });
             context.SaveChanges();
             var repo = new RankRepository(context);
+
             // Act
             var result = await repo.GetRankByIdAsync(2);
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Silver", result.RankName);
@@ -58,7 +82,12 @@ namespace MovieTheater.Tests.Repository
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var rank = new Rank { RankId = 1, RankName = "Bronze" };
+            var rank = new Rank { 
+                RankId = 1, 
+                RankName = "Bronze",
+                ColorGradient = "linear-gradient(135deg, #cd7f32 0%, #daa520 100%)",
+                IconClass = "fa-medal"
+            };
             var account = new Account { AccountId = "A1", Username = "user", Rank = rank, RankId = 1 };
             var member = new Member { MemberId = "M1", AccountId = "A1", Account = account };
             context.Ranks.Add(rank);
@@ -66,8 +95,10 @@ namespace MovieTheater.Tests.Repository
             context.Members.Add(member);
             context.SaveChanges();
             var repo = new RankRepository(context);
+
             // Act
             var result = await repo.GetAccountWithMemberAsync("A1");
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal("A1", result.AccountId);

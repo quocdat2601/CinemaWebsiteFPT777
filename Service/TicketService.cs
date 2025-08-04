@@ -119,13 +119,13 @@ public class TicketService : ITicketService
         }
         else if (!string.IsNullOrEmpty(booking.Seat))
         {
-            var seatIdArr = booking.SeatIds
+            var seatNames = booking.Seat
                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-               .Select(id => int.Parse(id.Trim()))
+               .Select(name => name.Trim())
                .ToList();
-            foreach (var seatId in seatIdArr)
+            foreach (var seatName in seatNames)
             {
-                var seat = _seatRepository.GetById(seatId);
+                var seat = _seatRepository.GetSeatByName(seatName);
                 if (seat == null) continue;
                 var seatType = seat.SeatType;
                 decimal originalPrice = (seatType?.PricePercent ?? 0) * versionMulti;

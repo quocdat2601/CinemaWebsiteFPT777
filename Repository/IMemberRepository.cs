@@ -14,5 +14,6 @@ namespace MovieTheater.Repository
         public Member? GetByIdentityCard(string identityCard);
         public Member? GetByAccountId(string accountId);
         public Member GetByMemberId(string memberId);
+        public Member? GetByIdWithAccount(string memberId);
     }
 }

@@ -19,6 +19,8 @@ using System.Threading.Tasks;
 using Xunit;
 using ModelType = MovieTheater.Models.Type;
 using ModelVersion = MovieTheater.Models.Version;
+using System;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -744,6 +746,378 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.IsType<MovieDetailViewModel>(result.Model);
+        }
+
+        [Fact]
+        public void GetMovieShows_ReturnsJsonResult()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>
+            {
+                new MovieShow 
+                { 
+                    MovieShowId = 1, 
+                    MovieId = "1",
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
+                    Version = new MovieTheater.Models.Version { VersionName = "2D" },
+                    CinemaRoom = new CinemaRoom { StatusId = 1 }
+                },
+                new MovieShow 
+                { 
+                    MovieShowId = 2, 
+                    MovieId = "1",
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(16, 0) },
+                    Version = new MovieTheater.Models.Version { VersionName = "3D" },
+                    CinemaRoom = new CinemaRoom { StatusId = 1 }
+                }
+            };
+            _movieService.Setup(s => s.GetMovieShowsByMovieId("1")).Returns(movieShows);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShows("1") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void GetMovieShows_ReturnsEmptyList_WhenNoShows()
+        {
+            // Arrange
+            _movieService.Setup(s => s.GetMovieShowsByMovieId("1")).Returns(new List<MovieShow>());
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShows("1") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Value as dynamic);
+        }
+
+        [Fact]
+        public void GetDirectors_ReturnsJsonResult()
+        {
+            // Arrange
+            var directors = new List<Person> { new Person { PersonId = 1, Name = "Director 1" } };
+            _personRepository.Setup(r => r.GetDirectors()).Returns(directors);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetDirectors() as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void GetActors_ReturnsJsonResult()
+        {
+            // Arrange
+            var actors = new List<Person> { new Person { PersonId = 1, Name = "Actor 1" } };
+            _personRepository.Setup(r => r.GetActors()).Returns(actors);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetActors() as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void MovieList_WithSearchTerm_FiltersMovies()
+        {
+            // Arrange
+            var movies = new List<Movie>
+            {
+                new Movie { MovieId = "1", MovieNameEnglish = "Test Movie", Content = "Test content" },
+                new Movie { MovieId = "2", MovieNameEnglish = "Another Movie", Content = "Another content" }
+            };
+            _movieService.Setup(s => s.GetCurrentlyShowingMoviesWithDetails()).Returns(movies);
+            _movieService.Setup(s => s.GetComingSoonMoviesWithDetails()).Returns(new List<Movie>());
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.MovieList("Test", null, null) as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void MovieList_WithTypeFilter_FiltersMovies()
+        {
+            // Arrange
+            var movies = new List<Movie>
+            {
+                new Movie 
+                { 
+                    MovieId = "1", 
+                    MovieNameEnglish = "Test Movie",
+                    Types = new List<ModelType> { new ModelType { TypeId = 1 } }
+                }
+            };
+            _movieService.Setup(s => s.GetCurrentlyShowingMoviesWithDetails()).Returns(movies);
+            _movieService.Setup(s => s.GetComingSoonMoviesWithDetails()).Returns(new List<Movie>());
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.MovieList(null, "1", null) as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void MovieList_WithVersionFilter_FiltersMovies()
+        {
+            // Arrange
+            var movies = new List<Movie>
+            {
+                new Movie 
+                { 
+                    MovieId = "1", 
+                    MovieNameEnglish = "Test Movie",
+                    Versions = new List<ModelVersion> { new ModelVersion { VersionId = 1 } }
+                }
+            };
+            _movieService.Setup(s => s.GetCurrentlyShowingMoviesWithDetails()).Returns(movies);
+            _movieService.Setup(s => s.GetComingSoonMoviesWithDetails()).Returns(new List<Movie>());
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.MovieList(null, null, "1") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task GetAvailableScheduleTimes_ReturnsJsonResult()
+        {
+            // Arrange
+            var schedules = new List<Schedule> { new Schedule { ScheduleId = 1, ScheduleTime = new TimeOnly(14, 0) } };
+            _movieService.Setup(s => s.GetAvailableSchedulesAsync(It.IsAny<DateOnly>(), It.IsAny<int>()))
+                         .ReturnsAsync(schedules);
+            _movieService.Setup(s => s.GetMovieShowsByRoomAndDate(It.IsAny<int>(), It.IsAny<DateOnly>()))
+                        .Returns(new List<MovieShow>());
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.GetAvailableScheduleTimes(1, "2024-06-15", 120, 15) as OkObjectResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public async Task AddMovieShow_ReturnsOk_OnSuccess()
+        {
+            // Arrange
+            var request = new MovieShowRequest
+            {
+                MovieId = "1",
+                CinemaRoomId = 1,
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                ScheduleId = 1
+            };
+            _movieService.Setup(s => s.AddMovieShow(It.IsAny<MovieShow>())).Returns(true);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.AddMovieShow(request) as OkObjectResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public async Task AddMovieShow_ReturnsBadRequest_OnFailure()
+        {
+            // Arrange
+            var request = new MovieShowRequest
+            {
+                MovieId = "1",
+                CinemaRoomId = 1,
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                ScheduleId = 1
+            };
+            _movieService.Setup(s => s.AddMovieShow(It.IsAny<MovieShow>())).Returns(false);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.AddMovieShow(request) as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task DeleteAllMovieShows_ReturnsOk_OnSuccess()
+        {
+            // Arrange
+            var request = new MovieController.MovieShowRequestDeleteAll { MovieId = "1" };
+            _movieService.Setup(s => s.DeleteAllMovieShows("1")).Returns(true);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.DeleteAllMovieShows(request) as OkResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task DeleteAllMovieShows_ReturnsBadRequest_OnFailure()
+        {
+            // Arrange
+            var request = new MovieController.MovieShowRequestDeleteAll { MovieId = "1" };
+            _movieService.Setup(s => s.DeleteAllMovieShows("1")).Returns(false);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.DeleteAllMovieShows(request) as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task GetAvailableSchedules_ReturnsJsonResult()
+        {
+            // Arrange
+            var schedules = new List<Schedule> { new Schedule { ScheduleId = 1, ScheduleTime = new TimeOnly(14, 0) } };
+            _movieService.Setup(s => s.GetAvailableSchedulesAsync(DateOnly.FromDateTime(DateTime.Today), 1))
+                         .ReturnsAsync(schedules);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.GetAvailableSchedules(DateOnly.FromDateTime(DateTime.Today), 1) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void GetMovieShowsByRoomAndDate_ReturnsJsonResult_WithValidParameters()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>
+            {
+                new MovieShow 
+                { 
+                    MovieShowId = 1, 
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
+                    Version = new MovieTheater.Models.Version { VersionName = "2D" },
+                    CinemaRoom = new CinemaRoom { CinemaRoomName = "Room 1" },
+                    Movie = new Movie { MovieNameEnglish = "Test Movie" }
+                }
+            };
+            _movieService.Setup(s => s.GetMovieShowsByRoomAndDate(It.IsAny<int>(), It.IsAny<DateOnly>()))
+                        .Returns(movieShows);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShowsByRoomAndDate(1, "2024-06-15") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void GetMovieShowsByRoomAndDate_ReturnsBadRequest_WithInvalidDate()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShowsByRoomAndDate(1, "invalid-date") as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void ViewShow_ReturnsNotFound_WhenMovieNull()
+        {
+            // Arrange
+            _movieService.Setup(s => s.GetById("1")).Returns((Movie)null);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.ViewShow("1") as NotFoundResult;
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void ViewShow_ReturnsView_WhenMovieFound()
+        {
+            // Arrange
+            var movie = new Movie 
+            { 
+                MovieId = "1", 
+                MovieNameEnglish = "Test Movie",
+                Versions = new List<MovieTheater.Models.Version>()
+            };
+            _movieService.Setup(s => s.GetById("1")).Returns(movie);
+            _movieService.Setup(s => s.GetMovieShows("1")).Returns(new List<MovieShow>());
+            _cinemaService.Setup(s => s.GetAll()).Returns(new List<CinemaRoom>());
+            _movieService.Setup(s => s.GetSchedules()).Returns(new List<Schedule>());
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.ViewShow("1") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<MovieDetailViewModel>(result.Model);
+        }
+
+        [Fact]
+        public void DeleteMovieShowIfNotReferenced_ReturnsJsonResult_OnSuccess()
+        {
+            // Arrange
+            var movieShow = new MovieShow { MovieShowId = 1, Invoices = new List<Invoice>() };
+            _movieService.Setup(s => s.GetMovieShowById(1)).Returns(movieShow);
+            _movieService.Setup(s => s.DeleteMovieShows(1)).Returns(true);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.DeleteMovieShowIfNotReferenced(1) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public void DeleteMovieShowIfNotReferenced_ReturnsJsonResult_WhenReferenced()
+        {
+            // Arrange
+            var movieShow = new MovieShow { MovieShowId = 1, Invoices = new List<Invoice> { new Invoice() } };
+            _movieService.Setup(s => s.GetMovieShowById(1)).Returns(movieShow);
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.DeleteMovieShowIfNotReferenced(1) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
         }
     }
 }

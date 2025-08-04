@@ -97,5 +97,12 @@ namespace MovieTheater.Repository
                 .ThenInclude(a => a.Rank)
                 .FirstOrDefault(m => m.MemberId == memberId);
         }
+
+        public Member? GetByIdWithAccount(string memberId)
+        {
+            return _context.Members
+                .Include(m => m.Account)
+                .FirstOrDefault(m => m.MemberId == memberId);
+        }
     }
 }

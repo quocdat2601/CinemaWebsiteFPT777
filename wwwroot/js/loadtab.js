@@ -39,7 +39,7 @@ window.loadTab = function(tabName, params = {}) {
 window.initDashboardCharts = function(model) {
     const revCtx = document.getElementById('revenueChart')?.getContext('2d');
     if (revCtx && model.revenueDates) {
-        new Chart(revCtx, {
+        window.revenueChart = new Chart(revCtx, {
             type: 'line',
             data: {
                 labels: model.revenueDates,
@@ -55,7 +55,7 @@ window.initDashboardCharts = function(model) {
     
     const bookCtx = document.getElementById('bookingChart')?.getContext('2d');
     if (bookCtx && model.bookingDates) {
-        new Chart(bookCtx, {
+        window.bookingChart = new Chart(bookCtx, {
             type: 'line',
             data: {
                 labels: model.bookingDates,
@@ -275,7 +275,6 @@ function initializeBookingPagination() {
         const script = document.createElement('script');
         script.src = '/js/pagination-common.js';
         script.onload = function() {
-            console.log('pagination-common.js loaded, initializing booking pagination...');
             initializeBookingPagination();
         };
         script.onerror = function() {
@@ -288,7 +287,6 @@ function initializeBookingPagination() {
 
     // Booking-specific functions
     function renderBookingTable(bookingData) {
-        console.log('Rendering booking table with data:', bookingData);
         if (bookingData.length > 0) {
             let html = '<div class="table-responsive"><table id="booking-table" class="table table-hover">';
             html += '<thead class="table-light"><tr>';
@@ -305,11 +303,15 @@ function initializeBookingPagination() {
             bookingData.forEach(function(booking) {
                 let statusBadge = '';
                 if (booking.status === 'Completed' && !booking.cancel) {
-                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Completed</span>';
+                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Paid</span>';
                 } else if (booking.status === 'Completed' && booking.cancel) {
                     statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled</span>';
+                } else if (booking.status === null || booking.status === 'null') {
+                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled</span>';
+                } else if (booking.status === 'Incomplete') {
+                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Unpaid</span>';
                 } else {
-                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Not Paid</span>';
+                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Unpaid</span>';
                 }
 
                 html += '<tr class="text-center booking-row">';
@@ -330,22 +332,27 @@ function initializeBookingPagination() {
 
             html += '</tbody></table></div>';
             $('#bookingResult').html(html);
+            
+            // Restore sort icons after rendering table
+            if (typeof window.updateSortIcons === 'function') {
+                setTimeout(function() {
+                    window.updateSortIcons();
+                }, 100);
+            }
         } else {
             $('#bookingResult').html('<div class="text-center py-4"><i class="bi bi-emoji-frown display-1 text-muted"></i><h4 class="text-muted mt-3">No bookings found</h4><p class="text-muted">Try adjusting your search criteria or add a new booking.</p></div>');
         }
     }
 
     function updateBookingStatistics(statistics) {
-        console.log('Updating booking statistics:', statistics);
         $('#totalBookingsCount').text(statistics.totalBookings);
-        $('#completedCount').text(statistics.completed);
+        $('#paidCount').text(statistics.paid);
         $('#cancelledCount').text(statistics.cancelled);
-        $('#notPaidCount').text(statistics.notPaid);
+        $('#unpaidCount').text(statistics.unpaid);
     }
 
     // Initialize booking pagination
-    console.log('Creating booking pagination manager...');
-    const bookingPagination = createPaginationManager({
+    window.bookingPagination = createPaginationManager({
         containerId: 'bookingSearchForm',
         resultId: 'bookingResult',
         paginationId: 'bookingPagination',
@@ -359,17 +366,15 @@ function initializeBookingPagination() {
 
     // Handle reset filters
     window.resetFilters = function() {
-        console.log('Resetting booking filters...');
         $('#searchKeyword').val('');
         $('#statusFilter').val('');
         $('input[name="bookingTypeFilter"][value="all"]').prop('checked', true);
-        bookingPagination.loadData({}, 1);
+        window.bookingPagination.loadData({}, 1);
     };
 
     // Handle search bookings
-    window.searchBookings = function() {
-        console.log('Searching bookings...');
-        bookingPagination.loadData(bookingPagination.getCurrentParams(), 1);
+    window.searchBookingsFromForm = function() {
+        window.bookingPagination.loadData(window.bookingPagination.getCurrentParams(), 1);
     };
 }
 
@@ -382,7 +387,6 @@ function initializeVoucherPagination() {
         const script = document.createElement('script');
         script.src = '/js/pagination-common.js';
         script.onload = function() {
-            console.log('pagination-common.js loaded, initializing voucher pagination...');
             initializeVoucherPagination();
         };
         script.onerror = function() {
@@ -395,16 +399,15 @@ function initializeVoucherPagination() {
 
     // Voucher-specific functions
     function renderVoucherTable(voucherData) {
-        console.log('Rendering voucher table with data:', voucherData);
         if (voucherData.length > 0) {
             let html = '<div class="table-responsive"><table id="voucher-table" class="table table-hover">';
             html += '<thead class="table-light"><tr>';
             html += '<th>Image</th>';
             html += '<th class="text-center sortable" data-sort="voucherid">Voucher ID <span id="sortIconVoucherId"></span></th>';
             html += '<th>Code</th>';
-            html += '<th class="text-center sortable" data-sort="account">Account ID <span id="sortIconAccount"></span></th>';
+            html += '<th class="text-center sortable" data-sort="account">Account ID <span id="sortIconVoucherAccount"></span></th>';
             html += '<th class="text-end sortable" data-sort="value">Value <span id="sortIconValue"></span></th>';
-            html += '<th class="text-center sortable" data-sort="created">Created Date <span id="sortIconCreated"></span></th>';
+            html += '<th class="text-center sortable" data-sort="created">Created Date <span id="sortIconVoucherCreated"></span></th>';
             html += '<th class="text-center sortable" data-sort="expiry">Expiry Date <span id="sortIconExpiry"></span></th>';
             html += '<th class="text-center">Status</th>';
             html += '<th class="text-center">Actions</th>';
@@ -471,13 +474,19 @@ function initializeVoucherPagination() {
 
             html += '</tbody></table></div>';
             $('#voucherResult').html(html);
+            
+            // Restore sort icons after rendering table
+            if (typeof window.updateSortIconsVoucher === 'function') {
+                setTimeout(function() {
+                    window.updateSortIconsVoucher();
+                }, 100);
+            }
         } else {
             $('#voucherResult').html('<div class="text-center py-4"><i class="bi bi-emoji-frown display-1 text-muted"></i><h4 class="text-muted mt-3">No vouchers found</h4><p class="text-muted">Try adjusting your search criteria or add a new voucher.</p></div>');
         }
     }
 
     function updateVoucherStatistics(statistics) {
-        console.log('Updating voucher statistics:', statistics);
         $('#totalVouchersCount').text(statistics.totalVouchers);
         $('#activeCount').text(statistics.active);
         $('#usedCount').text(statistics.used);
@@ -485,7 +494,6 @@ function initializeVoucherPagination() {
     }
 
     // Initialize voucher pagination
-    console.log('Creating voucher pagination manager...');
     const voucherPagination = createPaginationManager({
         containerId: 'voucherSearchForm',
         resultId: 'voucherResult',
@@ -500,7 +508,6 @@ function initializeVoucherPagination() {
 
     // Handle reset filters
     window.resetVoucherFilters = function() {
-        console.log('Resetting voucher filters...');
         $('#searchKeyword').val('');
         $('#statusFilter').val('');
         $('#expiryFilter').val('');
@@ -509,7 +516,6 @@ function initializeVoucherPagination() {
 
     // Handle search vouchers
     window.searchVouchers = function() {
-        console.log('Searching vouchers...');
         voucherPagination.loadData(voucherPagination.getCurrentParams(), 1);
     };
 

@@ -11,5 +11,6 @@ namespace MovieTheater.Repository
         void Delete(string voucherId);
         string GenerateVoucherId();
         IEnumerable<Voucher> GetAvailableVouchers(string accountId);
+        void Save();
     }
 }

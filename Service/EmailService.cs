@@ -60,12 +60,12 @@ namespace MovieTheater.Service
                 mailMessage.To.Add(toEmail);
 
                 smtpClient.Send(mailMessage);
-                _logger.LogInformation($"Email successfully sent to {toEmail}. Please check your inbox, including the Spam or Junk folder.");
+                _logger.LogInformation("Email successfully sent. Please check your inbox, including the Spam or Junk folder.");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to send email to {toEmail}. Error: {ex.Message}");
+                _logger.LogError(ex, "Failed to send email");
                 return false;
             }
         }

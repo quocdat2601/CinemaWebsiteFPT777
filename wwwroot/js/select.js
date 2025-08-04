@@ -3,14 +3,34 @@
     const selectedDate = window.selectedDate;
     const isAtToday = window.isAtToday;
     
+    // Flag to prevent onChange from firing during initialization
+    let isInitializing = true;
+    
     // Initialize flatpickr with dd/MM/yyyy format
+    // Remove minDate restriction to allow proper navigation
     flatpickr("#calendarInput", {
         dateFormat: "d/m/Y",
         defaultDate: selectedDate,
         allowInput: true,
-        minDate: "today",
+        // Removed minDate: "today" to allow proper navigation
         onChange: function(selectedDates, dateStr, instance) {
-            document.getElementById('dateNavForm').submit();
+            // Skip onChange during initialization
+            if (isInitializing) {
+                isInitializing = false;
+                return;
+            }
+            
+            // Only submit if the date is today or in the future
+            const selectedDate = new Date(selectedDates[0]);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate >= today) {
+                document.getElementById('dateNavForm').submit();
+            } else {
+                // Reset to today if user tries to select a past date
+                instance.setDate(today, true, "d/m/Y");
+            }
         }
     });
 
@@ -27,7 +47,12 @@
         const m = (date.getMonth() + 1).toString().padStart(2, '0');
         const y = date.getFullYear();
         const formatted = `${d}/${m}/${y}`;
-        document.getElementById('calendarInput')._flatpickr.setDate(formatted, true, "d/m/Y");
+        
+        // Update flatpickr instance
+        const flatpickrInstance = document.getElementById('calendarInput')._flatpickr;
+        flatpickrInstance.setDate(formatted, true, "d/m/Y");
+        
+        // Submit form to navigate
         document.getElementById('dateNavForm').submit();
     }
 
@@ -37,9 +62,11 @@
         prevDayBtn.addEventListener('click', function() {
             const date = getSelectedDate();
             date.setDate(date.getDate() - 1);
-            // Prevent going before today
+            
+            // Only allow navigation to today or future dates
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
+            
             if (date >= today) {
                 setSelectedDate(date);
             }

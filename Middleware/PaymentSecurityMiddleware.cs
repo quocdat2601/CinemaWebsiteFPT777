@@ -47,9 +47,8 @@ namespace MovieTheater.Middleware
                         context.Request.Body.Position = 0;
                     }
 
-                    // Log body để debug (chỉ log 100 ký tự đầu)
-                    var bodyPreview = body.Length > 100 ? body.Substring(0, 100) + "..." : body;
-                    _logger.LogDebug("Request body preview: {BodyPreview}", bodyPreview);
+                    // Log body size để debug (không log nội dung)
+                    _logger.LogDebug("Request body size: {BodySize} bytes", body.Length);
 
                     // Kiểm tra nếu body rỗng hoặc không phải JSON
                     if (string.IsNullOrWhiteSpace(body))
@@ -63,7 +62,7 @@ namespace MovieTheater.Middleware
                     body = body.Trim();
                     if (!body.StartsWith("{") && !body.StartsWith("["))
                     {
-                        _logger.LogInformation("Non-JSON body detected for payment API request: {BodyStart}", bodyPreview);
+                        _logger.LogInformation("Non-JSON body detected for payment API request");
                         await _next(context);
                         return;
                     }
@@ -85,7 +84,7 @@ namespace MovieTheater.Middleware
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogInformation(ex, "Không parse được PaymentRequest từ body. Body preview: {BodyPreview}", bodyPreview);
+                        _logger.LogInformation(ex, "Không parse được PaymentRequest từ body");
                     }
 
                     if (paymentRequest != null)

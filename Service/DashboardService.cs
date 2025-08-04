@@ -112,8 +112,10 @@ namespace MovieTheater.Service
             var cancelledInvoices = allCompleted.Where(i => i.Cancel).ToList();
 
             var allInvoiceIds = allCompleted.Select(i => i.InvoiceId).ToList();
-            var foodInvoiceData = _context.FoodInvoices
+            var foodInvoices = _context.FoodInvoices
                 .Where(fi => allInvoiceIds.Contains(fi.InvoiceId))
+                .ToList();
+            var foodInvoiceData = foodInvoices
                 .GroupBy(fi => fi.InvoiceId)
                 .ToDictionary(g => g.Key, g => g.Sum(fi => fi.Price * fi.Quantity));
 

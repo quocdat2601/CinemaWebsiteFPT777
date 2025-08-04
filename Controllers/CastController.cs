@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
-    [Authorize(Roles = "Admin, Employee")]
+    
     public class CastController : Controller
     {
         private readonly IPersonRepository _personRepository;
@@ -43,12 +43,14 @@ namespace MovieTheater.Controllers
         }
 
         // GET: CastController/Create
+        [Authorize(Roles = "Admin, Employee")]
         public ActionResult Create()
         {
             return View(new PersonFormModel());
         }
 
         // POST: CastController/Create
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create(PersonFormModel person, IFormFile ImageFile)
@@ -56,7 +58,7 @@ namespace MovieTheater.Controllers
             // Remove ImageFile from validation since it's optional
             ModelState.Remove("ImageFile");
             
-            // Debug: Check what validation errors exist
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState
@@ -122,6 +124,7 @@ namespace MovieTheater.Controllers
         }
 
         // GET: CastController/Edit/5
+        [Authorize(Roles = "Admin, Employee")]
         public ActionResult Edit(int id)
         {
             var person = _personRepository.GetById(id);
@@ -147,6 +150,7 @@ namespace MovieTheater.Controllers
         }
 
         // POST: CastController/Edit/5
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, PersonFormModel person, IFormFile? ImageFile)
@@ -232,6 +236,7 @@ namespace MovieTheater.Controllers
         }
 
         // POST: CastController/Delete/5
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, IFormCollection collection)

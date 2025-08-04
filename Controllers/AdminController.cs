@@ -582,7 +582,7 @@ namespace MovieTheater.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Employee")]
-        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, int page = 1, int pageSize = 10)
+        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, string sortBy = null, int page = 1, int pageSize = 10)
         {
             var invoices = _invoiceService.GetAll();
 
@@ -603,12 +603,12 @@ namespace MovieTheater.Controllers
             // Apply status filter
             if (!string.IsNullOrEmpty(statusFilter))
             {
-                if (statusFilter == "completed")
+                if (statusFilter == "paid")
                     invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && !b.Cancel).ToList();
                 else if (statusFilter == "cancelled")
-                    invoices = invoices.Where(b => b.Status == InvoiceStatus.Completed && b.Cancel).ToList();
-                else if (statusFilter == "notpaid")
-                    invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
+                    invoices = invoices.Where(b => (b.Status == InvoiceStatus.Completed && b.Cancel) || b.Status == null).ToList();
+                else if (statusFilter == "unpaid")
+                    invoices = invoices.Where(b => b.Status == InvoiceStatus.Incomplete).ToList();
             }
 
             // Apply booking type filter
@@ -620,8 +620,58 @@ namespace MovieTheater.Controllers
                     invoices = invoices.Where(i => i.EmployeeId != null).ToList();
             }
 
-            // Sort by booking date (newest first) - using InvoiceId as proxy for booking date
-            invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+            // Apply sorting
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                switch (sortBy)
+                {
+                    case "id_asc":
+                        invoices = invoices.OrderBy(i => i.InvoiceId).ToList();
+                        break;
+                    case "id_desc":
+                        invoices = invoices.OrderByDescending(i => i.InvoiceId).ToList();
+                        break;
+                    case "movie_az":
+                        invoices = invoices.OrderBy(i => i.MovieShow?.Movie?.MovieNameEnglish ?? "").ToList();
+                        break;
+                    case "movie_za":
+                        invoices = invoices.OrderByDescending(i => i.MovieShow?.Movie?.MovieNameEnglish ?? "").ToList();
+                        break;
+                    case "account_az":
+                        invoices = invoices.OrderBy(i => i.AccountId).ToList();
+                        break;
+                    case "account_za":
+                        invoices = invoices.OrderByDescending(i => i.AccountId).ToList();
+                        break;
+                    case "identity_az":
+                        invoices = invoices.OrderBy(i => i.Account?.IdentityCard ?? "").ToList();
+                        break;
+                    case "identity_za":
+                        invoices = invoices.OrderByDescending(i => i.Account?.IdentityCard ?? "").ToList();
+                        break;
+                    case "phone_az":
+                        invoices = invoices.OrderBy(i => i.Account?.PhoneNumber ?? "").ToList();
+                        break;
+                    case "phone_za":
+                        invoices = invoices.OrderByDescending(i => i.Account?.PhoneNumber ?? "").ToList();
+                        break;
+                    case "time_asc":
+                        invoices = invoices.OrderBy(i => i.MovieShow?.Schedule?.ScheduleTime).ToList();
+                        break;
+                    case "time_desc":
+                        invoices = invoices.OrderByDescending(i => i.MovieShow?.Schedule?.ScheduleTime).ToList();
+                        break;
+                    default:
+                        // Default sorting by booking date (newest first)
+                        invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+                        break;
+                }
+            }
+            else
+            {
+                // Default sorting by booking date (newest first)
+                invoices = invoices.OrderByDescending(i => i.BookingDate).ToList();
+            }
 
             // Calculate pagination
             var totalCount = invoices.Count();
@@ -631,9 +681,9 @@ namespace MovieTheater.Controllers
 
             // Calculate statistics
             var totalBookings = totalCount;
-            var completed = invoices.Count(b => b.Status == InvoiceStatus.Completed && !b.Cancel);
-            var cancelled = invoices.Count(b => b.Status == InvoiceStatus.Completed && b.Cancel);
-            var notPaid = invoices.Count(b => b.Status != InvoiceStatus.Completed);
+            var paid = invoices.Count(b => b.Status == InvoiceStatus.Completed && !b.Cancel);
+            var cancelled = invoices.Count(b => (b.Status == InvoiceStatus.Completed && b.Cancel) || b.Status == null);
+            var unpaid = invoices.Count(b => b.Status == InvoiceStatus.Incomplete);
 
             var result = pagedInvoices.Select(i => new
             {
@@ -643,7 +693,7 @@ namespace MovieTheater.Controllers
                 identityCard = i.Account?.IdentityCard ?? "N/A",
                 phoneNumber = i.Account?.PhoneNumber ?? "N/A",
                 scheduleTime = i.MovieShow?.Schedule?.ScheduleTime?.ToString() ?? "N/A",
-                status = i.Status,
+                status = i.Status == InvoiceStatus.Completed ? "Completed" : i.Status == InvoiceStatus.Incomplete ? "Incomplete" : null,
                 cancel = i.Cancel,
                 employeeId = i.EmployeeId
             }).ToList();
@@ -664,9 +714,9 @@ namespace MovieTheater.Controllers
                 statistics = new
                 {
                     totalBookings = totalBookings,
-                    completed = completed,
+                    paid = paid,
                     cancelled = cancelled,
-                    notPaid = notPaid
+                    unpaid = unpaid
                 }
             });
         }

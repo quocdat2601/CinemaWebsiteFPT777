@@ -45,7 +45,6 @@
                                             <label asp-for="TargetField" class="control-label"> Promotion type</label>
                                             <select asp-for="TargetField" class="form-control" id="TargetField">
                                                 <option value="">-- Select Table --</option>
-                                                <option value="Account">Account</option>
                                                 <option value="Invoice">booking</option>
                                                 <option value="Member">Member</option>
                                                 <option value="Movie">Movie</option>
@@ -142,47 +141,62 @@
 
         // Table columns mapping (update as needed)
         const tableColumns = {
-            Account: [ "Address", "DateOfBirth", "Email", "Gender",  "PhoneNumber", "RegisterDate", "RoleId", "Status", "RankId"],
-            Invoice: [ "AddScore", "BookingDate", "MovieName", "ScheduleShow", "ScheduleShowTime", "Status", "TotalMoney", "UseScore", "Seat", "AccountId"],
-            Member: [ "Score", "AccountId"],
-            Movie: [ "Actor", "CinemaRoomId", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish", "MovieNameVn", "LargeImage", "SmallImage", "TrailerUrl"],
-            SeatType: ["TypeName", "PricePercent", "ColorHex"],
+            Invoice: [   "MovieName", "ScheduleShow", "Seat"],
+            Member: [ "Score"],
+            Movie: [ "Actor", "Content", "Director", "Duration", "FromDate", "MovieProductionCompany", "ToDate", "Version", "MovieNameEnglish"],
+            SeatType: ["TypeName", "PricePercent"],
             Type: [ "TypeName"],
             Food: [ "FoodName", "Price", "Status", "Category"]
         };
 
-        // Column type mapping for all tables and columns
-        const columnTypes = {
-            Account: {
-                Address: "string",
-                DateOfBirth: "date",
-                Email: "string",
-                Gender: "string",
-                PhoneNumber: "string",
-                RegisterDate: "date",
-                RoleId: "number",
-                Status: "number",
-                RankId: "number"
-            },
+        // Display names mapping for better user experience
+        const columnDisplayNames = {
             Invoice: {
-                AddScore: "number",
-                BookingDate: "date",
-                MovieName: "string",
-                ScheduleShow: "date",
-                ScheduleShowTime: "string",
-                Status: "number",
-                TotalMoney: "number",
-                UseScore: "number",
-                Seat: "string",
-                AccountId: "string"
+                MovieName: "Movie Name",
+                ScheduleShow: "Schedule Show",
+                Seat: "Seat Count"
             },
             Member: {
-                Score: "number",
-                AccountId: "string"
+                Score: "Score"
+            },
+            Movie: {
+                Actor: "Actor",
+                Content: "Content",
+                Director: "Director",
+                Duration: "Duration",
+                FromDate: "From Date",
+                MovieProductionCompany: "Movie Production Company",
+                ToDate: "To Date",
+                Version: "Version",
+                MovieNameEnglish: "Movie Name English"
+            },
+            SeatType: {
+                TypeName: "Type Name",
+                PricePercent: "Price Percent"
+            },
+            Type: {
+                TypeName: "Type Name"
+            },
+            Food: {
+                FoodName: "Food Name",
+                Price: "Price",
+                Status: "Status",
+                Category: "Category"
+            }
+        };
+
+        // Column type mapping for all tables and columns
+        const columnTypes = {
+            Invoice: {
+                MovieName: "string",
+                ScheduleShow: "date",
+                Seat: "string"
+            },
+            Member: {
+                Score: "number"
             },
             Movie: {
                 Actor: "string",
-                CinemaRoomId: "number",
                 Content: "string",
                 Director: "string",
                 Duration: "number",
@@ -190,16 +204,11 @@
                 MovieProductionCompany: "string",
                 ToDate: "date",
                 Version: "string",
-                MovieNameEnglish: "string",
-                MovieNameVn: "string",
-                LargeImage: "string",
-                SmallImage: "string",
-                TrailerUrl: "string"
+                MovieNameEnglish: "string"
             },
             SeatType: {
                 TypeName: "string",
-                PricePercent: "number",
-                ColorHex: "string"
+                PricePercent: "number"
             },
             Type: {
                 TypeName: "string"
@@ -220,7 +229,8 @@
                 tableColumns[table].forEach(function (col) {
                     const option = document.createElement('option');
                     option.value = col;
-                    option.text = col;
+                    // Use display name if available, otherwise use original column name
+                    option.text = columnDisplayNames[table]?.[col] || col;
                     columnSelect.appendChild(option);
                 });
             }

@@ -393,9 +393,8 @@ namespace MovieTheater.Repository
         public IEnumerable<Invoice> GetInvoicesByMovieShow(int movieShowId)
         {
             return _context.Invoices
-                .Where(i => i.MovieShowId == movieShowId && 
-                           i.Status == InvoiceStatus.Completed && 
-                           i.Cancel == false)
+                .Include(i => i.Account)
+                .Where(i => i.MovieShowId == movieShowId && i.Status == InvoiceStatus.Completed)
                 .ToList();
         }
 
@@ -489,51 +488,7 @@ namespace MovieTheater.Repository
             return _context.Versions.FirstOrDefault(v => v.VersionId == versionId);
         }
 
-        public IEnumerable<MovieShow> GetSelectMovieShow(DateOnly today)
-        {
-            return (IEnumerable<MovieShow>)_context.MovieShows
-            .Where(ms => ms.ShowDate >= today)
-            .Include(ms => ms.Movie)
-            .Include(ms => ms.Schedule)
-            .Include(ms => ms.Version)
-            .ToList()
-            .GroupBy(ms => ms.Movie)
-            .Where(g => g.Key != null)
-            .Select(g => new MovieShowtimeInfo
-            {
-                MovieId = g.Key.MovieId,
-                MovieName = g.Key.MovieNameEnglish ?? "Unknown",
-                PosterUrl = g.Key.LargeImage ?? g.Key.SmallImage ?? "/images/default-movie.png",
-                VersionShowtimes = g.Where(ms => ms.Schedule != null && ms.Version != null)
-                                .GroupBy(ms => new { ms.VersionId, ms.Version.VersionName })
-                                .Select(versionGroup => new VersionShowtimeInfo
-                                {
-                                    VersionId = versionGroup.Key.VersionId,
-                                    VersionName = versionGroup.Key.VersionName,
-                                    Showtimes = versionGroup
-                                        .Where(ms => ms.ShowDate >= today)
-                                        .Select(ms => ms.Schedule.ScheduleTime.HasValue ? ms.Schedule.ScheduleTime.Value.ToString("HH:mm") : null)
-                                        .Where(t => !string.IsNullOrEmpty(t))
-                                        .OrderBy(t => t)
-                                        .ToList()
-                                })
-                                .Where(v => v.Showtimes.Any())
-                                .OrderBy(v => v.VersionName)
-                                .ToList()
-            })
-        .Where(m => m.VersionShowtimes.Any())
-        .ToList();
-        }
 
-        public IEnumerable<MovieShow> GetSelectDates(DateOnly today, string movieId)
-        {
-            return (IEnumerable<MovieShow>)_context.MovieShows
-            .Where(ms => ms.ShowDate >= today)
-            .Select(ms => ms.ShowDate)
-            .Distinct()
-            .OrderBy(d => d)
-            .ToList();
-        }
 
         // New methods for categorizing movies
         public List<Movie> GetCurrentlyShowingMovies()

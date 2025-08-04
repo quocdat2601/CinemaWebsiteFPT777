@@ -165,7 +165,7 @@ namespace MovieTheater.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error adding movie show: {ex.Message}");
+                _logger.LogError(ex, "Error adding movie show");
                 return false;
             }
         }
@@ -197,7 +197,7 @@ namespace MovieTheater.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error adding movie shows: {ex.Message}");
+                _logger.LogError(ex, "Error adding movie shows");
                 return false;
             }
         }

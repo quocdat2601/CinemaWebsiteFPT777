@@ -2,10 +2,16 @@
     ViewData["Title"] = "Admin Main Page";
 }
 
-<!-- CDN Resources -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- CDN Resources with integrity -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" 
+      integrity="sha512-0Qvq9FL9f+uL7xUUDs6TqQqipbLYwZgBve8/2b1TCLc7vMKeTjhI4zPo9q9TbK2fzAztLQF5d+1pYY3kblmg==" 
+      crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" 
+      integrity="sha512-6KMClB6X4tovtI0UVzmy34OF0gWskyL1jQsWr20yPw6h/L3cWn6Nlpj7NjpRrygNQfq6RC9eYfQ+Zox3IhA==" 
+      crossorigin="anonymous" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" 
+        integrity="sha512-6KMClB6X4tovtI0UVzmy34OF0gWskyL1jQsWr20yPw6h/L3cWn6Nlpj7NjpRrygNQfq6RC9eYfQ+Zox3IhA==" 
+        crossorigin="anonymous"></script>
 
 <div class="container-fluid">
     <div class="row">
@@ -32,7 +38,9 @@
     // Set global variables for the JavaScript file to use
     window.initialTab = '@ViewData["ActiveTab"]';
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" 
+        integrity="sha512-7U4rRBFea2Q1fTNMo0B3I0p0zJ7bZJTvf8DLPuZL6XENz6R+0oOkVeI7BjOF0fGQVkq0qgGqLDNNcrNv4LkQ==" 
+        crossorigin="anonymous"></script>
 <script src="~/js/loadtab.js" asp-append-version="true"></script>
 <script src="~/js/admin-sorting.js"></script>
 
