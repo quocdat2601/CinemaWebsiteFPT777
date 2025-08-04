@@ -22,7 +22,6 @@ namespace MovieTheater.Controllers
 
         [HttpPost("test-generate")]
         [Authorize]
-        [HttpPost("test-generate")]
         public IActionResult TestGenerateToken([FromBody] LoginViewModel model)
         {
             if (!ModelState.IsValid)
