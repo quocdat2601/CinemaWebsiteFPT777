@@ -307,6 +307,7 @@ namespace MovieTheater.Tests.Controller
         {
             var voucher = new Voucher { VoucherId = "V1" };
             _voucherServiceMock.Setup(s => s.GetById("V1")).Returns(voucher);
+            _voucherServiceMock.Setup(s => s.Delete("V1")).Returns(true); // Mock Delete to return true
             var controller = CreateControllerWithTempData("Admin");
             var result = await controller.AdminDelete("V1", null);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
