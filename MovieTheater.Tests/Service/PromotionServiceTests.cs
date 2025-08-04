@@ -135,77 +135,7 @@ namespace MovieTheater.Tests.Service
             _mockRepo.Verify(r => r.Save(), Times.Once);
         }
 
-        [Fact]
-        public void GetBestPromotionForShowDate_ReturnsBestPromotion()
-        {
-            // Arrange
-            var showDate = new DateOnly(2024, 6, 10);
-            var promotions = new List<Promotion>
-            {
-                new Promotion { PromotionId = 1, IsActive = true, StartTime = new DateTime(2024, 6, 1), EndTime = new DateTime(2024, 6, 30), DiscountLevel = 10 },
-                new Promotion { PromotionId = 2, IsActive = true, StartTime = new DateTime(2024, 6, 5), EndTime = new DateTime(2024, 6, 15), DiscountLevel = 20 },
-                new Promotion { PromotionId = 3, IsActive = false, StartTime = new DateTime(2024, 6, 1), EndTime = new DateTime(2024, 6, 30), DiscountLevel = 50 }
-            };
-            _mockRepo.Setup(r => r.GetAll()).Returns(promotions);
 
-            // Act
-            var result = _service.GetBestPromotionForShowDate(showDate);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.PromotionId); // Promotion có DiscountLevel cao nhất và hợp lệ
-        }
-
-        [Fact]
-        public void GetBestPromotionForShowDate_ReturnsNull_WhenNoValidPromotions()
-        {
-            // Arrange
-            var showDate = new DateOnly(2024, 6, 10);
-            var promotions = new List<Promotion>
-            {
-                new Promotion { PromotionId = 1, IsActive = false, StartTime = new DateTime(2024, 6, 1), EndTime = new DateTime(2024, 6, 30), DiscountLevel = 10 },
-                new Promotion { PromotionId = 2, IsActive = true, StartTime = new DateTime(2024, 7, 1), EndTime = new DateTime(2024, 7, 30), DiscountLevel = 20 }
-            };
-            _mockRepo.Setup(r => r.GetAll()).Returns(promotions);
-
-            // Act
-            var result = _service.GetBestPromotionForShowDate(showDate);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public void GetBestPromotionForShowDate_ReturnsNull_WhenNoPromotions()
-        {
-            // Arrange
-            var showDate = new DateOnly(2024, 6, 10);
-            _mockRepo.Setup(r => r.GetAll()).Returns(new List<Promotion>());
-
-            // Act
-            var result = _service.GetBestPromotionForShowDate(showDate);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public void GetBestPromotionForShowDate_ReturnsNull_WhenNoDiscountLevel()
-        {
-            // Arrange
-            var showDate = new DateOnly(2024, 6, 10);
-            var promotions = new List<Promotion>
-            {
-                new Promotion { PromotionId = 1, IsActive = true, StartTime = new DateTime(2024, 6, 1), EndTime = new DateTime(2024, 6, 30), DiscountLevel = null }
-            };
-            _mockRepo.Setup(r => r.GetAll()).Returns(promotions);
-
-            // Act
-            var result = _service.GetBestPromotionForShowDate(showDate);
-
-            // Assert
-            Assert.Null(result);
-        }
 
         [Fact]
         public void GetBestEligiblePromotionForBooking_ReturnsBestPromotion()

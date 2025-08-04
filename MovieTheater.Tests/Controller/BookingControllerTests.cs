@@ -63,7 +63,7 @@ namespace MovieTheater.Tests.Controller
             
             _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(seats);
             _promotionService.Setup(p => p.GetAll()).Returns(promotions ?? new List<Promotion>());
-            _promotionService.Setup(p => p.IsPromotionEligible(It.IsAny<Promotion>(), It.IsAny<PromotionCheckContext>())).Returns(false);
+
         }
 
         [Fact]
@@ -861,7 +861,6 @@ namespace MovieTheater.Tests.Controller
             
             _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(seats);
             _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion>());
-            _promotionService.Setup(p => p.IsPromotionEligible(It.IsAny<Promotion>(), It.IsAny<PromotionCheckContext>())).Returns(false);
 
             // Act
             var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
@@ -1225,7 +1224,6 @@ namespace MovieTheater.Tests.Controller
             
             _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(seats);
             _promotionService.Setup(p => p.GetAll()).Returns(new List<Promotion>());
-            _promotionService.Setup(p => p.IsPromotionEligible(It.IsAny<Promotion>(), It.IsAny<PromotionCheckContext>())).Returns(false);
 
             // Act
             var result = await ctrl.GetEligiblePromotions(request) as JsonResult;
