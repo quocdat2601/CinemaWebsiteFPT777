@@ -141,9 +141,9 @@
 
         // Table columns mapping (update as needed)
         const tableColumns = {
-            Invoice: [   "MovieName", "ScheduleShow", "Seat"],
+            Invoice: [   "MovieName", "ScheduleShow", "Seat", "AccountId"],
             Member: [ "Score"],
-            Movie: [ "Director", "FromDate", "ToDate", "MovieNameEnglish"],
+            Movie: [ "FromDate", "ToDate", "MovieNameEnglish"],
             SeatType: ["TypeName", "PricePercent"],
             Type: [ "TypeName"],
             Food: [ "FoodName", "Price"]
@@ -154,13 +154,13 @@
             Invoice: {
                 MovieName: "Movie Name",
                 ScheduleShow: "Schedule Show",
-                Seat: "Seat Count"
+                Seat: "Seat Count",
+                AccountId: "Account ID"
             },
             Member: {
                 Score: "Score"
             },
             Movie: {
-                Director: "Director",
                 FromDate: "From Date",
                 ToDate: "To Date",
                 MovieNameEnglish: "Movie Name English"
@@ -183,13 +183,13 @@
             Invoice: {
                 MovieName: "string",
                 ScheduleShow: "date",
-                Seat: "string"
+                Seat: "string",
+                AccountId: "string"
             },
             Member: {
                 Score: "number"
             },
             Movie: {
-                Director: "string",
                 FromDate: "date",
                 ToDate: "date",
                 MovieNameEnglish: "string"
