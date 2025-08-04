@@ -22,9 +22,13 @@ namespace MovieTheater.Controllers
 
         [HttpPost("test-generate")]
         [Authorize]
-        [HttpPost("test-generate")]
         public IActionResult TestGenerateToken([FromBody] LoginViewModel model)
         {
+            if (model == null)
+            {
+                return BadRequest("Invalid credentials");
+            }
+            
             if (_accountService.Authenticate(model.Username, model.Password, out var account))
             {
                 var token = _jwtService.GenerateToken(account);
