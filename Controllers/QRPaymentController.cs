@@ -768,7 +768,7 @@ namespace MovieTheater.Controllers
         /// Test QR code cho Member - để kiểm tra QR code có hoạt động không
         /// </summary>
         [HttpGet]
-        public IActionResult TestQRForMember()
+        public IActionResult TestQRForMember() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             try
             {
@@ -808,7 +808,7 @@ namespace MovieTheater.Controllers
         /// Hiển thị QR code cho Guest
         /// </summary>
         [HttpGet]
-        public IActionResult DisplayQR(string orderId, decimal amount, string customerName, string customerPhone, string movieName, string showTime, string seatInfo)
+        public IActionResult DisplayQR(string orderId, decimal amount, string customerName, string customerPhone, string movieName, string showTime, string seatInfo) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             try
             {

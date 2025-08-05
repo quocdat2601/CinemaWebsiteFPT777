@@ -178,7 +178,7 @@ namespace MovieTheater.Repository
         {
             return _context.CinemaRooms
                 .Include(c => c.Version)
-                .Where(c => c.VersionId == versionId && c.StatusId == 1)
+                .Where(c => c.VersionId == versionId)
                 .ToList();
         }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
@@ -19,11 +19,11 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Xem lịch sử điểm cộng
+        /// Xem l?ch s? di?m c?ng
         /// </summary>
         /// <remarks>url: /Score/ScoreHistory (GET)</remarks>
         [HttpGet]
-        public IActionResult ScoreHistory()
+        public IActionResult ScoreHistory() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))
@@ -38,7 +38,7 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Xem lịch sử điểm theo khoảng ngày và loại điểm
+        /// Xem l?ch s? di?m theo kho?ng ng�y v� lo?i di?m
         /// </summary>
         /// <remarks>url: /Score/ScoreHistory (POST)</remarks>
         [HttpPost]
@@ -64,11 +64,11 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Lấy lịch sử điểm (partial, ajax)
+        /// L?y l?ch s? di?m (partial, ajax)
         /// </summary>
         /// <remarks>url: /Score/ScoreHistoryPartial (GET)</remarks>
         [HttpGet]
-        public IActionResult ScoreHistoryPartial(string fromDate, string toDate, string historyType)
+        public IActionResult ScoreHistoryPartial(string fromDate, string toDate, string historyType) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(accountId))

@@ -250,8 +250,8 @@ namespace MovieTheater.Service
                 .Select(g => (Category: g.Key, Revenue: g.Sum(fi => fi.Price * fi.Quantity)))
                 .ToList();
 
-            // Sales by hour (last 7 days)
-            var salesByHour = Enumerable.Range(0, 24)
+            // Sales by hour (last 7 days) - 8 AM to 11 PM only
+            var salesByHour = Enumerable.Range(8, 16) // 8 to 23 (8 AM to 11 PM)
                 .Select(hour => sevenDayValidFoodInvoices.Count(fi => fi.Invoice.BookingDate.HasValue && fi.Invoice.BookingDate.Value.Hour == hour))
                 .ToList();
 

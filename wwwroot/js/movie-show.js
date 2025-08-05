@@ -171,24 +171,72 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 2. Cinema Room selection enables Show Date
-    cinemaRoomSelect.addEventListener('change', function () {
+    cinemaRoomSelect.addEventListener('change', async function () {
         resetAndDisable(showDateSelect);
         resetAndDisable(scheduleSelect);
         addMovieShowBtn.disabled = true;
         const roomId = cinemaRoomSelect.value;
         if (!roomId) return;
 
-        // Populate show dates from global variable
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to midnight
+        // Get the selected movie ID
+        const movieId = document.getElementById('movieId')?.value;
+        if (!movieId) {
+            // Fallback to original logic if no movie ID
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to midnight
 
-        const filteredDates = availableShowDates.filter(d => {
-            const dateObj = new Date(d.value);
-            dateObj.setHours(0, 0, 0, 0); // Set to midnight
-            return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
-        });
-        populateShowDates(filteredDates);
-        showDateSelect.disabled = false;
+            const filteredDates = availableShowDates.filter(d => {
+                const dateObj = new Date(d.value);
+                dateObj.setHours(0, 0, 0, 0); // Set to midnight
+                return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
+            });
+            populateShowDates(filteredDates);
+            showDateSelect.disabled = false;
+            return;
+        }
+
+        // Get available dates considering room availability
+        try {
+            const response = await fetch(`/Movie/GetAvailableDatesForRoom?cinemaRoomId=${roomId}&movieId=${movieId}`);
+            if (response.ok) {
+                const data = await response.json();
+                const availableDates = data.availableDates;
+                
+                // Convert the available dates to the format expected by populateShowDates
+                const formattedDates = availableDates.map(date => ({
+                    value: date.value,
+                    text: date.text
+                }));
+                
+                populateShowDates(formattedDates);
+                showDateSelect.disabled = false;
+            } else {
+                // Fallback to original logic if endpoint fails
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const filteredDates = availableShowDates.filter(d => {
+                    const dateObj = new Date(d.value);
+                    dateObj.setHours(0, 0, 0, 0);
+                    return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
+                });
+                populateShowDates(filteredDates);
+                showDateSelect.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error fetching available dates:', error);
+            // Fallback to original logic
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const filteredDates = availableShowDates.filter(d => {
+                const dateObj = new Date(d.value);
+                dateObj.setHours(0, 0, 0, 0);
+                return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
+            });
+            populateShowDates(filteredDates);
+            showDateSelect.disabled = false;
+        }
     });
 
     // 3. Show Date selection enables Schedule
