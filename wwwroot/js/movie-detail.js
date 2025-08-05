@@ -171,46 +171,108 @@
                 bookSection.style.display = 'block';
             }
 
+            // Create date selector
+            const dateSelector = document.createElement('select');
+            dateSelector.className = 'date-selector';
+            dateSelector.id = 'showtimeDateSelect';
+            dateSelector.innerHTML = '<option value="">— Select Date —</option>';
+            
             sortedGroups.forEach(group => {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'schedule-date mb-4';
+                const option = document.createElement('option');
+                option.value = group.dateText;
+                option.textContent = group.dateText;
+                dateSelector.appendChild(option);
+            });
+            
+            container.appendChild(dateSelector);
 
-                const heading = document.createElement('h4');
-                heading.className = 'text-muted mb-3 bg bg-info text-center';
-                heading.innerHTML = group.dateText;
-                heading.style = 'width: 150px; border-radius: 10px';
-                groupDiv.appendChild(heading);
+            // Create showtime grid container
+            const showtimeGrid = document.createElement('div');
+            showtimeGrid.className = 'showtime-grid';
+            showtimeGrid.id = 'showtimeGrid';
+            container.appendChild(showtimeGrid);
 
+            // Show first date by default, or tomorrow if available
+            if (sortedGroups.length > 0) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowStr = `${tomorrow.getDate().toString().padStart(2, '0')}/${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}/${tomorrow.getFullYear()}`;
+                
+                const tomorrowGroup = sortedGroups.find(group => group.dateText === tomorrowStr);
+                if (tomorrowGroup) {
+                    dateSelector.value = tomorrowStr;
+                    displayShowtimesForDate(tomorrowStr, tomorrowGroup);
+                } else {
+                    displayShowtimesForDate(sortedGroups[0].dateText, sortedGroups[0]);
+                }
+            }
+
+            // Add event listener for date selector
+            dateSelector.addEventListener('change', function() {
+                const selectedDate = this.value;
+                if (selectedDate) {
+                    const selectedGroup = sortedGroups.find(group => group.dateText === selectedDate);
+                    if (selectedGroup) {
+                        displayShowtimesForDate(selectedDate, selectedGroup);
+                    }
+                } else {
+                    showtimeGrid.innerHTML = '';
+                }
+            });
+
+            function displayShowtimesForDate(dateText, group) {
+                showtimeGrid.innerHTML = '';
+                
                 // Sort versions alphabetically
                 const sortedVersions = Object.keys(group.versions).sort((a, b) => a.localeCompare(b));
 
                 sortedVersions.forEach(versionName => {
-                    const versionDiv = document.createElement('div');
-                    versionDiv.className = 'mb-3';
-
-                    const versionLabel = document.createElement('div');
-                    versionLabel.className = 'medium text-white mb-2';
-                    versionLabel.innerHTML = versionName;
-                    versionDiv.appendChild(versionLabel);
-
-                    const timeContainer = document.createElement('div');
-                    timeContainer.className = 'd-flex flex-wrap gap-2';
-
                     // Convert Set to Array and sort times
                     const sortedTimes = Array.from(group.versions[versionName]).sort((a, b) => a.localeCompare(b));
+                    
                     sortedTimes.forEach(time => {
-                        const timeBtn = document.createElement('button');
-                        timeBtn.className = 'btn btn-outline-light btn-sm';
-                        timeBtn.innerText = time;
-                        timeContainer.appendChild(timeBtn);
+                        const showtimeBlock = document.createElement('div');
+                        showtimeBlock.className = 'showtime-block';
+
+                        const showtimeInfo = document.createElement('div');
+                        showtimeInfo.className = 'showtime-info';
+
+                        // Film icon
+                        const filmIcon = document.createElement('i');
+                        filmIcon.className = 'fas fa-film film-icon';
+                        showtimeInfo.appendChild(filmIcon);
+
+                        // Screen name (using version name as screen name)
+                        const screenName = document.createElement('div');
+                        screenName.className = 'screen-name';
+                        screenName.textContent = versionName;
+                        showtimeInfo.appendChild(screenName);
+
+                        // Time button
+                        const timeButton = document.createElement('button');
+                        timeButton.className = 'showtime-button';
+                        timeButton.textContent = time;
+                        timeButton.addEventListener('click', function() {
+                            // Handle booking logic here
+                            if (isAuthenticated) {
+                                // Redirect to booking page with selected parameters
+                                const [day, month, year] = dateText.split('/');
+                                const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                                window.location.href = `/Seat/Select?movieId=${movieId}&date=${dateText}&versionId=${versionName}&time=${time}`;
+                            } else {
+                                // Show login prompt
+                                window.location.href = '/Account/Login';
+                            }
+                        });
+                        showtimeInfo.appendChild(timeButton);
+
+
+
+                        showtimeBlock.appendChild(showtimeInfo);
+                        showtimeGrid.appendChild(showtimeBlock);
                     });
-
-                    versionDiv.appendChild(timeContainer);
-                    groupDiv.appendChild(versionDiv);
                 });
-
-                container.appendChild(groupDiv);
-            });
+            }
         } catch (error) {
             console.error('Error loading movie shows:', error);
             document.getElementById('movieShowsContainer').innerHTML =

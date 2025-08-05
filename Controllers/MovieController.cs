@@ -146,6 +146,11 @@ namespace MovieTheater.Controllers
                 AvailableVersions = movie.Versions.ToList(),
                 People = movie.People.ToList()
             };
+
+            // Lấy phim cùng thể loại cho phần "You may also like"
+            var similarMovies = _movieService.GetMoviesBySameGenre(id, 4);
+            ViewBag.SimilarMovies = similarMovies;
+
             return View(viewModel);
         }
 

@@ -220,11 +220,13 @@ body.dark-mode .dashboard-kpi-table tr:nth-child(even) {
 
 /* Scrollable recent list */
 .dashboard-recent-list {
-  background: #fff;
+  background: #ffffff !important;
   border-radius: 10px;
   box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
   max-height: 260px;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
 }
 .recent-list-item {
   background: transparent;
@@ -241,7 +243,20 @@ body.light-mode .recent-list-item {
   border: none !important;
 }
 body.dark-mode .dashboard-recent-list {
-  background: #181c2f;
+  background: #181c2f !important;
+}
+
+/* Ensure white background in light mode */
+body.light-mode .dashboard-recent-list,
+.dashboard-recent-list {
+  background: #ffffff !important;
+}
+
+/* Force white background for dashboard recent lists */
+.tab-content.flex-fill.dashboard-recent-list,
+.dashboard-recent-list {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 .dashboard-recent-list::-webkit-scrollbar {
   width: 8px;
@@ -611,9 +626,7 @@ body.light-mode .card .card-body .display-6 {
     display: block;
 }
 
-.dashboard-recent-list {
-    overflow-y: auto;
-}
+/* Removed duplicate definition that was overriding the white background */
 
 /* Remove border-end class styles */
 .border-end {
@@ -663,13 +676,17 @@ body, html {
 }
 
 .dashboard-recent-list {
-    background: transparent;
+    background: #ffffff !important;
     padding: 0;
     margin: 0;
     max-height: 288px; /* 4 cards at ~72px each */
     height: 288px;
     overflow-y: auto;
     flex: 1 1 auto;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+    position: relative;
+    z-index: 1;
 }
 
 .recent-list-item {
@@ -725,4 +742,35 @@ body, html {
     opacity: 0.9;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.9);
+}
+
+/* Force white background for Recent Food Activity and Recent Movie Activity sections */
+#booked-list,
+#cancelled-list,
+#orders-list,
+#cancels-list,
+.tab-content.flex-fill.dashboard-recent-list,
+.dashboard-recent-list {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07) !important;
+}
+
+/* Ensure proper styling for recent list items in white background */
+.dashboard-recent-list .recent-list-item {
+    background-color: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    color: #212529 !important;
+}
+
+.dashboard-recent-list .recent-list-item:hover {
+    background-color: #e9ecef !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dashboard-recent-list .text-warning,
+.dashboard-recent-list .fw-bold {
+    color: #fd7e14 !important;
 }
