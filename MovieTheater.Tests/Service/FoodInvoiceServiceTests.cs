@@ -190,15 +190,13 @@ namespace MovieTheater.Tests.Service
             var invoiceId = "INV-001";
             List<FoodViewModel> selectedFoods = null;
 
-            _mockRepository.Setup(r => r.CreateMultipleAsync(It.IsAny<IEnumerable<FoodInvoice>>()))
-                .ReturnsAsync(new List<FoodInvoice>());
-
             // Act
             var result = await _service.SaveFoodOrderAsync(invoiceId, selectedFoods);
 
             // Assert
             Assert.True(result);
-            _mockRepository.Verify(r => r.CreateMultipleAsync(It.Is<IEnumerable<FoodInvoice>>(fi => !fi.Any())), Times.Once);
+            // Repository should not be called when foods is null
+            _mockRepository.Verify(r => r.CreateMultipleAsync(It.IsAny<IEnumerable<FoodInvoice>>()), Times.Never);
         }
 
         [Fact]
@@ -208,15 +206,13 @@ namespace MovieTheater.Tests.Service
             var invoiceId = "INV-001";
             var selectedFoods = new List<FoodViewModel>();
 
-            _mockRepository.Setup(r => r.CreateMultipleAsync(It.IsAny<IEnumerable<FoodInvoice>>()))
-                .ReturnsAsync(new List<FoodInvoice>());
-
             // Act
             var result = await _service.SaveFoodOrderAsync(invoiceId, selectedFoods);
 
             // Assert
             Assert.True(result);
-            _mockRepository.Verify(r => r.CreateMultipleAsync(It.Is<IEnumerable<FoodInvoice>>(fi => !fi.Any())), Times.Once);
+            // Repository should not be called when there are no foods to save
+            _mockRepository.Verify(r => r.CreateMultipleAsync(It.IsAny<IEnumerable<FoodInvoice>>()), Times.Never);
         }
 
         [Fact]
