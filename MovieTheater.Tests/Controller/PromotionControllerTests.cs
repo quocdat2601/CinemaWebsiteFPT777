@@ -667,5 +667,320 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
         }
+
+        // Test for lines 91-117: Date column handling in Create method
+        [Fact]
+        public async Task Create_Post_WithDateColumn_TargetValueHandledCorrectly()
+        {
+            // Arrange
+            var viewModel = new PromotionViewModel
+            {
+                Title = "Test Promotion",
+                Detail = "Test Detail",
+                DiscountLevel = 10,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(30),
+                IsActive = true,
+                TargetField = "Member",
+                TargetFieldColumn = "DateOfBirth", // Date column
+                Operator = ">",
+                TargetValue = "1990-01-01"
+            };
+
+            var mockImageFile = new Mock<IFormFile>();
+            mockImageFile.Setup(f => f.Length).Returns(1024);
+            mockImageFile.Setup(f => f.FileName).Returns("test.jpg");
+            mockImageFile.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockService.Setup(s => s.GetAll()).Returns(new List<Promotion>());
+            _mockService.Setup(s => s.Add(It.IsAny<Promotion>())).Returns(true);
+            _mockService.Setup(s => s.Save());
+
+            // Act
+            var result = await _controller.Create(viewModel, mockImageFile.Object);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            _mockService.Verify(s => s.Add(It.Is<Promotion>(p => 
+                p.PromotionConditions.Any(pc => 
+                    pc.TargetEntity == "Member" && 
+                    pc.TargetField == "DateOfBirth" && 
+                    pc.TargetValue == "1990-01-01"))), Times.Once);
+        }
+
+        // Test for lines 143-166: Path traversal validation in Create method
+        [Fact]
+        public async Task Create_Post_WithPathTraversalAttempt_ReturnsViewWithError()
+        {
+            // Arrange
+            var viewModel = new PromotionViewModel
+            {
+                Title = "Test Promotion",
+                Detail = "Test Detail",
+                DiscountLevel = 10,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(30),
+                IsActive = true
+            };
+
+            var mockImageFile = new Mock<IFormFile>();
+            mockImageFile.Setup(f => f.Length).Returns(1024);
+            mockImageFile.Setup(f => f.FileName).Returns("../../../malicious.jpg"); // Path traversal attempt
+            mockImageFile.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockService.Setup(s => s.GetAll()).Returns(new List<Promotion>());
+            _mockService.Setup(s => s.Add(It.IsAny<Promotion>())).Returns(true);
+            _mockService.Setup(s => s.Save());
+
+            // Act
+            var result = await _controller.Create(viewModel, mockImageFile.Object);
+
+            // Assert
+            Assert.IsType<ViewResult>(result);
+            var viewResult = result as ViewResult;
+            Assert.False(_controller.ModelState.IsValid);
+            Assert.Contains(_controller.ModelState.Values, v => v.Errors.Any(e => e.ErrorMessage.Contains("Only image files")));
+        }
+
+        // Test for lines 206-213: Mapping first PromotionCondition in Edit GET method
+        [Fact]
+        public void Edit_Get_WithPromotionConditions_MapsFirstConditionToViewModel()
+        {
+            // Arrange
+            var promotion = new Promotion 
+            { 
+                PromotionId = 1, 
+                Title = "Test", 
+                Detail = "Detail", 
+                DiscountLevel = 10, 
+                StartTime = DateTime.Now, 
+                EndTime = DateTime.Now.AddDays(1), 
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>
+                {
+                    new PromotionCondition
+                    {
+                        ConditionId = 1,
+                        TargetEntity = "Member",
+                        TargetField = "Age",
+                        Operator = ">",
+                        TargetValue = "18"
+                    }
+                }
+            };
+            _mockService.Setup(s => s.GetById(1)).Returns(promotion);
+
+            // Act
+            var result = _controller.Edit(1) as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            var viewModel = result.Model as PromotionViewModel;
+            Assert.NotNull(viewModel);
+            Assert.Equal("Member", viewModel.TargetField);
+            Assert.Equal("Age", viewModel.TargetFieldColumn);
+            Assert.Equal(">", viewModel.Operator);
+            Assert.Equal("18", viewModel.TargetValue);
+        }
+
+        // Test for lines 322-352: Complex condition handling in Edit POST method
+        [Fact]
+        public async Task Edit_Post_WithExistingCondition_UpdatesCondition()
+        {
+            // Arrange
+            var existingCondition = new PromotionCondition
+            {
+                ConditionId = 1,
+                TargetEntity = "Member",
+                TargetField = "Age",
+                Operator = ">",
+                TargetValue = "18"
+            };
+
+            var promotion = new Promotion
+            {
+                PromotionId = 1,
+                Title = "Test",
+                Detail = "Detail",
+                DiscountLevel = 10,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(1),
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition> { existingCondition }
+            };
+
+            var viewModel = new PromotionViewModel
+            {
+                PromotionId = 1,
+                Title = "Updated Test",
+                Detail = "Updated Detail",
+                DiscountLevel = 15,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(2),
+                IsActive = true,
+                TargetField = "Member",
+                TargetFieldColumn = "Age",
+                Operator = ">=",
+                TargetValue = "21"
+            };
+
+            _mockService.Setup(s => s.GetById(1)).Returns(promotion);
+            _mockService.Setup(s => s.Update(It.IsAny<Promotion>())).Returns(true);
+            _mockService.Setup(s => s.Save());
+
+            // Act
+            var result = await _controller.Edit(1, viewModel, null);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            _mockService.Verify(s => s.Update(It.Is<Promotion>(p => 
+                p.PromotionConditions.Any(pc => 
+                    pc.TargetEntity == "Member" && 
+                    pc.TargetField == "Age" && 
+                    pc.Operator == ">=" && 
+                    pc.TargetValue == "21"))), Times.Once);
+        }
+
+        [Fact]
+        public async Task Edit_Post_WithNoExistingCondition_CreatesNewCondition()
+        {
+            // Arrange
+            var promotion = new Promotion
+            {
+                PromotionId = 1,
+                Title = "Test",
+                Detail = "Detail",
+                DiscountLevel = 10,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(1),
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>() // Empty list
+            };
+
+            var viewModel = new PromotionViewModel
+            {
+                PromotionId = 1,
+                Title = "Updated Test",
+                Detail = "Updated Detail",
+                DiscountLevel = 15,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(2),
+                IsActive = true,
+                TargetField = "Member",
+                TargetFieldColumn = "Age",
+                Operator = ">",
+                TargetValue = "18"
+            };
+
+            _mockService.Setup(s => s.GetById(1)).Returns(promotion);
+            _mockService.Setup(s => s.Update(It.IsAny<Promotion>())).Returns(true);
+            _mockService.Setup(s => s.Save());
+
+            // Act
+            var result = await _controller.Edit(1, viewModel, null);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            _mockService.Verify(s => s.Update(It.Is<Promotion>(p => 
+                p.PromotionConditions.Any(pc => 
+                    pc.TargetEntity == "Member" && 
+                    pc.TargetField == "Age" && 
+                    pc.Operator == ">" && 
+                    pc.TargetValue == "18" &&
+                    pc.PromotionId == 1))), Times.Once);
+        }
+
+        [Fact]
+        public async Task Edit_Post_WithDateColumnCondition_HandlesDateValueCorrectly()
+        {
+            // Arrange
+            var promotion = new Promotion
+            {
+                PromotionId = 1,
+                Title = "Test",
+                Detail = "Detail",
+                DiscountLevel = 10,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(1),
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>()
+            };
+
+            var viewModel = new PromotionViewModel
+            {
+                PromotionId = 1,
+                Title = "Updated Test",
+                Detail = "Updated Detail",
+                DiscountLevel = 15,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(2),
+                IsActive = true,
+                TargetField = "Member",
+                TargetFieldColumn = "DateOfBirth", // Date column
+                Operator = ">",
+                TargetValue = "1990-01-01"
+            };
+
+            _mockService.Setup(s => s.GetById(1)).Returns(promotion);
+            _mockService.Setup(s => s.Update(It.IsAny<Promotion>())).Returns(true);
+            _mockService.Setup(s => s.Save());
+
+            // Act
+            var result = await _controller.Edit(1, viewModel, null);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            _mockService.Verify(s => s.Update(It.Is<Promotion>(p => 
+                p.PromotionConditions.Any(pc => 
+                    pc.TargetEntity == "Member" && 
+                    pc.TargetField == "DateOfBirth" && 
+                    pc.TargetValue == "1990-01-01"))), Times.Once);
+        }
+
+        [Fact]
+        public async Task Edit_Post_WithEmptyTargetFields_SkipsConditionCreation()
+        {
+            // Arrange
+            var promotion = new Promotion
+            {
+                PromotionId = 1,
+                Title = "Test",
+                Detail = "Detail",
+                DiscountLevel = 10,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(1),
+                IsActive = true,
+                PromotionConditions = new List<PromotionCondition>()
+            };
+
+            var viewModel = new PromotionViewModel
+            {
+                PromotionId = 1,
+                Title = "Updated Test",
+                Detail = "Updated Detail",
+                DiscountLevel = 15,
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddDays(2),
+                IsActive = true,
+                TargetField = "", // Empty
+                TargetFieldColumn = "", // Empty
+                Operator = ">",
+                TargetValue = "18"
+            };
+
+            _mockService.Setup(s => s.GetById(1)).Returns(promotion);
+            _mockService.Setup(s => s.Update(It.IsAny<Promotion>())).Returns(true);
+            _mockService.Setup(s => s.Save());
+
+            // Act
+            var result = await _controller.Edit(1, viewModel, null);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            _mockService.Verify(s => s.Update(It.Is<Promotion>(p => 
+                !p.PromotionConditions.Any())), Times.Once);
+        }
     }
 }
