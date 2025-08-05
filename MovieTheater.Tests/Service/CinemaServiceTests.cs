@@ -126,7 +126,7 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
-        public void Update_WithValidCinemaRoom_ReturnsTrue()
+        public async Task Update_WithValidCinemaRoom_ReturnsTrueAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "Updated Room" };
@@ -134,7 +134,7 @@ namespace MovieTheater.Tests.Service
             _repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
 
             // Act
-            var result = _service.Update(cinemaRoom);
+            var result = await _service.Update(cinemaRoom);
 
             // Assert
             Assert.True(result);
@@ -143,14 +143,14 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
-        public void Update_WhenRepositoryThrowsException_ReturnsFalse()
+        public async Task Update_WhenRepositoryThrowsException_ReturnsFalseAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "Updated Room" };
             _repositoryMock.Setup(r => r.Update(cinemaRoom)).Throws(new Exception("Test exception"));
 
             // Act
-            var result = _service.Update(cinemaRoom);
+            var result = await _service.Update(cinemaRoom);
 
             // Assert
             Assert.False(result);
@@ -265,13 +265,13 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
-        public void Update_WithNullCinemaRoom_ThrowsArgumentNullException()
+        public async Task Update_WithNullCinemaRoom_ThrowsArgumentNullException()
         {
             // Arrange
             CinemaRoom cinemaRoom = null;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _service.Update(cinemaRoom));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _service.Update(cinemaRoom));
         }
 
         [Fact]
@@ -304,4 +304,4 @@ namespace MovieTheater.Tests.Service
             await Assert.ThrowsAsync<ArgumentNullException>(() => _service.Disable(cinemaRoom));
         }
     }
-} 
+}

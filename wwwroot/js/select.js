@@ -26,10 +26,23 @@
             today.setHours(0, 0, 0, 0);
             
             if (selectedDate >= today) {
+                // Submit form immediately when date is selected
                 document.getElementById('dateNavForm').submit();
             } else {
                 // Reset to today if user tries to select a past date
                 instance.setDate(today, true, "d/m/Y");
+            }
+        },
+        onClose: function(selectedDates, dateStr, instance) {
+            // Also submit on close if a valid date was selected
+            if (selectedDates.length > 0) {
+                const selectedDate = new Date(selectedDates[0]);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate >= today) {
+                    document.getElementById('dateNavForm').submit();
+                }
             }
         }
     });

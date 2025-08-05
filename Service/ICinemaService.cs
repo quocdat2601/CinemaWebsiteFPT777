@@ -7,7 +7,7 @@ namespace MovieTheater.Service
         public IEnumerable<CinemaRoom> GetAll();
         public CinemaRoom? GetById(int? id);
         public void Add(CinemaRoom cinemaRoom);
-        public bool Update(CinemaRoom cinemaRoom);
+        Task<bool> Update(CinemaRoom cinemaRoom);
         Task<bool> DeleteAsync(int id);
         Task SaveAsync();
         public Task<bool> Enable(CinemaRoom cinemaRoom);

@@ -17,20 +17,18 @@
     </div>
 
     <!-- Search and Filter Section -->
-    <div class="card mb-4">
+    <div class="card mb-2">
         <div class="card-header">
             <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter</h5>
         </div>
         <div class="card-body">
-            <form id="foodSearchForm" class="row g-3" onsubmit="searchFood(); return false;">
+            <form id="foodSearchForm" class="row g-3" method="get" onsubmit="searchFood(); return false;">
                 <div class="col-md-4">
-                    <label for="searchKeyword" class="form-label">Search</label>
                     <input type="text" class="form-control" id="searchKeyword" name="keyword" 
-                           placeholder="Search by name or description..." value="@ViewBag.Keyword">
+                           placeholder="Search by name" value="@ViewBag.Keyword">
                 </div>
                 <div class="col-md-2">
-                    <label for="categoryFilter" class="form-label">Category</label>
-                    <select class="form-select" id="categoryFilter" name="categoryFilter">
+                    <select class="form-select" id="categoryFilter" name="categoryFilter" onchange="searchFood();">
                         @if (string.IsNullOrEmpty(ViewBag.CategoryFilter))
                         {
                             <option value="" selected>All Categories</option>
@@ -65,31 +63,36 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">Status</label>
-                    <div class="btn-group w-100" role="group" aria-label="Status filter">
-                        <input type="radio" class="btn-check" name="statusFilter" id="statusActive" value="true" 
-                               @(string.IsNullOrEmpty(ViewBag.StatusFilter) || ViewBag.StatusFilter == "true" ? "checked" : "")>
-                        <label class="btn btn-outline-success" for="statusActive">
-                            <i class="bi bi-check-circle"></i> Active
+                <div class="col-md-2 text-center">
+                    <div class="btn-group" role="group" aria-label="Status filter">
+                        <input type="radio" class="btn-check" name="statusFilter" id="statusAll" value=""
+                               @(string.IsNullOrEmpty(ViewBag.StatusFilter) ? "checked" : "") onchange="searchFood();">
+                        <label class="btn btn-outline-secondary" for="statusAll">
+                           All
                         </label>
-                        
-                        <input type="radio" class="btn-check" name="statusFilter" id="statusInactive" value="false" 
-                               @(ViewBag.StatusFilter == "false" ? "checked" : "")>
+
+                        <input type="radio" class="btn-check" name="statusFilter" id="statusActive" value="true"
+                               @(ViewBag.StatusFilter == "true" ? "checked" : "") onchange="searchFood();">
+                        <label class="btn btn-outline-success" for="statusActive">
+                            Active
+                        </label>
+
+                        <input type="radio" class="btn-check" name="statusFilter" id="statusInactive" value="false"
+                               @(ViewBag.StatusFilter == "false" ? "checked" : "") onchange="searchFood();">
                         <label class="btn btn-outline-danger" for="statusInactive">
-                            <i class="bi bi-x-circle"></i> Inactive
+                            Inactive
                         </label>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-outline-primary w-100">
+                    <button type="submit" class="btn btn-outline-primary w-75">
                         <i class="bi bi-search"></i> Search
                     </button>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">&nbsp;</label>
-                    <a href="#" onclick="loadTab('FoodMg'); return false;" class="btn btn-outline-secondary w-100">
+                    <a href="#" onclick="loadTab('FoodMg'); return false;" class="btn btn-outline-secondary w-75">
                         <i class="bi bi-arrow-clockwise"></i> Reset
                     </a>
                 </div>
@@ -103,22 +106,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-list-ul"></i> Food List</h5>
-            @if (!string.IsNullOrEmpty(ViewBag.Keyword) || !string.IsNullOrEmpty(ViewBag.CategoryFilter))
-            {
-                <small class="text-muted">
-                    @if (!string.IsNullOrEmpty(ViewBag.Keyword))
-                    {
-                        <span class="badge bg-info me-1">Search: "@ViewBag.Keyword"</span>
-                    }
-                    @if (!string.IsNullOrEmpty(ViewBag.CategoryFilter))
-                    {
-                        <span class="badge bg-primary me-1">Category: @ViewBag.CategoryFilter</span>
-                    }
-                    <span class="badge bg-@(ViewBag.StatusFilter == "true" ? "success" : "danger") me-1">
-                        Status: @(ViewBag.StatusFilter == "true" ? "Active" : "Inactive")
-                    </span>
-                </small>
-            }
+           
         </div>
         <div class="card-body">
             @if (Model.Foods.Any())
@@ -127,7 +115,6 @@
                     <table id="food-table" class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>Image</th>
                                 <th class="sortable" data-sort="name">Name <span id="sortIconName"></span></th>
                                 <th class="sortable" data-sort="category">Category <span id="sortIconCategory"></span></th>
                                 <th class="sortable" data-sort="price">Price <span id="sortIconPrice"></span></th>
@@ -140,19 +127,7 @@
                             @foreach (var food in Model.Foods)
                             {
                                 <tr>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(food.Image))
-                                        {
-                                            <img src="@food.Image" alt="@food.Name" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                                        }
-                                        else
-                                        {
-                                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" 
-                                                 style="width: 50px; height: 50px; font-size: 12px;">
-                                                No Image
-                                            </div>
-                                        }
-                                    </td>
+                                   
                                     <td>
                                         <strong>@food.Name</strong>
                                         @if (!string.IsNullOrEmpty(food.Description))
@@ -247,38 +222,4 @@
 
 @section Scripts {
     <script src="~/js/admin-sorting.js"></script>
-    <script>
-        // Auto-submit form when filters change
-        $(document).ready(function() {
-            // Category filter change
-            $('#categoryFilter').change(function() {
-                searchFood();
-            });
-            
-            // Status filter change (real-time)
-            $('input[name="statusFilter"]').change(function() {
-                searchFood();
-            });
-            
-            // Add debounce to search input
-            let searchTimeout;
-            $('#searchKeyword').on('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(function() {
-                    searchFood();
-                }, 500);
-            });
-            
-            // Add loading indicator for status buttons
-            $('input[name="statusFilter"]').on('change', function() {
-                const label = $('label[for="' + this.id + '"]');
-                label.append('<span class="spinner-border spinner-border-sm ms-1" role="status"></span>');
-            });
-            
-            // Remove loading indicator after search completes
-            $(document).on('tabContentLoaded', function() {
-                $('.spinner-border').remove();
-            });
-        });
-    </script>
 } 

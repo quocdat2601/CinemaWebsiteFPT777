@@ -267,8 +267,20 @@
     });
 
     $('#confirmBtn').on('click', function (e) {
-        $(this).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...').prop('disabled', true);
+        // Prevent default form submission
+        e.preventDefault();
+        
+        // Update the form fields
         updatePriceFlow();
+        
+        // Ensure isTestSuccess is set to false for normal submissions
+        $('#isTestSuccess').val('false');
+        
+        // Update the button state
+        $(this).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...').prop('disabled', true);
+        
+        // Submit the form
+        $('#confirmForm').submit();
     });
 
     // Initialize

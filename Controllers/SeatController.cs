@@ -306,7 +306,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Employee")]
-        public async Task<IActionResult> CreateCoupleSeat([FromBody] CoupleSeat coupleSeat)
+        public async Task<IActionResult> CreateCoupleSeat([FromBody] CoupleSeatRequest coupleSeat)
         {
             if (!ModelState.IsValid)
             {
@@ -382,7 +382,7 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Employee")]
-        public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeat> coupleSeats)
+        public async Task<IActionResult> CreateCoupleSeatsBatch([FromBody] List<CoupleSeatRequest> coupleSeats)
         {
             if (!ModelState.IsValid)
             {

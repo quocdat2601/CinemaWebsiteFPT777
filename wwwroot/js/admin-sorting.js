@@ -151,7 +151,6 @@ $(document).ready(function() {
 
 // Add event handler for radio button changes
 $(document).on('change', 'input[name="bookingTypeFilter"]', function() {
-    console.log('Radio button changed:', $(this).val());
     const selectedValue = $(this).val();
     // Save the selected value before reloading
     localStorage.setItem('bookingTypeFilter', selectedValue);
@@ -160,13 +159,11 @@ $(document).on('change', 'input[name="bookingTypeFilter"]', function() {
 
 // Add event handler for search input changes
 $(document).on('input', '#searchKeyword', function() {
-    console.log('Search input changed:', $(this).val());
     window.searchBookings();
 });
 
 // Add event handler for status filter changes
 $(document).on('change', '#statusFilter', function() {
-    console.log('Status filter changed:', $(this).val());
     window.searchBookings();
 });
 
@@ -227,12 +224,12 @@ window.resetFilters = function() {
     window.searchFoodWithSort = function() {
         const keyword = document.getElementById('searchKeyword').value;
         const category = document.getElementById('categoryFilter').value;
-        const status = document.querySelector('input[name="statusFilter"]:checked')?.value || 'true';
+        const status = document.querySelector('input[name="statusFilter"]:checked')?.value || '';
         const params = {};
         if (keyword) params.keyword = keyword;
         if (category) params.categoryFilter = category;
-        // Always include statusFilter, default to 'true' (Active)
-        params.statusFilter = status;
+        // Include statusFilter only if it's not empty (not "All")
+        if (status) params.statusFilter = status;
         if (window.currentSortFood.param) params.sortBy = window.currentSortFood.param;
         window.loadTab('FoodMg', params);
     }

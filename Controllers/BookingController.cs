@@ -206,34 +206,40 @@ namespace MovieTheater.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model, string IsTestSuccess)
+        public async Task<IActionResult> Confirm(ConfirmBookingViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View("ConfirmBooking", model);
-            }
+            Console.WriteLine($"[BookingController.Confirm] Starting confirmation process");
+            Console.WriteLine($"[BookingController.Confirm] ModelState.IsValid: {ModelState.IsValid}");
+            
+            // if (!ModelState.IsValid)
+            // {
+            //     Console.WriteLine($"[BookingController.Confirm] ModelState is invalid, returning to view");
+            //     return View("ConfirmBooking", model);
+            // }
             var userId = _accountService.GetCurrentUser()?.AccountId;
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-           var result = await _bookingDomainService.ConfirmBookingAsync(model, userId, IsTestSuccess);
+           var result = await _bookingDomainService.ConfirmBookingAsync(model, userId);
            Console.WriteLine($"[Controller] Model.SelectedVoucherId: {model.SelectedVoucherId}, Model.VoucherAmount: {model.VoucherAmount}");
 
-           if (!result.Success)
-           {
-               ModelState.AddModelError("", result.ErrorMessage);
-               return View("ConfirmBooking", model);
-           }
+            if (!result.Success)
+            {
+                Console.WriteLine($"[BookingController.Confirm] Booking failed: {result.ErrorMessage}");
+                ModelState.AddModelError("", result.ErrorMessage);
+                return View("ConfirmBooking", model);
+            }
 
-           
-           Console.WriteLine($"[BookingController.Confirm] IsTestSuccess: '{IsTestSuccess}', TotalPrice: {result.TotalPrice}");
+            Console.WriteLine($"[BookingController.Confirm] InvoiceId: {result.InvoiceId}");
 
-           if (IsTestSuccess == "true" || Math.Abs(result.TotalPrice) < 0.01m)
+           if (Math.Abs(result.TotalPrice) < 0.01m)
            {
+               Console.WriteLine($"[BookingController.Confirm] Redirecting to Success page");
                return RedirectToAction("Success", new { invoiceId = result.InvoiceId });
            }
            else
            {
+               Console.WriteLine($"[BookingController.Confirm] Redirecting to Payment page");
                return RedirectToAction("Payment", new { invoiceId = result.InvoiceId });
            }
        }
@@ -281,17 +287,25 @@ namespace MovieTheater.Controllers
         [Authorize]
         public async Task<IActionResult> Payment(string invoiceId)
         {
+            Console.WriteLine($"[BookingController.Payment] Starting payment process for invoiceId: {invoiceId}");
+            
             var invoice = _invoiceService.GetById(invoiceId);
             if (invoice == null)
             {
+                Console.WriteLine($"[BookingController.Payment] Invoice not found for id: {invoiceId}");
                 return NotFound();
             }
+
+            Console.WriteLine($"[BookingController.Payment] Invoice found - TotalMoney: {invoice.TotalMoney}, Status: {invoice.Status}");
 
            // Redirect to Success if total is 0 (for 0 VND bookings)   
            if ((invoice.TotalMoney ?? 0) == 0)
            {
+               Console.WriteLine($"[BookingController.Payment] TotalMoney is 0, redirecting to Success");
                return RedirectToAction("Success", new { invoiceId = invoice.InvoiceId });
            }
+
+           Console.WriteLine($"[BookingController.Payment] Proceeding with payment page display");
 
            var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
            decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);

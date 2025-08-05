@@ -103,6 +103,9 @@ namespace MovieTheater.Service
             var cinemaRoom = movieShow.CinemaRoom;
             if (cinemaRoom == null) return null;
 
+            var version = movieShow.Version;
+            if (version == null) return null;
+
             var seatTypes = await _seatService.GetSeatTypesAsync();
             var userAccount = _accountService.GetById(userId);
             if (userAccount == null) return null;
@@ -220,7 +223,7 @@ namespace MovieTheater.Service
                 CinemaRoomName = cinemaRoom.CinemaRoomName,
                 ShowDate = showDate,
                 ShowTime = showTime,
-                VersionName = movieShow.Version?.VersionName ?? "N/A",
+                VersionName = version.VersionName,
                 VersionId = movieShow.VersionId, // <-- Set VersionId here
                 SelectedSeats = seats,
                 Subtotal = subtotal,
@@ -242,7 +245,7 @@ namespace MovieTheater.Service
             return viewModel;
         }
 
-        public async Task<BookingResult> ConfirmBookingAsync(ConfirmBookingViewModel model, string userId, string isTestSuccess)
+        public async Task<BookingResult> ConfirmBookingAsync(ConfirmBookingViewModel model, string userId)
         {
             Console.WriteLine($"[DomainService] model.SelectedVoucherId: {model.SelectedVoucherId}, model.VoucherAmount: {model.VoucherAmount}");
             if (model == null || string.IsNullOrEmpty(userId) || model.SelectedSeats == null || !model.SelectedSeats.Any())
@@ -334,7 +337,7 @@ namespace MovieTheater.Service
                 BookingDate = DateTime.Now,
                 TotalMoney = finalTotalPrice, // <-- luôn là seat sau giảm + food sau giảm - discount
                 MovieShowId = model.MovieShowId,
-                Status = (isTestSuccess == "true") ? InvoiceStatus.Completed : InvoiceStatus.Incomplete,
+                Status = InvoiceStatus.Incomplete,
                 Seat = seatNames,
                 SeatIds = seatIdsStr,
                 RankDiscountPercentage = rankDiscountPercent,
@@ -345,30 +348,6 @@ namespace MovieTheater.Service
             };
             _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
-
-            // Only update scores and voucher if test success (real payment: do this after payment success)
-            if (isTestSuccess == "true")
-            {
-                if (priceResult.AddScore > 0)
-                {
-                    await _accountService.AddScoreAsync(userId, priceResult.AddScore, true); // Pass isTestSuccess true
-                }
-                if (priceResult.UseScore > 0)
-                {
-                    await _accountService.DeductScoreAsync(userId, priceResult.UseScore, true); // Pass isTestSuccess true
-                }
-                // Always mark voucher as used if applied (SelectedVoucherId or VoucherId)
-                string voucherIdToUse = !string.IsNullOrEmpty(model.SelectedVoucherId) ? model.SelectedVoucherId : invoice.VoucherId;
-                if (!string.IsNullOrEmpty(voucherIdToUse))
-                {
-                    var voucher = _voucherService.GetById(voucherIdToUse);
-                    if (voucher != null && (voucher.IsUsed == false))
-                    {
-                        voucher.IsUsed = true;
-                        _voucherService.Update(voucher);
-                    }
-                }
-            }
 
             // Đừng set SeatStatusId = 2 ở đây nữa, chỉ tạo ScheduleSeat nếu cần, không set trạng thái booked
             foreach (var seat in seats)

@@ -412,8 +412,8 @@ window.initFoodCharts = function() {
         const hourData = data.SalesByHour;
         
         // Extract data for hours 8-24 (indices 8-23 in the original array)
-        const filteredHourData = hourData.slice(8, 24);
-        const labels = Array.from({length: 16}, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`); // 8 AM to 11 PM
+        const filteredHourData = hourData.slice(8, 22);
+        const labels = Array.from({length: 15}, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`); // 8 AM to 11 PM
         
         createResponsiveChart(foodHourCanvas, {
             type: 'bar',

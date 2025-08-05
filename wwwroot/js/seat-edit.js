@@ -2,7 +2,7 @@
 const selectedSeats = new Set();
 
 // Get data from global variables set by the view
-const coupleSeatPairs = window.coupleSeatPairs || {};
+let coupleSeatPairs = {};
 
 let batchCouplePairs = []; // Store pairs for batch creation
 
@@ -185,29 +185,37 @@ function updateDisabledSeatCount() {
 }
 
 function isContiguousSelection(seatElements) {
-	// Get numeric seat IDs from the selected elements
-	const seatIds = seatElements.map(seat => parseInt(seat.getAttribute('data-seat-id')));
-	if (seatIds.length < 2) return false;
+	// Get seat positions from the selected elements
+	const seatPositions = seatElements.map(seat => ({
+		row: parseInt(seat.getAttribute('data-seat-row')),
+		col: parseInt(seat.getAttribute('data-seat-col'))
+	}));
+	
+	if (seatPositions.length < 2) return false;
 
-	// Check if strictly ascending
-	let ascending = true;
-	for (let i = 1; i < seatIds.length; i++) {
-		if (seatIds[i] !== seatIds[i - 1] + 1) {
-			ascending = false;
-			break;
-		}
-	}
+	// Sort by row first, then by column
+	seatPositions.sort((a, b) => {
+		if (a.row !== b.row) return a.row - b.row;
+		return a.col - b.col;
+	});
 
-	// Check if strictly descending
-	let descending = true;
-	for (let i = 1; i < seatIds.length; i++) {
-		if (seatIds[i] !== seatIds[i - 1] - 1) {
-			descending = false;
-			break;
-		}
-	}
+	// Check if seats are in the same row and adjacent columns
+	const sameRow = seatPositions.every((pos, index) => {
+		if (index === 0) return true;
+		return pos.row === seatPositions[index - 1].row && 
+			   pos.col === seatPositions[index - 1].col + 1;
+	});
 
-	return ascending || descending;
+	if (sameRow) return true;
+
+	// Check if seats are in adjacent rows and same column
+	const sameColumn = seatPositions.every((pos, index) => {
+		if (index === 0) return true;
+		return pos.col === seatPositions[index - 1].col && 
+			   pos.row === seatPositions[index - 1].row + 1;
+	});
+
+	return sameColumn;
 }
 
 function applySeatType(clickedTypeDiv) {
@@ -501,6 +509,8 @@ function deleteSelectedCoupleSeat(event) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function () {
+	// Initialize coupleSeatPairs from global variable
+	coupleSeatPairs = window.coupleSeatPairs || {};
 	updateDisabledSeatCount();
 	updateSelectionUI();
 });

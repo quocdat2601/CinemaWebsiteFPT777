@@ -14,6 +14,7 @@ namespace MovieTheater.Repository
         Task<List<SeatType>> GetSeatTypesAsync();
         Seat GetSeatByName(string seatName);
         Task DeleteCoupleSeatBySeatIdsAsync(int seatId1, int seatId2);
+        Task DeleteCoupleSeatsByCinemaRoomAsync(int cinemaRoomId);
         List<Seat> GetSeatsWithTypeByIds(List<int> seatIds);
         List<Seat> GetSeatsByNames(List<string> seatNames);
         Task UpdateSeatsStatusToBookedAsync(List<int> seatIds);

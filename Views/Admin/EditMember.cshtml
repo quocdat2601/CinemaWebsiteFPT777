@@ -64,7 +64,7 @@ else
 
                     <div class="form-group mb-3">
                         <label asp-for="DateOfBirth">Date of Birth</label>
-                        <input type="date" class="form-control" asp-for="DateOfBirth" placeholder="Date of Birth" />
+                        <input type="date" class="form-control" asp-for="DateOfBirth" placeholder="Date of Birth" max="@DateTime.Now.ToString("yyyy-MM-dd")"/>
                         <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                     </div>
 
