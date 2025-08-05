@@ -1,0 +1,151 @@
+/* Particle System Animation - Pure CSS */
+
+.particle-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+/* Dots (Chấm) */
+.particle-dot {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, rgba(255, 105, 180, 0.8) 0%, rgba(255, 105, 180, 0.3) 70%, transparent 100%);
+    border-radius: 50%;
+    animation: floatDot 15s linear infinite;
+    filter: blur(0.5px);
+}
+
+/* Lines (Đường kết nối) */
+.particle-line {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 105, 180, 0.6) 50%, transparent 100%);
+    animation: floatLine 12s linear infinite;
+    transform-origin: left center;
+}
+
+/* Tạo nhiều particles với delay khác nhau */
+.particle-dot:nth-child(1) { left: 10%; animation-delay: 0s; }
+.particle-dot:nth-child(2) { left: 20%; animation-delay: 2s; }
+.particle-dot:nth-child(3) { left: 30%; animation-delay: 4s; }
+.particle-dot:nth-child(4) { left: 40%; animation-delay: 6s; }
+.particle-dot:nth-child(5) { left: 50%; animation-delay: 8s; }
+.particle-dot:nth-child(6) { left: 60%; animation-delay: 10s; }
+.particle-dot:nth-child(7) { left: 70%; animation-delay: 12s; }
+.particle-dot:nth-child(8) { left: 80%; animation-delay: 14s; }
+
+.particle-line:nth-child(9) { left: 15%; animation-delay: 1s; }
+.particle-line:nth-child(10) { left: 25%; animation-delay: 3s; }
+.particle-line:nth-child(11) { left: 35%; animation-delay: 5s; }
+.particle-line:nth-child(12) { left: 45%; animation-delay: 7s; }
+.particle-line:nth-child(13) { left: 55%; animation-delay: 9s; }
+.particle-line:nth-child(14) { left: 65%; animation-delay: 11s; }
+.particle-line:nth-child(15) { left: 75%; animation-delay: 13s; }
+
+/* Animation cho dots */
+@keyframes floatDot {
+    0% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: translateY(90vh) scale(1);
+    }
+    90% {
+        opacity: 1;
+        transform: translateY(10vh) scale(1);
+    }
+    100% {
+        transform: translateY(-10vh) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Animation cho lines */
+@keyframes floatLine {
+    0% {
+        transform: translateY(100vh) rotate(0deg) scaleX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: translateY(90vh) rotate(15deg) scaleX(1);
+    }
+    50% {
+        transform: translateY(50vh) rotate(45deg) scaleX(1);
+    }
+    90% {
+        opacity: 1;
+        transform: translateY(10vh) rotate(75deg) scaleX(1);
+    }
+    100% {
+        transform: translateY(-10vh) rotate(90deg) scaleX(0);
+        opacity: 0;
+    }
+}
+
+/* Mouse-following effect với CSS custom properties */
+.particle-container {
+    --mouse-x: 0;
+    --mouse-y: 0;
+}
+
+.particle-dot:hover,
+.particle-line:hover {
+    transform: scale(1.5);
+    filter: brightness(1.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .particle-dot {
+        width: 3px;
+        height: 3px;
+    }
+    
+    .particle-line {
+        height: 0.5px;
+    }
+}
+
+/* Alternative: Using CSS Grid for more complex patterns */
+.particle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
+    gap: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.grid-particle {
+    width: 2px;
+    height: 2px;
+    background: rgba(255, 105, 180, 0.6);
+    border-radius: 50%;
+    animation: gridFloat 8s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.5s);
+}
+
+@keyframes gridFloat {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translateY(-20px) scale(1.5);
+        opacity: 1;
+    }
+} 

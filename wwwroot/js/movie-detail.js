@@ -60,7 +60,7 @@
         const modalBody = document.getElementById('actorModalBody');
         console.log(actor); // Inspect the whole object
         let bodyHtml = `
-        <div class="container-fluid text-black" style="font-size: 20px">
+        <div class="container-fluid text-white" style="font-size: 20px">
                 <div class="row g-3 align-items-center" style="margin-top: 0.1rem">
                   <!-- Left Column -->
               <div class="col-md-6 text-center">

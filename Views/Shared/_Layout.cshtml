@@ -31,10 +31,34 @@
     <link rel="stylesheet" href="~/css/navbar.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/admin-styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/particle-animation.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
+    @* Particle Background Animation *@
+    <div class="particle-container">
+        @* Dots *@
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        
+        @* Lines *@
+        <div class="particle-line" style="width: 30px;"></div>
+        <div class="particle-line" style="width: 25px;"></div>
+        <div class="particle-line" style="width: 35px;"></div>
+        <div class="particle-line" style="width: 20px;"></div>
+        <div class="particle-line" style="width: 40px;"></div>
+        <div class="particle-line" style="width: 28px;"></div>
+        <div class="particle-line" style="width: 32px;"></div>
+        <div class="particle-line" style="width: 22px;"></div>
+    </div>
+    
     <!-- jQuery (first, only once) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Bootstrap 5 JS -->
