@@ -686,7 +686,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void ShowtimeMg_ReturnsView_WithInvalidDate_UsesToday()
+        public void ShowtimeMg_ReturnsView_WithInvalidDate_UsesToday_SecondTest()
         {
             // Arrange
             var movieShows = new List<MovieShow>();
@@ -1069,6 +1069,1456 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public async void LoadTab_Dashboard_ReturnsDashboardPartialView()
+        {
+            // Arrange
+            var dashboardModel = new AdminDashboardViewModel
+            {
+                RevenueToday = 1000m,
+                BookingsToday = 5,
+                TicketsSoldToday = 10
+            };
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(It.IsAny<int>())).Returns(dashboardModel);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("Dashboard", range: "monthly") as PartialViewResult;
+
+            // Assert
+            Assert.Equal("Dashboard", result.ViewName);
+            Assert.Equal("monthly", result.ViewData["DashboardRange"]);
+            Assert.IsType<AdminDashboardViewModel>(result.Model);
+        }
+
+        [Fact]
+        public async void LoadTab_VersionMg_ReturnsVersionManagementView()
+        {
+            // Arrange
+            var seatTypes = new List<SeatType> { new SeatType() };
+            var versions = new List<MovieTheater.Models.Version> { new MovieTheater.Models.Version() };
+            _seatType.Setup(s => s.GetAll()).Returns(seatTypes);
+            _versionRepo.Setup(v => v.GetAll()).Returns(versions);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("VersionMg") as PartialViewResult;
+
+            // Assert
+            Assert.Equal("VersionMg", result.ViewName);
+            Assert.Same(versions, result.Model);
+            Assert.Same(seatTypes, ctrl.ViewBag.SeatTypes);
+        }
+
+        [Fact]
+        public async void LoadTab_CastMg_ReturnsCastManagementView()
+        {
+            // Arrange
+            var persons = new List<Person> 
+            { 
+                new Person { IsDirector = false },
+                new Person { IsDirector = true }
+            };
+            _personRepo.Setup(p => p.GetAll()).Returns(persons);
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("CastMg") as PartialViewResult;
+
+            // Assert
+            Assert.Equal("CastMg", result.ViewName);
+            Assert.Same(persons, ctrl.ViewBag.Persons);
+            Assert.Single(ctrl.ViewBag.Actors);
+            Assert.Single(ctrl.ViewBag.Directors);
+        }
+
+        [Fact]
+        public async void LoadTab_QRCode_ReturnsQRScannerView()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("QRCode") as PartialViewResult;
+
+            // Assert
+            Assert.Equal("~/Views/QRCode/Scanner.cshtml", result.ViewName);
+        }
+
+        [Fact]
+        public async void LoadTab_BookingMg_WithStatusFilter_FiltersInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> 
+            {
+                new Invoice { Status = InvoiceStatus.Completed, Cancel = false },
+                new Invoice { Status = InvoiceStatus.Completed, Cancel = true },
+                new Invoice { Status = InvoiceStatus.Incomplete }
+            };
+            _invSvc.Setup(i => i.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with proper query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", statusFilter: "completed") as PartialViewResult;
+
+            // Assert
+            var model = Assert.IsAssignableFrom<IEnumerable<Invoice>>(result.Model);
+            Assert.Single(model);
+            Assert.Equal(InvoiceStatus.Completed, model.First().Status);
+            Assert.False(model.First().Cancel);
+        }
+
+        [Fact]
+        public async void LoadTab_BookingMg_WithBookingTypeFilter_FiltersInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> 
+            {
+                new Invoice { EmployeeId = null },
+                new Invoice { EmployeeId = "E1" }
+            };
+            _invSvc.Setup(i => i.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with proper query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", bookingTypeFilter: "employee") as PartialViewResult;
+
+            // Assert
+            var model = Assert.IsAssignableFrom<IEnumerable<Invoice>>(result.Model);
+            Assert.Single(model);
+            Assert.NotNull(model.First().EmployeeId);
+        }
+
+        [Fact]
+        public async void LoadTab_BookingMg_WithSorting_SortsInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> 
+            {
+                new Invoice { InvoiceId = "B", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Beta" } } },
+                new Invoice { InvoiceId = "A", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Alpha" } } }
+            };
+            _invSvc.Setup(i => i.GetAll()).Returns(invoices);
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with proper query string for sorting
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues> 
+            { 
+                { "sortBy", "movie_az" } 
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            var model = Assert.IsAssignableFrom<IEnumerable<Invoice>>(result.Model);
+            Assert.Equal("Alpha", model.First().MovieShow.Movie.MovieNameEnglish);
+        }
+
+        [Fact]
+        public async void LoadTab_FoodMg_WithSorting_SortsFoods()
+        {
+            // Arrange
+            var foods = new List<FoodViewModel> 
+            {
+                new FoodViewModel { Name = "Beta", Category = "Drinks", Price = 20, CreatedDate = DateTime.Today.AddDays(1) },
+                new FoodViewModel { Name = "Alpha", Category = "Snacks", Price = 10, CreatedDate = DateTime.Today }
+            };
+            var foodList = new MovieTheater.ViewModels.FoodListViewModel { Foods = foods };
+            _foodSvc.Setup(f => f.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>())).ReturnsAsync(foodList);
+            var ctrl = BuildController();
+            var context = new DefaultHttpContext();
+            context.Request.QueryString = new QueryString("?sortBy=name_az&categoryFilter=&statusFilter=");
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            var model = Assert.IsType<MovieTheater.ViewModels.FoodListViewModel>(result.Model);
+            Assert.Equal("Alpha", model.Foods.First().Name);
+        }
+
+        [Fact]
+        public async void LoadTab_VoucherMg_WithSorting_SortsVouchers()
+        {
+            // Arrange
+            var vouchers = new List<Voucher> 
+            {
+                new Voucher { VoucherId = "2", AccountId = "B", Value = 200, CreatedDate = DateTime.Today.AddDays(1), ExpiryDate = DateTime.Today.AddDays(31) },
+                new Voucher { VoucherId = "1", AccountId = "A", Value = 100, CreatedDate = DateTime.Today, ExpiryDate = DateTime.Today.AddDays(30) }
+            };
+            _vouchSvc.Setup(v => v.GetFilteredVouchers(It.IsAny<MovieTheater.Service.VoucherFilterModel>())).Returns(vouchers);
+            var ctrl = BuildController();
+            var context = new DefaultHttpContext();
+            context.Request.QueryString = new QueryString("?sortBy=voucherid_asc&keyword=&statusFilter=&expiryFilter=");
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("VoucherMg") as PartialViewResult;
+
+            // Assert
+            var model = Assert.IsAssignableFrom<IEnumerable<Voucher>>(result.Model);
+            Assert.Equal("1", model.First().VoucherId);
+        }
+
+        [Fact]
+        public async void Edit_Post_RedirectsToEmployee_WhenUserIsEmployee()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            ctrl.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
+            
+            // Mock User claims for Employee role
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Employee")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+            ctrl.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = principal
+                }
+            };
+            
+            var model = new RegisterViewModel { AccountId = "id" };
+            _acctSvc.Setup(a => a.Update("id", model)).Returns(true);
+
+            // Act
+            var result = await ctrl.Edit("id", model) as RedirectToActionResult;
+
+            // Assert
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Employee", result.ControllerName);
+            Assert.Equal("MemberMg", result.RouteValues["tab"]);
+        }
+
+        [Fact]
+        public void ShowtimeMg_ReturnsView_WithInvalidDate_UsesToday()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var movieShows = new List<MovieShow>
+            {
+                new MovieShow { MovieShowId = 1, ShowDate = DateOnly.FromDateTime(DateTime.Today) }
+            };
+            _movieSvc.Setup(x => x.GetMovieShow()).Returns(movieShows);
+            _movieSvc.Setup(x => x.GetAllSchedules()).Returns(new List<Schedule>());
+            
+            // Set up HTTP context with RequestServices and TempData
+            var context = new DefaultHttpContext();
+            var services = new ServiceCollection();
+            services.AddSingleton<IMovieRepository>(Mock.Of<IMovieRepository>());
+            services.AddSingleton<ITempDataDictionaryFactory>(Mock.Of<ITempDataDictionaryFactory>());
+            context.RequestServices = services.BuildServiceProvider();
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = ctrl.ShowtimeMg("01/01/2024");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<ViewResult>(result);
+        }
+
+        [Fact]
+        public void ShowtimeMg_WithInvalidDate_ReturnsView()
+        {
+            // Arrange
+            var ctrl = BuildController();
+            var movieShows = new List<MovieShow>
+            {
+                new MovieShow { MovieShowId = 1, ShowDate = DateOnly.FromDateTime(DateTime.Today) }
+            };
+            _movieSvc.Setup(x => x.GetMovieShow()).Returns(movieShows);
+            _movieSvc.Setup(x => x.GetAllSchedules()).Returns(new List<Schedule>());
+            
+            // Set up HTTP context with RequestServices and TempData
+            var context = new DefaultHttpContext();
+            var services = new ServiceCollection();
+            services.AddSingleton<IMovieRepository>(Mock.Of<IMovieRepository>());
+            services.AddSingleton<ITempDataDictionaryFactory>(Mock.Of<ITempDataDictionaryFactory>());
+            context.RequestServices = services.BuildServiceProvider();
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = ctrl.ShowtimeMg("invalid-date");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<ViewResult>(result);
+        }
+
+        // Additional tests to improve branch coverage - Batch 1
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithNullKeyword_ReturnsAllEmployees()
+        {
+            // Arrange
+            var employees = new List<Employee> {
+                new() { Account = new Account { FullName = "John", IdentityCard = "123", Email = "john@test.com", PhoneNumber = "123456789", Address = "Test Address" } },
+                new() { Account = new Account { FullName = "Jane", IdentityCard = "456", Email = "jane@test.com", PhoneNumber = "987654321", Address = "Another Address" } }
+            };
+            _empSvc.Setup(x => x.GetAll()).Returns(employees);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("EmployeeMg", keyword: null) as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("EmployeeMg", result.ViewName);
+            var model = Assert.IsType<List<Employee>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithEmptyKeyword_ReturnsAllEmployees()
+        {
+            // Arrange
+            var employees = new List<Employee> {
+                new() { Account = new Account { FullName = "John", IdentityCard = "123", Email = "john@test.com", PhoneNumber = "123456789", Address = "Test Address" } },
+                new() { Account = new Account { FullName = "Jane", IdentityCard = "456", Email = "jane@test.com", PhoneNumber = "987654321", Address = "Another Address" } }
+            };
+            _empSvc.Setup(x => x.GetAll()).Returns(employees);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("EmployeeMg", keyword: "") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("EmployeeMg", result.ViewName);
+            var model = Assert.IsType<List<Employee>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithWhitespaceKeyword_ReturnsAllEmployees()
+        {
+            // Arrange
+            var employees = new List<Employee> {
+                new() { Account = new Account { FullName = "John", IdentityCard = "123", Email = "john@test.com", PhoneNumber = "123456789", Address = "Test Address" } },
+                new() { Account = new Account { FullName = "Jane", IdentityCard = "456", Email = "jane@test.com", PhoneNumber = "987654321", Address = "Another Address" } }
+            };
+            _empSvc.Setup(x => x.GetAll()).Returns(employees);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("EmployeeMg", keyword: "   ") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("EmployeeMg", result.ViewName);
+            var model = Assert.IsType<List<Employee>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithNullAccount_HandlesGracefully()
+        {
+            // Arrange
+            var employees = new List<Employee> {
+                new() { Account = null },
+                new() { Account = new Account { FullName = "Jane", IdentityCard = "456", Email = "jane@test.com", PhoneNumber = "987654321", Address = "Another Address" } }
+            };
+            _empSvc.Setup(x => x.GetAll()).Returns(employees);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("EmployeeMg", keyword: "jane") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("EmployeeMg", result.ViewName);
+            var model = Assert.IsType<List<Employee>>(result.Model);
+            Assert.Single(model);
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithNullAccountFields_HandlesGracefully()
+        {
+            // Arrange
+            var employees = new List<Employee> {
+                new() { Account = new Account { FullName = null, IdentityCard = null, Email = null, PhoneNumber = null, Address = null } },
+                new() { Account = new Account { FullName = "Jane", IdentityCard = "456", Email = "jane@test.com", PhoneNumber = "987654321", Address = "Another Address" } }
+            };
+            _empSvc.Setup(x => x.GetAll()).Returns(employees);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("EmployeeMg", keyword: "jane") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("EmployeeMg", result.ViewName);
+            var model = Assert.IsType<List<Employee>>(result.Model);
+            Assert.Single(model);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullKeyword_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "I1", AccountId = "A1", Account = new Account { PhoneNumber = "123", IdentityCard = "ID1" } },
+                new() { InvoiceId = "I2", AccountId = "A2", Account = new Account { PhoneNumber = "456", IdentityCard = "ID2" } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", keyword: null) as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithEmptyKeyword_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "I1", AccountId = "A1", Account = new Account { PhoneNumber = "123", IdentityCard = "ID1" } },
+                new() { InvoiceId = "I2", AccountId = "A2", Account = new Account { PhoneNumber = "456", IdentityCard = "ID2" } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", keyword: "") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullInvoiceFields_HandlesGracefully()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = null, AccountId = null, Account = null },
+                new() { InvoiceId = "I2", AccountId = "A2", Account = new Account { PhoneNumber = "456", IdentityCard = "ID2" } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", keyword: "456") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Single(model);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullAccountFields_HandlesGracefully()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "I1", AccountId = "A1", Account = new Account { PhoneNumber = null, IdentityCard = null } },
+                new() { InvoiceId = "I2", AccountId = "A2", Account = new Account { PhoneNumber = "456", IdentityCard = "ID2" } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", keyword: "456") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Single(model);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullStatusFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { Status = InvoiceStatus.Completed, Cancel = false },
+                new() { Status = InvoiceStatus.Incomplete, Cancel = false }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", statusFilter: null) as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithEmptyStatusFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { Status = InvoiceStatus.Completed, Cancel = false },
+                new() { Status = InvoiceStatus.Incomplete, Cancel = false }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", statusFilter: "") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithInvalidStatusFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { Status = InvoiceStatus.Completed, Cancel = false },
+                new() { Status = InvoiceStatus.Incomplete, Cancel = false }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", statusFilter: "invalid") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullBookingTypeFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { EmployeeId = null },
+                new() { EmployeeId = "EMP1" }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", bookingTypeFilter: null) as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithEmptyBookingTypeFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { EmployeeId = null },
+                new() { EmployeeId = "EMP1" }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", bookingTypeFilter: "") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithInvalidBookingTypeFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { EmployeeId = null },
+                new() { EmployeeId = "EMP1" }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", bookingTypeFilter: "invalid") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithAllBookingTypeFilter_ReturnsAllInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { EmployeeId = null },
+                new() { EmployeeId = "EMP1" }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg", bookingTypeFilter: "all") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullSortBy_ReturnsUnsortedInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "I2", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "B Movie" } } },
+                new() { InvoiceId = "I1", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "A Movie" } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+            Assert.Equal("I2", model[0].InvoiceId); // Should remain unsorted
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithEmptySortBy_ReturnsUnsortedInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "I2", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "B Movie" } } },
+                new() { InvoiceId = "I1", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "A Movie" } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+            Assert.Equal("I2", model[0].InvoiceId); // Should remain unsorted
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithInvalidSortBy_ReturnsUnsortedInvoices()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "I2", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "B Movie" } } },
+                new() { InvoiceId = "I1", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "A Movie" } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with empty query string
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var model = Assert.IsType<List<Invoice>>(result.Model);
+            Assert.Equal(2, model.Count);
+            Assert.Equal("I2", model[0].InvoiceId); // Should remain unsorted
+        }
+
+        [Fact]
+        public async Task LoadTab_Dashboard_WithMonthlyRange_ReturnsMonthlyDashboard()
+        {
+            // Arrange
+            var dashboardModel = new AdminDashboardViewModel
+            {
+                RevenueToday = 1000m,
+                BookingsToday = 10,
+                TicketsSoldToday = 15
+            };
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(30)).Returns(dashboardModel);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("Dashboard", range: "monthly") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Dashboard", result.ViewName);
+            var model = Assert.IsType<AdminDashboardViewModel>(result.Model);
+            Assert.Equal(1000m, model.RevenueToday);
+        }
+
+        [Fact]
+        public async Task LoadTab_Dashboard_WithWeeklyRange_ReturnsWeeklyDashboard()
+        {
+            // Arrange
+            var dashboardModel = new AdminDashboardViewModel
+            {
+                RevenueToday = 500m,
+                BookingsToday = 5,
+                TicketsSoldToday = 8
+            };
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(7)).Returns(dashboardModel);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("Dashboard", range: "weekly") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Dashboard", result.ViewName);
+            var model = Assert.IsType<AdminDashboardViewModel>(result.Model);
+            Assert.Equal(500m, model.RevenueToday);
+        }
+
+        [Fact]
+        public async Task LoadTab_Dashboard_WithInvalidRange_ReturnsWeeklyDashboard()
+        {
+            // Arrange
+            var dashboardModel = new AdminDashboardViewModel
+            {
+                RevenueToday = 500m,
+                BookingsToday = 5,
+                TicketsSoldToday = 8
+            };
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(7)).Returns(dashboardModel);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = await ctrl.LoadTab("Dashboard", range: "invalid") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Dashboard", result.ViewName);
+            var model = Assert.IsType<AdminDashboardViewModel>(result.Model);
+            Assert.Equal(500m, model.RevenueToday);
+        }
+
+        // Additional tests to improve branch coverage - Batch 2
+        [Fact]
+        public void BookingMgPartial_WithKeywordFilter_FiltersCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { InvoiceId = "INV001", AccountId = "ACC001", Account = new Account { PhoneNumber = "123456789", IdentityCard = "ID001" } },
+                new() { InvoiceId = "INV002", AccountId = "ACC002", Account = new Account { PhoneNumber = "987654321", IdentityCard = "ID002" } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(keyword: "INV001") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithStatusFilterPaid_FiltersCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { Status = InvoiceStatus.Completed, Cancel = false },
+                new() { Status = InvoiceStatus.Incomplete, Cancel = false }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(statusFilter: "paid") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithStatusFilterCancelled_FiltersCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { Status = InvoiceStatus.Completed, Cancel = true },
+                new() { Status = null, Cancel = false }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(statusFilter: "cancelled") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithStatusFilterUnpaid_FiltersCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { Status = InvoiceStatus.Incomplete, Cancel = false },
+                new() { Status = InvoiceStatus.Completed, Cancel = false }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(statusFilter: "unpaid") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithBookingTypeFilterNormal_FiltersCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { EmployeeId = null },
+                new() { EmployeeId = "EMP001" }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(bookingTypeFilter: "normal") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithBookingTypeFilterEmployee_FiltersCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { EmployeeId = "EMP001" },
+                new() { EmployeeId = null }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(bookingTypeFilter: "employee") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithSortByMovieAz_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Zebra" } } },
+                new() { MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Alpha" } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(sortBy: "movie_az") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithSortByMovieZa_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Alpha" } } },
+                new() { MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Zebra" } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(sortBy: "movie_za") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithSortByTimeAsc_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)) } } },
+                new() { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)) } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(sortBy: "time_asc") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithSortByTimeDesc_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice> {
+                new() { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)) } } },
+                new() { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)) } } }
+            };
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(sortBy: "time_desc") as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void BookingMgPartial_WithPagination_ReturnsCorrectPage()
+        {
+            // Arrange
+            var invoices = Enumerable.Range(1, 25).Select(i => new Invoice { InvoiceId = $"INV{i:000}" }).ToList();
+            _invSvc.Setup(x => x.GetAll()).Returns(invoices);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.BookingMgPartial(page: 2, pageSize: 10) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it's an anonymous type
+        }
+
+        [Fact]
+        public void GetMovieShowsByDate_WithValidDate_ReturnsJson()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow> {
+                new() { ShowDate = DateOnly.FromDateTime(DateTime.Today) }
+            };
+            _movieSvc.Setup(x => x.GetMovieShow()).Returns(movieShows);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShowsByDate(DateTime.Today.ToString("dd/MM/yyyy")) as JsonResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
+            // Don't check specific type since it returns an anonymous type
+        }
+
+        [Fact]
+        public void GetMovieShowsByDate_WithInvalidDate_ReturnsBadRequest()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>();
+            _movieSvc.Setup(x => x.GetMovieShow()).Returns(movieShows);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShowsByDate("invalid-date");
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public void GetMovieShowsByDate_WithNullDate_ReturnsBadRequest()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>();
+            _movieSvc.Setup(x => x.GetMovieShow()).Returns(movieShows);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShowsByDate(null);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public void GetMovieShowsByDate_WithEmptyDate_ReturnsBadRequest()
+        {
+            // Arrange
+            var movieShows = new List<MovieShow>();
+            _movieSvc.Setup(x => x.GetMovieShow()).Returns(movieShows);
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.GetMovieShowsByDate("");
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithStatusFilterTrue_ReturnsActiveFoods()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel> { new() { Status = true }, new() { Status = false } }
+            };
+            _foodSvc.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                    .ReturnsAsync(foods);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with status filter
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                ["statusFilter"] = "true"
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithStatusFilterFalse_ReturnsInactiveFoods()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel> { new() { Status = false }, new() { Status = true } }
+            };
+            _foodSvc.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                    .ReturnsAsync(foods);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with status filter
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                ["statusFilter"] = "false"
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByNameZa_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel> 
+                { 
+                    new() { Name = "Alpha" }, 
+                    new() { Name = "Zebra" } 
+                }
+            };
+            _foodSvc.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                    .ReturnsAsync(foods);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with sort parameter
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                ["sortBy"] = "name_za"
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByCategoryAz_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel> 
+                { 
+                    new() { Category = "Zebra" }, 
+                    new() { Category = "Alpha" } 
+                }
+            };
+            _foodSvc.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                    .ReturnsAsync(foods);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with sort parameter
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                ["sortBy"] = "category_az"
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByPriceDesc_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel> 
+                { 
+                    new() { Price = 10.0m }, 
+                    new() { Price = 20.0m } 
+                }
+            };
+            _foodSvc.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                    .ReturnsAsync(foods);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with sort parameter
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                ["sortBy"] = "price_desc"
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByCreatedDesc_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel> 
+                { 
+                    new() { CreatedDate = DateTime.Now.AddDays(-1) }, 
+                    new() { CreatedDate = DateTime.Now } 
+                }
+            };
+            _foodSvc.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                    .ReturnsAsync(foods);
+
+            var ctrl = BuildController();
+            
+            // Set up HTTP context with sort parameter
+            var context = new DefaultHttpContext();
+            var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            {
+                ["sortBy"] = "created_desc"
+            });
+            context.Request.Query = queryCollection;
+            ctrl.ControllerContext = new ControllerContext { HttpContext = context };
+
+            // Act
+            var result = await ctrl.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+        }
+
+        [Fact]
+        public void MainPage_WithMonthlyRange_SetsCorrectDays()
+        {
+            // Arrange
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(It.IsAny<int>()))
+                         .Returns(new AdminDashboardViewModel());
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.MainPage(tab: "Dashboard", range: "monthly") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            _dashboardSvc.Verify(x => x.GetDashboardViewModel(30), Times.Once);
+        }
+
+        [Fact]
+        public void MainPage_WithWeeklyRange_SetsCorrectDays()
+        {
+            // Arrange
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(It.IsAny<int>()))
+                         .Returns(new AdminDashboardViewModel());
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.MainPage(tab: "Dashboard", range: "weekly") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            _dashboardSvc.Verify(x => x.GetDashboardViewModel(7), Times.Once);
+        }
+
+        [Fact]
+        public void MainPage_WithInvalidRange_SetsDefaultDays()
+        {
+            // Arrange
+            _dashboardSvc.Setup(x => x.GetDashboardViewModel(It.IsAny<int>()))
+                         .Returns(new AdminDashboardViewModel());
+
+            var ctrl = BuildController();
+
+            // Act
+            var result = ctrl.MainPage(tab: "Dashboard", range: "invalid") as ViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            _dashboardSvc.Verify(x => x.GetDashboardViewModel(7), Times.Once);
         }
     }
 }

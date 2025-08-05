@@ -356,8 +356,11 @@ namespace MovieTheater.Tests.Repository
             using var context = GetInMemoryContext();
             var repo = new FoodRepository(context);
 
-            // Act & Assert - Should not throw exception
+            // Act
             await repo.DeleteAsync(999);
+
+            // Assert
+            Assert.Empty(context.Foods);
         }
 
         [Fact]

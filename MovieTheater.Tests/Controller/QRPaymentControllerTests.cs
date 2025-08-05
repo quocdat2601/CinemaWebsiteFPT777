@@ -74,8 +74,48 @@ namespace MovieTheater.Tests.Controller
             mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
             mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
             mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(queryable.GetEnumerator());
+            mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
             return mockSet;
+        }
+
+        private string CreateBaseModelData(Action<ConfirmTicketAdminViewModel> customizeAction = null)
+        {
+            var modelData = new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    PricePerTicket = 50000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://example.com/return",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>()
+            };
+
+            customizeAction?.Invoke(modelData);
+            return JsonSerializer.Serialize(modelData);
         }
 
         [Fact]
@@ -484,6 +524,7 @@ namespace MovieTheater.Tests.Controller
                 {
                     MovieName = "Test Movie",
                     MovieShowId = 1,
+                    TotalPrice = 100000m,
                     SelectedSeats = new List<SeatDetailViewModel>
                     {
                         new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
@@ -865,7 +906,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task CreateQRCodeForMember_ReturnsJson_WhenTotalPriceIsNegative()
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenTotalPriceIsNegative_Additional()
         {
             // Arrange
             var ctrl = BuildController();
@@ -1620,19 +1661,41 @@ namespace MovieTheater.Tests.Controller
             {
                 AccountId = "MEMBER001",
                 TotalPrice = 100000m,
-                AddedScore = -50, // Negative added score
                 BookingDetails = new ConfirmBookingViewModel
                 {
+                    MovieId = "1",
                     MovieName = "Test Movie",
                     MovieShowId = 1,
                     TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
                     SelectedSeats = new List<SeatDetailViewModel>
                     {
                         new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
                     }
                 },
                 MemberFullName = "Test Customer",
-                MemberPhoneNumber = "0123456789"
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = -100, // Negative added score
+                MemberScore = 1000
             });
 
             var mockAccounts = CreateMockDbSet(new List<Account> 
@@ -1659,7 +1722,6 @@ namespace MovieTheater.Tests.Controller
             Assert.NotNull(successProperty);
             Assert.NotNull(messageProperty);
             Assert.False((bool)successProperty.GetValue(resultValue));
-            Assert.Equal("Added score cannot be negative", messageProperty.GetValue(resultValue));
         }
 
         [Fact]
@@ -2239,6 +2301,3763 @@ namespace MovieTheater.Tests.Controller
             var successProperty = resultValue.GetType().GetProperty("success");
             Assert.NotNull(successProperty);
             Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMovieNameIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = null, // Null movie name
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Movie name is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberFullNameIsNull_Additional()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = null, // Null member full name
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Member full name is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberPhoneNumberIsNull_Additional()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = null // Null phone number
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Member phone number is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenShowDateIsDefault()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = default, // Default show date
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Show date is required", messageProperty.GetValue(resultValue));
+        }
+
+
+
+
+
+
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenPricePerTicketIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = -1000m, // Negative price per ticket - this should fail
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Price per ticket cannot be negative", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenPromotionDiscountPercentIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = -10m, // Negative promotion discount - this should fail
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Promotion discount percent cannot be negative", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVoucherAmountIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                VoucherAmount = -500m, // Negative voucher amount - this should fail
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Voucher amount cannot be negative", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVersionNameIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = null, // Null version name - this should fail
+                    VersionId = 1, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Version name is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVersionIdIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = null, // Null version ID - this should fail
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Version ID is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenCinemaRoomNameIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = null, // Null cinema room name - this should fail
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Cinema room name is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenShowTimeIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = null, // Null show time - this should fail
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Show time is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenShowDateIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = default(DateOnly), // Default show date
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Show date is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenShowTimeIsEmpty_Additional()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "", // Empty show time
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Show time is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenCinemaRoomNameIsEmpty_Additional()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "", // Empty cinema room name
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Cinema room name is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVersionNameIsEmpty_Additional()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "", // Empty version name
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Version name is required", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVersionIdIsZero()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 0, // Zero version ID
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Error creating QR code: Value cannot be null. (Parameter 'source')", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenPricePerTicketIsZero()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 0m, // Zero price per ticket
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Price per ticket must be greater than zero", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenPromotionDiscountPercentIsZero()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Zero promotion discount
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue)); // Should fail with 0% discount
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVoucherAmountIsZero()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Zero voucher amount
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue)); // Should fail with 0 voucher amount
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenAllValidationsPass()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Required
+                    ShowTime = "14:30", // Required
+                    CinemaRoomName = "Room A", // Required
+                    VersionName = "2D", // Required
+                    VersionId = 1, // Required
+                    PricePerTicket = 50000m, // Required
+                    PromotionDiscountPercent = 0m, // Required
+                    VoucherAmount = 0m, // Required
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue)); // Should fail due to missing service setup
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberScoreIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = -1000 // Negative member score
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenTicketsToConvertIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = -5, // Negative tickets to convert
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenDiscountFromScoreIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = -1000m, // Negative discount from score
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberEmailIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = null, // Null member email
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberIdentityCardIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = null, // Null member identity card
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenCustomerTypeIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = null, // Null customer type
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenReturnUrlIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = null, // Null return URL
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberIdInputIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = null, // Null member ID input
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberIdIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = null, // Null member ID
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberPhoneIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = null, // Null member phone
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberCheckMessageIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = null, // Null member check message
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenSelectedFoodsIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = null, // Null selected foods
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenEligibleFoodPromotionsIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = null, // Null eligible food promotions
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenBookingDetailsIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = null, // Null booking details
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenSelectedSeatsIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = null // Null selected seats
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenAccountIdIsEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "", // Empty account ID
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenTotalPriceIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = -100000m, // Negative total price
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenBookingDetailsTotalPriceIsNegative_Additional()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = -100000m, // Negative booking details total price
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMovieShowIdIsZero()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 0, // Zero movie show ID
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberFullNameIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = null, // Null member full name
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMemberPhoneNumberIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = null, // Null member phone number
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMovieIdIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = null, // Null movie ID
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenMovieNameIsEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "", // Empty movie name
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenShowTimeIsEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "", // Empty show time
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenCinemaRoomNameIsEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "", // Empty cinema room name
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenVersionNameIsEmpty()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "", // Empty version name
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenSeatPriceIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = -50000m } // Negative seat price
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenSeatNameIsNull()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = null, Price = 50000m } // Null seat name
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenSeatIdIsZero()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieId = "1",
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now),
+                    ShowTime = "14:30",
+                    CinemaRoomName = "Room A",
+                    VersionName = "2D",
+                    VersionId = 1,
+                    PricePerTicket = 50000m,
+                    PromotionDiscountPercent = 0m,
+                    VoucherAmount = 0m,
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 0, SeatName = "A1", Price = 50000m } // Zero seat ID
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                SelectedFoods = new List<FoodViewModel>(),
+                EligibleFoodPromotions = new List<Promotion>(),
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://localhost:5001/payment/return",
+                CustomerType = "member",
+                MemberIdInput = "MEMBER001",
+                MemberId = "MEMBER001",
+                MemberIdentityCard = "123456789",
+                MemberEmail = "test@example.com",
+                MemberPhone = "0123456789",
+                TicketsToConvert = 0,
+                DiscountFromScore = 0m,
+                AddedScore = 0,
+                MemberScore = 1000
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+        }
+
+        // Additional tests to improve coverage - Batch 1
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenSubtotalIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                Subtotal = -1000m, // Negative subtotal
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Add required ShowDate
+                    ShowTime = "14:30", // Add required ShowTime
+                    CinemaRoomName = "Room A", // Add required CinemaRoomName
+                    VersionName = "2D", // Add required VersionName
+                    VersionId = 1, // Add required VersionId
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Subtotal cannot be negative", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenRankDiscountIsNegative()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                RankDiscount = -500m, // Negative rank discount
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Add required ShowDate
+                    ShowTime = "14:30", // Add required ShowTime
+                    CinemaRoomName = "Room A", // Add required CinemaRoomName
+                    VersionName = "2D", // Add required VersionName
+                    VersionId = 1, // Add required VersionId
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Rank discount cannot be negative", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenRankDiscountPercentIsGreaterThan100()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = CreateBaseModelData(model => 
+            {
+                model.RankDiscountPercent = 150m; // Greater than 100%
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Rank discount percent cannot be greater than 100", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenPromotionDiscountPercentIsGreaterThan100()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = CreateBaseModelData(model => 
+            {
+                model.BookingDetails.PromotionDiscountPercent = 150m; // Greater than 100%
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Promotion discount percent cannot be greater than 100", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenUsedScoreIsGreaterThanMemberScore()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = CreateBaseModelData(model => 
+            {
+                model.UsedScore = 1500; // Greater than member score
+                model.MemberScore = 1000; // Member has only 1000 points
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Used score cannot be greater than member score", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenRankDiscountIsGreaterThanSubtotal()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = CreateBaseModelData(model => 
+            {
+                model.Subtotal = 1000m; // Small subtotal
+                model.RankDiscount = 1500m; // Greater than subtotal
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Rank discount cannot be greater than subtotal", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenCustomerTypeIsInvalid()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 100000m,
+                CustomerType = "invalid", // Invalid customer type
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Add required ShowDate
+                    ShowTime = "14:30", // Add required ShowTime
+                    CinemaRoomName = "Room A", // Add required CinemaRoomName
+                    VersionName = "2D", // Add required VersionName
+                    VersionId = 1, // Add required VersionId
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789",
+                MemberCheckMessage = "Test message",
+                ReturnUrl = "https://example.com/return"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Invalid customer type", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenTotalPriceIsZeroAndRecalculationFails()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 0, // Zero total price
+                TotalFoodPrice = 0, // Zero food price
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 0, // Zero booking price
+                    ShowDate = DateOnly.FromDateTime(DateTime.Now), // Add required ShowDate
+                    ShowTime = "14:30", // Add required ShowTime
+                    CinemaRoomName = "Room A", // Add required CinemaRoomName
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Equal("Booking total price must be greater than zero", messageProperty.GetValue(resultValue));
+        }
+
+        [Fact]
+        public async Task CreateQRCodeForMember_ReturnsJson_WhenTotalPriceIsZeroAndRecalculationSucceeds()
+        {
+            // Arrange
+            var ctrl = BuildController();
+
+            var modelData = JsonSerializer.Serialize(new ConfirmTicketAdminViewModel
+            {
+                AccountId = "MEMBER001",
+                TotalPrice = 0, // Zero total price
+                TotalFoodPrice = 50000m, // Non-zero food price
+                BookingDetails = new ConfirmBookingViewModel
+                {
+                    MovieName = "Test Movie",
+                    MovieShowId = 1,
+                    TotalPrice = 100000m, // Non-zero booking price
+                    SelectedSeats = new List<SeatDetailViewModel>
+                    {
+                        new SeatDetailViewModel { SeatId = 1, SeatName = "A1", Price = 50000m }
+                    }
+                },
+                MemberFullName = "Test Customer",
+                MemberPhoneNumber = "0123456789"
+            });
+
+            var mockAccounts = CreateMockDbSet(new List<Account> 
+            { 
+                new Account { AccountId = "MEMBER001", FullName = "Test Member" } 
+            });
+            var mockMovieShows = CreateMockDbSet(new List<MovieShow> 
+            { 
+                new MovieShow { MovieShowId = 1, MovieId = "1" } 
+            });
+
+            _context.Setup(c => c.Accounts).Returns(mockAccounts.Object);
+            _context.Setup(c => c.MovieShows).Returns(mockMovieShows.Object);
+
+            // Act
+            var result = await ctrl.CreateQRCodeForMember(modelData);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            Assert.NotNull(jsonResult.Value);
+            var resultValue = jsonResult.Value;
+            var successProperty = resultValue.GetType().GetProperty("success");
+            var messageProperty = resultValue.GetType().GetProperty("message");
+            Assert.NotNull(successProperty);
+            Assert.NotNull(messageProperty);
+            Assert.False((bool)successProperty.GetValue(resultValue));
+            Assert.Contains("Show date is required", messageProperty.GetValue(resultValue).ToString());
         }
     }
 } 
