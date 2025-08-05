@@ -201,7 +201,6 @@ namespace MovieTheater
                 pattern: "Seat/{action}/{id?}",
                 defaults: new { controller = "Seat", action = "Select" });
 
-            app.MapHub<ChatHub>("/chathub"); //Tuyen duong cho hub
             app.MapHub<SeatHub>("/seathub"); //Tuyen duong cho hub
             app.MapHub<DashboardHub>("/dashboardhub"); //Tuyen duong cho hub
             app.MapHub<CinemaHub>("/cinemahub"); //Tuyen duong cho hub
