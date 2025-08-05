@@ -161,8 +161,8 @@ namespace MovieTheater.Tests.Service
             var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
             var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
             var invoice = new Invoice 
-            { 
-                InvoiceId = "INV001", 
+                {
+                    InvoiceId = "INV001",
                 AccountId = "ACC001", 
                 Status = InvoiceStatus.Incomplete,
                 ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
@@ -235,8 +235,8 @@ namespace MovieTheater.Tests.Service
             var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
             var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
             var invoice = new Invoice 
-            { 
-                InvoiceId = "INV001", 
+                {
+                    InvoiceId = "INV001",
                 Status = InvoiceStatus.Incomplete,
                 ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
             };
@@ -265,8 +265,8 @@ namespace MovieTheater.Tests.Service
             var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
             var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
             var invoice = new Invoice 
-            { 
-                InvoiceId = "INV001", 
+                {
+                    InvoiceId = "INV001",
                 Status = InvoiceStatus.Incomplete,
                 PromotionDiscount = "{\"seat\": 20}", // 20% discount
                 ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
@@ -294,10 +294,10 @@ namespace MovieTheater.Tests.Service
             var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
             var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
             var invoice = new Invoice 
-            { 
-                InvoiceId = "INV001", 
+                {
+                    InvoiceId = "INV001",
                 Status = InvoiceStatus.Incomplete,
-                UseScore = 10, // 10 points = 10000 VND
+                    UseScore = 10, // 10 points = 10000 VND
                 ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
             };
             
