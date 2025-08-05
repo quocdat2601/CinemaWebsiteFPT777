@@ -572,7 +572,7 @@ namespace MovieTheater.Repository
                 .Where(m => !m.MovieShows.Any(ms => ms.ShowDate >= today &&
                     (ms.CinemaRoom.StatusId != 3 ||
                      (ms.CinemaRoom.UnavailableEndDate.HasValue &&
-                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))))
+                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))) && m.ToDate >= today)
                 .Distinct()
                 .ToList();
         }
