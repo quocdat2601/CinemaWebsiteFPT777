@@ -1063,6 +1063,65 @@ namespace MovieTheater.Controllers
                 }).ToList();
             return Json(movies);
         }
+
+        [HttpGet]
+        public IActionResult GetAvailableDatesForRoom(int cinemaRoomId, string movieId)
+        {
+            
+            var movie = _movieService.GetById(movieId);
+            if (movie == null)
+            {
+                return NotFound();
+            }
+
+            var room = _cinemaService.GetById(cinemaRoomId);
+            if (room == null)
+            {
+                _logger.LogWarning($"Room not found: {cinemaRoomId}");
+                return NotFound();
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var availableDates = new List<object>();
+
+            // Generate dates from movie's fromDate to toDate
+            if (movie.FromDate.HasValue && movie.ToDate.HasValue)
+            {
+                for (var date = movie.FromDate.Value; date <= movie.ToDate.Value; date = date.AddDays(1))
+                {
+                    // Skip past dates
+                    if (date < today)
+                        continue;
+
+                    // Check if room is available on this date
+                    bool isRoomAvailable = true;
+                    
+                    // If room is disabled (StatusId = 3), check the unavailable period
+                    if (room.StatusId == 3 && room.UnavailableStartDate.HasValue && room.UnavailableEndDate.HasValue)
+                    {
+                        var unavailableStart = DateOnly.FromDateTime(room.UnavailableStartDate.Value);
+                        var unavailableEnd = DateOnly.FromDateTime(room.UnavailableEndDate.Value);
+                        
+                        // If date falls within unavailable period, skip it
+                        if (date >= unavailableStart && date <= unavailableEnd)
+                        {
+                            isRoomAvailable = false;
+                        }
+                    }
+
+                    if (isRoomAvailable)
+                    {
+                        availableDates.Add(new
+                        {
+                            value = date.ToString("yyyy-MM-dd"),
+                            text = date.ToString("dd/MM/yyyy")
+                        });
+                    }
+                }
+            }
+
+            return Json(new { availableDates});
+        }
     }
 }
 
