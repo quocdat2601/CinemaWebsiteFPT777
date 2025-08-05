@@ -347,7 +347,7 @@ namespace MovieTheater.Tests.Repository
             repo.Delete("NONEXISTENT");
 
             // Assert
-            // Should not throw - no exception means the test passes
+            Assert.Empty(context.Movies);
         }
 
         [Fact]
@@ -403,7 +403,7 @@ namespace MovieTheater.Tests.Repository
             repo.DeleteMovieShow(999);
 
             // Assert
-            // Should not throw - no exception means the test passes
+            Assert.Empty(context.MovieShows);
         }
 
         #endregion
@@ -1422,7 +1422,7 @@ namespace MovieTheater.Tests.Repository
             repo.Delete(null);
 
             // Assert
-            // Should not throw - no exception means the test passes
+            Assert.Empty(context.Movies);
         }
 
         [Fact]
@@ -1436,7 +1436,7 @@ namespace MovieTheater.Tests.Repository
             repo.DeleteMovieShow(0);
 
             // Assert
-            // Should not throw - no exception means the test passes
+            Assert.Empty(context.MovieShows);
         }
 
         [Fact]

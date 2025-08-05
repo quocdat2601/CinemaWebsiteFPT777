@@ -41,7 +41,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /MyAccount/MainPage (GET)</remarks>
         [HttpGet]
-        public IActionResult MainPage(string tab = "Profile")
+        public IActionResult MainPage(string tab = "Profile") // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             ViewData["ActiveTab"] = tab;
             var user = _service.GetCurrentUser();
@@ -59,7 +59,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /MyAccount/LoadTab (GET)</remarks>
         [HttpGet]
-        public IActionResult LoadTab(string tab)
+        public IActionResult LoadTab(string tab) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var user = _service.GetCurrentUser();
             if (user == null) return NotFound();
@@ -381,7 +381,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         /// <remarks>url: /MyAccount/ChangePassword (GET)</remarks>
         [HttpGet]
-        public IActionResult ChangePassword()
+        public IActionResult ChangePassword() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var user = _service.GetCurrentUser();
             if (user == null)

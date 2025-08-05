@@ -18,7 +18,7 @@ namespace MovieTheater.Controllers
         /// Trang danh sách loại ghế
         /// </summary>
         /// <remarks>url: /SeatType/Index (GET)</remarks>
-        public ActionResult Index()
+        public ActionResult Index() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -27,7 +27,7 @@ namespace MovieTheater.Controllers
         /// Xem chi tiết loại ghế
         /// </summary>
         /// <remarks>url: /SeatType/Details (GET)</remarks>
-        public ActionResult Details(int id)
+        public ActionResult Details(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -36,7 +36,7 @@ namespace MovieTheater.Controllers
         /// Trang tạo loại ghế mới
         /// </summary>
         /// <remarks>url: /SeatType/Create (GET)</remarks>
-        public ActionResult Create()
+        public ActionResult Create() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -99,7 +99,7 @@ namespace MovieTheater.Controllers
         /// Trang xóa loại ghế
         /// </summary>
         /// <remarks>url: /SeatType/Delete (GET)</remarks>
-        public ActionResult Delete(int id)
+        public ActionResult Delete(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }

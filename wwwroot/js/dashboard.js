@@ -410,7 +410,7 @@ window.initFoodCharts = function() {
     const foodHourCanvas = document.getElementById('foodHourHeatmap');
     if (foodHourCanvas && data.SalesByHour) {
         const hourData = data.SalesByHour;
-        const labels = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+        const labels = Array.from({length: 16}, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`); // 8 AM to 11 PM
         
         createResponsiveChart(foodHourCanvas, {
             type: 'bar',
@@ -434,7 +434,7 @@ window.initFoodCharts = function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Sales by Hour (24-hour period)'
+                        text: 'Sales by Hour (8 AM to 11 PM)'
                     },
                     legend: {
                         display: false
