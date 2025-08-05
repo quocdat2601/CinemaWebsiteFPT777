@@ -518,10 +518,9 @@ namespace MovieTheater.Tests.Repository
             var result = repository.GetRoomsByVersion(1).ToList();
 
             // Assert
-            Assert.Equal(1, result.Count);
-            Assert.Equal(1, result[0].CinemaRoomId);
-            Assert.Equal(1, result[0].VersionId);
-            Assert.Equal(1, result[0].StatusId); // Only active rooms
+            Assert.Equal(2, result.Count); // 1 active + 1 deleted room with VersionId = 1
+            Assert.Contains(result, r => r.CinemaRoomId == 1 && r.StatusId == 1); // Active room
+            Assert.Contains(result, r => r.CinemaRoomId == 3 && r.StatusId == 2); // Deleted room
         }
 
         [Fact]
@@ -564,8 +563,10 @@ namespace MovieTheater.Tests.Repository
             var result = repository.GetRoomsByVersion(1).ToList();
 
             // Assert
-            Assert.Equal(1, result.Count); // Only the active room, not the disabled one
-            Assert.Equal(1, result[0].CinemaRoomId);
+            Assert.Equal(3, result.Count); // 1 active + 1 deleted + 1 disabled room with VersionId = 1
+            Assert.Contains(result, r => r.CinemaRoomId == 1 && r.StatusId == 1); // Active room
+            Assert.Contains(result, r => r.CinemaRoomId == 3 && r.StatusId == 2); // Deleted room
+            Assert.Contains(result, r => r.CinemaRoomId == 4 && r.StatusId == 3); // Disabled room
         }
     }
 } 

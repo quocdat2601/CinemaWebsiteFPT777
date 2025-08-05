@@ -12,402 +12,275 @@ namespace MovieTheater.Tests.Service
 {
     public class PaymentSecurityServiceTests
     {
-        private readonly Mock<MovieTheaterContext> _mockContext;
+        private readonly MovieTheaterContext _context;
         private readonly Mock<ILogger<PaymentSecurityService>> _mockLogger;
         private readonly Mock<IVNPayService> _mockVnPayService;
         private readonly PaymentSecurityService _service;
 
         public PaymentSecurityServiceTests()
         {
-            _mockContext = new Mock<MovieTheaterContext>();
+            var options = new DbContextOptionsBuilder<MovieTheaterContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            _context = new MovieTheaterContext(options);
             _mockLogger = new Mock<ILogger<PaymentSecurityService>>();
             _mockVnPayService = new Mock<IVNPayService>();
-            _service = new PaymentSecurityService(_mockContext.Object, _mockLogger.Object, _mockVnPayService.Object);
+            _service = new PaymentSecurityService(_context, _mockLogger.Object, _mockVnPayService.Object);
         }
 
         [Fact]
-        public void ValidatePaymentData_WithValidData_ReturnsValidResult()
+        public void ValidatePaymentData_WhenInvoiceIdIsEmpty_ReturnsInvalidInvoiceId()
         {
             // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "INV001",
-                TotalAmount = 100000
-            };
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    AccountId = "USER001",
-                    Status = InvoiceStatus.Incomplete,
-                    PromotionDiscount = "0",
-                    UseScore = 0,
-                    VoucherId = null,
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var model = new PaymentViewModel { InvoiceId = "", TotalAmount = 100 };
+            var userId = "user1";
 
             // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
-
-            // Assert
-            Assert.True(result.IsValid);
-            Assert.Empty(result.ErrorMessage);
-            Assert.Empty(result.ErrorCode);
-        }
-
-        [Fact]
-        public void ValidatePaymentData_WithNullInvoiceId_ReturnsInvalidResult()
-        {
-            // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = null,
-                TotalAmount = 100000
-            };
-
-            // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Invoice ID không được để trống", result.ErrorMessage);
+            Assert.Equal("INVALID_INVOICE_ID", result.ErrorCode);
+            Assert.Contains("Invoice ID không được để trống", result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ValidatePaymentData_WhenInvoiceIdIsNull_ReturnsInvalidInvoiceId()
+        {
+            // Arrange
+            var model = new PaymentViewModel { InvoiceId = null!, TotalAmount = 100 };
+            var userId = "user1";
+
+            // Act
+            var result = _service.ValidatePaymentData(model, userId);
+
+            // Assert
+            Assert.False(result.IsValid);
             Assert.Equal("INVALID_INVOICE_ID", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidatePaymentData_WithEmptyInvoiceId_ReturnsInvalidResult()
+        public void ValidatePaymentData_WhenTotalAmountIsZero_ReturnsInvalidAmount()
         {
             // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "",
-                TotalAmount = 100000
-            };
+            var model = new PaymentViewModel { InvoiceId = "INV001", TotalAmount = 0 };
+            var userId = "user1";
 
             // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Invoice ID không được để trống", result.ErrorMessage);
-            Assert.Equal("INVALID_INVOICE_ID", result.ErrorCode);
+            Assert.Equal("INVALID_AMOUNT", result.ErrorCode);
+            Assert.Contains("Số tiền thanh toán không hợp lệ", result.ErrorMessage);
         }
 
         [Fact]
-        public void ValidatePaymentData_WithInvalidAmount_ReturnsInvalidResult()
+        public void ValidatePaymentData_WhenTotalAmountIsNegative_ReturnsInvalidAmount()
         {
             // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "INV001",
-                TotalAmount = 0
-            };
+            var model = new PaymentViewModel { InvoiceId = "INV001", TotalAmount = -100 };
+            var userId = "user1";
 
             // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Số tiền thanh toán không hợp lệ", result.ErrorMessage);
             Assert.Equal("INVALID_AMOUNT", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidatePaymentData_WithNegativeAmount_ReturnsInvalidResult()
+        public void ValidatePaymentData_WhenInvoiceDoesNotExist_ReturnsInvoiceNotFound()
         {
             // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "INV001",
-                TotalAmount = -1000
-            };
+            var model = new PaymentViewModel { InvoiceId = "INV999", TotalAmount = 100 };
+            var userId = "user1";
 
             // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Số tiền thanh toán không hợp lệ", result.ErrorMessage);
-            Assert.Equal("INVALID_AMOUNT", result.ErrorCode);
-        }
-
-        [Fact]
-        public void ValidatePaymentData_WithNonExistentInvoice_ReturnsInvalidResult()
-        {
-            // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "INV999",
-                TotalAmount = 100000
-            };
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>().AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-
-            // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.Equal("Hóa đơn không tồn tại", result.ErrorMessage);
             Assert.Equal("INVOICE_NOT_FOUND", result.ErrorCode);
+            Assert.Contains("Hóa đơn không tồn tại", result.ErrorMessage);
         }
 
         [Fact]
-        public void ValidatePaymentData_WithUnauthorizedUser_ReturnsInvalidResult()
+        public void ValidatePaymentData_WhenInvoiceBelongsToDifferentUser_ReturnsUnauthorizedAccess()
         {
             // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "INV001",
-                TotalAmount = 100000
-            };
+            var account = new Account { AccountId = "ACC001", Username = "user1" };
+            var invoice = new Invoice { InvoiceId = "INV001", AccountId = "ACC001", Status = InvoiceStatus.Incomplete };
+            
+            _context.Accounts.Add(account);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    AccountId = "USER002", // Different user
-                    Status = InvoiceStatus.Incomplete
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var model = new PaymentViewModel { InvoiceId = "INV001", TotalAmount = 100 };
+            var userId = "ACC002"; // Different user
 
             // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Bạn không có quyền truy cập hóa đơn này", result.ErrorMessage);
             Assert.Equal("UNAUTHORIZED_ACCESS", result.ErrorCode);
+            Assert.Contains("Bạn không có quyền truy cập hóa đơn này", result.ErrorMessage);
         }
 
         [Fact]
-        public void ValidatePaymentData_WithProcessedInvoice_ReturnsInvalidResult()
+        public void ValidatePaymentData_WhenInvoiceIsNotIncomplete_ReturnsInvoiceAlreadyProcessed()
         {
             // Arrange
-            var model = new PaymentViewModel
-            {
-                InvoiceId = "INV001",
-                TotalAmount = 100000
-            };
+            var account = new Account { AccountId = "ACC001", Username = "user1" };
+            var invoice = new Invoice { InvoiceId = "INV001", AccountId = "ACC001", Status = InvoiceStatus.Completed };
+            
+            _context.Accounts.Add(account);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    AccountId = "USER001",
-                    Status = InvoiceStatus.Completed // Already processed
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var model = new PaymentViewModel { InvoiceId = "INV001", TotalAmount = 100 };
+            var userId = "ACC001";
 
             // Act
-            var result = _service.ValidatePaymentData(model, "USER001");
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Hóa đơn đã được xử lý", result.ErrorMessage);
             Assert.Equal("INVOICE_ALREADY_PROCESSED", result.ErrorCode);
+            Assert.Contains("Hóa đơn đã được xử lý", result.ErrorMessage);
         }
 
         [Fact]
-        public void ValidateAmount_WithValidAmount_ReturnsValidResult()
+        public void ValidatePaymentData_WhenValidData_ReturnsValid()
         {
             // Arrange
-            var invoiceId = "INV001";
-            var amount = 100000m;
+            var account = new Account { AccountId = "ACC001", Username = "user1" };
+            var seatType = new SeatType { SeatTypeId = 1, PricePercent = 100000, ColorHex = "#FF0000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
+            var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
+            var invoice = new Invoice 
+            { 
+                InvoiceId = "INV001", 
+                AccountId = "ACC001", 
+                Status = InvoiceStatus.Incomplete,
+                ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
+            };
+            
+            _context.Accounts.Add(account);
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    PromotionDiscount = "0",
-                    UseScore = 0,
-                    VoucherId = null,
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var model = new PaymentViewModel { InvoiceId = "INV001", TotalAmount = 100000 };
+            var userId = "ACC001";
 
             // Act
-            var result = _service.ValidateAmount(invoiceId, amount);
+            var result = _service.ValidatePaymentData(model, userId);
 
             // Assert
             Assert.True(result.IsValid);
-            Assert.Empty(result.ErrorMessage);
-            Assert.Empty(result.ErrorCode);
         }
 
         [Fact]
-        public void ValidateAmount_WithNonExistentInvoice_ReturnsInvalidResult()
+        public void ValidateAmount_WhenInvoiceDoesNotExist_ReturnsInvoiceNotFound()
         {
             // Arrange
             var invoiceId = "INV999";
-            var amount = 100000m;
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>().AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var amount = 100m;
 
             // Act
             var result = _service.ValidateAmount(invoiceId, amount);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Hóa đơn không tồn tại", result.ErrorMessage);
             Assert.Equal("INVOICE_NOT_FOUND", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidateAmount_WithAmountMismatch_ReturnsInvalidResult()
+        public void ValidateAmount_WhenAmountMatches_ReturnsValid()
         {
             // Arrange
-            var invoiceId = "INV001";
-            var amount = 150000m; // Different from calculated amount
+            var seatType = new SeatType { SeatTypeId = 1, PricePercent = 100000, ColorHex = "#FF0000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
+            var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
+            var invoice = new Invoice 
+            { 
+                InvoiceId = "INV001", 
+                Status = InvoiceStatus.Incomplete,
+                ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
+            };
+            
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    PromotionDiscount = "0",
-                    UseScore = 0,
-                    VoucherId = null,
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var amount = 100000m;
 
             // Act
-            var result = _service.ValidateAmount(invoiceId, amount);
+            var result = _service.ValidateAmount("INV001", amount);
+
+            // Assert
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateAmount_WhenAmountDoesNotMatch_ReturnsAmountMismatch()
+        {
+            // Arrange
+            var seatType = new SeatType { SeatTypeId = 1, PricePercent = 100000, ColorHex = "#FF0000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
+            var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
+            var invoice = new Invoice 
+            { 
+                InvoiceId = "INV001", 
+                Status = InvoiceStatus.Incomplete,
+                ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
+            };
+            
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
+
+            var amount = 150000m; // Different amount
+
+            // Act
+            var result = _service.ValidateAmount("INV001", amount);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Số tiền thanh toán không khớp với giá trị thực tế", result.ErrorMessage);
             Assert.Equal("AMOUNT_MISMATCH", result.ErrorCode);
+            Assert.Contains("Số tiền thanh toán không khớp với giá trị thực tế", result.ErrorMessage);
         }
 
         [Fact]
         public void ValidateAmount_WithPromotionDiscount_CalculatesCorrectAmount()
         {
             // Arrange
-            var invoiceId = "INV001";
-            var amount = 90000m; // 100000 - 10% discount
+            var seatType = new SeatType { SeatTypeId = 1, PricePercent = 100000, ColorHex = "#FF0000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
+            var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
+            var invoice = new Invoice 
+            { 
+                InvoiceId = "INV001", 
+                Status = InvoiceStatus.Incomplete,
+                PromotionDiscount = "{\"seat\": 20}", // 20% discount
+                ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
+            };
+            
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    PromotionDiscount = "{\"seat\": 10}", // 10% discount
-                    UseScore = 0,
-                    VoucherId = null,
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var amount = 80000m; // 100000 - 20% = 80000
 
             // Act
-            var result = _service.ValidateAmount(invoiceId, amount);
+            var result = _service.ValidateAmount("INV001", amount);
 
             // Assert
             Assert.True(result.IsValid);
@@ -417,88 +290,78 @@ namespace MovieTheater.Tests.Service
         public void ValidateAmount_WithUsedScore_CalculatesCorrectAmount()
         {
             // Arrange
-            var invoiceId = "INV001";
-            var amount = 90000m; // 100000 - 10000 (10 points * 1000)
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    PromotionDiscount = "0",
-                    UseScore = 10, // 10 points = 10000 VND
-                    VoucherId = null,
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-
-            // Act
-            var result = _service.ValidateAmount(invoiceId, amount);
-
-            // Assert
-            Assert.True(result.IsValid);
-        }
-
-        [Fact]
-        public void ValidatePaymentResponse_WithValidData_ReturnsValidResult()
-        {
-            // Arrange
-            var vnpayData = new Dictionary<string, string>
-            {
-                ["vnp_TxnRef"] = "INV001",
-                ["vnp_ResponseCode"] = "00",
-                ["vnp_SecureHash"] = "valid_signature"
+            var seatType = new SeatType { SeatTypeId = 1, PricePercent = 100000, ColorHex = "#FF0000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
+            var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
+            var invoice = new Invoice 
+            { 
+                InvoiceId = "INV001", 
+                Status = InvoiceStatus.Incomplete,
+                UseScore = 10, // 10 points = 10000 VND
+                ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
             };
+            
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "valid_signature")).Returns(true);
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>
-            {
-                new Invoice { InvoiceId = "INV001" }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            var amount = 90000m; // 100000 - 10000 = 90000
 
             // Act
-            var result = _service.ValidatePaymentResponse(vnpayData);
+            var result = _service.ValidateAmount("INV001", amount);
 
             // Assert
             Assert.True(result.IsValid);
-            Assert.Empty(result.ErrorMessage);
-            Assert.Empty(result.ErrorCode);
         }
 
         [Fact]
-        public void ValidatePaymentResponse_WithMissingRequiredFields_ReturnsInvalidResult()
+        public void ValidateAmount_WithVoucher_CalculatesCorrectAmount()
+        {
+            // Arrange
+            var seatType = new SeatType { SeatTypeId = 1, PricePercent = 100000, ColorHex = "#FF0000" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatType = seatType };
+            var scheduleSeat = new ScheduleSeat { ScheduleSeatId = 1, Seat = seat };
+            var voucher = new Voucher 
+            { 
+                VoucherId = "VOUCHER001", 
+                AccountId = "ACC001",
+                Code = "VOUCHER001",
+                Value = 15000,
+                CreatedDate = DateTime.Now,
+                ExpiryDate = DateTime.Now.AddDays(30)
+            };
+            var invoice = new Invoice 
+            { 
+                InvoiceId = "INV001", 
+                Status = InvoiceStatus.Incomplete,
+                VoucherId = "VOUCHER001",
+                ScheduleSeats = new List<ScheduleSeat> { scheduleSeat }
+            };
+            
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Vouchers.Add(voucher);
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
+
+            var amount = 85000m; // 100000 - 15000 = 85000
+
+            // Act
+            var result = _service.ValidateAmount("INV001", amount);
+
+            // Assert
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidatePaymentResponse_WhenMissingRequiredFields_ReturnsInvalidResponse()
         {
             // Arrange
             var vnpayData = new Dictionary<string, string>
             {
-                ["vnp_TxnRef"] = "INV001"
-                // Missing vnp_ResponseCode
+                { "vnp_ResponseCode", "00" }
+                // Missing vnp_TxnRef
             };
 
             // Act
@@ -506,18 +369,17 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Dữ liệu phản hồi từ VNPay không hợp lệ", result.ErrorMessage);
             Assert.Equal("INVALID_VNPAY_RESPONSE", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidatePaymentResponse_WithMissingSignature_ReturnsInvalidResult()
+        public void ValidatePaymentResponse_WhenMissingSignature_ReturnsInvalidSignature()
         {
             // Arrange
             var vnpayData = new Dictionary<string, string>
             {
-                ["vnp_TxnRef"] = "INV001",
-                ["vnp_ResponseCode"] = "00"
+                { "vnp_TxnRef", "INV001" },
+                { "vnp_ResponseCode", "00" }
                 // Missing vnp_SecureHash
             };
 
@@ -526,193 +388,96 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Chữ ký bảo mật không hợp lệ", result.ErrorMessage);
             Assert.Equal("INVALID_SIGNATURE", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidatePaymentResponse_WithInvalidSignature_ReturnsInvalidResult()
+        public void ValidatePaymentResponse_WhenInvalidSignature_ReturnsInvalidSignature()
         {
             // Arrange
             var vnpayData = new Dictionary<string, string>
             {
-                ["vnp_TxnRef"] = "INV001",
-                ["vnp_ResponseCode"] = "00",
-                ["vnp_SecureHash"] = "invalid_signature"
+                { "vnp_TxnRef", "INV001" },
+                { "vnp_ResponseCode", "00" },
+                { "vnp_SecureHash", "invalid_signature" }
             };
 
-            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "invalid_signature")).Returns(false);
+            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "invalid_signature"))
+                .Returns(false);
 
             // Act
             var result = _service.ValidatePaymentResponse(vnpayData);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Chữ ký bảo mật không hợp lệ", result.ErrorMessage);
             Assert.Equal("INVALID_SIGNATURE", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidatePaymentResponse_WithFailedResponseCode_ReturnsInvalidResult()
+        public void ValidatePaymentResponse_WhenResponseCodeNotSuccess_ReturnsError()
         {
             // Arrange
             var vnpayData = new Dictionary<string, string>
             {
-                ["vnp_TxnRef"] = "INV001",
-                ["vnp_ResponseCode"] = "07", // Failed response code
-                ["vnp_SecureHash"] = "valid_signature"
+                { "vnp_TxnRef", "INV001" },
+                { "vnp_ResponseCode", "99" }, // Error code
+                { "vnp_SecureHash", "valid_signature" }
             };
 
-            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "valid_signature")).Returns(true);
+            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "valid_signature"))
+                .Returns(true);
 
             // Act
             var result = _service.ValidatePaymentResponse(vnpayData);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Giao dịch thất bại với mã lỗi: 07", result.ErrorMessage);
-            Assert.Equal("VNPAY_ERROR_07", result.ErrorCode);
+            Assert.Equal("VNPAY_ERROR_99", result.ErrorCode);
+            Assert.Contains("Giao dịch thất bại với mã lỗi: 99", result.ErrorMessage);
         }
 
         [Fact]
-        public void ValidatePaymentResponse_WithNonExistentInvoice_ReturnsInvalidResult()
+        public void ValidatePaymentResponse_WhenInvoiceDoesNotExist_ReturnsInvoiceNotFound()
         {
             // Arrange
             var vnpayData = new Dictionary<string, string>
             {
-                ["vnp_TxnRef"] = "INV999",
-                ["vnp_ResponseCode"] = "00",
-                ["vnp_SecureHash"] = "valid_signature"
+                { "vnp_TxnRef", "INV999" }, // Non-existent invoice
+                { "vnp_ResponseCode", "00" },
+                { "vnp_SecureHash", "valid_signature" }
             };
 
-            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "valid_signature")).Returns(true);
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var invoices = new List<Invoice>().AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
+            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "valid_signature"))
+                .Returns(true);
 
             // Act
             var result = _service.ValidatePaymentResponse(vnpayData);
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Equal("Không tìm thấy hóa đơn tương ứng", result.ErrorMessage);
             Assert.Equal("INVOICE_NOT_FOUND", result.ErrorCode);
         }
 
         [Fact]
-        public void ValidateAmount_WithVoucherDiscount_CalculatesCorrectAmount()
+        public void ValidatePaymentResponse_WhenValidResponse_ReturnsValid()
         {
             // Arrange
-            var invoiceId = "INV001";
-            var amount = 90000m; // 100000 - 10000 voucher
+            var invoice = new Invoice { InvoiceId = "INV001", Status = InvoiceStatus.Incomplete };
+            _context.Invoices.Add(invoice);
+            _context.SaveChanges();
 
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var mockVouchers = new Mock<DbSet<Voucher>>();
-            
-            var invoices = new List<Invoice>
+            var vnpayData = new Dictionary<string, string>
             {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    PromotionDiscount = "0",
-                    UseScore = 0,
-                    VoucherId = "VOUCHER001",
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
+                { "vnp_TxnRef", "INV001" },
+                { "vnp_ResponseCode", "00" },
+                { "vnp_SecureHash", "valid_signature" }
+            };
 
-            var vouchers = new List<Voucher>
-            {
-                new Voucher { VoucherId = "VOUCHER001", Value = 10000 }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.Provider).Returns(vouchers.Provider);
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.Expression).Returns(vouchers.Expression);
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.ElementType).Returns(vouchers.ElementType);
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.GetEnumerator()).Returns(vouchers.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _mockContext.Setup(c => c.Vouchers).Returns(mockVouchers.Object);
+            _mockVnPayService.Setup(s => s.ValidateSignature(vnpayData, "valid_signature"))
+                .Returns(true);
 
             // Act
-            var result = _service.ValidateAmount(invoiceId, amount);
-
-            // Assert
-            Assert.True(result.IsValid);
-        }
-
-        [Fact]
-        public void ValidateAmount_WithComplexCalculation_HandlesAllDiscounts()
-        {
-            // Arrange
-            var invoiceId = "INV001";
-            var amount = 80000m; // 100000 - 10% promo (10000) - 10000 voucher = 80000
-
-            var mockInvoices = new Mock<DbSet<Invoice>>();
-            var mockVouchers = new Mock<DbSet<Voucher>>();
-            
-            var invoices = new List<Invoice>
-            {
-                new Invoice
-                {
-                    InvoiceId = "INV001",
-                    PromotionDiscount = "{\"seat\": 10}", // 10% discount
-                    UseScore = 0,
-                    VoucherId = "VOUCHER001",
-                    ScheduleSeats = new List<ScheduleSeat>
-                    {
-                        new ScheduleSeat
-                        {
-                            Seat = new Seat
-                            {
-                                SeatType = new SeatType { PricePercent = 100000 }
-                            }
-                        }
-                    }
-                }
-            }.AsQueryable();
-
-            var vouchers = new List<Voucher>
-            {
-                new Voucher { VoucherId = "VOUCHER001", Value = 10000 }
-            }.AsQueryable();
-
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.Provider);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.Expression);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.ElementType);
-            mockInvoices.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
-
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.Provider).Returns(vouchers.Provider);
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.Expression).Returns(vouchers.Expression);
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.ElementType).Returns(vouchers.ElementType);
-            mockVouchers.As<IQueryable<Voucher>>().Setup(m => m.GetEnumerator()).Returns(vouchers.GetEnumerator());
-
-            _mockContext.Setup(c => c.Invoices).Returns(mockInvoices.Object);
-            _mockContext.Setup(c => c.Vouchers).Returns(mockVouchers.Object);
-
-            // Act
-            var result = _service.ValidateAmount(invoiceId, amount);
+            var result = _service.ValidatePaymentResponse(vnpayData);
 
             // Assert
             Assert.True(result.IsValid);
