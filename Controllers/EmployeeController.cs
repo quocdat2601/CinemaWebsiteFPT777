@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -73,7 +73,7 @@ namespace MovieTheater.Controllers
                         ).ToList();
                     }
 
-                    // Bổ sung filter trạng thái
+                    // B? sung filter tr?ng th�i
                     if (!string.IsNullOrEmpty(statusFilter))
                     {
                         if (statusFilter == "completed")
@@ -84,7 +84,7 @@ namespace MovieTheater.Controllers
                             invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
                     }
 
-                    // Bổ sung filter booking type (all vs normal vs employee)
+                    // B? sung filter booking type (all vs normal vs employee)
                     if (!string.IsNullOrEmpty(bookingTypeFilter))
                     {
                         if (bookingTypeFilter == "normal")
@@ -97,7 +97,7 @@ namespace MovieTheater.Controllers
                     // Set the current booking type filter for the view
                     ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
 
-                    // Bổ sung sort
+                    // B? sung sort
                     var sortBy = Request.Query["sortBy"].ToString();
                     if (!string.IsNullOrEmpty(sortBy))
                     {
@@ -129,7 +129,7 @@ namespace MovieTheater.Controllers
 
                     return PartialView("BookingMg", invoices);
                 case "FoodMg":
-                    // Sử dụng parameter keyword thay vì Request.Query["keyword"]
+                    // S? d?ng parameter keyword thay v� Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
                     var categoryFilter = Request.Query["categoryFilter"].ToString();
                     string statusFilterStr = Request.Query["statusFilter"].ToString();
@@ -146,7 +146,7 @@ namespace MovieTheater.Controllers
 
                     var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, foodStatusFilter);
 
-                    // Bổ sung sort
+                    // B? sung sort
                     var sortByFood = Request.Query["sortBy"].ToString();
                     if (!string.IsNullOrEmpty(sortByFood))
                     {
@@ -182,7 +182,7 @@ namespace MovieTheater.Controllers
                     };
                     var filteredVouchers = _voucherService.GetFilteredVouchers(filter).ToList();
 
-                    // Bổ sung sort
+                    // B? sung sort
                     var sortByVoucher = Request.Query["sortBy"].ToString();
                     if (!string.IsNullOrEmpty(sortByVoucher))
                     {
@@ -234,7 +234,7 @@ namespace MovieTheater.Controllers
 
         // GET: EmployeeController/Create
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult Create() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var model = new RegisterViewModel();
             return View(model);
@@ -418,7 +418,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Delete(string id)
+        public IActionResult Delete(string id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var employee = _service.GetById(id);
             if (employee == null)

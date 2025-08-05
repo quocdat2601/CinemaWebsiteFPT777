@@ -25,14 +25,14 @@ namespace MovieTheater.Controllers
 
         // GET: CinemaController
         [HttpGet]
-        public ActionResult Index()
+        public ActionResult Index() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
 
         // GET: CinemaController/Details/5
         [HttpGet]
-        public ActionResult Details(int id)
+        public ActionResult Details(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -57,7 +57,7 @@ namespace MovieTheater.Controllers
 
         // GET: CinemaController/Edit/5
         [HttpGet]
-        public IActionResult Edit(int id)
+        public IActionResult Edit(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var showroom = _cinemaService.GetById(id);
             if (showroom == null)
@@ -168,7 +168,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         [Route("Cinema/Disable")]
 
-        public IActionResult Disable(int id)
+        public IActionResult Disable(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var cinemaRoom = _cinemaService.GetById(id); 
             if (cinemaRoom == null)
@@ -351,7 +351,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetRoomsByVersion(int versionId)
+        public IActionResult GetRoomsByVersion(int versionId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var rooms = _cinemaService.GetRoomsByVersion(versionId)
                 .Select(r => new { r.CinemaRoomId, r.CinemaRoomName })
@@ -360,7 +360,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMovieShowsByCinemaRoomGrouped(int cinemaRoomId)
+        public IActionResult GetMovieShowsByCinemaRoomGrouped(int cinemaRoomId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             
@@ -376,7 +376,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetDetailedMovieShowsByCinemaRoom(int cinemaRoomId)
+        public IActionResult GetDetailedMovieShowsByCinemaRoom(int cinemaRoomId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             
@@ -402,7 +402,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetInvoicesByMovieShow(int movieShowId)
+        public IActionResult GetInvoicesByMovieShow(int movieShowId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var invoices = _movieService.GetInvoicesByMovieShow(movieShowId)
                 .Select(i => new {

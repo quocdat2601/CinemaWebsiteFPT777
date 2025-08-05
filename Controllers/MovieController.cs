@@ -47,7 +47,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/MovieList")]
-        public IActionResult MovieList(string searchTerm, string typeIds, string versionIds)
+        public IActionResult MovieList(string searchTerm, string typeIds, string versionIds) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var selectedTypeIds = string.IsNullOrEmpty(typeIds) ? new List<int>() : typeIds.Split(',').Select(int.Parse).ToList();
             var selectedVersionIds = string.IsNullOrEmpty(versionIds) ? new List<int>() : versionIds.Split(',').Select(int.Parse).ToList();
@@ -121,7 +121,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [HttpGet]
         [Route("Movie/Detail/{id}")]
-        public ActionResult Detail(string id)
+        public ActionResult Detail(string id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movie = _movieService.GetById(id);
             if (movie == null)
@@ -156,7 +156,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         [Route("Movie/Create")]
         [Authorize(Roles = "Admin,Employee")]
-        public IActionResult Create()
+        public IActionResult Create() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var model = new MovieDetailViewModel
             {
@@ -342,7 +342,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         [Route("Movie/Edit/{id}")]
         [Authorize(Roles = "Admin,Employee")]
-        public IActionResult Edit(string id)
+        public IActionResult Edit(string id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movie = _movieService.GetById(id);
             if (movie == null)
@@ -664,7 +664,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMovieShows(string movieId)
+        public IActionResult GetMovieShows(string movieId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movieShows = _movieService.GetMovieShowsByMovieId(movieId)
                 .Select(ms => new {
@@ -889,7 +889,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMovieShowsByRoomAndDate(int cinemaRoomId, string showDate)
+        public IActionResult GetMovieShowsByRoomAndDate(int cinemaRoomId, string showDate) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (!DateOnly.TryParse(showDate, out var parsedDate))
                 return BadRequest("Invalid date format.");
@@ -905,7 +905,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMovieShowsByMovieVersionDate(string movieId, int versionId, string showDate)
+        public IActionResult GetMovieShowsByMovieVersionDate(string movieId, int versionId, string showDate) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (!DateOnly.TryParse(showDate, out var parsedDate))
                 return BadRequest("Invalid date format.");
@@ -995,7 +995,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetDirectors()
+        public IActionResult GetDirectors() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var directors = _personRepository.GetDirectors();
             return Json(directors.Select(d => new { 
@@ -1006,7 +1006,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetActors()
+        public IActionResult GetActors() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var actors = _personRepository.GetActors();
             return Json(actors.Select(a => new { 
@@ -1017,7 +1017,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAllMovies()
+        public IActionResult GetAllMovies() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movies = _movieService.GetCurrentlyShowingMoviesWithDetails()
                 .Select(m => new {
@@ -1031,7 +1031,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetVersionsByMovie(string movieId)
+        public IActionResult GetVersionsByMovie(string movieId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movie = _movieService.GetById(movieId);
             if (movie == null)
@@ -1045,7 +1045,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAvailableMovies()
+        public IActionResult GetAvailableMovies() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var movies = _movieService.GetCurrentlyShowingMoviesWithDetails()

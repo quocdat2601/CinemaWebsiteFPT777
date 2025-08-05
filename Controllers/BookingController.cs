@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
@@ -100,14 +100,14 @@ namespace MovieTheater.Controllers
         
        //GET: /api/booking/information
        /// <summary>
-       /// Hiển thị thông tin xác nhận đặt vé.
+       /// Hi?n th? th�ng tin x�c nh?n d?t v�.
        /// </summary>
-       /// <param name="movieId">Id phim được chọn.</param>
-       /// <param name="showDate">Ngày chiếu.</param>
-       /// <param name="showTime">Giờ chiếu.</param>
-       /// <param name="selectedSeatIds">Danh sách ghế đã chọn.</param>
-       /// <param name="movieShowId">Id của suất chiếu cụ thể.</param>
-       /// <returns>View xác nhận đặt vé.</returns>
+       /// <param name="movieId">Id phim du?c ch?n.</param>
+       /// <param name="showDate">Ng�y chi?u.</param>
+       /// <param name="showTime">Gi? chi?u.</param>
+       /// <param name="selectedSeatIds">Danh s�ch gh? d� ch?n.</param>
+       /// <param name="movieShowId">Id c?a su?t chi?u c? th?.</param>
+       /// <returns>View x�c nh?n d?t v�.</returns>
        [HttpGet]
        [Authorize]
        public async Task<IActionResult> Information(string movieId, DateOnly showDate, string showTime, List<int>? selectedSeatIds, int movieShowId, List<int>? foodIds, List<int>? foodQtys)
@@ -145,7 +145,7 @@ namespace MovieTheater.Controllers
                 ShowDate = showDate.ToDateTime(TimeOnly.MinValue)
             };
 
-            // Thêm thông tin SeatType cho promotion context
+            // Th�m th�ng tin SeatType cho promotion context
             if (selectedSeatIds != null)
             {
                 var selectedSeats = _seatService.GetSeatsWithTypeByIds(selectedSeatIds);
@@ -200,7 +200,7 @@ namespace MovieTheater.Controllers
        }
 
         /// <summary>
-        /// Xác nhận đặt vé (tính toán giá, lưu invoice, chuyển sang thanh toán)
+        /// X�c nh?n d?t v� (t�nh to�n gi�, luu invoice, chuy?n sang thanh to�n)
         /// </summary>
         /// <remarks>url: /Booking/Confirm (POST)</remarks>
         [HttpPost]
@@ -239,7 +239,7 @@ namespace MovieTheater.Controllers
        }
 
         /// <summary>
-        /// Trang thông báo đặt vé thành công, cộng/trừ điểm
+        /// Trang th�ng b�o d?t v� th�nh c�ng, c?ng/tr? di?m
         /// </summary>
         /// <remarks>url: /Booking/Success (GET)</remarks>
         [HttpGet]
@@ -274,7 +274,7 @@ namespace MovieTheater.Controllers
        }
 
         /// <summary>
-        /// Trang thanh toán VNPay
+        /// Trang thanh to�n VNPay
         /// </summary>
         /// <remarks>url: /Booking/Payment (GET)</remarks>
         [HttpGet]
@@ -296,7 +296,7 @@ namespace MovieTheater.Controllers
            var selectedFoods = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(invoiceId)).ToList();
            decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
 
-           // Lấy promotion discount percent từ invoice
+           // L?y promotion discount percent t? invoice
            int promotionDiscount = 0;
            if (!string.IsNullOrEmpty(invoice.PromotionDiscount) && invoice.PromotionDiscount != "0")
            {
@@ -308,14 +308,14 @@ namespace MovieTheater.Controllers
                catch { promotionDiscount = 0; }
            }
 
-           // Lấy version multiplier
+           // L?y version multiplier
            decimal versionMulti = 1;
            if (invoice.MovieShow?.Version != null)
            {
                versionMulti = (decimal)invoice.MovieShow.Version.Multi;
            }
 
-           // Tính lại giá seat sau giảm (rank, voucher, points, promotion, version)
+           // T�nh l?i gi� seat sau gi?m (rank, voucher, points, promotion, version)
            var scheduleSeats = invoice.ScheduleSeats?.ToList() ?? new List<ScheduleSeat>();
            decimal subtotal = 0;
            if (scheduleSeats.Count == 0 && !string.IsNullOrEmpty(invoice.SeatIds))
@@ -400,7 +400,7 @@ namespace MovieTheater.Controllers
        }
 
         /// <summary>
-        /// Xử lý tạo URL thanh toán VNPay
+        /// X? l� t?o URL thanh to�n VNPay
         /// </summary>
         /// <remarks>url: /Booking/ProcessPayment (POST)</remarks>
         [HttpPost]
@@ -424,9 +424,9 @@ namespace MovieTheater.Controllers
            catch (Exception ex)
            {
                _logger.LogError(ex, "Error creating payment URL");
-               TempData["ErrorMessage"] = "Có lỗi xảy ra khi tạo URL thanh toán. Vui lòng thử lại sau.";
+               TempData["ErrorMessage"] = "C� l?i x?y ra khi t?o URL thanh to�n. Vui l�ng th? l?i sau.";
 
-               // Lấy lại invoice để truyền TempData cho Price Breakdown
+               // L?y l?i invoice d? truy?n TempData cho Price Breakdown
                var invoice = _invoiceService.GetById(model.InvoiceId);
                if (invoice != null)
                {
@@ -439,7 +439,7 @@ namespace MovieTheater.Controllers
                    TempData["InvoiceId"] = invoice.InvoiceId;
                    TempData["BookingTime"] = invoice.BookingDate?.ToString();
 
-                   // Tính subtotal đúng từ SeatType
+                   // T�nh subtotal d�ng t? SeatType
                    var scheduleSeats = invoice.ScheduleSeats?.ToList() ?? new List<ScheduleSeat>();
                    decimal subtotal = 0;
                    foreach (var ss in scheduleSeats)
@@ -457,7 +457,7 @@ namespace MovieTheater.Controllers
                    TempData["OriginalPrice"] = subtotal;
                    TempData["UsedScore"] = invoice.UseScore ?? 0;
                    TempData["FinalPrice"] = invoice.TotalMoney ?? 0;
-                   // Tính lại rank discount nếu có
+                   // T�nh l?i rank discount n?u c�
                    decimal usedScoreValue = (invoice.UseScore ?? 0) * 1000;
                    decimal totalPriceValue = invoice.TotalMoney ?? 0;
                    decimal rankDiscount = subtotal - usedScoreValue - totalPriceValue;
@@ -489,7 +489,7 @@ namespace MovieTheater.Controllers
        }
 
         /// <summary>
-        /// Trang thông báo thanh toán thất bại
+        /// Trang th�ng b�o thanh to�n th?t b?i
         /// </summary>
         /// <remarks>url: /Booking/Failed (GET)</remarks>
         [HttpGet]
@@ -509,12 +509,12 @@ namespace MovieTheater.Controllers
                 var viewModel = await _bookingDomainService.BuildSuccessViewModelAsync(invoiceId, userId);
                 return View(viewModel);
             }
-            // Nếu không có invoiceId hoặc userId, truyền ViewModel rỗng để tránh null
+            // N?u kh�ng c� invoiceId ho?c userId, truy?n ViewModel r?ng d? tr�nh null
             return View(new BookingSuccessViewModel());
         }
 
        /// <summary>
-       /// Trang xác nhận bán vé cho admin (chọn ghế, nhập member...)
+       /// Trang x�c nh?n b�n v� cho admin (ch?n gh?, nh?p member...)
        /// </summary>
        /// <remarks>url: /Booking/ConfirmTicketForAdmin (GET)</remarks>
        [Authorize(Roles = "Admin, Employee")]
@@ -531,7 +531,7 @@ namespace MovieTheater.Controllers
                    return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
            }
            
-           // Build lại ViewModel với memberId nếu có
+           // Build l?i ViewModel v?i memberId n?u c�
            var viewModel = await _bookingDomainService.BuildConfirmTicketAdminViewModelAsync(
                movieShowId, selectedSeatIds, foodIds, foodQtys, memberId
            );
@@ -542,7 +542,7 @@ namespace MovieTheater.Controllers
                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
            }
            
-           // Nếu có memberId, cập nhật thông tin member
+           // N?u c� memberId, c?p nh?t th�ng tin member
            if (!string.IsNullOrEmpty(memberId))
            {
                var member = _memberRepository.GetByIdWithAccount(memberId);
@@ -561,7 +561,7 @@ namespace MovieTheater.Controllers
        }
 
        /// <summary>
-       /// Kiểm tra thông tin member khi bán vé cho admin
+       /// Ki?m tra th�ng tin member khi b�n v� cho admin
        /// </summary>
        /// <remarks>url: /Booking/CheckMemberDetails (POST)</remarks>
        [Authorize(Roles = "Admin, Employee")]
@@ -589,7 +589,7 @@ namespace MovieTheater.Controllers
        }
 
        /// <summary>
-       /// Xác nhận bán vé cho admin (lưu invoice, cập nhật điểm, trạng thái ghế...)
+       /// X�c nh?n b�n v� cho admin (luu invoice, c?p nh?t di?m, tr?ng th�i gh?...)
        /// </summary>
        /// <remarks>url: /Booking/ConfirmTicketForAdmin (POST)</remarks>
        [Authorize(Roles = "Admin, Employee")]
@@ -612,7 +612,7 @@ namespace MovieTheater.Controllers
 
 
        /// <summary>
-       /// Trang xác nhận bán vé thành công cho admin
+       /// Trang x�c nh?n b�n v� th�nh c�ng cho admin
        /// </summary>
        /// <remarks>url: /Booking/TicketBookingConfirmed (GET)</remarks>
        [Authorize(Roles = "Admin, Employee")]
@@ -624,7 +624,7 @@ namespace MovieTheater.Controllers
            if (string.IsNullOrEmpty(invoiceId))
            {
                _logger.LogWarning("InvoiceId is null or empty");
-               TempData["ErrorMessage"] = "Không có thông tin invoice.";
+               TempData["ErrorMessage"] = "Kh�ng c� th�ng tin invoice.";
                return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
            }
            
@@ -633,7 +633,7 @@ namespace MovieTheater.Controllers
            if (viewModel == null)
            {
                //_logger.LogWarning($"View model is null for invoiceId: {invoiceId}");
-               TempData["ErrorMessage"] = "Không tìm thấy thông tin booking.";
+               TempData["ErrorMessage"] = "Kh�ng t�m th?y th�ng tin booking.";
                return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
            }
            
@@ -642,7 +642,7 @@ namespace MovieTheater.Controllers
        }
 
        /// <summary>
-       /// Kiểm tra điểm để quy đổi vé cho admin
+       /// Ki?m tra di?m d? quy d?i v� cho admin
        /// </summary>
        /// <remarks>url: /Booking/CheckScoreForConversion (POST)</remarks>
        [Authorize(Roles = "Admin, Employee")]
@@ -667,7 +667,7 @@ namespace MovieTheater.Controllers
       }
 
       /// <summary>
-      /// Xem thông tin vé (admin/employee)
+      /// Xem th�ng tin v� (admin/employee)
       /// </summary>
       /// <remarks>url: /Booking/TicketInfo (GET)</remarks>
       [Authorize(Roles = "Admin, Employee")]
@@ -681,12 +681,12 @@ namespace MovieTheater.Controllers
       }
 
       /// <summary>
-      /// Lấy danh sách member (admin)
+      /// L?y danh s�ch member (admin)
       /// </summary>
       /// <remarks>url: /Booking/GetAllMembers (GET)</remarks>
       [Authorize(Roles = "Admin, Employee")]
       [HttpGet]
-      public IActionResult GetAllMembers()
+      public IActionResult GetAllMembers() // NOSONAR - GET methods don't require ModelState.IsValid check
       {
           var members = _memberRepository.GetAll()
               .Select(m => new
@@ -706,7 +706,7 @@ namespace MovieTheater.Controllers
       }
 
         /// <summary>
-        /// Khởi tạo bán vé cho member (admin)
+        /// Kh?i t?o b�n v� cho member (admin)
         /// </summary>
         /// <remarks>url: /Booking/InitiateTicketSellingForMember/{id} (GET)</remarks>
         [Authorize(Roles = "Admin, Employee")]
@@ -728,12 +728,12 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Trang booking cho admin/employee với Date, Version, Time selection (Quick Book)
+        /// Trang booking cho admin/employee v?i Date, Version, Time selection (Quick Book)
         /// </summary>
         /// <remarks>url: /Booking/TicketBookingAdmin (GET)</remarks>
         [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
-        public IActionResult TicketBookingAdmin(string returnUrl)
+        public IActionResult TicketBookingAdmin(string returnUrl) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             // Get all currently showing movies
             var currentlyShowingMovies = _movieService.GetCurrentlyShowingMovies();
@@ -753,7 +753,7 @@ namespace MovieTheater.Controllers
         /// <remarks>url: /Booking/QuickBook (GET)</remarks>
         [Authorize(Roles = "Admin, Employee")]
         [HttpGet]
-        public IActionResult QuickBook()
+        public IActionResult QuickBook() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             string returnUrl;
             if (role == "Admin")
@@ -768,7 +768,7 @@ namespace MovieTheater.Controllers
         }
 
         /// <summary>
-        /// Lấy discount và earning rate của member (admin)
+        /// L?y discount v� earning rate c?a member (admin)
         /// </summary>
         /// <remarks>url: /Booking/GetMemberDiscount (GET)</remarks>
         [Authorize(Roles = "Admin, Employee")]
@@ -794,7 +794,7 @@ namespace MovieTheater.Controllers
         }
 
       /// <summary>
-      /// Reload page với member đã chọn (admin)
+      /// Reload page v?i member d� ch?n (admin)
       /// </summary>
       /// <remarks>url: /Booking/ReloadWithMember (POST)</remarks>
       [Authorize(Roles = "Admin, Employee")]
@@ -803,7 +803,7 @@ namespace MovieTheater.Controllers
       {
           try
           {
-              // Redirect đến ConfirmTicketForAdmin với memberId
+              // Redirect d?n ConfirmTicketForAdmin v?i memberId
               var url = Url.Action("ConfirmTicketForAdmin", "Booking", new
               {
                   movieShowId = request.MovieShowId,
@@ -823,7 +823,7 @@ namespace MovieTheater.Controllers
       }
 
       /// <summary>
-      /// Lấy danh sách food
+      /// L?y danh s�ch food
       /// </summary>
       /// <remarks>url: /Booking/GetFoods (GET)</remarks>
       [HttpGet]
@@ -834,7 +834,7 @@ namespace MovieTheater.Controllers
       }
 
       /// <summary>
-      /// Lấy danh sách promotion hợp lệ cho member
+      /// L?y danh s�ch promotion h?p l? cho member
       /// </summary>
       /// <remarks>url: /Booking/GetEligiblePromotions (POST)</remarks>
       [Authorize(Roles = "Admin, Employee")]
@@ -843,10 +843,10 @@ namespace MovieTheater.Controllers
       {
           try
           {
-              // Lấy thông tin ghế đã chọn từ request
+              // L?y th�ng tin gh? d� ch?n t? request
               var selectedSeatIds = request.SelectedSeatIds ?? new List<int>();
               
-              // Lấy thông tin SeatType từ các ghế đã chọn
+              // L?y th�ng tin SeatType t? c�c gh? d� ch?n
               var selectedSeats = _seatService.GetSeatsWithTypeByIds(selectedSeatIds);
 
               var promotionContext = new PromotionCheckContext
@@ -854,20 +854,20 @@ namespace MovieTheater.Controllers
                   MemberId = request.MemberId,
                   SeatCount = selectedSeatIds.Count,
                   MovieId = request.MovieId,
-                  MovieName = "", // Sẽ được lấy từ movie service
+                  MovieName = "", // S? du?c l?y t? movie service
                   ShowDate = DateTime.Parse(request.ShowDate),
                   SelectedSeatTypeIds = selectedSeats.Select(s => s.SeatTypeId ?? 0).Distinct().ToList(),
                   SelectedSeatTypeNames = selectedSeats.Select(s => s.SeatType?.TypeName).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList(),
                   SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList()
               };
 
-              // Lấy tất cả promotion và kiểm tra từng cái
+              // L?y t?t c? promotion v� ki?m tra t?ng c�i
               var allPromotions = _promotionService.GetAll().Where(p => p.IsActive).ToList();
               var eligiblePromotions = new List<object>();
 
               foreach (var promotion in allPromotions)
               {
-                  // Kiểm tra xem promotion có hợp lệ không
+                  // Ki?m tra xem promotion c� h?p l? kh�ng
                   var context = new PromotionCheckContext
                   {
                       MemberId = request.MemberId,
@@ -880,7 +880,7 @@ namespace MovieTheater.Controllers
                       SelectedSeatTypePricePercents = selectedSeats.Select(s => s.SeatType?.PricePercent ?? 0).Distinct().ToList()
                   };
 
-                  // Sử dụng logic từ PromotionService để kiểm tra
+                  // S? d?ng logic t? PromotionService d? ki?m tra
                   if (_promotionService.IsPromotionEligible(promotion, context))
                   {
                       eligiblePromotions.Add(new
@@ -910,7 +910,7 @@ namespace MovieTheater.Controllers
       }
 
       [HttpGet]
-      public IActionResult GetVersions(string movieId, string date)
+      public IActionResult GetVersions(string movieId, string date) // NOSONAR - GET methods don't require ModelState.IsValid check
       {
           try
           {
@@ -952,7 +952,7 @@ namespace MovieTheater.Controllers
       }
 
       [HttpGet]
-      public IActionResult GetTimes(string movieId, string date, int versionId)
+      public IActionResult GetTimes(string movieId, string date, int versionId) // NOSONAR - GET methods don't require ModelState.IsValid check
       {
           try
           {

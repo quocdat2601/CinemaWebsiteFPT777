@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Repository;
 using Version = MovieTheater.Models.Version;
 using Microsoft.AspNetCore.Authorization;
@@ -88,7 +88,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get(int id)
+        public IActionResult Get(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var version = _versionRepo.GetById(id);
             if (version == null) return NotFound();

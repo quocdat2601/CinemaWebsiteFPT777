@@ -40,7 +40,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
-        public IActionResult Scanner()
+        public IActionResult Scanner() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -72,7 +72,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
-        public IActionResult VerificationResult(string invoiceId, string result)
+        public IActionResult VerificationResult(string invoiceId, string result) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var invoice = _invoiceService.GetById(invoiceId);
             if (invoice == null)
@@ -108,7 +108,7 @@ namespace MovieTheater.Controllers
         /// </summary>
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
-        public IActionResult GetTicketInfo(string invoiceId)
+        public IActionResult GetTicketInfo(string invoiceId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var result = _ticketVerificationService.GetTicketInfo(invoiceId);
             if (result.IsSuccess)

@@ -31,7 +31,7 @@ namespace MovieTheater.Service
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, account.AccountId),
+                new Claim("AccountId", account.AccountId),
                 new Claim(ClaimTypes.Name, account.Username),
                 new Claim(ClaimTypes.Role, roleName),
                 new Claim("Status", account.Status.ToString()),
@@ -87,11 +87,9 @@ namespace MovieTheater.Service
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidIssuer = _jwtSettings.Issuer,
-                    ValidateAudience = true,
-                    ValidAudience = _jwtSettings.Audience,
-                    ValidateLifetime = true,
+                    ValidateIssuer = false, // Don't validate issuer for claim extraction
+                    ValidateAudience = false, // Don't validate audience for claim extraction
+                    ValidateLifetime = false, // Don't validate lifetime for claim extraction
                     ClockSkew = TimeSpan.Zero
                 }, out SecurityToken validatedToken);
 

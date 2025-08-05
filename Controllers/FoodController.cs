@@ -59,6 +59,14 @@ namespace MovieTheater.Controllers
                 if (model.ImageFile != null)
                 {
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    
+                    // Check if filename is null or empty
+                    if (string.IsNullOrEmpty(model.ImageFile.FileName))
+                    {
+                        ModelState.AddModelError("ImageFile", "Chỉ cho phép file ảnh nhỏ hơn 2MB và đúng định dạng.");
+                        return View(model);
+                    }
+                    
                     var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
                     if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
                     {
