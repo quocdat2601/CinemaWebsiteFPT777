@@ -1,0 +1,35 @@
+@* Particle Background Animation - Pure CSS *@
+
+<link rel="stylesheet" href="~/css/particle-animation.css" />
+
+<div class="particle-container">
+    @* Dots *@
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    <div class="particle-dot"></div>
+    
+    @* Lines *@
+    <div class="particle-line" style="width: 30px;"></div>
+    <div class="particle-line" style="width: 25px;"></div>
+    <div class="particle-line" style="width: 35px;"></div>
+    <div class="particle-line" style="width: 20px;"></div>
+    <div class="particle-line" style="width: 40px;"></div>
+    <div class="particle-line" style="width: 28px;"></div>
+    <div class="particle-line" style="width: 32px;"></div>
+    <div class="particle-line" style="width: 22px;"></div>
+</div>
+
+@* Alternative Grid Version *@
+@* 
+<div class="particle-grid">
+    @for (int i = 0; i < 50; i++)
+    {
+        <div class="grid-particle" style="--i: @i;"></div>
+    }
+</div>
+*@ 
