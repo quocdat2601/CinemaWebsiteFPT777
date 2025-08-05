@@ -1,4 +1,4 @@
-using MovieTheater.Controllers;
+﻿using MovieTheater.Controllers;
 using Xunit;
 
 namespace MovieTheater.Tests
@@ -29,4 +29,4 @@ namespace MovieTheater.Tests
             Assert.Equal("ORD123", model.OrderId);
         }
     }
-} 
+}
