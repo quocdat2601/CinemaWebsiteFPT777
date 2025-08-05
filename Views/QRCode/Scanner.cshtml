@@ -4,131 +4,324 @@
 
 <style>
     .scanner-container {
-        background: #f8f9fa;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
-        padding: 0.5rem 0;
+        padding: 1rem 0;
+        position: relative;
+        overflow: hidden;
     }
+
+    .scanner-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
     .scanner-card {
-        margin-top: 2rem;
-        margin-bottom: 2rem;
-        background: #fff;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
         border-radius: 20px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+        position: relative;
+        margin: 1rem auto;
+        max-width: 900px;
+        animation: slideInUp 0.6s ease-out;
     }
+
+    body.dark-mode .scanner-card {
+        background: rgba(33, 37, 41, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
     .scanner-header {
-        background: #007bff;
-        color: #fff;
-        padding: 2rem;
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        color: white;
+        padding: 1.5rem 2rem;
         text-align: center;
-        border-radius: 20px 20px 0 0;
+        position: relative;
+        overflow: hidden;
     }
+
+    .scanner-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    @@keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     .scanner-header h2 {
         margin: 0;
         font-weight: 700;
-        font-size: 1.7rem;
+        font-size: 1.5rem;
         letter-spacing: 1px;
-    }
-    .scanner-header p {
-        color: #e3e3e3;
-        font-size: 1rem;
-        margin-bottom: 0;
-    }
-    .scanner-body {
-        padding: 2rem;
-    }
-    #video-container {
         position: relative;
-        width: 280px;
-        height: 380px;
-        background: #e9ecef;
-        border-radius: 15px;
-        overflow: hidden;
-        margin: 0 auto 1.5rem auto;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        z-index: 1;
+    }
+
+    .scanner-header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+        margin: 0.25rem 0 0 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .scanner-body {
+        padding: 1.5rem 2rem;
+    }
+
+    .scanner-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .scanner-section {
+        margin-bottom: 1rem;
+    }
+
+    .scanner-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 1rem;
+        text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 0.5rem;
     }
+
+    body.dark-mode .scanner-section-title {
+        color: #e9ecef;
+    }
+
+    #video-container {
+        position: relative;
+        width: 280px;
+        height: 320px;
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 16px;
+        overflow: hidden;
+        margin: 0 auto 1rem auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #fff;
+    }
+
+    body.dark-mode #video-container {
+        background: linear-gradient(145deg, #343a40, #495057);
+        border-color: #495057;
+    }
+
     #video {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 15px;
+        border-radius: 13px;
     }
+
     .scanner-overlay {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 180px;
-        height: 180px;
+        width: 160px;
+        height: 160px;
         border: 3px solid #28a745;
-        border-radius: 15px;
+        border-radius: 16px;
         pointer-events: none;
-        box-shadow: 0 0 0 2px #fff, 0 0 12px 2px #28a74544;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 16px 3px rgba(40, 167, 69, 0.4);
         background: transparent;
+        animation: pulse 2s infinite;
     }
-    .manual-input {
-        background: #fff;
+
+    body.dark-mode .scanner-overlay {
+        box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.8), 0 0 16px 3px rgba(40, 167, 69, 0.4);
+    }
+
+    @@keyframes pulse {
+        0%, 100% { 
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 16px 3px rgba(40, 167, 69, 0.4);
+        }
+        50% { 
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 24px 6px rgba(40, 167, 69, 0.6);
+        }
+    }
+
+    body.dark-mode .scanner-overlay {
+        animation: pulseDark 2s infinite;
+    }
+
+    @@keyframes pulseDark {
+        0%, 100% { 
+            box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.8), 0 0 16px 3px rgba(40, 167, 69, 0.4);
+        }
+        50% { 
+            box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.8), 0 0 24px 6px rgba(40, 167, 69, 0.6);
+        }
+    }
+
+    .scanner-controls {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .btn-scanner {
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
         border-radius: 10px;
-        padding: 1.5rem 1rem 1rem 1rem;
-        margin-top: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
+        border: none;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        margin: 0 0.25rem;
+        position: relative;
+        overflow: hidden;
     }
-    .manual-input h6 {
+
+    .btn-scanner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-scanner:hover::before {
+        left: 100%;
+    }
+
+    .btn-start {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-start:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+
+    .btn-stop {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-stop:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        color: white;
+    }
+
+    .manual-input-section {
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        height: fit-content;
+    }
+
+    body.dark-mode .manual-input-section {
+        background: linear-gradient(145deg, #343a40, #495057);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .manual-input-section h6 {
         color: #007bff;
         font-weight: 600;
         margin-bottom: 1rem;
-    }
-    .result-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-    }
-    .result-content {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        max-width: 500px;
-        width: 90%;
         text-align: center;
-        animation: slideIn 0.3s ease;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+        font-size: 1rem;
     }
-    .success-icon {
-        font-size: 4rem;
-        color: #28a745;
-        margin-bottom: 1rem;
+
+    body.dark-mode .manual-input-section h6 {
+        color: #6ea8fe;
     }
-    .error-icon {
-        font-size: 4rem;
-        color: #dc3545;
-        margin-bottom: 1rem;
+
+    .input-group {
+        position: relative;
     }
-    .ticket-info {
-        background: #f8f9fa;
+
+    .form-control {
         border-radius: 10px;
-        padding: 1rem;
-        margin: 1rem 0;
-        text-align: left;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        background: white;
     }
-    .ticket-info p {
-        margin: 0.5rem 0;
-        font-size: 0.95rem;
+
+    body.dark-mode .form-control {
+        background: #495057;
+        border-color: #6c757d;
+        color: #e9ecef;
     }
-    .ticket-info strong {
-        color: #495057;
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
     }
+
+    body.dark-mode .form-control:focus {
+        border-color: #6ea8fe;
+        box-shadow: 0 0 0 0.2rem rgba(110, 168, 254, 0.25);
+    }
+
+    .btn-verify {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-verify:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        color: white;
+    }
+
     .loading-spinner {
         display: none;
         position: absolute;
@@ -137,24 +330,261 @@
         transform: translate(-50%, -50%);
         z-index: 10;
     }
+
     .loading-spinner .spinner-border {
-        width: 3rem;
-        height: 3rem;
+        width: 2.5rem;
+        height: 2.5rem;
         color: #28a745;
     }
-    @@media (max-width: 600px) {
-        .scanner-card, .result-content {
-            padding: 0.5rem !important;
+
+    .scanner-status {
+        text-align: center;
+        margin: 0.5rem 0;
+        padding: 0.75rem;
+        border-radius: 10px;
+        font-weight: 500;
+        display: none;
+        font-size: 0.9rem;
+    }
+
+    .status-scanning {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.2);
+    }
+
+    .status-stopped {
+        background: linear-gradient(135deg, rgba(108, 117, 125, 0.1), rgba(73, 80, 87, 0.1));
+        color: #6c757d;
+        border: 1px solid rgba(108, 117, 125, 0.2);
+    }
+
+    body.dark-mode .status-scanning {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(32, 201, 151, 0.2));
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    body.dark-mode .status-stopped {
+        background: linear-gradient(135deg, rgba(108, 117, 125, 0.2), rgba(73, 80, 87, 0.2));
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+
+    .result-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .result-content {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        animation: slideInUp 0.4s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .result-content {
+        background: #343a40;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .success-icon {
+        font-size: 3rem;
+        color: #28a745;
+        margin-bottom: 1rem;
+        animation: bounceIn 0.6s ease;
+    }
+
+    .error-icon {
+        font-size: 3rem;
+        color: #dc3545;
+        margin-bottom: 1rem;
+        animation: bounceIn 0.6s ease;
+    }
+
+    @@keyframes bounceIn {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    .result-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .result-message {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: #6c757d;
+    }
+
+    body.dark-mode .result-message {
+        color: #adb5bd;
+    }
+
+    .ticket-info {
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        text-align: left;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    body.dark-mode .ticket-info {
+        background: linear-gradient(145deg, #495057, #343a40);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .ticket-info p {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ticket-info strong {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    body.dark-mode .ticket-info strong {
+        color: #e9ecef;
+    }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        margin: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+
+    .btn-close {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        margin: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-close:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        color: white;
+    }
+
+    @@media (max-width: 768px) {
+        .scanner-container {
+            padding: 0.5rem 0;
         }
-        .scanner-header, .result-header {
-            padding: 0.5rem !important;
+        
+        .scanner-card {
+            margin: 0.5rem;
+            border-radius: 16px;
         }
+        
+        .scanner-header {
+            padding: 1rem;
+        }
+        
+        .scanner-header h2 {
+            font-size: 1.25rem;
+        }
+        
+        .scanner-body {
+            padding: 1rem;
+        }
+
+        .scanner-content {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
         #video-container {
+            width: 240px;
+            height: 280px;
+        }
+        
+        .scanner-overlay {
+            width: 140px;
             height: 140px;
         }
-        .scanner-card {
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
+        
+        .btn-scanner {
+            padding: 0.6rem 1.25rem;
+            font-size: 0.85rem;
+            margin: 0.2rem;
+        }
+        
+        .manual-input-section {
+            padding: 1rem;
+        }
+        
+        .result-content {
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        #video-container {
+            width: 200px;
+            height: 240px;
+        }
+        
+        .scanner-overlay {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .btn-scanner {
+            display: block;
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .scanner-content {
+            gap: 0.75rem;
         }
     }
 </style>
@@ -162,34 +592,60 @@
 <div class="scanner-container">
     <div class="scanner-card">
         <div class="scanner-header">
-            <h2>🎫 QR Ticket Scanner</h2>
-            <p class="mb-0">Scan the QR code on the ticket to check-in customer</p>
+            <h2><i class="fas fa-qrcode me-2"></i>QR Ticket Scanner</h2>
+            <p>Scan QR codes or enter invoice ID to check-in customers</p>
         </div>
+        
         <div class="scanner-body">
-            <div id="video-container">
-                <video id="video" autoplay></video>
-                <div class="scanner-overlay"></div>
-                <div class="loading-spinner" id="loadingSpinner">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
+            <!-- Scanner Status -->
+            <div id="scannerStatus" class="scanner-status">
+                <i class="fas fa-circle me-2"></i>
+                <span id="statusText">Ready to scan</span>
+            </div>
+
+            <div class="scanner-content">
+                <!-- Video Scanner Section -->
+                <div class="scanner-section">
+                    <h6 class="scanner-section-title">
+                        <i class="fas fa-camera"></i>
+                        Camera Scanner
+                    </h6>
+                    
+                    <div id="video-container">
+                        <video id="video" autoplay muted></video>
+                        <div class="scanner-overlay"></div>
+                        <div class="loading-spinner" id="loadingSpinner">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="scanner-controls">
+                        <button id="startScan" class="btn-scanner btn-start">
+                            <i class="fas fa-play me-1"></i>Start
+                        </button>
+                        <button id="stopScan" class="btn-scanner btn-stop" style="display: none;">
+                            <i class="fas fa-stop me-1"></i>Stop
+                        </button>
                     </div>
                 </div>
-            </div>
-            <div class="text-center">
-                <button id="startScan" class="btn btn-success btn-lg me-2">
-                    <i class="fas fa-camera me-2"></i>Start Scanning
-                </button>
-                <button id="stopScan" class="btn btn-secondary btn-lg" style="display: none;">
-                    <i class="fas fa-stop me-2"></i>Stop
-                </button>
-            </div>
-            <div class="manual-input mt-4">
-                <h6 class="text-center mb-3">📝 Manual Entry</h6>
-                <div class="input-group">
-                    <input type="text" id="manualInvoiceId" class="form-control" placeholder="Enter Invoice ID">
-                    <button id="verifyManual" class="btn btn-primary">
-                        <i class="fas fa-check me-1"></i>Verify
-                    </button>
+
+                <!-- Manual Input Section -->
+                <div class="scanner-section">
+                    <h6 class="scanner-section-title">
+                        <i class="fas fa-keyboard"></i>
+                        Manual Entry
+                    </h6>
+                    
+                    <div class="manual-input-section">
+                        <div class="input-group">
+                            <input type="text" id="manualInvoiceId" class="form-control" placeholder="Enter Invoice ID or QR data">
+                            <button id="verifyManual" class="btn-verify">
+                                <i class="fas fa-search me-1"></i>Verify
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -200,11 +656,17 @@
 <div id="resultModal" class="result-modal">
     <div class="result-content">
         <div id="resultIcon"></div>
-        <h4 id="resultTitle"></h4>
-        <p id="resultMessage"></p>
+        <h4 id="resultTitle" class="result-title"></h4>
+        <p id="resultMessage" class="result-message"></p>
         <div id="ticketInfo" class="ticket-info" style="display: none;"></div>
-        <button id="confirmCheckIn" class="btn btn-success mt-2" style="display:none;">Xác nhận Check-in</button>
-        <button id="closeModal" class="btn btn-primary mt-3">Close</button>
+        <div class="modal-buttons">
+            <button id="confirmCheckIn" class="btn-confirm" style="display:none;">
+                <i class="fas fa-check me-1"></i>Confirm Check-in
+            </button>
+            <button id="closeModal" class="btn-close">
+                <i class="fas fa-times me-1"></i>Close
+            </button>
+        </div>
     </div>
 </div>
 
@@ -220,18 +682,32 @@
         const video = document.getElementById('video');
         const manualBtn = document.getElementById('verifyManual');
         const manualInput = document.getElementById('manualInvoiceId');
+        const statusDiv = document.getElementById('scannerStatus');
+        const statusText = document.getElementById('statusText');
 
         function showLoading(show) {
             const spinner = document.getElementById('loadingSpinner');
             spinner.style.display = show ? 'block' : 'none';
         }
 
+        function updateStatus(status, text) {
+            statusDiv.className = `scanner-status ${status}`;
+            statusText.textContent = text;
+            statusDiv.style.display = 'block';
+        }
+
         // Start scanner
         startBtn.addEventListener('click', async function() {
             showLoading(true);
+            updateStatus('status-scanning', 'Initializing camera...');
+            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
                 });
                 video.srcObject = stream;
                 videoStream = stream;
@@ -239,10 +715,12 @@
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'inline-block';
                 showLoading(false);
+                updateStatus('status-scanning', 'Scanning for QR codes...');
                 scanQRCode();
             } catch (error) {
                 showLoading(false);
-                showResult('error', 'Camera Error', 'Unable to access camera. Please check device permissions.');
+                updateStatus('status-stopped', 'Camera access denied');
+                showResult('error', 'Camera Error', 'Unable to access camera. Please check device permissions and try again.');
             }
         });
 
@@ -255,15 +733,17 @@
             scanning = false;
             startBtn.style.display = 'inline-block';
             stopBtn.style.display = 'none';
+            updateStatus('status-stopped', 'Scanner stopped');
         });
 
         // Manual verification
         manualBtn.addEventListener('click', function() {
             const invoiceId = manualInput.value.trim();
             if (invoiceId) {
+                updateStatus('status-scanning', 'Verifying ticket...');
                 redirectToTicketInfo(invoiceId);
             } else {
-                showResult('error', 'Invalid Input', 'Please enter a valid Invoice ID.');
+                showResult('error', 'Invalid Input', 'Please enter a valid Invoice ID or QR code data.');
             }
         });
 
@@ -278,33 +758,41 @@
                 manualBtn.click();
             }
         });
+
+        // Initialize status
+        updateStatus('status-stopped', 'Ready to scan');
     }
 
-    // Gọi lại hàm khởi tạo mỗi khi tab QRCode được load
+    // Initialize when tab is loaded
     $(document).on('tabContentLoaded', function(e, tabName) {
         if (tabName === 'QRCode') {
             initQrScannerTab();
         }
     });
-    // Nếu load full page (trường hợp F5), vẫn khởi tạo
+
+    // Initialize if page is loaded directly
     if (document.getElementById('startScan')) {
         initQrScannerTab();
     }
 
     function scanQRCode() {
         if (!scanning) return;
+        
         const video = document.getElementById('video');
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
+        
         if (video.videoWidth === 0) {
             setTimeout(scanQRCode, 100);
             return;
         }
+        
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
         if (code) {
             try {
                 const url = new URL(code.data);
@@ -320,6 +808,7 @@
                 }
             }
         }
+        
         setTimeout(scanQRCode, 100);
     }
 
@@ -346,29 +835,33 @@
         const messageEl = document.getElementById('resultMessage');
         const ticketInfoEl = document.getElementById('ticketInfo');
         const confirmBtn = document.getElementById('confirmCheckIn');
+        
         if (type === 'success') {
             icon.innerHTML = '<i class="fas fa-check-circle success-icon"></i>';
-            titleEl.className = 'text-success';
+            titleEl.className = 'result-title text-success';
         } else {
             icon.innerHTML = '<i class="fas fa-times-circle error-icon"></i>';
-            titleEl.className = 'text-danger';
+            titleEl.className = 'result-title text-danger';
         }
+        
         titleEl.textContent = title;
         messageEl.textContent = message;
+        
         if (ticketInfo) {
             ticketInfoEl.style.display = 'block';
             ticketInfoEl.innerHTML = `
-                <p><strong>Invoice ID:</strong> ${ticketInfo.invoiceId}</p>
-                <p><strong>Movie:</strong> ${ticketInfo.movieName}</p>
-                <p><strong>Date:</strong> ${ticketInfo.showDate}</p>
-                <p><strong>Time:</strong> ${ticketInfo.showTime}</p>
-                <p><strong>Customer:</strong> ${ticketInfo.customerName}</p>
-                <p><strong>Phone:</strong> ${ticketInfo.customerPhone}</p>
-                <p><strong>Seats:</strong> ${ticketInfo.seats.map(s => s.seatName).join(', ')}</p>
-                <p><strong>Amount:</strong> ${ticketInfo.totalAmount}</p>
-                <p><strong>Status:</strong> ${ticketInfo.status === 'Completed' ? 'Paid' : 'Unpaid'}</p>
-                <p><strong>Checked-in:</strong> ${ticketInfo.isUsed ? 'Checked-in' : 'Not yet'}</p>
+                <p><strong>Invoice ID:</strong> <span>${ticketInfo.invoiceId}</span></p>
+                <p><strong>Movie:</strong> <span>${ticketInfo.movieName}</span></p>
+                <p><strong>Date:</strong> <span>${ticketInfo.showDate}</span></p>
+                <p><strong>Time:</strong> <span>${ticketInfo.showTime}</span></p>
+                <p><strong>Customer:</strong> <span>${ticketInfo.customerName}</span></p>
+                <p><strong>Phone:</strong> <span>${ticketInfo.customerPhone}</span></p>
+                <p><strong>Seats:</strong> <span>${ticketInfo.seats.map(s => s.seatName).join(', ')}</span></p>
+                <p><strong>Amount:</strong> <span>${ticketInfo.totalAmount}</span></p>
+                <p><strong>Status:</strong> <span class="badge ${ticketInfo.status === 'Completed' ? 'bg-success' : 'bg-warning'}">${ticketInfo.status === 'Completed' ? 'Paid' : 'Unpaid'}</span></p>
+                <p><strong>Check-in:</strong> <span class="badge ${ticketInfo.isUsed ? 'bg-secondary' : 'bg-primary'}">${ticketInfo.isUsed ? 'Checked-in' : 'Not yet'}</span></p>
             `;
+            
             if(ticketInfo.status === 'Completed' && !ticketInfo.isUsed) {
                 confirmBtn.style.display = 'inline-block';
             } else {
@@ -378,33 +871,41 @@
             ticketInfoEl.style.display = 'none';
             confirmBtn.style.display = 'none';
         }
+        
         modal.style.display = 'flex';
+        
         if (type === 'success') {
             setTimeout(() => {
                 modal.style.display = 'none';
-            }, 5000);
+            }, 8000);
         }
     }
+
     document.getElementById('confirmCheckIn').onclick = async function() {
         if (!lastInvoiceId) return;
+        
         this.disabled = true;
-        this.textContent = 'Đang xác nhận...';
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Confirming...';
+        
         try {
             const response = await fetch('/QRCode/ConfirmCheckIn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ invoiceId: lastInvoiceId })
             });
+            
             const result = await response.json();
+            
             if(result.success) {
-                showResult('success', 'Check-in thành công', result.message);
+                showResult('success', 'Check-in Successful', result.message);
             } else {
-                showResult('error', 'Check-in thất bại', result.message);
+                showResult('error', 'Check-in Failed', result.message);
             }
         } catch (e) {
-            showResult('error', 'Lỗi hệ thống', 'Không thể xác nhận check-in.');
+            showResult('error', 'System Error', 'Unable to confirm check-in. Please try again.');
         }
+        
         this.disabled = false;
-        this.textContent = 'Xác nhận Check-in';
+        this.innerHTML = '<i class="fas fa-check me-1"></i>Confirm Check-in';
     };
 </script> 

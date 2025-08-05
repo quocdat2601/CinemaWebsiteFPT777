@@ -1,5 +1,195 @@
 /* Admin Management Styles */
 
+/* Enhanced Admin Sidebar Styles */
+#account-sidebar {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-right: 1px solid #dee2e6 !important;
+    padding: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#account-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #6610f2, #6f42c1, #e83e8c);
+    background-size: 400% 100%;
+    animation: gradientShift 3s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+#account-sidebar .nav {
+    padding: 1.5rem 0 !important;
+}
+
+#account-sidebar .nav-link {
+    position: relative !important;
+    padding: 0.875rem 1.5rem !important;
+    margin: 0.25rem 1rem !important;
+    border-radius: 12px !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    color: #495057 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 2px solid transparent !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+}
+
+#account-sidebar .nav-link i {
+    font-size: 1.1rem !important;
+    width: 20px !important;
+    text-align: center !important;
+    margin-right: 0.75rem !important;
+    transition: transform 0.3s ease !important;
+}
+
+#account-sidebar .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: linear-gradient(180deg, #007bff, #6610f2);
+    border-radius: 0 2px 2px 0;
+    transition: height 0.3s ease;
+}
+
+#account-sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #007bff !important;
+    transform: translateX(8px) !important;
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.15) !important;
+    border-color: rgba(0, 123, 255, 0.2) !important;
+}
+
+#account-sidebar .nav-link:hover i {
+    transform: scale(1.1) !important;
+}
+
+#account-sidebar .nav-link:hover::before {
+    height: 60%;
+}
+
+#account-sidebar .nav-link.active {
+    background: linear-gradient(135deg, #007bff 0%, #6610f2 100%) !important;
+    color: white !important;
+    transform: translateX(8px) !important;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3) !important;
+    border-color: transparent !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#account-sidebar .nav-link.active i {
+    transform: scale(1.1) !important;
+}
+
+#account-sidebar .nav-link.active::before {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Removed triangle shape from active nav links */
+
+/* Special styling for QR Scanner button */
+#account-sidebar .nav-link[data-tab="QRCode"] {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+    margin-top: 2rem !important;
+    border: 2px solid rgba(40, 167, 69, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#account-sidebar .nav-link[data-tab="QRCode"]::before {
+    background: rgba(255, 255, 255, 0.2);
+    height: 100%;
+}
+
+#account-sidebar .nav-link[data-tab="QRCode"]:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%) !important;
+    transform: translateX(8px) scale(1.02) !important;
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4) !important;
+}
+
+#account-sidebar .nav-link[data-tab="QRCode"] i {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Dark mode enhancements */
+body.dark-mode #account-sidebar {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%) !important;
+    border-right: 1px solid rgba(99, 102, 241, 0.2) !important;
+}
+
+body.dark-mode #account-sidebar .nav-link {
+    background: rgba(30, 41, 59, 0.8) !important;
+    color: #cbd5e1 !important;
+    border: 2px solid rgba(99, 102, 241, 0.1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode #account-sidebar .nav-link:hover {
+    background: rgba(51, 65, 85, 0.9) !important;
+    color: #6366f1 !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2) !important;
+}
+
+body.dark-mode #account-sidebar .nav-link.active {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4) !important;
+}
+
+body.dark-mode #account-sidebar .nav-link[data-tab="QRCode"] {
+    background: linear-gradient(135deg, #059669 0%, #0d9488 100%) !important;
+    border-color: rgba(5, 150, 105, 0.3) !important;
+}
+
+body.dark-mode #account-sidebar .nav-link[data-tab="QRCode"]:hover {
+    background: linear-gradient(135deg, #047857 0%, #0f766e 100%) !important;
+    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #account-sidebar {
+        margin-bottom: 1rem !important;
+    }
+    
+    #account-sidebar .nav-link {
+        margin: 0.125rem 0.5rem !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    #account-sidebar .nav-link:hover,
+    #account-sidebar .nav-link.active {
+        transform: translateX(4px) !important;
+    }
+}
+
 /* Table and Card Styles */
 .font-monospace {
     font-family: 'Courier New', monospace;

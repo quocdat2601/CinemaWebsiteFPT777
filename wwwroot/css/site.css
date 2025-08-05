@@ -756,7 +756,8 @@ main {
     color: pink;
 }
 
-/* Account Sidebar Enhancements */
+/* Account Sidebar Enhancements - DISABLED (replaced by admin-styles.css) */
+/*
 #account-sidebar {
     background-color: var(--container-bg) !important;
     padding: 1.5rem 1rem;
@@ -764,7 +765,7 @@ main {
 }
 
 #account-sidebar .nav-item {
-    margin-bottom: 0.5rem; /* Space between nav items */
+    margin-bottom: 0.5rem;
 }
 
 #account-sidebar .nav-link {
@@ -780,10 +781,9 @@ main {
 #account-sidebar .nav-link:hover:not(.active) {
     background-color: rgba(0, 123, 255, 0.1) !important;
     color: var(--primary-color) !important;
-    transform: translateX(3px); /* Slight slide effect on hover */
+    transform: translateX(3px);
 }
 
-/* Dark mode specific adjustments for sidebar */
 body.dark-mode #account-sidebar {
     background: rgba(22, 33, 62, 0.8) !important;
     backdrop-filter: blur(15px) !important;
@@ -808,6 +808,7 @@ body.dark-mode #account-sidebar .nav-link:hover:not(.active) {
     color: #6366f1 !important;
     transform: translateX(5px);
 }
+*/
 
 /* Modern animations for dark mode */
 @keyframes glow {
