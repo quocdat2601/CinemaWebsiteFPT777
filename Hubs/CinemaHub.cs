@@ -17,12 +17,16 @@ namespace MovieTheater.Hubs
         // Static method to notify when a room is automatically enabled
         public static async Task NotifyRoomEnabled(IHubContext<CinemaHub> hubContext, int cinemaRoomId, string roomName)
         {
+            if (hubContext == null)
+                throw new ArgumentNullException(nameof(hubContext));
             await hubContext.Clients.Group($"cinema_room_{cinemaRoomId}").SendAsync("RoomAutoEnabled", cinemaRoomId, roomName);
         }
 
         // Static method to notify all admins about room status changes
         public static async Task NotifyAdmins(IHubContext<CinemaHub> hubContext, string message, string roomName)
         {
+            if (hubContext == null)
+                throw new ArgumentNullException(nameof(hubContext));
             await hubContext.Clients.All.SendAsync("AdminNotification", message, roomName);
         }
     }

@@ -14,6 +14,8 @@ namespace MovieTheater.Service
 
         public void Add(CinemaRoom cinemaRoom)
         {
+            if (cinemaRoom == null)
+                throw new ArgumentNullException(nameof(cinemaRoom));
             _repository.Add(cinemaRoom);
         }
 
@@ -41,6 +43,8 @@ namespace MovieTheater.Service
 
         public bool Update(CinemaRoom cinemaRoom)
         {
+            if (cinemaRoom == null)
+                throw new ArgumentNullException(nameof(cinemaRoom));
             try
             {
                 _repository.Update(cinemaRoom);
@@ -56,6 +60,8 @@ namespace MovieTheater.Service
         }
         public async Task<bool> Enable(CinemaRoom cinemaRoom)
         {
+            if (cinemaRoom == null)
+                throw new ArgumentNullException(nameof(cinemaRoom));
             try
             {
                 await _repository.Enable(cinemaRoom);
@@ -70,6 +76,8 @@ namespace MovieTheater.Service
         
         public async Task<bool> Disable(CinemaRoom cinemaRoom)
         {
+            if (cinemaRoom == null)
+                throw new ArgumentNullException(nameof(cinemaRoom));
             try
             {
                 await _repository.Disable(cinemaRoom);
