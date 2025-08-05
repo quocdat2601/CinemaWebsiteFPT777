@@ -17,7 +17,7 @@ namespace MovieTheater.Tests.Service
         {
             _jwtSettings = new JwtSettings
             {
-                SecretKey = "supersecretkey1234567890123456", // 32 chars for HmacSha256
+                SecretKey = "supersecretkey123456789012345678901234567890", // 42 chars for HmacSha256
                 Issuer = "TestIssuer",
                 Audience = "TestAudience",
                 ExpirationInMinutes = 60
@@ -33,7 +33,7 @@ namespace MovieTheater.Tests.Service
             // Arrange
             var jwtSettings = new JwtSettings
             {
-                SecretKey = "testsecretkey1234567890123456",
+                SecretKey = "testsecretkey123456789012345678901234567890",
                 Issuer = "TestIssuer",
                 Audience = "TestAudience",
                 ExpirationInMinutes = 30
@@ -217,7 +217,7 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.NotNull(principal);
-            Assert.Equal(account.AccountId, principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
+            Assert.Equal(account.AccountId, principal.FindFirst("AccountId")?.Value);
             Assert.Equal(account.Username, principal.FindFirst(ClaimTypes.Name)?.Value);
             Assert.Equal("Admin", principal.FindFirst(ClaimTypes.Role)?.Value);
             Assert.Equal(account.Status.ToString(), principal.FindFirst("Status")?.Value);
@@ -304,7 +304,7 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.NotNull(principal);
-            Assert.Equal(account.AccountId, principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
+            Assert.Equal(account.AccountId, principal.FindFirst("AccountId")?.Value);
             Assert.Equal(account.Username, principal.FindFirst(ClaimTypes.Name)?.Value);
         }
 
