@@ -1074,36 +1074,266 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
-        public async Task BuildTicketBookingConfirmedViewModelAsync_SetsTotalPriceToZeroIfNegative()
+        public async Task BuildTicketBookingConfirmedViewModelAsync_HandlesNegativeTotalPrice()
         {
             // Arrange
-            var show = new MovieShow
+            var invoiceId = "INV1";
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#FFFFFF" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            var movie = new Movie { MovieId = "M1", MovieNameEnglish = "Test Movie" };
+            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" };
+            var schedule = new Schedule { ScheduleId = 1, ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) };
+            var movieShow = new MovieShow
             {
                 MovieShowId = 1,
-                Movie = new Movie { MovieId = "M1", MovieNameEnglish = "Test" },
+                Movie = movie,
+                CinemaRoom = cinemaRoom,
                 ShowDate = DateOnly.FromDateTime(DateTime.Today),
-                CinemaRoom = new CinemaRoom { CinemaRoomName = "R1" },
-                Version = new ModelVersion { VersionName = "STD", Multi = 1 },
-                Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }
+                Schedule = schedule
             };
-            _context.MovieShows.Add(show);
-            await _context.SaveChangesAsync();
-            var inv = new Invoice { InvoiceId = "INVN", SeatIds = "1", MovieShowId = 1, TotalMoney = -5, RankDiscountPercentage = 50, VoucherId = "V1", UseScore = 1 };
-            _context.Invoices.Add(inv);
-            var st = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 10, ColorHex = "#FFFFFF" };
-            _context.SeatTypes.Add(st);
-            _context.Seats.Add(new Seat { SeatId = 1, SeatTypeId = 1, SeatType = st });
-            _context.Vouchers.Add(new Voucher { VoucherId = "V1", Value = 100, AccountId = "A1", Code = "CODE1" });
-            _context.ScheduleSeats.Add(new ScheduleSeat { InvoiceId = inv.InvoiceId, SeatId = 1, MovieShowId = inv.MovieShowId, SeatStatusId = 2 });
+            
+            var invoice = new Invoice
+            {
+                InvoiceId = invoiceId,
+                TotalMoney = -100m,
+                AccountId = "USER1",
+                Account = new Account { AccountId = "USER1", FullName = "Test User" },
+                MovieShowId = 1,
+                MovieShow = movieShow,
+                ScheduleSeats = new List<ScheduleSeat>
+                {
+                    new ScheduleSeat
+                    {
+                        ScheduleSeatId = 1,
+                        SeatId = 1,
+                        Seat = seat,
+                        BookedPrice = 100m
+                    }
+                }
+            };
+
+            _context.Movies.Add(movie);
+            _context.CinemaRooms.Add(cinemaRoom);
+            _context.Schedules.Add(schedule);
+            _context.MovieShows.Add(movieShow);
+            _context.SeatTypes.Add(seatType);
+            _context.Seats.Add(seat);
+            _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
 
             // Act
-            var vm = await _svc.BuildTicketBookingConfirmedViewModelAsync("INVN");
+            var result = await _svc.BuildTicketBookingConfirmedViewModelAsync(invoiceId);
 
             // Assert
-            Assert.NotNull(vm);
-            Assert.Equal(-5, vm.TotalPrice); // The SUT doesn't set negative values to zero
+            Assert.NotNull(result);
+            Assert.Equal(-100m, result.TotalPrice); // Logic thực tế cho phép giá âm
         }
+
+        #region CalculateSeatPrice Tests (via BuildConfirmBookingViewModelAsync)
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_WithStandardSeatType_CalculatesCorrectPrice()
+        {
+            // Arrange
+            var movieId = "M1";
+            var movieShowId = 1;
+            var selectedSeatIds = new List<int> { 1 };
+            var userId = "USER1";
+
+            var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
+            var movieShow = new MovieShow
+            {
+                MovieShowId = movieShowId,
+                Movie = movie,
+                CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
+                Version = new ModelVersion { VersionId = 1, VersionName = "STD", Multi = 1 },
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
+            };
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#FFFFFF" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            var account = new Account { AccountId = userId, FullName = "Test User" };
+
+            _bookingService.Setup(x => x.GetById(movieId)).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShowById(movieShowId)).Returns(movieShow);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatType });
+            _accountService.Setup(x => x.GetById(userId)).Returns(account);
+            _promoService.Setup(x => x.GetBestEligiblePromotionForBooking(It.IsAny<PromotionCheckContext>())).Returns((Promotion)null);
+
+            _context.Seats.Add(seat);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _svc.BuildConfirmBookingViewModelAsync(movieId, DateOnly.FromDateTime(DateTime.Today), "14:00", selectedSeatIds, movieShowId, null, null, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.SelectedSeats);
+            Assert.Equal(100m, result.SelectedSeats[0].Price); // basePrice * (100/100) * 1 = 100
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_WithPremiumSeatType_CalculatesCorrectPrice()
+        {
+            // Arrange
+            var movieId = "M1";
+            var movieShowId = 1;
+            var selectedSeatIds = new List<int> { 1 };
+            var userId = "USER1";
+
+            var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
+            var movieShow = new MovieShow
+            {
+                MovieShowId = movieShowId,
+                Movie = movie,
+                CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
+                Version = new ModelVersion { VersionId = 1, VersionName = "STD", Multi = 1 },
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
+            };
+            var seatType = new SeatType { SeatTypeId = 2, TypeName = "Premium", PricePercent = 150, ColorHex = "#FFD700" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 2, SeatType = seatType };
+            var account = new Account { AccountId = userId, FullName = "Test User" };
+
+            _bookingService.Setup(x => x.GetById(movieId)).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShowById(movieShowId)).Returns(movieShow);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatType });
+            _accountService.Setup(x => x.GetById(userId)).Returns(account);
+            _promoService.Setup(x => x.GetBestEligiblePromotionForBooking(It.IsAny<PromotionCheckContext>())).Returns((Promotion)null);
+
+            _context.Seats.Add(seat);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _svc.BuildConfirmBookingViewModelAsync(movieId, DateOnly.FromDateTime(DateTime.Today), "14:00", selectedSeatIds, movieShowId, null, null, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.SelectedSeats);
+            Assert.Equal(150m, result.SelectedSeats[0].Price); // basePrice * (150/100) * 1 = 150
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_With3DVersion_CalculatesCorrectPrice()
+        {
+            // Arrange
+            var movieId = "M1";
+            var movieShowId = 1;
+            var selectedSeatIds = new List<int> { 1 };
+            var userId = "USER1";
+
+            var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
+            var movieShow = new MovieShow
+            {
+                MovieShowId = movieShowId,
+                Movie = movie,
+                CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
+                Version = new ModelVersion { VersionId = 2, VersionName = "3D", Multi = 1.5m },
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
+            };
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#FFFFFF" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            var account = new Account { AccountId = userId, FullName = "Test User" };
+
+            _bookingService.Setup(x => x.GetById(movieId)).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShowById(movieShowId)).Returns(movieShow);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatType });
+            _accountService.Setup(x => x.GetById(userId)).Returns(account);
+            _promoService.Setup(x => x.GetBestEligiblePromotionForBooking(It.IsAny<PromotionCheckContext>())).Returns((Promotion)null);
+
+            _context.Seats.Add(seat);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _svc.BuildConfirmBookingViewModelAsync(movieId, DateOnly.FromDateTime(DateTime.Today), "14:00", selectedSeatIds, movieShowId, null, null, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.SelectedSeats);
+            Assert.Equal(150m, result.SelectedSeats[0].Price); // basePrice * (100/100) * 1.5 = 150
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_WithNullSeatType_CalculatesCorrectPrice()
+        {
+            // Arrange
+            var movieId = "M1";
+            var movieShowId = 1;
+            var selectedSeatIds = new List<int> { 1 };
+            var userId = "USER1";
+
+            var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
+            var movieShow = new MovieShow
+            {
+                MovieShowId = movieShowId,
+                Movie = movie,
+                CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
+                Version = new ModelVersion { VersionId = 1, VersionName = "STD", Multi = 1 },
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
+            };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = null, SeatType = null };
+            var account = new Account { AccountId = userId, FullName = "Test User" };
+
+            _bookingService.Setup(x => x.GetById(movieId)).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShowById(movieShowId)).Returns(movieShow);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType>());
+            _accountService.Setup(x => x.GetById(userId)).Returns(account);
+            _promoService.Setup(x => x.GetBestEligiblePromotionForBooking(It.IsAny<PromotionCheckContext>())).Returns((Promotion)null);
+
+            _context.Seats.Add(seat);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _svc.BuildConfirmBookingViewModelAsync(movieId, DateOnly.FromDateTime(DateTime.Today), "14:00", selectedSeatIds, movieShowId, null, null, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.SelectedSeats);
+            Assert.Equal(0m, result.SelectedSeats[0].Price); // When SeatType is null, price calculation uses 0
+        }
+
+        [Fact]
+        public async Task BuildConfirmBookingViewModelAsync_WithNullVersion_CalculatesCorrectPrice()
+        {
+            // Arrange
+            var movieId = "M1";
+            var movieShowId = 1;
+            var selectedSeatIds = new List<int> { 1 };
+            var userId = "USER1";
+
+            var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
+            var movieShow = new MovieShow
+            {
+                MovieShowId = movieShowId,
+                Movie = movie,
+                CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
+                Version = null,
+                ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
+            };
+            var seatType = new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#FFFFFF" };
+            var seat = new Seat { SeatId = 1, SeatName = "A1", SeatTypeId = 1, SeatType = seatType };
+            var account = new Account { AccountId = userId, FullName = "Test User" };
+
+            _bookingService.Setup(x => x.GetById(movieId)).Returns(movie);
+            _movieService.Setup(x => x.GetMovieShowById(movieShowId)).Returns(movieShow);
+            _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatType });
+            _accountService.Setup(x => x.GetById(userId)).Returns(account);
+            _promoService.Setup(x => x.GetBestEligiblePromotionForBooking(It.IsAny<PromotionCheckContext>())).Returns((Promotion)null);
+
+            _context.Seats.Add(seat);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _svc.BuildConfirmBookingViewModelAsync(movieId, DateOnly.FromDateTime(DateTime.Today), "14:00", selectedSeatIds, movieShowId, null, null, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.SelectedSeats);
+            Assert.Equal(100m, result.SelectedSeats[0].Price); // basePrice * (100/100) * 1 = 100 (default when Version is null)
+        }
+        #endregion
     }
 
     // Helper to create an in‑memory DbContext

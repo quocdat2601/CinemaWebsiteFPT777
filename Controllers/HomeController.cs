@@ -26,35 +26,6 @@ namespace MovieTheater.Controllers
         /// [GET] /Home/Index
         /// Trang chủ hiển thị danh sách phim và khuyến mãi hiện có.
         /// </summary>
-        public IActionResult Index1() // NOSONAR - GET methods don't require ModelState.IsValid check
-        {
-            if (User.Identity.IsAuthenticated)
-            {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (!string.IsNullOrEmpty(userId) && User.IsInRole("Member"))
-                {
-                    _accountService.CheckAndUpgradeRank(userId);
-                }
-            }
-
-            // Get categorized movies
-            var currentlyShowingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails().ToList();
-            var comingSoonMovies = _movieService.GetComingSoonMoviesWithDetails().ToList();
-            var promotions = _promotionService.GetAll();
-            var people = _personRepository.GetAll().ToList();
-            var movies = _movieService.GetAll().ToList();
-
-            // Use first currently showing movie as active movie, fallback to coming soon
-            Movie? activeMovie = currentlyShowingMovies.FirstOrDefault() ?? comingSoonMovies.FirstOrDefault();
-            
-            ViewBag.People = people;
-            ViewBag.Movies = movies; // Use currently showing movies for hero section
-            ViewBag.CurrentlyShowingMovies = currentlyShowingMovies; // For "Now Showing" slide
-            ViewBag.ComingSoonMovies = comingSoonMovies; // For "Upcoming Movies" slide
-            ViewBag.Promotions = promotions;
-
-            return View(activeMovie);
-        }
         public IActionResult Index() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (User.Identity.IsAuthenticated)
@@ -84,15 +55,6 @@ namespace MovieTheater.Controllers
             ViewBag.Promotions = promotions;
 
             return View(activeMovie);
-        }
-
-        /// <summary>
-        /// [GET] /Home/Chat
-        /// Trang test chat realtime.
-        /// </summary>
-        public IActionResult Chat() // NOSONAR - GET methods don't require ModelState.IsValid check
-        {
-            return View();
         }
 
         /// <summary>
