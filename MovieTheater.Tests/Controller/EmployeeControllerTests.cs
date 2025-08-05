@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
 using Microsoft.Extensions.Primitives;
+using System;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -202,16 +203,16 @@ namespace MovieTheater.Tests.Controller
         public async Task LoadTab_FoodMg_ReturnsPartialView_WithFoods()
         {
             // Arrange
-            var foodListViewModel = new FoodListViewModel
+            var foods = new FoodListViewModel
             {
                 Foods = new List<FoodViewModel>
                 {
-                    new FoodViewModel { FoodId = 1, Name = "Popcorn", Category = "Snacks" },
-                    new FoodViewModel { FoodId = 2, Name = "Coke", Category = "Drinks" }
+                    new FoodViewModel { FoodId = 1, Name = "Pizza", Category = "food", Status = true },
+                    new FoodViewModel { FoodId = 2, Name = "Coke", Category = "drink", Status = false }
                 }
             };
-            _foodServiceMock.Setup(s => s.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
-                           .ReturnsAsync(foodListViewModel);
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
 
             // Act
             var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
@@ -219,7 +220,366 @@ namespace MovieTheater.Tests.Controller
             // Assert
             Assert.NotNull(result);
             Assert.Equal("FoodMg", result.ViewName);
-            Assert.Equal(foodListViewModel, result.Model);
+            Assert.Equal(foods, result.Model);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithKeyword_FiltersFoods()
+        {
+            // Arrange
+            var keyword = "pizza";
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel>
+                {
+                    new FoodViewModel { FoodId = 1, Name = "Pizza", Category = "food", Status = true }
+                }
+            };
+            _foodServiceMock.Setup(x => x.GetAllAsync(keyword, It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg", keyword: keyword) as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(keyword, result.ViewData["Keyword"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithCategoryFilter_SetsViewBag()
+        {
+            // Arrange
+            var categoryFilter = "food";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), categoryFilter, It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "categoryFilter", categoryFilter } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(categoryFilter, result.ViewData["CategoryFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithStatusFilterTrue_SetsViewBag()
+        {
+            // Arrange
+            var statusFilter = "true";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), true))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "statusFilter", statusFilter } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(statusFilter, result.ViewData["StatusFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithStatusFilterFalse_SetsViewBag()
+        {
+            // Arrange
+            var statusFilter = "false";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), false))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "statusFilter", statusFilter } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(statusFilter, result.ViewData["StatusFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithNullStatusFilter_SetsDefaultTrue()
+        {
+            // Arrange
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), true))
+                           .ReturnsAsync(foods);
+
+            // Setup query string with empty statusFilter
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "statusFilter", "" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal("true", result.ViewData["StatusFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithStatusFilterOne_SetsTrue()
+        {
+            // Arrange
+            var statusFilter = "1";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), true))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "statusFilter", statusFilter } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(statusFilter, result.ViewData["StatusFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithStatusFilterZero_SetsFalse()
+        {
+            // Arrange
+            var statusFilter = "0";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), false))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "statusFilter", statusFilter } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(statusFilter, result.ViewData["StatusFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithInvalidStatusFilter_SetsDefaultTrue()
+        {
+            // Arrange
+            var statusFilter = "invalid";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), true))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "statusFilter", statusFilter } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(statusFilter, result.ViewData["StatusFilter"]);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByNameAz_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel>
+                {
+                    new FoodViewModel { FoodId = 2, Name = "Zebra" },
+                    new FoodViewModel { FoodId = 1, Name = "Alpha" }
+                }
+            };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "name_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            var resultFoods = result.Model as FoodListViewModel;
+            Assert.NotNull(resultFoods);
+            Assert.Equal("Alpha", resultFoods.Foods[0].Name);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByNameZa_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel>
+                {
+                    new FoodViewModel { FoodId = 1, Name = "Alpha" },
+                    new FoodViewModel { FoodId = 2, Name = "Zebra" }
+                }
+            };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "name_za" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            var resultFoods = result.Model as FoodListViewModel;
+            Assert.NotNull(resultFoods);
+            Assert.Equal("Zebra", resultFoods.Foods[0].Name);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByCategoryAz_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel>
+                {
+                    new FoodViewModel { FoodId = 2, Name = "Coke", Category = "drink" },
+                    new FoodViewModel { FoodId = 1, Name = "Pizza", Category = "food" }
+                }
+            };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "category_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            var resultFoods = result.Model as FoodListViewModel;
+            Assert.NotNull(resultFoods);
+            Assert.Equal("drink", resultFoods.Foods[0].Category);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByPriceAsc_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel>
+                {
+                    new FoodViewModel { FoodId = 2, Name = "Coke", Price = 50000 },
+                    new FoodViewModel { FoodId = 1, Name = "Pizza", Price = 100000 }
+                }
+            };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "price_asc" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            var resultFoods = result.Model as FoodListViewModel;
+            Assert.NotNull(resultFoods);
+            Assert.Equal(50000, resultFoods.Foods[0].Price);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithSortByCreatedAsc_SortsCorrectly()
+        {
+            // Arrange
+            var foods = new FoodListViewModel
+            {
+                Foods = new List<FoodViewModel>
+                {
+                    new FoodViewModel { FoodId = 2, Name = "Coke", CreatedDate = DateTime.Now.AddDays(1) },
+                    new FoodViewModel { FoodId = 1, Name = "Pizza", CreatedDate = DateTime.Now }
+                }
+            };
+            _foodServiceMock.Setup(x => x.GetAllAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool?>()))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "created_asc" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            var resultFoods = result.Model as FoodListViewModel;
+            Assert.NotNull(resultFoods);
+            Assert.Equal(DateTime.Now.Date, resultFoods.Foods[0].CreatedDate.Date);
+        }
+
+        [Fact]
+        public async Task LoadTab_FoodMg_WithAllFiltersAndSort_SetsAllViewBag()
+        {
+            // Arrange
+            var keyword = "pizza";
+            var categoryFilter = "food";
+            var statusFilter = "true";
+            var sortBy = "name_az";
+            var foods = new FoodListViewModel { Foods = new List<FoodViewModel>() };
+            _foodServiceMock.Setup(x => x.GetAllAsync(keyword, categoryFilter, true))
+                           .ReturnsAsync(foods);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> 
+            { 
+                { "categoryFilter", categoryFilter },
+                { "statusFilter", statusFilter },
+                { "sortBy", sortBy }
+            });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("FoodMg", keyword: keyword) as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("FoodMg", result.ViewName);
+            Assert.Equal(keyword, result.ViewData["Keyword"]);
+            Assert.Equal(categoryFilter, result.ViewData["CategoryFilter"]);
+            Assert.Equal(statusFilter, result.ViewData["StatusFilter"]);
         }
 
         [Fact]

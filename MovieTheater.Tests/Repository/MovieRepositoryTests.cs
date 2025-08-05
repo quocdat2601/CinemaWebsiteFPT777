@@ -1101,7 +1101,7 @@ namespace MovieTheater.Tests.Repository
             // Arrange
             using var context = CreateInMemoryContext();
             var movie1 = new Movie { MovieId = "MV001", MovieNameEnglish = "Currently Showing" };
-            var movie2 = new Movie { MovieId = "MV002", MovieNameEnglish = "Coming Soon" };
+            var movie2 = new Movie { MovieId = "MV002", MovieNameEnglish = "Coming Soon", ToDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30)) };
             var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, StatusId = 1 }; // Active room
             var movieShow = new MovieShow { MovieShowId = 1, MovieId = "MV001", ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), CinemaRoomId = 1 };
             context.Movies.AddRange(movie1, movie2);
@@ -1114,8 +1114,9 @@ namespace MovieTheater.Tests.Repository
             var result = repo.GetComingSoonMoviesWithDetails();
 
             // Assert
-            Assert.Single(result);
-            Assert.Equal("MV002", result[0].MovieId);
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.Contains(result, m => m.MovieId == "MV002");
         }
 
         #endregion

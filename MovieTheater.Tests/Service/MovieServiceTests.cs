@@ -904,9 +904,9 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Count);
-            Assert.Equal("1", result[0].MovieId);
-            Assert.Equal("2", result[1].MovieId);
+            Assert.Equal(expectedMovies.Count, result.Count);
+            Assert.Equal(expectedMovies[0].MovieId, result[0].MovieId);
+            Assert.Equal(expectedMovies[1].MovieId, result[1].MovieId);
             _mockMovieRepository.Verify(x => x.GetComingSoonMoviesWithDetails(), Times.Once);
         }
     }
