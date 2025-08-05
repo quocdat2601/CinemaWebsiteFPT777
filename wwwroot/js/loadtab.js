@@ -110,15 +110,19 @@ function searchBooking() {
 }
 
 function searchFood() {
-    const keyword = document.getElementById('searchKeyword').value;
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const statusFilter = document.querySelector('input[name="statusFilter"]:checked')?.value || 'true';
+    const searchKeywordElement = document.getElementById('searchKeyword');
+    const categoryFilterElement = document.getElementById('categoryFilter');
+    const statusFilterElement = document.querySelector('input[name="statusFilter"]:checked');
+    
+    const keyword = searchKeywordElement ? searchKeywordElement.value : '';
+    const categoryFilter = categoryFilterElement ? categoryFilterElement.value : '';
+    const statusFilter = statusFilterElement ? statusFilterElement.value : '';
     
     const params = {};
     if (keyword) params.keyword = keyword;
     if (categoryFilter) params.categoryFilter = categoryFilter;
-    // Always include statusFilter, default to 'true' (Active)
-    params.statusFilter = statusFilter;
+    // Include statusFilter only if it's not empty (not "All")
+    if (statusFilter) params.statusFilter = statusFilter;
     
     // Check if there's an active sort
     if (window.currentSortFood && window.currentSortFood.param) {
@@ -470,9 +474,7 @@ function initializeVoucherPagination() {
                 html += '<i class="bi bi-pencil"></i>';
                 html += '</button>';
                 html += '</form>';
-                html += '<button type="button" class="btn btn-sm btn-outline-info" onclick="viewVoucherDetails(\'' + voucher.voucherId + '\')" title="View details">';
-                html += '<i class="bi bi-eye"></i>';
-                html += '</button>';
+                
                 html += '<form action="/Voucher/AdminDelete" method="post" onsubmit="return confirm(\'Are you sure you want to delete this voucher? This action cannot be undone.\');" style="display: inline;">';
                 html += '<input type="hidden" name="id" value="' + voucher.voucherId + '" />';
                 html += '<button type="submit" class="btn btn-sm btn-outline-danger" title="Delete voucher">';
@@ -546,88 +548,6 @@ function initializeVoucherPagination() {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
-
-    // Voucher details function
-    window.viewVoucherDetails = function(voucherId) {
-        $('#voucherDetailsContent').html(`
-            <div class="text-center">
-                <i class="bi bi-arrow-clockwise fa-spin fa-2x text-primary mb-3"></i>
-                <p>Loading voucher details...</p>
-            </div>
-        `);
-        $('#voucherDetailsModal').modal('show');
-
-        // Load voucher details via AJAX
-        $.getJSON('/Voucher/GetVoucherDetails', { id: voucherId }, function(response) {
-            if (response.success) {
-                var voucher = response.voucher;
-                var statusBadge = '';
-
-                if (voucher.status === 'Active') {
-                    statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>';
-                } else if (voucher.status === 'Used') {
-                    statusBadge = '<span class="badge bg-secondary"><i class="bi bi-check2-all me-1"></i>Used</span>';
-                } else {
-                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>';
-                }
-
-                var expiryWarning = '';
-                if (voucher.isExpiringSoon) {
-                    expiryWarning = `<div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        This voucher expires in ${voucher.daysUntilExpiry} day${voucher.daysUntilExpiry === 1 ? '' : 's'}!
-                    </div>`;
-                }
-
-                var imageSection = '';
-                if (voucher.image) {
-                    imageSection = `
-                        <div class="text-center mb-3">
-                            <img src="${voucher.image}" alt="Voucher Image" class="img-fluid rounded" style="max-height: 200px;">
-                        </div>
-                    `;
-                }
-
-                $('#voucherDetailsContent').html(`
-                    ${expiryWarning}
-                    ${imageSection}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-ticket-perforated me-2 text-primary"></i>Voucher Information</h6>
-                            <table class="table table-sm">
-                                <tr><td><strong>Voucher ID:</strong></td><td>${voucher.id}</td></tr>
-                                <tr><td><strong>Code:</strong></td><td><span class="badge bg-light text-dark font-monospace">${voucher.code}</span></td></tr>
-                                <tr><td><strong>Value:</strong></td><td><span class="fw-bold text-success">${voucher.value.toLocaleString()} VND</span></td></tr>
-                                <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-calendar me-2 text-primary"></i>Date Information</h6>
-                            <table class="table table-sm">
-                                <tr><td><strong>Created:</strong></td><td>${voucher.createdDate}</td></tr>
-                                <tr><td><strong>Expires:</strong></td><td>${voucher.expiryDate}</td></tr>
-                                <tr><td><strong>Account ID:</strong></td><td>${voucher.accountId || '<span class="text-muted fst-italic">Unassigned</span>'}</td></tr>
-                            </table>
-                        </div>
-                    </div>
-                `);
-            } else {
-                $('#voucherDetailsContent').html(`
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        ${response.message}
-                    </div>
-                `);
-            }
-        }).fail(function() {
-            $('#voucherDetailsContent').html(`
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Failed to load voucher details. Please try again.
-                </div>
-            `);
-        });
-    };
 }
 
 // Make functions globally available

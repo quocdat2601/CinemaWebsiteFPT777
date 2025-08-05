@@ -72,7 +72,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null) // NOSONAR - GET methods don't require ModelState.IsValid check
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null, string categoryFilter = null) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             switch (tab)
             {
@@ -201,10 +201,10 @@ namespace MovieTheater.Controllers
                 case "FoodMg":
                     // S? d?ng parameter keyword thay v� Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
-                    var categoryFilter = Request.Query["categoryFilter"].ToString();
-                    string statusFilterStr = Request.Query["statusFilter"].ToString();
+                    var categoryFilterParam = categoryFilter ?? string.Empty;
+                    string statusFilterStr = statusFilter ?? string.Empty;
                     
-                    bool? foodStatusFilter = true; // Default to Active
+                    bool? foodStatusFilter = null; // Default to null (show all)
                     if (!string.IsNullOrEmpty(statusFilterStr) && statusFilterStr != "")
                     {
                         if (bool.TryParse(statusFilterStr, out var parsedBool))
@@ -215,7 +215,7 @@ namespace MovieTheater.Controllers
                             foodStatusFilter = false;
                     }
 
-                    var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, foodStatusFilter);
+                    var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilterParam, foodStatusFilter);
 
                     // B? sung sort
                     var sortByFood = Request.Query["sortBy"].ToString();
@@ -240,8 +240,8 @@ namespace MovieTheater.Controllers
                     }
 
                     ViewBag.Keyword = searchKeyword;
-                    ViewBag.CategoryFilter = categoryFilter;
-                    ViewBag.StatusFilter = string.IsNullOrEmpty(statusFilterStr) ? "true" : statusFilterStr;
+                    ViewBag.CategoryFilter = categoryFilterParam;
+                    ViewBag.StatusFilter = statusFilterStr;
 
                     return PartialView("FoodMg", foods);
                 case "VoucherMg":
