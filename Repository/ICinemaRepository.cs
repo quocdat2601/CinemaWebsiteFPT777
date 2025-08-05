@@ -8,7 +8,7 @@ namespace MovieTheater.Repository
         public CinemaRoom? GetById(int? id);
         Task<CinemaRoom?> GetByIdAsync(int? id);
         public void Add(CinemaRoom cinemaRoom);
-        public void Update(CinemaRoom cinemaRoom);
+        Task Update(CinemaRoom cinemaRoom);
         Task Delete(int id);
         Task Disable(CinemaRoom cinemaRoom);
         Task Enable(CinemaRoom cinemaRoom);

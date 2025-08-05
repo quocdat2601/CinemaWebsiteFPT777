@@ -54,6 +54,7 @@ namespace MovieTheater.Repository
             {
                 employee.EmployeeId = GenerateEmployeeId();
             }
+            employee.Status = true;
             _context.Employees.Add(employee);
         }
 

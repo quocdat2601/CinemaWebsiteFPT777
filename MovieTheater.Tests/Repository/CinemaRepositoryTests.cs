@@ -199,7 +199,7 @@ namespace MovieTheater.Tests.Repository
             var addedRoom = context.CinemaRooms.FirstOrDefault(r => r.CinemaRoomName == "New Room");
             Assert.NotNull(addedRoom);
             Assert.Equal("New Room", addedRoom.CinemaRoomName);
-            
+
             // Check that seats were generated
             var seats = context.Seats.Where(s => s.CinemaRoomId == addedRoom.CinemaRoomId).ToList();
             Assert.Equal(16, seats.Count); // 4x4 = 16 seats
@@ -231,14 +231,14 @@ namespace MovieTheater.Tests.Repository
             Assert.Equal(2, result.VersionId);
             Assert.Equal(6, result.SeatLength);
             Assert.Equal(4, result.SeatWidth);
-            
+
             // Check that seats were regenerated
             var seats = context.Seats.Where(s => s.CinemaRoomId == 1).ToList();
             Assert.Equal(24, seats.Count); // 6x4 = 24 seats
         }
 
         [Fact]
-        public void Update_NonExistingCinemaRoom_ThrowsKeyNotFoundException()
+        public async Task Update_NonExistingCinemaRoom_ThrowsKeyNotFoundException()
         {
             // Arrange
             using var context = CreateContext();
@@ -254,7 +254,7 @@ namespace MovieTheater.Tests.Repository
             };
 
             // Act & Assert
-            var exception = Assert.Throws<KeyNotFoundException>(() => repository.Update(nonExistingRoom));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => repository.Update(nonExistingRoom));
             Assert.Contains("Cinema room with ID 999 not found", exception.Message);
         }
 
@@ -265,10 +265,10 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateContext();
             SeedData(context);
             var repository = new CinemaRepository(context, _seatRepositoryMock.Object);
-            
+
             // Get initial seat count
             var initialSeatCount = context.Seats.Where(s => s.CinemaRoomId == 1).Count();
-            
+
             var updatedRoom = new CinemaRoom
             {
                 CinemaRoomId = 1,
@@ -287,18 +287,18 @@ namespace MovieTheater.Tests.Repository
         }
 
         [Fact]
-        public void Update_DatabaseException_ThrowsException()
+        public async Task Update_DatabaseException_ThrowsException()
         {
             // Arrange
             using var context = CreateContext();
             SeedData(context);
-            
+
             // Create a mock context that throws an exception on SaveChanges
             var mockContext = new Mock<MovieTheaterContext>(_options);
             mockContext.Setup(c => c.CinemaRooms).Returns(context.CinemaRooms);
             mockContext.Setup(c => c.Seats).Returns(context.Seats);
             mockContext.Setup(c => c.SaveChanges()).Throws(new Exception("Database connection failed"));
-            
+
             var repository = new CinemaRepository(mockContext.Object, _seatRepositoryMock.Object);
             var updatedRoom = new CinemaRoom
             {
@@ -310,7 +310,7 @@ namespace MovieTheater.Tests.Repository
             };
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => repository.Update(updatedRoom));
+            var exception = await Assert.ThrowsAsync<Exception>(() => repository.Update(updatedRoom));
             Assert.Contains("Error updating cinema room", exception.Message);
             Assert.Contains("Database connection failed", exception.Message);
         }
@@ -354,7 +354,7 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateContext();
             SeedData(context);
             var repository = new CinemaRepository(context, _seatRepositoryMock.Object);
-            
+
             // First disable the room
             var roomToDisable = new CinemaRoom
             {
@@ -399,12 +399,12 @@ namespace MovieTheater.Tests.Repository
             // Arrange
             using var context = CreateContext();
             SeedData(context);
-            
+
             // Create a mock context that throws an exception on SaveChangesAsync
             var mockContext = new Mock<MovieTheaterContext>(_options);
             mockContext.Setup(c => c.CinemaRooms).Returns(context.CinemaRooms);
             mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Database connection failed"));
-            
+
             var repository = new CinemaRepository(mockContext.Object, _seatRepositoryMock.Object);
             var roomToEnable = new CinemaRoom { CinemaRoomId = 1 };
 
@@ -461,12 +461,12 @@ namespace MovieTheater.Tests.Repository
             // Arrange
             using var context = CreateContext();
             SeedData(context);
-            
+
             // Create a mock context that throws an exception on SaveChangesAsync
             var mockContext = new Mock<MovieTheaterContext>(_options);
             mockContext.Setup(c => c.CinemaRooms).Returns(context.CinemaRooms);
             mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Database connection failed"));
-            
+
             var repository = new CinemaRepository(mockContext.Object, _seatRepositoryMock.Object);
             var roomToDisable = new CinemaRoom
             {
@@ -568,4 +568,4 @@ namespace MovieTheater.Tests.Repository
             Assert.DoesNotContain(result, r => r.CinemaRoomId == 3); // Deleted room should not be included
         }
     }
-} 
+}

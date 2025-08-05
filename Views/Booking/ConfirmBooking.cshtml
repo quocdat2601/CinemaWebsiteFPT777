@@ -946,14 +946,15 @@
     <div class="cinema-header">
         <div class="container-fluid">
             <div class="d-flex justify-content-between align-items-center">
+                <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })"
+                   class="back-btn">
+                    <i class="fas fa-arrow-left"></i>Back to Seats
+                </a>
                 <div class="flex-grow-1">
                     <h1 class="cinema-title">🎬 Confirm Your Booking</h1>
                     <p class="cinema-subtitle">Review your selection and complete your purchase</p>
                 </div>
-                <a href="@Url.Action("Select", "Seat", new { movieId = Model.MovieId, date = Model.ShowDate.ToString("dd/MM/yyyy"), time = Model.ShowTime, versionId = Model.VersionId })"
-                   class="back-btn">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Seats
-                </a>
+                
             </div>
         </div>
     </div>
@@ -1232,10 +1233,11 @@
             </div>
 
             <!-- Confirmation Form -->
-            <form asp-action="Confirm" method="post" id="confirmForm" class="mt-4">
+            <form asp-action="Confirm" asp-controller="Booking" method="post" id="confirmForm" class="mt-4">
                 @Html.HiddenFor(m => m.MovieId)
                 @Html.HiddenFor(m => m.MovieName)
                 @Html.HiddenFor(m => m.CinemaRoomName)
+                @Html.HiddenFor(m => m.VersionName)
                 @Html.HiddenFor(m => m.ShowDate)
                 @Html.HiddenFor(m => m.ShowTime)
                 @Html.HiddenFor(m => m.TotalPrice)
@@ -1287,11 +1289,7 @@
                             <i class="fas fa-check-circle me-2"></i>Confirm Booking
                         </button>
                     </div>
-                    <div class="col-md-4">
-                        <button type="button" class="test-btn" onclick="testSuccess()">
-                            <i class="fas fa-flask me-2"></i>Test Success
-                        </button>
-                    </div>
+                 
                 </div>
             </form>
         </div>
