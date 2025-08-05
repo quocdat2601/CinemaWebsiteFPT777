@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
@@ -63,7 +63,7 @@ namespace MovieTheater.Controllers
 
         // GET: AdminController
         [Authorize(Roles = "Admin")]
-        public IActionResult MainPage(string tab = "Dashboard", string range = "weekly")
+        public IActionResult MainPage(string tab = "Dashboard", string range = "weekly") // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             ViewData["ActiveTab"] = tab;
             ViewData["DashboardRange"] = range;
@@ -72,7 +72,7 @@ namespace MovieTheater.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null)
+        public async Task<IActionResult> LoadTab(string tab, string keyword = null, string statusFilter = null, string range = "weekly", string bookingTypeFilter = null) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             switch (tab)
             {
@@ -142,7 +142,7 @@ namespace MovieTheater.Controllers
                         ).ToList();
                     }
 
-                    // Bổ sung filter trạng thái
+                    // B? sung filter tr?ng th�i
                     if (!string.IsNullOrEmpty(statusFilter))
                     {
                         if (statusFilter == "completed")
@@ -153,7 +153,7 @@ namespace MovieTheater.Controllers
                             invoices = invoices.Where(b => b.Status != InvoiceStatus.Completed).ToList();
                     }
 
-                    // Bổ sung filter booking type (all vs normal vs employee)
+                    // B? sung filter booking type (all vs normal vs employee)
                     if (!string.IsNullOrEmpty(bookingTypeFilter))
                     {
                         if (bookingTypeFilter == "normal")
@@ -167,7 +167,7 @@ namespace MovieTheater.Controllers
                     ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
                     ViewBag.StatusFilter = statusFilter;
 
-                    // Bổ sung sort
+                    // B? sung sort
                     var sortBy = Request.Query["sortBy"].ToString();
                     if (!string.IsNullOrEmpty(sortBy))
                     {
@@ -199,7 +199,7 @@ namespace MovieTheater.Controllers
 
                     return PartialView("BookingMg", invoices);
                 case "FoodMg":
-                    // Sử dụng parameter keyword thay vì Request.Query["keyword"]
+                    // S? d?ng parameter keyword thay v� Request.Query["keyword"]
                     var searchKeyword = keyword ?? string.Empty;
                     var categoryFilter = Request.Query["categoryFilter"].ToString();
                     string statusFilterStr = Request.Query["statusFilter"].ToString();
@@ -217,7 +217,7 @@ namespace MovieTheater.Controllers
 
                     var foods = await _foodService.GetAllAsync(searchKeyword, categoryFilter, foodStatusFilter);
 
-                    // Bổ sung sort
+                    // B? sung sort
                     var sortByFood = Request.Query["sortBy"].ToString();
                     if (!string.IsNullOrEmpty(sortByFood))
                     {
@@ -253,7 +253,7 @@ namespace MovieTheater.Controllers
                     };
                     var filteredVouchers = _voucherService.GetFilteredVouchers(filter).ToList();
 
-                    // Bổ sung sort
+                    // B? sung sort
                     var sortByVoucher = Request.Query["sortBy"].ToString();
                     if (!string.IsNullOrEmpty(sortByVoucher))
                     {
@@ -300,7 +300,7 @@ namespace MovieTheater.Controllers
         }
 
         // GET: AdminController/Create
-        public ActionResult Create()
+        public ActionResult Create() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -325,7 +325,7 @@ namespace MovieTheater.Controllers
         }
 
         // GET: AdminController/Delete/5
-        public ActionResult Delete(int id)
+        public ActionResult Delete(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -350,7 +350,7 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult Edit(string id)
+        public IActionResult Edit(string id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var account = _accountService.GetById(id); // Use AccountService to get the Account by AccountId
             if (account == null)
@@ -429,7 +429,7 @@ namespace MovieTheater.Controllers
 
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
-        public IActionResult ShowtimeMg(string date)
+        public IActionResult ShowtimeMg(string date) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             DateOnly selectedDate;
             if (!string.IsNullOrEmpty(date) && DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out selectedDate))
@@ -464,7 +464,7 @@ namespace MovieTheater.Controllers
 
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
-        public IActionResult GetMovieShowSummary(int year, int month)
+        public IActionResult GetMovieShowSummary(int year, int month) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (HttpContext.RequestServices.GetService(typeof(IMovieRepository)) is not MovieRepository repo)
             {
@@ -482,7 +482,7 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult CreateRank()
+        public IActionResult CreateRank() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View("~/Views/Rank/Create.cshtml", new RankCreateViewModel());
         }
@@ -522,7 +522,7 @@ namespace MovieTheater.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult EditRank(int id)
+        public IActionResult EditRank(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var rank = _rankService.GetById(id);
             if (rank == null) return NotFound();
@@ -592,7 +592,7 @@ namespace MovieTheater.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Employee")]
-        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, string sortBy = null, int page = 1, int pageSize = 10)
+        public IActionResult BookingMgPartial(string keyword = null, string statusFilter = null, string bookingTypeFilter = null, string sortBy = null, int page = 1, int pageSize = 10) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var invoices = _invoiceService.GetAll();
 
@@ -733,7 +733,7 @@ namespace MovieTheater.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public IActionResult VoucherMgPartial(string keyword = null, string statusFilter = null, string expiryFilter = null, int page = 1, int pageSize = 10)
+        public IActionResult VoucherMgPartial(string keyword = null, string statusFilter = null, string expiryFilter = null, int page = 1, int pageSize = 10) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var filter = new Service.VoucherFilterModel
             {
@@ -796,7 +796,7 @@ namespace MovieTheater.Controllers
 
         [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
-        public IActionResult GetMovieShowsByDate(string date)
+        public IActionResult GetMovieShowsByDate(string date) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (!DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var selectedDate))
             {

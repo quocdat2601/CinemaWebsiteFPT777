@@ -26,7 +26,7 @@ namespace MovieTheater.Controllers
         /// [GET] /Home/Index
         /// Trang chủ hiển thị danh sách phim và khuyến mãi hiện có.
         /// </summary>
-        public IActionResult Index1()
+        public IActionResult Index1() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (User.Identity.IsAuthenticated)
             {
@@ -55,7 +55,7 @@ namespace MovieTheater.Controllers
 
             return View(activeMovie);
         }
-        public IActionResult Index()
+        public IActionResult Index() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             if (User.Identity.IsAuthenticated)
             {
@@ -90,7 +90,7 @@ namespace MovieTheater.Controllers
         /// [GET] /Home/Chat
         /// Trang test chat realtime.
         /// </summary>
-        public IActionResult Chat()
+        public IActionResult Chat() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -99,7 +99,7 @@ namespace MovieTheater.Controllers
         /// [GET] /Home/MovieList
         /// Trang hiển thị danh sách các bộ phim.
         /// </summary>
-        public IActionResult MovieList()
+        public IActionResult MovieList() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -108,12 +108,12 @@ namespace MovieTheater.Controllers
         /// [GET] /Home/Showtime
         /// Trang hiển thị lịch chiếu phim.
         /// </summary>
-        public IActionResult Showtime()
+        public IActionResult Showtime() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
 
-        public IActionResult GradientColorPicker()
+        public IActionResult GradientColorPicker() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View("GradientColorPicker");
         }

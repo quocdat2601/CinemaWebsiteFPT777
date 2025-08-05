@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +48,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult ExternalLogin()
+        public IActionResult ExternalLogin() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var redirectUrl = Url.Action("ExternalLoginCallback", "Account");
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
@@ -75,10 +75,10 @@ namespace MovieTheater.Controllers
                 return RedirectToAction(LOGIN_ACTION);
             }
 
-            // Refactor: Đẩy logic tạo user/member mới vào service
+            // Refactor: �?y logic t?o user/member m?i v�o service
             var user = _service.GetOrCreateGoogleAccount(email, name, givenName, surname, picture);
 
-            // Refactor: Đẩy logic kiểm tra thông tin thiếu vào service
+            // Refactor: �?y logic ki?m tra th�ng tin thi?u v�o service
             bool missingInfo = _service.HasMissingProfileInfo(user);
             if (missingInfo)
             {
@@ -91,7 +91,7 @@ namespace MovieTheater.Controllers
                 return RedirectToAction(LOGIN_ACTION);
             }
 
-            // Refactor: Đẩy logic tạo claims, sign-in vào service
+            // Refactor: �?y logic t?o claims, sign-in v�o service
             await _service.SignInUserAsync(HttpContext, user);
 
             // Check and update rank
@@ -144,7 +144,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -299,7 +299,7 @@ namespace MovieTheater.Controllers
         }
 
         [HttpGet]
-        public IActionResult History()
+        public IActionResult History() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             // This action is obsolete since history is now in the profile tab
             return RedirectToAction(MAIN_PAGE, MY_ACCOUNT_CONTROLLER);
@@ -318,7 +318,7 @@ namespace MovieTheater.Controllers
 
         // --- Forget Password Actions ---
         [HttpGet]
-        public IActionResult ForgetPassword()
+        public IActionResult ForgetPassword() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             return View();
         }
@@ -335,26 +335,26 @@ namespace MovieTheater.Controllers
             var account = _service.GetAccountByEmail(model.Email);
             if (account == null)
             {
-                ModelState.AddModelError("Email", "Email không tồn tại trong hệ thống.");
+                ModelState.AddModelError("Email", "Email kh�ng t?n t?i trong h? th?ng.");
                 return View(model);
             }
 
             var success = _service.SendForgetPasswordOtp(model.Email);
             if (success)
             {
-                TempData["SuccessMessage"] = "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư và thư mục spam.";
+                TempData["SuccessMessage"] = "M� OTP d� du?c g?i d?n email c?a b?n. Vui l�ng ki?m tra h?p thu v� thu m?c spam.";
                 TempData["Email"] = model.Email;
                 return RedirectToAction("ResetPassword");
             }
             else
             {
-                ModelState.AddModelError("", "Không thể gửi mã OTP. Vui lòng thử lại sau.");
+                ModelState.AddModelError("", "Kh�ng th? g?i m� OTP. Vui l�ng th? l?i sau.");
                 return View(model);
             }
         }
 
         [HttpGet]
-        public IActionResult ResetPassword()
+        public IActionResult ResetPassword() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var email = TempData["Email"] as string;
             if (string.IsNullOrEmpty(email))
@@ -381,7 +381,7 @@ namespace MovieTheater.Controllers
             // Verify OTP
             if (!_service.VerifyForgetPasswordOtp(model.Email, model.Otp))
             {
-                ModelState.AddModelError("Otp", "Mã OTP không đúng hoặc đã hết hạn.");
+                ModelState.AddModelError("Otp", "M� OTP kh�ng d�ng ho?c d� h?t h?n.");
                 return View(model);
             }
 
@@ -389,12 +389,12 @@ namespace MovieTheater.Controllers
             var success = _service.ResetPassword(model.Email, model.NewPassword);
             if (success)
             {
-                TempData["SuccessMessage"] = "Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.";
+                TempData["SuccessMessage"] = "M?t kh?u d� du?c d?t l?i th�nh c�ng. Vui l�ng dang nh?p v?i m?t kh?u m?i.";
                 return RedirectToAction("Login");
             }
             else
             {
-                ModelState.AddModelError("", "Không thể đặt lại mật khẩu. Vui lòng thử lại sau.");
+                ModelState.AddModelError("", "Kh�ng th? d?t l?i m?t kh?u. Vui l�ng th? l?i sau.");
                 return View(model);
             }
         }
@@ -414,7 +414,7 @@ namespace MovieTheater.Controllers
 
             var account = _service.GetAccountByEmail(req.Email);
             if (account == null)
-                return Json(new { success = false, error = "Email không tồn tại trong hệ thống." });
+                return Json(new { success = false, error = "Email kh�ng t?n t?i trong h? th?ng." });
 
             _logger.LogInformation("Forget password OTP send request initiated for email: {EmailHash}", GetEmailHash(req.Email));
 
