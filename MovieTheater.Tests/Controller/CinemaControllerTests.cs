@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
+using Microsoft.Extensions.Primitives;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -676,6 +677,348 @@ namespace MovieTheater.Tests.Controller
             var identity = new ClaimsIdentity(claims, "TestAuth");
             var principal = new ClaimsPrincipal(identity);
             _controller.ControllerContext.HttpContext.User = principal;
+        }
+        #endregion
+
+        #region GetConflictedShows Tests (via Disable method)
+        [Fact]
+        public async Task Disable_Post_WithConflictedShows_ReturnsConflictedShows()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today,
+                UnavailableEndDate = DateTime.Today.AddDays(1)
+            };
+
+            var conflictedShows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 1,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
+                    Movie = new Movie { Duration = 120 }
+                }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(conflictedShows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(new List<Invoice>());
+            _ticketServiceMock.Setup(x => x.CancelTicketByAdminAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((true, new List<string>()));
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithNoConflictedShows_ProceedsWithDisable()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today,
+                UnavailableEndDate = DateTime.Today.AddDays(1)
+            };
+
+            var noConflictedShows = new List<MovieShow>();
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(noConflictedShows);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithNullUnavailableDates_ProceedsWithDisable()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = null,
+                UnavailableEndDate = null
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(new List<MovieShow>());
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithShowOutsideUnavailablePeriod_ProceedsWithDisable()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today,
+                UnavailableEndDate = DateTime.Today.AddDays(1)
+            };
+
+            var shows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 1,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2)), // Outside unavailable period
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
+                    Movie = new Movie { Duration = 120 }
+                }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(shows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(new List<Invoice>());
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithShowInsideUnavailablePeriod_RefundsAndProceeds()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today.AddHours(13), // 1 PM
+                UnavailableEndDate = DateTime.Today.AddHours(17)   // 5 PM
+            };
+
+            var shows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 1,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }, // 2 PM
+                    Movie = new Movie { Duration = 120 } // 2 hours duration
+                }
+            };
+
+            var invoices = new List<Invoice>
+            {
+                new Invoice { InvoiceId = "INV1", Cancel = false }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(shows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(invoices);
+            _ticketServiceMock.Setup(x => x.CancelTicketByAdminAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((true, new List<string>()));
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithShowOverlappingUnavailablePeriod_RefundsAndProceeds()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today.AddHours(15), // 3 PM
+                UnavailableEndDate = DateTime.Today.AddHours(17)   // 5 PM
+            };
+
+            var shows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 1,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) }, // 2 PM start
+                    Movie = new Movie { Duration = 120 } // 2 hours duration (ends at 4 PM)
+                }
+            };
+
+            var invoices = new List<Invoice>
+            {
+                new Invoice { InvoiceId = "INV1", Cancel = false }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(shows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(invoices);
+            _ticketServiceMock.Setup(x => x.CancelTicketByAdminAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((true, new List<string>()));
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithShowOutsideCinemaRoom_ProceedsWithDisable()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today,
+                UnavailableEndDate = DateTime.Today.AddDays(1)
+            };
+
+            var shows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 2, // Different cinema room
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
+                    Movie = new Movie { Duration = 120 }
+                }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(shows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(new List<Invoice>());
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithNullSchedule_ProceedsWithDisable()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today,
+                UnavailableEndDate = DateTime.Today.AddDays(1)
+            };
+
+            var shows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 1,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = null,
+                    Movie = new Movie { Duration = 120 }
+                }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(shows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(new List<Invoice>());
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
+        }
+
+        [Fact]
+        public async Task Disable_Post_WithNullMovie_ProceedsWithDisable()
+        {
+            // Arrange
+            var cinemaRoom = new CinemaRoom
+            {
+                CinemaRoomId = 1,
+                CinemaRoomName = "Test Room",
+                UnavailableStartDate = DateTime.Today,
+                UnavailableEndDate = DateTime.Today.AddDays(1)
+            };
+
+            var shows = new List<MovieShow>
+            {
+                new MovieShow
+                {
+                    MovieShowId = 1,
+                    CinemaRoomId = 1,
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
+                    Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
+                    Movie = null
+                }
+            };
+
+            _cinemaServiceMock.Setup(x => x.GetById(1)).Returns(cinemaRoom);
+            _movieServiceMock.Setup(x => x.GetMovieShow()).Returns(shows);
+            _movieServiceMock.Setup(x => x.GetInvoicesByMovieShow(It.IsAny<int>())).Returns(new List<Invoice>());
+            _cinemaServiceMock.Setup(x => x.Disable(It.IsAny<CinemaRoom>())).ReturnsAsync(true);
+            SetupUserRole("Admin");
+
+            // Act
+            var result = await _controller.Disable(cinemaRoom, null) as RedirectToActionResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("MainPage", result.ActionName);
+            Assert.Equal("Admin", result.ControllerName);
         }
         #endregion
     }

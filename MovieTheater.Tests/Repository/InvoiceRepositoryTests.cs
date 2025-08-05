@@ -11,343 +11,532 @@ namespace MovieTheater.Tests.Repository
 {
     public class InvoiceRepositoryTests
     {
-        private MovieTheaterContext CreateInMemoryContext()
+        private readonly MovieTheaterContext _context;
+        private readonly InvoiceRepository _repository;
+
+        public InvoiceRepositoryTests()
         {
             var options = new DbContextOptionsBuilder<MovieTheaterContext>()
-                .UseInMemoryDatabase(databaseName: "InvoiceRepoTestDb" + Guid.NewGuid())
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
-            return new MovieTheaterContext(options);
+            _context = new MovieTheaterContext(options);
+            _repository = new InvoiceRepository(_context);
+            SeedData();
+        }
+
+        private void SeedData()
+        {
+            var accounts = new List<Account>
+            {
+                new Account { AccountId = "acc1", Username = "user1", Email = "user1@test.com" },
+                new Account { AccountId = "acc2", Username = "user2", Email = "user2@test.com" }
+            };
+
+            var employees = new List<Employee>
+            {
+                new Employee { EmployeeId = "emp1", AccountId = "acc1", Status = true }
+            };
+
+            var movies = new List<Movie>
+            {
+                new Movie { MovieId = "MV001", MovieNameEnglish = "Test Movie 1" },
+                new Movie { MovieId = "MV002", MovieNameEnglish = "Test Movie 2" }
+            };
+
+            var cinemaRooms = new List<CinemaRoom>
+            {
+                new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "Room 1", StatusId = 1 }
+            };
+
+            var schedules = new List<Schedule>
+            {
+                new Schedule { ScheduleId = 1, ScheduleTime = new TimeOnly(14, 0) }
+            };
+
+            var versions = new List<MovieTheater.Models.Version>
+            {
+                new MovieTheater.Models.Version { VersionId = 1, VersionName = "2D" }
+            };
+
+            var movieShows = new List<MovieShow>
+            {
+                new MovieShow 
+                { 
+                    MovieShowId = 1, 
+                    MovieId = "MV001", 
+                    CinemaRoomId = 1, 
+                    ScheduleId = 1, 
+                    VersionId = 1,
+                    Movie = movies[0],
+                    CinemaRoom = cinemaRooms[0],
+                    Schedule = schedules[0],
+                    Version = versions[0]
+                }
+            };
+
+            var seatTypes = new List<SeatType>
+            {
+                new SeatType { SeatTypeId = 1, TypeName = "Standard", PricePercent = 100, ColorHex = "#FF0000" }
+            };
+
+            var seats = new List<Seat>
+            {
+                new Seat { SeatId = 1, SeatName = "A1", CinemaRoomId = 1, SeatTypeId = 1, SeatType = seatTypes[0] }
+            };
+
+            var invoices = new List<Invoice>
+            {
+                new Invoice 
+                { 
+                    InvoiceId = "INV001", 
+                    AccountId = "acc1", 
+                    EmployeeId = "emp1",
+                    MovieShowId = 1,
+                    TotalMoney = 100000,
+                    Status = InvoiceStatus.Incomplete,
+                    Cancel = false,
+                    BookingDate = DateTime.Now.AddDays(-1),
+                    MovieShow = movieShows[0],
+                    Account = accounts[0],
+                    Employee = employees[0]
+                },
+                new Invoice 
+                { 
+                    InvoiceId = "INV002", 
+                    AccountId = "acc1", 
+                    EmployeeId = "emp1",
+                    MovieShowId = 1,
+                    TotalMoney = 150000,
+                    Status = InvoiceStatus.Completed,
+                    Cancel = false,
+                    BookingDate = DateTime.Now.AddDays(-2),
+                    MovieShow = movieShows[0],
+                    Account = accounts[0],
+                    Employee = employees[0]
+                },
+                new Invoice 
+                { 
+                    InvoiceId = "INV003", 
+                    AccountId = "acc2", 
+                    EmployeeId = "emp1",
+                MovieShowId = 1,
+                    TotalMoney = 200000,
+                    Status = InvoiceStatus.Incomplete,
+                    Cancel = true,
+                    BookingDate = DateTime.Now.AddDays(-3),
+                    MovieShow = movieShows[0],
+                    Account = accounts[1],
+                    Employee = employees[0]
+                }
+            };
+
+            var scheduleSeats = new List<ScheduleSeat>
+            {
+                new ScheduleSeat 
+                { 
+                    ScheduleSeatId = 1, 
+                    InvoiceId = "INV001", 
+                    SeatId = 1,
+                    Seat = seats[0]
+                }
+            };
+
+            var vouchers = new List<Voucher>
+            {
+                new Voucher 
+                { 
+                    VoucherId = "1", 
+                    AccountId = "acc1", 
+                    Code = "VOUCHER001",
+                    CreatedDate = DateTime.Now,
+                    ExpiryDate = DateTime.Now.AddDays(30)
+                }
+            };
+
+            _context.Accounts.AddRange(accounts);
+            _context.Employees.AddRange(employees);
+            _context.Movies.AddRange(movies);
+            _context.CinemaRooms.AddRange(cinemaRooms);
+            _context.Schedules.AddRange(schedules);
+            _context.Versions.AddRange(versions);
+            _context.MovieShows.AddRange(movieShows);
+            _context.SeatTypes.AddRange(seatTypes);
+            _context.Seats.AddRange(seats);
+            _context.Invoices.AddRange(invoices);
+            _context.ScheduleSeats.AddRange(scheduleSeats);
+            _context.Vouchers.AddRange(vouchers);
+            _context.SaveChanges();
         }
 
         [Fact]
-        public void GetAll_ShouldReturnAllInvoicesWithIncludes()
+        public void GetAll_ReturnsAllInvoicesWithIncludes()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1 };
-            context.CinemaRooms.Add(cinemaRoom);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            var version = new MovieTheater.Models.Version { VersionId = 1 };
-            context.Versions.Add(version);
-            context.SaveChanges();
-            var movieShow = new MovieShow
-            {
-                MovieShowId = 1,
-                MovieId = movie.MovieId,
-                Movie = movie,
-                CinemaRoomId = cinemaRoom.CinemaRoomId,
-                CinemaRoom = cinemaRoom,
-                ScheduleId = schedule.ScheduleId,
-                Schedule = schedule,
-                VersionId = version.VersionId,
-                Version = version
-            };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            var invoice = new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, Account = account, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow };
-            context.Invoices.Add(invoice);
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = repo.GetAll().ToList();
-            // Assert
-            Assert.Single(result);
-            Assert.NotNull(result[0].Account);
-            Assert.NotNull(result[0].MovieShow);
-        }
+            var result = _repository.GetAll();
 
-        [Fact]
-        public void GetById_ShouldReturnInvoiceWithIncludes_WhenFound()
-        {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1", Members = new List<Member>() };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1 };
-            context.CinemaRooms.Add(cinemaRoom);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            var version = new MovieTheater.Models.Version { VersionId = 1 };
-            context.Versions.Add(version);
-            context.SaveChanges();
-            var movieShow = new MovieShow
-            {
-                MovieShowId = 1,
-                MovieId = movie.MovieId,
-                Movie = movie,
-                CinemaRoomId = cinemaRoom.CinemaRoomId,
-                CinemaRoom = cinemaRoom,
-                ScheduleId = schedule.ScheduleId,
-                Schedule = schedule,
-                VersionId = version.VersionId,
-                Version = version
-            };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            var invoice = new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, Account = account, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow };
-            context.Invoices.Add(invoice);
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
-            // Act
-            var result = repo.GetById("inv1");
             // Assert
             Assert.NotNull(result);
+            Assert.Equal(3, result.Count());
+            var firstInvoice = result.First();
+            Assert.NotNull(firstInvoice.Account);
+            Assert.NotNull(firstInvoice.Employee);
+            Assert.NotNull(firstInvoice.MovieShow);
+            Assert.NotNull(firstInvoice.MovieShow.Movie);
+            Assert.NotNull(firstInvoice.MovieShow.CinemaRoom);
+            Assert.NotNull(firstInvoice.MovieShow.Schedule);
+            Assert.NotNull(firstInvoice.MovieShow.Version);
+        }
+
+        [Fact]
+        public void GetById_WithValidId_ReturnsInvoiceWithIncludes()
+        {
+            // Act
+            var result = _repository.GetById("INV001");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("INV001", result.InvoiceId);
             Assert.NotNull(result.Account);
+            Assert.NotNull(result.Employee);
             Assert.NotNull(result.MovieShow);
+            Assert.NotNull(result.MovieShow.Movie);
+            Assert.NotNull(result.Account.Members);
         }
 
         [Fact]
-        public void GetById_ShouldReturnNull_WhenNotFound()
+        public void GetById_WithInvalidId_ReturnsNull()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = repo.GetById("notfound");
+            var result = _repository.GetById("INVALID");
+
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task GetByAccountIdAsync_ShouldReturnInvoicesForAccount()
+        public void GetById_WithNullId_ReturnsNull()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            context.SaveChanges();
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = movie.MovieId, Movie = movie, ScheduleId = schedule.ScheduleId, Schedule = schedule };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            context.Invoices.Add(new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, Status = InvoiceStatus.Completed, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.Invoices.Add(new Invoice { InvoiceId = "inv2", AccountId = account.AccountId, Status = InvoiceStatus.Incomplete, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = (await repo.GetByAccountIdAsync(account.AccountId)).ToList();
+            var result = _repository.GetById(null);
+
             // Assert
-            Assert.Equal(2, result.Count);
+            Assert.Null(result);
         }
 
         [Fact]
-        public async Task GetByAccountIdAsync_ShouldFilterByStatus()
+        public async Task GetByAccountIdAsync_WithValidAccountId_ReturnsInvoices()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            context.SaveChanges();
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = movie.MovieId, Movie = movie, ScheduleId = schedule.ScheduleId, Schedule = schedule };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            context.Invoices.Add(new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, Status = InvoiceStatus.Completed, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.Invoices.Add(new Invoice { InvoiceId = "inv2", AccountId = account.AccountId, Status = InvoiceStatus.Incomplete, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = (await repo.GetByAccountIdAsync(account.AccountId, InvoiceStatus.Completed)).ToList();
+            var result = await _repository.GetByAccountIdAsync("acc1");
+
             // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+            Assert.All(result, invoice => Assert.Equal("acc1", invoice.AccountId));
+        }
+
+        [Fact]
+        public async Task GetByAccountIdAsync_WithStatusFilter_ReturnsFilteredInvoices()
+        {
+            // Act
+            var result = await _repository.GetByAccountIdAsync("acc1", InvoiceStatus.Incomplete);
+
+            // Assert
+            Assert.NotNull(result);
             Assert.Single(result);
-            Assert.Equal(InvoiceStatus.Completed, result[0].Status);
+            Assert.Equal(InvoiceStatus.Incomplete, result.First().Status);
         }
 
         [Fact]
-        public async Task GetByDateRangeAsync_ShouldReturnInvoicesInRange()
+        public async Task GetByAccountIdAsync_WithCancelFilter_ReturnsFilteredInvoices()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            context.SaveChanges();
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = movie.MovieId, Movie = movie, ScheduleId = schedule.ScheduleId, Schedule = schedule };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            context.Invoices.Add(new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, BookingDate = new DateTime(2024, 1, 1), MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.Invoices.Add(new Invoice { InvoiceId = "inv2", AccountId = account.AccountId, BookingDate = new DateTime(2024, 2, 1), MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = (await repo.GetByDateRangeAsync(account.AccountId, new DateTime(2024, 1, 15), new DateTime(2024, 2, 15))).ToList();
+            var result = await _repository.GetByAccountIdAsync("acc1", null, false);
+
             // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+            Assert.All(result, invoice => Assert.False(invoice.Cancel));
+        }
+
+        [Fact]
+        public async Task GetByAccountIdAsync_WithBothFilters_ReturnsFilteredInvoices()
+        {
+            // Act
+            var result = await _repository.GetByAccountIdAsync("acc1", InvoiceStatus.Incomplete, false);
+
+            // Assert
+            Assert.NotNull(result);
             Assert.Single(result);
-            Assert.Equal("inv2", result[0].InvoiceId);
+            Assert.Equal(InvoiceStatus.Incomplete, result.First().Status);
+            Assert.False(result.First().Cancel);
         }
 
         [Fact]
-        public async Task GetByDateRangeAsync_ShouldReturnAll_WhenNoDates()
+        public async Task GetByAccountIdAsync_WithInvalidAccountId_ReturnsEmpty()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            context.SaveChanges();
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = movie.MovieId, Movie = movie, ScheduleId = schedule.ScheduleId, Schedule = schedule };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            context.Invoices.Add(new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, BookingDate = new DateTime(2024, 1, 1), MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.Invoices.Add(new Invoice { InvoiceId = "inv2", AccountId = account.AccountId, BookingDate = new DateTime(2024, 2, 1), MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = (await repo.GetByDateRangeAsync(account.AccountId, null, null)).ToList();
+            var result = await _repository.GetByAccountIdAsync("invalid");
+
             // Assert
-            Assert.Equal(2, result.Count);
+            Assert.NotNull(result);
+            Assert.Empty(result);
         }
 
         [Fact]
-        public async Task GetDetailsAsync_ShouldReturnInvoice_WhenFound()
+        public async Task GetByDateRangeAsync_WithValidRange_ReturnsFilteredInvoices()
         {
             // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var cinemaRoom = new CinemaRoom { CinemaRoomId = 1 };
-            context.CinemaRooms.Add(cinemaRoom);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            var version = new MovieTheater.Models.Version { VersionId = 1 };
-            context.Versions.Add(version);
-            context.SaveChanges();
-            var movieShow = new MovieShow
+            var fromDate = DateTime.Now.AddDays(-2);
+            var toDate = DateTime.Now.AddDays(-1);
+
+            // Act
+            var result = await _repository.GetByDateRangeAsync("acc1", fromDate, toDate);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.Count()); // Only 1 invoice in the date range
+            Assert.All(result, invoice => 
             {
-                MovieShowId = 1,
-                MovieId = movie.MovieId,
-                Movie = movie,
-                CinemaRoomId = cinemaRoom.CinemaRoomId,
-                CinemaRoom = cinemaRoom,
-                ScheduleId = schedule.ScheduleId,
-                Schedule = schedule,
-                VersionId = version.VersionId,
-                Version = version
-            };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            context.Invoices.Add(new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
-            // Act
-            var result = await repo.GetDetailsAsync("inv1", account.AccountId);
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("inv1", result.InvoiceId);
+                Assert.True(invoice.BookingDate >= fromDate);
+                Assert.True(invoice.BookingDate <= toDate);
+            });
         }
 
         [Fact]
-        public async Task GetDetailsAsync_ShouldReturnNull_WhenNotFound()
+        public async Task GetByDateRangeAsync_WithFromDateOnly_ReturnsFilteredInvoices()
         {
             // Arrange
-            using var context = CreateInMemoryContext();
-            var repo = new InvoiceRepository(context);
+            var fromDate = DateTime.Now.AddDays(-2);
+
             // Act
-            var result = await repo.GetDetailsAsync("notfound", "acc1");
+            var result = await _repository.GetByDateRangeAsync("acc1", fromDate, null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.Count()); // Only 1 invoice from the date
+            Assert.All(result, invoice => Assert.True(invoice.BookingDate >= fromDate));
+        }
+
+        [Fact]
+        public async Task GetByDateRangeAsync_WithToDateOnly_ReturnsFilteredInvoices()
+        {
+            // Arrange
+            var toDate = DateTime.Now.AddDays(-1);
+
+            // Act
+            var result = await _repository.GetByDateRangeAsync("acc1", null, toDate);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+            Assert.All(result, invoice => Assert.True(invoice.BookingDate <= toDate));
+        }
+
+        [Fact]
+        public async Task GetByDateRangeAsync_WithNoDates_ReturnsAllInvoices()
+        {
+            // Act
+            var result = await _repository.GetByDateRangeAsync("acc1", null, null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+        }
+
+        [Fact]
+        public async Task GetDetailsAsync_WithValidIds_ReturnsInvoiceWithDetails()
+        {
+            // Act
+            var result = await _repository.GetDetailsAsync("INV001", "acc1");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("INV001", result.InvoiceId);
+            Assert.Equal("acc1", result.AccountId);
+            Assert.NotNull(result.MovieShow);
+            Assert.NotNull(result.MovieShow.Movie);
+            Assert.NotNull(result.ScheduleSeats);
+            Assert.Single(result.ScheduleSeats);
+        }
+
+        [Fact]
+        public async Task GetDetailsAsync_WithInvalidInvoiceId_ReturnsNull()
+        {
+            // Act
+            var result = await _repository.GetDetailsAsync("INVALID", "acc1");
+
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task GetForCancelAsync_ShouldReturnInvoice_WhenFound()
+        public async Task GetDetailsAsync_WithInvalidAccountId_ReturnsNull()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var account = new Account { AccountId = "acc1" };
-            context.Accounts.Add(account);
-            var movie = new Movie { MovieId = "1" };
-            context.Movies.Add(movie);
-            var schedule = new Schedule { ScheduleId = 1 };
-            context.Schedules.Add(schedule);
-            context.SaveChanges();
-            var movieShow = new MovieShow { MovieShowId = 1, MovieId = movie.MovieId, Movie = movie, ScheduleId = schedule.ScheduleId, Schedule = schedule };
-            context.MovieShows.Add(movieShow);
-            context.SaveChanges();
-            context.Invoices.Add(new Invoice { InvoiceId = "inv1", AccountId = account.AccountId, MovieShowId = movieShow.MovieShowId, MovieShow = movieShow });
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            var result = await repo.GetForCancelAsync("inv1", account.AccountId);
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("inv1", result.InvoiceId);
-        }
+            var result = await _repository.GetDetailsAsync("INV001", "invalid");
 
-        [Fact]
-        public async Task GetForCancelAsync_ShouldReturnNull_WhenNotFound()
-        {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var repo = new InvoiceRepository(context);
-            // Act
-            var result = await repo.GetForCancelAsync("notfound", "acc1");
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task UpdateAsync_ShouldUpdateInvoice()
+        public async Task GetForCancelAsync_WithValidIds_ReturnsInvoice()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var invoice = new Invoice { InvoiceId = "inv1", AccountId = "acc1" };
-            context.Invoices.Add(invoice);
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
-            invoice.Status = InvoiceStatus.Completed;
             // Act
-            await repo.UpdateAsync(invoice);
+            var result = await _repository.GetForCancelAsync("INV001", "acc1");
+
             // Assert
-            var updated = context.Invoices.First(i => i.InvoiceId == "inv1");
-            Assert.Equal(InvoiceStatus.Completed, updated.Status);
+            Assert.NotNull(result);
+            Assert.Equal("INV001", result.InvoiceId);
+            Assert.Equal("acc1", result.AccountId);
+            Assert.NotNull(result.MovieShow);
+            Assert.NotNull(result.MovieShow.Schedule);
         }
 
         [Fact]
-        public void Update_ShouldSetEntityStateToModified()
+        public async Task GetForCancelAsync_WithInvalidIds_ReturnsNull()
         {
-            // Arrange
-            using var context = CreateInMemoryContext();
-            var invoice = new Invoice { InvoiceId = "inv1", AccountId = "acc1" };
-            context.Invoices.Add(invoice);
-            context.SaveChanges();
-            var repo = new InvoiceRepository(context);
             // Act
-            repo.Update(invoice);
+            var result = await _repository.GetForCancelAsync("INVALID", "invalid");
+
             // Assert
-            Assert.Equal(EntityState.Modified, context.Entry(invoice).State);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void Save_ShouldCallSaveChanges()
+        public async Task UpdateAsync_WithValidInvoice_UpdatesSuccessfully()
         {
             // Arrange
-            using var context = CreateInMemoryContext();
-            var repo = new InvoiceRepository(context);
+            var invoice = _repository.GetById("INV001");
+            invoice.TotalMoney = 200000;
+
             // Act
-            repo.Save();
+            await _repository.UpdateAsync(invoice);
+
             // Assert
-            Assert.True(true); // No exception means success
+            var updatedInvoice = _repository.GetById("INV001");
+            Assert.Equal(200000, updatedInvoice.TotalMoney);
+        }
+
+        [Fact]
+        public void Update_WithValidInvoice_SetsModifiedState()
+        {
+            // Arrange
+            var invoice = _repository.GetById("INV001");
+            invoice.TotalMoney = 200000;
+
+            // Act
+            _repository.Update(invoice);
+
+            // Assert
+            var entry = _context.Entry(invoice);
+            Assert.Equal(EntityState.Modified, entry.State);
+        }
+
+        [Fact]
+        public void Save_SavesChanges()
+        {
+            // Arrange
+            var invoice = _repository.GetById("INV001");
+            var originalMoney = invoice.TotalMoney;
+            invoice.TotalMoney = 200000;
+            _repository.Update(invoice);
+
+            // Act
+            _repository.Save();
+
+            // Assert
+            var updatedInvoice = _repository.GetById("INV001");
+            Assert.Equal(200000, updatedInvoice.TotalMoney);
+        }
+
+        [Fact]
+        public void FindInvoiceByOrderId_WithExactMatch_ReturnsInvoice()
+        {
+            // Act
+            var result = _repository.FindInvoiceByOrderId("INV001");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("INV001", result.InvoiceId);
+        }
+
+        [Fact]
+        public void FindInvoiceByOrderId_WithInvalidId_ReturnsNull()
+        {
+            // Act
+            var result = _repository.FindInvoiceByOrderId("INVALID");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void FindInvoiceByAmountAndTime_WithValidAmount_ReturnsInvoice()
+        {
+            // Act
+            var result = _repository.FindInvoiceByAmountAndTime(100000);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(100000, result.TotalMoney);
+            Assert.NotEqual(InvoiceStatus.Completed, result.Status);
+        }
+
+        [Fact]
+        public void FindInvoiceByAmountAndTime_WithAmountAndTime_ReturnsFilteredInvoice()
+        {
+            // Arrange
+            var recentTime = DateTime.Now.AddDays(-2);
+
+            // Act
+            var result = _repository.FindInvoiceByAmountAndTime(100000, recentTime);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(100000, result.TotalMoney);
+            Assert.True(result.BookingDate >= recentTime);
+        }
+
+        [Fact]
+        public void FindInvoiceByAmountAndTime_WithInvalidAmount_ReturnsNull()
+        {
+            // Act
+            var result = _repository.FindInvoiceByAmountAndTime(999999);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void FindInvoiceByAmountAndTime_WithCompletedInvoice_ReturnsNull()
+        {
+            // Act
+            var result = _repository.FindInvoiceByAmountAndTime(150000);
+
+            // Assert
+            Assert.Null(result); // Should return null because status is Completed
+        }
+
+        [Fact]
+        public void FindInvoiceByAmountAndTime_WithZeroAmount_ReturnsNull()
+        {
+            // Act
+            var result = _repository.FindInvoiceByAmountAndTime(0);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void FindInvoiceByAmountAndTime_WithNegativeAmount_ReturnsNull()
+        {
+            // Act
+            var result = _repository.FindInvoiceByAmountAndTime(-100);
+
+            // Assert
+            Assert.Null(result);
         }
     }
 } 

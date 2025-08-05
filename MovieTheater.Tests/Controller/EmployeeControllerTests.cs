@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
+using Microsoft.Extensions.Primitives;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -282,6 +283,346 @@ namespace MovieTheater.Tests.Controller
             Assert.NotNull(result);
             Assert.Equal("Tab not found.", result.Content);
         }
+
+        #region LoadTab BookingMg Additional Tests
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByMovieAz_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { InvoiceId = "INV1", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Zebra" } } },
+                new Invoice { InvoiceId = "INV2", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Alpha" } } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "movie_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("Alpha", resultInvoices[0].MovieShow.Movie.MovieNameEnglish);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByMovieZa_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { InvoiceId = "INV1", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Alpha" } } },
+                new Invoice { InvoiceId = "INV2", MovieShow = new MovieShow { Movie = new Movie { MovieNameEnglish = "Zebra" } } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "movie_za" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("Zebra", resultInvoices[0].MovieShow.Movie.MovieNameEnglish);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByIdAsc_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { InvoiceId = "INV2" },
+                new Invoice { InvoiceId = "INV1" }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "id_asc" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("INV1", resultInvoices[0].InvoiceId);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByIdDesc_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { InvoiceId = "INV1" },
+                new Invoice { InvoiceId = "INV2" }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "id_desc" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("INV2", resultInvoices[0].InvoiceId);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByAccountAz_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { AccountId = "USER2" },
+                new Invoice { AccountId = "USER1" }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "account_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("USER1", resultInvoices[0].AccountId);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByAccountZa_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { AccountId = "USER1" },
+                new Invoice { AccountId = "USER2" }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "account_za" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("USER2", resultInvoices[0].AccountId);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByIdentityAz_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { Account = new Account { IdentityCard = "ID2" } },
+                new Invoice { Account = new Account { IdentityCard = "ID1" } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "identity_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("ID1", resultInvoices[0].Account.IdentityCard);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByIdentityZa_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { Account = new Account { IdentityCard = "ID1" } },
+                new Invoice { Account = new Account { IdentityCard = "ID2" } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "identity_za" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("ID2", resultInvoices[0].Account.IdentityCard);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByPhoneAz_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { Account = new Account { PhoneNumber = "0987654321" } },
+                new Invoice { Account = new Account { PhoneNumber = "0123456789" } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "phone_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("0123456789", resultInvoices[0].Account.PhoneNumber);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByPhoneZa_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { Account = new Account { PhoneNumber = "0123456789" } },
+                new Invoice { Account = new Account { PhoneNumber = "0987654321" } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "phone_za" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal("0987654321", resultInvoices[0].Account.PhoneNumber);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByTimeAsc_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = new TimeOnly(15, 0) } } },
+                new Invoice { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) } } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "time_asc" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal(new TimeOnly(14, 0), resultInvoices[0].MovieShow.Schedule.ScheduleTime);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithSortByTimeDesc_SortsCorrectly()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) } } },
+                new Invoice { MovieShow = new MovieShow { Schedule = new Schedule { ScheduleTime = new TimeOnly(15, 0) } } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "time_desc" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            Assert.Equal(new TimeOnly(15, 0), resultInvoices[0].MovieShow.Schedule.ScheduleTime);
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullAccount_HandlesGracefully()
+        {
+            // Arrange
+            var invoices = new List<Invoice>
+            {
+                new Invoice { Account = null },
+                new Invoice { Account = new Account { IdentityCard = "ID1" } }
+            };
+            _invoiceServiceMock.Setup(x => x.GetAll()).Returns(invoices);
+
+            // Setup query string
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues> { { "sortBy", "identity_az" } });
+            _controller.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = await _controller.LoadTab("BookingMg") as PartialViewResult;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("BookingMg", result.ViewName);
+            var resultInvoices = result.Model as List<Invoice>;
+            Assert.NotNull(resultInvoices);
+            // Should handle null account gracefully
+        }
+        #endregion
         #endregion
 
         #region Details Tests

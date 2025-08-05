@@ -273,6 +273,27 @@ namespace MovieTheater.Tests.Controller
             _mockVersionRepo.Verify(r => r.GetById(It.IsAny<int>()), Times.Once()); // GetById was called and threw exception
         }
 
+        [Fact]
+        public async Task Delete_Post_RedirectsToAdminPage_WhenModelStateIsInvalid()
+        {
+            // Arrange
+            int versionId = 1;
+            var controller = BuildController();
+
+            // Force model state to be invalid
+            controller.ModelState.AddModelError("Key", "Some error");
+
+            // Act
+            var result = await controller.Delete(versionId, new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>()));
+
+            // Assert
+            var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirectToActionResult.ActionName);
+            Assert.Equal("Admin", redirectToActionResult.ControllerName);
+            Assert.Equal("VersionMg", redirectToActionResult.RouteValues["tab"]);
+        }
+
+
         // --- Get (GET) Action Tests ---
 
         [Fact]
