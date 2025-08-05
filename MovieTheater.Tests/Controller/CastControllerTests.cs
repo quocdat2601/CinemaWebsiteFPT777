@@ -1,17 +1,18 @@
-﻿using Xunit;
-using Moq;
+﻿using Microsoft.AspNetCore.Http; // For DefaultHttpContext, IFormFile
 using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Controllers;
-using MovieTheater.Repository;
-using MovieTheater.Models;
-using MovieTheater.ViewModels;
-using System.Collections.Generic;
-using System.Linq;
-using System;
-using Microsoft.AspNetCore.Http; // For DefaultHttpContext, IFormFile
 using Microsoft.AspNetCore.Mvc.ViewFeatures; // For TempDataDictionary, ITempDataProvider
 using Microsoft.AspNetCore.Routing; // For RouteData
+using Moq;
+using MovieTheater.Controllers;
+using MovieTheater.Models;
+using MovieTheater.Repository;
+using MovieTheater.ViewModels;
+using System;
+using System.Collections.Generic;
 using System.IO; // For MemoryStream
+using System.Linq;
+using System.Security.Claims;
+using Xunit;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -24,14 +25,22 @@ namespace MovieTheater.Tests.Controller
             _mockPersonRepository = new Mock<IPersonRepository>();
         }
 
-        private CastController BuildController()
+        private CastController BuildController(string role = null)
         {
             var controller = new CastController(_mockPersonRepository.Object);
 
-            // Setup HttpContext and TempData for the controller
             var httpContext = new DefaultHttpContext();
-            var tempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
 
+            if (role != null)
+            {
+                var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, role)
+        };
+                httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
+            }
+
+            var tempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext,
@@ -41,6 +50,7 @@ namespace MovieTheater.Tests.Controller
 
             return controller;
         }
+
 
         // --- Detail Action Tests ---
 
@@ -308,6 +318,109 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal(existingPerson.Description, model.Description);
             Assert.Equal(existingPerson.Image, model.Image);
         }
+        [Fact]
+        public void Edit_Post_ValidPerson_UpdatesAndRedirects()
+        {
+            // Arrange
+            var personId = 1;
+            var existingPerson = new Person
+            {
+                PersonId = personId,
+                Name = "Old Name",
+                DateOfBirth = new DateOnly(1980, 1, 1),
+                Nationality = "Old Country",
+                Gender = true,
+                IsDirector = false,
+                Description = "Old Description",
+                Image = "/images/avatars/old.jpg"
+            };
+
+            var model = new PersonFormModel
+            {
+                PersonId = personId,
+                Name = "New Name",
+                DateOfBirth = new DateOnly(1990, 5, 5),
+                Nationality = "New Country",
+                Gender = true,
+                IsDirector = true,
+                Description = "Updated description",
+                Image = "/images/avatars/old.jpg" // kept same if no new file
+            };
+
+            var mockRepo = new Mock<IPersonRepository>();
+            mockRepo.Setup(r => r.GetById(personId)).Returns(existingPerson);
+
+            var controller = new CastController(mockRepo.Object);
+
+            // Set up HttpContext, role, and TempData
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[] {
+        new Claim(ClaimTypes.Role, "Employee")
+    }, "mock"));
+
+            var tempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
+            controller.ControllerContext = new ControllerContext()
+            {
+                HttpContext = httpContext
+            };
+            controller.TempData = tempData;
+
+            // Manually clear ImageFile validation if needed (simulating what controller does)
+            controller.ModelState.Remove("ImageFile");
+
+            // Act
+            var result = controller.Edit(personId, model, null);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirectResult.ActionName);
+            Assert.Equal("Employee", redirectResult.ControllerName);
+            Assert.Equal("CastMg", redirectResult.RouteValues["tab"]);
+
+            mockRepo.Verify(r => r.Update(It.Is<Person>(p =>
+                p.PersonId == personId &&
+                p.Name == model.Name &&
+                p.DateOfBirth == model.DateOfBirth &&
+                p.Nationality == model.Nationality &&
+                p.Gender == model.Gender &&
+                p.IsDirector == model.IsDirector &&
+                p.Description == model.Description
+            )), Times.Once);
+
+            mockRepo.Verify(r => r.Save(), Times.Once);
+        }
+        [Fact]
+        public void Create_Post_ValidPerson_RedirectsToMainPage()
+        {
+            // Arrange
+            var controller = BuildController("Admin");
+
+            var person = new PersonFormModel
+            {
+                Name = "Test Name",
+                DateOfBirth = DateOnly.FromDateTime(DateTime.Now.AddYears(-30)),
+                Nationality = "Test Country",
+                Gender = false,
+                IsDirector = false,
+                Description = "Test description"
+            };
+
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.Length).Returns(0); // No file uploaded
+
+            _mockPersonRepository.Setup(r => r.Add(It.IsAny<Person>()));
+            _mockPersonRepository.Setup(r => r.Save());
+
+            // Act
+            var result = controller.Create(person, mockFile.Object);
+
+            // Assert
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
+            Assert.Equal("Admin", redirect.ControllerName);
+            Assert.Equal("CastMg", redirect.RouteValues["tab"]);
+        }
+
 
         [Fact]
         public void Edit_Get_ReturnsNotFound_WhenPersonDoesNotExist()
@@ -361,7 +474,7 @@ namespace MovieTheater.Tests.Controller
             _mockPersonRepository.Setup(r => r.Update(It.IsAny<Person>()));
             _mockPersonRepository.Setup(r => r.Save());
 
-            var controller = BuildController();
+            var controller = BuildController("Admin");
 
             // Ensure the target directory for image uploads exists for the test
             var uploadPath = Path.Combine(Path.GetTempPath(), "wwwroot", "images", "avatars");
@@ -376,7 +489,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Employee", redirectToActionResult.ControllerName);
+            Assert.Equal("Admin", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
 
             _mockPersonRepository.Verify(r => r.Update(It.Is<Person>(p =>
@@ -389,6 +502,81 @@ namespace MovieTheater.Tests.Controller
 
             // Clean up
             Directory.Delete(uploadPath, true);
+        }
+        [Fact]
+        public void Edit_ReturnsFormModel_WithFallbackValues_WhenPersonFieldsAreNull()
+        {
+            // Arrange
+            var personId = 1;
+            var person = new Person
+            {
+                PersonId = personId,
+                Name = "Null Fields",
+                DateOfBirth = null,             // Trigger fallback
+                Nationality = null,             // Trigger fallback
+                Gender = true,
+                IsDirector = false,
+                Description = null,             // Trigger fallback
+                Image = "some.jpg"
+            };
+
+            _mockPersonRepository.Setup(r => r.GetById(personId)).Returns(person);
+
+            var controller = BuildController("Admin");
+
+            // Act
+            var result = controller.Edit(personId);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            var model = Assert.IsType<PersonFormModel>(viewResult.Model);
+
+            Assert.Equal(personId, model.PersonId);
+            Assert.True(model.DateOfBirth >= DateOnly.FromDateTime(DateTime.Now).AddDays(-1));
+            Assert.Equal(string.Empty, model.Nationality);
+            Assert.Equal(string.Empty, model.Description);
+        }
+
+        [Fact]
+        public async Task Update_AssignsCurrentDate_WhenDateOfBirthIsNull()
+        {
+            // Arrange
+            int personId = 1;
+            var existingPerson = new Person
+            {
+                PersonId = personId,
+                Name = "Original Name",
+                Image = "/images/avatars/original.png",
+                DateOfBirth = new DateOnly(2000, 1, 1)
+            };
+
+            _mockPersonRepository.Setup(r => r.GetById(personId)).Returns(existingPerson);
+
+            var model = new PersonFormModel
+            {
+                PersonId = personId,
+                Name = "Updated Name",
+                DateOfBirth = null, // <- this triggers the null branch
+                Image = existingPerson.Image
+            };
+
+            var controller = BuildController("Admin");
+
+            // Act
+            var result = controller.Edit(personId, model, null);
+
+            // Assert
+            _mockPersonRepository.Verify(r => r.Update(It.Is<Person>(p =>
+                p.Name == model.Name &&
+                p.DateOfBirth != null &&
+                p.DateOfBirth >= DateOnly.FromDateTime(DateTime.Now).AddDays(-1) && // allows 1-day leeway
+                p.DateOfBirth <= DateOnly.FromDateTime(DateTime.Now).AddDays(1)
+            )), Times.Once);
+
+            _mockPersonRepository.Verify(r => r.Save(), Times.Once);
+
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirect.ActionName);
         }
 
         [Fact]
@@ -605,7 +793,7 @@ namespace MovieTheater.Tests.Controller
             _mockPersonRepository.Setup(r => r.Delete(personId));
             _mockPersonRepository.Setup(r => r.Save());
 
-            var controller = BuildController();
+            var controller = BuildController("Admin");
 
             // Act
             var result = await controller.Delete(personId, new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>()));
@@ -613,7 +801,7 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Employee", redirectToActionResult.ControllerName);
+            Assert.Equal("Admin", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
             Assert.Equal("Cast deleted successfully!", controller.TempData["ToastMessage"]);
 
@@ -681,7 +869,7 @@ namespace MovieTheater.Tests.Controller
             _mockPersonRepository.Setup(r => r.GetById(personId)).Returns(cast);
             _mockPersonRepository.Setup(r => r.GetMovieByPerson(personId)).Throws(new Exception("Simulated DB error during movie check.")); // Simulate an exception
 
-            var controller = BuildController();
+            var controller = BuildController("Admin");
 
             // Act
             var result = await controller.Delete(personId, new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>()));
@@ -689,12 +877,42 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
-            Assert.Equal("Employee", redirectToActionResult.ControllerName);
+            Assert.Equal("Admin", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
             Assert.Contains("An error occurred during deletion:", controller.TempData["ErrorMessage"].ToString());
 
             _mockPersonRepository.Verify(r => r.Delete(It.IsAny<int>()), Times.Never());
             _mockPersonRepository.Verify(r => r.Save(), Times.Never());
+        }
+
+        [Fact]
+        public async Task Delete_ValidIdAndNoMovieAssociations_AdminRole_DeletesCastAndRedirects()
+        {
+            // Arrange
+            int castId = 1;
+
+            var cast = new Person { PersonId = castId, Name = "John Doe" };
+            var controller = BuildController("Admin");
+
+            _mockPersonRepository.Setup(r => r.GetById(castId)).Returns(cast);
+            _mockPersonRepository.Setup(r => r.GetMovieByPerson(castId)).Returns(new List<Movie>());
+            _mockPersonRepository.Setup(r => r.Delete(castId));
+            _mockPersonRepository.Setup(r => r.Save());
+
+            var formCollection = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
+
+            // Act
+            var result = await controller.Delete(castId, formCollection);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirectResult.ActionName);
+            Assert.Equal("Admin", redirectResult.ControllerName);
+            Assert.Equal("CastMg", redirectResult.RouteValues["tab"]);
+            Assert.Equal("Cast deleted successfully!", controller.TempData["ToastMessage"]);
+
+            _mockPersonRepository.Verify(r => r.Delete(castId), Times.Once);
+            _mockPersonRepository.Verify(r => r.Save(), Times.Once);
         }
     }
 }
