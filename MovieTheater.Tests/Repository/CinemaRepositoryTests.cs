@@ -520,6 +520,7 @@ namespace MovieTheater.Tests.Repository
             // Assert
             Assert.True(result.Count >= 1); // At least one room
             Assert.All(result, r => Assert.Equal(1, r.VersionId)); // All rooms should match version
+            Assert.Equal(1, result[0].StatusId); // Only active rooms
         }
 
         [Fact]
@@ -561,10 +562,10 @@ namespace MovieTheater.Tests.Repository
             // Act
             var result = repository.GetRoomsByVersion(1).ToList();
 
-            // Assert
             Assert.Equal(3, result.Count); // Expecting 3 rooms with VersionId = 1
             Assert.Contains(result, r => r.CinemaRoomId == 1); // Active room
             Assert.Contains(result, r => r.CinemaRoomId == 4); // Disabled room
+            Assert.Equal(1, result[0].CinemaRoomId);
         }
     }
 } 

@@ -41,6 +41,9 @@ namespace MovieTheater.Helpers
 
         public static void SetToastMessage(Microsoft.AspNetCore.Mvc.Controller controller, string category, string action, string type)
         {
+            if (controller == null)
+                return;
+                
             string message = GetMessage(category, action, type);
             if (type == "success")
             {
