@@ -21,6 +21,13 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+@section Styles {
+    <script>
+        // Set global variables for the JavaScript file to use
+        window.coupleSeatPairs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
+    </script>
+}
+
 
 <div class="cinema-container">
     <!-- Header Section -->
@@ -208,12 +215,6 @@
         </div>
     </div>
 </div>
-
-<!-- Pass data from Razor to JavaScript -->
-<script>
-    // Set global variables for the JavaScript file to use
-    window.coupleSeatPairs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
-</script>
 
 <!-- Include the JavaScript file -->
 <script src="~/js/seat-edit.js" asp-append-version="true"></script>

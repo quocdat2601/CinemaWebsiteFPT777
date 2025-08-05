@@ -166,7 +166,7 @@ namespace MovieTheater.Tests.Controller
 
         #region Edit POST Tests
         [Fact]
-        public void Edit_Post_InvalidModel_ReturnsViewWithErrors()
+        public async Task Edit_Post_InvalidModel_ReturnsViewWithErrorsAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomName = "" };
@@ -175,7 +175,7 @@ namespace MovieTheater.Tests.Controller
             _movieServiceMock.Setup(s => s.GetAllVersions()).Returns(versions);
 
             // Act
-            var result = _controller.Edit(cinemaRoom, 1) as ViewResult;
+            var result = await _controller.Edit(cinemaRoom, 1) as ViewResult;
 
             // Assert
             Assert.NotNull(result);
@@ -185,16 +185,16 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_ValidModel_UpdateFails_ReturnsViewWithError()
+        public async Task Edit_Post_ValidModel_UpdateFails_ReturnsViewWithErrorAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomName = "Test Room" };
             var versions = new List<MovieTheater.Models.Version> { new MovieTheater.Models.Version { VersionId = 1, VersionName = "2D" } };
-            _cinemaServiceMock.Setup(s => s.Update(cinemaRoom)).Returns(false);
+            _cinemaServiceMock.Setup(s => s.Update(cinemaRoom)).Returns(Task.FromResult(false));
             _movieServiceMock.Setup(s => s.GetAllVersions()).Returns(versions);
 
             // Act
-            var result = _controller.Edit(cinemaRoom, 1) as ViewResult;
+            var result = await _controller.Edit(cinemaRoom, 1) as ViewResult;
 
             // Assert
             Assert.NotNull(result);
@@ -203,15 +203,15 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_ValidModel_AdminRole_RedirectsToAdminMainPage()
+        public async Task Edit_Post_ValidModel_AdminRole_RedirectsToAdminMainPageAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomName = "Test Room" };
             SetupUserRole("Admin");
-            _cinemaServiceMock.Setup(s => s.Update(cinemaRoom)).Returns(true);
+            _cinemaServiceMock.Setup(s => s.Update(cinemaRoom)).Returns(Task.FromResult(true));
 
             // Act
-            var result = _controller.Edit(cinemaRoom, 1) as RedirectToActionResult;
+            var result = await _controller.Edit(cinemaRoom, 1) as RedirectToActionResult;
 
             // Assert
             Assert.NotNull(result);
@@ -222,15 +222,15 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_ValidModel_EmployeeRole_RedirectsToEmployeeMainPage()
+        public async Task Edit_Post_ValidModel_EmployeeRole_RedirectsToEmployeeMainPageAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomName = "Test Room" };
             SetupUserRole("Employee");
-            _cinemaServiceMock.Setup(s => s.Update(cinemaRoom)).Returns(true);
+            _cinemaServiceMock.Setup(s => s.Update(cinemaRoom)).Returns(Task.FromResult(true));
 
             // Act
-            var result = _controller.Edit(cinemaRoom, 1) as RedirectToActionResult;
+            var result = await _controller.Edit(cinemaRoom, 1) as RedirectToActionResult;
 
             // Assert
             Assert.NotNull(result);
@@ -240,7 +240,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public void Edit_Post_ThrowsException_ReturnsViewWithError()
+        public async Task Edit_Post_ThrowsException_ReturnsViewWithErrorAsync()
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomName = "Test Room" };
@@ -249,7 +249,7 @@ namespace MovieTheater.Tests.Controller
             _movieServiceMock.Setup(s => s.GetAllVersions()).Returns(versions);
 
             // Act
-            var result = _controller.Edit(cinemaRoom, 1) as ViewResult;
+            var result = await _controller.Edit(cinemaRoom, 1) as ViewResult;
 
             // Assert
             Assert.NotNull(result);
@@ -590,11 +590,11 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var shows = new List<MovieShow>
             {
-                new MovieShow 
-                { 
-                    MovieShowId = 1, 
+                new MovieShow
+                {
+                    MovieShowId = 1,
                     CinemaRoomId = 1,
-                    ShowDate = DateOnly.FromDateTime(DateTime.Today), 
+                    ShowDate = DateOnly.FromDateTime(DateTime.Today),
                     Schedule = new Schedule { ScheduleTime = new TimeOnly(14, 0) },
                     Movie = new Movie { MovieNameEnglish = "Test Movie", Duration = 120 },
                     Version = new MovieTheater.Models.Version { VersionName = "2D" },
@@ -619,10 +619,10 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var invoices = new List<Invoice>
             {
-                new Invoice 
-                { 
-                    InvoiceId = "INV1", 
-                    AccountId = "ACC1", 
+                new Invoice
+                {
+                    InvoiceId = "INV1",
+                    AccountId = "ACC1",
                     Account = new Account { FullName = "Test User" },
                     Seat = "A1",
                     Cancel = false,
@@ -679,4 +679,4 @@ namespace MovieTheater.Tests.Controller
         }
         #endregion
     }
-} 
+}
