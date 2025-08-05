@@ -41,14 +41,13 @@ namespace MovieTheater.Service
             await _repository.Save();
         }
 
-        public bool Update(CinemaRoom cinemaRoom)
+        public async Task<bool> Update(CinemaRoom cinemaRoom)
         {
             if (cinemaRoom == null)
                 throw new ArgumentNullException(nameof(cinemaRoom));
             try
             {
-                _repository.Update(cinemaRoom);
-                _repository.Save().Wait(); // Ensure changes are saved to database
+                await _repository.Update(cinemaRoom);
                 return true;
             }
             catch (Exception ex)

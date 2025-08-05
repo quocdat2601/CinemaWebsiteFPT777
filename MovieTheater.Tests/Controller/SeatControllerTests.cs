@@ -116,7 +116,7 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var controller = BuildController();
             var collection = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
-            
+
             // Mock an exception scenario
             _seatService.Setup(s => s.GetSeatsByRoomIdAsync(It.IsAny<int>()))
                 .ThrowsAsync(new Exception("Test exception"));
@@ -188,7 +188,7 @@ namespace MovieTheater.Tests.Controller
             _scheduleSeatRepository.Setup(s => s.GetScheduleSeatsByMovieShowAsync(It.IsAny<int>())).ReturnsAsync(new List<ScheduleSeat>());
             _foodService.Setup(s => s.GetAllAsync(null, null, true)).ReturnsAsync(new FoodListViewModel { Foods = new List<FoodViewModel>() });
             _movieService.Setup(s => s.GetMovieShow()).Returns(new List<MovieShow>());
-            
+
             var controller = BuildController();
 
             // Act
@@ -205,7 +205,7 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             int cinemaId = 999;
             _cinemaService.Setup(s => s.GetById(cinemaId)).Returns((CinemaRoom)null);
-            
+
             var controller = BuildController();
 
             // Act
@@ -247,7 +247,7 @@ namespace MovieTheater.Tests.Controller
             int? versionId = 1;
 
             _movieService.Setup(s => s.GetById(movieId)).Returns((Movie)null);
-            
+
             var controller = BuildController();
 
             // Act
@@ -268,7 +268,7 @@ namespace MovieTheater.Tests.Controller
 
             var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
             _movieService.Setup(s => s.GetById(movieId)).Returns(movie);
-            
+
             var controller = BuildController();
 
             // Act
@@ -332,7 +332,7 @@ namespace MovieTheater.Tests.Controller
         public async Task CreateCoupleSeat_Post_ReturnsOk_WhenValidCoupleSeat()
         {
             // Arrange
-            var coupleSeat = new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 };
+            var coupleSeat = new CoupleSeatRequest { FirstSeatId = 1, SecondSeatId = 2 };
             _coupleSeatService.Setup(s => s.CreateCoupleSeatAsync(1, 2)).ReturnsAsync(new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 });
 
             var controller = BuildController();
@@ -349,7 +349,7 @@ namespace MovieTheater.Tests.Controller
         public async Task CreateCoupleSeat_Post_ReturnsBadRequest_WhenExceptionOccurs()
         {
             // Arrange
-            var coupleSeat = new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 };
+            var coupleSeat = new CoupleSeatRequest { FirstSeatId = 1, SecondSeatId = 2 };
             _coupleSeatService.Setup(s => s.CreateCoupleSeatAsync(1, 2))
                 .ThrowsAsync(new InvalidOperationException("Seats are already coupled"));
 
@@ -397,7 +397,7 @@ namespace MovieTheater.Tests.Controller
             // Arrange
             var controller = BuildController();
             var collection = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>());
-            
+
             // Mock an exception scenario
             _seatService.Setup(s => s.GetSeatsByRoomIdAsync(It.IsAny<int>()))
                 .ThrowsAsync(new Exception("Test exception"));
@@ -462,10 +462,10 @@ namespace MovieTheater.Tests.Controller
         public async Task CreateCoupleSeatsBatch_Post_ReturnsOk_WhenValidCoupleSeats()
         {
             // Arrange
-            var coupleSeats = new List<CoupleSeat>
+            var coupleSeats = new List<CoupleSeatRequest>
             {
-                new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 },
-                new CoupleSeat { FirstSeatId = 3, SecondSeatId = 4 }
+                new CoupleSeatRequest { FirstSeatId = 1, SecondSeatId = 2 },
+                new CoupleSeatRequest { FirstSeatId = 3, SecondSeatId = 4 }
             };
 
             _coupleSeatService.Setup(s => s.CreateCoupleSeatAsync(1, 2)).ReturnsAsync(new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 });
@@ -486,7 +486,7 @@ namespace MovieTheater.Tests.Controller
         public async Task CreateCoupleSeatsBatch_Post_ReturnsBadRequest_WhenCoupleSeatsIsNull()
         {
             // Arrange
-            List<CoupleSeat> coupleSeats = null;
+            List<CoupleSeatRequest> coupleSeats = null;
 
             var controller = BuildController();
 
@@ -502,7 +502,7 @@ namespace MovieTheater.Tests.Controller
         public async Task CreateCoupleSeatsBatch_Post_ReturnsBadRequest_WhenCoupleSeatsIsEmpty()
         {
             // Arrange
-            var coupleSeats = new List<CoupleSeat>();
+            var coupleSeats = new List<CoupleSeatRequest>();
 
             var controller = BuildController();
 
@@ -518,10 +518,10 @@ namespace MovieTheater.Tests.Controller
         public async Task CreateCoupleSeatsBatch_Post_HandlesException_WhenOnePairFails()
         {
             // Arrange
-            var coupleSeats = new List<CoupleSeat>
+            var coupleSeats = new List<CoupleSeatRequest>
             {
-                new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 },
-                new CoupleSeat { FirstSeatId = 3, SecondSeatId = 4 }
+                new CoupleSeatRequest { FirstSeatId = 1, SecondSeatId = 2 },
+                new CoupleSeatRequest { FirstSeatId = 3, SecondSeatId = 4 }
             };
 
             _coupleSeatService.Setup(s => s.CreateCoupleSeatAsync(1, 2)).ReturnsAsync(new CoupleSeat { FirstSeatId = 1, SecondSeatId = 2 });
@@ -531,9 +531,9 @@ namespace MovieTheater.Tests.Controller
             var controller = BuildController();
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => 
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await controller.CreateCoupleSeatsBatch(coupleSeats));
-            
+
             _coupleSeatService.Verify(s => s.CreateCoupleSeatAsync(1, 2), Times.Once);
             _coupleSeatService.Verify(s => s.CreateCoupleSeatAsync(3, 4), Times.Once);
         }
@@ -558,7 +558,7 @@ namespace MovieTheater.Tests.Controller
             _movieService.Setup(s => s.GetMovieShow()).Returns(new List<MovieShow> { movieShow });
             _scheduleSeatRepository.Setup(s => s.GetScheduleSeatsByMovieShowAsync(1)).ReturnsAsync(scheduleSeats);
             _foodService.Setup(s => s.GetAllAsync(null, null, true)).ReturnsAsync(new FoodListViewModel { Foods = new List<FoodViewModel>() });
-            
+
             var controller = BuildController();
 
             // Act
@@ -580,11 +580,11 @@ namespace MovieTheater.Tests.Controller
 
             var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
             var schedule = new Schedule { ScheduleId = 1, ScheduleTime = TimeOnly.Parse("10:00") };
-            var movieShow = new MovieShow 
-            { 
-                MovieShowId = 1, 
-                MovieId = movieId, 
-                ShowDate = DateOnly.Parse("01/01/2024"), 
+            var movieShow = new MovieShow
+            {
+                MovieShowId = 1,
+                MovieId = movieId,
+                ShowDate = DateOnly.Parse("01/01/2024"),
                 ScheduleId = 1,
                 VersionId = versionId ?? 1,
                 Schedule = schedule,
@@ -620,7 +620,7 @@ namespace MovieTheater.Tests.Controller
             var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
             _movieService.Setup(s => s.GetById(movieId)).Returns(movie);
             _movieService.Setup(s => s.GetMovieShows(movieId)).Returns(new List<MovieShow>());
-            
+
             var controller = BuildController();
 
             // Act
@@ -640,11 +640,11 @@ namespace MovieTheater.Tests.Controller
             int? versionId = 1;
 
             var movie = new Movie { MovieId = movieId, MovieNameEnglish = "Test Movie" };
-            var movieShow = new MovieShow 
-            { 
-                MovieShowId = 1, 
-                MovieId = movieId, 
-                ShowDate = DateOnly.Parse("01/01/2024"), 
+            var movieShow = new MovieShow
+            {
+                MovieShowId = 1,
+                MovieId = movieId,
+                ShowDate = DateOnly.Parse("01/01/2024"),
                 ScheduleId = 1,
                 VersionId = versionId ?? 1,
                 CinemaRoom = null // No cinema room
@@ -652,7 +652,7 @@ namespace MovieTheater.Tests.Controller
 
             _movieService.Setup(s => s.GetById(movieId)).Returns(movie);
             _movieService.Setup(s => s.GetMovieShows(movieId)).Returns(new List<MovieShow> { movieShow });
-            
+
             var controller = BuildController();
 
             // Act

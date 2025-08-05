@@ -71,7 +71,7 @@ namespace MovieTheater.Controllers
         // POST: CinemaController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(CinemaRoom cinemaRoom, int VersionId)
+        public async Task<IActionResult> Edit(CinemaRoom cinemaRoom, int VersionId)
         {
             try
             {
@@ -94,7 +94,7 @@ namespace MovieTheater.Controllers
                 }
                 
                 cinemaRoom.VersionId = VersionId;
-                bool success = _cinemaService.Update(cinemaRoom);
+                bool success = await _cinemaService.Update(cinemaRoom);
                 
                 if (!success)
                 {

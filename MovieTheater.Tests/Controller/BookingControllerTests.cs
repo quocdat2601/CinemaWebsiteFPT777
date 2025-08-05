@@ -75,7 +75,7 @@ namespace MovieTheater.Tests.Controller
             _accountService.Setup(a => a.GetCurrentUser()).Returns((ProfileUpdateViewModel)null);
 
             // Act
-            var redirect = await ctrl.Confirm(new ConfirmBookingViewModel(), "true") as RedirectToActionResult;
+            var redirect = await ctrl.Confirm(new ConfirmBookingViewModel()) as RedirectToActionResult;
 
             // Assert
             Assert.NotNull(redirect);
@@ -91,13 +91,13 @@ namespace MovieTheater.Tests.Controller
             var model = new ConfirmBookingViewModel();
             _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
             _domainService
-              .Setup(d => d.ConfirmBookingAsync(It.IsAny<ConfirmBookingViewModel>(), "u1", "true"))
+              .Setup(d => d.ConfirmBookingAsync(It.IsAny<ConfirmBookingViewModel>(), "u1"))
               .ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV123" });
 
             var ctrl = BuildController();
 
             // Act
-            var result = await ctrl.Confirm(model, "true") as RedirectToActionResult;
+            var result = await ctrl.Confirm(model) as RedirectToActionResult;
 
             // Assert
             Assert.NotNull(result);
@@ -111,9 +111,9 @@ namespace MovieTheater.Tests.Controller
             var user = new ProfileUpdateViewModel { AccountId = "u1" };
             var model = new ConfirmBookingViewModel();
             _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
-            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1", "ok")).ReturnsAsync(new BookingResult { Success = false, ErrorMessage = "fail!" });
+            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1")).ReturnsAsync(new BookingResult { Success = false, ErrorMessage = "fail!" });
             var ctrl = BuildController();
-            var result = await ctrl.Confirm(model, "ok");
+            var result = await ctrl.Confirm(model);
             var view = Assert.IsType<ViewResult>(result);
             Assert.Equal("ConfirmBooking", view.ViewName);
             Assert.Equal(model, view.Model);
@@ -126,9 +126,9 @@ namespace MovieTheater.Tests.Controller
             var user = new ProfileUpdateViewModel { AccountId = "u1" };
             var model = new ConfirmBookingViewModel();
             _accountService.Setup(a => a.GetCurrentUser()).Returns(user);
-            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1", "false")).ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV999", TotalPrice = 100m });
+            _domainService.Setup(d => d.ConfirmBookingAsync(model, "u1")).ReturnsAsync(new BookingResult { Success = true, InvoiceId = "INV999", TotalPrice = 100m });
             var ctrl = BuildController();
-            var result = await ctrl.Confirm(model, "false");
+            var result = await ctrl.Confirm(model);
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Payment", redirect.ActionName);
             Assert.Equal("INV999", redirect.RouteValues["invoiceId"]);

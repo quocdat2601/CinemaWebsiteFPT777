@@ -73,7 +73,7 @@ namespace MovieTheater.Repository
             _context.SaveChanges();
         }
 
-        public void Update(CinemaRoom cinemaRoom)
+        public async Task Update(CinemaRoom cinemaRoom)
         {
             var existingCinema = _context.CinemaRooms
                 .Include(c => c.Seats)
@@ -91,6 +91,9 @@ namespace MovieTheater.Repository
 
                 if (existingCinema.SeatLength != cinemaRoom.SeatLength || existingCinema.SeatWidth != cinemaRoom.SeatWidth)
                 {
+                    // Delete all couple seats for this cinema room before removing seats
+                    await _seatRepository.DeleteCoupleSeatsByCinemaRoomAsync(existingCinema.CinemaRoomId);
+                    
                     _context.Seats.RemoveRange(existingCinema.Seats);
 
                     existingCinema.SeatLength = cinemaRoom.SeatLength;
@@ -100,7 +103,7 @@ namespace MovieTheater.Repository
                     _context.Seats.AddRange(newSeats);
                 }
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {

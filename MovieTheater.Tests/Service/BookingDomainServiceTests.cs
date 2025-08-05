@@ -215,7 +215,7 @@ namespace MovieTheater.Tests.Service
             _bookingService.Setup(x => x.GenerateInvoiceIdAsync()).ReturnsAsync("INV1");
 
             // Act
-            var result = await _svc.ConfirmBookingAsync(model, userId: "u1", isTestSuccess: "true");
+            var result = await _svc.ConfirmBookingAsync(model, userId: "u1");
 
             // Assert
             Assert.False(result.Success);
@@ -256,7 +256,7 @@ namespace MovieTheater.Tests.Service
             _seatService.Setup(x => x.GetSeatById(1)).Returns(new Seat { SeatId = 1, SeatName = "A1" });
 
             // Act
-            var result = await _svc.ConfirmBookingAsync(vm, userId: "u1", isTestSuccess: "true");
+            var result = await _svc.ConfirmBookingAsync(vm, userId: "u1");
 
             // Assert
             Assert.True(result.Success);
@@ -457,7 +457,7 @@ namespace MovieTheater.Tests.Service
             _accountService.Setup(x => x.GetById("u1")).Returns((Account)null);
 
             // Act
-            var result = await _svc.ConfirmBookingAsync(vm, "u1", "true");
+            var result = await _svc.ConfirmBookingAsync(vm, "u1");
 
             // Assert
             Assert.False(result.Success);
@@ -491,7 +491,7 @@ namespace MovieTheater.Tests.Service
             });
             _voucherService.Setup(x => x.GetById("V1")).Returns((Voucher)null);
             // Act
-            var result = await _svc.ConfirmBookingAsync(vm, "u1", "true");
+            var result = await _svc.ConfirmBookingAsync(vm, "u1");
             // Assert
             Assert.False(result.Success);
             Assert.Equal("Selected voucher does not exist.", result.ErrorMessage);
@@ -520,7 +520,7 @@ namespace MovieTheater.Tests.Service
             _accountService.Setup(x => x.DeductScoreAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(Task.CompletedTask).Verifiable();
 
             // Act
-            var result = await _svc.ConfirmBookingAsync(vm, "u1", "true");
+            var result = await _svc.ConfirmBookingAsync(vm, "u1");
 
             // Assert
             Assert.True(result.Success);

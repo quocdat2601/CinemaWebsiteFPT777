@@ -79,6 +79,26 @@ namespace MovieTheater.Repository
             }
         }
 
+        public async Task DeleteCoupleSeatsByCinemaRoomAsync(int cinemaRoomId)
+        {
+            // Get all seats for this cinema room
+            var seatIds = await _context.Seats
+                .Where(s => s.CinemaRoomId == cinemaRoomId)
+                .Select(s => s.SeatId)
+                .ToListAsync();
+
+            // Delete all couple seats that reference any of these seats
+            var coupleSeatsToDelete = await _context.CoupleSeats
+                .Where(cs => seatIds.Contains(cs.FirstSeatId) || seatIds.Contains(cs.SecondSeatId))
+                .ToListAsync();
+
+            if (coupleSeatsToDelete.Any())
+            {
+                _context.CoupleSeats.RemoveRange(coupleSeatsToDelete);
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public List<Seat> GetSeatsWithTypeByIds(List<int> seatIds)
         {
             return _context.Seats.Include(s => s.SeatType).Where(s => seatIds.Contains(s.SeatId)).ToList();
