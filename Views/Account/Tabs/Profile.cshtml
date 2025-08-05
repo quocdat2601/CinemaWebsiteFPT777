@@ -8,6 +8,7 @@
 }
 
 <link rel="stylesheet" href="~/css/profile-page.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/profile-particle-network.css" asp-append-version="true" />
 <style>
 /* INLINE CSS TO GUARANTEE LAYOUT */
 .cinema-app {
@@ -726,6 +727,263 @@
     font-size: 16px !important;
 }
 
+/* Achievement Badges Styles */
+.achievement-section {
+    margin-top: 2rem !important;
+    padding: 1.5rem !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid var(--cinema-border) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.achievement-section::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, var(--cinema-gold), transparent) !important;
+    opacity: 0.6 !important;
+}
+
+.achievement-title {
+    color: var(--cinema-text) !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 1rem !important;
+    text-align: center !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.achievement-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+}
+
+.achievement-badge {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+}
+
+.achievement-badge::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+.achievement-badge:hover::before {
+    left: 100% !important;
+}
+
+.achievement-badge.unlocked {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%) !important;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
+}
+
+.achievement-badge.unlocked:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3) !important;
+    border-color: var(--cinema-gold) !important;
+}
+
+.achievement-badge.locked {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    opacity: 0.7 !important;
+    filter: grayscale(30%) !important;
+}
+
+.achievement-badge.locked:hover {
+    transform: translateY(-2px) !important;
+    opacity: 0.9 !important;
+    filter: grayscale(10%) !important;
+}
+
+.badge-icon {
+    font-size: 1.5rem !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.achievement-badge.unlocked .badge-icon {
+    background: linear-gradient(135deg, var(--cinema-gold), var(--cinema-accent)) !important;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4) !important;
+    animation: badgeGlow 2s ease-in-out infinite alternate !important;
+}
+
+.achievement-badge.locked .badge-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--cinema-text-dim) !important;
+}
+
+.badge-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.badge-name {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: var(--cinema-text) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.badge-desc {
+    font-size: 0.75rem !important;
+    color: var(--cinema-text-dim) !important;
+    font-weight: 500 !important;
+}
+
+.achievement-badge.unlocked .badge-name {
+    color: var(--cinema-gold) !important;
+    text-shadow: 0 1px 2px rgba(212, 175, 55, 0.3) !important;
+}
+
+.badge-status {
+    font-size: 1rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.achievement-badge.unlocked .badge-status {
+    color: #4caf50 !important;
+    animation: statusPulse 2s ease-in-out infinite !important;
+}
+
+.achievement-badge.locked .badge-status {
+    color: var(--cinema-text-dim) !important;
+}
+
+/* Tooltip styles */
+.achievement-badge {
+    position: relative !important;
+}
+
+.achievement-badge::after {
+    content: attr(data-tooltip) !important;
+    position: absolute !important;
+    bottom: 120% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+    z-index: 1000 !important;
+    pointer-events: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.achievement-badge::before {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 110% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border: 5px solid transparent !important;
+    border-top-color: rgba(0, 0, 0, 0.9) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+    z-index: 1000 !important;
+    pointer-events: none !important;
+}
+
+.achievement-badge:hover::after,
+.achievement-badge:hover::before {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Animations */
+@@keyframes badgeGlow {
+    0% {
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4) !important;
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(212, 175, 55, 0.6) !important;
+    }
+}
+
+@@keyframes statusPulse {
+    0%, 100% {
+        transform: scale(1) !important;
+    }
+    50% {
+        transform: scale(1.1) !important;
+    }
+}
+
+/* Responsive design */
+@@media (max-width: 768px) {
+    .achievement-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem !important;
+    }
+    
+    .achievement-badge {
+        padding: 0.6rem !important;
+        gap: 0.6rem !important;
+    }
+    
+    .badge-icon {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 1.3rem !important;
+    }
+    
+    .badge-name {
+        font-size: 0.8rem !important;
+    }
+    
+    .badge-desc {
+        font-size: 0.7rem !important;
+    }
+}
+
 /* Pagination now uses wrap instead of scroll */
 </style>
 
@@ -733,31 +991,56 @@
 
 
     <!-- Main Theater Content -->
-    <div class="theater-main">
+    <div class="theater-main" style="display: grid !important; grid-template-areas: 'rank profile' 'booking booking' !important; grid-template-columns: 1fr 1fr !important; grid-template-rows: auto auto !important; gap: 2rem !important; width: 100% !important; max-width: 100% !important;">
         <!-- Left Wing - Rank Information -->
-        <div class="theater-wing rank-wing">
-            <div class="compact-profile-header">
-                <!-- Avatar Section -->
-                <div class="avatar-section">
-                    <div class="avatar-container">
-                        <img src="@(profile.Image ?? "/image/profile.jpg")" alt="Profile" id="profileAvatar" class="compact-avatar">
-                        <label for="avatarUpload" class="avatar-edit-btn" title="Change photo">
-                            <i class="fas fa-camera"></i>
-                        </label>
-                        <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm">
-                            @Html.AntiForgeryToken()
-                            <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" style="display: none;">
-                            <input type="hidden" id="croppedImageData" name="Profile.CroppedImageData">
-                        </form>
-                    </div>
-                    <div class="user-info">
-                        <h3 class="user-name">@profile.FullName</h3>
-                        <div class="rank-badge" style="background: @(rank.ColorGradient ?? "linear-gradient(45deg, var(--cinema-gold), var(--cinema-accent))");">
-                            <i class="@(rank.IconClass ?? "fas fa-crown")"></i>
-                            <span>@rank.CurrentRankName Member</span>
+        <div class="theater-wing rank-wing" style="grid-area: rank !important; display: flex !important; flex-direction: column !important; width: 100% !important; margin: 0 !important; float: none !important;">
+            <!-- Rank Avatar Wrapper -->
+            <div class="rank-avatar-wrapper" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)"); border-radius: 20px 20px 0 0; padding: 1.5rem; margin: -2.5rem -2.5rem 0 -2.5rem;">
+                <!-- Profile Particle Network -->
+                <div class="profile-particle-container">
+                    <!-- Network Nodes -->
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    
+                    <!-- Network Connections -->
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                </div>
+                
+                <div class="compact-profile-header">
+                    <!-- Avatar Section -->
+                    <div class="avatar-section">
+                        <div class="avatar-container">
+                            <img src="@(profile.Image ?? "/image/profile.jpg")" alt="Profile" id="profileAvatar" class="compact-avatar">
+                            <label for="avatarUpload" class="avatar-edit-btn" title="Change photo">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm">
+                                @Html.AntiForgeryToken()
+                                <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" style="display: none;">
+                                <input type="hidden" id="croppedImageData" name="Profile.CroppedImageData">
+                            </form>
+                        </div>
+                        <div class="user-info">
+                            <h3 class="user-name">@profile.FullName</h3>
+                            <div class="rank-badge" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3);">
+                                <i class="@(rank.IconClass ?? "fas fa-crown")"></i>
+                                <span>@rank.CurrentRankName Member</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- Points Section -->
                 <div class="points-section">
@@ -793,11 +1076,81 @@
                 <button class="cinema-btn secondary" onclick="showRankDetails()" style="width: 100%; margin-top: 1rem;">
                     📊 View All Ranks
                 </button>
-            </div>
-        </div>
 
+                <!-- Achievement Badges Section -->
+                <div class="achievement-section">
+                    <h4 class="achievement-title">🏆 Achievements</h4>
+                    <div class="achievement-grid">
+                        <div class="achievement-badge @(rank.TotalPoints >= 10000 ? "unlocked" : "locked")" data-tooltip="@(rank.TotalPoints >= 10000 ? "Unlocked!" : "Earn 10,000 points to unlock")">
+                            <div class="badge-icon">🎬</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Movie Buff</span>
+                                <span class="badge-desc">10K Points</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.TotalPoints >= 10000 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                        <div class="achievement-badge @(rank.CurrentRankId >= 2 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentRankId >= 2 ? "Unlocked!" : "Reach Silver rank to unlock")">
+                            <div class="badge-icon">👑</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Loyal Customer</span>
+                                <span class="badge-desc">Silver Rank</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.CurrentRankId >= 2 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                                   <div class="achievement-badge @(rank.CurrentRankId >= 2 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentRankId >= 2 ? "Unlocked!" : "Reach Gold rank to unlock")">
+               <div class="badge-icon">⭐</div>
+               <div class="badge-info">
+                   <span class="badge-name">VIP Member</span>
+                   <span class="badge-desc">Gold Rank</span>
+               </div>
+               <div class="badge-status">
+                   <i class="fas @(rank.CurrentRankId >= 2 ? "fa-check-circle" : "fa-lock")"></i>
+               </div>
+           </div>
+
+                        <div class="achievement-badge @(rank.CurrentRankId >= 3 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentRankId >= 3 ? "Unlocked!" : "Reach Diamond rank to unlock")">
+                            <div class="badge-icon">💎</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Diamond Elite</span>
+                                <span class="badge-desc">Diamond Rank</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.CurrentRankId >= 3 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                        <div class="achievement-badge @(rank.TotalPoints >= 50000 ? "unlocked" : "locked")" data-tooltip="@(rank.TotalPoints >= 50000 ? "Unlocked!" : "Earn 50,000 points to unlock")">
+                            <div class="badge-icon">🚀</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Point Master</span>
+                                <span class="badge-desc">50K Points</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.TotalPoints >= 50000 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                        <div class="achievement-badge @(rank.CurrentScore >= 1000 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentScore >= 1000 ? "Unlocked!" : "Have 1,000 current points to unlock")">
+                            <div class="badge-icon">💰</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Point Saver</span>
+                                <span class="badge-desc">1K Current</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.CurrentScore >= 1000 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         <!-- Middle Wing - Profile Form -->
-        <div class="theater-wing profile-wing">
+        <div class="theater-wing profile-wing" style="grid-area: profile !important; display: flex !important; flex-direction: column !important; width: 100% !important; margin: 0 !important; float: none !important;">
             <div class="wing-header">
                 <h2>🎭 Personal Details</h2>
                 <div class="header-line"></div>
@@ -864,6 +1217,7 @@
 
                 <div class="form-actions">
                     @if (!profile.IsGoogleAccount)
+
                     {
                         <a href="@Url.Action("ChangePassword", "MyAccount")" class="cinema-btn secondary">🔐 Change Password</a>
                     }
@@ -871,10 +1225,15 @@
                 </div>
             </form>
         </div>
+        </div>
+
+      
 
         <!-- Bottom Wing - Booking History -->
-        <div class="theater-wing booking-wing">
-            <div class="wing-header">
+        <div class="theater-wing booking-wing" style="grid-area: booking !important; display: flex !important; flex-direction: column !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; float: none !important; box-sizing: border-box !important;">
+        <div class="wing-header" style="
+    padding-left: 600px;
+">
                 <h2>🎟️ Booking History</h2>
                 <div class="header-line"></div>
             </div>
@@ -1502,6 +1861,9 @@
         
         // Add sparkle effects
         createSparkleEffects(theaterHeader);
+        
+        // Initialize Profile Particle Network
+        initializeProfileParticleNetwork();
     }
 
     // Create enhanced floating particles with more variety
@@ -1571,8 +1933,128 @@
         }
     }
 
-    // Enhanced progress bar animation with counting effect
-    function animateEnhancedProgressBar() {
+            // Profile Particle Network Interaction
+        function initializeProfileParticleNetwork() {
+            const particleContainer = document.querySelector('.profile-particle-container');
+            const rankWrapper = document.querySelector('.rank-avatar-wrapper');
+            
+            if (!particleContainer || !rankWrapper) return;
+            
+            let mouseX = 0, mouseY = 0;
+            let isMouseActive = false;
+            
+            // Mouse move tracking
+            rankWrapper.addEventListener('mousemove', (e) => {
+                const rect = rankWrapper.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+                
+                // Update CSS custom properties for glow effect
+                rankWrapper.style.setProperty('--mouse-x', (mouseX / rect.width * 100) + '%');
+                rankWrapper.style.setProperty('--mouse-y', (mouseY / rect.height * 100) + '%');
+                
+                // Create mouse-following particles
+                if (!isMouseActive) {
+                    isMouseActive = true;
+                    particleContainer.classList.add('mouse-active');
+                }
+                
+                // Create particle trail
+                createParticleTrail(mouseX, mouseY, particleContainer);
+                
+                // Move nearby nodes towards mouse
+                moveNodesTowardsMouse(mouseX, mouseY, particleContainer);
+            });
+            
+            // Mouse leave
+            rankWrapper.addEventListener('mouseleave', () => {
+                isMouseActive = false;
+                particleContainer.classList.remove('mouse-active');
+            });
+            
+            // Click effect
+            rankWrapper.addEventListener('click', (e) => {
+                const rect = rankWrapper.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                createClickEffect(x, y, particleContainer);
+            });
+        }
+        
+        // Create particle trail
+        function createParticleTrail(x, y, container) {
+            if (Math.random() > 0.3) return; // Reduce frequency
+            
+            const trail = document.createElement('div');
+            trail.className = 'profile-particle-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            
+            container.appendChild(trail);
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (trail.parentNode) {
+                    trail.parentNode.removeChild(trail);
+                }
+            }, 1000);
+        }
+        
+        // Move nodes towards mouse
+        function moveNodesTowardsMouse(mouseX, mouseY, container) {
+            const nodes = container.querySelectorAll('.profile-particle-node');
+            const rect = container.getBoundingClientRect();
+            
+            nodes.forEach((node, index) => {
+                const nodeRect = node.getBoundingClientRect();
+                const nodeX = nodeRect.left - rect.left + nodeRect.width / 2;
+                const nodeY = nodeRect.top - rect.top + nodeRect.height / 2;
+                
+                const distance = Math.sqrt((mouseX - nodeX) ** 2 + (mouseY - nodeY) ** 2);
+                
+                if (distance < 100) {
+                    const angle = Math.atan2(mouseY - nodeY, mouseX - nodeX);
+                    const force = (100 - distance) / 100;
+                    
+                    node.style.transform = `translate(${Math.cos(angle) * force * 5}px, ${Math.sin(angle) * force * 5}px) scale(${1 + force * 0.2})`;
+                    node.style.filter = `brightness(${1 + force * 0.5})`;
+                } else {
+                    node.style.transform = '';
+                    node.style.filter = '';
+                }
+            });
+        }
+        
+        // Create click effect
+        function createClickEffect(x, y, container) {
+            // Create expanding circle effect
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'profile-particle-mouse';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.animation = 'none';
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 30 + Math.random() * 20;
+                
+                setTimeout(() => {
+                    particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`;
+                    particle.style.opacity = '0';
+                }, 50);
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Enhanced progress bar animation with counting effect
+        function animateEnhancedProgressBar() {
         const progressBar = document.querySelector('.film-progress');
         const statNumbers = document.querySelectorAll('.stat-number');
         
@@ -2092,6 +2574,223 @@
         }
     });
 
+    // Achievement Badges Interaction
+    function initAchievementBadges() {
+        const badges = document.querySelectorAll('.achievement-badge');
+        
+        badges.forEach(badge => {
+            badge.addEventListener('click', function() {
+                const isUnlocked = this.classList.contains('unlocked');
+                const badgeName = this.querySelector('.badge-name').textContent;
+                
+                if (isUnlocked) {
+                    // Show achievement celebration
+                    showAchievementCelebration(badgeName);
+                } else {
+                    // Show locked badge info
+                    showLockedBadgeInfo(badgeName, this.getAttribute('data-tooltip'));
+                }
+            });
+            
+            // Add hover sound effect for unlocked badges
+            if (badge.classList.contains('unlocked')) {
+                badge.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.02)';
+                    this.style.boxShadow = '0 8px 25px rgba(212, 175, 55, 0.4)';
+                });
+                
+                badge.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.2)';
+                });
+            }
+        });
+    }
+    
+    function showAchievementCelebration(badgeName) {
+        // Create celebration modal
+        const celebration = document.createElement('div');
+        celebration.className = 'achievement-celebration';
+        celebration.innerHTML = `
+            <div class="celebration-content">
+                <div class="celebration-icon">🏆</div>
+                <h3>Achievement Unlocked!</h3>
+                <p>${badgeName}</p>
+                <button class="celebration-close" onclick="this.parentElement.parentElement.remove()">Awesome!</button>
+            </div>
+        `;
+        
+        // Add celebration styles
+        celebration.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            animation: celebrationFadeIn 0.5s ease-out;
+        `;
+        
+        celebration.querySelector('.celebration-content').style.cssText = `
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            border: 2px solid var(--cinema-gold);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            animation: celebrationBounce 0.6s ease-out;
+        `;
+        
+        celebration.querySelector('.celebration-icon').style.cssText = `
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: celebrationSpin 1s ease-out;
+        `;
+        
+        celebration.querySelector('h3').style.cssText = `
+            color: var(--cinema-gold);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        `;
+        
+        celebration.querySelector('p').style.cssText = `
+            color: var(--cinema-text);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        `;
+        
+        celebration.querySelector('.celebration-close').style.cssText = `
+            background: var(--cinema-gold);
+            color: var(--cinema-dark);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        `;
+        
+        document.body.appendChild(celebration);
+        
+        // Add celebration animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes celebrationFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @@keyframes celebrationBounce {
+                0% { transform: scale(0.3) rotate(-10deg); }
+                50% { transform: scale(1.1) rotate(5deg); }
+                100% { transform: scale(1) rotate(0deg); }
+            }
+            
+            @@keyframes celebrationSpin {
+                0% { transform: scale(0) rotate(0deg); }
+                50% { transform: scale(1.2) rotate(180deg); }
+                100% { transform: scale(1) rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (celebration.parentElement) {
+                celebration.remove();
+            }
+        }, 3000);
+    }
+    
+    function showLockedBadgeInfo(badgeName, tooltip) {
+        // Create locked badge info modal
+        const info = document.createElement('div');
+        info.className = 'locked-badge-info';
+        info.innerHTML = `
+            <div class="info-content">
+                <div class="info-icon">🔒</div>
+                <h3>${badgeName}</h3>
+                <p>${tooltip}</p>
+                <button class="info-close" onclick="this.parentElement.parentElement.remove()">Got it!</button>
+            </div>
+        `;
+        
+        // Add info styles
+        info.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            animation: infoFadeIn 0.3s ease-out;
+        `;
+        
+        info.querySelector('.info-content').style.cssText = `
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            max-width: 300px;
+            width: 90%;
+        `;
+        
+        info.querySelector('.info-icon').style.cssText = `
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        `;
+        
+        info.querySelector('h3').style.cssText = `
+            color: var(--cinema-text);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        `;
+        
+        info.querySelector('p').style.cssText = `
+            color: var(--cinema-text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        `;
+        
+        info.querySelector('.info-close').style.cssText = `
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--cinema-text);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        `;
+        
+        document.body.appendChild(info);
+        
+        // Add info animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes infoFadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // Enhanced initialization
     function initProfileTab() {
         // Load tickets immediately
@@ -2105,6 +2804,9 @@
                 loadTickets(this.dataset.filter, 1);
             });
         });
+
+        // Initialize achievement badges
+        initAchievementBadges();
 
         // Apply auto text color after a short delay to ensure styles are loaded
         setTimeout(applyAutoTextColor, 100);

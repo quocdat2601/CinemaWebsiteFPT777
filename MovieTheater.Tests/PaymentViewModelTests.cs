@@ -1,4 +1,4 @@
-using MovieTheater.ViewModels;
+﻿using MovieTheater.ViewModels;
 using System;
 using Xunit;
 
@@ -55,4 +55,4 @@ namespace MovieTheater.Tests
             Assert.Equal(73.2m, model.TotalSeatPrice);
         }
     }
-} 
+}
