@@ -539,7 +539,7 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = "No seats were selected.";
 
                 if (role == "Admin")
-                    return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+                    return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
                 else
                     return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
             }
@@ -551,8 +551,17 @@ namespace MovieTheater.Controllers
 
             if (viewModel == null)
             {
-                TempData["ErrorMessage"] = "Unable to build confirmation view.";
-                return RedirectToAction("MainPage", "Admin", new { tab = "TicketSellingMg" });
+                if (role == "Admin") 
+                {
+                    TempData["ErrorMessage"] = "Unable to build confirmation view.";
+                    return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Unable to build confirmation view.";
+                    return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
+                }
+                    
             }
 
             // N?u c� memberId, c?p nh?t th�ng tin member

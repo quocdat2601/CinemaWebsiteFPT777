@@ -219,7 +219,7 @@
                                         <td>
                                             @if (food.OriginalPrice > food.Price)
                                             {
-                                                <span style="text-decoration: line-through; color: #888;">(@food.OriginalPrice?.ToString("N0") ?? "0")  VND</span>
+                                                <span style="text-decoration: line-through; color: #888;">@(food.OriginalPrice?.ToString("N0") ?? "0")  VND</span>
                                                 <span style="color: #38ef7d; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
                                             }
                                             else

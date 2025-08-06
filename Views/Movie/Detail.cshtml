@@ -728,7 +728,7 @@
                             @foreach (var movie in similarMovies)
 
                             {
-                                <div class="movie-card">
+                                <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="movie-card" style="text-decoration: none; color: inherit;">
                                     <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish" />
                                     <div class="movie-card-info">
                                         <div class="movie-card-title">@movie.MovieNameEnglish</div>
@@ -736,7 +736,8 @@
                                             @string.Join(", ", movie.Types?.Select(t => t.TypeName) ?? new[] { "Unknown" })
                                         </div>
                                     </div>
-                                </div>
+                                </a>
+
                             }
                         }
 
