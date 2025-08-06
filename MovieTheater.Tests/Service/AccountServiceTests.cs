@@ -320,6 +320,142 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
+        public void Update_ShouldHandleInvalidFileName_WhenImageFileProvided()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Username = "user", Password = "pass" };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Length).Returns(1);
+            fileMock.Setup(f => f.FileName).Returns("avatar<>:\"/\\|?*.png"); // Invalid characters
+            fileMock.Setup(f => f.CopyTo(It.IsAny<Stream>())).Callback<Stream>(s => { });
+            var model = new RegisterViewModel { Username = "user", ImageFile = fileMock.Object };
+            var testDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+            Directory.CreateDirectory(testDir);
+            try
+            {
+                // Act
+                var result = service.Update("id", model);
+                // Assert
+                Assert.True(result);
+                Assert.Contains("/images/avatars/", account.Image);
+                // Should sanitize the filename
+                Assert.DoesNotContain("<>:\"/\\|?*", account.Image);
+            }
+            finally
+            {
+                // Clean up test directory if empty
+                if (Directory.Exists(testDir) && Directory.GetFiles(testDir).Length == 0)
+                {
+                    Directory.Delete(testDir, false);
+                }
+            }
+        }
+
+        [Fact]
+        public void Update_ShouldHandleNullFileName_WhenImageFileProvided()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Username = "user", Password = "pass" };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Length).Returns(1);
+            fileMock.Setup(f => f.FileName).Returns((string)null);
+            fileMock.Setup(f => f.CopyTo(It.IsAny<Stream>())).Callback<Stream>(s => { });
+            var model = new RegisterViewModel { Username = "user", ImageFile = fileMock.Object };
+            var testDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+            Directory.CreateDirectory(testDir);
+            try
+            {
+                // Act
+                var result = service.Update("id", model);
+                // Assert
+                Assert.True(result);
+                Assert.Contains("/images/avatars/", account.Image);
+                // Should use default filename
+                Assert.Contains("default.jpg", account.Image);
+            }
+            finally
+            {
+                // Clean up test directory if empty
+                if (Directory.Exists(testDir) && Directory.GetFiles(testDir).Length == 0)
+                {
+                    Directory.Delete(testDir, false);
+                }
+            }
+        }
+
+        [Fact]
+        public void Update_ShouldHandleEmptyFileName_WhenImageFileProvided()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Username = "user", Password = "pass" };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Length).Returns(1);
+            fileMock.Setup(f => f.FileName).Returns("");
+            fileMock.Setup(f => f.CopyTo(It.IsAny<Stream>())).Callback<Stream>(s => { });
+            var model = new RegisterViewModel { Username = "user", ImageFile = fileMock.Object };
+            var testDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+            Directory.CreateDirectory(testDir);
+            try
+            {
+                // Act
+                var result = service.Update("id", model);
+                // Assert
+                Assert.True(result);
+                Assert.Contains("/images/avatars/", account.Image);
+                // Should use default filename
+                Assert.Contains("default.jpg", account.Image);
+            }
+            finally
+            {
+                // Clean up test directory if empty
+                if (Directory.Exists(testDir) && Directory.GetFiles(testDir).Length == 0)
+                {
+                    Directory.Delete(testDir, false);
+                }
+            }
+        }
+
+        [Fact]
+        public void Update_ShouldHandleLongFileName_WhenImageFileProvided()
+        {
+            // Arrange
+            var service = CreateService();
+            var account = new Account { AccountId = "id", Username = "user", Password = "pass" };
+            _accountRepoMock.Setup(r => r.GetById("id")).Returns(account);
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.Length).Returns(1);
+            fileMock.Setup(f => f.FileName).Returns(new string('a', 200) + ".png"); // Very long filename
+            fileMock.Setup(f => f.CopyTo(It.IsAny<Stream>())).Callback<Stream>(s => { });
+            var model = new RegisterViewModel { Username = "user", ImageFile = fileMock.Object };
+            var testDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+            Directory.CreateDirectory(testDir);
+            try
+            {
+                // Act
+                var result = service.Update("id", model);
+                // Assert
+                Assert.True(result);
+                Assert.Contains("/images/avatars/", account.Image);
+                // Should truncate long filename
+                Assert.True(account.Image.Length < 200);
+            }
+            finally
+            {
+                // Clean up test directory if empty
+                if (Directory.Exists(testDir) && Directory.GetFiles(testDir).Length == 0)
+                {
+                    Directory.Delete(testDir, false);
+                }
+            }
+        }
+
+        [Fact]
         public void Update_ShouldUpdateImage_WhenImageProvidedAndNoImageFile()
         {
             // Arrange

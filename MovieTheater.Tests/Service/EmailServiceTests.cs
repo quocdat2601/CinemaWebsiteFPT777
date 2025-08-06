@@ -105,5 +105,58 @@ namespace MovieTheater.Tests.Service
             Assert.True(result);
             smtpClientMock.Verify(c => c.Send(Moq.It.IsAny<System.Net.Mail.MailMessage>()), Moq.Times.Once);
         }
+
+        [Fact]
+        public void SendEmail_ShouldReturnFalse_WhenSmtpClientThrowsException()
+        {
+            // Arrange
+            var configMock = new Moq.Mock<IConfiguration>();
+            var sectionMock = new Moq.Mock<IConfigurationSection>();
+            configMock.Setup(c => c.GetSection("EmailSettings")).Returns(sectionMock.Object);
+            sectionMock.Setup(s => s["SmtpServer"]).Returns("smtp.test.com");
+            sectionMock.Setup(s => s["Port"]).Returns("25");
+            sectionMock.Setup(s => s["Username"]).Returns("user");
+            sectionMock.Setup(s => s["Password"]).Returns("pass");
+            sectionMock.Setup(s => s["FromEmail"]).Returns("from@test.com");
+            sectionMock.Setup(s => s["FromName"]).Returns("Test Sender");
+
+            var loggerMock = new Moq.Mock<ILogger<EmailService>>();
+
+            var smtpClientMock = new Moq.Mock<MovieTheater.Service.ISmtpClient>();
+            smtpClientMock.SetupProperty(c => c.Port);
+            smtpClientMock.SetupProperty(c => c.Credentials);
+            smtpClientMock.SetupProperty(c => c.EnableSsl);
+            smtpClientMock.Setup(c => c.Send(Moq.It.IsAny<System.Net.Mail.MailMessage>()))
+                .Throws(new System.Net.Mail.SmtpException("Connection failed"));
+            smtpClientMock.Setup(c => c.Dispose());
+
+            var service = new EmailService(
+                configMock.Object,
+                loggerMock.Object,
+                host => smtpClientMock.Object
+            );
+
+            // Act
+            var result = service.SendEmail("to@test.com", "subject", "body");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void SendEmail_ShouldHandleNullEmailSettings()
+        {
+            // Arrange
+            var configMock = new Moq.Mock<IConfiguration>();
+            configMock.Setup(c => c.GetSection("EmailSettings")).Returns((IConfigurationSection)null);
+            var loggerMock = new Moq.Mock<ILogger<EmailService>>();
+            var service = new EmailService(configMock.Object, loggerMock.Object);
+
+            // Act
+            var result = service.SendEmail("a@b.com", "subject", "body");
+
+            // Assert
+            Assert.False(result);
+        }
     }
 } 
