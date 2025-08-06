@@ -242,7 +242,15 @@ namespace MovieTheater.Tests.Service
             _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
 
             // Act
-            var result = _service.GetEligibleFoodPromotions(null);
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now
+            };
+            var result = _service.GetEligibleFoodPromotions(null, context);
 
             // Assert
             Assert.Empty(result);
@@ -261,7 +269,15 @@ namespace MovieTheater.Tests.Service
             _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
 
             // Act
-            var result = _service.GetEligibleFoodPromotions(new List<(int, int, decimal, string)>());
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now
+            };
+            var result = _service.GetEligibleFoodPromotions(new List<(int, int, decimal, string)>(), context);
 
             // Assert
             Assert.Empty(result);
@@ -294,7 +310,15 @@ namespace MovieTheater.Tests.Service
             _mockContext.Setup(c => c.Promotions).Returns(mockDbSet.Object);
 
             // Act
-            var result = _service.GetEligibleFoodPromotions(selectedFoods);
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now
+            };
+            var result = _service.GetEligibleFoodPromotions(selectedFoods, context);
 
             // Assert
             Assert.Single(result);
@@ -5445,6 +5469,156 @@ namespace MovieTheater.Tests.Service
 
             // Assert
             Assert.Null(result); // Should return null when account has invoices
+        }
+
+        [Fact]
+        public void GetEligibleFoodPromotions_FirstTimeBookingPromotion_ReturnsEligiblePromotion()
+        {
+            // Arrange
+            var selectedFoods = new List<(int, int, decimal, string)> { (1, 2, 100, "Pizza") };
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now
+            };
+
+            // First-time booking promotion (AccountID condition without food target entity)
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    Title = "First Time Booking",
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "accountid", 
+                            TargetValue = null, // Null target value means no invoices for first-time booking
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var members = new List<Member>
+            {
+                new Member { MemberId = "member1", AccountId = "account1" }
+            };
+
+            var invoices = new List<Invoice>(); // Empty invoices list - first time booking
+
+            // Setup mock DbSets
+            var mockPromotionsDbSet = new Mock<DbSet<Promotion>>();
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            var mockMembersDbSet = new Mock<DbSet<Member>>();
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.Provider).Returns(members.AsQueryable().Provider);
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.Expression).Returns(members.AsQueryable().Expression);
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.ElementType).Returns(members.AsQueryable().ElementType);
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.GetEnumerator()).Returns(members.GetEnumerator());
+
+            var mockInvoicesDbSet = new Mock<DbSet<Invoice>>();
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.AsQueryable().Provider);
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.AsQueryable().Expression);
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.AsQueryable().ElementType);
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockPromotionsDbSet.Object);
+            _mockContext.Setup(c => c.Members).Returns(mockMembersDbSet.Object);
+            _mockContext.Setup(c => c.Invoices).Returns(mockInvoicesDbSet.Object);
+
+            // Act
+            var result = _service.GetEligibleFoodPromotions(selectedFoods, context);
+
+            // Assert
+            Assert.Single(result);
+            Assert.Equal(1, result[0].PromotionId);
+            Assert.Equal("First Time Booking", result[0].Title);
+            Assert.Equal(15, result[0].DiscountLevel);
+        }
+
+        [Fact]
+        public void GetEligibleFoodPromotions_FirstTimeBookingPromotionWithExistingBooking_ReturnsNoPromotion()
+        {
+            // Arrange
+            var selectedFoods = new List<(int, int, decimal, string)> { (1, 2, 100, "Pizza") };
+            var context = new PromotionCheckContext
+            {
+                MemberId = "member1",
+                SeatCount = 2,
+                MovieId = "movie1",
+                MovieName = "Test Movie",
+                ShowDate = DateTime.Now
+            };
+
+            // First-time booking promotion (AccountID condition without food target entity)
+            var promotions = new List<Promotion>
+            {
+                new Promotion 
+                { 
+                    PromotionId = 1, 
+                    IsActive = true, 
+                    DiscountLevel = 15,
+                    Title = "First Time Booking",
+                    PromotionConditions = new List<PromotionCondition>
+                    {
+                        new PromotionCondition 
+                        { 
+                            TargetField = "accountid", 
+                            TargetValue = null, // Null target value means no invoices for first-time booking
+                            Operator = "=" 
+                        }
+                    }
+                }
+            };
+
+            var members = new List<Member>
+            {
+                new Member { MemberId = "member1", AccountId = "account1" }
+            };
+
+            var invoices = new List<Invoice>
+            {
+                new Invoice { AccountId = "account1" } // Existing booking - not first time
+            };
+
+            // Setup mock DbSets
+            var mockPromotionsDbSet = new Mock<DbSet<Promotion>>();
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.Provider).Returns(promotions.AsQueryable().Provider);
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.Expression).Returns(promotions.AsQueryable().Expression);
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.ElementType).Returns(promotions.AsQueryable().ElementType);
+            mockPromotionsDbSet.As<IQueryable<Promotion>>().Setup(m => m.GetEnumerator()).Returns(promotions.GetEnumerator());
+
+            var mockMembersDbSet = new Mock<DbSet<Member>>();
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.Provider).Returns(members.AsQueryable().Provider);
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.Expression).Returns(members.AsQueryable().Expression);
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.ElementType).Returns(members.AsQueryable().ElementType);
+            mockMembersDbSet.As<IQueryable<Member>>().Setup(m => m.GetEnumerator()).Returns(members.GetEnumerator());
+
+            var mockInvoicesDbSet = new Mock<DbSet<Invoice>>();
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.Provider).Returns(invoices.AsQueryable().Provider);
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.Expression).Returns(invoices.AsQueryable().Expression);
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.ElementType).Returns(invoices.AsQueryable().ElementType);
+            mockInvoicesDbSet.As<IQueryable<Invoice>>().Setup(m => m.GetEnumerator()).Returns(invoices.GetEnumerator());
+
+            _mockContext.Setup(c => c.Promotions).Returns(mockPromotionsDbSet.Object);
+            _mockContext.Setup(c => c.Members).Returns(mockMembersDbSet.Object);
+            _mockContext.Setup(c => c.Invoices).Returns(mockInvoicesDbSet.Object);
+
+            // Act
+            var result = _service.GetEligibleFoodPromotions(selectedFoods, context);
+
+            // Assert
+            Assert.Empty(result); // Should not return the first-time booking promotion since user has existing bookings
         }
     }
 } 

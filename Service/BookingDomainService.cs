@@ -184,7 +184,7 @@ namespace MovieTheater.Service
                         foodTuples.Add((food.FoodId, foodQtys[i], food.Price, food.Name));
                     }
                 }
-                var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
+                var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples, promotionContext);
                 var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
                 for (int i = 0; i < foodTuples.Count; i++)
                 {
@@ -630,7 +630,7 @@ namespace MovieTheater.Service
                         foodTuples.Add((food.FoodId, foodQtys[i], food.Price, food.Name));
                     }
                 }
-                eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
+                eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples, promotionContext);
                 var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
                 for (int i = 0; i < foodTuples.Count; i++)
                 {
@@ -1029,7 +1029,16 @@ namespace MovieTheater.Service
                     var food = foods.FirstOrDefault(food => food.FoodId == f.FoodId);
                     return (f.FoodId, f.Quantity, f.Price, food?.Name ?? "N/A");
                 }).ToList();
-                var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples);
+                // Create minimal promotion context for displaying existing booking data
+                var promotionContext = new PromotionCheckContext
+                {
+                    MemberId = member?.MemberId,
+                    SeatCount = seatIdArr.Count,
+                    MovieId = movieShow.Movie?.MovieId,
+                    MovieName = movieShow.Movie?.MovieNameEnglish,
+                    ShowDate = movieShow.ShowDate.ToDateTime(TimeOnly.MinValue)
+                };
+                var eligibleFoodPromotions = _promotionService.GetEligibleFoodPromotions(foodTuples, promotionContext);
                 var foodDiscounts = _promotionService.ApplyFoodPromotionsToFoods(foodTuples, eligibleFoodPromotions);
                 var selectedFoods = foodInvoices.Select(f =>
                 {
