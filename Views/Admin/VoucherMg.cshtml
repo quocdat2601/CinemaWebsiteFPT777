@@ -28,7 +28,7 @@
                                placeholder="Search by code or account..." value="@ViewBag.Keyword">
                     </div>
                     <div class="col-md-2">
-                        <select class="form-select" id="statusFilter" name="statusFilter">
+                        <select class="form-select" id="statusFilter" name="statusFilter" onchange="searchVouchers();">
                             @if (string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()))
                             {
                                 <option value="" selected>All Status</option>
@@ -64,7 +64,7 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <select class="form-select" id="expiryFilter" name="expiryFilter">
+                        <select class="form-select" id="expiryFilter" name="expiryFilter" onchange="searchVouchers();">
                             @if (string.IsNullOrEmpty(ViewBag.ExpiryFilter?.ToString()))
                             {
                                 <option value="" selected>All Expiry</option>

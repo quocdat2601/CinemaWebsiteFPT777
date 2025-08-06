@@ -4,7 +4,7 @@
 @{
     ViewBag.Title = "Ticket Information (Admin)";
     Layout = "_Layout";
-    
+
     // Kiểm tra Model có null không
     if (Model == null)
     {
@@ -43,7 +43,7 @@
     // Lấy giá gốc của seat (sau promotion, trước rank discount)
     decimal seatPrice = booking != null && booking.SelectedSeats != null
         ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
-    
+
     // Tính toán seat total sau khi áp dụng rank discount và points
     decimal seatTotalAfterRankAndScore = seatPrice;
     if (Model.RankDiscount > 0)
@@ -55,10 +55,10 @@
         seatTotalAfterRankAndScore -= Model.UsedScoreValue;
     }
     if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
-    
+
     // Sử dụng TotalPrice từ database (đã được tính đúng từ backend)
     decimal finalTotalAmount = booking?.TotalPrice ?? 0;
-    
+
     // Tính toán để hiển thị breakdown - sử dụng giá cuối cùng từ database
     decimal runningTotal = finalTotalAmount;
 
@@ -101,9 +101,10 @@
                     @if (Model.EmployeeId != null)
                     {
                         <h1>Ticket Information (Employee)</h1>
-                    } else
+                    }
+                    else
                     {
-                     <h1>Ticket Information (Admin)</h1>   
+                        <h1>Ticket Information (Admin)</h1>
                     }
                     <p>Booking ID: @ticketId</p>
                 </div>
@@ -295,7 +296,7 @@
                                 <span class="price-label">Seat Price</span>
                                 <span class="price-value">@seatPrice.ToString("N0") VND</span>
                             </div>
-                            
+
                             <!-- Rank Discount -->
                             @if (Model.RankDiscount > 0)
                             {
@@ -304,7 +305,7 @@
                                     <span class="price-value discount">-@Model.RankDiscount.ToString("N0") VND</span>
                                 </div>
                             }
-                            
+
                             <!-- Points Used -->
                             @if (Model.UsedScore > 0)
                             {
@@ -313,13 +314,13 @@
                                     <span class="price-value discount">-@Model.UsedScore (@Model.UsedScoreValue.ToString("N0") VND)</span>
                                 </div>
                             }
-                            
+
                             <!-- Seat Total (after all seat discounts) -->
                             <div class="price-row">
                                 <span class="price-label">Seat Total</span>
                                 <span class="price-value">@seatTotalAfterRankAndScore.ToString("N0") VND</span>
                             </div>
-                            
+
                             <!-- Food & Drinks -->
                             @if (totalFoodPrice > 0)
                             {
@@ -328,7 +329,7 @@
                                     <span class="price-value addition">+@totalFoodPrice.ToString("N0") VND</span>
                                 </div>
                             }
-                            
+
                             <!-- Voucher -->
                             @if (Model.VoucherAmount > 0)
                             {
@@ -337,13 +338,13 @@
                                     <span class="price-value discount">-@Model.VoucherAmount.ToString("N0") VND</span>
                                 </div>
                             }
-                            
+
                             <!-- Total Amount -->
                             <div class="price-row total-row">
                                 <span class="price-label">Total Amount</span>
                                 <span class="price-value total">@runningTotal.ToString("N0") VND</span>
                             </div>
-                            
+
                             <!-- Points Earned -->
                             @if (Model.AddedScore > 0)
                             {
@@ -364,29 +365,31 @@
                     <h3>Member Information</h3>
                 </div>
                 <div class="card-content-modern">
-                    <div class="info-grid">
-                        <div class="info-item">
+                    <div class="row mb-2">
+                        <div class="info-item col-md-6">
                             <i class="fas fa-id-card"></i>
                             <div class="info-content">
                                 <div class="info-label">Member ID</div>
                                 <div class="info-value">@memberId</div>
                             </div>
                         </div>
-                        <div class="info-item">
+                        <div class="info-item col-md-6">
                             <i class="fas fa-envelope"></i>
                             <div class="info-content">
                                 <div class="info-label">Email</div>
                                 <div class="info-value email-field" title="@memberEmail">@memberEmail</div>
                             </div>
                         </div>
-                        <div class="info-item">
+                    </div>
+                    <div class="row">
+                        <div class="info-item col-md-6">
                             <i class="fas fa-id-badge"></i>
                             <div class="info-content">
                                 <div class="info-label">Identity Card</div>
                                 <div class="info-value id-field" title="@memberIdentityCard">@memberIdentityCard</div>
                             </div>
                         </div>
-                        <div class="info-item">
+                        <div class="info-item col-md-6">
                             <i class="fas fa-phone"></i>
                             <div class="info-content">
                                 <div class="info-label">Phone</div>
@@ -401,42 +404,44 @@
                 <!-- Employee Information Card -->
                 <div class="content-card">
                     <div class="card-header-modern">
-                    <i class="fas fa-user"></i>
-                    <h3>Employee Information</h3>
-                </div>
-                <div class="card-content-modern">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <i class="fas fa-id-card"></i>
-                            <div class="info-content">
-                                <div class="info-label">Employee ID</div>
-                                <div class="info-value">@Model.EmployeeId</div>
+                        <i class="fas fa-user"></i>
+                        <h3>Employee Information</h3>
+                    </div>
+                    <div class="card-content-modern">
+                        <div class="row mb-2">
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-id-card"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Employee ID</div>
+                                    <div class="info-value">@Model.EmployeeId</div>
+                                </div>
+                            </div>
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-envelope"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Phone</div>
+                                    <div class="info-value phone-field" title="@Model.EmployeePhone">@Model.EmployeePhone</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="info-item">
-                            <i class="fas fa-envelope"></i>
-                            <div class="info-content">
-                                <div class="info-label">Phone</div>
-                                <div class="info-value phone-field" title="@Model.EmployeePhone">@Model.EmployeePhone</div>
+                        <div class="row">
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-id-badge"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Name</div>
+                                    <div class="info-value name-field" title="@Model.EmployeeName">@Model.EmployeeName</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-id-badge"></i>
-                            <div class="info-content">
-                                <div class="info-label">Name</div>
-                                <div class="info-value name-field" title="@Model.EmployeeName">@Model.EmployeeName</div>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-phone"></i>
-                            <div class="info-content">
-                                <div class="info-label">Date of Birth</div>
-                                <div class="info-value">@Model.DateofBirth</div>
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-phone"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Date of Birth</div>
+                                    <div class="info-value">@Model.DateofBirth</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
             }
             <!-- Cancel Button - Bottom of page -->
             @if (booking != null && booking.Status == MovieTheater.Models.InvoiceStatus.Completed && !booking.Cancel)
@@ -446,6 +451,9 @@
                         <form asp-controller="Ticket" asp-action="CancelByAdmin" asp-route-id="@booking.InvoiceId"
                               method="post" style="display: inline;"
                               onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
+
+                            <input type="hidden" name="returnUrl" value="@Url.Action("TicketInfo", "Booking", new { invoiceId = booking.InvoiceId })" />
+
                             <button type="submit" class="btn-modern btn-danger">
                                 <i class="fas fa-times"></i>
                                 Cancel Ticket
