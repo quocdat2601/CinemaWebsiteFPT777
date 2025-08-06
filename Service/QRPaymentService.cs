@@ -26,7 +26,7 @@ namespace MovieTheater.Service
             {
                 // Tạo nội dung QR code theo chuẩn VietQR
                 var qrContent = $"https://api.vietqr.io/image/{_config.BankCode}/{_config.AccountNumber}?amount={amount}&addInfo={orderId}&accountName={_config.AccountName}";
-                
+
                 _logger.LogInformation("QR code data generated for order {OrderId}", orderId);
                 return qrContent;
             }
@@ -49,10 +49,10 @@ namespace MovieTheater.Service
                 var bankId = "VCB"; // Vietcombank
                 var accountNo = "1234567890"; // Demo account
                 var description = Uri.EscapeDataString(orderInfo);
-                
+
                 var vietQRUrl = $"https://api.vietqr.io/image/{bankId}/{accountNo}/{amount}/{description}";
                 _logger.LogInformation("VietQR URL generated: {URL}", vietQRUrl);
-                
+
                 return vietQRUrl;
             }
             catch (Exception ex)
@@ -183,7 +183,7 @@ namespace MovieTheater.Service
                 // Tạo QR code đơn giản bằng cách sử dụng Google Charts API
                 var encodedData = Uri.EscapeDataString(qrData);
                 var qrUrl = $"https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl={encodedData}&chld=L|0";
-                
+
                 _logger.LogInformation("QR code image URL generated successfully");
                 return qrUrl;
             }
@@ -202,7 +202,7 @@ namespace MovieTheater.Service
                 // Tạo QR code đơn giản cho demo sử dụng QR Server API
                 var encodedText = Uri.EscapeDataString(text);
                 var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encodedText}";
-                
+
                 _logger.LogInformation("Simple QR code generated successfully");
                 return qrUrl;
             }
@@ -340,4 +340,4 @@ namespace MovieTheater.Service
     }
 
 
-} 
+}

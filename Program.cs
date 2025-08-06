@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -138,11 +137,11 @@ namespace MovieTheater
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
                 );
-            
+
             builder.Services.Configure<QRPaymentConfig>(
              builder.Configuration.GetSection("QRPayment")
                 );
-            
+
             builder.Services.AddScoped<IQRPaymentService, QRPaymentService>();
             builder.Services.AddScoped<IGuestInvoiceService, GuestInvoiceService>();
             builder.Services.AddHostedService<CinemaAutoEnableService>();

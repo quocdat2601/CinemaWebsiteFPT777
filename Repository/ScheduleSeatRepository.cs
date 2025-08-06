@@ -21,17 +21,17 @@ namespace MovieTheater.Repository
             try
             {
                 // Set BookedSeatTypeId and BookedPrice if not already set
-                
-                    var seat = await _context.Seats.FindAsync(scheduleSeat.SeatId.Value);
-                    if (seat != null && seat.SeatTypeId.HasValue)
+
+                var seat = await _context.Seats.FindAsync(scheduleSeat.SeatId.Value);
+                if (seat != null && seat.SeatTypeId.HasValue)
+                {
+                    var seatType = await _context.SeatTypes.FindAsync(seat.SeatTypeId.Value);
+                    if (seatType != null)
                     {
-                        var seatType = await _context.SeatTypes.FindAsync(seat.SeatTypeId.Value);
-                        if (seatType != null)
-                        {
-                            scheduleSeat.BookedPrice = seatType.PricePercent;
-                        }
+                        scheduleSeat.BookedPrice = seatType.PricePercent;
                     }
-                
+                }
+
                 await _context.ScheduleSeats.AddAsync(scheduleSeat);
                 await _context.SaveChangesAsync();
                 // Xóa hold trước khi phát sự kiện SignalR

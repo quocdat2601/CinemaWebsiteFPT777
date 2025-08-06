@@ -9,4 +9,4 @@ namespace MovieTheater.Repository
         Task<IEnumerable<FoodInvoice>> CreateMultipleAsync(IEnumerable<FoodInvoice> foodInvoices);
         Task<bool> DeleteByInvoiceIdAsync(string invoiceId);
     }
-} 
+}

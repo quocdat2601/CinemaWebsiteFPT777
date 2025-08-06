@@ -1,6 +1,6 @@
-using MovieTheater.ViewModels;
-using MovieTheater.Models;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
+using MovieTheater.ViewModels;
 using Newtonsoft.Json;
 
 namespace MovieTheater.Service
@@ -282,4 +282,4 @@ namespace MovieTheater.Service
             return Math.Max(0, totalAmount);
         }
     }
-} 
+}

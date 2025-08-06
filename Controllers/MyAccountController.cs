@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
-using MovieTheater.Models;
 
 namespace MovieTheater.Controllers
 {
@@ -153,11 +153,11 @@ namespace MovieTheater.Controllers
                                                                    .Replace("data:image/png;base64,", "")
                                                                    .Replace("data:image/gif;base64,", "");
                     var imageBytes = Convert.FromBase64String(base64Data);
-                    
+
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
                     var uniqueFileName = Guid.NewGuid().ToString() + "_avatar.jpg";
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                    
+
                     System.IO.File.WriteAllBytes(filePath, imageBytes);
                     registerModel.Image = $"/images/avatars/{uniqueFileName}";
                 }
@@ -210,7 +210,7 @@ namespace MovieTheater.Controllers
             ModelState.Remove("Profile.Email");
             ModelState.Remove("Profile.Address");
             ModelState.Remove("Profile.PhoneNumber");
-            
+
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));

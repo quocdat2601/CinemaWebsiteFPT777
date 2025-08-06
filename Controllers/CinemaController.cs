@@ -1,7 +1,5 @@
-﻿using AspNetCoreGeneratedDocument;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using System.Data;
@@ -80,7 +78,7 @@ namespace MovieTheater.Controllers
                     var versions = _movieService.GetAllVersions();
                     ViewBag.Versions = versions;
                     ViewBag.CurrentVersionId = VersionId;
-                    
+
                     // Add specific validation errors to help debug
                     foreach (var modelState in ModelState.Values)
                     {
@@ -89,13 +87,13 @@ namespace MovieTheater.Controllers
                             ModelState.AddModelError("", error.ErrorMessage);
                         }
                     }
-                    
+
                     return View(cinemaRoom);
                 }
-                
+
                 cinemaRoom.VersionId = VersionId;
                 bool success = await _cinemaService.Update(cinemaRoom);
-                
+
                 if (!success)
                 {
                     TempData["ErrorMessage"] = "Failed to update showroom. Please check your input and try again.";
@@ -104,7 +102,7 @@ namespace MovieTheater.Controllers
                     ViewBag.CurrentVersionId = VersionId;
                     return View(cinemaRoom);
                 }
-                
+
                 TempData["ToastMessage"] = "Showroom updated successfully!";
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "ShowroomMg" });
@@ -170,10 +168,10 @@ namespace MovieTheater.Controllers
 
         public IActionResult Disable(int id) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
-            var cinemaRoom = _cinemaService.GetById(id); 
+            var cinemaRoom = _cinemaService.GetById(id);
             if (cinemaRoom == null)
             {
-                return NotFound(); 
+                return NotFound();
             }
             return View(cinemaRoom);
         }
@@ -187,7 +185,7 @@ namespace MovieTheater.Controllers
             {
                 // 1. Get all conflicted shows that will be affected by the disable period
                 var conflictedShows = GetConflictedShows(cinemaRoom);
-                
+
                 // 2. Automatically refund any invoices in conflicted shows
                 var refundedShows = new List<string>();
                 foreach (var show in conflictedShows)
@@ -195,7 +193,7 @@ namespace MovieTheater.Controllers
                     var invoices = _movieService.GetInvoicesByMovieShow(show.MovieShowId)
                         .Where(i => !i.Cancel) // Only refund active invoices
                         .ToList();
-                    
+
                     if (invoices.Any())
                     {
                         foreach (var invoice in invoices)
@@ -229,7 +227,7 @@ namespace MovieTheater.Controllers
                         }
                     }
                 }
-                
+
                 // 4. Disable the room
                 bool disableSuccess = await _cinemaService.Disable(cinemaRoom);
                 if (!disableSuccess)
@@ -240,7 +238,7 @@ namespace MovieTheater.Controllers
                     else
                         return RedirectToAction("MainPage", "Employee", new { tab = "ShowroomMg" });
                 }
-                
+
                 // 5. Feedback
                 var feedbackMessages = new List<string>();
                 if (refundedShows.Count > 0)
@@ -255,7 +253,7 @@ namespace MovieTheater.Controllers
                 {
                     feedbackMessages.Add($"Deleted {deletedShows.Count} show(s) with no bookings.");
                 }
-                
+
                 if (feedbackMessages.Any())
                 {
                     TempData["ToastMessage"] = string.Join(" ", feedbackMessages);
@@ -287,18 +285,18 @@ namespace MovieTheater.Controllers
 
             var startDate = cinemaRoom.UnavailableStartDate.Value;
             var endDate = cinemaRoom.UnavailableEndDate.Value;
-            
+
             var allShows = _movieService.GetMovieShow()
                 .Where(ms => ms.CinemaRoomId == cinemaRoom.CinemaRoomId)
                 .ToList();
 
             var conflictedShows = new List<MovieShow>();
-            
+
             foreach (var show in allShows)
             {
                 // Convert DateOnly to DateTime for comparison
                 var showDate = show.ShowDate.ToDateTime(TimeOnly.MinValue);
-                
+
                 // Check if show date falls within unavailable period
                 if (showDate.Date >= startDate.Date && showDate.Date <= endDate.Date)
                 {
@@ -307,7 +305,7 @@ namespace MovieTheater.Controllers
                     {
                         var showStartTime = showDate.Date.Add(show.Schedule.ScheduleTime.Value.ToTimeSpan());
                         var showEndTime = showStartTime.AddMinutes(show.Movie?.Duration ?? 0);
-                        
+
                         if (showStartTime < endDate && showEndTime > startDate)
                         {
                             conflictedShows.Add(show);
@@ -315,7 +313,7 @@ namespace MovieTheater.Controllers
                     }
                 }
             }
-            
+
             return conflictedShows;
         }
 
@@ -363,12 +361,13 @@ namespace MovieTheater.Controllers
         public IActionResult GetMovieShowsByCinemaRoomGrouped(int cinemaRoomId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            
+
             var shows = _movieService.GetMovieShow()
                 .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate >= today)
                 .GroupBy(ms => ms.ShowDate)
                 .OrderBy(g => g.Key)
-                .Select(g => new {
+                .Select(g => new
+                {
                     date = g.Key.ToString("dd/MM/yyyy"),
                     times = g.OrderBy(ms => ms.Schedule?.ScheduleTime).Select(ms => ms.Schedule?.ScheduleTime?.ToString("HH:mm")).ToList()
                 }).ToList();
@@ -379,10 +378,11 @@ namespace MovieTheater.Controllers
         public IActionResult GetDetailedMovieShowsByCinemaRoom(int cinemaRoomId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            
+
             var shows = _movieService.GetMovieShow()
                 .Where(ms => ms.CinemaRoomId == cinemaRoomId && ms.ShowDate >= today)
-                .Select(ms => new {
+                .Select(ms => new
+                {
                     movieShowId = ms.MovieShowId,
                     movieId = ms.MovieId,
                     movieName = ms.Movie?.MovieNameEnglish ?? "Unknown Movie",
@@ -397,7 +397,7 @@ namespace MovieTheater.Controllers
                 .OrderBy(s => s.showDate)
                 .ThenBy(s => s.scheduleTime)
                 .ToList();
-            
+
             return Json(shows);
         }
 
@@ -405,7 +405,8 @@ namespace MovieTheater.Controllers
         public IActionResult GetInvoicesByMovieShow(int movieShowId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var invoices = _movieService.GetInvoicesByMovieShow(movieShowId)
-                .Select(i => new {
+                .Select(i => new
+                {
                     invoiceId = i.InvoiceId,
                     accountId = i.AccountId,
                     accountName = i.Account != null ? i.Account.FullName : null,

@@ -1,6 +1,4 @@
-using MovieTheater.Models;
 using MovieTheater.ViewModels;
-using System.Collections.Generic;
 
 namespace MovieTheater.Service
 {
@@ -33,4 +31,4 @@ namespace MovieTheater.Service
             List<Models.Food> foods = null
         );
     }
-} 
+}

@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Service;
-using System.Security.Claims;
 using MovieTheater.Models; // Added for Movie model
-using System.Linq;
 using MovieTheater.Repository; // Added for ToList()
+using MovieTheater.Service;
 
 namespace MovieTheater.Controllers
 {
@@ -47,7 +45,7 @@ namespace MovieTheater.Controllers
 
             // Use first currently showing movie as active movie, fallback to coming soon
             Movie? activeMovie = currentlyShowingMovies.FirstOrDefault() ?? comingSoonMovies.FirstOrDefault();
-            
+
             ViewBag.People = people;
             ViewBag.Movies = movies; // Use currently showing movies for hero section
             ViewBag.CurrentlyShowingMovies = currentlyShowingMovies; // For "Now Showing" slide

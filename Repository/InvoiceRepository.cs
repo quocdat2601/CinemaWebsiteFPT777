@@ -138,12 +138,12 @@ namespace MovieTheater.Repository
         public Invoice? FindInvoiceByAmountAndTime(decimal amount, DateTime? recentTime = null)
         {
             var query = _context.Invoices.Where(i => i.TotalMoney == amount && i.Status != InvoiceStatus.Completed);
-            
+
             if (recentTime.HasValue)
             {
                 query = query.Where(i => i.BookingDate >= recentTime.Value);
             }
-            
+
             return query.OrderByDescending(i => i.BookingDate).FirstOrDefault();
         }
     }

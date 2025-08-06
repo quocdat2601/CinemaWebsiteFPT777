@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -38,7 +37,7 @@ namespace MovieTheater.Controllers
             ILogger<AccountController> logger,
             IAccountRepository accountRepository,
             IMemberRepository memberRepository,
-            IJwtService jwtService, 
+            IJwtService jwtService,
             IEmployeeService employeeService)
         {
             _service = service;
@@ -230,7 +229,7 @@ namespace MovieTheater.Controllers
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage)
                     .ToList();
-                
+
                 TempData[ERROR_MESSAGE] = string.Join(", ", errors);
                 return RedirectToAction(LOGIN_ACTION);
             }
@@ -271,17 +270,18 @@ namespace MovieTheater.Controllers
                 var account = _accountRepository.GetById(user.AccountId);
                 var employee = account?.Employees
                     .FirstOrDefault(e => e.AccountId == account.AccountId);
-                
+
                 if (employee == null)
                 {
                     TempData["ErrorMessage"] = "Employee account not found!";
                     return RedirectToAction("Login");
                 }
-                
+
                 if (employee.Status)
                 {
                     return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER);
-                } else
+                }
+                else
                 {
                     TempData[ERROR_MESSAGE] = "Account has been locked!";
                     return RedirectToAction(LOGIN_ACTION);

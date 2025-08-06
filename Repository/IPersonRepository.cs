@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MovieTheater.Models;
+﻿using MovieTheater.Models;
 
 namespace MovieTheater.Repository
 {

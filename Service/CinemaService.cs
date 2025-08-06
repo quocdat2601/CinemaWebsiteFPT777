@@ -73,7 +73,7 @@ namespace MovieTheater.Service
                 return false;
             }
         }
-        
+
         public async Task<bool> Disable(CinemaRoom cinemaRoom)
         {
             if (cinemaRoom == null)
@@ -90,7 +90,8 @@ namespace MovieTheater.Service
             }
         }
 
-        public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId){
+        public IEnumerable<CinemaRoom> GetRoomsByVersion(int versionId)
+        {
             return _repository.GetRoomsByVersion(versionId);
         }
     }

@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
-using MovieTheater.ViewModels;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace MovieTheater.Repository
 {

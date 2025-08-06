@@ -79,4 +79,4 @@ namespace MovieTheater.Service
             await _scheduleSeatRepository.UpdateScheduleSeatsToBookedAsync(invoiceId, movieShowId, seatIds);
         }
     }
-} 
+}

@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
 using MovieTheater.Hubs;
-using MovieTheater.Models;
-using MovieTheater.Service;
 
 namespace MovieTheater.Service
 {
@@ -42,8 +40,8 @@ namespace MovieTheater.Service
 
             var now = DateTime.Now;
             var disabledRooms = cinemaService.GetAll()
-                .Where(r => r.StatusId == 3 && 
-                           r.UnavailableEndDate.HasValue && 
+                .Where(r => r.StatusId == 3 &&
+                           r.UnavailableEndDate.HasValue &&
                            r.UnavailableEndDate.Value <= now)
                 .ToList();
 
@@ -52,7 +50,7 @@ namespace MovieTheater.Service
                 // Create a new scope for each room operation to avoid DbContext concurrency issues
                 using var roomScope = _serviceProvider.CreateScope();
                 var roomCinemaService = roomScope.ServiceProvider.GetRequiredService<ICinemaService>();
-                
+
                 try
                 {
                     // Get the room again in the new scope
@@ -69,11 +67,11 @@ namespace MovieTheater.Service
                     if (success)
                     {
                         _logger.LogInformation("Auto-enabled cinema room {RoomName} (ID: {RoomId})", room.CinemaRoomName, room.CinemaRoomId);
-                        
+
                         // Notify via SignalR
                         await CinemaHub.NotifyRoomEnabled(hubContext, room.CinemaRoomId, room.CinemaRoomName);
-                        await CinemaHub.NotifyAdmins(hubContext, 
-                            $"Room '{room.CinemaRoomName}' has been automatically enabled after its disable period ended.", 
+                        await CinemaHub.NotifyAdmins(hubContext,
+                            $"Room '{room.CinemaRoomName}' has been automatically enabled after its disable period ended.",
                             room.CinemaRoomName);
                     }
                     else
@@ -88,4 +86,4 @@ namespace MovieTheater.Service
             }
         }
     }
-} 
+}

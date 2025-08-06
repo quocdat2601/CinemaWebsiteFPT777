@@ -13,7 +13,7 @@ namespace MovieTheater.Service
             _foodRepository = foodRepository;
         }
 
-       public async Task<FoodListViewModel> GetAllAsync(string? searchKeyword = null, string? categoryFilter = null, bool? statusFilter = null)
+        public async Task<FoodListViewModel> GetAllAsync(string? searchKeyword = null, string? categoryFilter = null, bool? statusFilter = null)
         {
             var foods = await _foodRepository.GetAllAsync();
 

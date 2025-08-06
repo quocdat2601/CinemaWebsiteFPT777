@@ -4,7 +4,7 @@ namespace MovieTheater.Repository
 {
     public class VersionRepository : IVersionRepository
     {
-    
+
         private readonly MovieTheaterContext _context;
 
         public VersionRepository(MovieTheaterContext context)

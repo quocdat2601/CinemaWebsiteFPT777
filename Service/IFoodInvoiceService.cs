@@ -8,4 +8,4 @@ namespace MovieTheater.Service
         Task<bool> SaveFoodOrderAsync(string invoiceId, List<FoodViewModel> selectedFoods);
         Task<decimal> GetTotalFoodPriceByInvoiceIdAsync(string invoiceId);
     }
-} 
+}

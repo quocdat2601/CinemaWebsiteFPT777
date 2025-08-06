@@ -1,6 +1,6 @@
-﻿using MovieTheater.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 using MovieTheater.Repository;
-using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Service
 {
@@ -75,11 +75,11 @@ namespace MovieTheater.Service
         public bool IsPromotionEligible(Promotion promotion, PromotionCheckContext context)
         {
             if (promotion.PromotionConditions == null || !promotion.PromotionConditions.Any()) return true;
-            
+
 
             Console.WriteLine($"[PromotionService] Checking promotion: {promotion.Title}");
             Console.WriteLine($"[PromotionService] Context - SeatTypeNames: [{string.Join(", ", context.SelectedSeatTypeNames)}]");
-            
+
             foreach (var condition in promotion.PromotionConditions)
             {
                 switch (condition.TargetField?.ToLower())
@@ -103,9 +103,10 @@ namespace MovieTheater.Service
                         if (!selectedSeatTypes.Any()) return false;
                         switch (condition.Operator)
                         {
-                            case "=": case "==": 
+                            case "=":
+                            case "==":
                                 if (!selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
-                            case "!=": 
+                            case "!=":
                                 if (selectedSeatTypes.Any(st => st == seatTypeTarget)) return false; break;
                             default: return false;
                         }
@@ -114,16 +115,17 @@ namespace MovieTheater.Service
                         // Kiểm tra TypeName của các ghế đã chọn
                         var selectedTypeNames = context.SelectedSeatTypeNames ?? new List<string>();
                         if (!selectedTypeNames.Any()) return false;
-                        
+
                         Console.WriteLine($"[PromotionService] Checking TypeName condition: {condition.TargetValue} vs [{string.Join(", ", selectedTypeNames)}]");
-                        
+
                         switch (condition.Operator)
                         {
-                            case "=": case "==": 
+                            case "=":
+                            case "==":
                                 var isMatch = selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase));
                                 Console.WriteLine($"[PromotionService] TypeName match result: {isMatch}");
                                 if (!isMatch) return false; break;
-                            case "!=": 
+                            case "!=":
                                 var isNotMatch = selectedTypeNames.Any(tn => tn.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase));
                                 Console.WriteLine($"[PromotionService] TypeName not match result: {isNotMatch}");
                                 if (isNotMatch) return false; break;
@@ -203,7 +205,8 @@ namespace MovieTheater.Service
                         }
                         switch (condition.Operator)
                         {
-                            case "=": case "==":
+                            case "=":
+                            case "==":
                                 if (!invoices.Any(i => i.AccountId != null && i.AccountId.Equals(condition.TargetValue, StringComparison.OrdinalIgnoreCase))) return false;
                                 break;
                             case "!=":
@@ -213,7 +216,7 @@ namespace MovieTheater.Service
                                 return false;
                         }
                         break;
-                    // Thêm các điều kiện khác nếu cần
+                        // Thêm các điều kiện khác nếu cần
                 }
             }
             return true;
@@ -326,7 +329,7 @@ namespace MovieTheater.Service
         {
             var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
             var eligiblePromotions = new List<Promotion>();
-            
+
             foreach (var promotion in allPromotions)
             {
                 if (IsPromotionEligible(promotion, context))
@@ -334,12 +337,13 @@ namespace MovieTheater.Service
                     eligiblePromotions.Add(promotion);
                 }
             }
-            
+
             return eligiblePromotions;
         }
     }
 
-    public class PromotionCheckContext {
+    public class PromotionCheckContext
+    {
         public string MemberId { get; set; }
         public int SeatCount { get; set; }
         public string MovieId { get; set; }

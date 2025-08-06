@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace MovieTheater.Repository
+﻿namespace MovieTheater.Repository
 {
     public interface IVersionRepository
     {

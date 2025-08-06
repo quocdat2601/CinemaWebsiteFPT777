@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MovieTheater.Helpers;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
-using MovieTheater.Helpers;
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace MovieTheater.Service
 {
@@ -126,7 +126,7 @@ namespace MovieTheater.Service
             account.Address = model.Address;
             account.PhoneNumber = model.PhoneNumber;
             account.RegisterDate = DateOnly.FromDateTime(DateTime.Now);
-            
+
             // Update status if provided
             if (model.Status.HasValue)
             {
@@ -138,13 +138,13 @@ namespace MovieTheater.Service
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.ImageFile.FileName);
                 var uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
                     return false; // Invalid file path
                 }
-                
+
                 using (var stream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     model.ImageFile.CopyTo(stream);
@@ -708,7 +708,7 @@ namespace MovieTheater.Service
             try
             {
                 _logger.LogInformation("ResetPassword called for email: {EmailHash}", GetEmailHash(email));
-                
+
                 var account = _repository.GetAccountByEmail(email);
                 if (account == null)
                 {

@@ -1,10 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using MovieTheater.Models;
-using MovieTheater.ViewModels;
-using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using MovieTheater.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Service;
+using System.Security.Claims;
 
 namespace MovieTheater.Controllers
 {
@@ -81,7 +78,8 @@ namespace MovieTheater.Controllers
             if (DateTime.TryParse(fromDate, out var f)) from = f;
             if (DateTime.TryParse(toDate, out var t)) to = t;
             var data = _scoreService.GetScoreHistory(accountId, from, to, historyType);
-            var result = data.Select(i => new {
+            var result = data.Select(i => new
+            {
                 dateCreated = i.DateCreated,
                 movieName = i.MovieName,
                 score = i.Score,

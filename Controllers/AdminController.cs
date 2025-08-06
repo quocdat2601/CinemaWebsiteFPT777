@@ -1,16 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Security.Claims;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace MovieTheater.Controllers
 {
@@ -162,7 +157,7 @@ namespace MovieTheater.Controllers
                             invoices = invoices.Where(i => i.EmployeeId != null).ToList();
                         // If bookingTypeFilter is "all" or any other value, don't filter (show all)
                     }
-                    
+
                     // Set the current booking type filter for the view
                     ViewBag.CurrentBookingTypeFilter = bookingTypeFilter ?? "all";
                     ViewBag.StatusFilter = statusFilter;
@@ -203,7 +198,7 @@ namespace MovieTheater.Controllers
                     var searchKeyword = keyword ?? string.Empty;
                     var categoryFilterParam = categoryFilter ?? string.Empty;
                     string statusFilterStr = statusFilter ?? string.Empty;
-                    
+
                     bool? foodStatusFilter = null; // Default to null (show all)
                     if (!string.IsNullOrEmpty(statusFilterStr) && statusFilterStr != "")
                     {

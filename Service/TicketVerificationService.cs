@@ -1,10 +1,6 @@
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Service
 {
@@ -172,4 +168,4 @@ namespace MovieTheater.Service
             };
         }
     }
-} 
+}

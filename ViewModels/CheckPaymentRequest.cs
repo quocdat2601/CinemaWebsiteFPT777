@@ -4,4 +4,4 @@ namespace MovieTheater.ViewModels
     {
         public string orderId { get; set; }
     }
-} 
+}

@@ -30,4 +30,4 @@ namespace MovieTheater.Hubs
             await hubContext.Clients.All.SendAsync("AdminNotification", message, roomName);
         }
     }
-} 
+}
