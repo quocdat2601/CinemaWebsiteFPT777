@@ -1,0 +1,81 @@
+stages:
+  - build
+  - test
+  - sonarqube
+  - deploy
+
+variables:
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  GIT_DEPTH: "0"
+
+build-job:
+  stage: build
+  tags:
+    - datthai
+  script:
+  - echo "Navigating to project directory..."
+  - cd $CI_PROJECT_DIR
+  - 'echo "Current directory is: $CI_PROJECT_DIR"'
+  - echo "Pulling latest code..."
+  - git pull origin main
+  - echo "Restoring packages..."
+  - dotnet restore
+  - echo "Building and publishing project..."
+  - dotnet publish -c Release -o ./publish --no-restore
+  artifacts:
+    paths:
+      - publish/
+    expire_in: 1 week
+  only:
+    - main
+    - dev
+
+test-job:
+  stage: test
+  tags:
+    - datthai
+  needs:
+    - build-job
+  script:
+    - echo "Running tests with coverage..."
+    - dotnet test --collect:"XPlat Code Coverage" --results-directory "TestResults" --configuration Release
+    - echo "Coverage files generated"
+  artifacts:
+    paths:
+      - TestResults/
+    expire_in: 1 week
+  only:
+    - main
+    - dev
+
+sonarqube-job:
+  stage: sonarqube
+  tags:
+    - datthai
+  needs:
+    - test-job
+  script:
+    - echo "Installing SonarQube Scanner..."
+    - dotnet tool install --global dotnet-sonarscanner
+    - echo "Starting SonarQube analysis..."
+    - dotnet sonarscanner begin /k:"movie-theater-team03" /d:sonar.host.url="$SONAR_HOST_URL" /d:sonar.login="$SONAR_TOKEN" /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml"
+    - dotnet build --configuration Release
+    - dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory "TestResults" --configuration Release
+    - dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+  only:
+    - main
+    - dev
+
+deploy-job:
+  stage: deploy
+  tags:
+    - datthai
+  needs:
+    - sonarqube-job
+  script:
+    - echo "Restarting the application service..."
+    - Restart-Service -Name "MovieTheaterService"
+    - echo "Deployment successful!"
+  only:
+    - main
+    - dev

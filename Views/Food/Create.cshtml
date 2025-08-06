@@ -1,0 +1,93 @@
+@model MovieTheater.ViewModels.FoodViewModel
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Create Food";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
+
+<div class="container mt-3 mb-3">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Add New Food</h3>
+                </div>
+                <div class="card-body">
+                  
+                    <form asp-controller="Food" asp-action="Create" method="post" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Category" class="form-label">Category *</label>
+                                    <select asp-for="Category" class="form-select" required>
+                                        <option value="">Select Category</option>
+                                        <option value="food">Food</option>
+                                        <option value="drink">Drink</option>
+                                        <option value="combo">Combo</option>
+                                    </select>
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label">Name *</label>
+                                    <input asp-for="Name" class="form-control" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Price" class="form-label">Price (VND) *</label>
+                                    <input asp-for="Price" class="form-control" type="number" min="0" step="1000" required />
+                                    <span asp-validation-for="Price" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Description</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="ImageFile" class="form-label">Image</label>
+                                    <input asp-for="ImageFile" class="form-control" type="file" accept="image/*" />
+                                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="Status" class="form-check-input" type="checkbox" />
+                                        <label asp-for="Status" class="form-check-label">
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            @if (@userRole == "Admin"){ 
+                            <a href="@Url.Action("MainPage", "Admin", new { tab = "FoodMg" })" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Food Management
+                            </a>
+                            }
+                            else {
+                            <a href="@Url.Action("MainPage", "Employee", new { tab = "FoodMg" })" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Food Management
+                            </a>
+                            }
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Create Food
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

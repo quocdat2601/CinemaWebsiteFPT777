@@ -1,0 +1,84 @@
+﻿# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+bin/
+obj/
+MovieTheater.Tests/bin/
+MovieTheater.Tests/obj/
+
+# Logs
+*.log
+Logs/
+
+# Rider/JetBrains IDE files
+.idea/
+
+# User-specific files
+*.rsuser
+*.sln.ide
+
+# DotNet core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# npm/Yarn package folders
+node_modules/
+.yarn/
+
+# npm/Yarn debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Visual Studio Code settings folder
+.vscode/
+
+# Mac/Windows system files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage-report/
+coverage-history/
+
+# Windows system files
+Thumbs.db
+
+
+# Test results
+TestResults/
+MovieTheater.Tests/TestResults/
+
+# SonarQube analysis files
+.sonar/
+.sonarqube/
+coverage-report/
+coverage-history/
+
+# Coverage files
+*.coverage
+*.coveragexml
+*.opencover.xml
+*.cobertura.xml
+
+# Temporary files
+*.tmp
+*.temp
+
+# Ignore coverage reports
+coverage-report/
+coverage-history/
+
+# SonarQube specific
+.sonar/
+.sonarqube/
+sonar-project.properties.local

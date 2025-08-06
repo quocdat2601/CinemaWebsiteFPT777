@@ -1,0 +1,511 @@
+@model MovieTheater.ViewModels.ConfirmTicketAdminViewModel
+@using System.Security.Claims
+
+@{
+    ViewBag.Title = "Ticket Information (Admin)";
+    Layout = "_Layout";
+
+    // Kiểm tra Model có null không
+    if (Model == null)
+    {
+        <div class="container mt-4">
+            <div class="alert alert-warning">
+                <h4>Không có thông tin booking</h4>
+                <p>Vui lòng quay lại trang booking để tạo vé mới.</p>
+                <a href="@Url.Action("BookingMg", "Admin")" class="btn btn-primary">Quay lại Booking Management</a>
+            </div>
+        </div>
+        return;
+    }
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var booking = Model.BookingDetails;
+    string movieName = booking?.MovieName ?? TempData["MovieName"] as string;
+    string screen = booking?.CinemaRoomName ?? TempData["Screen"] as string;
+    string showDate = booking != null ? booking.ShowDate.ToString("yyyy-MM-dd") : TempData["ShowDate"] as string;
+    string showTime = booking?.ShowTime ?? TempData["ShowTime"] as string;
+    string ticketId = booking?.InvoiceId ?? TempData["InvoiceId"] as string;
+    string totalPrice = booking != null ? booking.TotalPrice.ToString("N0") : TempData["TotalPrice"] as string;
+    string scoreUsed = booking?.ScoreUsed.ToString() ?? TempData["ScoreUsed"] as string;
+    string bookingTime = booking?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? TempData["BookingTime"] as string ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+    string memberId = Model?.MemberId ?? TempData["MemberId"] as string;
+    string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
+    string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
+    string memberPhone = Model?.MemberPhone ?? TempData["MemberPhone"] as string;
+    string bookingManagementUrl;
+    // Set the correct fallback URL for Booking Management
+    var status = booking.Status == InvoiceStatus.Completed ? "Completed" : booking.Status == null ? "Canceled" : "Not Paid";
+
+    // Lấy thông tin food từ TempData hoặc Model
+    var selectedFoods = Model?.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    decimal totalFoodPrice = selectedFoods.Sum(f => f.Price * f.Quantity);
+
+    // SỬA: Tính toán đúng Total Amount
+    // Lấy giá gốc của seat (sau promotion, trước rank discount)
+    decimal seatPrice = booking != null && booking.SelectedSeats != null
+        ? booking.SelectedSeats.Sum(s => (decimal?)(s.PriceAfterPromotion ?? s.Price) ?? 0) : 0;
+
+    // Tính toán seat total sau khi áp dụng rank discount và points
+    decimal seatTotalAfterRankAndScore = seatPrice;
+    if (Model.RankDiscount > 0)
+    {
+        seatTotalAfterRankAndScore -= Model.RankDiscount;
+    }
+    if (Model.UsedScore > 0)
+    {
+        seatTotalAfterRankAndScore -= Model.UsedScoreValue;
+    }
+    if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
+
+    // Sử dụng TotalPrice từ database (đã được tính đúng từ backend)
+    decimal finalTotalAmount = booking?.TotalPrice ?? 0;
+
+    // Tính toán để hiển thị breakdown - sử dụng giá cuối cùng từ database
+    decimal runningTotal = finalTotalAmount;
+
+    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ticket-styles.css" />
+    <link rel="stylesheet" href="~/css/text-overflow-fix.css" />
+    <link rel="stylesheet" href="~/css/info-grid-responsive.css" />
+}
+
+<!-- Back Button - Completely outside container -->
+<div style="margin-top: 5rem;">
+    @if (userRole == "Admin")
+    {
+        <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="BookingMg" class="btn-modern" style="padding: 0.8rem 1.5rem; font-size: 0.9rem;">
+            <i class="fas fa-arrow-left"></i>
+            Back to Booking Management
+        </a>
+    }
+    else
+    {
+        <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="BookingMg" class="btn-modern" style="padding: 0.8rem 1.5rem; font-size: 0.9rem;">
+            <i class="fas fa-arrow-left"></i>
+            Back to Booking Management
+        </a>
+    }
+</div>
+
+<div class="container">
+    <!-- Header Card -->
+    <div class="ticket-header-card">
+        <div class="ticket-header-content">
+            <div class="ticket-header-left">
+                <div class="ticket-header-icon">
+                    <i class="fas fa-film"></i>
+                </div>
+                <div class="ticket-header-text">
+                    @if (Model.EmployeeId != null)
+                    {
+                        <h1>Ticket Information (Employee)</h1>
+                    }
+                    else
+                    {
+                        <h1>Ticket Information (Admin)</h1>
+                    }
+                    <p>Booking ID: @ticketId</p>
+                </div>
+            </div>
+            <span class="status-badge @(status == "Completed" ? "status-completed" : status == "Canceled" ? "status-cancelled" : "status-secondary")">
+                @status
+            </span>
+        </div>
+    </div>
+
+    <!-- Main Layout Grid -->
+    <div class="ticket-layout-grid">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Movie & Show Info Card -->
+            <div class="content-card">
+                <div class="card-header-modern">
+                    <i class="fas fa-film"></i>
+                    <h3>Movie & Show Details</h3>
+                </div>
+                <div class="card-content-modern">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-film"></i>
+                            <div class="info-content">
+                                <div class="info-label">Movie</div>
+                                <div class="info-value">@movieName</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar"></i>
+                            <div class="info-content">
+                                <div class="info-label">Date</div>
+                                <div class="info-value">@showDate</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="info-content">
+                                <div class="info-label">Time</div>
+                                <div class="info-value">@showTime</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div class="info-content">
+                                <div class="info-label">Screen</div>
+                                <div class="info-value">@screen</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-star"></i>
+                            <div class="info-content">
+                                <div class="info-label">Version</div>
+                                <div class="info-value">@booking.VersionName</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="info-content">
+                                <div class="info-label">Booking Time</div>
+                                <div class="info-value">@bookingTime</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seats Card -->
+            <div class="content-card">
+                <div class="card-header-modern">
+                    <i class="fas fa-users"></i>
+                    <h3>Seat Information</h3>
+                </div>
+                <div class="card-content-modern">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Seat</th>
+                                <th>Type</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (booking != null && booking.SelectedSeats != null && booking.SelectedSeats.Any())
+                            {
+                                foreach (var seat in booking.SelectedSeats)
+                                {
+                                    <tr>
+                                        <td>@seat.SeatName</td>
+                                        <td>@seat.SeatType</td>
+                                        <td>
+                                            @if (seat.OriginalPrice.HasValue && seat.PromotionDiscount.HasValue && seat.PromotionDiscount.Value > 0)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                <span style="color: #38ef7d; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #38ef7d; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else if (TempData["SeatTableRows"] != null)
+                            {
+                                @Html.Raw(TempData["SeatTableRows"])
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">Seat Total:</td>
+                                <td>@seatPrice.ToString("N0") VND</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Food & Drinks Card -->
+            @if (selectedFoods.Any())
+            {
+                <div class="content-card">
+                    <div class="card-header-modern">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Food & Drinks</h3>
+                    </div>
+                    <div class="card-content-modern">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var food in selectedFoods)
+                                {
+                                    <tr>
+                                        <td>
+                                            @food.Name
+                                            @if (!string.IsNullOrEmpty(food.PromotionName))
+                                            {
+                                                <span class="badge bg-info text-dark ms-2">@food.PromotionName (@(food.PromotionDiscount?.ToString("N0") ?? "0")% off)</span>
+                                            }
+                                        </td>
+                                        <td>@food.Quantity</td>
+                                        <td>
+                                            @if (food.PromotionDiscount > 0 && food.OriginalPrice > food.Price)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@(food.OriginalPrice?.ToString("N0") ?? "0") VND</span>
+                                                <span style="color: #38ef7d; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #38ef7d; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
+                                        <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3">Food Total:</td>
+                                    <td>@totalFoodPrice.ToString("N0") VND</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Price Breakdown Card -->
+            @if (Model.Subtotal > 0 || Model.RankDiscount > 0 || Model.VoucherAmount > 0 || Model.UsedScore > 0)
+            {
+                <div class="content-card">
+                    <div class="card-header-modern">
+                        <i class="fas fa-gift"></i>
+                        <h3>Price Breakdown</h3>
+                    </div>
+                    <div class="card-content-modern">
+                        <div class="price-breakdown">
+                            <!-- Seat Price (after promotion) -->
+                            <div class="price-row">
+                                <span class="price-label">Seat Price</span>
+                                <span class="price-value">@seatPrice.ToString("N0") VND</span>
+                            </div>
+
+                            <!-- Rank Discount -->
+                            @if (Model.RankDiscount > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">- Rank Discount (@Model.RankDiscountPercent.ToString("0.##")%)</span>
+                                    <span class="price-value discount">-@Model.RankDiscount.ToString("N0") VND</span>
+                                </div>
+                            }
+
+                            <!-- Points Used -->
+                            @if (Model.UsedScore > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">- Points Used</span>
+                                    <span class="price-value discount">-@Model.UsedScore (@Model.UsedScoreValue.ToString("N0") VND)</span>
+                                </div>
+                            }
+
+                            <!-- Seat Total (after all seat discounts) -->
+                            <div class="price-row">
+                                <span class="price-label">Seat Total</span>
+                                <span class="price-value">@seatTotalAfterRankAndScore.ToString("N0") VND</span>
+                            </div>
+
+                            <!-- Food & Drinks -->
+                            @if (totalFoodPrice > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">+ Food & Drinks</span>
+                                    <span class="price-value addition">+@totalFoodPrice.ToString("N0") VND</span>
+                                </div>
+                            }
+
+                            <!-- Voucher -->
+                            @if (Model.VoucherAmount > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">- Voucher</span>
+                                    <span class="price-value discount">-@Model.VoucherAmount.ToString("N0") VND</span>
+                                </div>
+                            }
+
+                            <!-- Total Amount -->
+                            <div class="price-row total-row">
+                                <span class="price-label">Total Amount</span>
+                                <span class="price-value total">@runningTotal.ToString("N0") VND</span>
+                            </div>
+
+                            <!-- Points Earned -->
+                            @if (Model.AddedScore > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">+ Points Earned</span>
+                                    <span class="price-value addition">+@Model.AddedScore (@Model.AddedScoreValue.ToString("N0") VND)</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Member Information Card -->
+            <div class="content-card">
+                <div class="card-header-modern">
+                    <i class="fas fa-user"></i>
+                    <h3>Member Information</h3>
+                </div>
+                <div class="card-content-modern">
+                    <div class="row mb-2">
+                        <div class="info-item col-md-6">
+                            <i class="fas fa-id-card"></i>
+                            <div class="info-content">
+                                <div class="info-label">Member ID</div>
+                                <div class="info-value">@memberId</div>
+                            </div>
+                        </div>
+                        <div class="info-item col-md-6">
+                            <i class="fas fa-envelope"></i>
+                            <div class="info-content">
+                                <div class="info-label">Email</div>
+                                <div class="info-value email-field" title="@memberEmail">@memberEmail</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="info-item col-md-6">
+                            <i class="fas fa-id-badge"></i>
+                            <div class="info-content">
+                                <div class="info-label">Identity Card</div>
+                                <div class="info-value id-field" title="@memberIdentityCard">@memberIdentityCard</div>
+                            </div>
+                        </div>
+                        <div class="info-item col-md-6">
+                            <i class="fas fa-phone"></i>
+                            <div class="info-content">
+                                <div class="info-label">Phone</div>
+                                <div class="info-value phone-field" title="@memberPhone">@memberPhone</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @if (Model.EmployeeId != null)
+            {
+                <!-- Employee Information Card -->
+                <div class="content-card">
+                    <div class="card-header-modern">
+                        <i class="fas fa-user"></i>
+                        <h3>Employee Information</h3>
+                    </div>
+                    <div class="card-content-modern">
+                        <div class="row mb-2">
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-id-card"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Employee ID</div>
+                                    <div class="info-value">@Model.EmployeeId</div>
+                                </div>
+                            </div>
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-envelope"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Phone</div>
+                                    <div class="info-value phone-field" title="@Model.EmployeePhone">@Model.EmployeePhone</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-id-badge"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Name</div>
+                                    <div class="info-value name-field" title="@Model.EmployeeName">@Model.EmployeeName</div>
+                                </div>
+                            </div>
+                            <div class="info-item col-md-6">
+                                <i class="fas fa-phone"></i>
+                                <div class="info-content">
+                                    <div class="info-label">Date of Birth</div>
+                                    <div class="info-value">@Model.DateofBirth</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            <!-- Cancel Button - Bottom of page -->
+            @if (booking != null && booking.Status == MovieTheater.Models.InvoiceStatus.Completed && !booking.Cancel)
+            {
+                <div class="content-card">
+                    <div class="card-content-modern">
+                        <form asp-controller="Ticket" asp-action="CancelByAdmin" asp-route-id="@booking.InvoiceId"
+                              method="post" style="display: inline;"
+                              onsubmit="return confirm('Are you sure you want to cancel this ticket? You will receive a voucher equal to the ticket price.');">
+
+                            <input type="hidden" name="returnUrl" value="@Url.Action("TicketInfo", "Booking", new { invoiceId = booking.InvoiceId })" />
+
+                            <button type="submit" class="btn-modern btn-danger">
+                                <i class="fas fa-times"></i>
+                                Cancel Ticket
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="qr-section">
+            <div class="qr-card">
+                <div class="qr-header">
+                    <h3><i class="fas fa-qrcode"></i> QR Code</h3>
+                    <p>Scan for ticket information</p>
+                </div>
+                <div class="qr-content">
+                    <div class="qr-code-container">
+                        <canvas id="qrcode-staff"></canvas>
+                    </div>
+                    <button id="downloadQRStaff" class="btn-download">
+                        <i class="fas fa-download"></i>
+                        Download QR Code
+                    </button>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; margin-top: 1rem;">
+                        Present this QR code at the cinema for quick entry
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_ToastMessages" />
+
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script src="~/js/text-overflow-handler.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var qrStaffUrl = '@qrStaffUrl';
+        var qrStaff = new QRious({
+            element: document.getElementById('qrcode-staff'),
+            value: qrStaffUrl,
+            size: 200
+        });
+        document.getElementById('downloadQRStaff').onclick = function() {
+            var canvas = document.getElementById('qrcode-staff');
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = 'ticket-info-qr.png';
+            link.click();
+        }
+    });
+</script>

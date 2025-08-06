@@ -1,0 +1,63 @@
+﻿@using MovieTheater.Models
+
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #f8f9fa !important;
+        font-weight: bold;
+     }
+</style>
+
+<div class="text-center">
+    <h2>List of Persons</h2>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <a asp-action="Create" asp-controller="Cast" class="btn btn-sm btn-primary">
+        Create a cast/director
+    </a>
+
+    <div class="input-group" style="width: 400px;">
+        <input type="text" id="searchBox" maxlength="50"
+               class="form-control" placeholder="🔍 Search by name..." />
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="personTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-dark" id="actor-tab" data-bs-toggle="tab" data-bs-target="#actor" type="button" role="tab">Actors</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark" id="director-tab" data-bs-toggle="tab" data-bs-target="#director" type="button" role="tab">Directors</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="personTabsContent">
+    <div class="tab-pane fade show active" id="actor" role="tabpanel">
+        @Html.Partial("_CastTable", ViewBag.Actors as List<Person>)
+    </div>
+    <div class="tab-pane fade" id="director" role="tabpanel">
+        @Html.Partial("_CastTable", ViewBag.Directors as List<Person>)
+    </div>
+</div>
+<partial name="_ToastMessages" />
+
+<script>
+    document.getElementById("searchBox").addEventListener("input", function () {
+        const filter = this.value.toLowerCase();
+        // Only filter visible tab
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (!activeTab) return;
+        const rows = activeTab.querySelectorAll("tbody tr");
+        rows.forEach(row => {
+            const nameCell = row.cells[1]; // second column: name
+            const nameText = nameCell.textContent.toLowerCase();
+            row.style.display = nameText.includes(filter) ? "" : "none";
+        });
+    });
+</script>

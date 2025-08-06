@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,13 +7,57 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="image\" />
+    <Compile Remove="image\**" />
+    <Content Remove="image\**" />
+    <EmbeddedResource Remove="image\**" />
+    <None Remove="image\**" />
+
+	  <Compile Remove="MovieTheater.Tests\**" />
+	  <None Remove="MovieTheater.Tests\**" />
+  </ItemGroup>
+
+ 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.7">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Drawing.Common" Version="9.0.7" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\css\moviebackground.jpeg" />
-    <None Include="wwwroot\css\moviewatching.jpg" />
-    <None Include="wwwroot\css\poster.jpg" />
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="MovieTheater.Tests\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\css\hero-section.css" />
+    <None Include="wwwroot\js\hero-section.js" />
   </ItemGroup>
 
 </Project>

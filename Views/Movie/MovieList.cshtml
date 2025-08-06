@@ -1,0 +1,33 @@
+﻿@model IEnumerable<MovieTheater.ViewModels.MovieViewModel>
+@{
+    ViewData["Title"] = "Movie List";
+    var allTypes = ViewBag.AllTypes as List<MovieTheater.Models.Type>;
+    var allVersions = ViewBag.AllVersions as List<MovieTheater.Models.Version>;
+    var selectedTypeIds = ViewBag.SelectedTypeIds as List<int> ?? new List<int>();
+    var selectedVersionIds = ViewBag.SelectedVersionIds as List<int> ?? new List<int>();
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+<link href="~/css/movie-grid.css" rel="stylesheet" />
+
+<div id="content">
+    <div id="movieFilterAndGrid" class="movie-filter-and-grid-margin">
+        @await Html.PartialAsync("_MovieFilterAndGrid", Model)
+    </div>
+</div>
+
+<partial name="_ToastMessages" />
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.js"></script>
+    
+    <!-- Pass data from Razor to JavaScript -->
+    <script>
+        // Set global variables for the JavaScript file to use
+        window.selectedTypeIds = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(selectedTypeIds));
+        window.selectedVersionIds = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(selectedVersionIds));
+    </script>
+    
+    <!-- Include the JavaScript file -->
+    <script src="~/js/movie-list.js" asp-append-version="true"></script>
+}

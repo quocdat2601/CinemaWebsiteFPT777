@@ -1,0 +1,3211 @@
+@model MovieTheater.ViewModels.ProfilePageViewModel
+@{
+    ViewData["Title"] = "Profile";
+    var profile = Model.Profile;
+    var rank = Model.RankInfo;
+    var isMaxRank = Model.AllRanks?.OrderByDescending(r => r.RequiredPointsForCurrentRank).FirstOrDefault()?.CurrentRankId == rank.CurrentRankId;
+    var progressPercentage = isMaxRank ? 100 : Math.Max(0, Math.Min(100, (double)(rank.TotalPoints - rank.RequiredPointsForCurrentRank) / (rank.RequiredPointsForNextRank - rank.RequiredPointsForCurrentRank) * 100));
+}
+
+<link rel="stylesheet" href="~/css/profile-page.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/profile-particle-network.css" asp-append-version="true" />
+<style>
+/* INLINE CSS TO GUARANTEE LAYOUT */
+.cinema-app {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.theater-main {
+    display: grid !important;
+    grid-template-areas: 
+        "rank profile"
+        "booking booking" !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: auto auto !important;
+    gap: 2rem !important;
+    max-width: 100% !important; /* Remove 1400px limitation */
+    width: 100% !important; /* Force full width */
+    margin: 0 auto !important;
+}
+
+.theater-main > .theater-wing.rank-wing {
+    grid-area: rank !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    margin: 0 !important;
+    float: none !important;
+}
+
+.theater-main > .theater-wing.profile-wing {
+    grid-area: profile !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    margin: 0 !important;
+    float: none !important;
+}
+
+.theater-main > .theater-wing.booking-wing {
+    grid-area: booking !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important; /* Force full width */
+    margin: 0 !important;
+    float: none !important;
+    box-sizing: border-box !important;
+}
+
+@@media (max-width: 1024px) {
+    .theater-main {
+        grid-template-areas: 
+            "rank"
+            "profile"
+            "booking" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto auto !important;
+    }
+}
+
+/* INLINE PAGINATION STYLES - OVERRIDE BOOTSTRAP */
+.ticket-pagination {
+    display: flex !important;
+    justify-content: center !important; /* Center the pagination */
+    align-items: center !important;
+    gap: 0.5rem !important; /* Increase gap for better spacing */
+    margin-top: 2rem !important;
+    padding: 1.5rem !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--cinema-border) !important;
+    border-radius: 12px !important;
+    flex-wrap: wrap !important; /* Allow wrapping instead of scroll */
+    overflow-x: visible !important; /* Remove scroll */
+    white-space: normal !important; /* Allow text wrapping */
+    min-height: 60px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    /* Override Bootstrap */
+    padding-left: 0 !important;
+    list-style: none !important;
+    /* Force pagination to match exactly the width of 3 ticket cards */
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    /* Ensure it spans the full width of the container */
+    flex: 1 1 100% !important;
+}
+
+.ticket-pagination .page-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 40px !important; /* Giảm từ 45px xuống 40px */
+    height: 40px !important; /* Giảm từ 45px xuống 40px */
+    padding: 0.4rem !important; /* Giảm padding */
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--cinema-border) !important;
+    border-radius: 8px !important;
+    color: var(--cinema-text) !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important; /* Giảm font size */
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+    margin: 0 0.15rem !important; /* Giảm margin */
+    box-sizing: border-box !important;
+    /* Override Bootstrap */
+    position: static !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--cinema-border) !important;
+    outline: none !important;
+    z-index: auto !important;
+}
+
+.ticket-pagination .page-btn:hover {
+    background: rgba(212, 175, 55, 0.2) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-gold) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3) !important;
+    /* Override Bootstrap */
+    background-color: rgba(212, 175, 55, 0.2) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-gold) !important;
+    z-index: auto !important;
+}
+
+.ticket-pagination .page-btn.active {
+    background: var(--cinema-gold) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-dark) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4) !important;
+    /* Override Bootstrap */
+    background-color: var(--cinema-gold) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-dark) !important;
+    z-index: auto !important;
+}
+
+.ticket-pagination .page-btn.prev-btn,
+.ticket-pagination .page-btn.next-btn {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    min-width: 45px !important;
+}
+
+/* Ensure pagination container takes full width */
+.booking-wing {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    /* Ensure it spans full width */
+    box-sizing: border-box !important;
+    padding: 0 !important; /* Remove padding to match tickets-showcase */
+    margin: 0 !important;
+    /* Force full width */
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
+.tickets-showcase {
+    width: 100% !important;
+    max-width: 100% !important;
+    /* Ensure it spans full width */
+    box-sizing: border-box !important;
+    padding: 0 !important; /* Remove padding to match pagination */
+}
+
+/* Force tickets-showcase and pagination to have same width */
+.tickets-showcase {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Force pagination to match tickets-showcase width exactly */
+.ticket-pagination {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 1.5rem !important; /* Add padding back to pagination only */
+    margin: 0 !important;
+    /* Force it to span the full width of the parent container */
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
+.ticket-pagination .page-dots {
+    padding: 0.5rem 0.25rem !important;
+    color: var(--cinema-text-dim) !important;
+    font-weight: 500 !important;
+    user-select: none !important;
+    margin: 0 0.25rem !important;
+}
+
+.ticket-pagination .pagination-ellipsis {
+    padding: 0.5rem 0.25rem !important;
+    color: var(--cinema-text-dim) !important;
+    font-weight: 500 !important;
+    user-select: none !important;
+    margin: 0 0.25rem !important;
+}
+
+/* Additional Bootstrap overrides */
+.ticket-pagination .page-btn:focus {
+    outline: none !important;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3) !important;
+    z-index: auto !important;
+}
+
+.ticket-pagination .page-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    color: var(--cinema-text-dim) !important;
+}
+
+/* Separate Pagination Card Styles */
+.pagination-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    margin-top: 2rem !important;
+    padding: 2rem !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid var(--cinema-border) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.pagination-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, var(--cinema-gold), transparent) !important;
+    opacity: 0.6 !important;
+}
+
+.pagination-card .ticket-pagination {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    flex-wrap: nowrap !important; /* Không wrap - chỉ 1 hàng */
+    overflow-x: visible !important;
+    white-space: nowrap !important; /* Không wrap text */
+    min-height: 60px !important;
+}
+
+.pagination-card .ticket-pagination .page-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 45px !important;
+    height: 45px !important;
+    padding: 0.5rem !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 10px !important;
+    color: var(--cinema-text) !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-decoration: none !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    position: static !important;
+    outline: none !important;
+    z-index: auto !important;
+}
+
+.pagination-card .ticket-pagination .page-btn:hover {
+    background: rgba(212, 175, 55, 0.25) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-gold) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4) !important;
+}
+
+.pagination-card .ticket-pagination .page-btn.active {
+    background: var(--cinema-gold) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-dark) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5) !important;
+    transform: translateY(-2px) !important;
+}
+
+.pagination-card .ticket-pagination .page-btn.prev-btn,
+.pagination-card .ticket-pagination .page-btn.next-btn {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    min-width: 50px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.pagination-card .ticket-pagination .page-btn.prev-btn:hover,
+.pagination-card .ticket-pagination .page-btn.next-btn:hover {
+    background: rgba(212, 175, 55, 0.3) !important;
+    transform: translateY(-3px) scale(1.05) !important;
+}
+
+.pagination-card .ticket-pagination .page-dots,
+.pagination-card .ticket-pagination .pagination-ellipsis {
+    padding: 0.75rem 0.5rem !important;
+    color: var(--cinema-text-dim) !important;
+    font-weight: 600 !important;
+    user-select: none !important;
+    margin: 0 0.5rem !important;
+    font-size: 1.1rem !important;
+    animation: ellipsisPulse 2s ease-in-out infinite !important;
+}
+
+@@keyframes ellipsisPulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Enhanced pagination card animations */
+.pagination-card {
+    animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hover effect for pagination card */
+.pagination-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+    transform: translateY(-2px) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Glow effect for active page button */
+.pagination-card .ticket-pagination .page-btn.active::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -2px !important;
+    left: -2px !important;
+    right: -2px !important;
+    bottom: -2px !important;
+    background: linear-gradient(45deg, var(--cinema-gold), transparent, var(--cinema-gold)) !important;
+    border-radius: 12px !important;
+    z-index: -1 !important;
+    opacity: 0.6 !important;
+    animation: glowPulse 2s ease-in-out infinite !important;
+}
+
+@@keyframes glowPulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+}
+
+/* Rank Modal Styles */
+.rank-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    display: none !important; /* Default hidden */
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 10000 !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.rank-modal.show {
+    display: flex !important; /* Show when has .show class */
+}
+
+/* Ensure modal is completely hidden when not shown */
+.rank-modal:not(.show) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.rank-modal-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+    border-radius: 20px !important;
+    max-width: 800px !important;
+    width: 90% !important;
+    max-height: 90vh !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    position: relative !important;
+}
+
+.rank-modal-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 20px 25px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.rank-modal-header h3 {
+    color: #ffffff !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+
+.rank-modal-close {
+    background: none !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    padding: 5px !important;
+    border-radius: 50% !important;
+    width: 35px !important;
+    height: 35px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+}
+
+.rank-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(1.1) !important;
+}
+
+.rank-modal-body {
+    padding: 25px !important;
+    max-height: calc(90vh - 80px) !important;
+    overflow-y: auto !important;
+}
+
+.rank-carousel {
+    position: relative !important;
+}
+
+.rank-indicators {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin-bottom: 20px !important;
+}
+
+.rank-indicator {
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.rank-indicator.active {
+    background: var(--cinema-gold) !important;
+    transform: scale(1.2) !important;
+}
+
+.rank-slides {
+    position: relative !important;
+}
+
+.rank-slide {
+    display: none !important;
+    animation: slideIn 0.5s ease-out !important;
+}
+
+.rank-slide.active {
+    display: block !important;
+}
+
+@@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.rank-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    padding: 25px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.rank-card-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    margin-bottom: 20px !important;
+}
+
+.rank-icon-wrapper {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 24px !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.rank-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+}
+
+.rank-title {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+}
+
+.rank-status {
+    font-size: 14px !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+}
+
+.rank-status.current-rank {
+    background: rgba(212, 175, 55, 0.2) !important;
+    color: var(--cinema-gold) !important;
+}
+
+.rank-status.achieved {
+    background: rgba(76, 175, 80, 0.2) !important;
+    color: #4caf50 !important;
+}
+
+.rank-status.not-reached {
+    background: rgba(158, 158, 158, 0.2) !important;
+    color: #9e9e9e !important;
+}
+
+.rank-progress-wrapper {
+    margin-bottom: 20px !important;
+}
+
+.rank-progress {
+    height: 8px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    margin-bottom: 10px !important;
+}
+
+.rank-progress-bar {
+    height: 100% !important;
+    border-radius: 4px !important;
+    transition: width 0.5s ease !important;
+}
+
+.rank-points {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 12px !important;
+    color: var(--cinema-text-dim) !important;
+}
+
+.benefits-section {
+    margin-bottom: 20px !important;
+}
+
+.benefits-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 15px !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+}
+
+.benefits-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+.benefit-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.benefit-icon {
+    font-size: 18px !important;
+    width: 24px !important;
+    text-align: center !important;
+}
+
+.benefit-text {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex: 1 !important;
+}
+
+.benefit-label {
+    font-size: 14px !important;
+    color: var(--cinema-text) !important;
+}
+
+.benefit-value {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--cinema-gold) !important;
+}
+
+.auto-upgrade {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    background: rgba(212, 175, 55, 0.1) !important;
+    border: 1px solid rgba(212, 175, 55, 0.2) !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    color: var(--cinema-gold) !important;
+}
+
+.upgrade-icon {
+    font-size: 16px !important;
+}
+
+.rank-navigation {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 20px !important;
+}
+
+.rank-nav-btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    padding: 10px 15px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+}
+
+.rank-nav-btn:hover {
+    background: rgba(212, 175, 55, 0.2) !important;
+    border-color: var(--cinema-gold) !important;
+    color: var(--cinema-gold) !important;
+    transform: translateY(-2px) !important;
+}
+
+.no-ranks {
+    text-align: center !important;
+    color: var(--cinema-text-dim) !important;
+    padding: 40px !important;
+    font-size: 16px !important;
+}
+
+/* Achievement Badges Styles */
+.achievement-section {
+    margin-top: 2rem !important;
+    padding: 1.5rem !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid var(--cinema-border) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.achievement-section::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, var(--cinema-gold), transparent) !important;
+    opacity: 0.6 !important;
+}
+
+.achievement-title {
+    color: var(--cinema-text) !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 1rem !important;
+    text-align: center !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.achievement-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+}
+
+.achievement-badge {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+}
+
+.achievement-badge::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+.achievement-badge:hover::before {
+    left: 100% !important;
+}
+
+.achievement-badge.unlocked {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%) !important;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
+}
+
+.achievement-badge.unlocked:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3) !important;
+    border-color: var(--cinema-gold) !important;
+}
+
+.achievement-badge.locked {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    opacity: 0.7 !important;
+    filter: grayscale(30%) !important;
+}
+
+.achievement-badge.locked:hover {
+    transform: translateY(-2px) !important;
+    opacity: 0.9 !important;
+    filter: grayscale(10%) !important;
+}
+
+.badge-icon {
+    font-size: 1.5rem !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.achievement-badge.unlocked .badge-icon {
+    background: linear-gradient(135deg, var(--cinema-gold), var(--cinema-accent)) !important;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4) !important;
+    animation: badgeGlow 2s ease-in-out infinite alternate !important;
+}
+
+.achievement-badge.locked .badge-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--cinema-text-dim) !important;
+}
+
+.badge-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.badge-name {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: var(--cinema-text) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.badge-desc {
+    font-size: 0.75rem !important;
+    color: var(--cinema-text-dim) !important;
+    font-weight: 500 !important;
+}
+
+.achievement-badge.unlocked .badge-name {
+    color: var(--cinema-gold) !important;
+    text-shadow: 0 1px 2px rgba(212, 175, 55, 0.3) !important;
+}
+
+.badge-status {
+    font-size: 1rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.achievement-badge.unlocked .badge-status {
+    color: #4caf50 !important;
+    animation: statusPulse 2s ease-in-out infinite !important;
+}
+
+.achievement-badge.locked .badge-status {
+    color: var(--cinema-text-dim) !important;
+}
+
+/* Tooltip styles */
+.achievement-badge {
+    position: relative !important;
+}
+
+.achievement-badge::after {
+    content: attr(data-tooltip) !important;
+    position: absolute !important;
+    bottom: 120% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+    z-index: 1000 !important;
+    pointer-events: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.achievement-badge::before {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 110% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border: 5px solid transparent !important;
+    border-top-color: rgba(0, 0, 0, 0.9) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+    z-index: 1000 !important;
+    pointer-events: none !important;
+}
+
+.achievement-badge:hover::after,
+.achievement-badge:hover::before {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Animations */
+@@keyframes badgeGlow {
+    0% {
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4) !important;
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(212, 175, 55, 0.6) !important;
+    }
+}
+
+@@keyframes statusPulse {
+    0%, 100% {
+        transform: scale(1) !important;
+    }
+    50% {
+        transform: scale(1.1) !important;
+    }
+}
+
+/* Responsive design */
+@@media (max-width: 768px) {
+    .achievement-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem !important;
+    }
+    
+    .achievement-badge {
+        padding: 0.6rem !important;
+        gap: 0.6rem !important;
+    }
+    
+    .badge-icon {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 1.3rem !important;
+    }
+    
+    .badge-name {
+        font-size: 0.8rem !important;
+    }
+    
+    .badge-desc {
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Pagination now uses wrap instead of scroll */
+</style>
+
+<div class="cinema-app">
+
+
+    <!-- Main Theater Content -->
+    <div class="theater-main" style="display: grid !important; grid-template-areas: 'rank profile' 'booking booking' !important; grid-template-columns: 1fr 1fr !important; grid-template-rows: auto auto !important; gap: 2rem !important; width: 100% !important; max-width: 100% !important;">
+        <!-- Left Wing - Rank Information -->
+        <div class="theater-wing rank-wing" style="grid-area: rank !important; display: flex !important; flex-direction: column !important; width: 100% !important; margin: 0 !important; float: none !important;">
+            <!-- Rank Avatar Wrapper -->
+            <div class="rank-avatar-wrapper" style="background: @(rank.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)"); border-radius: 20px 20px 0 0; padding: 1.5rem; margin: -2.5rem -2.5rem 0 -2.5rem;">
+                <!-- Profile Particle Network -->
+                <div class="profile-particle-container">
+                    <!-- Network Nodes -->
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    <div class="profile-particle-node"></div>
+                    
+                    <!-- Network Connections -->
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                    <div class="profile-particle-connection"></div>
+                </div>
+                
+                <div class="compact-profile-header">
+                    <!-- Avatar Section -->
+                    <div class="avatar-section">
+                        <div class="avatar-container">
+                            <img src="@(profile.Image ?? "/image/profile.jpg")" alt="Profile" id="profileAvatar" class="compact-avatar">
+                            <label for="avatarUpload" class="avatar-edit-btn" title="Change photo">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <form asp-controller="MyAccount" asp-action="UpdateImage" method="post" enctype="multipart/form-data" id="avatarForm">
+                                @Html.AntiForgeryToken()
+                                <input type="file" id="avatarUpload" name="Profile.ImageFile" accept="image/*" style="display: none;">
+                                <input type="hidden" id="croppedImageData" name="Profile.CroppedImageData">
+                            </form>
+                        </div>
+                        <div class="user-info">
+                            <h3 class="user-name">@profile.FullName</h3>
+                            <div class="rank-badge" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3);">
+                                <i class="@(rank.IconClass ?? "fas fa-crown")"></i>
+                                <span>@rank.CurrentRankName Member</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Points Section -->
+                <div class="points-section">
+                    <div class="points-grid">
+                        <div class="point-item">
+                            <div class="point-value">@rank.CurrentScore</div>
+                            <div class="point-label">Current Points</div>
+                        </div>
+                        <div class="point-item">
+                            <div class="point-value">@rank.TotalPoints</div>
+                            <div class="point-label">Total Points</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @(progressPercentage)%; background: @(rank.ColorGradient ?? "linear-gradient(90deg, var(--cinema-gold), var(--cinema-accent))");"></div>
+                    </div>
+                    <div class="progress-text">
+                        @if (isMaxRank)
+                        {
+                            <span>🎬 VIP Member - Maximum Level</span>
+                        }
+                        else
+                        {
+                            <span>@(rank.RequiredPointsForNextRank - rank.TotalPoints) points to @rank.NextRankName</span>
+                        }
+                    </div>
+                </div>
+
+                <button class="cinema-btn secondary" onclick="showRankDetails()" style="width: 100%; margin-top: 1rem;">
+                    📊 View All Ranks
+                </button>
+
+                <!-- Achievement Badges Section -->
+                <div class="achievement-section">
+                    <h4 class="achievement-title">🏆 Achievements</h4>
+                    <div class="achievement-grid">
+                        <div class="achievement-badge @(rank.TotalPoints >= 10000 ? "unlocked" : "locked")" data-tooltip="@(rank.TotalPoints >= 10000 ? "Unlocked!" : "Earn 10,000 points to unlock")">
+                            <div class="badge-icon">🎬</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Movie Buff</span>
+                                <span class="badge-desc">10K Points</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.TotalPoints >= 10000 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                        <div class="achievement-badge @(rank.CurrentRankId >= 2 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentRankId >= 2 ? "Unlocked!" : "Reach Silver rank to unlock")">
+                            <div class="badge-icon">👑</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Loyal Customer</span>
+                                <span class="badge-desc">Silver Rank</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.CurrentRankId >= 2 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                                   <div class="achievement-badge @(rank.CurrentRankId >= 2 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentRankId >= 2 ? "Unlocked!" : "Reach Gold rank to unlock")">
+               <div class="badge-icon">⭐</div>
+               <div class="badge-info">
+                   <span class="badge-name">VIP Member</span>
+                   <span class="badge-desc">Gold Rank</span>
+               </div>
+               <div class="badge-status">
+                   <i class="fas @(rank.CurrentRankId >= 2 ? "fa-check-circle" : "fa-lock")"></i>
+               </div>
+           </div>
+
+                        <div class="achievement-badge @(rank.CurrentRankId >= 3 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentRankId >= 3 ? "Unlocked!" : "Reach Diamond rank to unlock")">
+                            <div class="badge-icon">💎</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Diamond Elite</span>
+                                <span class="badge-desc">Diamond Rank</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.CurrentRankId >= 3 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                        <div class="achievement-badge @(rank.TotalPoints >= 50000 ? "unlocked" : "locked")" data-tooltip="@(rank.TotalPoints >= 50000 ? "Unlocked!" : "Earn 50,000 points to unlock")">
+                            <div class="badge-icon">🚀</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Point Master</span>
+                                <span class="badge-desc">50K Points</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.TotalPoints >= 50000 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+
+                        <div class="achievement-badge @(rank.CurrentScore >= 1000 ? "unlocked" : "locked")" data-tooltip="@(rank.CurrentScore >= 1000 ? "Unlocked!" : "Have 1,000 current points to unlock")">
+                            <div class="badge-icon">💰</div>
+                            <div class="badge-info">
+                                <span class="badge-name">Point Saver</span>
+                                <span class="badge-desc">1K Current</span>
+                            </div>
+                            <div class="badge-status">
+                                <i class="fas @(rank.CurrentScore >= 1000 ? "fa-check-circle" : "fa-lock")"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <!-- Middle Wing - Profile Form -->
+        <div class="theater-wing profile-wing" style="grid-area: profile !important; display: flex !important; flex-direction: column !important; width: 100% !important; margin: 0 !important; float: none !important;">
+            <div class="wing-header">
+                <h2>🎭 Personal Details</h2>
+                <div class="header-line"></div>
+            </div>
+
+            <form asp-controller="MyAccount" asp-action="EditProfile" method="post" class="cinema-form">
+                <div class="form-row">
+                    <div class="input-cinema">
+                        <input asp-for="Profile.FullName" placeholder=" " required>
+                        <label asp-for="Profile.FullName">Full Name</label>
+                        <div class="input-glow"></div>
+                    </div>
+
+                    <div class="input-cinema">
+                        <input asp-for="Profile.DateOfBirth" type="date" placeholder=" ">
+                        <label asp-for="Profile.DateOfBirth">Date of Birth</label>
+                        <div class="input-glow"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-cinema">
+                        <input asp-for="Profile.Email" placeholder=" " readonly>
+                        <label asp-for="Profile.Email">Email Address</label>
+                        <div class="input-glow"></div>
+                    </div>
+
+                    <div class="input-cinema">
+                        <input asp-for="Profile.PhoneNumber" placeholder=" ">
+                        <label asp-for="Profile.PhoneNumber">Phone Number</label>
+                        <div class="input-glow"></div>
+                    </div>
+                </div>
+
+                <div class="gender-selector">
+                    <span class="selector-label">Gender</span>
+                    <div class="gender-options">
+                        <label class="gender-option">
+                            <input type="radio" asp-for="Profile.Gender" value="male">
+                            <span class="option-button">Male</span>
+                        </label>
+                        <label class="gender-option">
+                            <input type="radio" asp-for="Profile.Gender" value="female">
+                            <span class="option-button">Female</span>
+                        </label>
+                        <label class="gender-option">
+                            <input type="radio" asp-for="Profile.Gender" value="other">
+                            <span class="option-button">Other</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="input-cinema full-width">
+                    <input asp-for="Profile.Address" placeholder=" ">
+                    <label asp-for="Profile.Address">Address</label>
+                    <div class="input-glow"></div>
+                </div>
+
+                <div class="input-cinema full-width">
+                    <input asp-for="Profile.IdentityCard" placeholder=" ">
+                    <label asp-for="Profile.IdentityCard">Identity Number</label>
+                    <div class="input-glow"></div>
+                </div>
+
+                <div class="form-actions">
+                    @if (!profile.IsGoogleAccount)
+
+                    {
+                        <a href="@Url.Action("ChangePassword", "MyAccount")" class="cinema-btn secondary">🔐 Change Password</a>
+                    }
+                    <button type="submit" class="cinema-btn primary">💾 Save Changes</button>
+                </div>
+            </form>
+        </div>
+        </div>
+
+      
+
+        <!-- Bottom Wing - Booking History -->
+        <div class="theater-wing booking-wing" style="grid-area: booking !important; display: flex !important; flex-direction: column !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; float: none !important; box-sizing: border-box !important;">
+        <div class="wing-header" style="
+    padding-left: 600px;
+">
+                <h2>🎟️ Booking History</h2>
+                <div class="header-line"></div>
+            </div>
+
+            <div class="ticket-filters">
+                <button class="filter-ticket active" data-filter="all">All Tickets</button>
+                <button class="filter-ticket" data-filter="booked">Active</button>
+                <button class="filter-ticket" data-filter="canceled">Canceled</button>
+            </div>
+
+            <div class="tickets-showcase" id="ticketsShowcase">
+                <div class="loading-reel">
+                    <div class="film-loading"></div>
+                    <p>Loading your cinema history...</p>
+                </div>
+            </div>
+            
+            <!-- Separate Pagination Card -->
+            <div class="pagination-card" id="paginationCard" style="display: none;">
+                <!-- Pagination content will be inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Edit Modal -->
+<div class="image-edit-modal" id="imageEditModal" style="display:none;">
+    <div class="image-edit-content">
+        <div class="image-edit-header">
+            <h3>Edit Image</h3>
+            <button class="image-edit-close" onclick="closeImageEdit()">×</button>
+        </div>
+        <div class="image-edit-body">
+            <div class="image-preview-container">
+                <div class="image-preview-frame">
+                    <canvas id="imageCanvas" width="400" height="400" style="max-width: 100%; height: auto;"></canvas>
+                    <div class="crop-overlay">
+                        <div class="crop-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="image-controls">
+                <div class="zoom-control">
+                    <span class="zoom-icons">
+                        <i class="fas fa-search-minus"></i>
+                        <i class="fas fa-search-plus"></i>
+                    </span>
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="0.5" max="3" step="0.1" value="1">
+                </div>
+                <div class="rotate-control">
+                    <button class="rotate-btn" onclick="rotateImage()">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="image-edit-actions">
+                <button class="image-btn secondary" onclick="resetImageEdit()">Reset</button>
+                <button class="image-btn secondary" onclick="closeImageEdit()">Cancel</button>
+                <button class="image-btn primary" onclick="applyImageEdit()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rank Details Modal -->
+<div class="rank-modal" id="rankDetailsModal">
+    <div class="rank-modal-content">
+        <div class="rank-modal-header">
+            <h3>🎭 Rank Tiers & Benefits</h3>
+            <button class="rank-modal-close" onclick="closeRankDetails()">×</button>
+        </div>
+        <div class="rank-modal-body">
+            @if (Model.AllRanks != null && Model.AllRanks.Any())
+            {
+                var sortedRanks = Model.AllRanks.OrderBy(r => r.RequiredPointsForCurrentRank).ToList();
+                var currentUserScore = Model.RankInfo.TotalPoints;
+                var currentUserRankId = Model.RankInfo.CurrentRankId;
+            <div class="rank-carousel" id="rankCarousel">
+                <div class="rank-indicators">
+                    @for (int i = 0; i < sortedRanks.Count; i++)
+                    {
+                        var rankDetail = sortedRanks[i];
+                        var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                        <button class="rank-indicator @activeClass" onclick="showRankSlide(@i)"></button>
+                    }
+                </div>
+                <div class="rank-slides">
+                    @for (int i = 0; i < sortedRanks.Count; i++)
+                    {
+                        var rankDetail = sortedRanks[i];
+                        var rankGradient = rankDetail.ColorGradient ?? "linear-gradient(135deg, #4e54c8 0%, #6c63ff 50%, #8f94fb 100%)";
+                        var rankIcon = rankDetail.IconClass ?? "fas fa-crown";
+                        var rankStatus = rankDetail.CurrentRankId == currentUserRankId ? "Current Rank" : (currentUserScore >= rankDetail.RequiredPointsForCurrentRank ? "Achieved" : "Not Reached");
+                        var activeClass = rankDetail.CurrentRankId == currentUserRankId ? "active" : "";
+                        var prevRankPoints = i > 0 ? sortedRanks[i - 1].RequiredPointsForCurrentRank : 0;
+                        var targetRankPoints = rankDetail.RequiredPointsForCurrentRank;
+                        var pointsForThisTier = targetRankPoints - prevRankPoints;
+                        double rankProgressPercentage;
+                        if (currentUserScore >= targetRankPoints)
+                        {
+                            rankProgressPercentage = 100;
+                        }
+                        else if (currentUserScore < prevRankPoints)
+                        {
+                            rankProgressPercentage = 0;
+                        }
+                        else
+                        {
+                            var progressRaw = currentUserScore - prevRankPoints;
+                            rankProgressPercentage = (pointsForThisTier > 0)
+                                ? Math.Min(100, (double)progressRaw / pointsForThisTier * 100)
+                                : 100;
+                        }
+                    <div class="rank-slide @activeClass" data-slide="@i">
+                        <div class="rank-card" style="--rank-gradient: @rankGradient;">
+                            <div class="rank-card-header">
+                                <div class="rank-icon-wrapper" style="background: @rankGradient;" data-auto-text-color>
+                                    <i class="@rankIcon"></i>
+                                </div>
+                                <div class="rank-info">
+                                    <span class="rank-title" data-auto-text-color>@rankDetail.CurrentRankName Rank</span>
+                                    <span class="rank-status @rankStatus.ToLower().Replace(" ", "-")" data-auto-text-color>@rankStatus</span>
+                                </div>
+                            </div>
+                                                            <div class="rank-card-body">
+                                    <div class="rank-progress-wrapper">
+                                        <div class="rank-progress">
+                                            <div class="rank-progress-bar" style="width: @rankProgressPercentage.ToString("0.##")%; background: @rankGradient;"></div>
+                                        </div>
+                                        <div class="rank-points">
+                                            <span>@prevRankPoints.ToString("N0") pts</span>
+                                            <span>@targetRankPoints.ToString("N0") pts</span>
+                                        </div>
+                                    </div>
+                                    <div class="benefits-section">
+                                        <div class="benefits-header">
+                                            <span class="benefits-icon">🎁</span>
+                                            <span data-auto-text-color>Benefits:</span>
+                                        </div>
+                                        <div class="benefits-content">
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">🎫</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Discount on Tickets</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentDiscountPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                            <div class="benefit-item">
+                                                <span class="benefit-icon">💰</span>
+                                                <div class="benefit-text">
+                                                    <span class="benefit-label" data-auto-text-color>Point Earning Rate</span>
+                                                    <span class="benefit-value" data-auto-text-color>@rankDetail.CurrentPointEarningPercentage.ToString("0.00")%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="auto-upgrade">
+                                        <span class="upgrade-icon">⚡</span>
+                                        <span data-auto-text-color>Auto-upgrade at @targetRankPoints.ToString("N0") pts</span>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="rank-navigation">
+                    <button class="rank-nav-btn" onclick="prevRankSlide()">←</button>
+                    <button class="rank-nav-btn" onclick="nextRankSlide()">→</button>
+                </div>
+            </div>
+            }
+            else
+            {
+                <div class="no-ranks">No rank information available.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto text color functionality
+    function calculateContrastRatio(backgroundColor) {
+        // Convert background color to RGB
+        let rgb;
+        if (backgroundColor.startsWith('linear-gradient')) {
+            // Extract multiple colors from gradient for better calculation
+            const colorMatches = backgroundColor.match(/(#[0-9a-fA-F]{3,6}|rgba?\([^)]+\))/g);
+            if (colorMatches && colorMatches.length > 0) {
+                // Calculate average of all colors in gradient
+                let totalR = 0, totalG = 0, totalB = 0;
+                let validColors = 0;
+                
+                colorMatches.forEach(color => {
+                    const parsed = hexToRgb(color) || parseRgb(color);
+                    if (parsed) {
+                        totalR += parsed.r;
+                        totalG += parsed.g;
+                        totalB += parsed.b;
+                        validColors++;
+                    }
+                });
+                
+                if (validColors > 0) {
+                    rgb = {
+                        r: Math.round(totalR / validColors),
+                        g: Math.round(totalG / validColors),
+                        b: Math.round(totalB / validColors)
+                    };
+                } else {
+                    // Fallback for gradients
+                    rgb = { r: 128, g: 128, b: 128 };
+                }
+            } else {
+                // Fallback to medium gray for gradients
+                rgb = { r: 128, g: 128, b: 128 };
+            }
+        } else if (backgroundColor.startsWith('#')) {
+            rgb = hexToRgb(backgroundColor);
+        } else if (backgroundColor.startsWith('rgb')) {
+            rgb = parseRgb(backgroundColor);
+        } else {
+            // Fallback
+            rgb = { r: 128, g: 128, b: 128 };
+        }
+
+        if (!rgb) {
+            return 0.5; // Default to medium luminance
+        }
+
+        // Calculate relative luminance using sRGB formula
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
+        
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        
+        return luminance;
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function parseRgb(rgb) {
+        const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        return match ? {
+            r: parseInt(match[1]),
+            g: parseInt(match[2]),
+            b: parseInt(match[3])
+        } : { r: 0, g: 0, b: 0 };
+    }
+
+    function applyAutoTextColor() {
+        const elements = document.querySelectorAll('[data-auto-text-color]');
+        
+        elements.forEach(element => {
+            const style = window.getComputedStyle(element);
+            const backgroundColor = style.background || style.backgroundColor;
+            
+            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                const luminance = calculateContrastRatio(backgroundColor);
+                
+                // Remove existing classes
+                element.classList.remove('text-white', 'text-black');
+                
+                // Use inline styles to avoid Bootstrap conflicts
+                if (luminance < 0.5) {
+                    element.style.setProperty('color', '#ffffff', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                } else {
+                    element.style.setProperty('color', '#000000', 'important');
+                    element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                }
+            } else {
+                // For elements without background, try to get parent background
+                const parent = element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+
+
+    // Load tickets function
+    function loadTickets(filter, page = 1) {
+        const showcase = document.getElementById('ticketsShowcase');
+        showcase.innerHTML = '<div class="loading-reel"><div class="film-loading"></div><p>Loading tickets...</p></div>';
+
+        fetch(`/Ticket/HistoryPartial?status=${filter}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data && data.data.length > 0) {
+                    renderTickets(data.data, page);
+                } else {
+                    showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">🎬</div><p>No tickets found</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading tickets:', error);
+                showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">❌</div><p>Error loading tickets</p></div>';
+            });
+    }
+
+    // Render tickets with pagination
+    function renderTickets(tickets, page = 1) {
+        const showcase = document.getElementById('ticketsShowcase');
+        const itemsPerPage = 3; // Chỉ hiển thị 3 tickets per page
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentTickets = tickets.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(tickets.length / itemsPerPage);
+
+        if (currentTickets.length === 0) {
+            showcase.innerHTML = '<div class="empty-theater"><div class="empty-seats">🎬</div><p>No tickets found</p></div>';
+            return;
+        }
+
+        const ticketsHtml = currentTickets.map(ticket => {
+            const movieName = ticket.movieShow?.movie?.movieNameEnglish || 'Unknown Movie';
+            const showDate = ticket.movieShow?.showDate ? new Date(ticket.movieShow.showDate).toLocaleDateString('en-GB') : 'N/A';
+            const showTime = ticket.movieShow?.schedule?.scheduleTime || 'N/A';
+            const seats = ticket.seat || 'N/A';
+            const paymentStatus = ticket.status; // 0 = Incomplete, 1 = Completed
+            const status = (paymentStatus === 0 || ticket.cancel) ? 'canceled' : 'booked';
+            const amount = ticket.totalMoney ? new Intl.NumberFormat('en-US').format(ticket.totalMoney) + ' VND' : 'N/A';
+            const invoiceId = ticket.invoiceId || ticket.id;
+
+            // Lấy đường dẫn ảnh phim
+            let moviePoster = ticket.movieShow?.movie?.smallImage;
+            if (!moviePoster || moviePoster === '') {
+                const movieNameLower = movieName.toLowerCase();
+                if (movieNameLower.includes('oppenheimer') || movieNameLower.includes('open')) {
+                    moviePoster = '/image/open.jpg';
+                } else if (movieNameLower.includes('barbie')) {
+                    moviePoster = '/image/barbie.jpg';
+                } else if (movieNameLower.includes('batman')) {
+                    moviePoster = '/image/batman.jpg';
+                } else if (movieNameLower.includes('spider')) {
+                    moviePoster = '/image/spider.jpg';
+                } else if (movieNameLower.includes('dune')) {
+                    moviePoster = '/image/dune.jpg';
+                } else if (movieNameLower.includes('parasite')) {
+                    moviePoster = '/image/parasite.jpg';
+                } else if (movieNameLower.includes('everything')) {
+                    moviePoster = '/image/everything.jpg';
+                } else if (movieNameLower.includes('topgun') || movieNameLower.includes('top gun')) {
+                    moviePoster = '/image/topgun.jpg';
+                } else {
+                    moviePoster = '/image/default-movie.png';
+                }
+            }
+            
+            return `
+                <div class="movie-ticket ${status}">
+                    <div class="ticket-stub">
+                        <img src="${moviePoster}" alt="${movieName}" class="movie-poster"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                            onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                        
+                    </div>
+                    <div class="ticket-main">
+                        <div class="ticket-header">
+                            <h3 class="movie-title">${movieName}</h3>
+                            <span class="ticket-status ${status}">${status === 'booked' ? '✓' : '✗'}</span>
+                        </div>
+                        <div class="ticket-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">📅</span>
+                                <span>${showDate}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                <span>${showTime}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🪑</span>
+                                <span>${seats}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">💰</span>
+                                <span>${amount}</span>
+                            </div>
+                        </div>
+                        <div class="ticket-actions">
+                            <a href="/Ticket/Details/${invoiceId}" class="cinema-btn secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                                🎫 View Details
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ticket-perforation"></div>
+                </div>
+            `;
+        }).join('');
+
+        // Hiển thị tickets
+        showcase.innerHTML = ticketsHtml;
+        
+        // Tạo phân trang riêng biệt trong pagination card
+        const paginationCard = document.getElementById('paginationCard');
+        if (totalPages > 1) {
+            let paginationHtml = '<div class="ticket-pagination">';
+            
+            // Nút Previous
+            if (page > 1) {
+                paginationHtml += `<button class="page-btn prev-btn" onclick="changePage(${page - 1})">←</button>`;
+            }
+            
+            // HIỂN THỊ PAGINATION GỌN GÀNG - CHỈ 1 HÀNG VỚI ELLIPSIS
+            const maxVisiblePages = 7; // Giảm xuống 7 nút để gọn gàng
+            let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            // Điều chỉnh để hiển thị đủ nút
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // Hiển thị nút đầu nếu cần
+            if (startPage > 1) {
+                paginationHtml += `<button class="page-btn" onclick="changePage(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHtml += `<span class="page-dots">...</span>`;
+                }
+            }
+            
+            // Hiển thị các nút chính
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === page ? 'active' : '';
+                paginationHtml += `<button class="page-btn ${activeClass}" onclick="changePage(${i})">${i}</button>`;
+            }
+            
+            // Hiển thị nút cuối nếu cần
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHtml += `<span class="page-dots">...</span>`;
+                }
+                paginationHtml += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            // Nút Next
+            if (page < totalPages) {
+                paginationHtml += `<button class="page-btn next-btn" onclick="changePage(${page + 1})">→</button>`;
+            }
+            
+            paginationHtml += '</div>';
+            
+            // Hiển thị pagination card
+            paginationCard.innerHTML = paginationHtml;
+            paginationCard.style.display = 'block';
+        } else {
+            // Ẩn pagination card nếu chỉ có 1 trang
+            paginationCard.style.display = 'none';
+        }
+    }
+
+    // Hàm chuyển trang
+    function changePage(page) {
+        const currentFilter = document.querySelector('.filter-ticket.active').dataset.filter;
+        loadTickets(currentFilter, page);
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initProfileTab);
+    } else {
+        initProfileTab();
+    }
+
+    // Enhanced Theater Header Effects
+    function initTheaterHeaderEffects() {
+        const theaterHeader = document.querySelector('.theater-header');
+        const profileSpotlight = document.querySelector('.profile-spotlight');
+        const statFrames = document.querySelectorAll('.stat-frame');
+        const tierBadge = document.querySelector('.tier-badge');
+        
+        if (!theaterHeader) return;
+
+        // Enhanced Mouse tracking effect with magnetic attraction
+        theaterHeader.addEventListener('mousemove', (e) => {
+            const rect = theaterHeader.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const deltaX = (x - centerX) / centerX;
+            const deltaY = (y - centerY) / centerY;
+            
+            // Apply magnetic effect to liquid glass
+            theaterHeader.style.setProperty('--mouse-x', deltaX);
+            theaterHeader.style.setProperty('--mouse-y', deltaY);
+            
+            // Enhanced parallax effect for profile spotlight
+            if (profileSpotlight) {
+                profileSpotlight.style.transform = `translate(${deltaX * 8}px, ${deltaY * 8}px) rotateX(${deltaY * 5}deg) rotateY(${deltaX * 5}deg)`;
+            }
+            
+            // Magnetic effect for stat frames
+            statFrames.forEach((frame, index) => {
+                const frameRect = frame.getBoundingClientRect();
+                const frameCenterX = frameRect.left + frameRect.width / 2;
+                const frameCenterY = frameRect.top + frameRect.height / 2;
+                
+                const distanceX = e.clientX - frameCenterX;
+                const distanceY = e.clientY - frameCenterY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                const maxDistance = 200;
+                
+                if (distance < maxDistance) {
+                    const force = (maxDistance - distance) / maxDistance;
+                    const moveX = (distanceX / distance) * force * 10;
+                    const moveY = (distanceY / distance) * force * 10;
+                    
+                    frame.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.05})`;
+                } else {
+                    frame.style.transform = 'translate(0, 0) scale(1)';
+                }
+            });
+            
+            // Magnetic effect for tier badge
+            if (tierBadge) {
+                const badgeRect = tierBadge.getBoundingClientRect();
+                const badgeCenterX = badgeRect.left + badgeRect.width / 2;
+                const badgeCenterY = badgeRect.top + badgeRect.height / 2;
+                
+                const distanceX = e.clientX - badgeCenterX;
+                const distanceY = e.clientY - badgeCenterY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                const maxDistance = 150;
+                
+                if (distance < maxDistance) {
+                    const force = (maxDistance - distance) / maxDistance;
+                    const moveX = (distanceX / distance) * force * 15;
+                    const moveY = (distanceY / distance) * force * 15;
+                    
+                    tierBadge.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.1})`;
+                } else {
+                    tierBadge.style.transform = 'translate(0, 0) scale(1)';
+                }
+            }
+        });
+
+        // Enhanced Interactive stat frames with ripple and glow effects
+        statFrames.forEach((frame, index) => {
+            frame.addEventListener('mouseenter', () => {
+                frame.style.transform = 'translateY(-6px) scale(1.08)';
+                frame.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.3)';
+                
+                // Enhanced ripple effect
+                const ripple = document.createElement('div');
+                ripple.className = 'stat-ripple';
+                ripple.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+                    border-radius: 50%;
+                    transform: translate(-50%, -50%);
+                    animation: rippleEffect 0.8s ease-out;
+                    pointer-events: none;
+                    z-index: 1;
+                `;
+                frame.appendChild(ripple);
+                
+                // Add glow effect
+                frame.style.filter = 'brightness(1.2) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))';
+                
+                setTimeout(() => {
+                    if (ripple.parentNode) {
+                        ripple.parentNode.removeChild(ripple);
+                    }
+                    frame.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+                }, 800);
+            });
+            
+            frame.addEventListener('mouseleave', () => {
+                frame.style.transform = 'translateY(0) scale(1)';
+                frame.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 255, 255, 0.1)';
+                frame.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+            });
+        });
+
+        // Enhanced tier badge interactions
+        if (tierBadge) {
+            tierBadge.addEventListener('mouseenter', () => {
+                tierBadge.style.transform = 'translateY(-4px) scale(1.12)';
+                tierBadge.style.boxShadow = '0 12px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.3)';
+                tierBadge.style.filter = 'brightness(1.3) drop-shadow(0 0 25px rgba(255, 255, 255, 0.4))';
+            });
+            
+            tierBadge.addEventListener('mouseleave', () => {
+                tierBadge.style.transform = 'translateY(0) scale(1)';
+                tierBadge.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 255, 255, 0.1)';
+                tierBadge.style.filter = 'brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0))';
+            });
+        }
+
+        // Enhanced floating particles with more variety
+        createEnhancedFloatingParticles(theaterHeader);
+        
+        // Enhanced progress bar animation
+        animateEnhancedProgressBar();
+        
+        // Add sparkle effects
+        createSparkleEffects(theaterHeader);
+        
+        // Initialize Profile Particle Network
+        initializeProfileParticleNetwork();
+    }
+
+    // Create enhanced floating particles with more variety
+    function createEnhancedFloatingParticles(container) {
+        const particleCount = 20; // Increased from 15
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'floating-particle';
+            
+            const size = Math.random() * 6 + 2; // Varied sizes
+            const opacity = Math.random() * 0.4 + 0.1;
+            const duration = Math.random() * 15 + 10; // Varied durations
+            const delay = Math.random() * 8;
+            const type = Math.random() > 0.5 ? 'circle' : 'star';
+            
+            particle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${type === 'circle' ? 
+                    `rgba(255, 255, 255, ${opacity})` : 
+                    `radial-gradient(circle at center, rgba(255, 255, 255, ${opacity}) 0%, transparent 70%)`
+                };
+                border-radius: ${type === 'circle' ? '50%' : '0'};
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: floatParticle ${duration}s linear infinite;
+                animation-delay: ${delay}s;
+                pointer-events: none;
+                z-index: 5;
+                filter: blur(0.5px);
+                ${type === 'star' ? `
+                    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+                ` : ''}
+            `;
+            container.appendChild(particle);
+        }
+    }
+
+    // Create sparkle effects
+    function createSparkleEffects(container) {
+        const sparkleCount = 8;
+        
+        for (let i = 0; i < sparkleCount; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            const size = Math.random() * 4 + 2;
+            const duration = Math.random() * 3 + 2;
+            const delay = Math.random() * 5;
+            
+            sparkle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+                border-radius: 50%;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: sparkleEffect ${duration}s ease-in-out infinite;
+                animation-delay: ${delay}s;
+                pointer-events: none;
+                z-index: 6;
+            `;
+            container.appendChild(sparkle);
+        }
+    }
+
+            // Profile Particle Network Interaction
+        function initializeProfileParticleNetwork() {
+            const particleContainer = document.querySelector('.profile-particle-container');
+            const rankWrapper = document.querySelector('.rank-avatar-wrapper');
+            
+            if (!particleContainer || !rankWrapper) return;
+            
+            let mouseX = 0, mouseY = 0;
+            let isMouseActive = false;
+            
+            // Mouse move tracking
+            rankWrapper.addEventListener('mousemove', (e) => {
+                const rect = rankWrapper.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+                
+                // Update CSS custom properties for glow effect
+                rankWrapper.style.setProperty('--mouse-x', (mouseX / rect.width * 100) + '%');
+                rankWrapper.style.setProperty('--mouse-y', (mouseY / rect.height * 100) + '%');
+                
+                // Create mouse-following particles
+                if (!isMouseActive) {
+                    isMouseActive = true;
+                    particleContainer.classList.add('mouse-active');
+                }
+                
+                // Create particle trail
+                createParticleTrail(mouseX, mouseY, particleContainer);
+                
+                // Move nearby nodes towards mouse
+                moveNodesTowardsMouse(mouseX, mouseY, particleContainer);
+            });
+            
+            // Mouse leave
+            rankWrapper.addEventListener('mouseleave', () => {
+                isMouseActive = false;
+                particleContainer.classList.remove('mouse-active');
+            });
+            
+            // Click effect
+            rankWrapper.addEventListener('click', (e) => {
+                const rect = rankWrapper.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                createClickEffect(x, y, particleContainer);
+            });
+        }
+        
+        // Create particle trail
+        function createParticleTrail(x, y, container) {
+            if (Math.random() > 0.3) return; // Reduce frequency
+            
+            const trail = document.createElement('div');
+            trail.className = 'profile-particle-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            
+            container.appendChild(trail);
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (trail.parentNode) {
+                    trail.parentNode.removeChild(trail);
+                }
+            }, 1000);
+        }
+        
+        // Move nodes towards mouse
+        function moveNodesTowardsMouse(mouseX, mouseY, container) {
+            const nodes = container.querySelectorAll('.profile-particle-node');
+            const rect = container.getBoundingClientRect();
+            
+            nodes.forEach((node, index) => {
+                const nodeRect = node.getBoundingClientRect();
+                const nodeX = nodeRect.left - rect.left + nodeRect.width / 2;
+                const nodeY = nodeRect.top - rect.top + nodeRect.height / 2;
+                
+                const distance = Math.sqrt((mouseX - nodeX) ** 2 + (mouseY - nodeY) ** 2);
+                
+                if (distance < 100) {
+                    const angle = Math.atan2(mouseY - nodeY, mouseX - nodeX);
+                    const force = (100 - distance) / 100;
+                    
+                    node.style.transform = `translate(${Math.cos(angle) * force * 5}px, ${Math.sin(angle) * force * 5}px) scale(${1 + force * 0.2})`;
+                    node.style.filter = `brightness(${1 + force * 0.5})`;
+                } else {
+                    node.style.transform = '';
+                    node.style.filter = '';
+                }
+            });
+        }
+        
+        // Create click effect
+        function createClickEffect(x, y, container) {
+            // Create expanding circle effect
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'profile-particle-mouse';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.animation = 'none';
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 30 + Math.random() * 20;
+                
+                setTimeout(() => {
+                    particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`;
+                    particle.style.opacity = '0';
+                }, 50);
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Enhanced progress bar animation with counting effect
+        function animateEnhancedProgressBar() {
+        const progressBar = document.querySelector('.film-progress');
+        const statNumbers = document.querySelectorAll('.stat-number');
+        
+        if (progressBar) {
+            const targetWidth = progressBar.style.width;
+            progressBar.style.width = '0%';
+            
+            setTimeout(() => {
+                progressBar.style.transition = 'width 2.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                progressBar.style.width = targetWidth;
+                
+                // Add pulse effect during animation
+                progressBar.style.animation = 'progressPulse 2.5s ease-out';
+            }, 500);
+        }
+        
+        // Enhanced stat numbers with bounce effect
+        statNumbers.forEach((number, index) => {
+            const targetValue = parseInt(number.textContent.replace(/,/g, ''));
+            const duration = 2500;
+            const startTime = Date.now();
+            
+            function updateNumber() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOutBounce = 1 - Math.pow(1 - progress, 3);
+                const currentValue = Math.floor(targetValue * easeOutBounce);
+                
+                number.textContent = currentValue.toLocaleString();
+                
+                // Add bounce effect
+                if (progress < 0.8) {
+                    number.style.transform = `scale(${1 + Math.sin(progress * Math.PI * 4) * 0.1})`;
+                } else {
+                    number.style.transform = 'scale(1)';
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                }
+            }
+            
+            setTimeout(() => {
+                updateNumber();
+            }, 600 + index * 300);
+        });
+    }
+
+    // Add CSS for enhanced effects
+    function addDynamicCSS() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes rippleEffect {
+                0% {
+                    width: 0;
+                    height: 0;
+                    opacity: 1;
+                }
+                100% {
+                    width: 300px;
+                    height: 300px;
+                    opacity: 0;
+                }
+            }
+            
+            @@keyframes floatParticle {
+                0% {
+                    transform: translateY(0) rotate(0deg) scale(1);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(-100vh) rotate(720deg) scale(0.5);
+                    opacity: 0;
+                }
+            }
+            
+            @@keyframes sparkleEffect {
+                0%, 100% {
+                    opacity: 0;
+                    transform: scale(0) rotate(0deg);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1) rotate(180deg);
+                }
+            }
+            
+            @@keyframes progressPulse {
+                0% {
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                }
+                50% {
+                    box-shadow: 0 0 35px rgba(255, 255, 255, 0.8);
+                }
+                100% {
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+                }
+            }
+            
+            @@keyframes spin {
+                0% { transform: translate(-50%, -50%) rotate(0deg); }
+                100% { transform: translate(-50%, -50%) rotate(360deg); }
+            }
+            
+            .theater-header {
+                --mouse-x: 0;
+                --mouse-y: 0;
+            }
+            
+            .theater-header::before {
+                transform: translate(calc(var(--mouse-x) * 8px), calc(var(--mouse-y) * 8px));
+            }
+            
+            .stat-frame {
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .floating-particle {
+                filter: blur(0.5px);
+            }
+            
+            .sparkle {
+                filter: blur(0.3px);
+            }
+            
+            /* Enhanced hover states */
+            .stat-frame:hover {
+                transform: translateY(-6px) scale(1.08) !important;
+            }
+            
+            .tier-badge:hover {
+                transform: translateY(-4px) scale(1.12) !important;
+            }
+            
+            /* Magnetic effect smoothness */
+            .stat-frame, .tier-badge {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            /* Enhanced camera action hover effects */
+            .camera-action {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+                position: relative;
+            }
+            
+            .camera-action:hover {
+                transform: scale(1.2);
+                filter: brightness(1.3);
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+            
+            .camera-action:active {
+                transform: scale(0.95);
+            }
+            
+            /* Avatar loading state */
+            .avatar-loading {
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 50%;
+                padding: 10px;
+                backdrop-filter: blur(5px);
+            }
+            
+            /* Camera tooltip */
+            .camera-tooltip {
+                position: absolute;
+                bottom: -30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                white-space: nowrap;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 1000;
+            }
+            
+            .camera-action:hover .camera-tooltip {
+                opacity: 1;
+            }
+            
+            /* Image Edit Modal Styles */
+            .image-edit-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                backdrop-filter: blur(10px);
+            }
+            
+            .image-edit-content {
+                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                border-radius: 20px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .image-edit-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 25px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            
+            .image-edit-header h3 {
+                color: #ffffff;
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0;
+            }
+            
+            .image-edit-close {
+                background: none;
+                border: none;
+                color: #ffffff;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 5px;
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            
+            .image-edit-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: scale(1.1);
+            }
+            
+            .image-edit-body {
+                padding: 25px;
+            }
+            
+            .image-preview-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 25px;
+            }
+            
+            .image-preview-frame {
+                position: relative;
+                width: 400px;
+                height: 400px;
+                background: #333;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            }
+            
+            #imageCanvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                cursor: move;
+            }
+            
+            .crop-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 10;
+            }
+            
+            .crop-circle {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 300px;
+                height: 300px;
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            }
+            
+            .image-controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 25px;
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 10px;
+            }
+            
+            .zoom-control {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex: 1;
+            }
+            
+            .zoom-icons {
+                display: flex;
+                gap: 10px;
+                color: #ffffff;
+                font-size: 14px;
+            }
+            
+            .zoom-slider {
+                flex: 1;
+                height: 6px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 3px;
+                outline: none;
+                -webkit-appearance: none;
+            }
+            
+            .zoom-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                background: #007bff;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .zoom-slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                background: #007bff;
+                border-radius: 50%;
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            
+            .rotate-control {
+                margin-left: 20px;
+            }
+            
+            .rotate-btn {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #ffffff;
+                padding: 10px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .rotate-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: scale(1.05);
+            }
+            
+            .image-edit-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .image-btn {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            }
+            
+            .image-btn.primary {
+                background: #007bff;
+                color: white;
+            }
+            
+            .image-btn.primary:hover {
+                background: #0056b3;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+            }
+            
+            .image-btn.secondary {
+                background: transparent;
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            
+            .image-btn.secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.5);
+            }
+            
+            @@media (max-width: 768px) {
+                .image-edit-content {
+                    width: 95%;
+                    margin: 10px;
+                    max-height: 95vh;
+                }
+                
+                .image-preview-frame {
+                    width: 300px;
+                    height: 300px;
+                }
+                
+                .crop-circle {
+                    width: 250px;
+                    height: 250px;
+                }
+                
+                .image-controls {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                
+                .rotate-control {
+                    margin-left: 0;
+                }
+                
+                .image-edit-actions {
+                    flex-direction: column;
+                }
+                
+                .image-btn {
+                    width: 100%;
+                }
+                
+                #imageCanvas {
+                    width: 300px !important;
+                    height: 300px !important;
+                }
+            }
+            
+            @@media (max-width: 480px) {
+                .image-edit-content {
+                    width: 98%;
+                    margin: 5px;
+                }
+                
+                .image-preview-frame {
+                    width: 250px;
+                    height: 250px;
+                }
+                
+                .crop-circle {
+                    width: 200px;
+                    height: 200px;
+                }
+                
+                #imageCanvas {
+                    width: 250px !important;
+                    height: 250px !important;
+                }
+                
+                .image-edit-header {
+                    padding: 15px 20px;
+                }
+                
+                .image-edit-body {
+                    padding: 20px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Avatar upload functionality
+    document.getElementById('avatarUpload').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPEG, PNG, or GIF)');
+                return;
+            }
+            
+            // Open image edit modal
+            openImageEditModal(file);
+        }
+    });
+
+    // Achievement Badges Interaction
+    function initAchievementBadges() {
+        const badges = document.querySelectorAll('.achievement-badge');
+        
+        badges.forEach(badge => {
+            badge.addEventListener('click', function() {
+                const isUnlocked = this.classList.contains('unlocked');
+                const badgeName = this.querySelector('.badge-name').textContent;
+                
+                if (isUnlocked) {
+                    // Show achievement celebration
+                    showAchievementCelebration(badgeName);
+                } else {
+                    // Show locked badge info
+                    showLockedBadgeInfo(badgeName, this.getAttribute('data-tooltip'));
+                }
+            });
+            
+            // Add hover sound effect for unlocked badges
+            if (badge.classList.contains('unlocked')) {
+                badge.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.02)';
+                    this.style.boxShadow = '0 8px 25px rgba(212, 175, 55, 0.4)';
+                });
+                
+                badge.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.2)';
+                });
+            }
+        });
+    }
+    
+    function showAchievementCelebration(badgeName) {
+        // Create celebration modal
+        const celebration = document.createElement('div');
+        celebration.className = 'achievement-celebration';
+        celebration.innerHTML = `
+            <div class="celebration-content">
+                <div class="celebration-icon">🏆</div>
+                <h3>Achievement Unlocked!</h3>
+                <p>${badgeName}</p>
+                <button class="celebration-close" onclick="this.parentElement.parentElement.remove()">Awesome!</button>
+            </div>
+        `;
+        
+        // Add celebration styles
+        celebration.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            animation: celebrationFadeIn 0.5s ease-out;
+        `;
+        
+        celebration.querySelector('.celebration-content').style.cssText = `
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            border: 2px solid var(--cinema-gold);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            animation: celebrationBounce 0.6s ease-out;
+        `;
+        
+        celebration.querySelector('.celebration-icon').style.cssText = `
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: celebrationSpin 1s ease-out;
+        `;
+        
+        celebration.querySelector('h3').style.cssText = `
+            color: var(--cinema-gold);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        `;
+        
+        celebration.querySelector('p').style.cssText = `
+            color: var(--cinema-text);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        `;
+        
+        celebration.querySelector('.celebration-close').style.cssText = `
+            background: var(--cinema-gold);
+            color: var(--cinema-dark);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        `;
+        
+        document.body.appendChild(celebration);
+        
+        // Add celebration animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes celebrationFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @@keyframes celebrationBounce {
+                0% { transform: scale(0.3) rotate(-10deg); }
+                50% { transform: scale(1.1) rotate(5deg); }
+                100% { transform: scale(1) rotate(0deg); }
+            }
+            
+            @@keyframes celebrationSpin {
+                0% { transform: scale(0) rotate(0deg); }
+                50% { transform: scale(1.2) rotate(180deg); }
+                100% { transform: scale(1) rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (celebration.parentElement) {
+                celebration.remove();
+            }
+        }, 3000);
+    }
+    
+    function showLockedBadgeInfo(badgeName, tooltip) {
+        // Create locked badge info modal
+        const info = document.createElement('div');
+        info.className = 'locked-badge-info';
+        info.innerHTML = `
+            <div class="info-content">
+                <div class="info-icon">🔒</div>
+                <h3>${badgeName}</h3>
+                <p>${tooltip}</p>
+                <button class="info-close" onclick="this.parentElement.parentElement.remove()">Got it!</button>
+            </div>
+        `;
+        
+        // Add info styles
+        info.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            animation: infoFadeIn 0.3s ease-out;
+        `;
+        
+        info.querySelector('.info-content').style.cssText = `
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            max-width: 300px;
+            width: 90%;
+        `;
+        
+        info.querySelector('.info-icon').style.cssText = `
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        `;
+        
+        info.querySelector('h3').style.cssText = `
+            color: var(--cinema-text);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        `;
+        
+        info.querySelector('p').style.cssText = `
+            color: var(--cinema-text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        `;
+        
+        info.querySelector('.info-close').style.cssText = `
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--cinema-text);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        `;
+        
+        document.body.appendChild(info);
+        
+        // Add info animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes infoFadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Enhanced initialization
+    function initProfileTab() {
+        // Load tickets immediately
+        loadTickets('all');
+        
+        // Attach filter event listeners
+        document.querySelectorAll('.filter-ticket').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-ticket').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                loadTickets(this.dataset.filter, 1);
+            });
+        });
+
+        // Initialize achievement badges
+        initAchievementBadges();
+
+        // Apply auto text color after a short delay to ensure styles are loaded
+        setTimeout(applyAutoTextColor, 100);
+        
+        // Apply again after a longer delay to ensure all styles are fully loaded
+        setTimeout(applyAutoTextColor, 500);
+        
+        // Force apply to stat elements specifically
+        setTimeout(() => {
+            const statElements = document.querySelectorAll('.stat-frame[data-auto-text-color], .stat-number[data-auto-text-color], .stat-label[data-auto-text-color]');
+            statElements.forEach(element => {
+                const parent = element.closest('.stat-frame') || element.parentElement;
+                if (parent) {
+                    const parentStyle = window.getComputedStyle(parent);
+                    const parentBackground = parentStyle.background || parentStyle.backgroundColor;
+                    
+                    if (parentBackground && parentBackground !== 'rgba(0, 0, 0, 0)') {
+                        const luminance = calculateContrastRatio(parentBackground);
+                        
+                        if (luminance < 0.5) {
+                            element.style.setProperty('color', '#ffffff', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(0, 0, 0, 0.5)', 'important');
+                        } else {
+                            element.style.setProperty('color', '#000000', 'important');
+                            element.style.setProperty('text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)', 'important');
+                        }
+                    }
+                }
+            });
+        }, 300);
+        
+        // Initialize enhanced theater header effects
+        addDynamicCSS();
+        setTimeout(initTheaterHeaderEffects, 1000);
+    }
+</script>
+
+<script>
+// Image Edit Modal Variables
+let currentImageFile = null;
+let imageEditor = {
+    canvas: null,
+    ctx: null,
+    image: null,
+    scale: 1,
+    rotation: 0,
+    offsetX: 0,
+    offsetY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0
+};
+
+// Rank Details Modal Logic
+if (typeof window.currentRankSlide === 'undefined') window.currentRankSlide = 0;
+
+function showRankDetails() {
+    console.log('showRankDetails called'); // Debug log
+    const modal = document.getElementById('rankDetailsModal');
+    if (!modal) {
+        console.error('Modal not found!');
+        return;
+    }
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    showRankSlide(window.currentRankSlide);
+    
+    // Apply auto text color after modal content is rendered
+    setTimeout(applyAutoTextColor, 200);
+}
+
+function closeRankDetails() {
+    console.log('closeRankDetails called'); // Debug log
+    const modal = document.getElementById('rankDetailsModal');
+    if (!modal) {
+        console.error('Modal not found for closing!');
+        return;
+    }
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+}
+
+function showRankSlide(slideIndex) {
+    var slides = document.querySelectorAll('.rank-slide');
+    var indicators = document.querySelectorAll('.rank-indicator');
+    slides.forEach(slide => slide.classList.remove('active'));
+    indicators.forEach(indicator => indicator.classList.remove('active'));
+    if (slides[slideIndex]) slides[slideIndex].classList.add('active');
+    if (indicators[slideIndex]) indicators[slideIndex].classList.add('active');
+    window.currentRankSlide = slideIndex;
+    
+    // Apply auto text color after slide change
+    setTimeout(applyAutoTextColor, 100);
+}
+
+function nextRankSlide() {
+    var slides = document.querySelectorAll('.rank-slide');
+    var next = (window.currentRankSlide + 1) % slides.length;
+    showRankSlide(next);
+}
+
+function prevRankSlide() {
+    var slides = document.querySelectorAll('.rank-slide');
+    var prev = (window.currentRankSlide - 1 + slides.length) % slides.length;
+    showRankSlide(prev);
+}
+
+// Image Edit Modal Functions
+function openImageEditModal(file) {
+    currentImageFile = file;
+    document.getElementById('imageEditModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Initialize canvas with responsive sizing
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size based on container
+    const container = canvas.parentElement;
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+    
+    canvas.width = Math.min(400, containerWidth);
+    canvas.height = Math.min(400, containerHeight);
+    
+    imageEditor.canvas = canvas;
+    imageEditor.ctx = ctx;
+    
+    // Load image
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            imageEditor.image = img;
+            resetImageEdit();
+            drawImage();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // Add event listeners
+    addImageEditEventListeners();
+}
+
+function closeImageEdit() {
+    document.getElementById('imageEditModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentImageFile = null;
+    removeImageEditEventListeners();
+}
+
+function resetImageEdit() {
+    imageEditor.scale = 1;
+    imageEditor.rotation = 0;
+    imageEditor.offsetX = 0;
+    imageEditor.offsetY = 0;
+    document.getElementById('zoomSlider').value = 1;
+    drawImage();
+}
+
+function rotateImage() {
+    imageEditor.rotation += 90;
+    if (imageEditor.rotation >= 360) {
+        imageEditor.rotation = 0;
+    }
+    drawImage();
+}
+
+function drawImage() {
+    if (!imageEditor.image || !imageEditor.ctx) return;
+    
+    const canvas = imageEditor.canvas;
+    const ctx = imageEditor.ctx;
+    const img = imageEditor.image;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Save context
+    ctx.save();
+    
+    // Move to center
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    
+    // Apply transformations
+    ctx.rotate((imageEditor.rotation * Math.PI) / 180);
+    ctx.scale(imageEditor.scale, imageEditor.scale);
+    
+    // Draw image
+    const imgWidth = img.width;
+    const imgHeight = img.height;
+    const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
+    const scale = Math.min(maxSize / imgWidth, maxSize / imgHeight);
+    
+    ctx.drawImage(
+        img,
+        -imgWidth * scale / 2 + imageEditor.offsetX,
+        -imgHeight * scale / 2 + imageEditor.offsetY,
+        imgWidth * scale,
+        imgHeight * scale
+    );
+    
+    // Restore context
+    ctx.restore();
+}
+
+function addImageEditEventListeners() {
+    const canvas = imageEditor.canvas;
+    const zoomSlider = document.getElementById('zoomSlider');
+    
+    // Zoom slider
+    zoomSlider.addEventListener('input', function() {
+        imageEditor.scale = parseFloat(this.value);
+        drawImage();
+    });
+    
+    // Mouse events for dragging
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', startDrag);
+    canvas.addEventListener('touchmove', drag);
+    canvas.addEventListener('touchend', endDrag);
+}
+
+function removeImageEditEventListeners() {
+    const canvas = imageEditor.canvas;
+    const zoomSlider = document.getElementById('zoomSlider');
+    
+    if (zoomSlider) {
+        zoomSlider.removeEventListener('input', function() {});
+    }
+    
+    if (canvas) {
+        canvas.removeEventListener('mousedown', startDrag);
+        canvas.removeEventListener('mousemove', drag);
+        canvas.removeEventListener('mouseup', endDrag);
+        canvas.removeEventListener('mouseleave', endDrag);
+        canvas.removeEventListener('touchstart', startDrag);
+        canvas.removeEventListener('touchmove', drag);
+        canvas.removeEventListener('touchend', endDrag);
+    }
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    imageEditor.isDragging = true;
+    
+    const rect = imageEditor.canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    imageEditor.startX = clientX - rect.left - imageEditor.offsetX;
+    imageEditor.startY = clientY - rect.top - imageEditor.offsetY;
+}
+
+function drag(e) {
+    e.preventDefault();
+    if (!imageEditor.isDragging) return;
+    
+    const rect = imageEditor.canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    
+    imageEditor.offsetX = clientX - rect.left - imageEditor.startX;
+    imageEditor.offsetY = clientY - rect.top - imageEditor.startY;
+    
+    drawImage();
+}
+
+function endDrag() {
+    imageEditor.isDragging = false;
+}
+
+function applyImageEdit() {
+    if (!imageEditor.image) return;
+    
+    // Create a temporary canvas for cropping
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    const size = 300; // Final avatar size
+    tempCanvas.width = size;
+    tempCanvas.height = size;
+    
+    // Draw the cropped and processed image
+    tempCtx.save();
+    tempCtx.translate(size / 2, size / 2);
+    tempCtx.rotate((imageEditor.rotation * Math.PI) / 180);
+    tempCtx.scale(imageEditor.scale, imageEditor.scale);
+    
+    const img = imageEditor.image;
+    const maxSize = Math.min(imageEditor.canvas.width, imageEditor.canvas.height) * 0.8;
+    const scale = Math.min(maxSize / img.width, maxSize / img.height);
+    
+    tempCtx.drawImage(
+        img,
+        -img.width * scale / 2 + imageEditor.offsetX,
+        -img.height * scale / 2 + imageEditor.offsetY,
+        img.width * scale,
+        img.height * scale
+    );
+    
+    tempCtx.restore();
+    
+    // Convert to blob and create file
+    tempCanvas.toBlob(function(blob) {
+        // Create a new file from the blob
+        const croppedFile = new File([blob], currentImageFile.name, {
+            type: currentImageFile.type,
+            lastModified: Date.now()
+        });
+        
+        // Create a new FileList-like object
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(croppedFile);
+        
+        // Update the file input
+        const fileInput = document.getElementById('avatarUpload');
+        fileInput.files = dataTransfer.files;
+        
+        // Update the cropped image data
+        document.getElementById('croppedImageData').value = tempCanvas.toDataURL();
+        
+        // Close modal
+        closeImageEdit();
+        
+        // Show preview and submit
+        showCroppedPreview(tempCanvas.toDataURL());
+        submitAvatarForm();
+    }, currentImageFile.type, 0.9);
+}
+
+function showCroppedPreview(dataUrl) {
+    const avatar = document.getElementById('profileAvatar');
+    
+    // Add loading animation
+    avatar.style.opacity = '0.7';
+    avatar.style.filter = 'grayscale(50%)';
+    
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'avatar-loading';
+    loadingIndicator.innerHTML = '🔄';
+    loadingIndicator.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        z-index: 10;
+        animation: spin 1s linear infinite;
+    `;
+    avatar.parentElement.style.position = 'relative';
+    avatar.parentElement.appendChild(loadingIndicator);
+    
+    // Update avatar
+    avatar.src = dataUrl;
+    avatar.style.opacity = '1';
+    avatar.style.filter = 'grayscale(0%)';
+    
+    // Add animation
+    avatar.style.transform = 'scale(1.1)';
+    avatar.style.filter = 'brightness(1.2)';
+    
+    setTimeout(() => {
+        avatar.style.transform = 'scale(1)';
+        avatar.style.filter = 'brightness(1)';
+    }, 300);
+}
+
+function submitAvatarForm() {
+    setTimeout(() => {
+        if (typeof showToast === 'function') {
+            showToast('Uploading profile picture...');
+        }
+        
+        const form = document.getElementById('avatarForm');
+        form.submit();
+    }, 100);
+}
+
+document.addEventListener('click', function(e) {
+    var modal = document.getElementById('rankDetailsModal');
+    if (e.target === modal) closeRankDetails();
+    
+    var imageModal = document.getElementById('imageEditModal');
+    if (e.target === imageModal) closeImageEdit();
+});
+
+// Add keyboard event listener for ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeRankDetails();
+        closeImageEdit();
+    }
+});
+</script> 

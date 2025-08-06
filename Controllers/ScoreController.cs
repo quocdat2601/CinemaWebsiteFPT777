@@ -1,0 +1,94 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MovieTheater.Service;
+using System.Security.Claims;
+
+namespace MovieTheater.Controllers
+{
+    [Authorize]
+    public class ScoreController : Controller
+    {
+        private readonly IScoreService _scoreService;
+
+        public ScoreController(IScoreService scoreService)
+        {
+            _scoreService = scoreService;
+        }
+
+        /// <summary>
+        /// Xem l?ch s? di?m c?ng
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistory (GET)</remarks>
+        [HttpGet]
+        public IActionResult ScoreHistory() // NOSONAR - GET methods don't require ModelState.IsValid check
+        {
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewBag.CurrentScore = _scoreService.GetCurrentScore(accountId);
+            var result = _scoreService.GetScoreHistory(accountId, null, null, "add");
+            ViewBag.HistoryType = "add";
+            return View("~/Views/Account/Tabs/Score.cshtml", result);
+        }
+
+        /// <summary>
+        /// Xem l?ch s? di?m theo kho?ng ng�y v� lo?i di?m
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistory (POST)</remarks>
+        [HttpPost]
+        public IActionResult ScoreHistory(DateTime fromDate, DateTime toDate, string historyType)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("ScoreHistory");
+            }
+            var accountId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewBag.CurrentScore = _scoreService.GetCurrentScore(accountId);
+            var result = _scoreService.GetScoreHistory(accountId, fromDate, toDate, historyType);
+            if (!result.Any())
+            {
+                ViewBag.Message = "No score history found for the selected period.";
+            }
+            return View("~/Views/Account/Tabs/Score.cshtml", result);
+        }
+
+        /// <summary>
+        /// L?y l?ch s? di?m (partial, ajax)
+        /// </summary>
+        /// <remarks>url: /Score/ScoreHistoryPartial (GET)</remarks>
+        [HttpGet]
+        public IActionResult ScoreHistoryPartial(string fromDate, string toDate, string historyType) // NOSONAR - GET methods don't require ModelState.IsValid check
+        {
+            var accountId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Json(new { success = false, message = "Not logged in." });
+            }
+
+            int currentScore = _scoreService.GetCurrentScore(accountId);
+            DateTime? from = null, to = null;
+            if (DateTime.TryParse(fromDate, out var f)) from = f;
+            if (DateTime.TryParse(toDate, out var t)) to = t;
+            var data = _scoreService.GetScoreHistory(accountId, from, to, historyType);
+            var result = data.Select(i => new
+            {
+                dateCreated = i.DateCreated,
+                movieName = i.MovieName,
+                score = i.Score,
+                type = i.Type
+            }).OrderByDescending(x => x.dateCreated).ToList();
+            return Json(new { success = true, currentScore = currentScore, data = result });
+        }
+
+
+
+    }
+}

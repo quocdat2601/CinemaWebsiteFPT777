@@ -1,0 +1,389 @@
+﻿@model MovieTheater.ViewModels.BookingSuccessViewModel
+@{
+    ViewBag.Title = "Booking Successful";
+    ViewBag.CurrentStep = 4;
+    var booking = Model.BookingDetails;
+    var seatDetails = booking.SelectedSeats ?? new List<MovieTheater.ViewModels.SeatDetailViewModel>();
+    var selectedFoods = Model.SelectedFoods ?? new List<MovieTheater.ViewModels.FoodViewModel>();
+    var totalFoodPrice = Model.TotalFoodPrice;
+    var subtotal = seatDetails.Sum(s => s.PriceAfterPromotion ?? s.Price); // Tổng giá seat sau khi đã giảm
+    var rankDiscount = Model.RankDiscount;
+    var voucherAmount = Model.VoucherAmount;
+    var usedScore = Model.UsedScore;
+    var usedScoreValue = Model.UsedScoreValue;
+    var addScore = Model.AddedScore;
+    var addedScoreValue = Model.AddedScoreValue;
+    var totalPriceValue = Model.TotalPrice;
+    var movieName = booking.MovieName;
+    var screen = booking.CinemaRoomName;
+    var version = booking.VersionName;
+    var showDate = booking.ShowDate.ToString("yyyy-MM-dd");
+    var showTime = booking.ShowTime;
+    var ticketId = booking.InvoiceId;
+    var bookingDate = booking.BookingDate?.ToString("yyyy-MM-dd HH:mm") ?? "";
+    var qrStaffUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/QRCode/Scanner?invoiceId={ticketId}";
+    
+    // SỬA: Tính rankDiscount giống như trang Details
+    decimal rankDiscountPercent = booking.RankDiscountPercent;
+    decimal calculatedRankDiscount = 0;
+    if (rankDiscountPercent > 0)
+    {
+        calculatedRankDiscount = subtotal * (rankDiscountPercent / 100m);
+    }
+    // Sử dụng rankDiscount đã tính lại thay vì từ Model
+    rankDiscount = calculatedRankDiscount;
+    
+    // Tính toán seat total sau khi áp dụng rank discount và points
+    decimal seatTotalAfterRankAndScore = subtotal;
+    if (rankDiscount > 0)
+    {
+        seatTotalAfterRankAndScore -= rankDiscount;
+    }
+    if (usedScore > 0)
+    {
+        seatTotalAfterRankAndScore -= usedScoreValue;
+    }
+    if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
+    
+    // Tính toán running total
+    decimal runningTotal = seatTotalAfterRankAndScore + totalFoodPrice - voucherAmount;
+    if (runningTotal < 0) runningTotal = 0;
+}
+
+@if ((seatDetails == null || !seatDetails.Any()) && TempData["SeatDetails"] != null)
+{
+    seatDetails = Newtonsoft.Json.JsonConvert.DeserializeObject<List<MovieTheater.ViewModels.SeatDetailViewModel>>(TempData["SeatDetails"].ToString());
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ticket-styles.css" />
+    <style>
+        /* Add margin-top to prevent navigation bar overlap */
+        .container {
+            margin-top: 10rem !important;
+        }
+    </style>
+}
+
+<div class="container">
+    <!-- Header Card -->
+    <div class="ticket-header-card">
+        <div class="ticket-header-content">
+            <div class="ticket-header-left">
+                <div class="ticket-header-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="ticket-header-text">
+                    <h1>Booking Successful</h1>
+                    <p>Ticket ID: @ticketId</p>
+                </div>
+            </div>
+            <span class="status-badge status-completed">Success</span>
+        </div>
+    </div>
+
+    <!-- Main Layout Grid -->
+    <div class="ticket-layout-grid">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Movie & Show Info Card -->
+            <div class="content-card">
+                <div class="card-header-modern">
+                    <i class="fas fa-film"></i>
+                    <h3>Movie & Show Details</h3>
+                </div>
+                <div class="card-content-modern">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-film"></i>
+                            <div class="info-content">
+                                <div class="info-label">Movie</div>
+                                <div class="info-value">@movieName</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar"></i>
+                            <div class="info-content">
+                                <div class="info-label">Date</div>
+                                <div class="info-value">@showDate</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="info-content">
+                                <div class="info-label">Time</div>
+                                <div class="info-value">@showTime</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div class="info-content">
+                                <div class="info-label">Screen</div>
+                                <div class="info-value">@screen</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-star"></i>
+                            <div class="info-content">
+                                <div class="info-label">Version</div>
+                                <div class="info-value">@version</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div class="info-content">
+                                <div class="info-label">Booking Time</div>
+                                <div class="info-value">@(DateTime.Parse(bookingDate).ToString("dd/MM/yyyy HH:mm"))</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seats Card -->
+            <div class="content-card">
+                <div class="card-header-modern">
+                    <i class="fas fa-users"></i>
+                    <h3>Seat Information</h3>
+                </div>
+                <div class="card-content-modern">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Seat</th>
+                                <th>Type</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (seatDetails.Any())
+                            {
+                                foreach (var seat in seatDetails)
+                                {
+                                    <tr>
+                                        <td>@seat.SeatName</td>
+                                        <td>@seat.SeatType</td>
+                                        <td>
+                                            @if (seat.OriginalPrice.HasValue && seat.PriceAfterPromotion.HasValue && seat.OriginalPrice.Value > seat.PriceAfterPromotion.Value)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                                <span style="color: #38ef7d; font-weight: bold;">@seat.PriceAfterPromotion.Value.ToString("N0") VND</span>
+                                            }
+                                            else if (seat.OriginalPrice.HasValue)
+                                            {
+                                                <span style="color: #38ef7d; font-weight: bold;">@seat.OriginalPrice.Value.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #38ef7d; font-weight: bold;">@seat.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">Seat Total:</td>
+                                <td>@subtotal.ToString("N0") VND</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Food & Drinks Card -->
+            @if (selectedFoods.Any())
+            {
+                <div class="content-card">
+                    <div class="card-header-modern">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Food & Drinks</h3>
+                    </div>
+                    <div class="card-content-modern">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var food in selectedFoods)
+                                {
+                                    <tr>
+                                        <td>@food.Name</td>
+                                        <td>@food.Quantity</td>
+                                        <td>
+                                            @if (food.OriginalPrice > food.Price)
+                                            {
+                                                <span style="text-decoration: line-through; color: #888;">@(food.OriginalPrice?.ToString("N0") ?? "0")  VND</span>
+                                                <span style="color: #38ef7d; font-weight: bold; margin-left: 0.5em;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #38ef7d; font-weight: bold;">@food.Price.ToString("N0") VND</span>
+                                            }
+                                        </td>
+                                        <td>@((food.Price * food.Quantity).ToString("N0")) VND</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3">Food Total:</td>
+                                    <td>@totalFoodPrice.ToString("N0") VND</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Price Breakdown Card -->
+            @if (subtotal > 0)
+            {
+                <div class="content-card">
+                    <div class="card-header-modern">
+                        <i class="fas fa-gift"></i>
+                        <h3>Price Breakdown</h3>
+                    </div>
+                    <div class="card-content-modern">
+                        <div class="price-breakdown">
+                            <!-- Seat Price (after promotion) -->
+                            <div class="price-row">
+                                <span class="price-label">Seat Price</span>
+                                <span class="price-value">@subtotal.ToString("N0") VND</span>
+                            </div>
+                            
+                            <!-- Rank Discount -->
+                            @if (rankDiscount > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">- Rank Discount (@rankDiscountPercent.ToString("0.##")%)</span>
+                                    <span class="price-value discount">-@rankDiscount.ToString("N0") VND</span>
+                                </div>
+                            }
+                            
+                            <!-- Points Used -->
+                            @if (usedScore > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">- Points Used</span>
+                                    <span class="price-value discount">-@usedScore (@usedScoreValue.ToString("N0") VND)</span>
+                                </div>
+                            }
+                            
+                            <!-- Seat Total (after all seat discounts) -->
+                            <div class="price-row">
+                                <span class="price-label">Seat Total</span>
+                                <span class="price-value">@seatTotalAfterRankAndScore.ToString("N0") VND</span>
+                            </div>
+                            
+                            <!-- Food & Drinks -->
+                            @if (totalFoodPrice > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">+ Food & Drinks</span>
+                                    <span class="price-value addition">+@totalFoodPrice.ToString("N0") VND</span>
+                                </div>
+                            }
+                            
+                            <!-- Voucher -->
+                            @if (voucherAmount > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">- Voucher</span>
+                                    <span class="price-value discount">-@voucherAmount.ToString("N0") VND</span>
+                                </div>
+                            }
+                            
+                            <!-- Total Amount -->
+                            <div class="price-row total-row">
+                                <span class="price-label">Total Amount</span>
+                                <span class="price-value total">@runningTotal.ToString("N0") VND</span>
+                            </div>
+                            
+                            <!-- Points Earned -->
+                            @if (addScore > 0)
+                            {
+                                <div class="price-row">
+                                    <span class="price-label">+ Points Earned</span>
+                                    <span class="price-value addition">+@addScore (@addedScoreValue.ToString("N0") VND)</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Action Buttons Card -->
+            <div class="content-card">
+                <div class="card-content-modern">
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a asp-controller="Home" asp-action="Index" class="btn-modern">
+                            <i class="fas fa-home"></i>
+                            Home
+                        </a>
+                        <a href="/#booking-widget" class="btn-modern">
+                            <i class="fas fa-plus"></i>
+                            Book Another Ticket
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="qr-section">
+            <div class="qr-card">
+                <div class="qr-header">
+                    <h3><i class="fas fa-qrcode"></i> QR Code</h3>
+                    <p>Scan for ticket information</p>
+                </div>
+                <div class="qr-content">
+                    <div class="qr-code-container">
+                        <canvas id="qrcode-staff"></canvas>
+                    </div>
+                    <button id="downloadQRStaff" class="btn-download">
+                        <i class="fas fa-download"></i>
+                        Download QR Code
+                    </button>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; margin-top: 1rem;">
+                        Present this QR code at the cinema for quick entry
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var qrStaffUrl = '@qrStaffUrl';
+        var qrStaff = new QRious({
+            element: document.getElementById('qrcode-staff'),
+            value: qrStaffUrl,
+            size: 200
+        });
+        document.getElementById('downloadQRStaff').onclick = function() {
+            var canvas = document.getElementById('qrcode-staff');
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = 'ticket-info-qr.png';
+            link.click();
+        }
+    });
+</script>
+
+<partial name="_ToastMessages" />
+@if (ViewBag.RankUpgradeMessage != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert" style="font-size:1.1rem; font-weight:500;">
+        <i class="fa fa-trophy me-2"></i> @ViewBag.RankUpgradeMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}

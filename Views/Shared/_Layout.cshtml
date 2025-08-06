@@ -1,54 +1,411 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@{
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var isAuthenticated = User.Identity.IsAuthenticated;
+}
+
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MovieTheater</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@(ViewData["Title"]) - MovieTheater</title>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="~/favicon.ico" />
+    <link rel="apple-touch-icon" href="~/image/logo.png" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MovieTheater.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/movie-grid.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.css" />
+
+    <!-- FontAwesome 5.11.2 CSS (CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" />
+    <!-- IconPicker 1.5.0 CSS/JS (CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fontawesome-iconpicker/1.5.0/css/fontawesome-iconpicker.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/navbar.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/admin-styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/particle-animation.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
+    @* Particle Background Animation *@
+    <div class="particle-container">
+        @* Dots *@
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        <div class="particle-dot"></div>
+        
+        @* Lines *@
+        <div class="particle-line" style="width: 30px;"></div>
+        <div class="particle-line" style="width: 25px;"></div>
+        <div class="particle-line" style="width: 35px;"></div>
+        <div class="particle-line" style="width: 20px;"></div>
+        <div class="particle-line" style="width: 40px;"></div>
+        <div class="particle-line" style="width: 28px;"></div>
+        <div class="particle-line" style="width: 32px;"></div>
+        <div class="particle-line" style="width: 22px;"></div>
+    </div>
+    
+    <!-- jQuery (first, only once) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- IconPicker 1.5.0 JS (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fontawesome-iconpicker/1.5.0/js/fontawesome-iconpicker.min.js"></script>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Caught global error:');
+            console.error('Message:', message);
+            console.error('Source:', source);
+            console.error('Line:', lineno);
+            console.error('Column:', colno);
+            console.error('Error object:', error);
+            // Return true to prevent the default browser error handling (optional)
+            // return true;
+        };
+    </script>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MovieTheater</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar border-bottom box-shadow mb-0">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="movie-logo-icon" style="display:flex;align-items:center;">
+                        <i class='bx bx-movie-play bx-tada main-color' style="font-size:2rem;"></i>
+                        <img src="~/image/logo.png" alt="MovieTheater Logo" style="height:40px; width:auto; display:inline-block; vertical-align:middle; margin-left:8px;">
+                    </span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        <!-- Đã xóa mục Home vì logo đã là link về Home -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-area="" asp-controller="Movie" asp-action="MovieList">Movies</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-area="" asp-controller="Promotion" asp-action="List">Promotions</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
-                        </li>
+                    </ul>
+                    <ul class="navbar-nav align-items-center">
+                        @if (userRole == "Admin")
+                        {
+                            <li class="nav-item me-2">
+                                <a class="nav-link" href="@Url.Action("QuickBook", "Booking")">
+                                    <i class="fas fa-ticket-alt me-1"></i>Quick Book
+                                </a>
+                            </li>
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
+                            </li>
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Admin" asp-action="MainPage">Admin Dashboard</a>
+                            </li>
+                        }
+                        else if (userRole == "Employee")
+                        {
+                            <li class="nav-item me-2">
+                                <a class="nav-link" href="@Url.Action("QuickBook", "Booking")">
+                                    <i class="fas fa-ticket-alt me-1"></i>Quick Book
+                                </a>
+                            </li>
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Admin" asp-action="ShowtimeMg">Showtime</a>
+                            </li>
+                            <li class="nav-item me-2">
+                                <a class="nav-link" asp-controller="Employee" asp-action="MainPage">Employee Board</a>
+                            </li>
+                        }
+                        
+                        @if (isAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding:0;">
+                                    <img src="@(User.FindFirst("Image")?.Value ?? "/image/profile.jpg")" alt="Avatar" class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid #eee;">
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end profile-dropdown-menu shadow-lg animate__animated animate__fadeIn" aria-labelledby="profileDropdown">
+                                    @if (userRole == "Member")
+                                    {
+                                        <li>
+                                            <a class="dropdown-item profile-dropdown-item d-flex align-items-center gap-2" href="/MyAccount/MainPage">
+                                                <i class="fas fa-user-circle"></i> View Profile
+                                            </a>
+                                        </li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item profile-dropdown-item d-flex align-items-center gap-2" href="/Account/Logout">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container text-center">
-            &copy; 2025 - MovieTheater
-        </div>
-    </footer>
 
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <main role="main" class="fade-in" style="padding-top:0;">
+        @RenderBody()
+    </main>
+
+<partial name="_ToastMessages" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/jquery.cycle2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.cycle2/2.1.6/plugin/jquery.cycle2.swipe.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize and show success toast if it exists
+            var toastMessageContainer = document.getElementById('toastMessage');
+            if (toastMessageContainer) {
+                var toastEl = toastMessageContainer.querySelector('.toast');
+                if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay
+                    });
+                    toast.show();
+                }
+            }
+
+            // Initialize and show error toast if it exists
+            var errorToastContainer = document.getElementById('errorToast');
+            if (errorToastContainer) {
+                 var toastEl = errorToastContainer.querySelector('.toast');
+                 if (toastEl) {
+                    var toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 2000 // 2 seconds delay (adjust to 4000 if preferred)
+                    });
+                    toast.show();
+                 }
+            }
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        // Force dark mode
+        document.body.classList.add("dark-mode");
+        const navbar = document.querySelector('.app-navbar');
+        const content = document.getElementById("content");
+        
+        if (navbar) {
+            navbar.classList.add("dark-mode");
+        }
+        if (content) {
+            content.classList.add("dark-mode");
+        }
+
+        // Sticky navbar scroll effect with hero section transparency
+        function updateNavbarStyle() {
+            const navbar = document.querySelector('.app-navbar');
+            const navWrapper = document.querySelector('.nav-wrapper');
+            const scrollY = window.scrollY;
+            const heroSection = document.querySelector('.hero-section');
+            
+            if (heroSection) {
+                const heroHeight = heroSection.offsetHeight;
+                
+                // Trong hero section (slide 1) - navbar trong suốt
+                if (scrollY < heroHeight) {
+                    navbar.classList.remove('scrolled');
+                    navbar.classList.add('hero-transparent');
+                    if (navWrapper) {
+                        navWrapper.classList.add('hero-transparent');
+                    }
+                } 
+                // Sau hero section - navbar có background
+                else {
+                    navbar.classList.remove('hero-transparent');
+                    navbar.classList.add('scrolled');
+                    if (navWrapper) {
+                        navWrapper.classList.remove('hero-transparent');
+                    }
+                }
+            } else {
+                // Fallback nếu không có hero section
+                if (scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                    if (navWrapper) {
+                        navWrapper.classList.remove('hero-transparent');
+                    }
+                } else {
+                    navbar.classList.remove('scrolled');
+                    if (navWrapper) {
+                        navWrapper.classList.add('hero-transparent');
+                    }
+                }
+            }
+        }
+        
+        // Initial call to set navbar style on page load
+        updateNavbarStyle();
+        
+        // Update on scroll
+        window.addEventListener('scroll', updateNavbarStyle);
+        
+        // Set active states for navbar items
+        function setActiveNavItems() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navbarBrand = document.querySelector('.navbar-brand');
+            
+            // Remove all active classes
+            navLinks.forEach(link => link.classList.remove('active'));
+            navbarBrand.classList.remove('home-active');
+            
+            // Set active based on current path
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && currentPath.includes(href.replace('~', ''))) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Check if we're on home page
+            if (currentPath === '/' || currentPath === '/Home' || currentPath === '/Home/Index') {
+                navbarBrand.classList.add('home-active');
+            }
+            
+            // Special cases for specific controllers
+            if (currentPath.includes('/Movie')) {
+                document.querySelector('a[href*="Movie"]')?.classList.add('active');
+            } else if (currentPath.includes('/Promotion')) {
+                document.querySelector('a[href*="Promotion"]')?.classList.add('active');
+            } else if (currentPath.includes('/Booking')) {
+                document.querySelector('a[href*="Booking"]')?.classList.add('active');
+            } else if (currentPath.includes('/Admin')) {
+                document.querySelector('a[href*="Admin"]')?.classList.add('active');
+            } else if (currentPath.includes('/Employee')) {
+                document.querySelector('a[href*="Employee"]')?.classList.add('active');
+            }
+        }
+        
+        // Set active states on page load
+        setActiveNavItems();
+    </script>
+    <!-- Thông báo hết thời gian ở giữa màn hình, luôn hiển thị nổi bật, nằm ngoài cùng -->
+    <div id="timeoutMessage" style="
+      display:none;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      width:100vw;
+      position:fixed;
+      top:0; left:0;
+      background:rgba(30,41,59,0.92);
+      z-index:99999;
+      flex-direction:column;
+      text-align:center;
+      border: 5px solid yellow;
+    ">
+      <h2 style='color:yellow'>⏰ Seat hold time has expired!!</h2>
+      <p style="color: #fff; font-size: 1.3rem;">Please select a seat again or return to the previous page.</p>
+      <button id="retryBtn" class="btn btn-primary mt-3">Choose your seats again</button>
+    </div>
+    <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+                        window.location.href = '/#booking-widget';
+      });
+    }
+  });
+</script>
+<footer class="footer pt-4 pb-2" style="background: #10131a; color: #fff;">
+    <div class="container-fluid px-0">
+        <div class="row footer-content py-4 justify-content-between">
+            <!-- FOOTER -->
+                <div class="col-lg-4 d-flex flex-column align-items-start mb-4" style="padding-left: 170px;">
+                <h5 class="fw-bold mb-3">ABOUT FPT 777</h5>
+                <div class="footer-underline mb-2"></div>
+                <ul class="list-unstyled">
+                    <li><a href="#" class="footer-link">Theater System</a></li>
+                    <li><a href="#" class="footer-link">Theater Cluster</a></li>
+                    <li><a href="#" class="footer-link">Contact</a></li>
+                </ul>
+                    <img src="https://www.bhdstar.vn/wp-content/uploads/2023/08/image-21.png" alt="Đã thông báo Bộ Công Thương" style="width=190px,height:48px;margin-top:10px">
+            </div>
+                <div class="col-lg-4 d-flex flex-column align-items-start mb-4" style="
+    padding-left: 150px;">
+                 <h5 class="fw-bold mb-3">TERMS & CONDITIONS</h5>
+                <div class="footer-underline mb-2"></div>
+                <ul class="list-unstyled">
+                        <li><a href="#" class="footer-link">Membership regulations</a></li>
+                    <li><a href="#" class="footer-link">Terms</a></li>
+                    <li><a href="#" class="footer-link">Guide how to book ticket online</a></li>
+                     <li><a href="#" class="footer-link">General rules and policies</a></li>
+                    <li>
+                        <a href="#" class="footer-link">
+                                Consumer personal information protection policy
+                        </a>
+                    </li>
+                </ul>
+            </div>
+                <div class="col-lg-4 d-flex flex-column align-items-start mb-4" style="
+    padding-left: 100px;">
+                <h5 class="fw-bold mb-3">CUSTOMER SERVICES</h5>
+                <div class="footer-underline mb-2"></div>
+                <p class="mb-1"><b>Hotline:</b> 19002099</p>
+                    <p class="mb-1"><b>Office hours:</b> 9:00 - 22:00 (Every single day, including Tet, holidays)</p>
+                <p class="mb-1"><b>Email support:</b> fpt777@support.com</p>
+                <div class="mt-3">
+                    <span class="fw-bold">SOCIAL MEDIAS</span>
+                    <div class="d-flex gap-3 mt-2">
+                        <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook fa-2x"></i></a>
+                        <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram fa-2x"></i></a>
+                        <a href="#" class="social-link" title="TikTok"><i class="fab fa-tiktok fa-2x"></i></a>
+                        <a href="#" class="social-link" title="YouTube"><i class="fab fa-youtube fa-2x"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- BOTTOM -->
+        <div class="footer-bottom-row d-flex align-items-center py-3 border-top" style="border-color: #222 !important;">
+            <img src="~/image/logo.png" alt="FPT777 Logo" style="height:56px;" class="me-3 ms-2">
+            <div class="footer-company-info small">
+                <b>FPT777 INDUSTRY</b><br>
+                <b>Business license:</b> Business license number: 01111111. First registered April 15, 2025<br>
+                <b>Address:</b> Saigon Hitech Park, Tan Phu Ward, Thu Duc, Ho Chi Minh City<br>
+                <b>Hotline:</b> 19002099<br>
+                COPYRIGHT 2025 FPT777NUMBER1. ALL RIGHTS RESERVED
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

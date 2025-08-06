@@ -1,0 +1,129 @@
+@model MovieTheater.ViewModels.ShowtimeSelectionViewModel
+
+<!--
+    MT-20: Select Movie and Showtime View
+    - Displays a date combobox (dropdown) for valid screening dates (AC-01)
+    - Shows movies with posters and showtimes as buttons (AC-02)
+    - If no showtimes, shows a 'No showtime' message (AC-04)
+    - All data is read-only and based on the ViewModel (AC-05)
+-->
+
+@{
+    ViewData["Title"] = "Ticket selling management – Select movie and showtime";
+    var isAuthenticated = User.Identity.IsAuthenticated;
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var isAtToday = Model.SelectedDate == today;
+}
+
+@{
+    var returnUrl = Context.Request.Query["ReturnUrl"].ToString();
+    if (string.IsNullOrEmpty(returnUrl))
+    {
+        // Default to Booking Management if no ReturnUrl is provided
+        if (User.IsInRole("Admin"))
+        {
+            returnUrl = Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+        }
+        else if (User.IsInRole("Employee"))
+        {
+            returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+        }
+        else
+        {
+            returnUrl = Url.Action("Index", "Home");
+        }
+    }
+}
+<!-- Flatpickr CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<div class="text-start p-3">
+    <a href="@returnUrl" class="btn btn-secondary">&larr; Return</a>
+</div>
+
+<h2 class="text-center mb-4">SHOWTIMES</h2>
+
+<div class="showtime-container p-4 rounded">
+    <!-- Date navigation UI -->
+    <form method="get" asp-action="Select" asp-controller="Showtime" class="mb-4 text-center" id="dateNavForm">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <div class="d-inline-flex align-items-center gap-2">
+            @if (!isAtToday)
+            {
+                <button type="button" id="prevDayBtn" class="btn btn-outline-secondary btn-sm" title="Previous day">&lt;</button>
+            }
+            <div style="position: relative; width: 150px;">
+                <input type="text" id="calendarInput" name="date" class="form-control form-control-sm" style="width: 100%; padding-right: 2em;" value="@Model.SelectedDate.ToString("dd/MM/yyyy")" autocomplete="off" />
+                <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;">
+                    <i class="fa-regular fa-calendar"></i>
+                </span>
+            </div>
+            <button type="button" id="nextDayBtn" class="btn btn-outline-secondary btn-sm" title="Next day">&gt;</button>
+        </div>
+    </form>
+
+    @if (Model.Movies == null || !Model.Movies.Any())
+    {
+        <div class="alert alert-warning text-center">No showtime</div> <!-- AC-04 -->
+    }
+    else
+    {
+        foreach (var movie in Model.Movies)
+        {
+            <div class="card mb-4 mx-auto" style="max-width: 700px;">
+                <div class="row g-0 align-items-center">
+                    <div class="col-md-2 text-center">
+                        <img src="@movie.PosterUrl" alt="@movie.MovieName" class="img-fluid rounded" style="max-height: 120px;" />
+                    </div>
+                    <div class="col-md-10">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">@movie.MovieName</h5>
+                            <div>
+                                @foreach (var versionShowtime in movie.VersionShowtimes)
+                                {
+                                    <div class="mb-2">
+                                        <div class="text-muted mb-1" style="font-size: 0.9em; font-weight: 500;">@versionShowtime.VersionName</div>
+                                        <div>
+                                            @foreach (var showtime in versionShowtime.Showtimes)
+                                            {
+                                                <a asp-action="Select" asp-controller="Seat"
+                                                   asp-route-movieId="@movie.MovieId"
+                                                   asp-route-date="@Model.SelectedDate.ToString("dd/MM/yyyy")"
+                                                   asp-route-time="@showtime"
+                                                   asp-route-versionId="@versionShowtime.VersionId"
+                                                   asp-route-isAdminSell="true"
+                                                   asp-route-returnUrl="@Url.Action("Select", "Showtime", new { date = Model.SelectedDate.ToString("dd/MM/yyyy"), returnUrl = Model.ReturnUrl })"
+                                                   class="btn btn-outline-primary btn-sm m-1 bookBtn">
+                                                    @showtime
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!--
+    - Date combobox triggers form submit on change (AC-01)
+    - Showtimes are links/buttons that redirect to seat selection with movieId, date, and time (AC-03)
+    - If no showtimes, shows a warning message (AC-04)
+    - All data is based on the ViewModel (active schedule, valid showtimes) (AC-05)
+--> 
+
+<!-- Pass data from Razor to JavaScript -->
+<script>
+    // Set global variables for the JavaScript file to use
+    window.selectedDate = '@Model.SelectedDate.ToString("dd/MM/yyyy")';
+    window.isAtToday = @isAtToday.ToString().ToLower();
+</script>
+
+<!-- Include the JavaScript file -->
+<script src="~/js/select.js" asp-append-version="true"></script>

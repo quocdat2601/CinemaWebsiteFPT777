@@ -1,0 +1,96 @@
+﻿@model MovieTheater.ViewModels.ProfileUpdateViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "My Account";
+    var activeTab = ViewData["ActiveTab"]?.ToString() ?? "Profile";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/modern-sidebar.css" asp-append-version="true" />
+}
+
+<!-- SIDEBAR TĨNH, KHÔNG CỐ ĐỊNH KHI CUỘN -->
+<div class="container-fluid">
+    <div class="row">
+        <aside id="modernSidebar" class="modern-sidebar-static col-auto">
+            <div style="width:100%; display:flex; justify-content:center; align-items:center; padding-top: 18px;">
+                <button id="sidebarToggle" class="hamburger-btn-static">
+                    <span class="material-icons">menu</span>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="sidebar-link active" data-tab="Profile"><span class="material-icons">person</span> <span>Profile</span></a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="Score"><span class="material-icons">star</span> <span>Score</span></a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="Voucher"><span class="material-icons">card_giftcard</span> <span>Voucher</span></a></li>
+                </ul>
+            </nav>
+        </aside>
+        <div class="col main-content" id="tabContent">
+            <h3>Loading...</h3>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+        // Sidebar toggle functionality - Unified
+        $('#sidebarToggle').click(function() {
+            const sidebar = $('#modernSidebar');
+            const icon = $(this).find('.material-icons');
+            
+            // Toggle collapsed state
+            sidebar.toggleClass('collapsed');
+            
+            // Change icon based on state
+            if (sidebar.hasClass('collapsed')) {
+                icon.text('menu_open');
+            } else {
+                icon.text('menu');
+            }
+        });
+        
+        // Tab switching
+        $('.sidebar-link').click(function(e) {
+            e.preventDefault();
+            $('.sidebar-link').removeClass('active');
+            $(this).addClass('active');
+            const tab = $(this).data('tab');
+            // Load tab content
+            $('#tabContent').html('<h3>Loading...</h3>');
+            $.get(`/MyAccount/LoadTab?tab=${tab}`, function (data) {
+                $('#tabContent').html(data);
+            }).fail(function() {
+                $('#tabContent').html('<div class="alert alert-danger">Failed to load tab content. Please try again.</div>');
+            });
+        });
+        
+        // Load initial tab
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTab = urlParams.get('tab') || 'Profile';
+        $(`.sidebar-link[data-tab="${initialTab}"]`).trigger('click');
+        
+        // Auto-hide sidebar when scrolling to footer - DISABLED
+        // $(window).scroll(function() {
+        //     const sidebar = $('#modernSidebar');
+        //     const footer = $('.footer');
+        //     const scrollTop = $(window).scrollTop();
+        //     const windowHeight = $(window).height();
+        //     const documentHeight = $(document).height();
+        //     const footerOffset = footer.offset().top;
+        //     
+        //     // Check if we're near the footer
+        //     if (scrollTop + windowHeight >= footerOffset - 100) {
+        //         sidebar.addClass('sidebar-hidden');
+        //     } else {
+        //         sidebar.removeClass('sidebar-hidden');
+        //     }
+        // });
+    });
+</script>
+}
+
+
+

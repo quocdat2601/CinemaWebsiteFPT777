@@ -1,0 +1,117 @@
+﻿@model IEnumerable<MovieTheater.ViewModels.MovieViewModel>
+
+@{
+    var ongoingMovies = Model.Where(m => m.IsOngoing).ToList();
+    var incomingMovies = Model.Where(m => !m.IsOngoing).ToList();
+}
+
+@if (!Model.Any())
+{
+    <div class="text-center w-100">
+        <h3>No movies found</h3>
+    </div>
+}
+else
+{   
+    <!-- Always show two rows - one for ongoing, one for incoming -->
+    
+    <!-- Row 1: Currently Showing -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="section-title text-white">🎬 Currently Showing</h2>
+        </div>
+        @if (ongoingMovies.Any())
+        {
+            @foreach (var movie in ongoingMovies)
+            {
+                <div class="col-md-3 mb-3">
+                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="text-decoration-none text-reset">
+                        <div class="movie-card">
+                            <div class="movie-poster">
+                                <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
+                                <div class="ongoing-badge">Now Showing</div>
+                            </div>
+                            <div class="movie-info" style="background-color: transparent !important">
+                                <h3 class="movie-title text-white">@movie.MovieNameEnglish</h3>
+                                <div class="movie-tags">
+                                    @if (movie.Types != null)
+                                    {
+                                        @foreach (var type in movie.Types)
+                                        {
+                                            <span class="movie-tag type-tag">@type.TypeName</span>
+                                        }
+                                    }
+                                    @if (movie.Versions != null)
+                                    {
+                                        @foreach (var version in movie.Versions)
+                                        {
+                                            <span class="movie-tag version-tag">@version.VersionName</span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <p class="text-muted">No movies currently showing</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Row 2: Coming Soon -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="section-title text-white">📅 Coming Soon</h2>
+        </div>
+        @if (incomingMovies.Any())
+        {
+            @foreach (var movie in incomingMovies)
+            {
+                <div class="col-md-3 mb-3">
+                    <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="text-decoration-none text-reset">
+                        <div class="movie-card">
+                            <div class="movie-poster">
+                                <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish">
+                                <div class="coming-soon-badge">Coming Soon</div>
+                            </div>
+                            <div class="movie-info" style="background-color: transparent !important">
+                                <h3 class="movie-title text-white">@movie.MovieNameEnglish</h3>
+                                <div class="movie-tags">
+                                    @if (movie.Types != null)
+                                    {
+                                        @foreach (var type in movie.Types)
+                                        {
+                                            <span class="movie-tag type-tag">@type.TypeName</span>
+                                        }
+                                    }
+                                    @if (movie.Versions != null)
+                                    {
+                                        @foreach (var version in movie.Versions)
+                                        {
+                                            <span class="movie-tag version-tag">@version.VersionName</span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <p class="text-muted">No movies coming soon</p>
+                </div>
+            </div>
+        }
+    </div>
+}

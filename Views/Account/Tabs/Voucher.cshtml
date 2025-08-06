@@ -1,0 +1,1047 @@
+﻿@using MovieTheater.Models;
+@model IEnumerable<Voucher>
+@{
+    ViewData["Title"] = "My Vouchers";
+    
+    var now = DateTime.Now;
+    var activeVouchers = Model?.Where(v => !v.IsUsed.HasValue || !v.IsUsed.Value)
+                               .Where(v => v.ExpiryDate > now)
+                               .OrderBy(v => v.ExpiryDate)
+                               .ToList() ?? new List<Voucher>();
+    
+    var expiredOrUsedVouchers = Model?.Where(v => (v.IsUsed.HasValue && v.IsUsed.Value) || v.ExpiryDate <= now)
+                                      .OrderByDescending(v => v.ExpiryDate)
+                                      .ToList() ?? new List<Voucher>();
+
+    var totalValue = activeVouchers.Sum(v => v.Value);
+    var totalVouchers = Model?.Count() ?? 0;
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h2 class="text-center mb-0">
+            <i class="fas fa-ticket-alt me-2"></i>
+            My Vouchers
+            </h2>
+        </div>
+
+    <div class="card-body">
+        <!-- Filter Form -->
+        <form id="voucherFilterForm" class="row g-3 p-4 bg-light rounded-3 shadow-sm mb-4">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Voucher Type</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" id="activeVouchers" name="voucherType" value="active" checked />
+                    <label class="btn btn-outline-primary" for="activeVouchers">
+                        <i class="fas fa-star"></i> Active
+                    </label>
+                    <input type="radio" class="btn-check" id="expiredVouchers" name="voucherType" value="expired" />
+                    <label class="btn btn-outline-primary" for="expiredVouchers">
+                        <i class="fas fa-history"></i> Expired/Used
+                    </label>
+                  
+                            </div>
+                                </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Sort By</label>
+                <select id="sortBy" class="form-control">
+                    <option value="expiry">Expiry Date</option>
+                    <option value="value">Value</option>
+                    <option value="created">Created Date</option>
+                    <option value="code">Code</option>
+                </select>
+                            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Items Per Page</label>
+                <select id="pageSize" class="form-control">
+                    <option value="4">4 per page</option>
+                    <option value="6">6 per page</option>
+                    <option value="12">12 per page</option>
+                    <option value="18">18 per page</option>
+                </select>
+                        </div>
+            <div class="col-12 text-end">
+                <button type="submit" id="filterBtn" class="btn btn-primary px-4">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+
+        <!-- Vouchers Result -->
+        <div id="vouchersResult">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                                    </div>
+                <p class="mt-3">Loading vouchers...</p>
+                                </div>
+                            </div>
+                            
+        <!-- Pagination -->
+        <nav id="vouchersPagination" class="mt-3"></nav>
+                                    </div>
+                                </div>
+
+<style>
+/* Modern Cinema Theme for Vouchers */
+.card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.card-header {
+    background: #2d2d2d !important;
+    color: #fff !important;
+    border-radius: 0 !important;
+    border: none;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header h2 {
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.alert-info {
+    background: transparent;
+    border: none;
+    color: #fff;
+    border-radius: 0;
+    padding: 0.5rem 0;
+}
+
+.alert-info .fas {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.bg-light {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: none;
+    border-radius: 0;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: #fff;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+/* Ensure better contrast for select elements */
+select.form-control {
+    background: rgba(44, 62, 80, 0.8);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+select.form-control option {
+    background: #2c3e50;
+    color: #fff;
+    text-shadow: none;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #d4af37;
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+    color: #fff;
+}
+
+select.form-control:focus {
+    background: rgba(52, 73, 94, 0.9);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Style for select options */
+.form-control option {
+    background: #2c3e50;
+    color: #fff;
+    padding: 8px;
+}
+
+.form-control option:hover {
+    background: #34495e;
+}
+
+.form-control option:checked {
+    background: #d4af37;
+    color: #000;
+}
+
+.form-label {
+    color: #d4af37;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.btn-group .btn {
+    border-radius: 8px;
+    margin: 0 2px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary {
+    border-color: #d4af37;
+    color: #d4af37;
+    background: transparent;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-check:checked + .btn-outline-primary {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+}
+
+.btn-primary {
+    background: transparent;
+    border: 1px solid #d4af37;
+    border-radius: 0;
+    color: #d4af37;
+    font-weight: 400;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #d4af37;
+    color: #000;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Voucher Grid */
+.voucher-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Voucher Cards */
+.voucher-card {
+    background: rgba(52, 73, 94, 0.1);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.voucher-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-color: rgba(52, 152, 219, 0.6);
+}
+
+.voucher-card.active {
+    border-color: rgba(39, 174, 96, 0.5);
+    box-shadow: 0 0 15px rgba(39, 174, 96, 0.2);
+}
+
+.voucher-card.expiring {
+    border-color: rgba(243, 156, 18, 0.6);
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.3);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.voucher-card.inactive {
+    opacity: 0.7;
+    filter: grayscale(30%);
+    border-color: rgba(149, 165, 166, 0.4);
+}
+
+.voucher-card.inactive:hover {
+    opacity: 1;
+    filter: grayscale(0%);
+    border-color: rgba(149, 165, 166, 0.6);
+}
+
+/* Voucher Image */
+.voucher-image {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.voucher-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+    filter: brightness(0.9) contrast(1.1);
+}
+
+.voucher-img.grayscale {
+    filter: grayscale(100%);
+}
+
+.voucher-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    color: #000;
+    font-size: 3rem;
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.voucher-placeholder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+}
+
+.voucher-placeholder::after {
+    content: 'VOUCHER';
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: rgba(0, 0, 0, 0.7);
+    margin-top: 0.5rem;
+}
+
+@@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.voucher-placeholder.inactive {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: #fff;
+}
+
+.voucher-placeholder.inactive::after {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Voucher Overlay */
+.voucher-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 20;
+    border-radius: 10px;
+}
+
+.voucher-card:hover .voucher-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.voucher-overlay .btn {
+    background: #2c3e50;
+    border: 2px solid #3498db;
+    color: #ecf0f1;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.voucher-overlay .btn:hover {
+    background: #3498db;
+    border-color: #3498db;
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+}
+
+/* Voucher Content */
+.voucher-content {
+    padding: 1.5rem;
+    background: rgba(44, 62, 80, 0.1);
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+/* Voucher Header */
+.voucher-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.voucher-code {
+    flex: 1;
+}
+
+.code-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #95a5a6;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.25rem;
+}
+
+.code-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #f1c40f;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
+}
+
+/* Expired voucher code color */
+.voucher-card.inactive .code-value,
+.voucher-card.expired .code-value {
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+}
+
+.voucher-value {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #27ae60;
+    text-shadow: 0 0 5px rgba(39, 174, 96, 0.3);
+}
+
+.voucher-value i {
+    color: #f39c12;
+    filter: drop-shadow(0 0 3px rgba(243, 156, 18, 0.5));
+}
+
+/* Voucher Details */
+.voucher-details {
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #bdc3c7;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+.detail-item i {
+    width: 16px;
+    color: #f39c12;
+    filter: drop-shadow(0 0 3px rgba(243, 156, 18, 0.5));
+}
+
+/* Status Badges */
+.voucher-status {
+    text-align: center;
+    margin-top: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.status-badge.active {
+    background: rgba(39, 174, 96, 0.2);
+    color: #27ae60;
+    border: 1px solid #27ae60;
+    text-shadow: 0 0 5px rgba(39, 174, 96, 0.3);
+}
+
+.status-badge.used {
+    background: rgba(149, 165, 166, 0.2);
+    color: #95a5a6;
+    border: 1px solid #95a5a6;
+    text-shadow: 0 0 5px rgba(149, 165, 166, 0.3);
+}
+
+.status-badge.expired {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+}
+
+/* Pagination - Modern Minimalist Style */
+.pagination-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.page-item {
+    margin: 0;
+}
+
+.page-link {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.page-item.active .page-link {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #000;
+    font-weight: 600;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.page-item.active .page-link:hover {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #000;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-item.disabled .page-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Ellipsis styling */
+.page-item.disabled .page-link:not(.page-link[data-page]) {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    min-width: auto;
+    height: auto;
+}
+
+.page-item.disabled .page-link:not(.page-link[data-page]):hover {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Animations */
+@@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .voucher-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .voucher-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .voucher-value {
+        align-self: flex-start;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin: 2px 0;
+    }
+    
+    .pagination {
+        gap: 0.25rem;
+    }
+    
+    .page-link {
+        padding: 0.5rem 0.75rem;
+        min-width: 40px;
+        height: 40px;
+        font-size: 0.85rem;
+    }
+}
+
+@@media (max-width: 480px) {
+    .voucher-card {
+        padding: 0;
+    }
+    
+    .voucher-content {
+        padding: 1rem;
+    }
+    
+    .pagination {
+        gap: 0.2rem;
+    }
+    
+    .page-link {
+        padding: 0.4rem 0.6rem;
+        min-width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+$(function () {
+    let allVouchersData = [];
+    let currentPage = 1;
+    let pageSize = 6;
+
+    // Prevent form submission
+    $('#voucherFilterForm').attr('action', 'javascript:void(0)');
+    $('#voucherFilterForm').removeAttr('method');
+
+    // Initialize data
+    function initializeData() {
+        // Create voucher data from the model
+        const activeVouchers = [
+            @foreach (var voucher in activeVouchers)
+            {
+                <text>
+                {
+                    code: '@voucher.Code',
+                    value: @voucher.Value,
+                    expiryDate: '@voucher.ExpiryDate.ToString("yyyy-MM-dd")',
+                    createdDate: '@voucher.CreatedDate.ToString("yyyy-MM-dd")',
+                    image: '@(string.IsNullOrEmpty(voucher.Image) ? "" : voucher.Image)',
+                    type: 'active'
+                },
+                </text>
+            }
+        ];
+        
+        const expiredVouchers = [
+            @foreach (var voucher in expiredOrUsedVouchers)
+            {
+                <text>
+                {
+                    code: '@voucher.Code',
+                    value: @voucher.Value,
+                    expiryDate: '@voucher.ExpiryDate.ToString("yyyy-MM-dd")',
+                    createdDate: '@voucher.CreatedDate.ToString("yyyy-MM-dd")',
+                    image: '@(string.IsNullOrEmpty(voucher.Image) ? "" : voucher.Image)',
+                    type: 'expired'
+                },
+                </text>
+            }
+        ];
+        
+        allVouchersData = [...activeVouchers, ...expiredVouchers];
+    }
+
+    // Sort vouchers
+    function sortVouchers(vouchers, sortBy) {
+        return vouchers.sort((a, b) => {
+            switch (sortBy) {
+                case 'expiry':
+                    return new Date(a.expiryDate) - new Date(b.expiryDate);
+                case 'value':
+                    return b.value - a.value;
+                case 'created':
+                    return new Date(b.createdDate) - new Date(a.createdDate);
+                case 'code':
+                    return a.code.localeCompare(b.code);
+                default:
+                    return 0;
+            }
+        });
+    }
+
+    // Filter vouchers
+    function filterVouchers(vouchers, voucherType) {
+        switch (voucherType) {
+            case 'active':
+                return vouchers.filter(v => v.type === 'active');
+            case 'expired':
+                return vouchers.filter(v => v.type === 'expired');
+            case 'all':
+            default:
+                return vouchers;
+        }
+    }
+
+    // Render vouchers
+    function renderVouchers(vouchers) {
+        const resultContainer = $('#vouchersResult');
+        if (!resultContainer.length) {
+            console.error('Vouchers result container not found');
+            return;
+        }
+
+        if (!vouchers || vouchers.length === 0) {
+            resultContainer.html(`
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-ticket-alt fa-3x mb-3"></i>
+                    <p class="lead">No vouchers found for the selected criteria.</p>
+                </div>
+            `);
+            return;
+        }
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageData = vouchers.slice(start, end);
+
+        let html = '<div class="voucher-grid">';
+        
+        pageData.forEach(voucher => {
+            if (!voucher) return;
+            
+            const isExpiringSoon = voucher.type === 'active' && 
+                (new Date(voucher.expiryDate) - new Date()).Days <= 7;
+            
+            html += `
+                <div class="voucher-card ${voucher.type} ${isExpiringSoon ? 'expiring' : ''}" 
+                     data-code="${voucher.code || ''}" 
+                     data-value="${voucher.value || 0}"
+                     data-expiry="${voucher.expiryDate || ''}"
+                     data-created="${voucher.createdDate || ''}">
+                    
+                    <div class="voucher-image">
+                        ${voucher.image ? 
+                            `<img src="${voucher.image}" alt="Voucher Image" class="voucher-img">` :
+                            `<div class="voucher-placeholder ${voucher.type === 'expired' ? 'inactive' : ''}">
+                                <i class="fas fa-ticket-alt"></i>
+                            </div>`
+                        }
+                    </div>
+                    
+                    <div class="voucher-content">
+                        <div class="voucher-header">
+                            <div class="voucher-code">
+                                <span class="code-label">CODE</span>
+                                <span class="code-value">${voucher.code || 'N/A'}</span>
+                            </div>
+                            <div class="voucher-value">
+                                <i class="fas fa-coins"></i>
+                                <span>${(voucher.value || 0).toLocaleString()} VND</span>
+                            </div>
+                        </div>
+                        
+                        <div class="voucher-details">
+                            <div class="detail-item">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span>Created: ${voucher.createdDate ? new Date(voucher.createdDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-calendar-times"></i>
+                                <span>Expires: ${voucher.expiryDate ? new Date(voucher.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="voucher-status">
+                            <span class="status-badge ${voucher.type}">
+                                <i class="fas fa-${voucher.type === 'active' ? 'check-circle' : 'times-circle'} me-1"></i>
+                                ${voucher.type === 'active' ? 'Active' : 'Expired/Used'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="voucher-overlay">
+                        <button class="btn btn-light btn-sm" onclick="copyVoucherCode('${voucher.code || ''}')">
+                            <i class="fas fa-copy"></i> Copy Code
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        resultContainer.html(html);
+    }
+
+    // Render pagination
+    function renderPagination(totalItems) {
+        console.log('Rendering pagination for', totalItems, 'items, pageSize:', pageSize, 'currentPage:', currentPage);
+        
+        const paginationContainer = $('#vouchersPagination');
+        if (!paginationContainer.length) {
+            console.error('Pagination container not found');
+            return;
+        }
+
+        const totalPages = Math.ceil(totalItems / pageSize);
+        console.log('Total pages:', totalPages);
+        
+        if (totalPages <= 1) {
+            paginationContainer.html('');
+            return;
+        }
+
+        // Ensure currentPage is within valid range
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        if (currentPage < 1) {
+            currentPage = 1;
+        }
+
+        const maxVisiblePages = 7;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        console.log('Pagination range:', startPage, 'to', endPage);
+
+        let html = '<div class="pagination-container">';
+        html += '<ul class="pagination justify-content-center">';
+
+        // Previous button
+        html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}">`;
+        html += `<a class="page-link" href="#" data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i></a>`;
+        html += '</li>';
+
+        // First page + ellipsis
+        if (startPage > 1) {
+            html += '<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>';
+            if (startPage > 2) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+        }
+
+        // Visible pages
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<li class="page-item${currentPage === i ? ' active' : ''}">`;
+            html += `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+            html += '</li>';
+        }
+
+        // Last page + ellipsis
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
+        // Next button
+        html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}">`;
+        html += `<a class="page-link" href="#" data-page="${currentPage + 1}"><i class="fas fa-chevron-right"></i></a>`;
+        html += '</li>';
+
+        html += '</ul>';
+        html += '</div>';
+
+        paginationContainer.html(html);
+        console.log('Pagination HTML rendered');
+
+        // Add event listeners
+        paginationContainer.find('.page-link').off('click').on('click', function (e) {
+            e.preventDefault();
+            const page = parseInt($(this).data('page'));
+            console.log('Page clicked:', page, 'Current page:', currentPage, 'Total pages:', totalPages);
+            
+            if (!isNaN(page) && page >= 1 && page <= totalPages && page !== currentPage) {
+                console.log('Changing to page:', page);
+                currentPage = page;
+                loadVouchers();
+            } else {
+                console.log('Invalid page or same page clicked');
+            }
+        });
+    }
+
+    // Load vouchers
+    function loadVouchers() {
+        try {
+            console.log('Loading vouchers...');
+            console.log('All vouchers data:', allVouchersData);
+            
+            const voucherType = $('input[name="voucherType"]:checked').val();
+            const sortBy = $('#sortBy').val();
+            pageSize = parseInt($('#pageSize').val()) || 6;
+
+            console.log('Filter settings:', { voucherType, sortBy, pageSize });
+
+            // Filter and sort
+            let filteredVouchers = filterVouchers(allVouchersData, voucherType);
+            console.log('Filtered vouchers:', filteredVouchers.length);
+            
+            filteredVouchers = sortVouchers(filteredVouchers, sortBy);
+            console.log('Sorted vouchers:', filteredVouchers.length);
+
+            // Ensure currentPage is valid
+            const totalPages = Math.ceil(filteredVouchers.length / pageSize);
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = totalPages;
+            }
+            if (currentPage < 1) {
+                currentPage = 1;
+            }
+
+            console.log('Current page:', currentPage, 'Total pages:', totalPages);
+
+            // Render
+            renderVouchers(filteredVouchers);
+            renderPagination(filteredVouchers.length);
+
+            // Update total value display
+            const totalValue = filteredVouchers.reduce((sum, v) => sum + (v.value || 0), 0);
+            $('#totalValueDisplay').text(totalValue.toLocaleString());
+            
+            console.log('Vouchers loaded successfully');
+        } catch (error) {
+            console.error('Error loading vouchers:', error);
+            $('#vouchersResult').html(`
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                    <p class="lead">Error loading vouchers. Please try again.</p>
+                    <small class="text-muted">${error.message}</small>
+                </div>
+            `);
+        }
+    }
+
+    // Copy voucher code function
+    window.copyVoucherCode = function(code) {
+        navigator.clipboard.writeText(code).then(function() {
+            // Show success message
+            const toast = document.createElement('div');
+            toast.className = 'toast show position-fixed';
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; background: #28a745; color: white; border-radius: 10px; padding: 1rem;';
+            toast.innerHTML = `<i class="fas fa-check-circle me-2"></i>Voucher code "${code}" copied to clipboard!`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        });
+    };
+
+    // Event listeners
+    $('#voucherFilterForm').on('submit', function (e) {
+        e.preventDefault();
+        currentPage = 1; // Reset to first page when filtering
+        loadVouchers();
+    });
+
+    // Also reset page when filter options change
+    $('input[name="voucherType"], #sortBy, #pageSize').on('change', function() {
+        currentPage = 1; // Reset to first page when options change
+        loadVouchers();
+    });
+
+    // Initialize
+    initializeData();
+    loadVouchers();
+
+    console.log('Voucher page loaded successfully with minimalist design!');
+});
+</script>
+

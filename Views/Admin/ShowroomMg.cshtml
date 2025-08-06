@@ -1,0 +1,114 @@
+﻿@model IEnumerable<CinemaRoom>
+@using MovieTheater.Models
+
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+    }
+
+        .nav-tabs .nav-link.active {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+        }
+</style>
+
+<div class="text-center">
+    <h2>
+        Showroom List
+    </h2>
+</div>
+
+<div class="text-center mb-2">
+    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addShowroomModal">
+        Create a Showroom
+    </button>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="showroomTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-dark" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">Active</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark" id="hidden-tab" data-bs-toggle="tab" data-bs-target="#hidden" type="button" role="tab">Hidden</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="showroomTabsContent">
+    @{
+        // Define column headers for Active tab
+        List<string> activeColumnHeaders = new List<string> { "ID", "Cinema Room Name", "Version", "Seat Quantity", "Actions" };
+
+        // Define column headers for Hidden tab
+        List<string> hiddenColumnHeaders = new List<string> { "ID", "Cinema Room Name", "Reason", "From Date", "To Date", "Actions" };
+    }
+
+    <div class="tab-pane fade show active" id="active" role="tabpanel">
+        @Html.Partial("_CinemaRoomTable", 
+                      ViewBag.ActiveRooms as List<CinemaRoom>, 
+                      new ViewDataDictionary(ViewData) 
+                      { 
+                          { "TableType", "Active" },
+                          { "ColumnHeaders", activeColumnHeaders } // Pass the active column headers
+                      })
+    </div>
+
+    <div class="tab-pane fade" id="hidden" role="tabpanel">
+        @Html.Partial("_CinemaRoomTable", 
+                      ViewBag.HiddenRooms as List<CinemaRoom>, 
+                      new ViewDataDictionary(ViewData) 
+                      { 
+                          { "TableType", "Hidden" },
+                          { "ColumnHeaders", hiddenColumnHeaders } // Pass the hidden column headers
+                      })
+    </div>
+</div>
+
+<div class="modal fade" id="addShowroomModal" tabindex="-1" aria-labelledby="addShowroomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-black">
+            <form asp-action="Create" asp-controller="Cinema" method="post">
+
+                <div class="modal-header">
+                    <h5 class="modal-title w-100 text-center" id="addShowroomModalLabel">Add New Showroom</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="CinemaRoomName" class="form-label">Showroom Name</label>
+                        <input id="CinemaRoomName" name="CinemaRoomName" class="form-control" />
+
+                    </div>
+                    <div class="mb-3">
+                        <label for="SeatWidth" class="form-label">Seat Columns</label>
+                        <input type="number" name="SeatWidth" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="SeatLength" class="form-label">Seat Rows</label>
+                        <input type="number" name="SeatLength" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Room Version</label>
+                        <div>
+                            @foreach (var version in ViewBag.Versions as List<MovieTheater.Models.Version>)
+                            {
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="VersionId" id="version_@version.VersionId" value="@version.VersionId" required />
+                                    <label class="form-check-label" for="version_@version.VersionId">@version.VersionName</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="submit" class="btn btn-primary text-center">Add Showroom</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<partial name="_ToastMessages" />

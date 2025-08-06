@@ -1,0 +1,225 @@
+﻿@model MovieTheater.ViewModels.FoodListViewModel
+@{
+    ViewData["Title"] = "Food Management";
+    var selectedFood = ViewBag.CategoryFilter == "food" ? "selected" : "";
+    var selectedDrink = ViewBag.CategoryFilter == "drink" ? "selected" : "";
+    var selectedCombo = ViewBag.CategoryFilter == "combo" ? "selected" : "";
+    var selectedActive = ViewBag.StatusFilter == "true" ? "selected" : "";
+    var selectedInactive = ViewBag.StatusFilter == "false" ? "selected" : "";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Food & Drink Management</h2>
+        <a href="@Url.Action("Create", "Food")" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Food
+        </a>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card mb-2">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter</h5>
+        </div>
+        <div class="card-body">
+            <form id="foodSearchForm" class="row g-3" method="get" onsubmit="searchFood(); return false;">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchKeyword" name="keyword" 
+                           placeholder="Search by name" value="@ViewBag.Keyword">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="categoryFilter" name="categoryFilter" onchange="searchFood();">
+                        @if (string.IsNullOrEmpty(ViewBag.CategoryFilter))
+                        {
+                            <option value="" selected>All Categories</option>
+                        }
+                        else
+                        {
+                            <option value="">All Categories</option>
+                        }
+                        @if (ViewBag.CategoryFilter == "food")
+                        {
+                            <option value="food" selected>Food</option>
+                        }
+                        else
+                        {
+                            <option value="food">Food</option>
+                        }
+                        @if (ViewBag.CategoryFilter == "drink")
+                        {
+                            <option value="drink" selected>Drink</option>
+                        }
+                        else
+                        {
+                            <option value="drink">Drink</option>
+                        }
+                        @if (ViewBag.CategoryFilter == "combo")
+                        {
+                            <option value="combo" selected>Combo</option>
+                        }
+                        else
+                        {
+                            <option value="combo">Combo</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="btn-group" role="group" aria-label="Status filter">
+                        <input type="radio" class="btn-check" name="statusFilter" id="statusAll" value=""
+                               @(string.IsNullOrEmpty(ViewBag.StatusFilter) ? "checked" : "") onchange="searchFood();">
+                        <label class="btn btn-outline-secondary" for="statusAll">
+                           All
+                        </label>
+
+                        <input type="radio" class="btn-check" name="statusFilter" id="statusActive" value="true"
+                               @(ViewBag.StatusFilter == "true" ? "checked" : "") onchange="searchFood();">
+                        <label class="btn btn-outline-success" for="statusActive">
+                            Active
+                        </label>
+
+                        <input type="radio" class="btn-check" name="statusFilter" id="statusInactive" value="false"
+                               @(ViewBag.StatusFilter == "false" ? "checked" : "") onchange="searchFood();">
+                        <label class="btn btn-outline-danger" for="statusInactive">
+                            Inactive
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-outline-primary w-75">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <a href="#" onclick="loadTab('FoodMg'); return false;" class="btn btn-outline-secondary w-75">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- Food List -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Food List</h5>
+           
+        </div>
+        <div class="card-body">
+            @if (Model.Foods.Any())
+            {
+                <div class="table-responsive">
+                    <table id="food-table" class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="sortable" data-sort="name">Name <span id="sortIconName"></span></th>
+                                <th class="sortable" data-sort="category">Category <span id="sortIconCategory"></span></th>
+                                <th class="sortable" data-sort="price">Price <span id="sortIconPrice"></span></th>
+                                <th>Status</th>
+                                <th class="sortable" data-sort="created">Created Date <span id="sortIconCreated"></span></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var food in Model.Foods)
+                            {
+                                <tr>
+                                   
+                                    <td>
+                                        <strong>@food.Name</strong>
+                                        @if (!string.IsNullOrEmpty(food.Description))
+                                        {
+                                            <br><small class="text-muted">@food.Description</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@food.Category</span>
+                                    </td>
+                                    <td>@food.Price.ToString("N0") VND</td>
+                                    <td>
+                                        @if (food.Status)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Inactive</span>
+                                        }
+                                    </td>
+                                    <td>@food.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Edit", "Food", new { id = food.FoodId })" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="post" action="@Url.Action("ToggleStatus", "Food", new { id = food.FoodId })" 
+                                                  style="display: inline;" onsubmit="return confirm('Are you sure you want to change the status?')">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-toggle-on"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" action="@Url.Action("Delete", "Food", new { id = food.FoodId })" 
+                                                  style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this food? This action cannot be undone.')">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        title="Delete food (only if not sold before)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="bi bi-emoji-frown display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No foods found</h4>
+                    <p class="text-muted">Try adjusting your search criteria or add a new food item.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<partial name="_ToastMessages" />
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-styles.css" />
+    <style>
+        .btn-group .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-group .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-group .btn-check:checked + .btn {
+            font-weight: 600;
+        }
+        
+        .badge {
+            font-size: 0.75em;
+        }
+        
+        .spinner-border-sm {
+            width: 0.75rem;
+            height: 0.75rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="~/js/admin-sorting.js"></script>
+} 

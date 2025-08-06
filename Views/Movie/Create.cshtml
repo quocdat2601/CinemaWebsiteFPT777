@@ -1,0 +1,241 @@
+@model MovieTheater.ViewModels.MovieDetailViewModel
+@using System.Security.Claims
+@using System
+
+@{
+	 
+	DateOnly todayDateOnly = DateOnly.FromDateTime(DateTime.Today);
+	string minDateFormatted = todayDateOnly.ToString("yyyy-MM-dd");
+	ViewData["Title"] = "Create a Movie";
+	var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
+
+<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/movie-edit-styles.css" asp-append-version="true" />
+
+<div class="signup-wrapper">
+	<div class="signup-card">
+		@if (userRole == "Admin")
+		{
+			<a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
+				&larr; Return
+			</a>
+		}
+		else
+		{
+			<a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
+				&larr; Return
+			</a>
+		}
+		<h2 class="signup-title">Create a Movie</h2>
+		<form asp-controller="Movie" asp-action="Create" method="post" enctype="multipart/form-data">
+			<div asp-validation-summary="All" class="text-danger"></div>
+
+			<div class="row">
+				<!-- Left Column: Image Uploads -->
+				<div class="col">
+					<div class="form-group mb-3">
+						<strong>Small Image:</strong><br />
+						@if (!string.IsNullOrEmpty(Model.SmallImage))
+						{
+							<img id="smallImagePreview" src="@Url.Content(Model.SmallImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						else
+						{
+							<img id="smallImagePreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						<input type="file" class="form-control" asp-for="SmallImageFile" onchange="previewImage(this, 'smallImagePreview')" />
+						<span asp-validation-for="SmallImageFile" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Large Image:</strong><br />
+						@if (!string.IsNullOrEmpty(Model.LargeImage))
+						{
+							<img id="largeImagePreview" src="@Url.Content(Model.LargeImage)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						else
+						{
+							<img id="largeImagePreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						<input type="file" class="form-control" asp-for="LargeImageFile" onchange="previewImage(this, 'largeImagePreview')" />
+						<span asp-validation-for="LargeImageFile" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Logo:</strong><br />
+						@if (!string.IsNullOrEmpty(Model.Logo))
+						{
+							<img id="logoPreview" src="@Url.Content(Model.Logo)" alt="@Model.MovieNameEnglish" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						else
+						{
+							<img id="logoPreview" src="@Url.Content("/images/movies/default-movie.jpg")" alt="No image" width="200" height="250" style="display:block; margin-bottom:10px;" />
+						}
+						<input type="file" class="form-control" asp-for="LogoFile" onchange="previewImage(this, 'logoPreview')" />
+						<span asp-validation-for="LogoFile" class="text-danger"></span>
+					</div>
+				</div>
+
+				<!-- Right Column: Movie Details -->
+				<div class="col-md-6">
+					<div class="form-group mb-3">
+						<strong>Movie Name (EN)</strong>
+						<input type="text" class="form-control" asp-for="MovieNameEnglish" />
+						<span asp-validation-for="MovieNameEnglish" class="text-danger"></span>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col">
+							<strong>From Date</strong>
+							<input type="date" class="form-control" asp-for="FromDate" min="@minDateFormatted" />
+							<span asp-validation-for="FromDate" class="text-danger"></span>
+						</div>
+						<div class="col">
+							<strong>To Date</strong>
+							<input type="date" class="form-control" asp-for="ToDate" min="@minDateFormatted"/>
+							<span asp-validation-for="ToDate" class="text-danger"></span>
+						</div>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Production Company</strong>
+						<input type="text" class="form-control" asp-for="MovieProductionCompany" />
+						<span asp-validation-for="MovieProductionCompany" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Director</strong>
+						<div class="d-flex align-items-center">
+							<input type="text" class="form-control me-2" id="selectedDirectors" readonly placeholder="Selected directors will appear here" />
+							<button type="button" class="btn btn-primary" onclick="openDirectorPopup()">Select</button>
+						</div>
+						<input type="hidden" asp-for="SelectedDirectorIds" id="selectedDirectorIds" />
+						<span asp-validation-for="SelectedDirectorIds" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Actors</strong>
+						<div class="d-flex align-items-center">
+							<input type="text" class="form-control me-2" id="selectedActors" readonly placeholder="Selected actors will appear here" />
+							<button type="button" class="btn btn-primary" onclick="openActorPopup()">Select</button>
+						</div>
+						<input type="hidden" asp-for="SelectedActorIds" id="selectedActorIds" />
+						<span asp-validation-for="SelectedActorIds" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Duration (min)</strong>
+						<input type="number" class="form-control" asp-for="Duration" />
+						<span asp-validation-for="Duration" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Version:</strong><br />
+						@foreach (var version in Model.AvailableVersions)
+						{
+							<label class="me-3">
+								<input type="checkbox" name="SelectedVersionIds" value="@version.VersionId" />
+								@version.VersionName
+							</label>
+						}
+						<span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
+					</div>
+
+					<div class="form-group mb-3">
+						<strong>Types</strong><br />
+						@foreach (var type in Model.AvailableTypes)
+						{
+							<label class="me-3">
+								<input type="checkbox" name="SelectedTypeIds" value="@type.TypeId" />
+								@type.TypeName
+							</label>
+						}
+					</div>
+
+
+				</div>
+			</div>
+
+			<!-- Full-width description row below columns -->
+			<div class="form-group mt-3">
+				<strong>Movie Description / Content</strong>
+				<textarea class="form-control" asp-for="Content"></textarea>
+				<span asp-validation-for="Content" class="text-danger"></span>
+			</div>
+
+			<h2 class="signup-title">Movie Trailer</h2>
+			<div class="form-group mt-3">
+				<strong>Trailer URL</strong>
+				<input type="url" class="form-control" asp-for="TrailerUrl" />
+				<span asp-validation-for="TrailerUrl" class="text-danger"></span>
+
+				@if (!string.IsNullOrWhiteSpace(Model.TrailerUrl))
+				{
+					<div class="video-container mb-4">
+						<iframe src="@Model.TrailerUrl" frameborder="0" allowfullscreen></iframe>
+					</div>
+				}
+			</div>
+
+			<div class="text-center mt-4">
+				<button type="submit" class="btn btn-primary px-4 py-2 rounded">Create Movie</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<!-- Director Selection Modal -->
+<div class="modal fade" id="directorModal" tabindex="-1" aria-labelledby="directorModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title text-black" id="directorModalLabel">Select Directors</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="search-container mb-3">
+					<input type="text" class="form-control" id="directorSearch" placeholder="Search directors..." onkeyup="filterDirectors()">
+				</div>
+				<div class="row" id="directorsList">
+					<!-- Directors will be loaded here -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="confirmDirectorSelection()">Confirm Selection</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Actor Selection Modal -->
+<div class="modal fade" id="actorModal" tabindex="-1" aria-labelledby="actorModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title text-black" id="actorModalLabel">Select Actors</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="search-container mb-3">
+					<input type="text" class="form-control" id="actorSearch" placeholder="Search actors..." onkeyup="filterActors()">
+				</div>
+				<div class="row" id="actorsList">
+					<!-- Actors will be loaded here -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="confirmActorSelection()">Confirm Selection</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+	
+	<!-- Include the JavaScript file -->
+	<script src="~/js/movie-crud.js" asp-append-version="true"></script>
+}

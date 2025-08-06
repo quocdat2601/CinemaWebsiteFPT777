@@ -1,0 +1,448 @@
+@model MovieTheater.ViewModels.QRPaymentViewModel
+
+@{
+    ViewBag.Title = "QR Code Payment";
+    Layout = "_Layout";
+    var returnUrl = TempData["ReturnUrl"]?.ToString() ?? Url.Action("MainPage", "Admin", new { tab = "BookingMg" });
+}
+
+<style>
+    .qr-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .qr-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .qr-logo {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .qr-content {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        flex: 1;
+    }
+    
+    .order-info-section {
+        flex: 1;
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .qr-code-section {
+        flex: 1;
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .qr-code-image {
+        max-width: 250px;
+        max-height: 250px;
+        border: 8px solid white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        animation: pulse 2s infinite;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95rem;
+    }
+    
+    .info-value {
+        color: #34495e;
+        text-align: right;
+        font-weight: 500;
+    }
+    
+    .amount {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #27ae60;
+    }
+    
+    .expired-timer {
+        text-align: center;
+        margin: 0.75rem 0;
+        padding: 0.75rem;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        color: #856404;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .payment-status {
+        text-align: center;
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+        font-weight: 500;
+    }
+    
+    .payment-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    
+    .payment-failed {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    
+    .payment-pending {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .btn-check-payment {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        margin: 0 0.5rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-check-payment:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        margin: 0 0.5rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-cancel:hover {
+        background: #545b62;
+        transform: translateY(-2px);
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a252f;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .qr-instruction {
+        color: #1a252f;
+        font-weight: 500;
+        margin: 0.75rem 0;
+        font-size: 0.95rem;
+    }
+    
+    .auto-check-info {
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        margin: 0.75rem 0;
+    }
+    
+    @@media (max-width: 768px) {
+        .qr-content {
+            flex-direction: column;
+        }
+        
+        .qr-container {
+            padding: 1rem;
+            min-height: auto;
+        }
+        
+        .order-info-section,
+        .qr-code-section {
+            padding: 1rem;
+        }
+        
+        .qr-code-image {
+            max-width: 200px;
+            max-height: 200px;
+        }
+    }
+    
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="text-start p-2">
+        <a href="@returnUrl" class="btn btn-secondary btn-sm">&larr; Return</a>
+    </div>
+    
+    <div class="qr-container">
+        <div class="qr-header">
+            <div class="qr-logo">QR</div>
+            <h3 class="mb-1">QR Code Payment</h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Scan QR code with your banking app to complete payment</p>
+        </div>
+        
+        <div class="qr-content">
+            <div class="order-info-section">
+                <div class="section-title">Payment Information</div>
+                <div class="info-row">
+                    <span class="info-label">Order ID:</span>
+                    <span class="info-value">@Model.OrderId</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Customer:</span>
+                    <span class="info-value">@Model.CustomerName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">@Model.CustomerPhone</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Movie:</span>
+                    <span class="info-value">@Model.MovieName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Show Time:</span>
+                    <span class="info-value">@Model.ShowTime</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Seats:</span>
+                    <span class="info-value">@Model.SeatInfo</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Amount:</span>
+                    <span class="info-value amount">@Model.Amount.ToString("N0") VND</span>
+                </div>
+            </div>
+            
+            <div class="qr-code-section">
+                <div class="section-title">QR Code Payment</div>
+                @if (!string.IsNullOrEmpty(Model.PayOSQRCodeUrl))
+                {
+                    <div class="text-center">
+                        <h5 class="qr-instruction">Scan QR PayOS to pay</h5>
+                        <img src="@Model.PayOSQRCodeUrl" alt="QR PayOS" class="qr-code-image" onerror="console.error('QR image failed to load:', this.src);" />
+                        <p class="qr-instruction">Use banking app or e-wallet scan this QR code to pay.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center">
+                        <h5 class="qr-instruction">QR Code not available</h5>
+                        <p class="text-muted">Unable to generate QR code. Please try again.</p>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="expired-timer">
+            <i class="fas fa-clock"></i>
+            <span id="timer">QR Code expires in: <span id="countdown">15:00</span></span>
+        </div>
+        
+        <div class="text-center auto-check-info">
+            <small><i class="fas fa-sync-alt"></i> Auto-checking payment status every 10 seconds</small>
+        </div>
+        
+        <div id="paymentStatus" class="payment-status">
+            <i class="fas fa-check-circle"></i>
+            <span id="statusMessage"></span>
+        </div>
+        
+        <div class="action-buttons">
+            <button type="button" id="checkPaymentBtn" class="btn-check-payment" style="display: none;">
+                <i class="fas fa-sync-alt"></i> Check Payment Status
+            </button>
+            <button type="button" id="cancelBtn" class="btn-cancel">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SweetAlert2 CDN with integrity -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js" 
+            integrity="sha512-Wv8+QHqFqeJwFvKCMhaVtMc+IYpGTB0+2prVb06H148g1LfI+a9zSkUzHpPc2NGS/0CkHqV7lxg1dxJcnJuTg==" 
+            crossorigin="anonymous"></script>
+    
+    <script>
+        $(document).ready(function() {
+            let timeLeft = 30 * 60; // 30 minutes in seconds
+            let timerInterval;
+            let autoCheckInterval;
+            
+            function updateTimer() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                $('#countdown').text(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    $('#countdown').text('00:00');
+                    $('.expired-timer').html('<i class="fas fa-exclamation-triangle"></i> QR Code has expired');
+                    $('.expired-timer').css({
+                        'background': '#f8d7da',
+                        'border-color': '#f5c6cb',
+                        'color': '#721c24'
+                    });
+                    $('#checkPaymentBtn').prop('disabled', true);
+                }
+                timeLeft--;
+            }
+            
+            // Start timer
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Check payment status
+            $('#checkPaymentBtn').click(function() {
+                try {
+                    const orderId = '@Model.OrderId';
+                    console.log('OrderId:', orderId);
+                    
+                    // Hiển thị thông báo đang xử lý
+                    $('#paymentStatus').removeClass('payment-failed payment-success').addClass('payment-pending').show();
+                    $('#statusMessage').html('<i class="fas fa-info-circle"></i> Processing payment...');
+                    
+                    // Kiểm tra trạng thái thanh toán từ server
+                    $.ajax({
+                        url: '@Url.Action("CheckPaymentStatus", "QRPayment")',
+                        type: 'POST',
+                        data: JSON.stringify({
+                            orderId: orderId
+                        }),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            console.log('Payment status response:', response);
+                            
+                            if (response.success) {
+                                if (response.isPaid) {
+                                    // Thanh toán thành công!
+                                    $('#paymentStatus').removeClass('payment-failed payment-pending').addClass('payment-success').show();
+                                    $('#statusMessage').html('<i class="fas fa-check-circle"></i> Payment completed successfully!');
+                                    
+                                    // Hiển thị thông báo thành công
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            title: 'Payment Successful!',
+                                            text: 'Your payment has been processed successfully.',
+                                            icon: 'success',
+                                            confirmButtonText: 'OK',
+                                            allowOutsideClick: false
+                                        }).then((result) => {
+                                            // Redirect về trang trước đó
+                                            window.location.href = '@returnUrl';
+                                        });
+                                    } else {
+                                        // Fallback if SweetAlert2 is not available
+                                        alert('Payment Successful! Your payment has been processed successfully.');
+                                        window.location.href = '@returnUrl';
+                                    }
+                                    
+                                    // Dừng auto-polling
+                                    clearInterval(autoCheckInterval);
+                                    
+                                } else {
+                                    $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
+                                    $('#statusMessage').html('<i class="fas fa-times-circle"></i> Payment not yet received. Please try again.');
+                                }
+                            } else {
+                                $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
+                                $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> ' + (response.message || 'Error checking payment status.'));
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
+                            $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
+                            $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Error checking payment status.');
+                        }
+                    });
+                } catch (error) {
+                    console.error('JavaScript Error:', error);
+                    $('#paymentStatus').removeClass('payment-success payment-pending').addClass('payment-failed').show();
+                    $('#statusMessage').html('<i class="fas fa-exclamation-triangle"></i> Error preparing payment data.');
+                }
+            });
+            
+            // Cancel button
+            $('#cancelBtn').click(function() {
+                if (confirm('Are you sure you want to cancel this payment?')) {
+                    window.location.href = '@returnUrl';
+                }
+            });
+            
+            // XÓA hoặc COMMENT đoạn này để không tự động check/redirect
+            // setInterval(function() {
+            //     if (timeLeft > 0) {
+            //         $('#checkPaymentBtn').click();
+            //     }
+            // }, 10000);
+            
+            // BẬT auto-polling để tự động kiểm tra trạng thái thanh toán
+            autoCheckInterval = setInterval(function() {
+                if (timeLeft > 0) {
+                    $('#checkPaymentBtn').click();
+                }
+            }, 10000); // 10 giây kiểm tra 1 lần
+        });
+    </script>
+} 

@@ -1,0 +1,174 @@
+﻿@model MovieTheater.ViewModels.MovieDetailViewModel
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Movie Show Schedule";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="~/css/schedule.css" asp-append-version="true" />
+<style>
+    .nav-tabs .nav-link {
+        color: black !important;
+        background-color: #e9ecef !important; /* light gray */
+        border: 1px solid #dee2e6 !important;
+        text-shadow: none !important;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #f8f9fa !important;
+        font-weight: bold;
+        color: black !important;
+        text-shadow: none !important;
+     }
+</style>
+<div class="mt-2 row" style="margin: 0 20px">
+    <div class="col">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            @if (userRole == "Admin")
+            {
+                <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-light mt-3">
+                    &larr; Return
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="MovieMg" class="btn btn-outline-light mt-3">
+                    &larr; Return
+                </a>
+            }
+        </div>
+
+        <h2 class="schedule-page-title text-center">Movie Schedule</h2>
+
+        <div class="movie-info mb-2" style="font-size: large; background-color: transparent !important">
+            <p class="text-muted mb-1" style="color: white !important">
+                <span class="fw-bold">Movie Name:</span> @Model.MovieNameEnglish
+            </p>
+             <p class="text-muted mb-1" style="color: white !important">
+                <span class="fw-bold">Duration:</span> @Model.Duration minutes
+            </p>
+            <input type="hidden" id="movieDuration" value="@Model.Duration" style="color: white !important"/>
+        </div>
+
+        <div class="schedule-form">
+            <input type="hidden" id="movieId" value="@Model.MovieId" />
+            <div id="validationSummary" class="text-danger"></div>
+
+            <!-- Version Selection (First) -->
+            <div class="form-group mb-2">
+                <label class="section-title text-white">Version</label>
+                <div id="versionRadioGroup" class="d-flex justify-content-center">
+                    @foreach (var version in Model.AvailableVersions)
+                    {
+                        <label class="me-5">
+                            <input type="radio"
+                                   name="SelectedVersionIds"
+                                   value="@version.VersionId"
+                                   @(Model.SelectedVersionIds.Contains(version.VersionId) ? "checked" : "")
+                                   class="version-radio" />
+                            @version.VersionName
+                        </label>
+                    }
+                </div>
+                <span asp-validation-for="SelectedVersionIds" class="text-danger"></span>
+            </div>
+
+            <!-- Cinema Room Selection (Second) -->
+            <div class="form-group mb-2">
+                <label for="cinemaRoomSelect" class="section-title text-white">Cinema Room</label>
+                <div class="d-flex justify-content-center">
+                    <select class="form-control w-75" id="cinemaRoomSelect" disabled>
+                        <option value="">-- Select a Cinema Room --</option>
+                    </select>
+                </div>
+                <span class="text-danger" id="cinemaRoomError"></span>
+            </div>
+
+            <!-- Show Dates (Third) -->
+            <div class="form-group mb-2">
+                <label class="section-title text-white">Show Date</label>
+                <div class="d-flex justify-content-center">
+                    <select class="form-control w-75" id="showDateSelect" disabled>
+                        <option value="">-- Select a Show Date --</option>
+                    </select>
+                </div>
+                <span class="text-danger" id="showDateError"></span>
+            </div>
+
+            <!-- Schedules (Fourth) -->
+            <div class="form-group mb-2">
+                <label class="section-title text-white">Available Schedules</label>
+                <div id="lastShowEndTime" class="text-muted text-center" style="font-size: 0.9em; margin-bottom: 5px; color: white !important"></div>
+                <div class="d-flex justify-content-center">
+                    <select class="form-control w-75" id="scheduleSelect" disabled>
+                        <option value="">-- Select a Schedule --</option>
+                    </select>
+                </div>
+                <span class="text-danger" id="scheduleError"></span>
+            </div>
+             <div class="text-center">
+                <button type="button" class="btn btn-outline-light mt-3 mb-3" id="addMovieShowBtn" disabled>
+                    Add Movie Show
+                </button>
+            </div>
+         </div>
+    </div>
+
+    <div class="col">
+        <!-- Movie Show List -->
+        <div class="form-group">
+            <label class="section-title text-white">Current Movie Shows</label>
+            <ul class="nav nav-tabs" id="movieShowTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing" type="button" role="tab" aria-controls="ongoing" aria-selected="true">
+                        Ongoing shows
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="old-tab" data-bs-toggle="tab" data-bs-target="#old" type="button" role="tab" aria-controls="old" aria-selected="false">
+                        Old shows
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content" id="movieShowTabsContent">
+                <div class="tab-pane fade show active" id="ongoing" role="tabpanel" aria-labelledby="ongoing-tab">
+                    <div id="movieShowsOngoingContainer" class="p-2 bg-light rounded border"></div>
+                </div>
+                <div class="tab-pane fade" id="old" role="tabpanel" aria-labelledby="old-tab">
+                    <div id="movieShowsOldContainer" class="p-2 bg-light rounded border"></div>
+                </div>
+            </div>
+        </div>
+    </div> 
+</div>
+
+<div class="col-12 d-flex justify-content-center gap-2 mt-4">
+    <button type="button" class="btn btn-primary mb-3" id="saveChangesBtn">
+        Save Changes
+    </button>
+</div>
+
+<partial name="_ToastMessages" />
+
+<!-- Pass data from Razor to JavaScript -->
+<script>
+    // Set global variables for the JavaScript file to use
+    window.movieShowItems = @Html.Raw(Json.Serialize(Model.CurrentMovieShows.Select(show => new {
+        dateId = show.ShowDate.ToString("yyyy-MM-dd"),
+        dateText = show.ShowDate.ToString("dd/MM/yyyy"),
+        roomId = show.CinemaRoomId,
+        roomName = show.CinemaRoom?.CinemaRoomName ?? "N/A",
+        scheduleId = show.ScheduleId,
+        scheduleText = show.Schedule?.ScheduleTime?.ToString("HH:mm") ?? "N/A",
+        versionId = show.VersionId,
+        versionName = show.Version?.VersionName,
+        cinemaRoomVersionName = show.CinemaRoom?.Version?.VersionName,
+        version = show.Version?.VersionName ?? (show.CinemaRoom?.Version?.VersionName ?? "N/A")
+    })));
+    
+    window.toDate = '@Model.ToDate';
+    window.availableShowDates = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.AvailableShowDates.OrderBy(d => d).Select(d => new { value = d.ToString("yyyy-MM-dd"), text = d.ToString("dd/MM/yyyy") })));
+</script>
+
+<!-- Include the JavaScript file -->
+<script src="~/js/movie-show.js" asp-append-version="true"></script>

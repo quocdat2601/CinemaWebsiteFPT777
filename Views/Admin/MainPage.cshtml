@@ -1,0 +1,75 @@
+﻿@{
+    ViewData["Title"] = "Admin Main Page";
+}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 min-vh-100 border-end" id="account-sidebar">
+            <ul class="nav flex-column nav-pills" id="adminTabs">
+                <a class="nav-link admin-tab active" data-tab="Dashboard" href="javascript:void(0)">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a class="nav-link admin-tab" data-tab="MemberMg" href="javascript:void(0)">
+                    <i class="fas fa-users me-2"></i>Member Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="EmployeeMg" href="javascript:void(0)">
+                    <i class="fas fa-user-tie me-2"></i>Employee Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="CastMg" href="javascript:void(0)">
+                    <i class="fas fa-star me-2"></i>Cast/Director Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="MovieMg" href="javascript:void(0)">
+                    <i class="fas fa-film me-2"></i>Movie Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="ShowroomMg" href="javascript:void(0)">
+                    <i class="fas fa-theater-masks me-2"></i>Showroom Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="VersionMg" href="javascript:void(0)">
+                    <i class="fas fa-code-branch me-2"></i>Version Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="PromotionMg" href="javascript:void(0)">
+                    <i class="fas fa-percentage me-2"></i>Promotion Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="BookingMg" href="javascript:void(0)">
+                    <i class="fas fa-calendar-check me-2"></i>Booking Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="FoodMg" href="javascript:void(0)">
+                    <i class="fas fa-utensils me-2"></i>Food & Drink
+                </a>
+                <a class="nav-link admin-tab" data-tab="VoucherMg" href="javascript:void(0)">
+                    <i class="fas fa-ticket-alt me-2"></i>Voucher Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="RankMg" href="javascript:void(0)">
+                    <i class="fas fa-crown me-2"></i>Rank Management
+                </a>
+                <a class="nav-link admin-tab" data-tab="QRCode" href="javascript:void(0)">
+                    <i class="fas fa-qrcode me-2"></i>QR Scanner
+                </a>
+            </ul>
+        </div>
+        <div class="col-md-9 col-lg-10 p-4">
+            <div id="tabContent"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass data from Razor to JavaScript -->
+<script>
+    // Set global variables for the JavaScript file to use
+    window.initialTab = '@ViewData["ActiveTab"]' || 'Dashboard';
+</script>
+
+<!-- Include external libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Include the JavaScript files in correct order -->
+<script src="~/js/pagination-common.js"></script>
+<script src="~/js/admin-sorting.js"></script>
+<script src="~/js/loadtab.js" asp-append-version="true"></script>
+
+<partial name="_ToastMessages" />
+

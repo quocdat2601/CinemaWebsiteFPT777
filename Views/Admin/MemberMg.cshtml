@@ -1,0 +1,94 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model IEnumerable<MovieTheater.Models.Member>
+
+<div class="text-center mb-2">
+    <h2>Member Management</h2>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <div></div> <!-- Empty div for spacing -->
+    
+    <div class="input-group" style="width: 400px;">
+        <input type="text" id="searchBox" maxlength="50"
+               class="form-control" placeholder="🔍 Search by ID, name, email, phone..." />
+    </div>
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <p>Empty list!</p>
+}
+else
+{
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="table-dark">
+            <tr class="text-center">
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>Status</th>
+                @if (User.IsInRole("Admin"))
+                {
+                    <th style="width: 150px;">Actions</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var member in Model)
+            {
+                <tr class="text-center">
+                    <td>@member.MemberId</td>
+                    <td>@member.Account.FullName</td>
+                    <td>@member.Account.Email</td>
+                    <td>@member.Account.PhoneNumber</td>
+                    <td>
+                        <span class="badge @(member.Account.Status  == 1 ? "bg-success" : "bg-danger")">
+                            @(member.Account.Status == 1 ? "Active" : "Inactive")
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <a href="@Url.Action("Edit", "Admin", new { id = member.AccountId })" class="btn btn-sm btn-primary">Edit</a>
+                            <form method="post" action="@Url.Action("ToggleStatus", "Account", new { id = member.AccountId })"
+                                  style="display: inline;" onsubmit="return confirm('Are you sure you want to change the status?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="btn btn-sm @(member.Account.Status == 0 ? "btn-outline-danger" : "btn-outline-success")"
+                                        title="@(member.Account.Status == 0 ? "Activate" : "Deactivate")">
+                                    <i class="bi @(member.Account.Status == 0 ? "bi-toggle-off" : "bi-toggle-on")"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<script>
+    document.getElementById("searchBox").addEventListener("input", function () {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll("tbody tr");
+        
+        rows.forEach(row => {
+            // Get text from relevant columns (ID, name, email, phone)
+            const idCell = row.cells[0]; // ID
+            const nameCell = row.cells[1]; // Full Name
+            const emailCell = row.cells[2]; // Email
+            const phoneCell = row.cells[3]; // Phone Number
+            
+            const searchText = (
+                (idCell?.textContent || "") +
+                (nameCell?.textContent || "") +
+                (emailCell?.textContent || "") +
+                (phoneCell?.textContent || "")
+            ).toLowerCase();
+            
+            row.style.display = searchText.includes(filter) ? "" : "none";
+        });
+    });
+</script>

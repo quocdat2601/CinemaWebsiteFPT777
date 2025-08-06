@@ -1,0 +1,63 @@
+/* Text Overflow Fix for Ticket Booking Confirmed Page */
+
+/* Base styles for info values */
+.info-value {
+    position: relative !important;
+}
+
+/* Tooltip container */
+.info-value[title] {
+    cursor: help !important;
+}
+
+/* Custom tooltip styles */
+.info-value[title]:hover::after {
+    content: attr(title) !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    z-index: 1000 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    max-width: 300px !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+    text-align: center !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Arrow for tooltip */
+.info-value[title]:hover::before {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border: 5px solid transparent !important;
+    border-top-color: rgba(0, 0, 0, 0.9) !important;
+    margin-bottom: -0.5rem !important;
+    z-index: 1000 !important;
+}
+
+/* Enhanced responsive handling */
+@media (max-width: 768px) {
+    .info-value[title]:hover::after {
+        max-width: 250px !important;
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .info-value[title]:hover::after {
+        max-width: 200px !important;
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+} 

@@ -1,0 +1,880 @@
+@model MovieTheater.ViewModels.MovieDetailViewModel
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Movie Detail";
+
+    var isAuthenticated = User.Identity.IsAuthenticated;
+
+    var movieList = ViewBag.MovieList as List<MovieTheater.Models.Movie>;
+
+    var selectedMovieId = ViewBag.SelectedMovieId as string;
+
+    var showsByDate = ViewBag.ShowsByDate as Dictionary<string, List<string>>;
+
+
+
+    // Hàm cải thiện để trích xuất YouTube Video ID
+
+    string ExtractYouTubeVideoId(string url)
+
+    {
+
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+
+
+
+        try
+
+        {
+
+            // Loại bỏ khoảng trắng và normalize URL
+
+            url = url.Trim();
+
+
+
+            // Xử lý các định dạng URL YouTube khác nhau
+
+            var patterns = new[]
+
+            {
+                @"(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)",
+                @"youtube\.com\/watch\?.*v=([^&\n?#]+)"
+            };
+
+
+
+            foreach (var pattern in patterns)
+
+            {
+
+                var match = System.Text.RegularExpressions.Regex.Match(url, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                if (match.Success)
+
+                {
+
+                    return match.Groups[1].Value;
+
+                }
+
+            }
+
+
+
+            // Fallback: thử phương pháp cũ
+
+            var uri = new Uri(url);
+
+            if (uri.Host.Contains("youtu.be"))
+
+            {
+
+                return uri.Segments.LastOrDefault()?.TrimEnd('/');
+
+            }
+
+            else if (uri.Host.Contains("youtube.com") && uri.Query.Contains("v="))
+
+            {
+
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+                return query["v"];
+
+            }
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            // Log lỗi nếu cần
+
+            System.Diagnostics.Debug.WriteLine($"Error extracting YouTube ID: {ex.Message}");
+
+        }
+
+
+
+        return string.Empty;
+
+    }
+}
+
+<style>
+    .movie-detail-container {
+        background-color: #1a1a1a;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .movie-title {
+        font-size: 3.5rem;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 1rem;
+        line-height: 1.1;
+    }
+
+    .movie-poster {
+        width: 100%;
+        max-width: 300px;
+        height: 450px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        object-fit: cover;
+    }
+
+    .movie-info-item {
+        margin-bottom: 1rem;
+    }
+
+    .info-label {
+        color: #F5B64C;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        display: inline-block;
+    }
+
+    .info-value {
+        color: white;
+    }
+
+    .person-link {
+        color: white;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .person-link:hover {
+        color: #F5B64C;
+        text-decoration: underline;
+    }
+
+    .synopsis {
+        line-height: 1.7;
+        color: #cccccc;
+        margin: 2rem 0;
+        font-size: 1.1rem;
+    }
+
+    .trailer-section {
+        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .trailer-thumbnail {
+        width: 100%;
+        border-radius: 8px;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        min-height: 200px;
+        object-fit: cover;
+    }
+
+        .trailer-thumbnail:hover {
+            transform: scale(1.02);
+        }
+
+    .play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        background: #F5B64C;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        box-shadow: 0 4px 20px rgba(233, 30, 99, 0.4);
+        transition: all 0.3s ease;
+    }
+
+        .play-button:hover {
+            background: #F5B64C;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+    .play-icon {
+        color: white;
+        font-size: 1.5rem;
+        margin-left: 4px;
+    }
+
+    .showtimes-section {
+        background: #2d2d2d;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 3rem;
+        min-height: 400px;
+    }
+
+    .showtimes-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .calendar-icon {
+        color: #F5B64C  ;
+        margin-right: 0.5rem;
+        font-size: 1.3rem;
+    }
+
+    .date-selector {
+        background: #F5B64C;
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        font-weight: 500;
+    }
+
+    .showtime-block {
+        background: #3d3d3d;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .showtime-block:hover {
+        transform: translateY(-2px);
+    }
+
+    .showtime-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .film-icon {
+        color: #F5B64C;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .screen-name {
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .showtime-button {
+        background: #F5B64C;
+        border: 2px solid #FBE6C3;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+        margin-bottom: 0.5rem;
+        width: 100%;
+        max-width: 120px;
+        cursor: pointer;
+    }
+
+    .showtime-button:hover {
+            background: #FBE6C3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+    }
+
+    .format-badge {
+        background: transparent;
+        color: #FBE6C3;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        justify-content: center;
+        font-weight: 500;
+    }
+
+    .format-badge i {
+        font-size: 0.8rem;
+    }
+
+    .showtime-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    @@media (max-width: 768px) {
+        .showtime-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+    }
+
+    .date-selector {
+        background: #3d3d3d;
+        border: 2px solid #F5B64C;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        font-weight: 500;
+        width: 200px;
+    }
+
+    .date-selector:focus {
+        outline: none;
+            border-color: #F5B64C;
+        box-shadow: 0 0 0 2px rgba(233, 30, 99, 0.2);
+    }
+
+    .recommendations-section {
+        background: #2d2d2d;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 3rem;
+    }
+
+    .recommendations-header {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+    }
+
+    .movie-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .movie-card {
+        background: #3d3d3d;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+        .movie-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+        }
+
+    .movie-card-info {
+        padding: 1rem;
+    }
+
+    .movie-card-title {
+        color: white;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .movie-card-genre {
+        color: #F5B64C;
+        font-size: 0.9rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-book {
+        background: #F5B64C;
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-book:hover {
+            background: #04193C;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-trailer {
+        background: transparent;
+        border: 2px solid #e91e63;
+        color: #e91e63;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-trailer:hover {
+            background: #e91e63;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+
+
+    .return-btn {
+        background: transparent;
+        border: 1px solid #555;
+        color: #ccc;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .return-btn:hover {
+            border-color: #e91e63;
+            color: #e91e63;
+        }
+
+    .debug-info {
+        background: rgba(255,0,0,0.1);
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        font-size: 12px;
+        border: 1px solid rgba(255,0,0,0.3);
+    }
+
+    .no-trailer-placeholder {
+        background: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 14px;
+        min-height: 200px;
+        border-radius: 8px;
+    }
+</style>
+
+<div class="movie-detail-container">
+    <div class="container-fluid px-4 py-4">
+        <!-- Return Button -->
+        <div class="mb-4">
+            <a asp-controller="Movie" asp-action="MovieList" class="return-btn">
+                <i class="fas fa-arrow-left"></i> Return to Movies
+            </a>
+        </div>
+
+        <!-- Main Content Row -->
+        <div class="row">
+            <!-- Left Column: Movie Poster and Details -->
+            <div class="col-lg-8">
+                <!-- Movie Title -->
+                <h1 class="movie-title" style="padding-left: 100px;">@Model.MovieNameEnglish</h1>
+
+                <div class="row">
+                    <!-- Movie Poster -->
+                    <div class="col-md-4" style="padding-left: 100px;">
+                        <img src="@Url.Content(Model.SmallImage)" alt="@Model.MovieNameEnglish" class="movie-poster" />
+                    </div>
+
+                    <!-- Movie Details -->
+                    <div class="col-md-8">
+                        <div class="movie-info-item">
+                            <span class="info-label">Genre:</span>
+                            <span class="info-value">
+                                @string.Join(", ", Model.AvailableTypes?.Select(t => t.TypeName) ?? new[] { "Unknown" })
+                            </span>
+                        </div>
+
+                        <div class="movie-info-item">
+                            <span class="info-label">Duration:</span>
+                            <span class="info-value">@Model.Duration min</span>
+                        </div>
+
+                        <div class="movie-info-item">
+                            <span class="info-label">Premiere:</span>
+                            <span class="info-value">@(Model.FromDate?.ToString("dd/MM/yyyy") ?? "TBA")</span>
+                        </div>
+
+                        <div class="movie-info-item">
+                            <span class="info-label">Director:</span>
+                            <span class="info-value">
+                                @if (Model.People?.Any(p => p.IsDirector == true) == true)
+                                {
+                                    @foreach (var director in Model.People.Where(p => p.IsDirector == true))
+                                    {
+                                        <a href="javascript:void(0);" class="person-link"
+                                           data-name="@director.Name" data-id="@director.PersonId"
+                                           data-dob="@(director.DateOfBirth?.ToString("yyyy-MM-dd") ?? "")"
+                                           data-nationality="@director.Nationality"
+                                           data-gender="@director.Gender"
+                                           data-description="@director.Description"
+                                           data-image="@director.Image">
+                                            @director.Name
+                                        </a>
+                                        @if (director != Model.People.Where(p => p.IsDirector == true).Last())
+                                        {
+                                            <span>, </span>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <span>Unknown Director</span>
+                                }
+                            </span>
+                        </div>
+
+                        <div class="movie-info-item">
+                            <span class="info-label">Actors:</span>
+                            <span class="info-value">
+                                @if (Model.People?.Any(p => p.IsDirector == false) == true)
+                                {
+                                    @foreach (var actor in Model.People.Where(p => p.IsDirector == false))
+                                    {
+                                        <a href="javascript:void(0);" class="person-link"
+                                           data-name="@actor.Name" data-id="@actor.PersonId"
+                                           data-dob="@(actor.DateOfBirth?.ToString("yyyy-MM-dd") ?? "")"
+                                           data-nationality="@actor.Nationality"
+                                           data-gender="@actor.Gender"
+                                           data-description="@actor.Description"
+                                           data-image="@actor.Image">
+                                            @actor.Name
+                                        </a>
+                                        @if (actor != Model.People.Where(p => p.IsDirector == false).Last())
+                                        {
+                                            <span>, </span>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <span>Unknown</span>
+                                }
+                            </span>
+                        </div>
+
+                        <!-- Synopsis -->
+                        <div class="synopsis">
+                            @Model.Content
+                        </div>
+
+                        <!-- Action Buttons -->
+                        @if (showsByDate != null && showsByDate.Values.Any(list => list != null && list.Count > 0))
+                        {
+                            <div class="action-buttons">
+                                <button type="button" class="btn-book" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                                    <i class="fas fa-ticket-alt"></i> Book Tickets
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="action-buttons" style="justify-content:center;">
+                                <div class="alert alert-info text-center w-100" style="background: #333; color: #F5B64C; border: none; border-radius: 8px;">
+                                    <i class="fas fa-info-circle me-2"></i> This movie doesn't have showtime yet. Please check back later.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Trailer -->
+            <div class="col-lg-4">
+                <div class="trailer-section" style="top: 50px;">
+                    
+                    <div class="position-relative">
+                        @{
+                            string trailerImage = "";
+
+                            string youtubeVideoId = "";
+
+
+
+                            // Ưu tiên 1: YouTube thumbnail
+
+                            if (!string.IsNullOrWhiteSpace(Model.TrailerUrl))
+
+                            {
+
+                                youtubeVideoId = ExtractYouTubeVideoId(Model.TrailerUrl);
+
+                                if (!string.IsNullOrEmpty(youtubeVideoId))
+
+                                {
+
+                                    // Thử các độ phân giải khác nhau của YouTube thumbnail
+
+                                    trailerImage = $"https://img.youtube.com/vi/{youtubeVideoId}/maxresdefault.jpg";
+
+                                }
+
+                            }
+
+
+
+                            // Ưu tiên 2: LargeImage (chỉ khi không có YouTube thumbnail)
+
+                            if (string.IsNullOrWhiteSpace(trailerImage) && !string.IsNullOrWhiteSpace(Model.LargeImage))
+
+                            {
+
+                                trailerImage = Model.LargeImage;
+
+                            }
+                        }
+
+                      
+
+                        <!-- Hiển thị thumbnail với fallback -->
+                        @if (!string.IsNullOrWhiteSpace(trailerImage))
+
+                        {
+                            @if (trailerImage.StartsWith("http"))
+
+                            {
+                                <img src="@trailerImage"
+                                     alt="Trailer Thumbnail"
+                                     class="trailer-thumbnail"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#trailerModal"
+                                     onerror="this.onerror=null; this.src='@(!string.IsNullOrEmpty(youtubeVideoId) ? $"https://img.youtube.com/vi/{youtubeVideoId}/hqdefault.jpg" : Url.Content(Model.LargeImage ?? "/images/no-trailer-placeholder.jpg"))'" />
+                            }
+
+                            else
+
+                            {
+                                <img src="@Url.Content(trailerImage)"
+                                     alt="Trailer Thumbnail"
+                                     class="trailer-thumbnail"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#trailerModal"
+                                     onerror="this.onerror=null; this.src='@Url.Content("/images/no-trailer-placeholder.jpg")'" />
+                            }
+                        }
+
+                        else
+
+                        {
+                            <div class="no-trailer-placeholder trailer-thumbnail" data-bs-toggle="modal" data-bs-target="#trailerModal">
+                                <div class="text-center">
+                                    <i class="fas fa-video" style="font-size: 48px; margin-bottom: 10px;"></i><br />
+                                    No Trailer Available
+                                </div>
+                            </div>
+                        }
+
+                        <button class="play-button" data-bs-toggle="modal" data-bs-target="#trailerModal">
+                            <i class="fas fa-play play-icon"></i>
+                        </button>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- Showtimes Section -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="showtimes-section">
+                    <div class="showtimes-header">
+                        <i class="fas fa-calendar-alt calendar-icon"></i>
+                        SHOWTIMES
+                    </div>
+
+                    <div id="movieShowsContainer">
+                        <!-- Dynamic movie shows will appear here -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Recommendations Section -->
+            <div class="col-lg-4">
+                <div class="recommendations-section">
+                    <h3 class="recommendations-header">You may also like</h3>
+                    <div class="movie-grid">
+                        @{
+                            var similarMovies = ViewBag.SimilarMovies as List<MovieTheater.Models.Movie>;
+                        }
+                        @if (similarMovies != null && similarMovies.Any())
+
+                        {
+                            @foreach (var movie in similarMovies)
+
+                            {
+                                <a href="@Url.Action("Detail", "Movie", new { id = movie.MovieId })" class="movie-card" style="text-decoration: none; color: inherit;">
+                                    <img src="@Url.Content(movie.SmallImage)" alt="@movie.MovieNameEnglish" />
+                                    <div class="movie-card-info">
+                                        <div class="movie-card-title">@movie.MovieNameEnglish</div>
+                                        <div class="movie-card-genre">
+                                            @string.Join(", ", movie.Types?.Select(t => t.TypeName) ?? new[] { "Unknown" })
+                                        </div>
+                                    </div>
+                                </a>
+
+                            }
+                        }
+
+                        else
+
+                        {
+                            <div class="text-center text-muted" style="grid-column: 1 / -1; padding: 2rem;">
+                                <i class="fas fa-film" style="font-size: 48px; margin-bottom: 1rem;"></i>
+                                <p>No similar movies found</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- Authentication Warning -->
+        @if (!isAuthenticated)
+
+        {
+            <div class="alert alert-warning text-center mt-5 mx-auto" role="alert" style="width: 500px; background: #ff9800; border: none; color: white;">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Please log in to book your tickets.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Pass data from Razor to JavaScript -->
+<script>
+    // Set global variables for the JavaScript file to use
+    window.movieId = '@Model.MovieId';
+    window.isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+    window.showsByDate = @Html.Raw(Json.Serialize(showsByDate));
+</script>
+
+<!-- Include the JavaScript file -->
+<script src="~/js/movie-detail.js" asp-append-version="true"></script>
+
+<!-- Trailer Modal -->
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background-color: #1a1a1a; border: none;">
+            <div class="modal-header" style="border-bottom: 1px solid #333;">
+                <h5 class="modal-title text-white" id="trailerModalLabel">
+                    <i class="fas fa-play me-2" style="color: #e91e63;"></i>Official Trailer
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: black; padding: 0;">
+                @if (!string.IsNullOrWhiteSpace(Model.TrailerUrl))
+
+                {
+                    <div class="ratio ratio-16x9">
+                        <iframe src="@Model.TrailerUrl" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                }
+
+                else
+
+                {
+                    <div class="text-muted text-center py-5">Trailer not available.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actor Info Modal -->
+<div class="modal fade" id="actorModal" tabindex="-1" aria-labelledby="actorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #2d2d2d; border: none; border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #444;">
+                <h5 class="modal-title text-white" id="actorModalLabel">Actor Information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-white" id="actorModalBody">
+                <!-- Actor details will be injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Modal -->
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-labelledby="addBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #2d2d2d; border: none; border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #444;">
+                <h5 class="modal-title text-white" id="addBookingModalLabel">
+                    <i class="fas fa-ticket-alt me-2" style="color: #e91e63;"></i>Book Your Ticket
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-white">
+                <form id="bookingForm" novalidate>
+                    <input type="hidden" id="movieId" name="movieId" value="@Model.MovieId" />
+                    <div class="mb-4">
+                        <label for="dateSelect" class="form-label text-white">
+                            <i class="fas fa-calendar me-2" style="color: #e91e63;"></i><strong>Date</strong>
+                        </label>
+                        <select id="dateSelect" class="form-select" style="background-color: #3d3d3d; border: 1px solid #555; color: white;" onchange="updateVersions()">
+                            <option value="">— Select Date —</option>
+                            <!-- Dates will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="versionSelect" class="form-label text-white">
+                            <i class="fas fa-film me-2" style="color: #e91e63;"></i><strong>Version</strong>
+                        </label>
+                        <select id="versionSelect" class="form-select" style="background-color: #3d3d3d; border: 1px solid #555; color: white;" disabled onchange="updateTimes()">
+                            <option value="">— Select Version —</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="timeSelect" class="form-label text-white">
+                            <i class="fas fa-clock me-2" style="color: #e91e63;"></i><strong>Time</strong>
+                        </label>
+                        <select id="timeSelect" class="form-select" style="background-color: #3d3d3d; border: 1px solid #555; color: white;" disabled>
+                            <option value="">— Select Time —</option>
+                        </select>
+                    </div>
+                    <button type="button" id="bookBtn" class="btn w-100 mt-2" style="background: #e91e63; color: white; border: none; border-radius: 8px; padding: 1rem; font-weight: 600;" onclick="continueToSeats()">
+                        <span>Continue to Seat Selection</span> <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

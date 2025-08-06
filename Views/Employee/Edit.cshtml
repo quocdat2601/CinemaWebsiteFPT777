@@ -1,0 +1,141 @@
+﻿@model MovieTheater.ViewModels.EmployeeEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Employee";
+    DateOnly todayDateOnly = DateOnly.FromDateTime(DateTime.Today);
+    string maxDateFormatted = todayDateOnly.ToString("yyyy-MM-dd");
+}
+
+<link rel="stylesheet" href="~/css/movieedit.css" asp-append-version="true" />
+
+<div style="width: 1000px; margin: 0 auto;">
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="EmployeeMg" class="btn btn-secondary mt-4">
+        &larr; Return
+    </a>
+    <h2 class="signup-title">Edit Employee</h2>
+    <form asp-controller="Employee" asp-action="Edit" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="row">
+            <!-- Left Column: Image Uploads -->
+            <div class="col">
+                <div class="form-group mb-3">
+                    <strong>Image</strong>
+                    @if (!string.IsNullOrEmpty(Model.Image))
+                    {
+                        <img id="smallImagePreview" src="@Url.Content(Model.Image)" width="200" height="180" style="display:block; margin-bottom:10px" />
+                    }
+                    else
+                    {
+                        <img id="smallImagePreview" src="#" alt="No image" width="200" height="180" style="display:none; margin-bottom:10px;" />
+                    }
+                    <input type="file" class="form-control" asp-for="ImageFile" onchange="previewImage(this, 'smallImagePreview')" />
+                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="form-group mb-3">
+                    <strong>Username</strong>
+                    <input type="text" class="form-control" asp-for="Username" readonly style="background-color: #e9ecef;" />
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Full Name</strong>
+                    <input type="text" class="form-control" asp-for="FullName" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Password</strong>
+                    <input type="password" class="form-control" asp-for="Password" placeholder="(leave blank to keep current)" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Confirm Password</strong>
+                    <input type="password" class="form-control" asp-for="ConfirmPassword" placeholder="(leave blank to keep current)" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Date of Birth</strong>
+                    <input type="date" class="form-control" asp-for="DateOfBirth" max="@maxDateFormatted" />
+                    <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                </div>
+
+            </div>
+            <div class="col">
+                <div class="form-group mb-3">
+                    <strong>Identity Number</strong>
+                    <input type="text" class="form-control" asp-for="IdentityCard" />
+                    <span asp-validation-for="IdentityCard" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Email</strong>
+                    <input type="email" class="form-control" asp-for="Email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Address</strong>
+                    <input type="text" class="form-control" asp-for="Address" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <strong>Phone Number</strong>
+                    <input type="tel" class="form-control" asp-for="PhoneNumber" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+                <div class="row mb-3">
+                    <strong>Gender</strong>
+                    <div class="col">
+                        <label class="radio-label">
+                            <input type="radio" asp-for="Gender" value="male" /> Male
+                        </label>
+                    </div>
+
+                    <div class="col">
+                        <label class="radio-label">
+                            <input type="radio" asp-for="Gender" value="female" /> Female
+                        </label>
+                        <span asp-validation-for="Gender" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group form-check mb-3">
+                    <input asp-for="Status" class="form-check-input" type="checkbox" />
+                    <label asp-for="Status" class="form-check-label">Active</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 mb-4">
+            <button type="submit" class="btn btn-primary px-4 py-2 rounded">Edit Employee</button>
+        </div>
+    </form>
+
+</div>
+</div>
+
+<script>
+    function previewImage(input, previewId) {
+        var preview = document.getElementById(previewId);
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = "#";
+            preview.style.display = "none";
+        }
+    }
+</script>
+
+<partial name="_ToastMessages" />

@@ -1,0 +1,1142 @@
+﻿/* --- Print Styles --- */
+@media print {
+    body, html { background: #fff !important; color: #000 !important; }
+    .dashboard-tabs, .dashboard-actions, .nav, .navbar, .btn, .dashboard-tab, .dashboard-tab.active { display: none !important; }
+    #food-dashboard, #movie-dashboard { display: block !important; }
+    .dashboard-card, .dashboard-grid, .table { background: #fff !important; color: #000 !important; }
+    .dashboard-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.bg-gradient-danger {
+    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.bg-gradient-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.card.shadow {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+    border-radius: 0.75rem !important;
+    border: 2px solid #2d2d44 !important;
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+/* General card styling for dark theme */
+.card {
+    background: #1a1a2e !important;
+    border: 2px solid #2d2d44 !important;
+    color: #ffffff !important;
+}
+
+.card-body {
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.card-body.p-3 {
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.card-body.d-flex {
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.card-body.d-flex.flex-column {
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.card.shadow.h-100 {
+    background: #1a1a2e !important;
+    border: 2px solid #2d2d44 !important;
+    color: #ffffff !important;
+}
+
+/* Override Bootstrap default card styles */
+.card,
+.card-body,
+.card-header,
+.card-footer {
+    background-color: #1a1a2e !important;
+    border-color: #2d2d44 !important;
+    color: #ffffff !important;
+}
+
+/* Specific card combinations */
+.card.shadow.h-100 .card-body,
+.card.shadow.h-100 .card-body.p-3,
+.card.shadow.h-100 .card-body.d-flex,
+.card.shadow.h-100 .card-body.d-flex.flex-column {
+    background: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+/* Light mode overrides */
+body.light-mode .card,
+body.light-mode .card-body,
+body.light-mode .card.shadow,
+body.light-mode .card.shadow.h-100 {
+    background: #ffffff !important;
+    border-color: #d0d0d0 !important;
+    color: #222222 !important;
+}
+
+body.light-mode .card-body,
+body.light-mode .card-body.p-3,
+body.light-mode .card-body.d-flex,
+body.light-mode .card-body.d-flex.flex-column {
+    background: #ffffff !important;
+    color: #222222 !important;
+}
+
+.dashboard-tab {
+    color: #FFD700;
+    background: #222;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.2s;
+    cursor: pointer;
+    border: none;
+}
+.dashboard-tab.active, .dashboard-tab:hover {
+    background: #FFD700;
+    color: #222;
+}
+.dashboard-chart-placeholder {
+    height: 180px;
+    background: #333;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+/* Merge .dashboard-card styles with existing if needed, avoid duplication */
+
+/* Dashboard KPI Cards */
+.dashboard-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+    height: 100%;
+    gap: 1rem;
+}
+
+    .dashboard-card:hover {
+        transform: translateY(-4px);
+    }
+    /* Color variants */
+    .dashboard-card.success {
+        background: linear-gradient(135deg, #28a745, #218838);
+    }
+
+    .dashboard-card.primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+    }
+
+    .dashboard-card.info {
+        background: linear-gradient(135deg, #17a2b8, #117a8b);
+    }
+
+    .dashboard-card.gray {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+    }
+
+    .dashboard-card .icon {
+        font-size: 2.25rem;
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .dashboard-card .text {
+        text-align: right;
+    }
+
+/* Chart containers */
+canvas {
+    background-color: #1a1a2e;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Fix chart height for dashboard charts */
+.dashboard-chart-canvas {
+    height: 300px !important;
+    max-height: 300px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Remove card look for food stat charts */
+.dashboard-card canvas.dashboard-chart-canvas {
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.08);
+  border-radius: 16px;
+  background: #1a1a2e;
+  padding: 1.5rem;
+  margin-bottom: 0;
+}
+
+body.dark-mode .dashboard-card canvas.dashboard-chart-canvas {
+  background: #1a1a2e;
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.30), 0 1.5px 4px 0 rgba(0,0,0,0.18);
+}
+
+/* Food stats cards - match movie stats styling */
+.dashboard-card:not(.kpi-card) { 
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important; 
+  background: #1a1a2e; 
+  border: 2px solid #2d2d44; 
+  border-radius: 0.75rem;
+  padding: 1.5rem; 
+  color: #ffffff;
+}
+
+/* Dashboard action buttons: visible in both modes */
+.dashboard-actions .btn {
+  border: 2px solid #FFD700;
+  color: #222;
+  background: #fff;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+body.dark-mode .dashboard-actions .btn {
+  border: 2px solid #FFD700;
+  color: #FFD700;
+  background: #1a1a2e;
+}
+.dashboard-actions .btn-warning {
+  color: #fff;
+  background: #FFD700;
+  border: 2px solid #FFD700;
+}
+.dashboard-actions .btn-warning:hover {
+  background: #e6c200;
+  color: #fff;
+}
+
+/* Button hover/click/active effects */
+.dashboard-actions .btn {
+  transition: box-shadow 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+.dashboard-actions .btn:hover, .dashboard-actions .btn:focus {
+  box-shadow: 0 2px 8px 0 rgba(255,215,0,0.15);
+  background: #ffe066;
+  color: #222;
+  transform: translateY(-2px) scale(1.04);
+  border-color: #FFD700;
+}
+body.dark-mode .dashboard-actions .btn:hover, body.dark-mode .dashboard-actions .btn:focus {
+  background: #2a2d3e;
+  color: #FFD700;
+}
+.dashboard-actions .btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px 0 rgba(255,215,0,0.10);
+}
+
+/* KPI Table for daily breakdown */
+.dashboard-kpi-table {
+  width: 100%;
+  font-size: 0.98rem;
+  background: #1a1a2e;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  color: #ffffff;
+}
+body.dark-mode .dashboard-kpi-table {
+  background: #1a1a2e;
+  color: #FFD700;
+}
+.dashboard-kpi-table th, .dashboard-kpi-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+}
+.dashboard-kpi-table th {
+  background: #2d2d44;
+  color: #ffffff;
+  font-weight: 700;
+}
+body.dark-mode .dashboard-kpi-table th {
+  background: #2d2d44;
+  color: #FFD700;
+}
+.dashboard-kpi-table tr:nth-child(even) {
+  background: #23243a;
+}
+body.dark-mode .dashboard-kpi-table tr:nth-child(even) {
+  background: #23243a;
+}
+
+/* Scrollable recent list */
+.dashboard-recent-list {
+  background: #1a1a2e !important;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+  max-height: 260px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+}
+.recent-list-item {
+  background: transparent;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: none;
+  border: none;
+  color: #ffffff;
+}
+body.light-mode .recent-list-item {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+body.dark-mode .dashboard-recent-list {
+  background: #1a1a2e !important;
+}
+
+/* Ensure dark background in dark mode */
+body.dark-mode .dashboard-recent-list,
+.dashboard-recent-list {
+  background: #1a1a2e !important;
+}
+
+/* Force dark background for dashboard recent lists */
+.tab-content.flex-fill.dashboard-recent-list,
+.dashboard-recent-list {
+  background: #1a1a2e !important;
+  background-color: #1a1a2e !important;
+}
+.dashboard-recent-list::-webkit-scrollbar {
+  width: 8px;
+  background: #2d2d44;
+  border-radius: 8px;
+}
+.dashboard-recent-list::-webkit-scrollbar-thumb {
+  background: #FFD700;
+  border-radius: 8px;
+}
+body.dark-mode .dashboard-recent-list::-webkit-scrollbar {
+  background: #2d2d44;
+}
+body.dark-mode .dashboard-recent-list::-webkit-scrollbar-thumb {
+  background: #FFD700;
+}
+
+/* Top lists and new members */
+.top-list-card li,
+.new-members-card li,
+.list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid #2d2d44;
+    border-radius: 0.35rem;
+    background-color: #1a1a2e;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s ease;
+    color: #ffffff;
+}
+
+    .top-list-card li:hover,
+    .new-members-card li:hover,
+    .list-group-item:hover {
+        background-color: #2d2d44;
+        cursor: pointer;
+    }
+
+/* Scrollable recent bookings */
+.recent-bookings-container {
+    background-color: #1a1a2e;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+    .recent-bookings-container table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #1a1a2e;
+        color: #f1f1f1;
+        border-radius: 10px;
+        overflow: hidden;
+        font-size: 1rem;
+    }
+
+    .recent-bookings-container thead {
+        background-color: #2d2d44;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .recent-bookings-container tbody {
+        display: block;
+        max-height: 185px;
+        overflow-y: auto;
+    }
+
+        .recent-bookings-container thead tr,
+        .recent-bookings-container tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+    .recent-bookings-container th,
+    .recent-bookings-container td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .recent-bookings-container th {
+        background: #2d2d44;
+        color: #fff;
+        font-weight: 600;
+        border-bottom: 2px solid #393e5c;
+    }
+
+    .recent-bookings-container tr {
+        border-bottom: 1px solid #393e5c;
+    }
+
+    .recent-bookings-container tbody tr:nth-child(even) {
+        background: #23243a;
+    }
+
+    .recent-bookings-container tbody tr:nth-child(odd) {
+        background: #1a1a2e;
+    }
+
+    .recent-bookings-container tr:hover {
+        background: #393e5c;
+        color: #fff;
+    }
+
+/* Sticky table header for safety */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #2d2d44;
+    z-index: 1;
+}
+
+/* KPI summary row for selected day */
+.dashboard-kpi-summary {
+  background: #1a1a2e;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+  gap: 2rem;
+  font-size: 1.05rem;
+  color: #ffffff;
+}
+body.dark-mode .dashboard-kpi-summary {
+  background: #1a1a2e;
+  color: #FFD700;
+}
+@media (max-width: 900px) {
+  .dashboard-kpi-summary { flex-direction: column; gap: 0.5rem; }
+}
+
+/* Card style for recent list items */
+.recent-list-item {
+  background: #1a1a2e;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.07);
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: box-shadow 0.15s, transform 0.1s;
+  color: #ffffff;
+}
+.recent-list-item:hover {
+  box-shadow: 0 4px 16px 0 rgba(255,215,0,0.13);
+  transform: translateY(-2px) scale(1.02);
+}
+body.dark-mode .recent-list-item {
+  background: #23243a;
+  color: #FFD700;
+}
+
+/* === KPI Cards Row Wrapper === */
+.dashboard-kpi-cards {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* === Individual KPI Card === */
+.kpi-card {
+  border-radius: 0.75rem;
+  border: 2px solid #2d2d44;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  background: #1a1a2e;
+  color: #fff;
+  text-align: center;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kpi-card .kpi-label,
+.kpi-card .kpi-value,
+.kpi-card .kpi-date,
+.kpi-card h5,
+.kpi-card .display-6 {
+  color: #fff;
+}
+
+.kpi-comparison {
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.kpi-comparison.positive {
+  color: #28a745;
+}
+
+.kpi-comparison.negative {
+  color: #dc3545;
+}
+
+.sparkline {
+  width: 100%;
+  height: 50px;
+  margin-top: 10px;
+}
+body.light-mode .kpi-card {
+  background: #fff !important;
+  color: #222 !important;
+  border: 2px solid #d0d0d0 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+}
+body.light-mode .kpi-card .kpi-label,
+body.light-mode .kpi-card .kpi-value,
+body.light-mode .kpi-card .kpi-date,
+body.light-mode .kpi-card h5,
+body.light-mode .kpi-card .display-6,
+body.light-mode .kpi-card * {
+  color: #222 !important;
+}
+
+/* Chart containers - match movie stats styling */
+.dashboard-chart-container {
+  background: #1a1a2e !important;
+  border: 2px solid #2d2d44 !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  color: #ffffff;
+}
+body.light-mode .dashboard-chart-container, .light-mode .dashboard-chart-container {
+  background: #fff !important;
+  border: 2px solid #d0d0d0 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+}
+body.light-mode .kpi-card, .light-mode .kpi-card,
+body.light-mode .card.kpi-card, .light-mode .card.kpi-card {
+  background: transparent !important;
+  color: #222 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+body.light-mode .kpi-card .kpi-label,
+body.light-mode .kpi-card .kpi-value,
+body.light-mode .kpi-card .kpi-date,
+.light-mode .kpi-card .kpi-label,
+.light-mode .kpi-card .kpi-value,
+.light-mode .kpi-card .kpi-date,
+body.light-mode .card .card-body,
+body.light-mode .card .card-body h5,
+body.light-mode .card .card-body .display-6 {
+  color: #222 !important;
+}
+
+.dashboard-chart-container h5 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.dashboard-chart-container canvas,
+.dashboard-chart-container .dashboard-chart-canvas {
+  max-width: 100%;
+  max-height: 350px;
+  width: 100% !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+
+#food-dashboard .card.shadow.h-100 {
+  border-radius: 0.75rem;
+  border: 2px solid #2d2d44;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10) !important;
+  background: #1a1a2e;
+  color: #ffffff;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.tab-buttons .btn {
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tab-buttons .btn:not(.active) {
+    background-color: transparent;
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+.tab-buttons .btn:not(.active):hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Remove nav-pills styles that might affect the sidebar */
+.nav-pills .nav-link {
+    color: #0d6efd;
+    background-color: white;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+[data-bs-theme="dark"] .nav-pills .nav-link {
+    background-color: transparent;
+    color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-group {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.btn-group .btn {
+    border: none;
+    padding: 8px 24px;
+    border-radius: 6px !important;
+    margin: 0 2px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-group .btn:not(.active) {
+    background-color: transparent;
+    color: #6c757d;
+}
+
+.btn-group .btn:not(.active):hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .btn-group {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-bs-theme="dark"] .btn-group .btn:not(.active) {
+    color: #adb5bd;
+}
+
+/* Tab content styles */
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.show.active {
+    display: block;
+}
+
+/* Removed duplicate definition that was overriding the white background */
+
+/* Remove border-end class styles */
+.border-end {
+    border-right: none !important;
+}
+
+/* Remove any min-height constraints */
+.min-vh-100 {
+    min-height: auto !important;
+}
+
+.small-stat {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: -0.5rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #007bff, #6610f2);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.bg-gradient-danger {
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border-radius: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* Additional Dashboard Styles - Moved from inline styles */
+body, html {
+    overflow-x: hidden;
+}
+
+#food-dashboard {
+    overflow-x: hidden;
+}
+
+.dashboard-recent-list {
+    background: #ffffff !important;
+    padding: 0;
+    margin: 0;
+    max-height: 288px; /* 4 cards at ~72px each */
+    height: 288px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07);
+    position: relative;
+    z-index: 1;
+}
+
+.recent-list-item {
+    background-color: #1f1f2e;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.recent-list-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.recent-list-item > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recent-list-item .text-warning,
+.recent-list-item .fw-bold {
+    color: #ffd700;
+}
+
+.dashboard-recent-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dashboard-recent-list::-webkit-scrollbar-thumb {
+    background: #ffd700;
+    border-radius: 4px;
+}
+
+.card-body.d-flex {
+    display: flex;
+    flex-direction: column; 
+    height: 100%;
+}
+
+.card-body .nav-pills {
+    flex: 0 0 auto;
+    margin-bottom: 0.75rem;
+    z-index: 10;
+}
+
+/* Override small-stat from previous definition */
+.small-stat {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Force white background for Recent Food Activity and Recent Movie Activity sections */
+#booked-list,
+#cancelled-list,
+#orders-list,
+#cancels-list,
+.tab-content.flex-fill.dashboard-recent-list,
+.dashboard-recent-list {
+    background: #1a1a2e !important;
+    background-color: #1a1a2e !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 6px 0 rgba(0,0,0,0.07) !important;
+    color: #ffffff;
+}
+
+/* Ensure proper styling for recent list items in dark background */
+.dashboard-recent-list .recent-list-item {
+    background-color: #2d2d44 !important;
+    border: 1px solid #393e5c !important;
+    color: #ffffff !important;
+}
+
+.dashboard-recent-list .recent-list-item:hover {
+    background-color: #393e5c !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dashboard-recent-list .text-warning,
+.dashboard-recent-list .fw-bold {
+    color: #FFD700 !important;
+}
+
+/* Bootstrap utility classes for dark theme */
+.d-flex {
+    display: flex !important;
+}
+
+.justify-content-between {
+    justify-content: space-between !important;
+}
+
+.align-items-center {
+    align-items: center !important;
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+.p-2 {
+    padding: 0.5rem !important;
+}
+
+.bg-light {
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.rounded {
+    border-radius: 0.375rem !important;
+}
+
+/* Additional utility classes that might be used */
+.bg-white {
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.bg-secondary {
+    background-color: #2d2d44 !important;
+    color: #ffffff !important;
+}
+
+.text-dark {
+    color: #ffffff !important;
+}
+
+.text-muted {
+    color: #adb5bd !important;
+}
+
+.border {
+    border: 1px solid #2d2d44 !important;
+}
+
+.border-light {
+    border-color: #2d2d44 !important;
+}
+
+/* Light mode overrides for utility classes */
+body.light-mode .bg-light,
+body.light-mode .bg-white {
+    background-color: #ffffff !important;
+    color: #222222 !important;
+}
+
+body.light-mode .bg-secondary {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+body.light-mode .text-dark {
+    color: #222222 !important;
+}
+
+body.light-mode .text-muted {
+    color: #6c757d !important;
+}
+
+body.light-mode .border,
+body.light-mode .border-light {
+    border-color: #dee2e6 !important;
+}
+
+/* Chart text styling for dark theme - Improved visibility */
+.movieComboChart,
+.topMoviesChart,
+.chart-container,
+.chart-area {
+    color: #ffffff !important;
+}
+
+/* Chart title and labels - Brighter white */
+.movieComboChart h5,
+.topMoviesChart h5,
+.chart-container h5,
+.chart-area h5,
+.movieComboChart .chart-title,
+.topMoviesChart .chart-title,
+.chart-container .chart-title,
+.chart-area .chart-title {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+/* Chart legend text - Brighter and more visible */
+.movieComboChart .legend,
+.topMoviesChart .legend,
+.chart-container .legend,
+.chart-area .legend,
+.movieComboChart .chart-legend,
+.topMoviesChart .chart-legend,
+.chart-container .chart-legend,
+.chart-area .chart-legend {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+/* Chart axis labels and text - Much brighter and more visible */
+.movieComboChart text,
+.topMoviesChart text,
+.chart-container text,
+.chart-area text,
+.movieComboChart .axis text,
+.topMoviesChart .axis text,
+.chart-container .axis text,
+.chart-area .axis text {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+/* Chart axis lines - Brighter and more visible */
+.movieComboChart .axis line,
+.topMoviesChart .axis line,
+.chart-container .axis line,
+.chart-area .axis line,
+.movieComboChart .axis path,
+.topMoviesChart .axis path,
+.chart-container .axis path,
+.chart-area .axis path {
+    stroke: #fff !important;
+    stroke-width: 1.5px !important;
+}
+
+/* Chart grid lines - Much brighter and more visible */
+.movieComboChart .grid,
+.topMoviesChart .grid,
+.chart-container .grid,
+.chart-area .grid,
+.movieComboChart .grid-line,
+.topMoviesChart .grid-line,
+.chart-container .grid-line,
+.chart-area .grid-line,
+.movieComboChart .tick line,
+.topMoviesChart .tick line,
+.chart-container .tick line,
+.chart-area .tick line {
+    stroke: #fff !important;
+    stroke-width: 1px !important;
+    opacity: 0.8 !important;
+}
+
+/* Chart tooltips and labels - Enhanced visibility */
+.movieComboChart .tooltip,
+.topMoviesChart .tooltip,
+.chart-container .tooltip,
+.chart-area .tooltip,
+.movieComboChart .label,
+.topMoviesChart .label,
+.chart-container .label,
+.chart-area .label {
+    color: #ffffff !important;
+    background-color: #2d2d44 !important;
+    border: 2px solid #FFD700 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+/* Chart canvas and SVG elements */
+.movieComboChart canvas,
+.topMoviesChart canvas,
+.chart-container canvas,
+.chart-area canvas,
+.movieComboChart svg,
+.topMoviesChart svg,
+.chart-container svg,
+.chart-area svg {
+    background-color: transparent !important;
+}
+
+/* Chart container backgrounds */
+.movieComboChart,
+.topMoviesChart,
+.chart-container,
+.chart-area {
+    background-color: #1a1a2e !important;
+    border: 2px solid #fff !important;
+    border-radius: 8px !important;
+}
+
+/* Specific chart styling for better visibility */
+.movieComboChart *,
+.topMoviesChart *,
+.chart-container *,
+.chart-area * {
+    color: #ffffff !important;
+}
+
+/* Chart data points and bars - Enhanced colors */
+.movieComboChart .data-point,
+.topMoviesChart .data-point,
+.chart-container .data-point,
+.chart-area .data-point,
+.movieComboChart .bar,
+.topMoviesChart .bar,
+.chart-container .bar,
+.chart-area .bar {
+    fill: #FFD700 !important;
+    stroke: #FFD700 !important;
+    stroke-width: 2px !important;
+}
+
+/* Chart hover effects - Enhanced visibility */
+.movieComboChart .data-point:hover,
+.topMoviesChart .data-point:hover,
+.chart-container .data-point:hover,
+.chart-area .data-point:hover,
+.movieComboChart .bar:hover,
+.topMoviesChart .bar:hover,
+.chart-container .bar:hover,
+.chart-area .bar:hover {
+    fill: #ffffff !important;
+    stroke: #FFD700 !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 2px 4px rgba(255,215,0,0.3)) !important;
+}
+
+/* Chart borders and outlines - Enhanced visibility */
+.movieComboChart .chart-border,
+.topMoviesChart .chart-border,
+.chart-container .chart-border,
+.chart-area .chart-border,
+.movieComboChart .chart-outline,
+.topMoviesChart .chart-outline,
+.chart-container .chart-outline,
+.chart-area .chart-outline {
+    stroke: #fff !important;
+    stroke-width: 2px !important;
+    fill: none !important;
+}
+
+/* Chart background grid - Enhanced visibility */
+.movieComboChart .background-grid,
+.topMoviesChart .background-grid,
+.chart-container .background-grid,
+.chart-area .background-grid {
+    stroke: #3a3a5a !important;
+    stroke-width: 0.5px !important;
+    opacity: 0.6 !important;
+}
+
+/* Chart tick marks - Enhanced visibility */
+.movieComboChart .tick,
+.topMoviesChart .tick,
+.chart-container .tick,
+.chart-area .tick {
+    stroke: #fff !important;
+    stroke-width: 1px !important;
+}
+
+/* Chart domain lines - Enhanced visibility */
+.movieComboChart .domain,
+.topMoviesChart .domain,
+.chart-container .domain,
+.chart-area .domain {
+    stroke: #fff !important;
+    stroke-width: 2px !important;
+}

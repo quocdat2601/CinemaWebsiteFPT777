@@ -1,0 +1,89 @@
+﻿@model IEnumerable<Promotion>
+
+    <div class="text-center">
+        <h2>
+            Promotion List
+        </h2>
+    </div>
+
+<div class="text-center mb-2">
+	<a asp-controller="Promotion" asp-action="Create" class="btn btn-sm btn-primary">Create a Promotion</a>
+</div>
+
+<table class="table table-bordered table-striped">
+	<thead class="table-dark">
+		<tr class="text-center">
+			<th>ID</th>
+			<th>Image</th>
+			<th>Name</th>
+			<th>Promotion Period</th>
+			<th>Discount Value%</th>
+			<th>Status</th>
+			<th style="width: 150px;">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var promotion in Model)
+		{
+			<tr>
+				<td class="text-center">@promotion.PromotionId</td>
+				<td class="text-center">
+					@if (!string.IsNullOrEmpty(promotion.Image))
+					{
+						<img src="@promotion.Image" alt="@promotion.Title" style="height: 50px; width: 50px; object-fit: cover;" class="img-thumbnail" />
+					}
+					else
+					{
+						<i class="fas fa-ticket-alt fa-2x text-muted"></i>
+					}
+				</td>
+				<td>@promotion.Title</td>
+				<td class="text-center">
+					@((promotion.StartTime.HasValue && promotion.EndTime.HasValue) ? ($"{promotion.StartTime.Value:dd/MM/yyyy} - {promotion.EndTime.Value:dd/MM/yyyy}") : "N/A")
+				</td>
+				<td class="text-center">
+					@promotion.DiscountLevel
+				</td>
+				<td class="text-center">
+					@if (promotion.IsActive)
+					{
+						<span class="badge bg-success">Active</span>
+					}
+					else
+					{
+						<span class="badge bg-danger">Inactive</span>
+					}
+				</td>
+
+				<td>
+					<div class="d-flex align-items-center gap-2">
+						<a href="@Url.Action("Edit", "Promotion", new { id = promotion.PromotionId })" class="btn btn-sm btn-primary">Edit</a>
+
+						<form asp-action="Delete" asp-controller="Promotion" method="post" onsubmit="return confirm('Are you sure you want to delete this promotion?');">
+							<input type="hidden" name="id" value="@promotion.PromotionId" />
+							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
+						</form>
+					</div>
+				</td>
+
+			</tr>
+		}
+	</tbody>
+	@if (TempData["ToastMessage"] != null)
+	{
+		<div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+			<div class="toast show align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+				<div class="d-flex">
+					<div class="toast-body">
+						@TempData["ToastMessage"]
+					</div>
+					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+			</div>
+		</div>
+	}
+
+
+
+</table>
+

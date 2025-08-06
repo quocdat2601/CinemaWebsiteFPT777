@@ -1,0 +1,1292 @@
+﻿@model MovieTheater.ViewModels.LoginViewModel
+@using MovieTheater.ViewModels
+@{
+    ViewData["Title"] = "Login & Signup";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .auth-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Login Wrapper for better centering */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        /* Left Side - Auth Form */
+        .auth-left {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .auth-left::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.2;
+        }
+
+        .auth-form-container {
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            z-index: 10;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-image {
+            height: 60px;
+            width: auto;
+            filter: drop-shadow(0 8px 20px rgba(255, 224, 102, 0.4));
+            transition: all 0.3s ease;
+        }
+
+        .logo-image:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 12px 25px rgba(255, 224, 102, 0.6));
+        }
+
+        .brand-subtitle {
+            color: #94a3b8;
+            font-size: 1.125rem;
+            text-align: center;
+        }
+
+        /* Tab Navigation */
+        .auth-tabs {
+            display: flex;
+            background: #000000;
+            border-radius: 1rem;
+            padding: 0.25rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            width: 240px;
+            height: 2.25rem;
+        }
+
+        .auth-tabs::before {
+            content: '';
+            position: absolute;
+            top: 0.25rem;
+            left: 0.25rem;
+            width: calc(50% - 0.25rem);
+            height: calc(100% - 0.5rem);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 0.75rem;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+        }
+
+        .auth-tabs[data-active-tab="signup"]::before {
+            transform: translateX(100%);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.85rem;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2rem;
+        }
+
+        .auth-tab.active {
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .auth-tab:hover:not(.active) {
+            color: #fbbf24;
+            transform: translateY(-1px);
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+        }
+
+        .auth-tab:active {
+            transform: scale(0.98);
+        }
+
+        .auth-tab:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
+        }
+
+        /* Form Cards Container */
+        .auth-cards-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Container for login - smaller */
+        .auth-cards-container[data-active-tab="login"] {
+            min-height: 500px;
+        }
+
+        /* Container for signup - larger */
+        .auth-cards-container[data-active-tab="signup"] {
+            min-height: 900px;
+        }   
+
+        /* Form Cards */
+        .auth-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            visibility: hidden;
+            width: 100%;
+        }
+
+        /* Login card - smaller width and height */
+        .auth-card#loginCard {
+            max-width: 450px;
+            min-height: 500px;
+            padding: 2rem;
+        }
+
+        /* Signup card - larger width */
+        .auth-card#signupCard {
+            max-width: 1400px;
+            min-height: 900px;
+            padding: 3rem;
+        }
+
+        /* Hide spacer for login form */
+        .auth-card#loginCard .signup-spacer {
+            display: none;
+        }
+
+        .auth-card.active {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+            position: relative;
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Smaller spacing for login form */
+        .auth-card#loginCard .card-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+            color: #cbd5e1;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        /* Special spacing for form groups in signup */
+        .auth-card .form-group {
+            margin-bottom: 1.75rem;
+        }
+
+        .auth-card .form-column .form-group {
+            margin-bottom: 0;
+        }
+
+        /* Smaller spacing for login form groups */
+        .auth-card#loginCard .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            padding: 0 1rem;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+        }
+
+        /* Password input specific focus */
+        .password-container .form-input:focus + .password-requirements {
+            margin-top: 0.75rem;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: white;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            margin-right: 0.5rem;
+        }
+
+        .forgot-link {
+            color: #f5f026;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #c084fc;
+        }
+
+        .auth-btn {
+            width: 100%;
+            max-width: 280px;
+            height: 2.75rem;
+            background: linear-gradient(135deg, #ffe66d 0%, #524a0e 100%);
+            border: none;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+            margin: 1.5rem auto 0 auto;
+        }
+
+        /* Smaller margin for login button */
+        .auth-card#loginCard .auth-btn {
+            margin: 1.25rem auto 0 auto;
+            max-width: 220px;
+        }
+
+        /* Larger button for signup */
+        .auth-card#signupCard .auth-btn {
+            max-width: 350px;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.6);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .divider {
+            position: relative;
+            margin: 1.25rem 0;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider-text {
+            background: transparent;
+            color: #94a3b8;
+            padding: 0 1rem;
+            font-size: 0.875rem;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .google-btn {
+            width: 100%;
+            height: 2.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .google-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Password requirements for signup */
+        .password-requirements {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        .password-requirements.show {
+            max-height: 150px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .password-requirements ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .password-requirements li {
+            margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .password-requirements li::before {
+            content: '○';
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .password-requirements li.valid {
+            color: #10b981;
+        }
+
+        .password-requirements li.valid::before {
+            content: '✓';
+            color: #10b981;
+        }
+
+        .password-requirements li.invalid {
+            color: #ef4444;
+        }
+
+        .password-requirements li.invalid::before {
+            content: '○';
+            color: #ef4444;
+        }
+
+        /* Password confirmation error */
+        .password-error {
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 0.5rem;
+            color: #ef4444;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(-10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .password-error.show {
+            max-height: 50px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .password-error::before {
+            content: '⚠';
+            font-size: 0.875rem;
+        }
+
+        /* Input error state */
+        .form-input.error {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .form-input.error:focus {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Validation error messages */
+        .validation-error {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: block;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+
+        .validation-error.field-validation-error {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .form-input.input-validation-error {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        /* Gender selection for signup */
+        .gender-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .radio-label input {
+            margin-right: 0.5rem;
+        }
+
+        /* Three Column Layout for Signup */
+        .form-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Smaller spacing for login form */
+        .auth-card#loginCard .form-row {
+            margin-bottom: 2rem;
+        }
+
+        .form-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Column headers for better organization */
+        .column-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fbbf24;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Right Side - Movie Slider */
+        .auth-right {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .movie-slider {
+            position: relative;
+            height: 100%;
+        }
+
+        .movie-slide {
+            position: absolute;
+            inset: 0;
+            transition: all 1s ease-in-out;
+            opacity: 0;
+            transform: scale(1.05);
+        }
+
+        .movie-slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .movie-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .movie-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 50%, transparent 100%);
+        }
+
+        .movie-info {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+        }
+
+        .movie-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .movie-meta {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            gap: 1rem;
+        }
+
+        .movie-genre {
+            padding: 0.25rem 0.75rem;
+            background: rgba(168, 85, 247, 0.2);
+            color: #c084fc;
+            font-size: 0.875rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .movie-rating {
+            display: flex;
+            align-items: center;
+            color: #fbbf24;
+            gap: 0.25rem;
+        }
+
+        .movie-rating span {
+            color: white;
+            font-weight: 600;
+        }
+
+        .movie-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .movie-description {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+        }
+
+        .slider-controls {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .slider-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-dot.active {
+            background: #fbbf24;
+            transform: scale(1.25);
+        }
+
+        .slider-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3rem;
+            height: 3rem;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-nav:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .slider-nav.prev {
+            left: 1rem;
+        }
+
+        .slider-nav.next {
+            right: 1rem;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 1400px) {
+            .auth-card#signupCard {
+                max-width: 100%;
+                padding: 2.5rem;
+            }
+        }
+
+        @@media (max-width: 1200px) {
+            .auth-card#signupCard {
+                max-width: 100%;
+                padding: 2rem;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .form-column {
+                margin-bottom: 0;
+                gap: 1.5rem;
+            }
+
+            .column-header {
+                font-size: 0.875rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .auth-container {
+                flex-direction: column;
+            }
+
+            .login-wrapper {
+                padding: 0.5rem;
+                min-height: 100vh;
+            }
+
+            .auth-left, .auth-right {
+                flex: none;
+            }
+
+            .auth-left {
+                min-height: 100vh;
+                padding: 0.5rem;
+            }
+
+            .auth-right {
+                display: none;
+            }
+
+            .logo-image {
+                height: 50px;
+            }
+
+            .auth-card {
+                padding: 1.25rem;
+            }
+
+            .auth-card#loginCard {
+                max-width: 100%;
+                padding: 1.5rem;
+            }
+
+            .auth-card#signupCard {
+                max-width: 100%;
+                padding: 1.5rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .form-column {
+                margin-bottom: 1rem;
+                gap: 1rem;
+            }
+
+            .column-header {
+                font-size: 0.875rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Login Wrapper for better centering -->
+        <div class="login-wrapper">
+            <!-- Left Side - Auth Form -->
+            <div class="auth-left">
+                <div class="auth-form-container">
+                    <!-- Header -->
+                    <div class="auth-header">
+                        <div class="logo-container">
+                            <img src="~/image/logo.png" alt="FPT 777 Logo" class="logo-image">
+                        </div>
+                        <p class="brand-subtitle">Your gateway to endless entertainment</p>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="auth-tabs" data-active-tab="login">
+                        <button class="auth-tab active" data-tab="login">Login</button>
+                        <button class="auth-tab" data-tab="signup">Sign Up</button>
+                    </div>
+
+                    <!-- Form Cards Container -->
+                    <div class="auth-cards-container" data-active-tab="login">
+                    <!-- Login Form -->
+                    <div class="auth-card active" id="loginCard">
+                    <div class="card-header">
+                        <h2 class="card-title">Welcome Back</h2>
+                        <p class="card-subtitle">Sign in to continue your movie journey</p>
+                    </div>
+
+                    <form id="loginForm" asp-action="Login" method="post">
+                        <!-- Username -->
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-input" asp-for="Username" placeholder="Enter your username" required />
+                            <span asp-validation-for="Username" class="validation-error"></span>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="password-container">
+                                <input type="password" class="form-input" asp-for="Password" placeholder="Enter your password" required id="loginPassword" />
+                                <button type="button" class="password-toggle" id="loginPasswordToggle">
+                                    <i class="fas fa-eye" id="loginPasswordIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="validation-error"></span>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="form-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" />
+                                Remember me
+                            </label>
+                            <a href="@Url.Action("ForgetPassword", "Account")" class="forgot-link">Forgot password?</a>
+                        </div>
+
+                        <!-- Login Button -->
+                        <button type="submit" class="auth-btn" id="loginBtn">
+                            <span id="loginText">Login</span>
+                            <i class="fas fa-arrow-right" id="loginIcon"></i>
+                        </button>
+
+                        <!-- Divider -->
+                        <div class="divider">
+                            <span class="divider-text">Or continue with</span>
+                        </div>
+
+                        <!-- Google Sign In -->
+                        <a href="/Account/ExternalLogin" class="google-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="#EA4335" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#4285F4" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            Continue with Google
+                        </a>
+                    </form>
+                </div>
+
+                <!-- Signup Form -->
+                <div class="auth-card" id="signupCard">
+                    <div class="card-header">
+                        <h2 class="card-title">Create Account</h2>
+                        <p class="card-subtitle">Join us for a cinematic experience</p>
+                    </div>
+
+                    <form id="signupForm" asp-action="Signup" method="post">
+                        <input type="hidden" name="RoleId" value="3" />
+
+                        <!-- Three Column Layout -->
+                        <div class="form-row">
+                            <!-- First Column - Account Info -->
+                            <div class="form-column">
+                                <h3 class="column-header">Account Information</h3>
+                                <!-- Username -->
+                                <div class="form-group">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-input" name="Username" placeholder="Enter your username" required />
+                                </div>
+
+                                <!-- Password -->
+                                <div class="form-group">
+                                    <label class="form-label">Password</label>
+                                    <div class="password-container">
+                                        <input type="password" class="form-input" name="Password" placeholder="Enter your password" required id="signupPassword" />
+                                        <button type="button" class="password-toggle" id="signupPasswordToggle">
+                                            <i class="fas fa-eye" id="signupPasswordIcon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-requirements">
+                                        <ul>
+                                            <li id="length-check">8-16 characters</li>
+                                            <li id="uppercase-check">At least one uppercase letter</li>
+                                            <li id="lowercase-check">At least one lowercase letter</li>
+                                            <li id="number-check">At least one number</li>
+                                            <li id="special-check">At least one special character (!@@#$%^&*)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Confirm Password -->
+                                <div class="form-group">
+                                    <label class="form-label">Confirm Password</label>
+                                    <div class="password-container">
+                                        <input type="password" class="form-input" name="ConfirmPassword" placeholder="Confirm your password" required id="confirmPassword" />
+                                        <button type="button" class="password-toggle" id="confirmPasswordToggle">
+                                            <i class="fas fa-eye" id="confirmPasswordIcon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-error" id="confirmPasswordError">
+                                        Passwords do not match
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Second Column - Personal Info -->
+                            <div class="form-column">
+                                <h3 class="column-header">Personal Information</h3>
+                                <!-- Full Name -->
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-input" name="FullName" placeholder="Enter your full name" required />
+                                </div>
+
+                                <!-- Date of Birth -->
+                                <div class="form-group">
+                                    <label class="form-label">Date of Birth</label>
+                                            <input type="date" class="form-input" name="DateOfBirth" required max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                </div>
+
+                                    <!-- Email -->
+                                    <div class="form-group">
+                                        <label class="form-label">Email</label>
+                                        <input type="text" class="form-input" name="Email" placeholder="Enter your email" required />
+                                    </div>
+
+                                <!-- Gender -->
+                                <div class="form-group">
+                                    <label class="form-label">Gender</label>
+                                    <div class="gender-group">
+                                        <label class="radio-label">
+                                            <input type="radio" name="Gender" value="male" required /> Male
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="Gender" value="female" required /> Female
+                                        </label>
+                                    </div>
+                                </div>
+
+                               
+                          </div>
+
+                            <!-- Third Column - Contact Info -->
+                            <div class="form-column">
+                                <h3 class="column-header">Contact Information</h3>
+                                <!-- Identity Card -->
+                                <div class="form-group">
+                                    <label class="form-label">Identity Number</label>
+                                    <input type="text" class="form-input" name="IdentityCard" placeholder="Enter your identity number" required />
+                                </div>
+
+                                <!-- Address -->
+                                <div class="form-group">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" class="form-input" name="Address" placeholder="Enter your address" required />
+                                </div>
+
+                                <!-- Phone Number -->
+                                <div class="form-group">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-input" name="PhoneNumber" placeholder="Enter your phone number" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Signup Button -->
+                        <button type="submit" class="auth-btn" id="signupBtn" disabled>
+                            <span id="signupText">Create Account</span>
+                            <i class="fas fa-user-plus" id="signupIcon"></i>
+                        </button>
+                    </form>
+                    
+                    <!-- Spacer to increase form height - only for signup -->
+                    <div class="signup-spacer" style="height: 3rem;"></div>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End of Login Wrapper -->
+    </div>
+
+    <script>
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.auth-tab');
+        const cards = document.querySelectorAll('.auth-card');
+        const tabsContainer = document.querySelector('.auth-tabs');
+        const cardsContainer = document.querySelector('.auth-cards-container');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update tabs container data attribute for sliding background
+                tabsContainer.setAttribute('data-active-tab', targetTab);
+                
+                // Update cards container data attribute for width
+                cardsContainer.setAttribute('data-active-tab', targetTab);
+                
+                // Update active card with smooth transition
+                cards.forEach(card => {
+                    card.classList.remove('active');
+                    if (card.id === targetTab + 'Card') {
+                        // Add a small delay for smooth transition
+                        setTimeout(() => {
+                            card.classList.add('active');
+                        }, 50);
+                    }
+                });
+            });
+        });
+
+        // Password toggle functionality
+        function setupPasswordToggle(inputId, toggleId, iconId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
+            const icon = document.getElementById(iconId);
+            
+            toggle.addEventListener('click', function() {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+
+        // Setup password toggles
+        setupPasswordToggle('loginPassword', 'loginPasswordToggle', 'loginPasswordIcon');
+        setupPasswordToggle('signupPassword', 'signupPasswordToggle', 'signupPasswordIcon');
+        setupPasswordToggle('confirmPassword', 'confirmPasswordToggle', 'confirmPasswordIcon');
+
+        // Password validation for signup
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8 && password.length <= 16,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /\d/.test(password),
+                special: /[!@@#$%^&*]/.test(password)
+            };
+            
+            // Show/hide password requirements based on input
+            const requirementsContainer = document.querySelector('.password-requirements');
+            if (password.length > 0) {
+                requirementsContainer.classList.add('show');
+            } else {
+                requirementsContainer.classList.remove('show');
+            }
+            
+            // Update visual indicators
+            document.getElementById('length-check').className = requirements.length ? 'valid' : 'invalid';
+            document.getElementById('uppercase-check').className = requirements.uppercase ? 'valid' : 'invalid';
+            document.getElementById('lowercase-check').className = requirements.lowercase ? 'valid' : 'invalid';
+            document.getElementById('number-check').className = requirements.number ? 'valid' : 'invalid';
+            document.getElementById('special-check').className = requirements.special ? 'valid' : 'invalid';
+            
+            return Object.values(requirements).every(req => req);
+        }
+
+        function validateSignupForm() {
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const isPasswordValid = validatePassword(password);
+            const isConfirmPasswordValid = password === confirmPassword && password.length > 0;
+            
+            // Show/hide confirm password error
+            const confirmPasswordError = document.getElementById('confirmPasswordError');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            
+            if (confirmPassword.length > 0 && password !== confirmPassword) {
+                confirmPasswordError.classList.add('show');
+                confirmPasswordInput.classList.add('error');
+            } else {
+                confirmPasswordError.classList.remove('show');
+                confirmPasswordInput.classList.remove('error');
+            }
+            
+            document.getElementById('signupBtn').disabled = !(isPasswordValid && isConfirmPasswordValid);
+        }
+
+        // Add event listeners for password validation
+        document.getElementById('signupPassword').addEventListener('input', validateSignupForm);
+        document.getElementById('confirmPassword').addEventListener('input', validateSignupForm);
+
+        // Form submission with loading state and validation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const username = document.querySelector('input[asp-for="Username"]').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            // Clear previous validation errors
+            document.querySelectorAll('.validation-error').forEach(error => {
+                error.classList.remove('field-validation-error');
+            });
+            document.querySelectorAll('.form-input').forEach(input => {
+                input.classList.remove('input-validation-error');
+            });
+            
+            let hasError = false;
+            
+            // Validate username
+            if (!username) {
+                const usernameError = document.querySelector('span[asp-validation-for="Username"]');
+                const usernameInput = document.querySelector('input[asp-for="Username"]');
+                usernameError.textContent = 'Username is required';
+                usernameError.classList.add('field-validation-error');
+                usernameInput.classList.add('input-validation-error');
+                hasError = true;
+            }
+            
+            // Validate password
+            if (!password) {
+                const passwordError = document.querySelector('span[asp-validation-for="Password"]');
+                const passwordInput = document.getElementById('loginPassword');
+                passwordError.textContent = 'Password is required';
+                passwordError.classList.add('field-validation-error');
+                passwordInput.classList.add('input-validation-error');
+                hasError = true;
+            }
+            
+            // If there are validation errors, prevent form submission
+            if (hasError) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // If validation passes, show loading state
+            const btn = document.getElementById('loginBtn');
+            const text = document.getElementById('loginText');
+            const icon = document.getElementById('loginIcon');
+            
+            btn.disabled = true;
+            text.textContent = 'Signing in...';
+            icon.className = 'loading-spinner';
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('signupBtn');
+            const text = document.getElementById('signupText');
+            const icon = document.getElementById('signupIcon');
+            
+            btn.disabled = true;
+            text.textContent = 'Creating account...';
+            icon.className = 'loading-spinner';
+        });
+
+        // Movie slider functionality
+       
+
+        // Clear validation errors when user starts typing
+        document.querySelector('input[asp-for="Username"]').addEventListener('input', function() {
+            const error = document.querySelector('span[asp-validation-for="Username"]');
+            const input = this;
+            error.classList.remove('field-validation-error');
+            input.classList.remove('input-validation-error');
+        });
+        
+        document.getElementById('loginPassword').addEventListener('input', function() {
+            const error = document.querySelector('span[asp-validation-for="Password"]');
+            const input = this;
+            error.classList.remove('field-validation-error');
+            input.classList.remove('input-validation-error');
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initSlider();
+            validateSignupForm(); // Initial validation
+            
+            // Show error message if exists
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                setTimeout(function() {
+                    alert('@Html.Raw(TempData["ErrorMessage"])');
+                }, 100);
+                </text>
+            }
+        });
+    </script>
+</body>
+</html>

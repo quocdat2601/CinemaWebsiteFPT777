@@ -1,0 +1,115 @@
+@model MovieTheater.ViewModels.PersonFormModel
+@using System.Security.Claims
+
+@{
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+}
+<link rel="stylesheet" href="/css/cast.css">
+
+@if (userRole == "Admin")
+{
+    <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="CastMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
+        &larr; Return
+    </a>
+}
+else
+{
+    <a asp-controller="Employee" asp-action="MainPage" asp-route-tab="CastMg" class="btn btn-secondary mt-2" style="margin-left: 0.5rem">
+        &larr; Return
+    </a>
+}
+<h2>Edit Cast</h2>
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="PersonId" />
+    <input type="hidden" asp-for="Image" />
+    <!-- Top section layout -->
+    <div class="row mt-2">
+        <!-- Image left -->
+        <div class="form-image col-md-6">
+            <div class="text-center">
+                <img id="imagePreview" src="@Model.Image" alt="Current Image" style="max-width: 100%; max-height: 320px; object-fit: contain; border-radius: 8px;" />
+            </div>
+            <div class="mt-4">
+                <input type="file" name="ImageFile" id="imageInput" class="form-control" accept="image/*" />
+            </div>
+        </div>
+
+        <!-- Info fields right -->
+        <div class="form-info col-md-6 ">
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Full Name</label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="DateOfBirth" class="form-label">Date Of Birth</label>
+                <input asp-for="DateOfBirth" class="form-control" type="date" max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Nationality" class="form-label">Nationality</label>
+                <input asp-for="Nationality" class="form-control" />
+                <span asp-validation-for="Nationality" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label me-3">Gender</label>
+                <div class="d-flex align-items-center">
+                    <div class="form-check me-4">
+                        <input type="radio" id="genderMale" name="Gender" value="false" class="form-check-input" @(Model.Gender == false ? "checked" : "") />
+                        <label class="form-check-label" for="genderMale">Male</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" id="genderFemale" name="Gender" value="true" class="form-check-input" @(Model.Gender == true ? "checked" : "") />
+                        <label class="form-check-label" for="genderFemale">Female</label>
+                    </div>
+                </div>
+                <span asp-validation-for="Gender" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">  
+                <label class="form-label me-3">Are they a director?</label>
+                <div class="d-flex align-items-center">
+                    <div class="form-check me-4">  
+                        <input type="radio" id="directorYes" name="IsDirector" value="true" class="form-check-input" @(Model.IsDirector == true ? "checked" : "") />  
+                        <label class="form-check-label" for="directorYes">Yes</label>  
+                    </div>  
+                    <div class="form-check">  
+                        <input type="radio" id="directorNo" name="IsDirector" value="false" class="form-check-input" @(Model.IsDirector == false ? "checked" : "") />  
+                        <label class="form-check-label" for="directorNo">No</label>  
+                    </div>  
+                </div>
+                <span asp-validation-for="IsDirector" class="text-danger"></span>  
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Second row: Description -->
+    <div class="full-width-row">
+        <label asp-for="Description" class="form-label">Description</label>
+        <textarea asp-for="Description" class="form-control" style="height: 200px">@Model.Description</textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-center mt-3">
+        <button type="submit" class="btn btn-primary me-2">Save</button>
+        <a asp-action="CastMg" asp-controller="Admin" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function (e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+    </script>
+}

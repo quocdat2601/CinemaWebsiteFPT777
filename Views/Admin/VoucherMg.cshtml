@@ -1,0 +1,219 @@
+@model IEnumerable<MovieTheater.Models.Voucher>
+
+@{
+    ViewData["Title"] = "Voucher Management";
+    var now = DateTime.Now;
+    
+    var totalVouchers = Model.Count();
+    var active = Model.Count(v => !v.IsUsed.HasValue || !v.IsUsed.Value && v.ExpiryDate > now);
+    var used = Model.Count(v => v.IsUsed.HasValue && v.IsUsed.Value);
+    var expired = Model.Count(v => v.ExpiryDate <= now);
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Voucher Management</h2>
+        <a asp-action="AdminCreate" asp-controller="Voucher" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Voucher
+        </a>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="voucherSearchForm" onsubmit="searchVouchers(); return false;">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="searchKeyword" name="keyword"
+                               placeholder="Search by code or account..." value="@ViewBag.Keyword">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter" name="statusFilter" onchange="searchVouchers();">
+                            @if (string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()))
+                            {
+                                <option value="" selected>All Status</option>
+                            }
+                            else
+                            {
+                                <option value="">All Status</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "active")
+                            {
+                                <option value="active" selected>Active</option>
+                            }
+                            else
+                            {
+                                <option value="active">Active</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "used")
+                            {
+                                <option value="used" selected>Used</option>
+                            }
+                            else
+                            {
+                                <option value="used">Used</option>
+                            }
+                            @if (ViewBag.StatusFilter?.ToString() == "expired")
+                            {
+                                <option value="expired" selected>Expired</option>
+                            }
+                            else
+                            {
+                                <option value="expired">Expired</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="expiryFilter" name="expiryFilter" onchange="searchVouchers();">
+                            @if (string.IsNullOrEmpty(ViewBag.ExpiryFilter?.ToString()))
+                            {
+                                <option value="" selected>All Expiry</option>
+                            }
+                            else
+                            {
+                                <option value="">All Expiry</option>
+                            }
+                            @if (ViewBag.ExpiryFilter?.ToString() == "expiring-soon")
+                            {
+                                <option value="expiring-soon" selected>Expiring Soon</option>
+                            }
+                            else
+                            {
+                                <option value="expiring-soon">Expiring Soon</option>
+                            }
+                            @if (ViewBag.ExpiryFilter?.ToString() == "expired")
+                            {
+                                <option value="expired" selected>Expired</option>
+                            }
+                            else
+                            {
+                                <option value="expired">Expired</option>
+                            }
+                            @if (ViewBag.ExpiryFilter?.ToString() == "valid")
+                            {
+                                <option value="valid" selected>Valid</option>
+                            }
+                            else
+                            {
+                                <option value="valid">Valid</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="#" onclick="resetVoucherFilters(); return false;" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4" id="voucherStatisticsCards">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0" id="totalVouchersCount">@totalVouchers</h4>
+                            <p class="mb-0">Total Vouchers</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-ticket-perforated fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0" id="activeCount">@active</h4>
+                            <p class="mb-0">Active</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0" id="usedCount">@used</h4>
+                            <p class="mb-0">Used</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check2-all fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0" id="expiredCount">@expired</h4>
+                            <p class="mb-0">Expired</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-x-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voucher List -->
+    <div class="card">
+        <div class="card-body">
+            <div id="voucherResult">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading vouchers...</p>
+                </div>
+            </div>
+            <nav id="voucherPagination" class="mt-3"></nav>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Voucher Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="Voucher Image" class="img-fluid" style="max-height: 500px;">
+                <p class="mt-3 mb-0 text-muted" id="modalImageCode"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<partial name="_ToastMessages" />
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-styles.css" />
+    <link rel="stylesheet" href="~/css/pagination-styles.css" />
+}

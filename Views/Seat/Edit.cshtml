@@ -1,0 +1,220 @@
+﻿@using MovieTheater.ViewModels
+@model ShowroomEditViewModel
+<form id="antiForgeryForm">
+	@Html.AntiForgeryToken()
+</form>
+
+@{
+	var seatTypes = ViewBag.SeatTypes as List<SeatType>;
+	var coupleSeatPairs = new Dictionary<int, int>();
+	if (ViewBag.CoupleSeats != null)
+	{
+		foreach (var couple in (List<MovieTheater.Models.CoupleSeat>)ViewBag.CoupleSeats)
+		{
+			coupleSeatPairs[couple.FirstSeatId] = couple.SecondSeatId;
+			coupleSeatPairs[couple.SecondSeatId] = couple.FirstSeatId;
+		}
+	}
+}
+
+<link rel="stylesheet" href="~/css/seat.css" asp-append-version="true" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+@section Styles {
+    <script>
+        // Set global variables for the JavaScript file to use
+        window.coupleSeatPairs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(coupleSeatPairs));
+    </script>
+}
+
+
+<div class="cinema-container">
+    <!-- Header Section -->
+    <div class="cinema-header">
+        <div class="header-content">
+            <a asp-controller="Admin" asp-action="MainPage" asp-route-tab="ShowroomMg" class="back-btn">
+                <span class="material-icons">arrow_back</span>
+                <span>Return</span>
+            </a>
+            <h1 class="page-title">Edit Seat Layout</h1>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="content-wrapper">
+            <!-- Seat Area -->
+            <div class="seat-area">
+                <div class="seat-selection-section">
+                    <!-- Screen -->
+                    <div class="screen-container">
+                        <div class="screen">
+                            <span>SCREEN</span>
+                        </div>
+                    </div>
+
+                    <!-- Seat Map -->
+                    <div class="seat-map-container">
+                       
+                       
+
+                        <!-- Column Headers -->
+						<div class="column-headers" style="
+    padding-right: 80px;
+">
+                            <div class="select-all-header">
+                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+                                <span>All</span>
+                            </div>
+                            @for (int col = 1; col <= Model.SeatWidth; col++)
+                            {
+                                <div class="column-header">
+                                    <input type="checkbox" class="column-checkbox" data-column="@col" onclick="toggleColumn(this)">
+                                    <span>@col</span>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="seat-grid">
+                            @for (int row = 1; row <= Model.SeatLength; row++)
+                            {
+                                <div class="seat-row" data-row="@row">
+                                    <div class="row-label">
+                                        <input type="checkbox" class="row-checkbox" data-row="@row" onclick="toggleRow(this)">
+                                        <span>@((char)('A' + row - 1))</span>
+                                    </div>
+                                    <div class="seats">
+                                        @for (int col = 1; col <= Model.SeatWidth; col++)
+                                        {
+                                            var seat = Model.Seats.FirstOrDefault(s => s.SeatRow == row && s.SeatColumn == col.ToString());
+                                            var seatType = seatTypes?.FirstOrDefault(st => st.SeatTypeId == seat.SeatTypeId);
+                                            bool isDisabledType = seatType?.TypeName == "Disabled";
+
+                                            <div class="seat @(isDisabledType ? "disabled" : "") @(seatType?.TypeName?.ToLower())"
+                                                 data-seat-id="@seat.SeatId"
+                                                 data-seat-row="@row"
+                                                 data-seat-col="@col"
+                                                 data-seat-name="@seat.SeatName"
+                                                 data-seat-type="@seatType?.TypeName"
+                                                 data-seat-color="@(seatType?.ColorHex ?? "#cccbc8")"
+                                                 @(coupleSeatPairs.ContainsKey(seat.SeatId) ? "data-couple-seat=true" : "")
+                                                 onclick="selectSeat(this)">
+                                                <div class="seat-inner">
+                                                    <span class="seat-number">@seat.SeatName</span>
+                                                    @if (coupleSeatPairs.ContainsKey(seat.SeatId))
+                                                    {
+                                                        <span class="couple-indicator">❤️</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="row-label">
+                                        <input type="checkbox" class="row-checkbox" data-row="@row" onclick="toggleRow(this)">
+                                        <span>@((char)('A' + row - 1))</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Column Footers -->
+                        <div class="column-headers">
+                            <div class="select-all-header">
+                                <input type="checkbox" id="selectAllFooter" onclick="toggleSelectAll(this)">
+                                <span>All</span>
+                            </div>
+                            @for (int col = 1; col <= Model.SeatWidth; col++)
+                            {
+                                <div class="column-header">
+                                    <input type="checkbox" class="column-checkbox" data-column="@col" onclick="toggleColumn(this)">
+                                    <span>@col</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Seat Legend -->
+                    <div class="seat-legend">
+                        @foreach (var type in seatTypes.Where(t => t.TypeName != "Disabled"))
+                        {
+                            <div class="legend-item">
+                                <div class="legend-color @(type.TypeName.ToLower())" style="background-color: @(type.ColorHex ?? "#FFFFFF")"></div>
+                                <span>@type.TypeName</span>
+                            </div>
+                        }
+                        <div class="legend-item">
+                            <div class="legend-color selected"></div>
+                            <span>Selected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Sidebar -->
+            <div class="booking-sidebar">
+                <div class="sidebar-content">
+                    <h3 class="sidebar-movie-title">@Model.CinemaRoomName</h3>
+                    
+                    <!-- Seat Type Options -->
+                    <div class="seat-type-controls">
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Seat Type Options</h4>
+                        <div class="seat-type-grid">
+                            @foreach (var type in seatTypes)
+                            {
+                                <div class="seat-type-option"
+                                     style="background-color: @type.ColorHex; cursor: pointer;"
+                                     data-color="@type.ColorHex"
+                                     data-type="@type.SeatTypeId"
+                                     data-type-name="@type.TypeName"
+                                     onclick="applySeatType(this)">
+                                    @type.TypeName
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+
+
+                    <!-- Selection Summary -->
+                    <div class="selection-summary">
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Selection Summary</h4>
+                        <div class="summary-item">
+                            <span class="label">Selected Seats:</span>
+                            <span class="value" id="selectedSeatCount">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Mode:</span>
+                            <span class="value" id="modeDescription">Select seats and choose a type</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Disabled Seats:</span>
+                            <span class="value" id="disabledSeatCount">0</span>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button id="saveChangesBtn" class="continue-btn" onclick="submitUpdatedSeats()" disabled>
+                            <span class="btn-text">Save Changes</span>
+                            <span class="material-icons">save</span>
+                        </button>
+                        <button id="deleteCoupleSeatBtn" class="btn btn-danger" style="display:none; margin-top: 1rem; width: 100%;" onclick="deleteSelectedCoupleSeat(event)" disabled>
+                            <span class="material-icons">delete</span>
+                            Delete Couple Seat
+                        </button>
+                        <button class="btn btn-secondary" style="margin-top: 1rem; width: 100%;" onclick="clearAllUpdates()">
+                            <span class="material-icons">refresh</span>
+                            Clear Updates
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the JavaScript file -->
+<script src="~/js/seat-edit.js" asp-append-version="true"></script>
