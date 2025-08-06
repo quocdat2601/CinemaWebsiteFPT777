@@ -293,8 +293,8 @@
             </div>
         </div>
         <div class="text-center mt-4">
-            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg me-2" disabled>Confirm Ticket Booking</button>
-            <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Create QR Code</button>
+            <button type="button" id="confirmTicketAdminBtn" class="btn btn-success btn-lg me-2" disabled>Pay with <strong>CASH</strong></button>
+            <button type="button" id="createQRCodeBtn" class="btn btn-warning btn-lg" disabled>Pay with <strong>QR BANKING</strong></button>
         </div>
         <input type="hidden" id="usedScoreHidden" name="UsedScore" value="@Model.UsedScore" />
         
@@ -319,10 +319,10 @@
 
 <!-- Member Picker Modal -->
 <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="memberModalLabel">Select a Member</h5>
+        <h5 class="modal-title text-black" id="memberModalLabel">Select a Member</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -351,10 +351,10 @@
 
 <!-- Voucher Picker Modal -->
 <div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="voucherModalLabel">My Vouchers</h5>
+        <h5 class="modal-title text-black" id="voucherModalLabel">My Vouchers</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">

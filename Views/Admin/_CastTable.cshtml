@@ -19,7 +19,10 @@
                         <a href="@Url.Action("Edit", "Cast", new { id = person.PersonId })" class="btn btn-sm btn-primary">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <form asp-action="Delete" asp-controller="Cast" asp-route-id="@person.PersonId" method="post" onsubmit="return confirm('Are you sure you want to delete this person?');">
+                        <a href="@Url.Action("Detail", "Cast", new { id = person.PersonId })" class="btn btn-sm btn-info">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <form asp-action="Delete" asp-controller="Cast" asp-route-id="@person.PersonId" method="post" onsubmit="return confirm('Are you sure you want to delete this person? This will also remove them from all associated movies.');">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="bi bi-trash"></i>
                             </button>

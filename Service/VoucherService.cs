@@ -144,8 +144,8 @@ namespace MovieTheater.Service
                     case "used":
                         vouchers = vouchers.Where(v => v.IsUsed == true);
                         break;
-                    case "unused":
-                        vouchers = vouchers.Where(v => v.IsUsed == false);
+                    case "active":
+                        vouchers = vouchers.Where(v => (v.IsUsed == false || v.IsUsed == null) && v.ExpiryDate > DateTime.Now);
                         break;
                     case "expired":
                         vouchers = vouchers.Where(v => v.ExpiryDate <= DateTime.Now);
@@ -158,14 +158,14 @@ namespace MovieTheater.Service
                 var today = DateTime.Today;
                 switch (filter.ExpiryFilter.ToLower())
                 {
-                    case "today":
-                        vouchers = vouchers.Where(v => v.ExpiryDate.Date == today);
+                    case "expiring-soon":
+                        vouchers = vouchers.Where(v => v.ExpiryDate.Date > today && v.ExpiryDate.Date <= today.AddDays(7));
                         break;
-                    case "week":
-                        vouchers = vouchers.Where(v => v.ExpiryDate.Date >= today && v.ExpiryDate.Date <= today.AddDays(7));
+                    case "expired":
+                        vouchers = vouchers.Where(v => v.ExpiryDate.Date <= today);
                         break;
-                    case "month":
-                        vouchers = vouchers.Where(v => v.ExpiryDate.Date >= today && v.ExpiryDate.Date <= today.AddMonths(1));
+                    case "valid":
+                        vouchers = vouchers.Where(v => v.ExpiryDate.Date > today);
                         break;
                 }
             }

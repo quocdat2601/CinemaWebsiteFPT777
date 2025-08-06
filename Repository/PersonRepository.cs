@@ -62,6 +62,23 @@ namespace MovieTheater.Repository
             }
         }
 
+        public void RemovePersonFromAllMovies(int personId)
+        {
+            var movies = _context.Movies
+                .Include(m => m.People)
+                .Where(m => m.People.Any(p => p.PersonId == personId))
+                .ToList();
+
+            foreach (var movie in movies)
+            {
+                var personToRemove = movie.People.FirstOrDefault(p => p.PersonId == personId);
+                if (personToRemove != null)
+                {
+                    movie.People.Remove(personToRemove);
+                }
+            }
+        }
+
         public void Save()
         {
             _context.SaveChanges();
