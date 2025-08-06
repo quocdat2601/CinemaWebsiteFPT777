@@ -302,7 +302,8 @@ public class TicketService : ITicketService
                     showDate = i.MovieShow.ShowDate,
                     Movie = i.MovieShow.Movie == null ? null : new
                     {
-                        MovieNameEnglish = i.MovieShow.Movie.MovieNameEnglish
+                        MovieNameEnglish = i.MovieShow.Movie.MovieNameEnglish,
+                        SmallImage = i.MovieShow.Movie.SmallImage
                     },
                     Schedule = i.MovieShow.Schedule == null ? null : new
                     {

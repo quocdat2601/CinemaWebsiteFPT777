@@ -1581,7 +1581,7 @@
             const invoiceId = ticket.invoiceId || ticket.id;
 
             // Lấy đường dẫn ảnh phim
-            let moviePoster = ticket.movieShow?.movie?.image;
+            let moviePoster = ticket.movieShow?.movie?.smallImage;
             if (!moviePoster || moviePoster === '') {
                 const movieNameLower = movieName.toLowerCase();
                 if (movieNameLower.includes('oppenheimer') || movieNameLower.includes('open')) {
