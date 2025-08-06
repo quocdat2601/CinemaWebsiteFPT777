@@ -311,6 +311,39 @@
             color: var(--text-light);
             font-weight: 600;
             font-size: 1.1rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Special handling for email and name fields to allow wrapping */
+        .info-value.email-field,
+        .info-value.name-field {
+            white-space: normal !important;
+            line-height: 1.4 !important;
+            min-height: 1.4em !important;
+            word-break: break-all !important;
+            overflow-wrap: break-word !important;
+            hyphens: auto !important;
+        }
+
+        /* For phone and ID fields, keep ellipsis but allow some wrapping */
+        .info-value.phone-field,
+        .info-value.id-field {
+            word-break: break-all !important;
+            white-space: normal !important;
+            line-height: 1.3 !important;
+            overflow-wrap: break-word !important;
+        }
+
+        /* Ensure info-content has proper width constraints */
+        .info-item {
+            min-width: 0 !important;
+            overflow: hidden !important;
         }
 
         .points-badge {
@@ -903,6 +936,54 @@
             .section-title {
                 font-size: 1.2rem;
             }
+
+            .info-value.email-field,
+            .info-value.name-field,
+            .info-value.phone-field,
+            .info-value.id-field {
+                font-size: 0.95rem !important;
+                line-height: 1.35 !important;
+                word-break: break-word !important;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .info-grid {
+                gap: 0.8rem;
+            }
+
+            .info-item {
+                padding: 1rem;
+            }
+
+            .info-label {
+                font-size: 0.8rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .info-value.email-field,
+            .info-value.name-field,
+            .info-value.phone-field,
+            .info-value.id-field {
+                font-size: 0.9rem !important;
+                line-height: 1.3 !important;
+                word-break: break-all !important;
+                overflow-wrap: break-word !important;
+            }
+        }
+
+        @@media (max-width: 360px) {
+            .info-item {
+                padding: 0.8rem;
+            }
+
+            .info-value.email-field,
+            .info-value.name-field,
+            .info-value.phone-field,
+            .info-value.id-field {
+                font-size: 0.85rem !important;
+                line-height: 1.25 !important;
+            }
         }
 
         /* Loading Animation */
@@ -938,6 +1019,65 @@
                 margin-bottom: 1rem;
                 opacity: 0.5;
             }
+
+        /* Tooltip styles for text overflow */
+        .info-value[title] {
+            cursor: help;
+        }
+
+        .info-value[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            word-wrap: break-word;
+            white-space: normal;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value[title]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            margin-bottom: -0.5rem;
+            z-index: 1000;
+        }
+
+        .info-value {
+            position: relative;
+        }
+
+        /* Enhanced responsive handling for tooltips */
+        @@media (max-width: 768px) {
+            .info-value[title]:hover::after {
+                max-width: 250px;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.6rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .info-value[title]:hover::after {
+                max-width: 200px;
+                font-size: 0.75rem;
+                padding: 0.3rem 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1005,25 +1145,19 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="info-label">Full Name</div>
-                            <div class="info-value">@Model.FullName</div>
+                            <div class="info-value name-field" title="@Model.FullName">@Model.FullName</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Email</div>
-                            <div class="info-value">@Model.Email</div>
+                            <div class="info-value email-field" title="@Model.Email">@Model.Email</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Phone</div>
-                            <div class="info-value">@Model.PhoneNumber</div>
+                            <div class="info-value phone-field" title="@Model.PhoneNumber">@Model.PhoneNumber</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">ID Card</div>
-                            <div class="info-value">@Model.IdentityCard</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Available Points</div>
-                            <div class="info-value">
-                                <span id="currentScore" class="points-badge">@Model.CurrentScore pts</span>
-                            </div>
+                            <div class="info-value id-field" title="@Model.IdentityCard">@Model.IdentityCard</div>
                         </div>
                     </div>
                 </div>
@@ -1336,6 +1470,111 @@
 
     <!-- Include the JavaScript file -->
     <script src="~/js/confirm-booking.js" asp-append-version="true"></script>
+
+    <!-- Text Overflow Handler -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Function to check if text is overflowing
+            function isTextOverflowing(element) {
+                return element.scrollWidth > element.clientWidth || 
+                       element.scrollHeight > element.clientHeight;
+            }
+            
+            // Function to add tooltip if text is overflowing
+            function addTooltipIfNeeded(element) {
+                const text = element.textContent.trim();
+                if (text && isTextOverflowing(element)) {
+                    element.setAttribute('title', text);
+                    element.classList.add('has-tooltip');
+                }
+            }
+            
+            // Apply to all info-value elements
+            const infoValues = document.querySelectorAll('.info-value');
+            infoValues.forEach(addTooltipIfNeeded);
+            
+            // Enhanced tooltip functionality
+            const tooltipElements = document.querySelectorAll('.info-value[title]');
+            
+            tooltipElements.forEach(element => {
+                element.addEventListener('mouseenter', function(e) {
+                    const title = this.getAttribute('title');
+                    if (!title) return;
+                    
+                    // Remove existing tooltip
+                    const existingTooltip = document.querySelector('.custom-tooltip');
+                    if (existingTooltip) {
+                        existingTooltip.remove();
+                    }
+                    
+                    // Create custom tooltip
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'custom-tooltip';
+                    tooltip.textContent = title;
+                    tooltip.style.cssText = `
+                        position: fixed;
+                        background: rgba(0, 0, 0, 0.9);
+                        color: white;
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        z-index: 10000;
+                        max-width: 300px;
+                        word-wrap: break-word;
+                        white-space: normal;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                        pointer-events: none;
+                        opacity: 0;
+                        transition: opacity 0.2s ease;
+                    `;
+                    
+                    document.body.appendChild(tooltip);
+                    
+                    // Position tooltip
+                    const rect = this.getBoundingClientRect();
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    
+                    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                    let top = rect.top - tooltipRect.height - 8;
+                    
+                    // Adjust if tooltip goes off screen
+                    if (left < 10) left = 10;
+                    if (left + tooltipRect.width > window.innerWidth - 10) {
+                        left = window.innerWidth - tooltipRect.width - 10;
+                    }
+                    if (top < 10) {
+                        top = rect.bottom + 8;
+                    }
+                    
+                    tooltip.style.left = left + 'px';
+                    tooltip.style.top = top + 'px';
+                    
+                    // Show tooltip
+                    setTimeout(() => {
+                        tooltip.style.opacity = '1';
+                    }, 10);
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    const tooltip = document.querySelector('.custom-tooltip');
+                    if (tooltip) {
+                        tooltip.style.opacity = '0';
+                        setTimeout(() => {
+                            tooltip.remove();
+                        }, 200);
+                    }
+                });
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // Re-check overflow after resize
+                const infoValues = document.querySelectorAll('.info-value');
+                infoValues.forEach(addTooltipIfNeeded);
+            });
+        });
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
 
