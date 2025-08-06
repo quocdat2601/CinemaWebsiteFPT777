@@ -1,5 +1,4 @@
 using MovieTheater.Models;
-using System.Collections.Generic;
 
 namespace MovieTheater.ViewModels
 {
@@ -18,4 +17,4 @@ namespace MovieTheater.ViewModels
         public decimal PromotionDiscountPercent { get; set; }
 
     }
-} 
+}

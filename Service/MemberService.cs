@@ -62,4 +62,4 @@ namespace MovieTheater.Service
             _memberRepository.Save();
         }
     }
-} 
+}

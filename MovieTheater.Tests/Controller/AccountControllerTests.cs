@@ -1261,5 +1261,158 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal("MainPage", redirect.ActionName);
             Assert.Equal("Admin", redirect.ControllerName);
         }
+
+        [Fact]
+        public void Login_WhenUserIsAuthenticated_RedirectsToAppropriatePage()
+        {
+            // Arrange
+            var mockService = new Mock<IAccountService>();
+            var mockLogger = new Mock<ILogger<AccountController>>();
+            var mockAccountRepository = new Mock<IAccountRepository>();
+            var mockMemberRepository = new Mock<IMemberRepository>();
+            var mockJwtService = new Mock<IJwtService>();
+            var mockEmployeeService = new Mock<IEmployeeService>();
+
+            var controller = new AccountController(
+                mockService.Object,
+                mockLogger.Object,
+                mockAccountRepository.Object,
+                mockMemberRepository.Object,
+                mockJwtService.Object,
+                mockEmployeeService.Object);
+
+            // Mock authenticated user
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "test-user-id"),
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.Role, "Member")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            // Mock account data
+            var mockAccount = new Account
+            {
+                AccountId = "test-user-id",
+                RoleId = 3 // Member
+            };
+            mockAccountRepository.Setup(x => x.GetById("test-user-id")).Returns(mockAccount);
+
+            // Act
+            var result = controller.Login();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Index", redirectResult.ActionName);
+            Assert.Equal("Home", redirectResult.ControllerName);
+        }
+
+        [Fact]
+        public void Login_WhenAdminIsAuthenticated_RedirectsToAdminPage()
+        {
+            // Arrange
+            var mockService = new Mock<IAccountService>();
+            var mockLogger = new Mock<ILogger<AccountController>>();
+            var mockAccountRepository = new Mock<IAccountRepository>();
+            var mockMemberRepository = new Mock<IMemberRepository>();
+            var mockJwtService = new Mock<IJwtService>();
+            var mockEmployeeService = new Mock<IEmployeeService>();
+
+            var controller = new AccountController(
+                mockService.Object,
+                mockLogger.Object,
+                mockAccountRepository.Object,
+                mockMemberRepository.Object,
+                mockJwtService.Object,
+                mockEmployeeService.Object);
+
+            // Mock authenticated admin user
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "admin-user-id"),
+                new Claim(ClaimTypes.Name, "adminuser"),
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            // Mock account data
+            var mockAccount = new Account
+            {
+                AccountId = "admin-user-id",
+                RoleId = 1 // Admin
+            };
+            mockAccountRepository.Setup(x => x.GetById("admin-user-id")).Returns(mockAccount);
+
+            // Act
+            var result = controller.Login();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirectResult.ActionName);
+            Assert.Equal("Admin", redirectResult.ControllerName);
+        }
+
+        [Fact]
+        public void Login_WhenEmployeeIsAuthenticated_RedirectsToEmployeePage()
+        {
+            // Arrange
+            var mockService = new Mock<IAccountService>();
+            var mockLogger = new Mock<ILogger<AccountController>>();
+            var mockAccountRepository = new Mock<IAccountRepository>();
+            var mockMemberRepository = new Mock<IMemberRepository>();
+            var mockJwtService = new Mock<IJwtService>();
+            var mockEmployeeService = new Mock<IEmployeeService>();
+
+            var controller = new AccountController(
+                mockService.Object,
+                mockLogger.Object,
+                mockAccountRepository.Object,
+                mockMemberRepository.Object,
+                mockJwtService.Object,
+                mockEmployeeService.Object);
+
+            // Mock authenticated employee user
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "employee-user-id"),
+                new Claim(ClaimTypes.Name, "employeeuser"),
+                new Claim(ClaimTypes.Role, "Employee")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            // Mock account data
+            var mockAccount = new Account
+            {
+                AccountId = "employee-user-id",
+                RoleId = 2 // Employee
+            };
+            mockAccountRepository.Setup(x => x.GetById("employee-user-id")).Returns(mockAccount);
+
+            // Act
+            var result = controller.Login();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("MainPage", redirectResult.ActionName);
+            Assert.Equal("Employee", redirectResult.ControllerName);
+        }
     }
 } 

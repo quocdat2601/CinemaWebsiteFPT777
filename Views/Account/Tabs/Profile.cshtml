@@ -1576,7 +1576,8 @@
             const showDate = ticket.movieShow?.showDate ? new Date(ticket.movieShow.showDate).toLocaleDateString('en-GB') : 'N/A';
             const showTime = ticket.movieShow?.schedule?.scheduleTime || 'N/A';
             const seats = ticket.seat || 'N/A';
-            const status = ticket.cancel ? 'canceled' : 'booked';
+            const paymentStatus = ticket.status; // 0 = Incomplete, 1 = Completed
+            const status = (paymentStatus === 0 || ticket.cancel) ? 'canceled' : 'booked';
             const amount = ticket.totalMoney ? new Intl.NumberFormat('en-US').format(ticket.totalMoney) + ' VND' : 'N/A';
             const invoiceId = ticket.invoiceId || ticket.id;
 

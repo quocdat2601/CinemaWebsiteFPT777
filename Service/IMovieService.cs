@@ -32,7 +32,7 @@ namespace MovieTheater.Service
         public List<MovieShow> GetMovieShowsByMovieId(string movieId);
         public List<Models.Version> GetAllVersions();
         public Models.Version? GetVersionById(int versionId);
-        
+
         // New methods for categorizing movies
         public List<Movie> GetCurrentlyShowingMovies();
         public List<Movie> GetComingSoonMovies();

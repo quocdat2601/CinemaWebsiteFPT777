@@ -803,7 +803,7 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
             Assert.Equal("Admin", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
-            Assert.Equal("Cast deleted successfully!", controller.TempData["ToastMessage"]);
+            Assert.Equal($"Successfully deleted {cast.Name}.", controller.TempData["ToastMessage"]);
 
             _mockPersonRepository.Verify(r => r.Delete(personId), Times.Once());
             _mockPersonRepository.Verify(r => r.Save(), Times.Once());
@@ -833,7 +833,7 @@ namespace MovieTheater.Tests.Controller
         }
 
         [Fact]
-        public async Task Delete_RedirectsWithErrorMessage_WhenCastAssociatedWithMovies()
+        public async Task Delete_RedirectsWithToastMessage_WhenCastAssociatedWithMovies()
         {
             // Arrange
             int personId = 1;
@@ -842,6 +842,9 @@ namespace MovieTheater.Tests.Controller
 
             _mockPersonRepository.Setup(r => r.GetById(personId)).Returns(cast);
             _mockPersonRepository.Setup(r => r.GetMovieByPerson(personId)).Returns(movies); // Associated movies
+            _mockPersonRepository.Setup(r => r.RemovePersonFromAllMovies(personId));
+            _mockPersonRepository.Setup(r => r.Delete(personId));
+            _mockPersonRepository.Setup(r => r.Save());
 
             var controller = BuildController();
 
@@ -853,10 +856,11 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
             Assert.Equal("Employee", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
-            Assert.Contains($"Cannot delete {cast.Name} because they are associated with {movies.Count()} movie(s).", controller.TempData["ErrorMessage"].ToString());
+            Assert.Equal($"Successfully removed {cast.Name} from {movies.Count()} movie(s) and deleted the cast member.", controller.TempData["ToastMessage"]);
 
-            _mockPersonRepository.Verify(r => r.Delete(It.IsAny<int>()), Times.Never());
-            _mockPersonRepository.Verify(r => r.Save(), Times.Never());
+            _mockPersonRepository.Verify(r => r.RemovePersonFromAllMovies(personId), Times.Once());
+            _mockPersonRepository.Verify(r => r.Delete(personId), Times.Once());
+            _mockPersonRepository.Verify(r => r.Save(), Times.Exactly(2)); // Once for removing from movies, once for deleting person
         }
 
         [Fact]
@@ -909,7 +913,7 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal("MainPage", redirectResult.ActionName);
             Assert.Equal("Admin", redirectResult.ControllerName);
             Assert.Equal("CastMg", redirectResult.RouteValues["tab"]);
-            Assert.Equal("Cast deleted successfully!", controller.TempData["ToastMessage"]);
+            Assert.Equal($"Successfully deleted {cast.Name}.", controller.TempData["ToastMessage"]);
 
             _mockPersonRepository.Verify(r => r.Delete(castId), Times.Once);
             _mockPersonRepository.Verify(r => r.Save(), Times.Once);

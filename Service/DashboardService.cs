@@ -1,7 +1,7 @@
-using MovieTheater.Models;
-using MovieTheater.ViewModels;
-using MovieTheater.Repository;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
+using MovieTheater.Repository;
+using MovieTheater.ViewModels;
 
 namespace MovieTheater.Service
 {
@@ -28,28 +28,28 @@ namespace MovieTheater.Service
         public AdminDashboardViewModel GetDashboardViewModel(int days = 7)
         {
             var today = DateTime.Today;
-            
+
             // Get base data
             var (validInvoices, cancelledInvoices, foodInvoiceData) = GetBaseInvoiceData();
-            
+
             // Calculate movie metrics
             var movieMetrics = CalculateMovieMetrics(validInvoices, cancelledInvoices, foodInvoiceData, today);
-            
+
             // Calculate food metrics
             var foodMetrics = CalculateFoodMetrics(today);
-            
+
             // Get trend data
             var trendData = CalculateTrendData(validInvoices, cancelledInvoices, foodInvoiceData, today, days);
-            
+
             // Get top performers
             var topPerformers = GetTopPerformers(validInvoices, today);
-            
+
             // Get recent activities
             var recentActivities = GetRecentActivities(validInvoices, cancelledInvoices, today);
-            
+
             // Get recent members
             var recentMembers = GetRecentMembers(today);
-            
+
             // Build and return the view model
             return new AdminDashboardViewModel
             {
@@ -122,30 +122,34 @@ namespace MovieTheater.Service
             return (validInvoices, cancelledInvoices, foodInvoiceData);
         }
 
-        private MovieMetrics CalculateMovieMetrics(List<Invoice> validInvoices, List<Invoice> cancelledInvoices, 
+        private MovieMetrics CalculateMovieMetrics(List<Invoice> validInvoices, List<Invoice> cancelledInvoices,
             Dictionary<string, decimal> foodInvoiceData, DateTime today)
         {
             // 7-day metrics
             var sevenDayValidInvoices = validInvoices.Where(i => i.BookingDate >= today.AddDays(-6)).ToList();
             var sevenDayCancelledInvoices = cancelledInvoices.Where(i => i.BookingDate >= today.AddDays(-6)).ToList();
 
-            var grossRevenue = sevenDayValidInvoices.Sum(i => {
+            var grossRevenue = sevenDayValidInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
-            }) + sevenDayCancelledInvoices.Sum(i => {
-                var totalMoney = i.TotalMoney ?? 0m;
-                var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
-                return totalMoney - foodTotal;
-            });
-
-            var totalVouchersIssued = sevenDayCancelledInvoices.Sum(i => {
+            }) + sevenDayCancelledInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
             });
 
-            var netRevenue = sevenDayValidInvoices.Sum(i => {
+            var totalVouchersIssued = sevenDayCancelledInvoices.Sum(i =>
+            {
+                var totalMoney = i.TotalMoney ?? 0m;
+                var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
+                return totalMoney - foodTotal;
+            });
+
+            var netRevenue = sevenDayValidInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
@@ -155,24 +159,28 @@ namespace MovieTheater.Service
             // Today's metrics
             var todayValidInvoices = validInvoices.Where(i => i.BookingDate?.Date == today).ToList();
             var todayCancelledInvoices = cancelledInvoices.Where(i => i.BookingDate?.Date == today).ToList();
-            
-            var revenueToday = todayValidInvoices.Sum(i => {
+
+            var revenueToday = todayValidInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
-            }) + todayCancelledInvoices.Sum(i => {
+            }) + todayCancelledInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
             });
 
-            var vouchersToday = todayCancelledInvoices.Sum(i => {
+            var vouchersToday = todayCancelledInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
             });
 
-            var netRevenueToday = todayValidInvoices.Sum(i => {
+            var netRevenueToday = todayValidInvoices.Sum(i =>
+            {
                 var totalMoney = i.TotalMoney ?? 0m;
                 var foodTotal = foodInvoiceData.ContainsKey(i.InvoiceId) ? foodInvoiceData[i.InvoiceId] : 0m;
                 return totalMoney - foodTotal;
@@ -235,7 +243,8 @@ namespace MovieTheater.Service
             // Top food items (last 7 days)
             var topFoodItems = sevenDayValidFoodInvoices
                 .GroupBy(fi => fi.Food.Name)
-                .Select(g => new FoodItemQuantity {
+                .Select(g => new FoodItemQuantity
+                {
                     FoodName = g.Key,
                     Quantity = g.Sum(fi => fi.Quantity),
                     Category = g.First().Food.Category,
@@ -302,7 +311,7 @@ namespace MovieTheater.Service
             };
         }
 
-        private TrendData CalculateTrendData(List<Invoice> validInvoices, List<Invoice> cancelledInvoices, 
+        private TrendData CalculateTrendData(List<Invoice> validInvoices, List<Invoice> cancelledInvoices,
             Dictionary<string, decimal> foodInvoiceData, DateTime today, int days)
         {
             var lastNDays = Enumerable.Range(0, days)
@@ -312,11 +321,13 @@ namespace MovieTheater.Service
 
             // Movie trends
             var grossRevenueTrend = lastNDays
-                .Select(d => validInvoices.Where(inv => inv.BookingDate?.Date == d).Sum(inv => {
+                .Select(d => validInvoices.Where(inv => inv.BookingDate?.Date == d).Sum(inv =>
+                {
                     var totalMoney = inv.TotalMoney ?? 0m;
                     var foodTotal = foodInvoiceData.ContainsKey(inv.InvoiceId) ? foodInvoiceData[inv.InvoiceId] : 0m;
                     return totalMoney - foodTotal;
-                }) + cancelledInvoices.Where(inv => inv.BookingDate?.Date == d).Sum(inv => {
+                }) + cancelledInvoices.Where(inv => inv.BookingDate?.Date == d).Sum(inv =>
+                {
                     var totalMoney = inv.TotalMoney ?? 0m;
                     var foodTotal = foodInvoiceData.ContainsKey(inv.InvoiceId) ? foodInvoiceData[inv.InvoiceId] : 0m;
                     return totalMoney - foodTotal;
@@ -324,7 +335,8 @@ namespace MovieTheater.Service
                 .ToList();
 
             var voucherTrend = lastNDays
-                .Select(d => cancelledInvoices.Where(inv => inv.BookingDate?.Date == d).Sum(inv => {
+                .Select(d => cancelledInvoices.Where(inv => inv.BookingDate?.Date == d).Sum(inv =>
+                {
                     var totalMoney = inv.TotalMoney ?? 0m;
                     var foodTotal = foodInvoiceData.ContainsKey(inv.InvoiceId) ? foodInvoiceData[inv.InvoiceId] : 0m;
                     return totalMoney - foodTotal;
@@ -510,4 +522,4 @@ namespace MovieTheater.Service
             public List<RecentMovieActivityInfo> RecentMovieCancellations { get; set; } = new();
         }
     }
-} 
+}

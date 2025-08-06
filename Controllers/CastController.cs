@@ -1,18 +1,13 @@
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
-using System;
-using System.IO;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
-    
+
     public class CastController : Controller
     {
         private readonly IPersonRepository _personRepository;
@@ -22,7 +17,7 @@ namespace MovieTheater.Controllers
         {
             _personRepository = personRepository;
         }
-       
+
         // GET: CastController/Detail/5
         public ActionResult Detail(int id)
         {
@@ -57,7 +52,7 @@ namespace MovieTheater.Controllers
         {
             // Remove ImageFile from validation since it's optional
             ModelState.Remove("ImageFile");
-            
+
 
             if (!ModelState.IsValid)
             {
@@ -65,10 +60,10 @@ namespace MovieTheater.Controllers
                     .Where(x => x.Value.Errors.Count > 0)
                     .Select(x => new { Field = x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage) })
                     .ToList();
-                
+
                 TempData["ValidationErrors"] = string.Join("; ", errors.SelectMany(e => e.Errors));
             }
-            
+
             if (ModelState.IsValid)
             {
                 try
@@ -132,7 +127,7 @@ namespace MovieTheater.Controllers
             {
                 return NotFound();
             }
-            
+
             // Map Person to PersonFormModel for the view
             var personFormModel = new PersonFormModel
             {
@@ -145,7 +140,7 @@ namespace MovieTheater.Controllers
                 Description = person.Description ?? string.Empty,
                 Image = person.Image
             };
-            
+
             return View(personFormModel);
         }
 
@@ -188,7 +183,7 @@ namespace MovieTheater.Controllers
                 existingPerson.Gender = person.Gender;
                 existingPerson.IsDirector = person.IsDirector;
                 existingPerson.Description = person.Description;
-                
+
                 // Handle image update
                 if (ImageFile != null && ImageFile.Length > 0)
                 {
@@ -257,16 +252,20 @@ namespace MovieTheater.Controllers
                 var movies = _personRepository.GetMovieByPerson(id);
                 if (movies != null && movies.Any())
                 {
-                    TempData["ErrorMessage"] = $"Cannot delete {cast.Name} because they are associated with {movies.Count()} movie(s). Please remove them from all movies first.";
-                    if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
-                    else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
+                    // Remove person from all movies first
+                    _personRepository.RemovePersonFromAllMovies(id);
+                    _personRepository.Save();
+                    
+                    TempData["ToastMessage"] = $"Successfully removed {cast.Name} from {movies.Count()} movie(s) and deleted the cast member.";
+                }
+                else
+                {
+                    TempData["ToastMessage"] = $"Successfully deleted {cast.Name}.";
                 }
 
                 _personRepository.Delete(id);
                 _personRepository.Save(); // Ensure changes are committed
-                TempData["ToastMessage"] = "Cast deleted successfully!";
+                
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
                 else

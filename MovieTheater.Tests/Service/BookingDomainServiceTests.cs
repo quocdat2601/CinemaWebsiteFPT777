@@ -391,7 +391,7 @@ namespace MovieTheater.Tests.Service
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
             _accountService.Setup(x => x.GetById("u1")).Returns(user);
             _foodService.Setup(x => x.GetByIdAsync(10)).ReturnsAsync(food);
-            _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>()))
+            _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<PromotionCheckContext>()))
                 .Returns(new List<Promotion>());
             _promoService.Setup(x => x.ApplyFoodPromotionsToFoods(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<List<Promotion>>()))
                 .Returns(new List<(int, decimal, decimal, string, decimal)> { (10, 50, 50, null, 0) });
@@ -426,7 +426,7 @@ namespace MovieTheater.Tests.Service
             _seatService.Setup(x => x.GetSeatById(5)).Returns(seatEntity);
             _seatService.Setup(x => x.GetSeatTypesAsync()).ReturnsAsync(new List<SeatType> { seatEntity.SeatType });
             _accountService.Setup(x => x.GetById("u1")).Returns(user);
-            _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>()))
+            _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<PromotionCheckContext>()))
                 .Returns(new List<Promotion>());
             _promoService.Setup(x => x.ApplyFoodPromotionsToFoods(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<List<Promotion>>()))
                 .Returns(new List<(int, decimal, decimal, string, decimal)>());
@@ -551,7 +551,7 @@ namespace MovieTheater.Tests.Service
             await _context.SaveChangesAsync();
             _movieService.Setup(x => x.GetMovieShowById(1)).Returns(show);
             _foodService.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new FoodViewModel { FoodId = 1, Name = "Popcorn", Price = 10 });
-            _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>()))
+            _promoService.Setup(x => x.GetEligibleFoodPromotions(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<PromotionCheckContext>()))
                 .Returns(new List<Promotion>());
             _promoService.Setup(x => x.ApplyFoodPromotionsToFoods(It.IsAny<List<(int, int, decimal, string)>>(), It.IsAny<List<Promotion>>()))
                 .Returns(new List<(int, decimal, decimal, string, decimal)> { (1, 10, 10, null, 0) });
@@ -1306,7 +1306,7 @@ namespace MovieTheater.Tests.Service
                 MovieShowId = movieShowId,
                 Movie = movie,
                 CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
-                Version = new ModelVersion { VersionId = 1, VersionName = "STD", Multi = 1 }, // Use default version instead of null
+                Version = null, // Actually set Version to null
                 ShowDate = DateOnly.FromDateTime(DateTime.Today),
                 Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
             };

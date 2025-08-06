@@ -42,7 +42,7 @@ namespace MovieTheater.Repository
                         _context.SaveChanges();
                         return;
                     }
-                    
+
                     // Regenerate the voucher ID
                     voucher.VoucherId = GenerateVoucherId();
                 }

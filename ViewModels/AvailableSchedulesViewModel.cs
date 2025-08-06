@@ -1,6 +1,4 @@
 using MovieTheater.Models;
-using System;
-using System.Collections.Generic;
 
 namespace MovieTheater.ViewModels
 {
@@ -10,4 +8,4 @@ namespace MovieTheater.ViewModels
         public TimeSpan LastShowEndTime { get; set; }
         public bool HasExistingShows { get; set; }
     }
-} 
+}

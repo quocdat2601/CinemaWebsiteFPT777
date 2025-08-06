@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.SignalR;
-using MovieTheater.Hubs;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {

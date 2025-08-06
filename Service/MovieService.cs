@@ -1,8 +1,6 @@
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Service
 {
@@ -368,16 +366,16 @@ namespace MovieTheater.Service
 
                 // Lấy các thể loại của phim hiện tại
                 var currentMovieTypeIds = currentMovie.Types.Select(t => t.TypeId).ToList();
-                
+
                 if (!currentMovieTypeIds.Any())
                     return new List<Movie>();
 
                 // Lấy tất cả phim đang chiếu và sắp chiếu
                 var allMovies = GetCurrentlyShowingMoviesWithDetails().Concat(GetComingSoonMoviesWithDetails()).ToList();
-                
+
                 // Lọc phim cùng thể loại (loại trừ phim hiện tại)
                 var similarMovies = allMovies
-                    .Where(m => m.MovieId != movieId && 
+                    .Where(m => m.MovieId != movieId &&
                                m.Types.Any(t => currentMovieTypeIds.Contains(t.TypeId)))
                     .OrderByDescending(m => m.Types.Count(t => currentMovieTypeIds.Contains(t.TypeId))) // Ưu tiên phim có nhiều thể loại trùng
                     .ThenBy(m => m.MovieNameEnglish) // Sắp xếp theo tên

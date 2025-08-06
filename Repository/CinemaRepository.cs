@@ -93,7 +93,7 @@ namespace MovieTheater.Repository
                 {
                     // Delete all couple seats for this cinema room before removing seats
                     await _seatRepository.DeleteCoupleSeatsByCinemaRoomAsync(existingCinema.CinemaRoomId);
-                    
+
                     _context.Seats.RemoveRange(existingCinema.Seats);
 
                     existingCinema.SeatLength = cinemaRoom.SeatLength;
@@ -125,12 +125,12 @@ namespace MovieTheater.Repository
             var existingCinema = _context.CinemaRooms
                            .Include(c => c.Seats)
                            .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
-            
+
             if (existingCinema == null)
             {
                 throw new KeyNotFoundException($"Cinema room with ID {cinemaRoom.CinemaRoomId} not found.");
             }
-            
+
             try
             {
                 existingCinema.StatusId = 1;
@@ -151,12 +151,12 @@ namespace MovieTheater.Repository
             var existingCinema = _context.CinemaRooms
                            .Include(c => c.Seats)
                            .FirstOrDefault(c => c.CinemaRoomId == cinemaRoom.CinemaRoomId);
-            
+
             if (existingCinema == null)
             {
                 throw new KeyNotFoundException($"Cinema room with ID {cinemaRoom.CinemaRoomId} not found.");
             }
-            
+
             try
             {
                 existingCinema.UnavailableEndDate = cinemaRoom.UnavailableEndDate;

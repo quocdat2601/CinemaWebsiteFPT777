@@ -42,7 +42,7 @@ namespace MovieTheater.Service
             try
             {
                 var smtpSettings = _configuration.GetSection("EmailSettings");
-                
+
                 // Early validation to avoid creating SmtpClient if configuration is invalid
                 if (smtpSettings == null)
                 {

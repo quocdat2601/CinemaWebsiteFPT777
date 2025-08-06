@@ -120,7 +120,7 @@ namespace MovieTheater.Repository
 
             // Tìm và cập nhật trạng thái seat
             var seats = _context.Seats.Where(s => seatIds.Contains(s.SeatId)).ToList();
-            
+
             foreach (var seat in seats)
             {
                 seat.SeatStatusId = bookedStatus.SeatStatusId; // Chuyển từ BeingHeld thành Booked

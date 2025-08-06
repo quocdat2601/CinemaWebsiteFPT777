@@ -151,7 +151,7 @@ public class TicketService : ITicketService
         var foodDetails = (await _foodInvoiceService.GetFoodsByInvoiceIdAsync(ticketId)).ToList();
         var totalFoodPrice = await _foodInvoiceService.GetTotalFoodPriceByInvoiceIdAsync(ticketId);
 
-      
+
         if (!string.IsNullOrEmpty(booking.PromotionDiscount) && booking.PromotionDiscount != "0")
         {
             try

@@ -1,11 +1,6 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using MovieTheater.Service;
-using System;
-using System.Text.Json;
-using System.Threading.Tasks;
 using MovieTheater.ViewModels;
-using System.Security.Claims;
+using System.Text.Json;
 
 namespace MovieTheater.Middleware
 {
@@ -161,4 +156,4 @@ namespace MovieTheater.Middleware
             return context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         }
     }
-} 
+}

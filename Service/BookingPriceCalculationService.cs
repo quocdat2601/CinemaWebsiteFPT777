@@ -1,8 +1,5 @@
 using MovieTheater.Models;
 using MovieTheater.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MovieTheater.Service
 {
@@ -44,7 +41,7 @@ namespace MovieTheater.Service
                     totalFoodPrice += food.Price;
                 }
             }
-            
+
             // SỬA: Lấy promotion discount percent từ seat data đã được tính toán chính xác
             decimal promotionDiscountPercent = 0;
             if (seats != null && seats.Count > 0)
@@ -56,27 +53,27 @@ namespace MovieTheater.Service
                     promotionDiscountPercent = Math.Round((seatWithPromotion.PromotionDiscount.Value / seatWithPromotion.OriginalPrice.Value) * 100);
                 }
             }
-            
+
             // SỬA: Tính toán đúng total price
             // Seat total after rank discount and used score
             decimal seatTotalAfterRankAndScore = promoSubtotal - rankDiscount - usedScoreValue;
             if (seatTotalAfterRankAndScore < 0) seatTotalAfterRankAndScore = 0;
-            
+
             // Add food price
             decimal seatAndFoodTotal = seatTotalAfterRankAndScore + totalFoodPrice;
-            
+
             // Apply voucher to total (seat + food)
             decimal totalAfterVoucher = seatAndFoodTotal - voucher;
             if (totalAfterVoucher < 0) totalAfterVoucher = 0;
-            
+
             // AddScore is based only on seat portion after discounts
             decimal earningRate = user?.Rank?.PointEarningPercentage ?? 1;
             decimal baseForEarning = promoSubtotal - rankDiscount - usedScoreValue;
             int addScore = (int)Math.Floor(baseForEarning * earningRate / 100 / 1000);
-            
+
 
             System.Diagnostics.Debug.WriteLine($"AddScore calculation: promoSubtotal={promoSubtotal}, rankDiscount={rankDiscount}, usedScoreValue={usedScoreValue}, baseForEarning={baseForEarning}, earningRate={earningRate}, addScore={addScore}");
-            
+
             return new BookingPriceResult
             {
                 Subtotal = promoSubtotal,
@@ -96,4 +93,4 @@ namespace MovieTheater.Service
             };
         }
     }
-} 
+}

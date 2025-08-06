@@ -1,5 +1,5 @@
-using MovieTheater.Models;
 using Microsoft.EntityFrameworkCore;
+using MovieTheater.Models;
 using MovieTheater.ViewModels;
 
 namespace MovieTheater.Repository
@@ -19,7 +19,7 @@ namespace MovieTheater.Repository
                 .OrderBy(s => s.ScheduleTime)
                 .ToList();
         }
-        
+
 
         public AvailableSchedulesViewModel GetAvailableScheduleTimes(int cinemaRoomId, DateOnly showDate, int movieDurationMinutes, int cleaningTimeMinutes)
         {

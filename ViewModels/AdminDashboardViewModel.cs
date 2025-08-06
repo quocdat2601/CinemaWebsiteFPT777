@@ -26,7 +26,7 @@ namespace MovieTheater.ViewModels
         public List<RecentMemberInfo> RecentMembers { get; set; }
 
         public decimal OccupancyRateToday { get; set; }    // from 0 to 100
-        
+
         // Movie Analytics - Three Bucket Pattern
         public decimal GrossRevenue { get; set; }           // Gross revenue (valid + cancelled)
         public decimal NetRevenue { get; set; }             // Net revenue (gross - vouchers)
@@ -77,7 +77,7 @@ namespace MovieTheater.ViewModels
         public decimal AvgOrderValueToday { get; set; }
 
 
-        
+
 
 
         // Combo chart: Revenue & Orders by Day

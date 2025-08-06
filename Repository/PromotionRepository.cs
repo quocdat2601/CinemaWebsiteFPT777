@@ -35,7 +35,7 @@ namespace MovieTheater.Repository
             var existingPromotion = _context.Promotions
                 .Include(p => p.PromotionConditions)
                 .FirstOrDefault(p => p.PromotionId == promotion.PromotionId);
-            
+
             if (existingPromotion != null)
             {
                 // Update basic properties
@@ -52,7 +52,7 @@ namespace MovieTheater.Repository
                 {
                     var existingCondition = existingPromotion.PromotionConditions
                         .FirstOrDefault(c => c.ConditionId == condition.ConditionId);
-                    
+
                     if (existingCondition != null)
                     {
                         // Update existing condition

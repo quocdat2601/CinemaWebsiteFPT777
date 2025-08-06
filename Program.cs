@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MovieTheater.Hubs;
+using MovieTheater.Middleware;
 using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.Service;
@@ -138,11 +138,11 @@ namespace MovieTheater
             builder.Services.Configure<VNPayConfig>(
              builder.Configuration.GetSection("VNPay")
                 );
-            
+
             builder.Services.Configure<QRPaymentConfig>(
              builder.Configuration.GetSection("QRPayment")
                 );
-            
+
             builder.Services.AddScoped<IQRPaymentService, QRPaymentService>();
             builder.Services.AddScoped<IGuestInvoiceService, GuestInvoiceService>();
             builder.Services.AddHostedService<CinemaAutoEnableService>();
@@ -173,11 +173,14 @@ namespace MovieTheater
             app.UseRouting();
             app.UseSession(); // Enable session before authentication/authorization
 
-            // Thêm middleware kiểm tra bảo mật thanh toán
-            app.UseMiddleware<MovieTheater.Middleware.PaymentSecurityMiddleware>();
-
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // Thêm middleware kiểm tra authentication và redirect người dùng đã đăng nhập khỏi trang Login
+            app.UseAuthenticationRedirect();
+
+            // Thêm middleware kiểm tra bảo mật thanh toán
+            app.UseMiddleware<MovieTheater.Middleware.PaymentSecurityMiddleware>();
 
             // Prevent caching redirects
             app.Use(async (context, next) =>

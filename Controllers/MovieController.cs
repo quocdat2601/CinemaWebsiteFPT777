@@ -1,15 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Helpers;
+using MovieTheater.Hubs;
 using MovieTheater.Models;
+using MovieTheater.Repository;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
-using MovieTheater.Repository;
-using Microsoft.AspNetCore.SignalR;
-using MovieTheater.Hubs;
-using Microsoft.AspNetCore.Hosting;
-using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {//movie
@@ -55,15 +53,15 @@ namespace MovieTheater.Controllers
             // Get ongoing and incoming movies
             var ongoingMovies = _movieService.GetCurrentlyShowingMoviesWithDetails();
             var incomingMovies = _movieService.GetComingSoonMoviesWithDetails();
-            
+
             // Filter by search term first
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                ongoingMovies = ongoingMovies.Where(m => 
+                ongoingMovies = ongoingMovies.Where(m =>
                     m.MovieNameEnglish?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
                     m.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
-                
-                incomingMovies = incomingMovies.Where(m => 
+
+                incomingMovies = incomingMovies.Where(m =>
                     m.MovieNameEnglish?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
                     m.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true).ToList();
             }
@@ -151,6 +149,15 @@ namespace MovieTheater.Controllers
             var similarMovies = _movieService.GetMoviesBySameGenre(id, 4);
             ViewBag.SimilarMovies = similarMovies;
 
+            // Bổ sung: Lấy danh sách MovieShow của phim này, group theo ngày chiếu
+            var movieShows = _movieService.GetMovieShow()
+                .Where(ms => ms.MovieId == id)
+                .ToList();
+            var showsByDate = movieShows
+                .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
+                .ToDictionary(g => g.Key, g => g.Select(ms => ms.MovieShowId.ToString()).ToList());
+            ViewBag.showsByDate = showsByDate;
+
             return View(viewModel);
         }
 
@@ -209,7 +216,7 @@ namespace MovieTheater.Controllers
             {
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LargeImageFile.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
@@ -218,7 +225,7 @@ namespace MovieTheater.Controllers
                     model.AvailableVersions = _movieService.GetAllVersions();
                     return View(model);
                 }
-                
+
                 using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LargeImageFile.CopyToAsync(fileStream);
@@ -234,7 +241,7 @@ namespace MovieTheater.Controllers
             {
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.SmallImageFile.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
@@ -243,7 +250,7 @@ namespace MovieTheater.Controllers
                     model.AvailableVersions = _movieService.GetAllVersions();
                     return View(model);
                 }
-                
+
                 using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.SmallImageFile.CopyToAsync(fileStream);
@@ -259,7 +266,7 @@ namespace MovieTheater.Controllers
             {
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LogoFile.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
@@ -268,7 +275,7 @@ namespace MovieTheater.Controllers
                     model.AvailableVersions = _movieService.GetAllVersions();
                     return View(model);
                 }
-                
+
                 using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LogoFile.CopyToAsync(fileStream);
@@ -285,7 +292,7 @@ namespace MovieTheater.Controllers
             // Parse selected actor and director IDs
             var selectedActorIds = new List<int>();
             var selectedDirectorIds = new List<int>();
-            
+
             if (!string.IsNullOrEmpty(model.SelectedActorIds))
             {
                 selectedActorIds = model.SelectedActorIds.Split(',')
@@ -293,7 +300,7 @@ namespace MovieTheater.Controllers
                     .Select(int.Parse)
                     .ToList();
             }
-            
+
             if (!string.IsNullOrEmpty(model.SelectedDirectorIds))
             {
                 selectedDirectorIds = model.SelectedDirectorIds.Split(',')
@@ -437,7 +444,7 @@ namespace MovieTheater.Controllers
                 }
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LargeImageFile.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
@@ -445,7 +452,7 @@ namespace MovieTheater.Controllers
                     model.AvailableTypes = _movieService.GetAllTypes();
                     return View(model);
                 }
-                
+
                 using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LargeImageFile.CopyToAsync(fileStream);
@@ -464,7 +471,7 @@ namespace MovieTheater.Controllers
                 }
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.SmallImageFile.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
@@ -472,7 +479,7 @@ namespace MovieTheater.Controllers
                     model.AvailableTypes = _movieService.GetAllTypes();
                     return View(model);
                 }
-                
+
                 using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.SmallImageFile.CopyToAsync(fileStream);
@@ -490,7 +497,7 @@ namespace MovieTheater.Controllers
                 }
                 string sanitizedFileName = PathSecurityHelper.SanitizeFileName(model.LogoFile.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                
+
                 string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                 if (secureFilePath == null)
                 {
@@ -498,7 +505,7 @@ namespace MovieTheater.Controllers
                     model.AvailableTypes = _movieService.GetAllTypes();
                     return View(model);
                 }
-                
+
                 using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                 {
                     await model.LogoFile.CopyToAsync(fileStream);
@@ -551,7 +558,7 @@ namespace MovieTheater.Controllers
             // Parse selected actor and director IDs
             var selectedActorIds = new List<int>();
             var selectedDirectorIds = new List<int>();
-            
+
             if (!string.IsNullOrEmpty(model.SelectedActorIds))
             {
                 selectedActorIds = model.SelectedActorIds.Split(',')
@@ -559,7 +566,7 @@ namespace MovieTheater.Controllers
                     .Select(int.Parse)
                     .ToList();
             }
-            
+
             if (!string.IsNullOrEmpty(model.SelectedDirectorIds))
             {
                 selectedDirectorIds = model.SelectedDirectorIds.Split(',')
@@ -672,7 +679,8 @@ namespace MovieTheater.Controllers
         public IActionResult GetMovieShows(string movieId) // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movieShows = _movieService.GetMovieShowsByMovieId(movieId)
-                .Select(ms => new {
+                .Select(ms => new
+                {
                     ms.MovieShowId,
                     ms.MovieId,
                     showDate = ms.ShowDate.ToString("yyyy-MM-dd"),
@@ -792,7 +800,7 @@ namespace MovieTheater.Controllers
             }
 
             var availableSchedules = await _movieService.GetAvailableSchedulesAsync(parsedDate, cinemaRoomId);
-            
+
             var lastShowInRoom = _movieService.GetMovieShowsByRoomAndDate(cinemaRoomId, parsedDate)
                 .OrderByDescending(ms => ms.Schedule.ScheduleTime)
                 .FirstOrDefault();
@@ -811,7 +819,7 @@ namespace MovieTheater.Controllers
                     lastEndTimeForFiltering = endTime;
                 }
             }
-            
+
             var filteredSchedules = availableSchedules;
             if (lastEndTimeForFiltering.HasValue)
             {
@@ -819,11 +827,13 @@ namespace MovieTheater.Controllers
             }
 
             var nextAvailableTime = "N/A";
-            if(filteredSchedules.Any()){
+            if (filteredSchedules.Any())
+            {
                 nextAvailableTime = filteredSchedules.First().ScheduleTime?.ToString("HH:mm") ?? "N/A";
             }
 
-            var scheduleVms = filteredSchedules.Select(s => new {
+            var scheduleVms = filteredSchedules.Select(s => new
+            {
                 scheduleId = s.ScheduleId,
                 scheduleTime = s.ScheduleTime?.ToString("HH:mm")
             }).ToList();
@@ -859,7 +869,7 @@ namespace MovieTheater.Controllers
                 return BadRequest(new { success = false, message = "Failed to add movie show. The schedule might be unavailable." });
             }
         }
-        
+
         [HttpPost]
         public async Task<IActionResult> DeleteAllMovieShows([FromBody] MovieShowRequestDeleteAll request)
         {
@@ -900,7 +910,8 @@ namespace MovieTheater.Controllers
                 return BadRequest("Invalid date format.");
 
             var shows = _movieService.GetMovieShowsByRoomAndDate(cinemaRoomId, parsedDate)
-                .Select(ms => new {
+                .Select(ms => new
+                {
                     scheduleText = ms.Schedule?.ScheduleTime?.ToString("HH:mm"),
                     roomId = ms.CinemaRoomId,
                     dateId = ms.ShowDate.ToString("yyyy-MM-dd"),
@@ -916,7 +927,8 @@ namespace MovieTheater.Controllers
                 return BadRequest("Invalid date format.");
 
             var shows = _movieService.GetMovieShowsByMovieVersionDate(movieId, versionId, parsedDate)
-                .Select(ms => new {
+                .Select(ms => new
+                {
                     scheduleText = ms.Schedule?.ScheduleTime?.ToString("HH:mm"),
                     roomId = ms.CinemaRoomId,
                     dateId = ms.ShowDate.ToString("yyyy-MM-dd"),
@@ -1003,10 +1015,11 @@ namespace MovieTheater.Controllers
         public IActionResult GetDirectors() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var directors = _personRepository.GetDirectors();
-            return Json(directors.Select(d => new { 
-                id = d.PersonId, 
+            return Json(directors.Select(d => new
+            {
+                id = d.PersonId,
                 name = d.Name,
-                image = d.Image 
+                image = d.Image
             }));
         }
 
@@ -1014,10 +1027,11 @@ namespace MovieTheater.Controllers
         public IActionResult GetActors() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var actors = _personRepository.GetActors();
-            return Json(actors.Select(a => new { 
-                id = a.PersonId, 
+            return Json(actors.Select(a => new
+            {
+                id = a.PersonId,
                 name = a.Name,
-                image = a.Image 
+                image = a.Image
             }));
         }
 
@@ -1025,7 +1039,8 @@ namespace MovieTheater.Controllers
         public IActionResult GetAllMovies() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
             var movies = _movieService.GetCurrentlyShowingMoviesWithDetails()
-                .Select(m => new {
+                .Select(m => new
+                {
                     movieId = m.MovieId,
                     movieNameEnglish = m.MovieNameEnglish,
                     duration = m.Duration,
@@ -1042,7 +1057,8 @@ namespace MovieTheater.Controllers
             if (movie == null)
                 return NotFound();
 
-            var versions = movie.Versions.Select(v => new {
+            var versions = movie.Versions.Select(v => new
+            {
                 versionId = v.VersionId,
                 versionName = v.VersionName
             }).ToList();
@@ -1055,13 +1071,15 @@ namespace MovieTheater.Controllers
             var today = DateOnly.FromDateTime(DateTime.Today);
             var movies = _movieService.GetCurrentlyShowingMoviesWithDetails()
                 .Where(m => m.ToDate.HasValue && m.ToDate.Value > today)
-                .Select(m => new {
+                .Select(m => new
+                {
                     movieId = m.MovieId,
                     movieNameEnglish = m.MovieNameEnglish,
                     duration = m.Duration,
                     fromDate = m.FromDate,
                     toDate = m.ToDate,
-                    versions = m.Versions.Select(v => new {
+                    versions = m.Versions.Select(v => new
+                    {
                         versionId = v.VersionId,
                         versionName = v.VersionName
                     }).ToList()
@@ -1072,7 +1090,7 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult GetAvailableDatesForRoom(int cinemaRoomId, string movieId)
         {
-            
+
             var movie = _movieService.GetById(movieId);
             if (movie == null)
             {
@@ -1100,13 +1118,13 @@ namespace MovieTheater.Controllers
 
                     // Check if room is available on this date
                     bool isRoomAvailable = true;
-                    
+
                     // If room is disabled (StatusId = 3), check the unavailable period
                     if (room.StatusId == 3 && room.UnavailableStartDate.HasValue && room.UnavailableEndDate.HasValue)
                     {
                         var unavailableStart = DateOnly.FromDateTime(room.UnavailableStartDate.Value);
                         var unavailableEnd = DateOnly.FromDateTime(room.UnavailableEndDate.Value);
-                        
+
                         // If date falls within unavailable period, skip it
                         if (date >= unavailableStart && date <= unavailableEnd)
                         {
@@ -1125,7 +1143,7 @@ namespace MovieTheater.Controllers
                 }
             }
 
-            return Json(new { availableDates});
+            return Json(new { availableDates });
         }
     }
 }

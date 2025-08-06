@@ -43,7 +43,7 @@ namespace MovieTheater.Helpers
         {
             if (controller == null)
                 return;
-                
+
             string message = GetMessage(category, action, type);
             if (type == "success")
             {

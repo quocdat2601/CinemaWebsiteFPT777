@@ -11,4 +11,4 @@ namespace MovieTheater.Service
         string GenerateMoMoQRCodeBase64(string phoneNumber);
         string GeneratePayOSQRCode(decimal amount, string orderInfo, string orderId);
     }
-} 
+}

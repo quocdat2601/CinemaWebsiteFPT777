@@ -93,7 +93,7 @@ namespace MovieTheater.Controllers
             // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-            
+
             // Redirect về trang hiện tại (reload)
             return Redirect(Request.Headers["Referer"].ToString() ?? "/");
         }
@@ -129,7 +129,7 @@ namespace MovieTheater.Controllers
             // Không redirect, chỉ reload trang hiện tại để hiển thị trạng thái đã hủy
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-            
+
             // Redirect về trang hiện tại (reload)
             return Redirect(Request.Headers["Referer"].ToString() ?? "/");
         }

@@ -14,4 +14,4 @@ namespace MovieTheater.Models
         public string PayOSReturnUrl { get; set; }
         public string PayOSCancelUrl { get; set; }
     }
-} 
+}

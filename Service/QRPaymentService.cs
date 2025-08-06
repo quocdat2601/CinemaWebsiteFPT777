@@ -24,9 +24,15 @@ namespace MovieTheater.Service
         {
             try
             {
+                // Kiểm tra null values và throw exception
+                if (string.IsNullOrEmpty(_config.BankCode) || string.IsNullOrEmpty(_config.AccountNumber) || string.IsNullOrEmpty(_config.AccountName))
+                {
+                    throw new InvalidOperationException("QR Payment configuration is missing required values (BankCode, AccountNumber, or AccountName).");
+                }
+
                 // Tạo nội dung QR code theo chuẩn VietQR
                 var qrContent = $"https://api.vietqr.io/image/{_config.BankCode}/{_config.AccountNumber}?amount={amount}&addInfo={orderId}&accountName={_config.AccountName}";
-                
+
                 _logger.LogInformation("QR code data generated for order {OrderId}", orderId);
                 return qrContent;
             }
@@ -49,10 +55,10 @@ namespace MovieTheater.Service
                 var bankId = "VCB"; // Vietcombank
                 var accountNo = "1234567890"; // Demo account
                 var description = Uri.EscapeDataString(orderInfo);
-                
+
                 var vietQRUrl = $"https://api.vietqr.io/image/{bankId}/{accountNo}/{amount}/{description}";
                 _logger.LogInformation("VietQR URL generated: {URL}", vietQRUrl);
-                
+
                 return vietQRUrl;
             }
             catch (Exception ex)
@@ -69,19 +75,26 @@ namespace MovieTheater.Service
         {
             try
             {
+                // Kiểm tra null values và fallback về simple QR code
+                if (string.IsNullOrEmpty(orderInfo) || string.IsNullOrEmpty(orderId))
+                {
+                    _logger.LogWarning("OrderInfo or OrderId is null/empty, falling back to simple QR code");
+                    return GenerateSimpleQRCode($"PAYMENT_{orderId ?? "NULL"}_{amount}");
+                }
+
                 // VNPAY QR code format
-                var vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+                var vnpUrl = _vnPayConfig.BaseUrl;
                 var vnpParams = new Dictionary<string, string>
                 {
                     ["vnp_Version"] = "2.1.0",
                     ["vnp_Command"] = "pay",
-                    ["vnp_TmnCode"] = "VVHLKKC6", // Demo TMN Code
+                    ["vnp_TmnCode"] = _vnPayConfig.TmnCode,
                     ["vnp_Amount"] = (amount * 100).ToString(), // Convert to smallest currency unit
                     ["vnp_CurrCode"] = "VND",
                     ["vnp_TxnRef"] = orderId,
                     ["vnp_OrderInfo"] = orderInfo,
                     ["vnp_OrderType"] = "billpayment",
-                    ["vnp_ReturnUrl"] = "https://localhost:7201/api/Payment/vnpay-return",
+                    ["vnp_ReturnUrl"] = _vnPayConfig.ReturnUrl,
                     ["vnp_IpAddr"] = "127.0.0.1",
                     ["vnp_CreateDate"] = DateTime.Now.ToString("yyyyMMddHHmmss")
                 };
@@ -121,7 +134,7 @@ namespace MovieTheater.Service
                 var queryString = string.Join("&", sortedParams.Select(p => $"{p.Key}={p.Value}"));
 
                 // Tạo HMAC-SHA512 signature
-                var secretKey = "VVHLKKC6"; // Demo secret key
+                var secretKey = _vnPayConfig.HashSecret;
                 var hmac = new System.Security.Cryptography.HMACSHA512(Encoding.UTF8.GetBytes(secretKey));
                 var data = Encoding.UTF8.GetBytes(queryString);
                 var hash = hmac.ComputeHash(data);
@@ -176,7 +189,7 @@ namespace MovieTheater.Service
                 // Tạo QR code đơn giản bằng cách sử dụng Google Charts API
                 var encodedData = Uri.EscapeDataString(qrData);
                 var qrUrl = $"https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl={encodedData}&chld=L|0";
-                
+
                 _logger.LogInformation("QR code image URL generated successfully");
                 return qrUrl;
             }
@@ -195,7 +208,7 @@ namespace MovieTheater.Service
                 // Tạo QR code đơn giản cho demo sử dụng QR Server API
                 var encodedText = Uri.EscapeDataString(text);
                 var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encodedText}";
-                
+
                 _logger.LogInformation("Simple QR code generated successfully");
                 return qrUrl;
             }
@@ -333,4 +346,4 @@ namespace MovieTheater.Service
     }
 
 
-} 
+}
