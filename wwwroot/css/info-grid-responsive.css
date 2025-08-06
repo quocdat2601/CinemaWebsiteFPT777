@@ -1,0 +1,121 @@
+/* Responsive Info Grid for Ticket Booking Confirmed Page */
+
+/* Tablet and smaller desktop */
+@media (max-width: 1024px) {
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+    
+    .info-item {
+        padding: 1.5rem !important;
+    }
+    
+    .info-value.email-field,
+    .info-value.name-field {
+        font-size: 1rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    .info-value.phone-field,
+    .info-value.id-field {
+        font-size: 0.95rem !important;
+        line-height: 1.3 !important;
+    }
+}
+
+/* Mobile landscape */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .info-item {
+        padding: 1.2rem !important;
+    }
+    
+    .info-content {
+        margin-left: 1rem !important;
+    }
+    
+    .info-value.email-field,
+    .info-value.name-field,
+    .info-value.phone-field,
+    .info-value.id-field {
+        font-size: 0.95rem !important;
+        line-height: 1.35 !important;
+        word-break: break-word !important;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    .info-grid {
+        gap: 0.8rem !important;
+    }
+    
+    .info-item {
+        padding: 1rem !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    
+    .info-item i {
+        align-self: flex-start !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .info-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    .info-label {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .info-value.email-field,
+    .info-value.name-field,
+    .info-value.phone-field,
+    .info-value.id-field {
+        font-size: 0.9rem !important;
+        line-height: 1.3 !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+    }
+}
+
+/* Extra small mobile */
+@media (max-width: 360px) {
+    .info-item {
+        padding: 0.8rem !important;
+    }
+    
+    .info-value.email-field,
+    .info-value.name-field,
+    .info-value.phone-field,
+    .info-value.id-field {
+        font-size: 0.85rem !important;
+        line-height: 1.25 !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+    }
+    
+    .info-value.email-field,
+    .info-value.name-field,
+    .info-value.phone-field,
+    .info-value.id-field {
+        font-size: 0.9rem !important;
+        line-height: 1.3 !important;
+        word-break: break-all !important;
+    }
+} 

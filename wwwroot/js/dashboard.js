@@ -131,7 +131,14 @@ window.initMovieCharts = function(data) {
                         display: true,
                         title: {
                             display: true,
-                            text: 'Date'
+                            text: 'Date',
+                            color: '#ffffff'
+                        },
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     },
                     y: {
@@ -140,12 +147,17 @@ window.initMovieCharts = function(data) {
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Revenue (VND)'
+                            text: 'Revenue (VND)',
+                            color: '#ffffff'
                         },
                         ticks: {
+                            color: '#ffffff',
                             callback: function(value) {
                                 return value.toLocaleString('vi-VN') + ' đ';
                             }
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     },
                     y1: {
@@ -154,12 +166,15 @@ window.initMovieCharts = function(data) {
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Bookings'
+                            text: 'Bookings',
+                            color: '#ffffff'
                         },
                         grid: {
                             drawOnChartArea: false,
+                            color: '#4a4a6a'
                         },
                         ticks: {
+                            color: '#ffffff',
                             callback: function(value) {
                                 return Number.isInteger(value) ? value : '';
                             },
@@ -170,11 +185,18 @@ window.initMovieCharts = function(data) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Revenue, Vouchers & Bookings (Last 7 days)'
+                        text: 'Revenue, Vouchers & Bookings (Last 7 days)',
+                        color: '#ffffff'
                     },
                     legend: {
                         display: true,
-                        position: 'top'
+                        position: 'top',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
                     }
                 }
             }
@@ -203,10 +225,17 @@ window.initMovieCharts = function(data) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Top 5 Movies by Tickets Sold'
+                        text: 'Top 5 Movies by Tickets Sold',
+                        color: '#ffffff'
                     },
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
                     }
                 }
             }
@@ -235,10 +264,17 @@ window.initMovieCharts = function(data) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Top 5 Members by Bookings'
+                        text: 'Top 5 Members by Bookings',
+                        color: '#ffffff'
                     },
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
                     }
                 }
             }
@@ -319,7 +355,14 @@ window.initFoodCharts = function() {
                         display: true,
                         title: {
                             display: true,
-                            text: 'Date'
+                            text: 'Date',
+                            color: '#ffffff'
+                        },
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     },
                     y: {
@@ -328,12 +371,17 @@ window.initFoodCharts = function() {
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Revenue (VND)'
+                            text: 'Revenue (VND)',
+                            color: '#ffffff'
                         },
                         ticks: {
+                            color: '#ffffff',
                             callback: function(value) {
                                 return value.toLocaleString('vi-VN') + ' đ';
                             }
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     },
                     y1: {
@@ -342,12 +390,15 @@ window.initFoodCharts = function() {
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Orders'
+                            text: 'Orders',
+                            color: '#ffffff'
                         },
                         grid: {
                             drawOnChartArea: false,
+                            color: '#4a4a6a'
                         },
                         ticks: {
+                            color: '#ffffff',
                             callback: function(value) {
                                 return Number.isInteger(value) ? value : '';
                             },
@@ -358,11 +409,18 @@ window.initFoodCharts = function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Revenue, Vouchers & Orders (Last 7 days)'
+                        text: 'Revenue, Vouchers & Orders (Last 7 days)',
+                        color: '#ffffff'
                     },
                     legend: {
                         display: true,
-                        position: 'top'
+                        position: 'top',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
                     }
                 }
             }
@@ -393,10 +451,17 @@ window.initFoodCharts = function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Sales by Category'
+                        text: 'Sales by Category',
+                        color: '#ffffff'
                     },
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
                     }
                 }
             }
@@ -437,7 +502,8 @@ window.initFoodCharts = function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Sales by Hour (8 AM to 11 PM)'
+                        text: 'Sales by Hour (8 AM to 11 PM)',
+                        color: '#ffffff'
                     },
                     legend: {
                         display: false
@@ -448,19 +514,31 @@ window.initFoodCharts = function() {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Number of Orders'
+                            text: 'Number of Orders',
+                            color: '#ffffff'
                         },
                         ticks: {
+                            color: '#ffffff',
                             callback: function(value) {
                                 return Number.isInteger(value) ? value : '';
                             },
                             stepSize: 1
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Hour of Day'
+                            text: 'Hour of Day',
+                            color: '#ffffff'
+                        },
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     }
                 }
@@ -519,7 +597,15 @@ function renderFoodItemsByCategoryBar() {
             data: { labels: categories, datasets },
             options: {
                 plugins: {
-                    legend: { position: 'bottom' },
+                    legend: { 
+                        position: 'bottom',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
+                    },
                     datalabels: {
                         display: true,
                         color: '#fff',
@@ -528,12 +614,26 @@ function renderFoodItemsByCategoryBar() {
                     }
                 },
                 scales: {
-                    x: { stacked: true },
+                    x: { 
+                        stacked: true,
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#4a4a6a'
+                        }
+                    },
                     y: {
                         stacked: true,
                         max: 100,
                         beginAtZero: true,
-                        ticks: { callback: v => v + '%' }
+                        ticks: { 
+                            color: '#ffffff',
+                            callback: v => v + '%' 
+                        },
+                        grid: {
+                            color: '#4a4a6a'
+                        }
                     }
                 }
             },
@@ -581,13 +681,35 @@ function renderTopBottomStackedBar() {
             data: { labels: foodTypes, datasets },
             options:{
                 responsive:true,
-                plugins:{ legend:{ position:'bottom' } },
+                plugins:{ 
+                    legend:{ 
+                        position:'bottom',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                weight: '500'
+                            }
+                        }
+                    } 
+                },
                 scales:{
-                    x: { stacked:true },
+                    x: { 
+                        stacked:true,
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#4a4a6a'
+                        }
+                    },
                     y: {
                         stacked:true,
                         ticks:{
+                            color: '#ffffff',
                             callback: value => value + '%'
+                        },
+                        grid: {
+                            color: '#4a4a6a'
                         }
                     }
                 }

@@ -26,6 +26,7 @@
     string ticketId = booking?.InvoiceId ?? TempData["InvoiceId"] as string;
     string totalPrice = booking != null ? booking.TotalPrice.ToString("N0") : TempData["TotalPrice"] as string;
     string scoreUsed = booking?.ScoreUsed.ToString() ?? TempData["ScoreUsed"] as string;
+    string bookingTime = booking?.BookingDate?.ToString("dd/MM/yyyy HH:mm") ?? TempData["BookingTime"] as string ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm");
     string memberId = Model?.MemberId ?? TempData["MemberId"] as string;
     string memberEmail = Model?.MemberEmail ?? TempData["MemberEmail"] as string;
     string memberIdentityCard = Model?.MemberIdentityCard ?? TempData["MemberIdentityCard"] as string;
@@ -66,6 +67,8 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/ticket-styles.css" />
+    <link rel="stylesheet" href="~/css/text-overflow-fix.css" />
+    <link rel="stylesheet" href="~/css/info-grid-responsive.css" />
 }
 
 <!-- Back Button - Completely outside container -->
@@ -156,6 +159,13 @@
                             <div class="info-content">
                                 <div class="info-label">Version</div>
                                 <div class="info-value">@booking.VersionName</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="info-content">
+                                <div class="info-label">Booking Time</div>
+                                <div class="info-value">@bookingTime</div>
                             </div>
                         </div>
                     </div>
@@ -366,21 +376,21 @@
                             <i class="fas fa-envelope"></i>
                             <div class="info-content">
                                 <div class="info-label">Email</div>
-                                <div class="info-value">@memberEmail</div>
+                                <div class="info-value email-field" title="@memberEmail">@memberEmail</div>
                             </div>
                         </div>
                         <div class="info-item">
                             <i class="fas fa-id-badge"></i>
                             <div class="info-content">
                                 <div class="info-label">Identity Card</div>
-                                <div class="info-value">@memberIdentityCard</div>
+                                <div class="info-value id-field" title="@memberIdentityCard">@memberIdentityCard</div>
                             </div>
                         </div>
                         <div class="info-item">
                             <i class="fas fa-phone"></i>
                             <div class="info-content">
                                 <div class="info-label">Phone</div>
-                                <div class="info-value">@memberPhone</div>
+                                <div class="info-value phone-field" title="@memberPhone">@memberPhone</div>
                             </div>
                         </div>
                     </div>
@@ -407,14 +417,14 @@
                             <i class="fas fa-envelope"></i>
                             <div class="info-content">
                                 <div class="info-label">Phone</div>
-                                <div class="info-value">@Model.EmployeePhone</div>
+                                <div class="info-value phone-field" title="@Model.EmployeePhone">@Model.EmployeePhone</div>
                             </div>
                         </div>
                         <div class="info-item">
                             <i class="fas fa-id-badge"></i>
                             <div class="info-content">
                                 <div class="info-label">Name</div>
-                                <div class="info-value">@Model.EmployeeName</div>
+                                <div class="info-value name-field" title="@Model.EmployeeName">@Model.EmployeeName</div>
                             </div>
                         </div>
                         <div class="info-item">
@@ -473,6 +483,7 @@
 <partial name="_ToastMessages" />
 
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script src="~/js/text-overflow-handler.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var qrStaffUrl = '@qrStaffUrl';
