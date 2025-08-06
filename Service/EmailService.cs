@@ -42,17 +42,47 @@ namespace MovieTheater.Service
             try
             {
                 var smtpSettings = _configuration.GetSection("EmailSettings");
-                using var smtpClient = _smtpClientFactory(smtpSettings["SmtpServer"]);
-                smtpClient.Port = int.Parse(smtpSettings["Port"]);
-                smtpClient.Credentials = new System.Net.NetworkCredential(smtpSettings["Username"], smtpSettings["Password"]);
-                smtpClient.EnableSsl = true;
+                
+                // Early validation to avoid creating SmtpClient if configuration is invalid
+                if (smtpSettings == null)
+                {
+                    _logger.LogError("EmailSettings configuration section is missing");
+                    return false;
+                }
 
-                var fromEmail = smtpSettings["FromEmail"].Trim();
-                var fromName = smtpSettings["FromName"].Trim();
+                var smtpServer = smtpSettings["SmtpServer"];
+                if (string.IsNullOrEmpty(smtpServer))
+                {
+                    _logger.LogError("SmtpServer configuration is missing or empty");
+                    return false;
+                }
+
+                var portStr = smtpSettings["Port"];
+                if (string.IsNullOrEmpty(portStr) || !int.TryParse(portStr, out var port))
+                {
+                    _logger.LogError("Port configuration is missing or invalid");
+                    return false;
+                }
+
+                var username = smtpSettings["Username"];
+                var password = smtpSettings["Password"];
+                var fromEmail = smtpSettings["FromEmail"]?.Trim();
+                var fromName = smtpSettings["FromName"]?.Trim();
+
+                if (string.IsNullOrEmpty(fromEmail))
+                {
+                    _logger.LogError("FromEmail configuration is missing or empty");
+                    return false;
+                }
+
+                using var smtpClient = _smtpClientFactory(smtpServer);
+                smtpClient.Port = port;
+                smtpClient.Credentials = new System.Net.NetworkCredential(username, password);
+                smtpClient.EnableSsl = true;
 
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(fromEmail, fromName),
+                    From = new MailAddress(fromEmail, fromName ?? fromEmail),
                     Subject = subject,
                     Body = body,
                     IsBodyHtml = isHtml,

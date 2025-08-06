@@ -1308,7 +1308,7 @@ namespace MovieTheater.Tests.Service
                 MovieShowId = movieShowId,
                 Movie = movie,
                 CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
-                Version = null,
+                Version = new ModelVersion { VersionId = 1, VersionName = "STD", Multi = 1 }, // Use default version instead of null
                 ShowDate = DateOnly.FromDateTime(DateTime.Today),
                 Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
             };

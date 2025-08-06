@@ -48,6 +48,7 @@ namespace MovieTheater.Service
             try
             {
                 await _repository.Update(cinemaRoom);
+                await _repository.Save();
                 return true;
             }
             catch (Exception ex)
