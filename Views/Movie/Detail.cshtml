@@ -594,12 +594,22 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="action-buttons">
-                            <button type="button" class="btn-book" data-bs-toggle="modal" data-bs-target="#addBookingModal">
-                                <i class="fas fa-ticket-alt"></i> Book Tickets
-                            </button>
-                            
-                        </div>
+                        @if (showsByDate != null && showsByDate.Values.Any(list => list != null && list.Count > 0))
+                        {
+                            <div class="action-buttons">
+                                <button type="button" class="btn-book" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                                    <i class="fas fa-ticket-alt"></i> Book Tickets
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="action-buttons" style="justify-content:center;">
+                                <div class="alert alert-info text-center w-100" style="background: #333; color: #F5B64C; border: none; border-radius: 8px;">
+                                    <i class="fas fa-info-circle me-2"></i> This movie doesn't have showtime yet. Please check back later.
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

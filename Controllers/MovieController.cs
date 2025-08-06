@@ -149,6 +149,15 @@ namespace MovieTheater.Controllers
             var similarMovies = _movieService.GetMoviesBySameGenre(id, 4);
             ViewBag.SimilarMovies = similarMovies;
 
+            // Bổ sung: Lấy danh sách MovieShow của phim này, group theo ngày chiếu
+            var movieShows = _movieService.GetMovieShow()
+                .Where(ms => ms.MovieId == id)
+                .ToList();
+            var showsByDate = movieShows
+                .GroupBy(ms => ms.ShowDate.ToString("dd/MM/yyyy"))
+                .ToDictionary(g => g.Key, g => g.Select(ms => ms.MovieShowId.ToString()).ToList());
+            ViewBag.showsByDate = showsByDate;
+
             return View(viewModel);
         }
 
