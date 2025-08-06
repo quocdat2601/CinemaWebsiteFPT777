@@ -175,15 +175,6 @@
             </tbody>
         </table>
 
-        <div class="text-end mb-2">
-            <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
-                Total Price: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) VND
-            </span>
-            <span id="discountedTotal" style="display:none;"></span>
-            <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
-            <div id="pointEarningPreview" class="text-muted" style="font-size: 0.95em;"></div>
-            <div id="pointSavings" class="text-success" style="font-size: 0.95em;"></div>
-        </div>
         
         @if (Model.SelectedFoods.Any())
         {
@@ -236,6 +227,17 @@
                 </tfoot>
             </table>
         }
+        
+        <div class="text-end mb-2">
+            <span id="originalTotal" style="font-size: 1.3em; font-weight: bold; color: #1a7f37;">
+                Total Price: @Model.BookingDetails.TotalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) VND
+            </span>
+            <span id="discountedTotal" style="display:none;"></span>
+            <div id="discountInfo" class="text-muted" style="font-size: 0.95em;"></div>
+            <div id="pointEarningPreview" class="text-muted" style="font-size: 0.95em;"></div>
+            <div id="pointSavings" class="text-success" style="font-size: 0.95em;"></div>
+        </div>
+        
         <hr />
         <!-- Member selection UI -->
         <div class="mb-3">

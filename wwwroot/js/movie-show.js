@@ -64,8 +64,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // 6. Get UI shows for this movie + version + date (across all rooms)
-        const uiMovieShows = movieShowItems.filter(item => 
-            item.dateId === selectedDate && 
+        const uiMovieShows = movieShowItems.filter(item =>
+            item.dateId === selectedDate &&
             item.versionId === versionId
         );
 
@@ -149,72 +149,89 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 1. Version selection enables Cinema Room
     const versionRadios = document.querySelectorAll('.version-radio');
-    versionRadios.forEach(radio => {
-        radio.addEventListener('change', async function () {
-            const versionId = this.value;
-            // Reset and disable all dependent selects
-            resetAndDisable(cinemaRoomSelect);
+    if (versionRadios.length > 0 && !document.getElementById('quickAddShowtimeModal')) {
+        versionRadios.forEach(radio => {
+            radio.addEventListener('change', async function () {
+                const versionId = this.value;
+                // Reset and disable all dependent selects
+                resetAndDisable(cinemaRoomSelect);
+                resetAndDisable(showDateSelect);
+                resetAndDisable(scheduleSelect);
+                addMovieShowBtn.disabled = true;
+
+                // Fetch rooms for this version
+                const response = await fetch(`/Cinema/GetRoomsByVersion?versionId=${versionId}`);
+                if (response.ok) {
+                    const rooms = await response.json();
+                    populateCinemaRooms(rooms);
+                    cinemaRoomSelect.disabled = false;
+                } else {
+                    cinemaRoomSelect.innerHTML = '<option value="">-- No rooms available --</option>';
+                }
+            });
+        });
+    }
+
+    // 2. Cinema Room selection enables Show Date
+    if (cinemaRoomSelect && !document.getElementById('quickAddShowtimeModal')) {
+        cinemaRoomSelect.addEventListener('change', async function () {
             resetAndDisable(showDateSelect);
             resetAndDisable(scheduleSelect);
             addMovieShowBtn.disabled = true;
+            const roomId = cinemaRoomSelect.value;
+            if (!roomId) return;
 
-            // Fetch rooms for this version
-            const response = await fetch(`/Cinema/GetRoomsByVersion?versionId=${versionId}`);
-            if (response.ok) {
-                const rooms = await response.json();
-                populateCinemaRooms(rooms);
-                cinemaRoomSelect.disabled = false;
-            } else {
-                cinemaRoomSelect.innerHTML = '<option value="">-- No rooms available --</option>';
-            }
-        });
-    });
+            // Get the selected movie ID
+            const movieId = document.getElementById('movieId')?.value;
+            if (!movieId) {
+                // Fallback to original logic if no movie ID
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Set to midnight
 
-    // 2. Cinema Room selection enables Show Date
-    cinemaRoomSelect.addEventListener('change', async function () {
-        resetAndDisable(showDateSelect);
-        resetAndDisable(scheduleSelect);
-        addMovieShowBtn.disabled = true;
-        const roomId = cinemaRoomSelect.value;
-        if (!roomId) return;
-
-        // Get the selected movie ID
-        const movieId = document.getElementById('movieId')?.value;
-        if (!movieId) {
-            // Fallback to original logic if no movie ID
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Set to midnight
-
-            const filteredDates = availableShowDates.filter(d => {
-                const dateObj = new Date(d.value);
-                dateObj.setHours(0, 0, 0, 0); // Set to midnight
-                return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
-            });
-            populateShowDates(filteredDates);
-            showDateSelect.disabled = false;
-            return;
-        }
-
-        // Get available dates considering room availability
-        try {
-            const response = await fetch(`/Movie/GetAvailableDatesForRoom?cinemaRoomId=${roomId}&movieId=${movieId}`);
-            if (response.ok) {
-                const data = await response.json();
-                const availableDates = data.availableDates;
-                
-                // Convert the available dates to the format expected by populateShowDates
-                const formattedDates = availableDates.map(date => ({
-                    value: date.value,
-                    text: date.text
-                }));
-                
-                populateShowDates(formattedDates);
+                const filteredDates = availableShowDates.filter(d => {
+                    const dateObj = new Date(d.value);
+                    dateObj.setHours(0, 0, 0, 0); // Set to midnight
+                    return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
+                });
+                populateShowDates(filteredDates);
                 showDateSelect.disabled = false;
-            } else {
-                // Fallback to original logic if endpoint fails
+                return;
+            }
+
+            // Get available dates considering room availability
+            try {
+                const response = await fetch(`/Movie/GetAvailableDatesForRoom?cinemaRoomId=${roomId}&movieId=${movieId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const availableDates = data.availableDates;
+
+                    // Convert the available dates to the format expected by populateShowDates
+                    const formattedDates = availableDates.map(date => ({
+                        value: date.value,
+                        text: date.text
+                    }));
+
+                    populateShowDates(formattedDates);
+                    showDateSelect.disabled = false;
+                } else {
+                    // Fallback to original logic if endpoint fails
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const filteredDates = availableShowDates.filter(d => {
+                        const dateObj = new Date(d.value);
+                        dateObj.setHours(0, 0, 0, 0);
+                        return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
+                    });
+                    populateShowDates(filteredDates);
+                    showDateSelect.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error fetching available dates:', error);
+                // Fallback to original logic
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                
+
                 const filteredDates = availableShowDates.filter(d => {
                     const dateObj = new Date(d.value);
                     dateObj.setHours(0, 0, 0, 0);
@@ -223,37 +240,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 populateShowDates(filteredDates);
                 showDateSelect.disabled = false;
             }
-        } catch (error) {
-            console.error('Error fetching available dates:', error);
-            // Fallback to original logic
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const filteredDates = availableShowDates.filter(d => {
-                const dateObj = new Date(d.value);
-                dateObj.setHours(0, 0, 0, 0);
-                return dateObj >= today && (!toDate || dateObj <= new Date(toDate));
-            });
-            populateShowDates(filteredDates);
-            showDateSelect.disabled = false;
-        }
-    });
+        });
+    }
 
     // 3. Show Date selection enables Schedule
-    showDateSelect.addEventListener('change', async function () {
-        resetAndDisable(scheduleSelect);
-        addMovieShowBtn.disabled = true;
-        const roomId = cinemaRoomSelect.value;
-        const selectedDate = showDateSelect.value;
-        if (!roomId || !selectedDate) return;
-        await updateAvailableSchedules();
-        scheduleSelect.disabled = false;
-    });
+    if (showDateSelect && !document.getElementById('quickAddShowtimeModal')) {
+        showDateSelect.addEventListener('change', async function () {
+            resetAndDisable(scheduleSelect);
+            addMovieShowBtn.disabled = true;
+            const roomId = cinemaRoomSelect.value;
+            const selectedDate = showDateSelect.value;
+            if (!roomId || !selectedDate) return;
+            await updateAvailableSchedules();
+            scheduleSelect.disabled = false;
+        });
+    }
 
     // 4. Schedule selection enables Add button
-    scheduleSelect.addEventListener('change', function () {
-        updateAddButtonState();
-    });
+    if (scheduleSelect && !document.getElementById('quickAddShowtimeModal')) {
+        scheduleSelect.addEventListener('change', function () {
+            updateAddButtonState();
+        });
+    }
 
     // Initial state: all selects except version are disabled
     resetAndDisable(cinemaRoomSelect);
@@ -261,7 +269,10 @@ document.addEventListener('DOMContentLoaded', function () {
     resetAndDisable(scheduleSelect);
     addMovieShowBtn.disabled = true;
 
-    addMovieShowBtn.addEventListener('click', addMovieShow);
+    // Only add event listener if not on ShowtimeMg page
+    if (addMovieShowBtn && !document.getElementById('quickAddShowtimeModal')) {
+        addMovieShowBtn.addEventListener('click', addMovieShow);
+    }
 
     // Force the ongoing tab to be active on first load
     var ongoingTab = document.getElementById('ongoing-tab');
@@ -274,14 +285,24 @@ document.addEventListener('DOMContentLoaded', function () {
     renderMovieShows();
 
     // On tab switch
-    ['show.bs.tab', 'shown.bs.tab'].forEach(function (eventName) {
-        document.getElementById('ongoing-tab').addEventListener(eventName, function (event) {
-            renderMovieShows();
+    if (!document.getElementById('quickAddShowtimeModal')) {
+        ['show.bs.tab', 'shown.bs.tab'].forEach(function (eventName) {
+            const ongoingTab = document.getElementById('ongoing-tab');
+            const oldTab = document.getElementById('old-tab');
+
+            if (ongoingTab) {
+                ongoingTab.addEventListener(eventName, function (event) {
+                    renderMovieShows();
+                });
+            }
+
+            if (oldTab) {
+                oldTab.addEventListener(eventName, function (event) {
+                    renderMovieShows();
+                });
+            }
         });
-        document.getElementById('old-tab').addEventListener(eventName, function (event) {
-            renderMovieShows();
-        });
-    });
+    }
 
     function renderMovieShows() {
         const ongoingContainer = document.getElementById('movieShowsOngoingContainer');
@@ -450,89 +471,91 @@ document.addEventListener('DOMContentLoaded', function () {
         renderMovieShows();
     }
 
-    saveChangesBtn.addEventListener('click', async function () {
-        try {
-            if (movieShowItems.length === 0) {
-                // Call backend to delete all shows for this movie
-                await fetch('/Movie/DeleteAllMovieShows', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ movieId: movieId })
+    if (saveChangesBtn && !document.getElementById('quickAddShowtimeModal')) {
+        saveChangesBtn.addEventListener('click', async function () {
+            try {
+                if (movieShowItems.length === 0) {
+                    // Call backend to delete all shows for this movie
+                    await fetch('/Movie/DeleteAllMovieShows', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ movieId: movieId })
+                    });
+                    alert('All movie shows deleted.');
+                    window.location.reload();
+                    return;
+                }
+
+                // 1. Fetch current shows from backend (get all for this movie)
+                const resp = await fetch(`/Movie/ViewShow/${movieId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                alert('All movie shows deleted.');
+                const backendShows = await resp.json();
+
+                // 2. Find shows to delete (in backend but not in UI)
+                const showsToDelete = backendShows.filter(b =>
+                    !movieShowItems.some(u =>
+                        u.dateId === b.showDate.split('/').reverse().join('-') &&
+                        u.roomId == b.cinemaRoomId &&
+                        u.scheduleId == b.scheduleId &&
+                        u.versionId == b.versionId
+                    )
+                );
+
+                // 3. Find shows to add (in UI but not in backend)
+                const showsToAdd = movieShowItems.filter(u =>
+                    !backendShows.some(b =>
+                        u.dateId === b.showDate.split('/').reverse().join('-') &&
+                        u.roomId == b.cinemaRoomId &&
+                        u.scheduleId == b.scheduleId &&
+                        u.versionId == b.versionId
+                    )
+                );
+
+                // 4. Try to delete shows (one by one, safely)
+                let undeletableShows = [];
+                for (const show of showsToDelete) {
+                    const delResp = await fetch('/Movie/DeleteMovieShowIfNotReferenced', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(show.movieShowId)
+                    });
+                    const delResult = await delResp.json();
+                    if (!delResult.success) {
+                        undeletableShows.push(show);
+                    }
+                }
+
+                // 5. Add new shows
+                for (const showItem of showsToAdd) {
+                    const response = await fetch('/Movie/AddMovieShow', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            movieId: movieId,
+                            showDate: showItem.dateId,
+                            scheduleId: showItem.scheduleId,
+                            cinemaRoomId: showItem.roomId,
+                            versionId: showItem.versionId
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Failed to add movie show for schedule ${showItem.scheduleText}`);
+                    }
+                }
+
+                if (undeletableShows.length > 0) {
+                    alert('Some shows could not be deleted because they are referenced by invoices.');
+                } else {
+                    alert('Movie shows saved successfully!');
+                }
                 window.location.reload();
-                return;
+            } catch (error) {
+                console.error('Error saving movie shows:', error);
+                alert('An error occurred while saving the movie shows. Please try again.');
             }
-
-            // 1. Fetch current shows from backend (get all for this movie)
-            const resp = await fetch(`/Movie/ViewShow/${movieId}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const backendShows = await resp.json();
-
-            // 2. Find shows to delete (in backend but not in UI)
-            const showsToDelete = backendShows.filter(b =>
-                !movieShowItems.some(u =>
-                    u.dateId === b.showDate.split('/').reverse().join('-') &&
-                    u.roomId == b.cinemaRoomId &&
-                    u.scheduleId == b.scheduleId &&
-                    u.versionId == b.versionId
-                )
-            );
-
-            // 3. Find shows to add (in UI but not in backend)
-            const showsToAdd = movieShowItems.filter(u =>
-                !backendShows.some(b =>
-                    u.dateId === b.showDate.split('/').reverse().join('-') &&
-                    u.roomId == b.cinemaRoomId &&
-                    u.scheduleId == b.scheduleId &&
-                    u.versionId == b.versionId
-                )
-            );
-
-            // 4. Try to delete shows (one by one, safely)
-            let undeletableShows = [];
-            for (const show of showsToDelete) {
-                const delResp = await fetch('/Movie/DeleteMovieShowIfNotReferenced', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(show.movieShowId)
-                });
-                const delResult = await delResp.json();
-                if (!delResult.success) {
-                    undeletableShows.push(show);
-                }
-            }
-
-            // 5. Add new shows
-            for (const showItem of showsToAdd) {
-                const response = await fetch('/Movie/AddMovieShow', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        movieId: movieId,
-                        showDate: showItem.dateId,
-                        scheduleId: showItem.scheduleId,
-                        cinemaRoomId: showItem.roomId,
-                        versionId: showItem.versionId
-                    })
-                });
-                if (!response.ok) {
-                    throw new Error(`Failed to add movie show for schedule ${showItem.scheduleText}`);
-                }
-            }
-
-            if (undeletableShows.length > 0) {
-                alert('Some shows could not be deleted because they are referenced by invoices.');
-            } else {
-                alert('Movie shows saved successfully!');
-            }
-            window.location.reload();
-        } catch (error) {
-            console.error('Error saving movie shows:', error);
-            alert('An error occurred while saving the movie shows. Please try again.');
-        }
-    });
+        });
+    }
 
     async function getMergedShowsForRoomDate(roomId, dateId) {
         // 1. Fetch backend shows

@@ -112,7 +112,7 @@ namespace MovieTheater.Controllers
         {
             if (selectedSeatIds == null || selectedSeatIds.Count == 0)
             {
-                TempData["BookingError"] = "No seats were selected.";
+                //TempData["BookingError"] = "No seats were selected.";
                 return RedirectToAction("Index", "Home", new { fragment = "booking-widget" });
             }
 
@@ -536,12 +536,12 @@ namespace MovieTheater.Controllers
         {
             if (selectedSeatIds == null || selectedSeatIds.Count == 0)
             {
-                TempData["ErrorMessage"] = "No seats were selected.";
+                //TempData["ErrorMessage"] = "No seats were selected.";
 
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "BookingMg" });
                 else
-                    return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
+                    return RedirectToAction("MainPage", "Employee", new { tab = "BookingMg" });
             }
 
             // Build l?i ViewModel v?i memberId n?u c�
@@ -559,7 +559,7 @@ namespace MovieTheater.Controllers
                 else
                 {
                     TempData["ErrorMessage"] = "Unable to build confirmation view.";
-                    return RedirectToAction("MainPage", "Employee", new { tab = "TicketSellingMg" });
+                    return RedirectToAction("MainPage", "Employee", new { tab = "BookingMg" });
                 }
                     
             }
@@ -744,7 +744,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
             }
             return RedirectToAction("Select", "Showtime", new { returnUrl = returnUrl, isAdminSell = "true" });
         }
@@ -784,7 +784,7 @@ namespace MovieTheater.Controllers
             }
             else
             {
-                returnUrl = Url.Action("MainPage", "Employee", new { tab = "TicketSellingMg" });
+                returnUrl = Url.Action("MainPage", "Employee", new { tab = "BookingMg" });
             }
             return RedirectToAction("TicketBookingAdmin", "Booking", new { returnUrl = returnUrl });
         }
