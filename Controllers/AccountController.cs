@@ -49,6 +49,13 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult ExternalLogin() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
+            // Kiểm tra nếu đã đăng nhập thì redirect về trang tương ứng
+            var redirectResult = RedirectIfAuthenticated();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             var redirectUrl = Url.Action("ExternalLoginCallback", "Account");
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
@@ -145,6 +152,13 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult Login() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
+            // Kiểm tra nếu đã đăng nhập thì redirect về trang tương ứng
+            var redirectResult = RedirectIfAuthenticated();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             return View();
         }
 
@@ -171,6 +185,13 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Signup(RegisterViewModel model)
         {
+            // Kiểm tra nếu đã đăng nhập thì redirect về trang tương ứng
+            var redirectResult = RedirectIfAuthenticated();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             if (!ModelState.IsValid)
             {
                 var errors = string.Join(", ", ModelState.Values
@@ -222,6 +243,13 @@ namespace MovieTheater.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            // Kiểm tra nếu đã đăng nhập thì redirect về trang tương ứng
+            var redirectResult = RedirectIfAuthenticated();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             if (!ModelState.IsValid)
             {
                 // Collect all validation errors
@@ -320,6 +348,13 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult ForgetPassword() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
+            // Kiểm tra nếu đã đăng nhập thì redirect về trang tương ứng
+            var redirectResult = RedirectIfAuthenticated();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             return View();
         }
 
@@ -356,6 +391,13 @@ namespace MovieTheater.Controllers
         [HttpGet]
         public IActionResult ResetPassword() // NOSONAR - GET methods don't require ModelState.IsValid check
         {
+            // Kiểm tra nếu đã đăng nhập thì redirect về trang tương ứng
+            var redirectResult = RedirectIfAuthenticated();
+            if (redirectResult != null)
+            {
+                return redirectResult;
+            }
+
             var email = TempData["Email"] as string;
             if (string.IsNullOrEmpty(email))
             {
@@ -585,6 +627,39 @@ namespace MovieTheater.Controllers
             var bytes = System.Text.Encoding.UTF8.GetBytes(email);
             var hash = sha256.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
+        }
+
+        /// <summary>
+        /// Kiểm tra nếu người dùng đã đăng nhập và redirect về trang tương ứng với role
+        /// </summary>
+        /// <returns>IActionResult nếu đã đăng nhập, null nếu chưa đăng nhập</returns>
+        private IActionResult? RedirectIfAuthenticated()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var account = _accountRepository.GetById(userId);
+                    if (account != null)
+                    {
+                        // Redirect dựa trên role
+                        if (account.RoleId == 1) // Admin
+                        {
+                            return RedirectToAction(MAIN_PAGE, ADMIN_CONTROLLER);
+                        }
+                        else if (account.RoleId == 2) // Employee
+                        {
+                            return RedirectToAction(MAIN_PAGE, EMPLOYEE_CONTROLLER);
+                        }
+                        else // Member (RoleId == 3)
+                        {
+                            return RedirectToAction(INDEX_ACTION, HOME_CONTROLLER);
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }
