@@ -1,7 +1,4 @@
 using MovieTheater.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace MovieTheater.Service
 {
@@ -16,4 +13,4 @@ namespace MovieTheater.Service
         Task<BookingResult> ConfirmTicketForAdminAsync(ConfirmTicketAdminViewModel model);
         Task<ConfirmTicketAdminViewModel> BuildTicketBookingConfirmedViewModelAsync(string invoiceId);
     }
-} 
+}

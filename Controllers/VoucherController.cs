@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using MovieTheater.Helpers;
 using MovieTheater.Hubs;
 using MovieTheater.Models;
 using MovieTheater.Service;
 using MovieTheater.ViewModels;
 using System.Data;
 using System.Security.Claims;
-using MovieTheater.Helpers;
 
 namespace MovieTheater.Controllers
 {
@@ -16,7 +16,7 @@ namespace MovieTheater.Controllers
         private readonly IVoucherService _voucherService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IHubContext<DashboardHub> _dashboardHubContext;
-        
+
         // Constants for string literals
         private const string TOAST_MESSAGE = "ToastMessage";
         private const string ERROR_MESSAGE = "ErrorMessage";
@@ -25,14 +25,14 @@ namespace MovieTheater.Controllers
         private const string EMPLOYEE_CONTROLLER = "Employee";
         private const string VOUCHER_MG_TAB = "VoucherMg";
         private const string INDEX_ACTION = "Index";
-        
+
         public string role => User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
         public VoucherController(IVoucherService voucherService, IWebHostEnvironment webHostEnvironment, IHubContext<DashboardHub> dashboardHubContext)
         {
             _voucherService = voucherService;
             _webHostEnvironment = webHostEnvironment;
-            _dashboardHubContext = dashboardHubContext;            
+            _dashboardHubContext = dashboardHubContext;
         }
 
         /// <summary>
@@ -373,14 +373,14 @@ namespace MovieTheater.Controllers
 
                     string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
                     string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                    
+
                     string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                     if (secureFilePath == null)
                     {
                         TempData[ERROR_MESSAGE] = "Invalid file path detected.";
                         return View(viewModel);
                     }
-                    
+
                     using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                     {
                         await imageFile.CopyToAsync(fileStream);
@@ -455,14 +455,14 @@ namespace MovieTheater.Controllers
 
                         string sanitizedFileName = PathSecurityHelper.SanitizeFileName(imageFile.FileName);
                         string uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName;
-                        
+
                         string? secureFilePath = PathSecurityHelper.CreateSecureFilePath(uploadsFolder, uniqueFileName);
                         if (secureFilePath == null)
                         {
                             TempData[ERROR_MESSAGE] = "Invalid file path detected.";
                             return View(viewModel);
                         }
-                        
+
                         using (var fileStream = new FileStream(secureFilePath, FileMode.Create))
                         {
                             await imageFile.CopyToAsync(fileStream);
@@ -567,8 +567,8 @@ namespace MovieTheater.Controllers
                 success = true,
                 canDelete = canDelete,
                 invoiceCount = invoiceCount,
-                message = canDelete 
-                    ? "Voucher can be deleted." 
+                message = canDelete
+                    ? "Voucher can be deleted."
                     : $"Voucher cannot be deleted because it is being used by {invoiceCount} invoice(s)."
             };
 

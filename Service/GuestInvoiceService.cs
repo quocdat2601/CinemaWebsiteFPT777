@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using MovieTheater.Models;
 
 namespace MovieTheater.Service
@@ -18,7 +17,7 @@ namespace MovieTheater.Service
         /// <summary>
         /// Tạo và lưu invoice cho guest payment
         /// </summary>
-        public async Task<bool> CreateGuestInvoiceAsync(string orderId, decimal amount, string customerName, 
+        public async Task<bool> CreateGuestInvoiceAsync(string orderId, decimal amount, string customerName,
             string customerPhone, string movieName, string showTime, string seatInfo, int movieShowId = 1)
         {
             try
@@ -53,7 +52,7 @@ namespace MovieTheater.Service
                 // Lưu invoice vào database
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync();
-                
+
                 _logger.LogInformation("Guest invoice created successfully with ID: {InvoiceId}", invoice.InvoiceId);
                 return true;
             }
@@ -96,4 +95,4 @@ namespace MovieTheater.Service
             }
         }
     }
-} 
+}

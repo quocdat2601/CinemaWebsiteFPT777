@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MovieTheater.Models;
 
 namespace MovieTheater.ViewModels
@@ -44,7 +43,7 @@ namespace MovieTheater.ViewModels
         public string SelectedVoucherId { get; set; }
         public string AccountId { get; set; }
         public decimal RankDiscountPercent { get; set; }
-        
+
         // Food information
         public List<FoodViewModel> SelectedFoods { get; set; } = new List<FoodViewModel>();
         public decimal TotalFoodPrice { get; set; }

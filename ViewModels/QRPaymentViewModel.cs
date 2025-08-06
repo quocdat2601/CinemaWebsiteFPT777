@@ -16,4 +16,4 @@ namespace MovieTheater.ViewModels
         public string MoMoQRCodeBase64 { get; set; }
         public string PayOSQRCodeUrl { get; set; }
     }
-} 
+}

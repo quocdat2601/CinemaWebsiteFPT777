@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-
 namespace MovieTheater.Helpers
 {
     /// <summary>
@@ -19,7 +16,7 @@ namespace MovieTheater.Helpers
             try
             {
                 // 1. Đảm bảo baseDirectory kết thúc bằng path separator
-                if (!baseDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()) && 
+                if (!baseDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()) &&
                     !baseDirectory.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
                 {
                     baseDirectory = baseDirectory + Path.DirectorySeparatorChar;
@@ -27,16 +24,16 @@ namespace MovieTheater.Helpers
 
                 // 2. Tạo path từ user input
                 string combinedPath = Path.Combine(baseDirectory, userFileName);
-                
+
                 // 3. Resolve canonical path (loại bỏ ../, ./)
                 string canonicalPath = Path.GetFullPath(combinedPath);
-                
+
                 // 4. Validate path có nằm trong thư mục được phép không
                 if (IsPathWithinDirectory(canonicalPath, baseDirectory))
                 {
                     return canonicalPath;
                 }
-                
+
                 return null; // Path không hợp lệ
             }
             catch (Exception)
@@ -56,7 +53,7 @@ namespace MovieTheater.Helpers
             try
             {
                 // Đảm bảo allowedDirectory kết thúc bằng path separator
-                if (!allowedDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()) && 
+                if (!allowedDirectory.EndsWith(Path.DirectorySeparatorChar.ToString()) &&
                     !allowedDirectory.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
                 {
                     allowedDirectory = allowedDirectory + Path.DirectorySeparatorChar;
@@ -64,7 +61,7 @@ namespace MovieTheater.Helpers
 
                 // Resolve canonical path cho allowed directory
                 string canonicalAllowedDirectory = Path.GetFullPath(allowedDirectory);
-                
+
                 // Kiểm tra file path có bắt đầu bằng allowed directory không
                 return filePath.StartsWith(canonicalAllowedDirectory, StringComparison.OrdinalIgnoreCase);
             }
@@ -87,7 +84,7 @@ namespace MovieTheater.Helpers
             // Loại bỏ các ký tự không hợp lệ
             var invalidChars = Path.GetInvalidFileNameChars();
             var sanitized = originalFileName;
-            
+
             foreach (var invalidChar in invalidChars)
             {
                 sanitized = sanitized.Replace(invalidChar.ToString(), "_");
@@ -104,4 +101,4 @@ namespace MovieTheater.Helpers
             return sanitized;
         }
     }
-} 
+}

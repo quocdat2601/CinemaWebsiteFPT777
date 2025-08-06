@@ -16,7 +16,7 @@ namespace MovieTheater.Service
         public async Task<IEnumerable<FoodViewModel>> GetFoodsByInvoiceIdAsync(string invoiceId)
         {
             var foodInvoices = await _foodInvoiceRepository.GetByInvoiceIdAsync(invoiceId);
-            
+
             return foodInvoices.Select(fi => new FoodViewModel
             {
                 FoodId = fi.Food.FoodId,
@@ -63,4 +63,4 @@ namespace MovieTheater.Service
             return foodInvoices.Sum(fi => fi.Price * fi.Quantity);
         }
     }
-} 
+}

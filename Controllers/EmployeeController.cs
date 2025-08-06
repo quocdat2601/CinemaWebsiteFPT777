@@ -212,7 +212,7 @@ namespace MovieTheater.Controllers
                     ViewBag.StatusFilter = filter.StatusFilter;
                     ViewBag.ExpiryFilter = filter.ExpiryFilter;
                     return PartialView("VoucherMg", filteredVouchers);
-                
+
                 case "CastMg":
                     var persons = _personRepository.GetAll();
                     ViewBag.Persons = persons;

@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Models;
 using MovieTheater.Service;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.EntityFrameworkCore;
 
 namespace MovieTheater.Controllers
 {
@@ -24,7 +21,7 @@ namespace MovieTheater.Controllers
         private const decimal ACCEPTABLE_DIFFERENCE = 10000m; // Số tiền chuyển thiếu tối đa mà hệ thống vẫn chấp nhận
         private const string MEMO_PREFIX = "DH"; // Tiền tố điền trước mã đơn hàng
         private const string HEADER_SECURE_TOKEN = "eogrBiWqaq"; // Key bảo mật từ PHP sample
-        
+
         // Security constants
         private const int DATABASE_TIMEOUT_SECONDS = 30;
         private const int MAX_PROCESSING_TIME_SECONDS = 60;
@@ -46,7 +43,7 @@ namespace MovieTheater.Controllers
                 return BadRequest(ModelState);
             }
             var startTime = DateTime.UtcNow;
-            
+
             try
             {
                 // Security: Check request size
@@ -134,7 +131,7 @@ namespace MovieTheater.Controllers
             {
                 // Security: Set database timeout
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(DATABASE_TIMEOUT_SECONDS));
-                
+
                 // 1. Lấy id giao dịch từ Casso
                 var cassoId = item.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0;
                 // TẠM THỜI BỎ QUA CHECK NÀY ĐỂ TEST
@@ -147,7 +144,7 @@ namespace MovieTheater.Controllers
                 // 2. Lấy orderId từ reference trước, sau đó từ description
                 var description = item.TryGetProperty("description", out var descElement) ? descElement.GetString() : "";
                 var reference = item.TryGetProperty("reference", out var refElement) ? refElement.GetString() : "";
-                
+
                 // Ưu tiên sử dụng reference trước
                 var orderId = !string.IsNullOrEmpty(reference) ? reference : ExtractOrderId(description);
 
@@ -184,7 +181,7 @@ namespace MovieTheater.Controllers
                         _logger.LogInformation("Trying to find invoice by amount: {Amount}", paidAmount);
                         // Tìm theo số tiền chính xác
                         invoice = _invoiceService.FindInvoiceByAmountAndTime(paidAmount);
-                        
+
                         // Nếu vẫn không tìm thấy, tìm invoice gần nhất trong 24h
                         if (invoice == null)
                         {
@@ -202,7 +199,7 @@ namespace MovieTheater.Controllers
                     return;
                 }
 
-                _logger.LogInformation("Found invoice: InvoiceId={InvoiceId}, Status={Status}, TotalMoney={TotalMoney}", 
+                _logger.LogInformation("Found invoice: InvoiceId={InvoiceId}, Status={Status}, TotalMoney={TotalMoney}",
                     invoice.InvoiceId, invoice.Status, invoice.TotalMoney);
 
                 // 4. Chống trùng lặp: chỉ xử lý nếu invoice chưa hoàn thành
@@ -237,20 +234,20 @@ namespace MovieTheater.Controllers
                 {
                     // Thanh toán đủ
                     await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
-                    
+
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
                     await UpdateSeatStatusToBooked(invoice);
-                    
+
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Đã thanh toán.", orderNote);
                 }
                 else
                 {
                     // Thanh toán dư
                     await UpdateInvoiceStatus(invoice.InvoiceId, InvoiceStatus.Completed, cts.Token);
-                    
+
                     // Cập nhật trạng thái seat từ "being held" thành "booked"
                     await UpdateSeatStatusToBooked(invoice);
-                    
+
                     _logger.LogInformation("{OrderNote}. Trạng thái đơn hàng đã được chuyển từ Tạm giữ sang Thanh toán dư.", orderNote);
                 }
 
@@ -303,7 +300,7 @@ namespace MovieTheater.Controllers
             try
             {
                 _logger.LogInformation("Test payment called for orderId: {OrderId}, amount: {Amount}", orderId, amount);
-                
+
                 // Tạo test transaction data
                 var testTransaction = new
                 {
@@ -311,16 +308,17 @@ namespace MovieTheater.Controllers
                     amount = amount,
                     type = "IN"
                 };
-                
+
                 // Convert to JsonElement để reuse existing logic
                 var jsonString = JsonSerializer.Serialize(new[] { testTransaction });
                 var jsonElement = JsonDocument.Parse(jsonString).RootElement;
-                
+
                 // Process như webhook thật
                 await ProcessTransaction(jsonElement[0]);
-                
-                return Ok(new { 
-                    success = true, 
+
+                return Ok(new
+                {
+                    success = true,
                     message = $"Test payment processed for {orderId}",
                     orderId = orderId,
                     amount = amount
@@ -350,7 +348,7 @@ namespace MovieTheater.Controllers
                 invoice.Status = status;
                 _invoiceService.Update(invoice);
                 _invoiceService.Save();
-                
+
                 _logger.LogInformation("Updated invoice {InvoiceId} status to {Status}", invoiceId, status);
             }
             catch (Exception ex)
@@ -393,7 +391,7 @@ namespace MovieTheater.Controllers
                     await _scheduleSeatService.UpdateScheduleSeatsToBookedAsync(invoice.InvoiceId, invoice.MovieShowId.Value, seatIds);
                 }
 
-                _logger.LogInformation("Successfully updated {SeatCount} seats to Booked status for invoice {InvoiceId}", 
+                _logger.LogInformation("Successfully updated {SeatCount} seats to Booked status for invoice {InvoiceId}",
                     seatIds.Count, invoice.InvoiceId);
             }
             catch (Exception ex)
@@ -412,7 +410,7 @@ namespace MovieTheater.Controllers
             {
                 // Create a sanitized version of the body for logging
                 var sanitizedObject = new JsonObject();
-                
+
                 if (body.ValueKind == JsonValueKind.Object)
                 {
                     foreach (var property in body.EnumerateObject())
@@ -429,7 +427,7 @@ namespace MovieTheater.Controllers
                         }
                     }
                 }
-                
+
                 // Convert JsonObject to JsonElement using JsonSerializer
                 var jsonString = sanitizedObject.ToJsonString();
                 return JsonSerializer.Deserialize<JsonElement>(jsonString);
@@ -441,4 +439,4 @@ namespace MovieTheater.Controllers
             }
         }
     }
-} 
+}

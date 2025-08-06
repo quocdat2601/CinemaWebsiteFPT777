@@ -1,4 +1,3 @@
-using MovieTheater.Models;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
 
@@ -68,4 +67,4 @@ namespace MovieTheater.Service
             return result;
         }
     }
-} 
+}

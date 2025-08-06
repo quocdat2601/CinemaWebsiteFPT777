@@ -1,20 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MovieTheater.Models;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Repository;
 using MovieTheater.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {
-   [Authorize(Roles = "Admin,Employee")]
-   public class ShowtimeController : Controller
-   {
-       private readonly IMovieRepository _movieRepository;
-       public ShowtimeController(IMovieRepository movieRepository)
-       {
-           _movieRepository = movieRepository;
-       }
+    [Authorize(Roles = "Admin,Employee")]
+    public class ShowtimeController : Controller
+    {
+        private readonly IMovieRepository _movieRepository;
+        public ShowtimeController(IMovieRepository movieRepository)
+        {
+            _movieRepository = movieRepository;
+        }
 
         /// <summary>
         /// Danh sách suất chiếu
@@ -138,8 +136,8 @@ namespace MovieTheater.Controllers
             // Only dates today or in the future
             var availableDates = _movieRepository.GetMovieShow()
                 .Where(ms => ms.ShowDate >= today)
-                .Where(ms => ms.CinemaRoom.StatusId != 3 || 
-                    (ms.CinemaRoom.UnavailableEndDate.HasValue && 
+                .Where(ms => ms.CinemaRoom.StatusId != 3 ||
+                    (ms.CinemaRoom.UnavailableEndDate.HasValue &&
                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value)))
                 .Select(ms => ms.ShowDate)
                 .Distinct()
@@ -173,8 +171,8 @@ namespace MovieTheater.Controllers
             // Also filter by cinema room status to only show movies from active rooms
             var movieShowsForDate = _movieRepository.GetMovieShow()
                 .Where(ms => ms.ShowDate == selectedDateOnly)
-                .Where(ms => ms.CinemaRoom.StatusId != 3 || 
-                    (ms.CinemaRoom.UnavailableEndDate.HasValue && 
+                .Where(ms => ms.CinemaRoom.StatusId != 3 ||
+                    (ms.CinemaRoom.UnavailableEndDate.HasValue &&
                      ms.ShowDate > DateOnly.FromDateTime(ms.CinemaRoom.UnavailableEndDate.Value))) // Only include movies from active cinema rooms or after disable period
                 .ToList();
 
@@ -216,5 +214,5 @@ namespace MovieTheater.Controllers
 
             return View("~/Views/Showtime/Select.cshtml", model);
         }
-   }
+    }
 }

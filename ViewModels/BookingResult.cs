@@ -7,4 +7,4 @@ namespace MovieTheater.ViewModels
         public string InvoiceId { get; set; }
         public decimal TotalPrice { get; set; }
     }
-} 
+}

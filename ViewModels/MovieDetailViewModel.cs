@@ -44,11 +44,11 @@ namespace MovieTheater.ViewModels
         public List<int> SelectedVersionIds { get; set; } = new();
         public List<int> SelectedCinemaRoomIds { get; set; } = new();
         public List<int> SelectedShowDateIds { get; set; } = new();
-        
+
         // New properties for actor and director selection
         public string? SelectedActorIds { get; set; }
         public string? SelectedDirectorIds { get; set; }
-        
+
         public string? CinemaRoomName { get; set; }
         public List<Schedule>? AvailableSchedules { get; set; }
         public List<DateOnly>? AvailableShowDates { get; set; }

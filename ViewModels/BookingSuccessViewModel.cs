@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace MovieTheater.ViewModels
 {
     public class BookingSuccessViewModel
@@ -22,4 +19,4 @@ namespace MovieTheater.ViewModels
         public List<FoodViewModel> SelectedFoods { get; set; }
         public decimal TotalFoodPrice { get; set; }
     }
-} 
+}

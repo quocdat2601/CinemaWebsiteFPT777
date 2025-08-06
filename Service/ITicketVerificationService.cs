@@ -8,4 +8,4 @@ namespace MovieTheater.Service
         TicketVerificationResultViewModel GetTicketInfo(string invoiceId);
         TicketVerificationResultViewModel ConfirmCheckIn(string invoiceId, string staffId);
     }
-} 
+}

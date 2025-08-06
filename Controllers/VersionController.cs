@@ -1,7 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTheater.Repository;
 using Version = MovieTheater.Models.Version;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MovieTheater.Controllers
 {

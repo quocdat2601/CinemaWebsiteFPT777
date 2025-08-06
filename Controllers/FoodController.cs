@@ -45,11 +45,11 @@ namespace MovieTheater.Controllers
                 TempData["ErrorMessage"] = $"Validation failed: {errors}";
                 return View(model);
             }
-            
+
             if (ModelState.IsValid)
             {
-    
-                
+
+
                 // Làm sạch dữ liệu đầu vào
                 model.Name = model.Name?.Trim();
                 model.Description = model.Description?.Trim();
@@ -59,14 +59,14 @@ namespace MovieTheater.Controllers
                 if (model.ImageFile != null)
                 {
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                    
+
                     // Check if filename is null or empty
                     if (string.IsNullOrEmpty(model.ImageFile.FileName))
                     {
                         ModelState.AddModelError("ImageFile", "Chỉ cho phép file ảnh nhỏ hơn 2MB và đúng định dạng.");
                         return View(model);
                     }
-                    
+
                     var extension = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
                     if (!allowedExtensions.Contains(extension) || model.ImageFile.Length > 2 * 1024 * 1024)
                     {
@@ -78,7 +78,7 @@ namespace MovieTheater.Controllers
                 var webRootPath = _webHostEnvironment.WebRootPath;
                 var result = await _foodService.CreateAsync(model, webRootPath);
 
-    
+
 
                 if (result)
                 {

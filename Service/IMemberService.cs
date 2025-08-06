@@ -15,4 +15,4 @@ namespace MovieTheater.Service
         void Delete(string memberId);
         void Save();
     }
-} 
+}
