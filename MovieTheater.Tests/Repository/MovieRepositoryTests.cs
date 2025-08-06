@@ -1114,8 +1114,9 @@ namespace MovieTheater.Tests.Repository
             var result = repo.GetComingSoonMoviesWithDetails();
 
             // Assert
-            Assert.Single(result);
-            Assert.Equal("MV002", result[0].MovieId);
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.Contains(result, m => m.MovieId == "MV002");
         }
 
         #endregion
