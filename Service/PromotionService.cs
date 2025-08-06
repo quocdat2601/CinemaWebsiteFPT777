@@ -222,17 +222,35 @@ namespace MovieTheater.Service
             return true;
         }
 
-        // Lấy danh sách promotion hợp lệ cho food (chỉ xét TargetEntity)
-        public List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price, string FoodName)> selectedFoods)
+        // Lấy danh sách promotion hợp lệ cho food (áp dụng cả logic eligibility như seat promotions)
+        public List<Promotion> GetEligibleFoodPromotions(List<(int FoodId, int Quantity, decimal Price, string FoodName)> selectedFoods, PromotionCheckContext context)
         {
             var allPromotions = _context.Promotions.Include(p => p.PromotionConditions).Where(p => p.IsActive).ToList();
+            
+            // Lọc các promotion có điều kiện food hoặc có điều kiện accountid (first-time booking)
             var foodPromotions = allPromotions
                 .Where(p =>
-                    p.PromotionConditions != null &&
-                    p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food")
+                    // Promotion có điều kiện food
+                    (p.PromotionConditions != null &&
+                     p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food")) ||
+                    // Promotion cho first-time booking (không có điều kiện food)
+                    (p.PromotionConditions != null &&
+                     p.PromotionConditions.Any(c => c.TargetField?.ToLower() == "accountid") &&
+                     !p.PromotionConditions.Any(c => c.TargetEntity != null && c.TargetEntity.ToLower() == "food"))
                 )
                 .ToList();
-            return foodPromotions;
+            
+            // Áp dụng logic eligibility giống như seat promotions
+            var eligibleFoodPromotions = new List<Promotion>();
+            foreach (var promotion in foodPromotions)
+            {
+                if (IsPromotionEligible(promotion, context))
+                {
+                    eligibleFoodPromotions.Add(promotion);
+                }
+            }
+            
+            return eligibleFoodPromotions;
         }
 
         // Áp dụng promotion cho từng món ăn riêng biệt, trả về danh sách món đã giảm giá và tên promotion
