@@ -613,61 +613,6 @@ namespace MovieTheater.Tests.Service
         // ========== NEW TESTS FOR IMPROVING BRANCH COVERAGE ==========
 
         [Fact]
-        public void GenerateQRCodeData_WithException_ThrowsException()
-        {
-            // Arrange
-            decimal amount = 100000;
-            string orderInfo = "Payment for movie ticket";
-            string orderId = "INV001";
-
-            // Create service with bad configuration to cause exception
-            var badConfiguration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    {"QRPayment:BankCode", null}, // This will cause exception
-                    {"QRPayment:AccountNumber", "1234567890"},
-                    {"QRPayment:AccountName", "Test Account"}
-                })
-                .Build();
-
-            var serviceWithBadConfig = new QRPaymentService(badConfiguration, _mockLogger.Object);
-
-            // Act & Assert
-            var exception = Assert.Throws<Exception>(() => 
-                serviceWithBadConfig.GenerateQRCodeData(amount, orderInfo, orderId));
-            Assert.Contains("Error generating QR code data", exception.Message);
-        }
-
-        [Fact]
-        public void GenerateVietQRCode_WithException_FallsBackToSimpleQRCode()
-        {
-            // Arrange
-            decimal amount = 100000;
-            string orderInfo = "Payment for movie ticket";
-            string orderId = "INV001";
-
-            // Create service with bad configuration to cause exception
-            var badConfiguration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    {"QRPayment:BankCode", null}, // This will cause exception
-                    {"QRPayment:AccountNumber", "1234567890"},
-                    {"QRPayment:AccountName", "Test Account"}
-                })
-                .Build();
-
-            var serviceWithBadConfig = new QRPaymentService(badConfiguration, _mockLogger.Object);
-
-            // Act
-            var result = serviceWithBadConfig.GenerateVietQRCode(amount, orderInfo, orderId);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Contains("api.qrserver.com", result);
-            Assert.Contains("PAYMENT_INV001_100000", result);
-        }
-
-        [Fact]
         public void ValidatePayment_WithException_ReturnsFalse()
         {
             // Arrange

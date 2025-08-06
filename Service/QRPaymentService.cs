@@ -24,6 +24,12 @@ namespace MovieTheater.Service
         {
             try
             {
+                // Kiểm tra null values và throw exception
+                if (string.IsNullOrEmpty(_config.BankCode) || string.IsNullOrEmpty(_config.AccountNumber) || string.IsNullOrEmpty(_config.AccountName))
+                {
+                    throw new InvalidOperationException("QR Payment configuration is missing required values (BankCode, AccountNumber, or AccountName).");
+                }
+
                 // Tạo nội dung QR code theo chuẩn VietQR
                 var qrContent = $"https://api.vietqr.io/image/{_config.BankCode}/{_config.AccountNumber}?amount={amount}&addInfo={orderId}&accountName={_config.AccountName}";
 

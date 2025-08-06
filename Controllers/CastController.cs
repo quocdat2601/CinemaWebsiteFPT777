@@ -265,7 +265,7 @@ namespace MovieTheater.Controllers
 
                 _personRepository.Delete(id);
                 _personRepository.Save(); // Ensure changes are committed
-                TempData["ToastMessage"] = "Cast deleted successfully!";
+                
                 if (role == "Admin")
                     return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
                 else

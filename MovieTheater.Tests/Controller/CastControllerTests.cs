@@ -803,7 +803,7 @@ namespace MovieTheater.Tests.Controller
             Assert.Equal("MainPage", redirectToActionResult.ActionName);
             Assert.Equal("Admin", redirectToActionResult.ControllerName);
             Assert.Equal("CastMg", redirectToActionResult.RouteValues["tab"]);
-            Assert.Equal("Cast deleted successfully!", controller.TempData["ToastMessage"]);
+            Assert.Equal($"Successfully deleted {cast.Name}.", controller.TempData["ToastMessage"]);
 
             _mockPersonRepository.Verify(r => r.Delete(personId), Times.Once());
             _mockPersonRepository.Verify(r => r.Save(), Times.Once());
