@@ -357,7 +357,7 @@ namespace MovieTheater.Tests.Service
             Assert.NotNull(result.FoodAnalytics.RecentOrders);
             Assert.NotNull(result.FoodAnalytics.RecentCancels);
             Assert.NotEmpty(result.FoodAnalytics.TopFoodItems);
-            Assert.Equal(16, result.FoodAnalytics.SalesByHour.Count); // 8 AM to 11 PM (16 hours)
+            Assert.Equal(24, result.FoodAnalytics.SalesByHour.Count); // 0 to 23 (full 24 hours)
         }
 
         [Fact]

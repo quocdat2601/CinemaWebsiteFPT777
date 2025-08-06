@@ -130,8 +130,7 @@ namespace MovieTheater.Tests.Service
         {
             // Arrange
             var cinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "Updated Room" };
-            _repositoryMock.Setup(r => r.Update(cinemaRoom)).Verifiable();
-            _repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            _repositoryMock.Setup(r => r.Update(cinemaRoom)).Returns(Task.CompletedTask);
 
             // Act
             var result = await _service.Update(cinemaRoom);
@@ -139,7 +138,6 @@ namespace MovieTheater.Tests.Service
             // Assert
             Assert.True(result);
             _repositoryMock.Verify(r => r.Update(cinemaRoom), Times.Once);
-            _repositoryMock.Verify(r => r.Save(), Times.Once);
         }
 
         [Fact]
