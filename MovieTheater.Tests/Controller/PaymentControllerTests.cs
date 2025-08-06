@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace MovieTheater.Tests.Controller
 {
@@ -209,6 +210,50 @@ namespace MovieTheater.Tests.Controller
 
             // Act
             var result = controller.CreatePayment(null);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public void CreatePayment_InvalidModelState_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = BuildController();
+            var request = new Controllers.PaymentRequest
+            {
+                Amount = -100, // Invalid amount
+                OrderInfo = "", // Empty order info
+                OrderId = null // Null order id
+            };
+
+            // Add model error to simulate invalid model state
+            controller.ModelState.AddModelError("Amount", "Amount must be positive");
+
+            // Act
+            var result = controller.CreatePayment(request);
+
+            // t
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<SerializableError>(badRequestResult.Value);
+        }
+
+        [Fact]
+        public void CreatePayment_ZeroAmount_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = BuildController();
+            var request = new Controllers.PaymentRequest
+            {
+                Amount = 0,
+                OrderInfo = "Test payment",
+                OrderId = "ORDER123"
+            };
+
+            controller.ModelState.AddModelError("Amount", "Amount must be greater than zero");
+
+            // Act
+            var result = controller.CreatePayment(request);
 
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);
@@ -477,6 +522,184 @@ namespace MovieTheater.Tests.Controller
             _scheduleSeatService.Verify(s => s.Update(It.Is<ScheduleSeat>(ss => ss.BookedPrice.HasValue)), Times.AtLeastOnce);
         }
 
+        [Fact]
+        public async Task VNPayReturn_WithInvalidPromotionDiscount_HandlesGracefully()
+        {
+            // Arrange
+            var controller = BuildController();
+            var session = (TestSession)((DefaultHttpContext)controller.ControllerContext.HttpContext).Session;
+            
+            session.SetString("SelectedFoods_INV123", JsonConvert.SerializeObject(new List<FoodViewModel>()));
+
+            var invoice = CreateTestInvoice();
+            invoice.PromotionDiscount = "invalid_json"; // Invalid JSON
+
+            var seats = CreateTestSeats();
+            var scheduleSeats = CreateTestScheduleSeats();
+
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(invoice);
+            _seatService.Setup(s => s.GetSeatsByNames(It.IsAny<List<string>>())).Returns(seats);
+            _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(seats);
+            _scheduleSeatService.Setup(s => s.GetByInvoiceId("INV123")).Returns(scheduleSeats);
+            _scheduleSeatService.Setup(s => s.CreateMultipleScheduleSeatsAsync(It.IsAny<List<ScheduleSeat>>())).Returns(Task.FromResult(true));
+            _scheduleSeatService.Setup(s => s.UpdateScheduleSeatsStatusAsync("INV123", 2)).Returns(Task.CompletedTask);
+            _scheduleSeatService.Setup(s => s.Update(It.IsAny<ScheduleSeat>())).Verifiable();
+            _scheduleSeatService.Setup(s => s.Save()).Verifiable();
+            _invoiceService.Setup(s => s.Update(It.IsAny<Invoice>())).Verifiable();
+            _invoiceService.Setup(s => s.Save()).Verifiable();
+
+            // Setup SignalR
+            _clientProxy.Setup(c => c.SendCoreAsync(
+                "DashboardUpdated",
+                It.IsAny<object[]>(),
+                It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            // Should handle gracefully without throwing exception
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithMemberAndRank_CalculatesAddScore()
+        {
+            // Arrange
+            var controller = BuildController();
+            var session = (TestSession)((DefaultHttpContext)controller.ControllerContext.HttpContext).Session;
+            
+            session.SetString("SelectedFoods_INV123", JsonConvert.SerializeObject(new List<FoodViewModel>()));
+
+            var invoice = CreateTestInvoice();
+            invoice.AddScore = 0; // Will be calculated
+
+            var member = CreateTestMember();
+            member.Account.Rank.PointEarningPercentage = 1.5m; // 150% earning rate
+
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(invoice);
+            _seatService.Setup(s => s.GetSeatsByNames(It.IsAny<List<string>>())).Returns(new List<Seat>());
+            _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(new List<Seat>());
+            _scheduleSeatService.Setup(s => s.GetByInvoiceId("INV123")).Returns(new List<ScheduleSeat>());
+            _scheduleSeatService.Setup(s => s.UpdateScheduleSeatsStatusAsync("INV123", 2)).Returns(Task.CompletedTask);
+            _invoiceService.Setup(s => s.Update(It.IsAny<Invoice>())).Verifiable();
+            _invoiceService.Setup(s => s.Save()).Verifiable();
+            _memberService.Setup(s => s.GetByIdWithAccountAndRank("ACC123")).Returns(member);
+
+            // Setup SignalR
+            _clientProxy.Setup(c => c.SendCoreAsync(
+                "DashboardUpdated",
+                It.IsAny<object[]>(),
+                It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            _invoiceService.Verify(s => s.Update(It.Is<Invoice>(i => i.AddScore > 0)), Times.Once);
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithFoodOrdersAndException_HandlesGracefully()
+        {
+            // Arrange
+            var controller = BuildController();
+            var session = (TestSession)((DefaultHttpContext)controller.ControllerContext.HttpContext).Session;
+            
+            var foods = new List<FoodViewModel>
+            {
+                new FoodViewModel { FoodId = 1, Name = "Popcorn", Price = 50000, Quantity = 2 }
+            };
+            session.SetString("SelectedFoods_INV123", JsonConvert.SerializeObject(foods));
+
+            var invoice = CreateTestInvoice();
+
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(invoice);
+            _seatService.Setup(s => s.GetSeatsByNames(It.IsAny<List<string>>())).Returns(new List<Seat>());
+            _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(new List<Seat>());
+            _scheduleSeatService.Setup(s => s.GetByInvoiceId("INV123")).Returns(new List<ScheduleSeat>());
+            _scheduleSeatService.Setup(s => s.UpdateScheduleSeatsStatusAsync("INV123", 2)).Returns(Task.CompletedTask);
+            _invoiceService.Setup(s => s.Update(It.IsAny<Invoice>())).Verifiable();
+            _invoiceService.Setup(s => s.Save()).Verifiable();
+            _foodInvoiceService.Setup(s => s.SaveFoodOrderAsync("INV123", It.IsAny<List<FoodViewModel>>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Setup SignalR
+            _clientProxy.Setup(c => c.SendCoreAsync(
+                "DashboardUpdated",
+                It.IsAny<object[]>(),
+                It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            // Should handle exception gracefully and still redirect to success
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithInvalidFoodJson_HandlesGracefully()
+        {
+            // Arrange
+            var controller = BuildController();
+            var session = (TestSession)((DefaultHttpContext)controller.ControllerContext.HttpContext).Session;
+            
+            session.SetString("SelectedFoods_INV123", "invalid_json");
+
+            var invoice = CreateTestInvoice();
+
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(invoice);
+            _seatService.Setup(s => s.GetSeatsByNames(It.IsAny<List<string>>())).Returns(new List<Seat>());
+            _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(new List<Seat>());
+            _scheduleSeatService.Setup(s => s.GetByInvoiceId("INV123")).Returns(new List<ScheduleSeat>());
+            _scheduleSeatService.Setup(s => s.UpdateScheduleSeatsStatusAsync("INV123", 2)).Returns(Task.CompletedTask);
+            _invoiceService.Setup(s => s.Update(It.IsAny<Invoice>())).Verifiable();
+            _invoiceService.Setup(s => s.Save()).Verifiable();
+
+            // Setup SignalR
+            _clientProxy.Setup(c => c.SendCoreAsync(
+                "DashboardUpdated",
+                It.IsAny<object[]>(),
+                It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            // Should handle invalid JSON gracefully
+        }
+
         #endregion
 
         #region VNPayIpn Tests
@@ -537,6 +760,87 @@ namespace MovieTheater.Tests.Controller
             // Assert
             var contentResult = Assert.IsType<ContentResult>(result);
             Assert.Equal("97", contentResult.Content);
+        }
+
+        [Fact]
+        public void VNPayIpn_NoSecureHash_ReturnsError()
+        {
+            // Arrange
+            var controller = BuildController();
+            
+            // Setup query parameters without secure hash
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues>
+            {
+                { "vnp_Amount", "10000000" },
+                { "vnp_OrderInfo", "Test payment" },
+                { "vnp_ResponseCode", "00" },
+                { "vnp_TxnRef", "INV123" }
+            });
+
+            controller.ControllerContext.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = controller.VNPayIpn();
+
+            // Assert
+            var contentResult = Assert.IsType<ContentResult>(result);
+            Assert.Equal("97", contentResult.Content);
+        }
+
+        [Fact]
+        public void VNPayIpn_EmptyQuery_ReturnsError()
+        {
+            // Arrange
+            var controller = BuildController();
+            
+            // Setup empty query parameters
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues>());
+
+            controller.ControllerContext.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = controller.VNPayIpn();
+
+            // Assert
+            var contentResult = Assert.IsType<ContentResult>(result);
+            Assert.Equal("97", contentResult.Content);
+        }
+
+        [Fact]
+        public void VNPayIpn_WithNonVnpParameters_FiltersCorrectly()
+        {
+            // Arrange
+            var controller = BuildController();
+            
+            // Setup query parameters with both vnp_ and non-vnp_ parameters
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues>
+            {
+                { "vnp_Amount", "10000000" },
+                { "vnp_OrderInfo", "Test payment" },
+                { "vnp_ResponseCode", "00" },
+                { "vnp_TxnRef", "INV123" },
+                { "vnp_SecureHash", "valid_hash" },
+                { "other_param", "should_be_ignored" },
+                { "another_param", "also_ignored" }
+            });
+
+            controller.ControllerContext.HttpContext.Request.Query = queryCollection;
+
+            _vnPayService.Setup(s => s.ValidateSignature(It.Is<Dictionary<string, string>>(dict => 
+                dict.ContainsKey("vnp_Amount") && 
+                dict.ContainsKey("vnp_OrderInfo") && 
+                dict.ContainsKey("vnp_ResponseCode") && 
+                dict.ContainsKey("vnp_TxnRef") && 
+                !dict.ContainsKey("other_param") && 
+                !dict.ContainsKey("another_param")), "valid_hash"))
+                .Returns(true);
+
+            // Act
+            var result = controller.VNPayIpn();
+
+            // Assert
+            var contentResult = Assert.IsType<ContentResult>(result);
+            Assert.Equal("00", contentResult.Content);
         }
 
         #endregion
@@ -662,6 +966,242 @@ namespace MovieTheater.Tests.Controller
                     }
                 }
             };
+        }
+
+        [Fact]
+        public void VNPayIpn_WithMissingRequiredParameters_ReturnsError()
+        {
+            // Arrange
+            var controller = BuildController();
+            
+            // Setup query parameters with missing required fields
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues>
+            {
+                { "vnp_Amount", "10000000" }
+                // Missing other required parameters
+            });
+
+            controller.ControllerContext.HttpContext.Request.Query = queryCollection;
+
+            // Act
+            var result = controller.VNPayIpn();
+
+            // Assert
+            var contentResult = Assert.IsType<ContentResult>(result);
+            Assert.Equal("97", contentResult.Content); // VNPay returns "97" for invalid signature
+        }
+
+        [Fact]
+        public void VNPayIpn_WithValidParameters_ReturnsSuccess()
+        {
+            // Arrange
+            var controller = BuildController();
+            
+            // Setup query parameters
+            var queryCollection = new QueryCollection(new Dictionary<string, StringValues>
+            {
+                { "vnp_Amount", "10000000" },
+                { "vnp_OrderInfo", "Test payment" },
+                { "vnp_ResponseCode", "00" },
+                { "vnp_TxnRef", "INV123" },
+                { "vnp_SecureHash", "valid_hash" }
+            });
+
+            controller.ControllerContext.HttpContext.Request.Query = queryCollection;
+
+            _vnPayService.Setup(s => s.ValidateSignature(It.IsAny<Dictionary<string, string>>(), "valid_hash"))
+                .Returns(true);
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(CreateTestInvoice());
+
+            // Act
+            var result = controller.VNPayIpn();
+
+            // Assert
+            var contentResult = Assert.IsType<ContentResult>(result);
+            Assert.Equal("00", contentResult.Content); // VNPay returns "00" for success
+        }
+
+        [Fact]
+        public void CreatePayment_WithValidRequest_ReturnsOkWithPaymentUrl()
+        {
+            // Arrange
+            var controller = BuildController();
+            var request = new Controllers.PaymentRequest
+            {
+                Amount = 100000,
+                OrderInfo = "Test payment",
+                OrderId = "INV123"
+            };
+
+            _vnPayService.Setup(s => s.CreatePaymentUrl(It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns("https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=100000&vnp_Command=pay&vnp_CreateDate=20231201120000&vnp_CurrCode=VND&vnp_IpAddr=127.0.0.1&vnp_Locale=vn&vnp_OrderInfo=Test+payment&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A5000%2FPayment%2FVNPayReturn&vnp_TmnCode=TMNC&vnp_TxnRef=INV123&vnp_Version=2.1.0&vnp_SecureHash=abc123");
+
+            // Act
+            var result = controller.CreatePayment(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = okResult.Value;
+            Assert.NotNull(response);
+            
+            // Use reflection to access the paymentUrl property
+            var paymentUrlProperty = response.GetType().GetProperty("paymentUrl");
+            Assert.NotNull(paymentUrlProperty);
+            var paymentUrl = paymentUrlProperty.GetValue(response) as string;
+            Assert.NotNull(paymentUrl);
+            Assert.Contains("https://sandbox.vnpayment.vn", paymentUrl);
+        }
+
+        [Fact]
+        public void CreatePayment_WithServiceException_ReturnsBadRequest()
+        {
+            // Arrange
+            var controller = BuildController();
+            var request = new Controllers.PaymentRequest
+            {
+                Amount = 100000,
+                OrderInfo = "Test payment",
+                OrderId = "INV123"
+            };
+
+            _vnPayService.Setup(s => s.CreatePaymentUrl(It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Throws(new Exception("Service error"));
+
+            // Act
+            var result = controller.CreatePayment(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains("error", badRequestResult.Value.ToString().ToLower());
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithInvalidInvoiceId_ReturnsRedirectToSuccess()
+        {
+            // Arrange
+            var controller = BuildController();
+            _invoiceService.Setup(s => s.GetById("INVALID")).Returns((Invoice)null);
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INVALID"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Success", redirectResult.ActionName);
+            Assert.Equal("Booking", redirectResult.ControllerName);
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithNullInvoice_ReturnsRedirectToSuccess()
+        {
+            // Arrange
+            var controller = BuildController();
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns((Invoice)null);
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Success", redirectResult.ActionName);
+            Assert.Equal("Booking", redirectResult.ControllerName);
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithEmptySeatNames_HandlesGracefully()
+        {
+            // Arrange
+            var controller = BuildController();
+            var session = (TestSession)((DefaultHttpContext)controller.ControllerContext.HttpContext).Session;
+            
+            session.SetString("SelectedFoods_INV123", JsonConvert.SerializeObject(new List<FoodViewModel>()));
+
+            var invoice = CreateTestInvoice();
+            invoice.Seat = ""; // Empty seat names
+
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(invoice);
+            _seatService.Setup(s => s.GetSeatsByNames(It.IsAny<List<string>>())).Returns(new List<Seat>());
+            _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(new List<Seat>());
+            _scheduleSeatService.Setup(s => s.GetByInvoiceId("INV123")).Returns(new List<ScheduleSeat>());
+            _scheduleSeatService.Setup(s => s.UpdateScheduleSeatsStatusAsync("INV123", 2)).Returns(Task.CompletedTask);
+            _invoiceService.Setup(s => s.Update(It.IsAny<Invoice>())).Verifiable();
+            _invoiceService.Setup(s => s.Save()).Verifiable();
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Success", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithNullSeatNames_HandlesGracefully()
+        {
+            // Arrange
+            var controller = BuildController();
+            var session = (TestSession)((DefaultHttpContext)controller.ControllerContext.HttpContext).Session;
+            
+            session.SetString("SelectedFoods_INV123", JsonConvert.SerializeObject(new List<FoodViewModel>()));
+
+            var invoice = CreateTestInvoice();
+            invoice.Seat = null; // Null seat names
+
+            _invoiceService.Setup(s => s.GetById("INV123")).Returns(invoice);
+            _seatService.Setup(s => s.GetSeatsByNames(It.IsAny<List<string>>())).Returns(new List<Seat>());
+            _seatService.Setup(s => s.GetSeatsWithTypeByIds(It.IsAny<List<int>>())).Returns(new List<Seat>());
+            _scheduleSeatService.Setup(s => s.GetByInvoiceId("INV123")).Returns(new List<ScheduleSeat>());
+            _scheduleSeatService.Setup(s => s.UpdateScheduleSeatsStatusAsync("INV123", 2)).Returns(Task.CompletedTask);
+            _invoiceService.Setup(s => s.Update(It.IsAny<Invoice>())).Verifiable();
+            _invoiceService.Setup(s => s.Save()).Verifiable();
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act
+            var result = await controller.VNPayReturn(model);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Success", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public async Task VNPayReturn_WithException_ReturnsErrorView()
+        {
+            // Arrange
+            var controller = BuildController();
+            _invoiceService.Setup(s => s.GetById("INV123")).Throws(new Exception("Database error"));
+
+            var model = new VnPayReturnModel
+            {
+                vnp_ResponseCode = "00",
+                vnp_TxnRef = "INV123"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(async () => await controller.VNPayReturn(model));
         }
 
         #endregion

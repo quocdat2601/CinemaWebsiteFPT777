@@ -293,11 +293,11 @@ namespace MovieTheater.Tests.Repository
             using var context = CreateContext();
             SeedData(context);
 
-            // Create a mock context that throws an exception on SaveChanges
+            // Create a mock context that throws an exception on SaveChangesAsync
             var mockContext = new Mock<MovieTheaterContext>(_options);
             mockContext.Setup(c => c.CinemaRooms).Returns(context.CinemaRooms);
             mockContext.Setup(c => c.Seats).Returns(context.Seats);
-            mockContext.Setup(c => c.SaveChanges()).Throws(new Exception("Database connection failed"));
+            mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Database connection failed"));
 
             var repository = new CinemaRepository(mockContext.Object, _seatRepositoryMock.Object);
             var updatedRoom = new CinemaRoom

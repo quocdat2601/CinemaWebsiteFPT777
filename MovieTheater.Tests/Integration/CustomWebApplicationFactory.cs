@@ -18,7 +18,7 @@ namespace MovieTheater.Tests.Integration
             builder.ConfigureServices(services =>
             {
                 // Remove all existing DbContext registrations
-                var dbContextDescriptors = services.Where(d => 
+                var dbContextDescriptors = services.Where(d =>
                     d.ServiceType == typeof(DbContextOptions<MovieTheaterContext>) ||
                     d.ServiceType == typeof(MovieTheaterContext)).ToList();
 
@@ -28,7 +28,7 @@ namespace MovieTheater.Tests.Integration
                 }
 
                 // Remove any SQL Server related services more comprehensively
-                var sqlServerDescriptors = services.Where(d => 
+                var sqlServerDescriptors = services.Where(d =>
                     d.ServiceType.Name.Contains("SqlServer") ||
                     d.ImplementationType?.Name.Contains("SqlServer") == true ||
                     d.ServiceType.FullName?.Contains("SqlServer") == true ||
@@ -136,4 +136,4 @@ namespace MovieTheater.Tests.Integration
             return Task.CompletedTask;
         }
     }
-} 
+}

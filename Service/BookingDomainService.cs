@@ -389,6 +389,16 @@ namespace MovieTheater.Service
             totalPrice += totalFoodPrice;
             Console.WriteLine($"subtotal: {subtotal}, rankDiscount: {rankDiscount}, voucherAmount: {voucherAmount}, usedScoreValue: {priceResult.UseScore * 1000}, totalFoodPrice: {totalFoodPrice}, totalPrice: {totalPrice}");
 
+            // Add and deduct scores if applicable
+            if (addScore > 0)
+            {
+                await _accountService.AddScoreAsync(userId, addScore, true);
+            }
+            if (priceResult.UseScore > 0)
+            {
+                await _accountService.DeductScoreAsync(userId, priceResult.UseScore, true);
+            }
+
             return new BookingResult { Success = true, ErrorMessage = null, InvoiceId = invoice.InvoiceId, TotalPrice = totalPrice };
         }
 

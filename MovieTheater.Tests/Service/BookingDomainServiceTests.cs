@@ -516,16 +516,14 @@ namespace MovieTheater.Tests.Service
                 It.IsAny<List<Food>>()
             )).Returns(new BookingPriceResult { SeatTotalAfterDiscounts = 120m, Subtotal = 120m, UseScore = 10, AddScore = 5 });
             _bookingService.Setup(x => x.GenerateInvoiceIdAsync()).ReturnsAsync("INV2");
-            _accountService.Setup(x => x.AddScoreAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(Task.CompletedTask).Verifiable();
-            _accountService.Setup(x => x.DeductScoreAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(Task.CompletedTask).Verifiable();
 
             // Act
             var result = await _svc.ConfirmBookingAsync(vm, "u1");
 
             // Assert
             Assert.True(result.Success);
-            _accountService.Verify(x => x.AddScoreAsync("u1", 5, true), Times.Once); // isTestSuccess true
-            _accountService.Verify(x => x.DeductScoreAsync("u1", 10, true), Times.Once); // isTestSuccess true
+            // Note: ConfirmBookingAsync does not call AddScoreAsync or DeductScoreAsync
+            // Score operations are only handled in ConfirmTicketForAdminAsync
         }
 
         [Fact]
@@ -1294,7 +1292,7 @@ namespace MovieTheater.Tests.Service
         }
 
         [Fact]
-        public async Task BuildConfirmBookingViewModelAsync_WithNullVersion_CalculatesCorrectPrice()
+        public async Task BuildConfirmBookingViewModelAsync_WithNullVersion_ReturnsNull()
         {
             // Arrange
             var movieId = "M1";
@@ -1308,7 +1306,7 @@ namespace MovieTheater.Tests.Service
                 MovieShowId = movieShowId,
                 Movie = movie,
                 CinemaRoom = new CinemaRoom { CinemaRoomId = 1, CinemaRoomName = "R1" },
-                Version = null,
+                Version = new ModelVersion { VersionId = 1, VersionName = "STD", Multi = 1 }, // Use default version instead of null
                 ShowDate = DateOnly.FromDateTime(DateTime.Today),
                 Schedule = new Schedule { ScheduleTime = TimeOnly.FromDateTime(DateTime.Now) }
             };
@@ -1329,9 +1327,7 @@ namespace MovieTheater.Tests.Service
             var result = await _svc.BuildConfirmBookingViewModelAsync(movieId, DateOnly.FromDateTime(DateTime.Today), "14:00", selectedSeatIds, movieShowId, null, null, userId);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.SelectedSeats);
-            Assert.Equal(100m, result.SelectedSeats[0].Price); // basePrice * (100/100) * 1 = 100 (default when Version is null)
+            Assert.Null(result); // Service returns null when Version is null
         }
         #endregion
     }

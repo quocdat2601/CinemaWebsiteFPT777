@@ -591,5 +591,293 @@ namespace MovieTheater.Tests.Service
             Assert.NotNull(result);
             Assert.StartsWith("data:image/png;base64,", result);
         }
+
+        [Fact]
+        public void GenerateQRCodeData_WithException_ThrowsException()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = "Payment for movie ticket";
+            string orderId = "INV001";
+
+            // Mock logger to throw exception
+            _mockLogger.Setup(l => l.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
+                .Throws(new Exception("Logger error"));
+
+            // Act & Assert
+            Assert.Throws<Exception>(() => _service.GenerateQRCodeData(amount, orderInfo, orderId));
+        }
+
+        [Fact]
+        public void GenerateVietQRCode_WithException_FallsBackToSimpleQRCode()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = "Payment for movie ticket";
+            string orderId = "INV001";
+
+            // Create service with bad configuration to cause exception
+            var badConfiguration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    {"QRPayment:BankCode", "VCB"},
+                    {"QRPayment:AccountNumber", "1234567890"},
+                    {"QRPayment:AccountName", "Test Account"},
+                    {"VNPay:TmnCode", "VVHLKKC6"},
+                    {"VNPay:HashSecret", "VVHLKKC6"},
+                    {"VNPay:BaseUrl", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"},
+                    {"VNPay:ReturnUrl", "https://localhost:7201/api/Payment/vnpay-return"}
+                })
+                .Build();
+
+            var serviceWithBadConfig = new QRPaymentService(badConfiguration, _mockLogger.Object);
+
+            // Act
+            var result = serviceWithBadConfig.GenerateVietQRCode(amount, orderInfo, orderId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("api.vietqr.io", result);
+        }
+
+        [Fact]
+        public void GenerateVNPayQRCode_WithNullOrderInfo_FallsBackToSimpleQRCode()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = null;
+            string orderId = "INV001";
+
+            // Act
+            var result = _service.GenerateVNPayQRCode(amount, orderInfo, orderId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("api.qrserver.com", result);
+        }
+
+        [Fact]
+        public void GenerateVNPayQRCode_WithNullOrderId_FallsBackToSimpleQRCode()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = "Payment for movie ticket";
+            string orderId = null;
+
+            // Act
+            var result = _service.GenerateVNPayQRCode(amount, orderInfo, orderId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("api.qrserver.com", result);
+        }
+
+        [Fact]
+        public void GeneratePayOSQRCode_WithException_ReturnsNull()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = "Payment for movie ticket";
+            string orderId = "INV001";
+
+            // Mock configuration to cause PayOS generation to fail
+            var badConfiguration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    {"QRPayment:BankCode", "VCB"},
+                    {"QRPayment:AccountNumber", "1234567890"},
+                    {"QRPayment:AccountName", "Test Account"},
+                    {"QRPayment:PayOSClientId", null}, // This will cause PayOS generation to fail
+                    {"QRPayment:PayOSApiKey", "test_api_key"},
+                    {"QRPayment:PayOSChecksumKey", "test_checksum_key"},
+                    {"QRPayment:PayOSReturnUrl", "https://localhost:7201/payment/return"},
+                    {"QRPayment:PayOSCancelUrl", "https://localhost:7201/payment/cancel"},
+                    {"VNPay:TmnCode", "VVHLKKC6"},
+                    {"VNPay:HashSecret", "VVHLKKC6"},
+                    {"VNPay:BaseUrl", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"},
+                    {"VNPay:ReturnUrl", "https://localhost:7201/api/Payment/vnpay-return"}
+                })
+                .Build();
+
+            var serviceWithBadConfig = new QRPaymentService(badConfiguration, _mockLogger.Object);
+
+            // Act
+            var result = serviceWithBadConfig.GeneratePayOSQRCode(amount, orderInfo, orderId);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GeneratePayOSQRCode_WithLongOrderInfo_TruncatesCorrectly()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = "This is a very long order information that should be truncated to 25 characters maximum";
+            string orderId = "INV001";
+
+            // Act
+            var result = _service.GeneratePayOSQRCode(amount, orderInfo, orderId);
+
+            // Assert
+            // The service should handle long descriptions by truncating them
+            Assert.True(result == null || result.StartsWith("data:image/png;base64,"));
+        }
+
+        [Fact]
+        public void GeneratePayOSQRCode_WithSpecialCharactersInOrderInfo_HandlesEncoding()
+        {
+            // Arrange
+            decimal amount = 100000;
+            string orderInfo = "Payment with special chars: @#$%^&*()";
+            string orderId = "INV001";
+
+            // Act
+            var result = _service.GeneratePayOSQRCode(amount, orderInfo, orderId);
+
+            // Assert
+            Assert.True(result == null || result.StartsWith("data:image/png;base64,"));
+        }
+
+        [Fact]
+        public void ValidatePayment_WithEmptyOrderId_ReturnsTrue()
+        {
+            // Arrange
+            string orderId = "";
+            string transactionId = "TXN123456";
+
+            // Act
+            var result = _service.ValidatePayment(orderId, transactionId);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void ValidatePayment_WithEmptyTransactionId_ReturnsTrue()
+        {
+            // Arrange
+            string orderId = "INV001";
+            string transactionId = "";
+
+            // Act
+            var result = _service.ValidatePayment(orderId, transactionId);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void ValidatePayment_WithBothEmptyParameters_ReturnsTrue()
+        {
+            // Arrange
+            string orderId = "";
+            string transactionId = "";
+
+            // Act
+            var result = _service.ValidatePayment(orderId, transactionId);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void GetQRCodeImage_WithEmptyData_ReturnsFallbackUrl()
+        {
+            // Arrange
+            string qrData = "";
+
+            // Act
+            var result = _service.GetQRCodeImage(qrData);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("chart.googleapis.com", result);
+        }
+
+        [Fact]
+        public void GetQRCodeImage_WithWhitespaceData_ReturnsFallbackUrl()
+        {
+            // Arrange
+            string qrData = "   ";
+
+            // Act
+            var result = _service.GetQRCodeImage(qrData);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("chart.googleapis.com", result);
+        }
+
+        [Fact]
+        public void GenerateSimpleQRCode_WithWhitespaceText_ReturnsValidUrl()
+        {
+            // Arrange
+            string text = "   ";
+
+            // Act
+            var result = _service.GenerateSimpleQRCode(text);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("api.qrserver.com", result);
+        }
+
+        [Fact]
+        public void GenerateSimpleQRCode_WithSpecialCharacters_ReturnsValidUrl()
+        {
+            // Arrange
+            string text = "PAYMENT_INV001_100000@#$%";
+
+            // Act
+            var result = _service.GenerateSimpleQRCode(text);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("api.qrserver.com", result);
+            Assert.Contains("data=PAYMENT_INV001_100000%40%23%24%25", result);
+        }
+
+        [Fact]
+        public void GenerateMoMoQRCodeBase64_WithPhoneNumberStartingWith84_ReturnsValidBase64()
+        {
+            // Arrange
+            string phoneNumber = "84123456789";
+
+            // Act
+            var result = _service.GenerateMoMoQRCodeBase64(phoneNumber);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.StartsWith("data:image/png;base64,", result);
+        }
+
+        [Fact]
+        public void GenerateMoMoQRCodeBase64_WithPhoneNumberStartingWith0_ConvertsToInternationalFormat()
+        {
+            // Arrange
+            string phoneNumber = "0123456789";
+
+            // Act
+            var result = _service.GenerateMoMoQRCodeBase64(phoneNumber);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.StartsWith("data:image/png;base64,", result);
+        }
+
+        [Fact]
+        public void GenerateMoMoQRCodeBase64_WithPhoneNumberStartingWith1_ReturnsValidBase64()
+        {
+            // Arrange
+            string phoneNumber = "123456789";
+
+            // Act
+            var result = _service.GenerateMoMoQRCodeBase64(phoneNumber);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.StartsWith("data:image/png;base64,", result);
+        }
     }
 } 

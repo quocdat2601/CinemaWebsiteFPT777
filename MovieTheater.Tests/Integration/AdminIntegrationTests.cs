@@ -20,7 +20,7 @@ namespace MovieTheater.Tests.Integration
             var client = _factory.CreateAuthenticatedClient("Admin");
 
             // Act
-            var response = await client.GetAsync("/Admin/MainPage");
+            var response = await client.GetAsync("/Admin/MainPage");    
 
             // Assert
             response.EnsureSuccessStatusCode();
@@ -988,6 +988,377 @@ namespace MovieTheater.Tests.Integration
 
             // Assert
             Assert.Contains("div", content.ToLower());
+        }
+        #endregion
+
+        #region BookingMg Status Filter Tests for 100% Coverage
+        [Fact]
+        public async Task LoadTab_BookingMg_WithPaidStatusFilter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=paid");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithCancelledStatusFilter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=cancelled");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithUnpaidStatusFilter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=unpaid");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithEmptyStatusFilter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithNullStatusFilter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithPaidStatusFilterAndKeyword_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=paid&keyword=test");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithCancelledStatusFilterAndKeyword_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=cancelled&keyword=test");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithUnpaidStatusFilterAndKeyword_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=unpaid&keyword=test");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithPaidStatusFilterAndBookingType_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=paid&bookingTypeFilter=normal");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithCancelledStatusFilterAndBookingType_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=cancelled&bookingTypeFilter=employee");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task LoadTab_BookingMg_WithUnpaidStatusFilterAndBookingType_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=BookingMg&statusFilter=unpaid&bookingTypeFilter=all");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+        }
+        #endregion
+
+        #region EditMember Page Tests
+        [Fact]
+        public async Task EditMember_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/Edit/test-id");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task EditMember_ReturnsHtmlContent()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/Edit/test-id");
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+            Assert.Contains("<!DOCTYPE html>", content);
+        }
+        #endregion
+
+        #region EditVoucher Page Tests
+        [Fact]
+        public async Task EditVoucher_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Voucher/AdminEdit/VOUCHER001");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task EditVoucher_ReturnsHtmlContent()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Voucher/AdminEdit/VOUCHER001");
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+            Assert.Contains("<!DOCTYPE html>", content);
+        }
+        #endregion
+
+        #region ShowtimeMg Page Tests
+        [Fact]
+        public async Task ShowtimeMg_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/ShowtimeMg");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task ShowtimeMg_ReturnsHtmlContent()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/ShowtimeMg");
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+            Assert.Contains("<!DOCTYPE html>", content);
+        }
+
+        [Fact]
+        public async Task ShowtimeMg_WithDateParameter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/ShowtimeMg?date=01/01/2024");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+        #endregion
+
+        #region Dashboard Page Tests
+        [Fact]
+        public async Task Dashboard_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/MainPage?tab=Dashboard");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task Dashboard_ReturnsHtmlContent()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/MainPage?tab=Dashboard");
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+            Assert.Contains("<!DOCTYPE html>", content);
+        }
+
+        [Fact]
+        public async Task Dashboard_WithWeeklyRange_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/MainPage?tab=Dashboard&range=weekly");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task Dashboard_WithMonthlyRange_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/MainPage?tab=Dashboard&range=monthly");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+        #endregion
+
+        #region LoadTab Tests
+        [Fact]
+        public async Task LoadTab_Dashboard_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=Dashboard");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task LoadTab_MemberMg_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=MemberMg");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=EmployeeMg");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithKeyword_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=EmployeeMg&keyword=test");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
+        }
+
+        [Fact]
+        public async Task LoadTab_EmployeeMg_WithStatusFilter_ReturnsSuccessStatusCode()
+        {
+            // Arrange
+            var client = _factory.CreateAuthenticatedClient("Admin");
+
+            // Act
+            var response = await client.GetAsync("/Admin/LoadTab?tab=EmployeeMg&statusFilter=active");
+
+            // Assert
+            Assert.True(response.IsSuccessStatusCode, $"Response status: {response.StatusCode}");
         }
         #endregion
     }
