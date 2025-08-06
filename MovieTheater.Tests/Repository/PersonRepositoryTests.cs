@@ -226,5 +226,54 @@ namespace MovieTheater.Tests.Repository
             var exception = Record.Exception(() => _repository.Delete(999));
             Assert.Null(exception);
         }
+
+        [Fact]
+        public void RemovePersonFromAllMovies_WhenPersonHasMovies_RemovesPersonFromAllMovies()
+        {
+            // Arrange
+            var person = new Person { PersonId = 1, Name = "John Doe", IsDirector = true };
+            var movie1 = new Movie { MovieId = "MV001", MovieNameEnglish = "Movie 1" };
+            var movie2 = new Movie { MovieId = "MV002", MovieNameEnglish = "Movie 2" };
+            
+            // Add person to both movies
+            movie1.People.Add(person);
+            movie2.People.Add(person);
+            
+            _context.People.Add(person);
+            _context.Movies.AddRange(movie1, movie2);
+            _context.SaveChanges();
+
+            // Verify person is associated with both movies
+            Assert.Equal(2, _repository.GetMovieByPerson(1).Count());
+
+            // Act
+            _repository.RemovePersonFromAllMovies(1);
+            _repository.Save();
+
+            // Assert
+            var moviesAfterRemoval = _repository.GetMovieByPerson(1);
+            Assert.Empty(moviesAfterRemoval);
+        }
+
+        [Fact]
+        public void RemovePersonFromAllMovies_WhenPersonHasNoMovies_DoesNothing()
+        {
+            // Arrange
+            var person = new Person { PersonId = 1, Name = "John Doe", IsDirector = true };
+            _context.People.Add(person);
+            _context.SaveChanges();
+
+            // Act & Assert - Should not throw exception
+            var exception = Record.Exception(() => _repository.RemovePersonFromAllMovies(1));
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void RemovePersonFromAllMovies_WhenPersonDoesNotExist_DoesNothing()
+        {
+            // Act & Assert - Should not throw exception
+            var exception = Record.Exception(() => _repository.RemovePersonFromAllMovies(999));
+            Assert.Null(exception);
+        }
     }
 } 

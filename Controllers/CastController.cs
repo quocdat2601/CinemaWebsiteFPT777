@@ -257,11 +257,15 @@ namespace MovieTheater.Controllers
                 var movies = _personRepository.GetMovieByPerson(id);
                 if (movies != null && movies.Any())
                 {
-                    TempData["ErrorMessage"] = $"Cannot delete {cast.Name} because they are associated with {movies.Count()} movie(s). Please remove them from all movies first.";
-                    if (role == "Admin")
-                        return RedirectToAction("MainPage", "Admin", new { tab = "CastMg" });
-                    else
-                        return RedirectToAction("MainPage", "Employee", new { tab = "CastMg" });
+                    // Remove person from all movies first
+                    _personRepository.RemovePersonFromAllMovies(id);
+                    _personRepository.Save();
+                    
+                    TempData["ToastMessage"] = $"Successfully removed {cast.Name} from {movies.Count()} movie(s) and deleted the cast member.";
+                }
+                else
+                {
+                    TempData["ToastMessage"] = $"Successfully deleted {cast.Name}.";
                 }
 
                 _personRepository.Delete(id);
