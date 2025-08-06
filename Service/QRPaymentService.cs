@@ -69,19 +69,26 @@ namespace MovieTheater.Service
         {
             try
             {
+                // Kiểm tra null values và fallback về simple QR code
+                if (string.IsNullOrEmpty(orderInfo) || string.IsNullOrEmpty(orderId))
+                {
+                    _logger.LogWarning("OrderInfo or OrderId is null/empty, falling back to simple QR code");
+                    return GenerateSimpleQRCode($"PAYMENT_{orderId ?? "NULL"}_{amount}");
+                }
+
                 // VNPAY QR code format
-                var vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+                var vnpUrl = _vnPayConfig.BaseUrl;
                 var vnpParams = new Dictionary<string, string>
                 {
                     ["vnp_Version"] = "2.1.0",
                     ["vnp_Command"] = "pay",
-                    ["vnp_TmnCode"] = "VVHLKKC6", // Demo TMN Code
+                    ["vnp_TmnCode"] = _vnPayConfig.TmnCode,
                     ["vnp_Amount"] = (amount * 100).ToString(), // Convert to smallest currency unit
                     ["vnp_CurrCode"] = "VND",
                     ["vnp_TxnRef"] = orderId,
                     ["vnp_OrderInfo"] = orderInfo,
                     ["vnp_OrderType"] = "billpayment",
-                    ["vnp_ReturnUrl"] = "https://localhost:7201/api/Payment/vnpay-return",
+                    ["vnp_ReturnUrl"] = _vnPayConfig.ReturnUrl,
                     ["vnp_IpAddr"] = "127.0.0.1",
                     ["vnp_CreateDate"] = DateTime.Now.ToString("yyyyMMddHHmmss")
                 };
@@ -121,7 +128,7 @@ namespace MovieTheater.Service
                 var queryString = string.Join("&", sortedParams.Select(p => $"{p.Key}={p.Value}"));
 
                 // Tạo HMAC-SHA512 signature
-                var secretKey = "VVHLKKC6"; // Demo secret key
+                var secretKey = _vnPayConfig.HashSecret;
                 var hmac = new System.Security.Cryptography.HMACSHA512(Encoding.UTF8.GetBytes(secretKey));
                 var data = Encoding.UTF8.GetBytes(queryString);
                 var hash = hmac.ComputeHash(data);
