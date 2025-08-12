@@ -279,7 +279,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support and questions:
-- **Email**: [your-email@example.com]
+- **Email**: [quocdat2601@example.com]
 - **GitHub Issues**: [Create an issue](https://github.com/quocdat2601/CinemaWebsiteFPT777/issues)
 - **Documentation**: Check the `Document/` folder for detailed guides
 
